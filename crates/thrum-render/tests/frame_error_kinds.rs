@@ -46,13 +46,17 @@ impl FrameWorld for RefusingWorld {
 
 #[test]
 fn usage_world_and_gpu_faults_have_distinct_kinds() {
-    let Some(gpu) = thrum_test_support::gpu("frame error kinds", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "frame error kinds",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    )
+    else {
+        return;
+    };
     let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let scene = SyntheticScene::grid(1).unwrap();
     let camera = scene.view;

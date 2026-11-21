@@ -10,14 +10,17 @@ use thrum_render::{
 
 #[test]
 fn light_modes_match_the_pre_split_pixels() {
-    let Some(gpu) = thrum_test_support::gpu("light record pixels", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "light record pixels",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let ambient_only = PhotometricEnvironment {
         toward_sun: [0.0, 1.0, 0.0],

@@ -5,12 +5,8 @@
 //! headers and section tables. The `fuzz_products` example in `thrum-asset` takes the same parsers
 //! to an external fuzzer.
 
-use std::sync::atomic::{AtomicU32, Ordering};
-
 use thrum_asset::{Head, Ktx2, Manifest, MeshProduct, ProductBytes, Profile};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-
-static NEXT: AtomicU32 = AtomicU32::new(0);
 
 fn exercise(bytes: &[u8]) {
     std::hint::black_box(Head::decode(bytes).is_ok());
@@ -33,11 +29,7 @@ fn exercise(bytes: &[u8]) {
 
 #[test]
 fn mutated_products_are_rejected_or_parsed_safely() {
-    let root = std::env::temp_dir().join(format!(
-        "thrum-g5-hostile-{}-{}",
-        std::process::id(),
-        NEXT.fetch_add(1, Ordering::Relaxed)
-    ));
+    let root = thrum_test_support::Scratch::new("g5-hostile");
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("dir");
     demo::write_grid_gltf(&source.join("meshes"), "terrain", 6, 0.2).expect("gltf");
@@ -115,8 +107,7 @@ fn mutated_products_are_rejected_or_parsed_safely() {
     }
     assert!(cases > 20_000, "{cases}");
     drop(cooker);
-    writable(&root);
-    std::fs::remove_dir_all(&root).ok();
+    writable(root.path());
 }
 
 fn writable(path: &std::path::Path) {

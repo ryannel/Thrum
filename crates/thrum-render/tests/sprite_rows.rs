@@ -98,7 +98,13 @@ fn submit(
 
 #[test]
 fn interpolates_only_adjacent_matching_endpoints_and_steps_art_by_tick() {
-    let Some(gpu) = thrum_test_support::gpu("sprite world rows", Some(wgpu::Backend::Metal)) else {
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("sprite world rows", "portable")
+    else {
         return;
     };
     let old = row(0, [-22.0, 12.0], 350.0, [0.75, 1.25]);
@@ -107,7 +113,6 @@ fn interpolates_only_adjacent_matching_endpoints_and_steps_art_by_tick() {
     scene.world_rows.push((0, 1, 9, old));
     let mut config = SpriteScene::new(art(), 1);
     config.world_capacity = 2;
-    let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
     let mut host = fixture::configured_host(&caps, &queue, EXTENT, scene, config);
     pixel_check(
         &submit(&mut host, &device, 0, 0, 1.0),
@@ -172,7 +177,12 @@ fn interpolates_only_adjacent_matching_endpoints_and_steps_art_by_tick() {
 
 #[test]
 fn a_tick_page_pair_bridges_a_missed_observation_without_bridging_a_rewind() {
-    let Some(gpu) = thrum_test_support::gpu("published sprite pair", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("published sprite pair", "portable")
     else {
         return;
     };
@@ -182,7 +192,6 @@ fn a_tick_page_pair_bridges_a_missed_observation_without_bridging_a_rewind() {
         .push((0, 1, 9, row(0, [-30.0, 10.0], 0.0, [1.0; 2])));
     let mut config = SpriteScene::new(art(), 0);
     config.world_capacity = 1;
-    let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
     let mut host = fixture::configured_host(&caps, &queue, EXTENT, scene, config);
 
     let previous = row(0, [-12.0, 10.0], 350.0, [0.75, 1.25]);
@@ -208,7 +217,12 @@ fn a_tick_page_pair_bridges_a_missed_observation_without_bridging_a_rewind() {
 
 #[test]
 fn one_recorded_draw_binds_eight_sheets_and_writes_only_changed_world_rows() {
-    let Some(gpu) = thrum_test_support::gpu("sprite sheet and uploads", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("sprite sheet and uploads", "apple-tile")
     else {
         return;
     };
@@ -256,7 +270,6 @@ fn one_recorded_draw_binds_eight_sheets_and_writes_only_changed_world_rows() {
     scene
         .world_rows
         .push((16, 1, 17, SpriteRow::new(0, [0.0; 2])));
-    let (device, queue, caps) = fixture::metal(&gpu, "apple-tile", 1);
     let mut host = fixture::configured_host(&caps, &queue, EXTENT, scene.clone(), config.clone());
     let initial = submit(&mut host, &device, 0, 0, 1.0);
     let stats = initial.sample.sprites.expect("sprite telemetry");

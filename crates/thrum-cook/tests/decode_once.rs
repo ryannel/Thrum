@@ -25,7 +25,7 @@ const PRODUCTS: [(&str, [&str; 3]); 2] = [
 
 #[test]
 fn products_keep_their_content_addresses() {
-    let root = std::env::temp_dir().join(format!("thrum-decode-once-{}", std::process::id()));
+    let root = thrum_test_support::Scratch::new("decode-once");
     let source = root.join("source");
     let store = root.join("store");
     std::fs::create_dir_all(&source).unwrap();
@@ -75,5 +75,4 @@ fn products_keep_their_content_addresses() {
         (cached.texture_preparations, cached.volume_preparations),
         (0, 0)
     );
-    std::fs::remove_dir_all(root).unwrap();
 }

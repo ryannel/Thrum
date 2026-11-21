@@ -15,14 +15,17 @@ use thrum_render::{
 
 #[test]
 fn extent_mismatch_reaches_the_drive_and_frame_sample() {
-    let Some(gpu) = thrum_test_support::gpu("surface fault report", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "surface fault report",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let profile = SurfaceProfile {
         format: wgpu::TextureFormat::Rgba8Unorm,

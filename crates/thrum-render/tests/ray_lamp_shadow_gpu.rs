@@ -27,25 +27,15 @@ mod metal {
 
     #[cfg(target_os = "macos")]
     fn count(device: &wgpu::Device, queue: &wgpu::Queue, prepared: &PreparedSynthetic) -> u32 {
-        let result = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("unshadowed lamp reference readback"),
-            size: 4,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.copy_buffer_to_buffer(
-            prepared.unshadowed_lamp_counter().expect("counter"),
-            0,
-            &result,
-            0,
-            4,
-        );
-        queue.submit([encoder.finish()]);
         u32::from_le_bytes(
-            support::read(device, &result)
-                .try_into()
-                .expect("one integer"),
+            thrum_test_support::readback::buffer(
+                device,
+                queue,
+                prepared.unshadowed_lamp_counter().expect("counter"),
+                0..4,
+            )
+            .try_into()
+            .expect("one integer"),
         )
     }
 

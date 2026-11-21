@@ -69,14 +69,17 @@ async fn draw(
 }
 #[test]
 fn own_cascades_and_world_height_field_shadow_receivers_outside_the_main_frustum() {
-    let Some(gpu) = thrum_test_support::gpu("secondary Sun visibility", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary Sun visibility",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let sun = Vec3::ONE.normalize();

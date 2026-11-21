@@ -1,5 +1,13 @@
 # TEST-SUPPORT log
 
+- 2026-11-21 Built M3, the conversion, in four workers with disjoint files. `test-readback` is 0 under `crates/` and
+  the kit scenes (70 sites), with one named exemption, the mirror pool's wasm timer-yield; `test-deadline` fell from
+  128 to 105. 132 tests open through the one call; the gate calls left are wrappers for a generation, a fresh
+  adapter, an owned instance or a capability cap. Frame waits, scratch folders, PPM writers and all six allocators
+  use the kit; the kit's count gained `largest` for the transport parsers' cap. Verified: `cargo test --workspace`
+  before and after (`THRUM_REQUIRE_GPU=1`) report the same 1,339 `ok` lines and no skip line.
+  [Evidence](../../../.orchestrate/evidence/TEST-SUPPORT/M3/README.md). Long tests and exact images are proved on main.
+
 - 2026-11-21 Built M6: the kit's `target` module (`target::new(&device, Depth)`, a 64-texel `Rgba8Unorm` colour
   target with an optional `Depth32Float` one, wgpu types only, `target::SIZE` for hosts) and its two tests, which draw
   a left-half quad and read colour and depth back through the kit. Verified on Metal with `THRUM_REQUIRE_GPU=1`; a

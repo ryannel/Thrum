@@ -7,18 +7,22 @@ use thrum_test_support::{Profile, Restriction};
 
 #[test]
 fn descriptor_adjustment_respects_recipe_restrictions() {
-    let Some(gate) = thrum_test_support::gpu(
-        "descriptor_adjustment_respects_recipe_restrictions",
-        Some(wgpu::Backend::Metal),
-    ) else {
-        return;
-    };
     let restriction = Restriction {
         storage_buffers: Some(7),
         features: Some(wgpu::Features::empty()),
     };
     let profile = Profile::Portable;
-    let (device, _) = gate.device(profile, &restriction);
+    let Some(thrum_test_support::Opened {
+        gpu: gate, device, ..
+    }) = thrum_test_support::open(
+        "descriptor_adjustment_respects_recipe_restrictions",
+        Some(wgpu::Backend::Metal),
+        profile,
+        &restriction,
+    )
+    else {
+        return;
+    };
     assert_eq!(device.limits().max_storage_buffers_per_shader_stage, 7);
     assert!(device.features().is_empty());
     let raised = gate.fresh_adapter().device_with_hardware_adjusted(

@@ -2,24 +2,20 @@ use super::{Host, Policy, gpu, host};
 use std::time::{Duration, Instant};
 
 fn retire_scene(host: &mut Host) {
-    let deadline = Instant::now() + Duration::from_secs(10);
-    loop {
-        let timeout = deadline.saturating_duration_since(Instant::now());
-        assert!(
-            !timeout.is_zero(),
-            "camera-history test scene did not retire"
-        );
-        host.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(timeout),
-            })
-            .expect("wait for scene or its timing readback");
-        if host.poll_completed().expect("collect scene").is_some() {
-            assert_eq!(host.pending_frames(), 0);
-            return;
-        }
-    }
+    thrum_test_support::wait::until(
+        "camera-history test scene did not retire",
+        Duration::from_secs(10),
+        || {
+            host.device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("wait for scene or its timing readback");
+            host.poll_completed().expect("collect scene").map(|_| ())
+        },
+    );
+    assert_eq!(host.pending_frames(), 0);
 }
 
 #[test]
@@ -286,22 +282,23 @@ fn m2_temporal_passes_preserve_named_timing_layout() {
 }
 
 fn drain_history_frames(host: &mut Host, count: usize) {
-    let deadline = Instant::now() + Duration::from_secs(10);
     let mut collected = 0;
-    while collected < count {
-        if let Some(sample) = host.poll_completed().expect("history frame completion") {
-            assert!(!sample.timing_fault, "history frame timing failed");
-            assert!(
-                sample.gpu_pass_ns.is_some(),
-                "Metal history proof needs valid timing too"
-            );
-            collected += 1;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "history frame completion timed out"
-        );
-        std::thread::yield_now();
-    }
+    thrum_test_support::wait::until(
+        "history frame completion timed out",
+        Duration::from_secs(10),
+        || {
+            if collected < count
+                && let Some(sample) = host.poll_completed().expect("history frame completion")
+            {
+                assert!(!sample.timing_fault, "history frame timing failed");
+                assert!(
+                    sample.gpu_pass_ns.is_some(),
+                    "Metal history proof needs valid timing too"
+                );
+                collected += 1;
+            }
+            (collected >= count).then_some(())
+        },
+    );
     assert_eq!(host.pending_frames(), 0);
 }

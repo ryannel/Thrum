@@ -141,13 +141,17 @@ fn host(
 
 #[test]
 fn waiting_draws_frames_until_content_is_drawn_and_reads_nothing_back() {
-    let Some(gpu) = thrum_test_support::gpu("await drawn", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "await drawn",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    )
+    else {
+        return;
+    };
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let (mut host, stats) = host(
         &caps,
@@ -178,29 +182,30 @@ fn waiting_draws_frames_until_content_is_drawn_and_reads_nothing_back() {
 
 #[test]
 fn a_loader_failure_ends_the_wait() {
-    let Some(gpu) = thrum_test_support::gpu("await drawn failure", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "await drawn failure",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     // A HEAD whose manifest is missing is a loader failure.
-    let store = std::env::temp_dir().join(format!("thrum-await-drawn-{}", std::process::id()));
-    std::fs::create_dir_all(&store).expect("store");
+    let store = thrum_test_support::Scratch::new("await-drawn");
     std::fs::copy(
         Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/HEAD"),
         store.join("HEAD"),
     )
     .expect("HEAD");
-    let (mut host, stats) = host(&caps, &queue, &store);
+    let (mut host, stats) = host(&caps, &queue, store.path());
     match await_drawn(&mut host, &stats, Drawn::Any) {
         Err(AwaitDrawnError::Content(errors)) => assert_ne!(errors, Vec::<String>::new()),
         other => panic!("expected a content failure, got {other:?}"),
     }
     assert_eq!(host.endpoint_readbacks(), 0);
     drop(host);
-    std::fs::remove_dir_all(&store).ok();
 }

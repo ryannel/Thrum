@@ -25,37 +25,41 @@ fn output(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
 }
 
 fn drain(host: &mut Host) {
-    let deadline = std::time::Instant::now() + Duration::from_secs(10);
-    while host.pending_frames() != 0 {
-        let timeout = deadline.saturating_duration_since(std::time::Instant::now());
-        assert!(!timeout.is_zero(), "native frames did not retire");
-        host.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(timeout),
-            })
-            .expect("native completion");
-        while host.poll_completed().expect("collect native").is_some() {}
-    }
+    thrum_test_support::wait::until(
+        "native frames did not retire",
+        Duration::from_secs(10),
+        || {
+            if host.pending_frames() == 0 {
+                return Some(());
+            }
+            host.device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("native completion");
+            while host.poll_completed().expect("collect native").is_some() {}
+            None
+        },
+    );
 }
 
 fn image(host: &mut Host) -> Vec<u8> {
-    let deadline = std::time::Instant::now() + Duration::from_secs(10);
-    loop {
+    thrum_test_support::wait::until("native tap timed out", Duration::from_secs(10), || {
         host.device
             .poll(wgpu::PollType::Wait {
                 submission_index: None,
                 timeout: Some(Duration::from_secs(10)),
             })
             .expect("capture completion");
-        if let Some(image) = host.try_submitted_image().expect("submitted native image") {
-            let bytes = image.rgba.clone();
-            host.recycle_submitted_image(image);
-            drain(host);
-            return bytes;
-        }
-        assert!(std::time::Instant::now() < deadline, "native tap timed out");
-    }
+        let image = host
+            .try_submitted_image()
+            .expect("submitted native image")?;
+        let bytes = image.rgba.clone();
+        host.recycle_submitted_image(image);
+        drain(host);
+        Some(bytes)
+    })
 }
 
 async fn sequence(

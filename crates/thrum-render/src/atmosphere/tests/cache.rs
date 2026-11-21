@@ -68,15 +68,22 @@ fn has_dfg(names: &[String]) -> bool {
 fn metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work() {
     pollster::block_on(async {
         crate::timestamp_permit::hold();
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work",
             Some(wgpu::Backend::Metal),
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction::default(),
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = crate::test_device::portable(&test_gpu, None).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 54);
         let mut scene = SyntheticScene::grid(1).unwrap();
         let initial = AtmosphereFrame::new([0.0, 1.0, 0.0], 1.0, [1.0; 3], 2.0, 1).unwrap();

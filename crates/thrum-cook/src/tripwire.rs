@@ -398,8 +398,8 @@ mod tests {
             None
         );
         assert_eq!(Run::parse("garbage"), None);
-        let path = std::env::temp_dir().join(format!("thrum-tripwire-{}", std::process::id()));
-        std::fs::remove_file(&path).ok();
+        let scratch = thrum_test_support::Scratch::new("tripwire");
+        let path = scratch.join("history.tsv");
         append(&path, &original).expect("append");
         std::fs::write(
             &path,
@@ -410,6 +410,5 @@ mod tests {
         )
         .expect("write");
         assert_eq!(load_history(&path), vec![original]);
-        std::fs::remove_file(&path).expect("remove");
     }
 }

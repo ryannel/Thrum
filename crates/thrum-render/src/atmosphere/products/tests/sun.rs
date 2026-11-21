@@ -61,16 +61,25 @@ fn transmission(point: [f64; 3], sun: [f64; 3]) -> [f64; 3] {
 #[test]
 fn metal_h1_lent_sun_meets_low_altitude_f64_quadrature() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "metal_h1_lent_sun_meets_low_altitude_f64_quadrature",
             Some(wgpu::Backend::Metal),
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 130);
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = SyntheticView::perspective(
@@ -148,16 +157,25 @@ fn metal_h1_lent_sun_meets_low_altitude_f64_quadrature() {
 #[test]
 fn metal_h1_lent_receiver_matrix_at_two_camera_origins() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "metal_h1_lent_receiver_matrix_at_two_camera_origins",
             Some(wgpu::Backend::Metal),
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 130);
         let near = [
             [0.0, 0.0, 0.0],

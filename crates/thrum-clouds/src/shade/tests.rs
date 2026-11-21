@@ -134,14 +134,17 @@ fn config() -> ShadeConfig {
     reason = "fixed fixture coordinates narrow to the production shader precision"
 )]
 fn lighting_stage_snapshots() {
-    let Some(gpu) = thrum_test_support::gpu("cloud lighting diagnosis", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "cloud lighting diagnosis",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let caps = thrum_render::capabilities::DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let state = State::new(
         thrum_cloud_model::Parameters {
@@ -229,7 +232,15 @@ fn lighting_stage_snapshots() {
                 .iter()
                 .enumerate()
             {
-                fixture::texture(&device, &queue, t, &path.join(format!("texture-{i}.bin")));
+                let packed = thrum_test_support::readback::texture(
+                    &device,
+                    &queue,
+                    t,
+                    thrum_test_support::readback::Mip::level(0),
+                    ..,
+                );
+                std::fs::write(path.join(format!("texture-{i}.bin")), packed)
+                    .expect("texture snapshot");
             }
             for (i, b) in buffers
                 .lock()
@@ -239,7 +250,7 @@ fn lighting_stage_snapshots() {
                 .iter()
                 .enumerate()
             {
-                let bytes = fixture::buffer(&device, &queue, b);
+                let bytes = thrum_test_support::readback::buffer(&device, &queue, b, ..);
                 if i == 0 {
                     let count =
                         f32::from_le_bytes(bytes[112..116].try_into().expect("sample count"));

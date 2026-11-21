@@ -23,17 +23,19 @@ struct Gpu {
     queue: wgpu::Queue,
 }
 
-fn gpu(test_gpu: &thrum_test_support::Gpu) -> Gpu {
-    pollster::block_on(async {
-        let adapter = test_gpu.adapter.clone();
-        let (device, queue) =
-            crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
-        Gpu {
-            capabilities,
-            device,
-            queue,
-        }
+/// The portable device without optional features, with its capabilities captured as generation 41.
+fn gpu(test: &str, backend: Option<wgpu::Backend>) -> Option<Gpu> {
+    let opened = crate::test_device::open(
+        test,
+        backend,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
+    )?;
+    let capabilities = DeviceCapabilities::capture(&opened.gpu.adapter, &opened.device, 41);
+    Some(Gpu {
+        capabilities,
+        device: opened.device,
+        queue: opened.queue,
     })
 }
 
@@ -129,27 +131,7 @@ impl Gpu {
 
     /// Instances over every bucket's indirect argument record.
     fn drawn(&self, args: &wgpu::Buffer) -> u32 {
-        let staging = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("route test args"),
-            size: args.size(),
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.copy_buffer_to_buffer(args, 0, &staging, 0, args.size());
-        self.queue.submit([encoder.finish()]);
-        staging.slice(..).map_async(wgpu::MapMode::Read, |result| {
-            result.expect("map");
-        });
-        self.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(std::time::Duration::from_secs(10)),
-            })
-            .expect("poll");
-        let bytes = staging.slice(..).get_mapped_range().expect("mapped");
+        let bytes = thrum_test_support::readback::buffer(&self.device, &self.queue, args, ..);
         bytes
             .as_chunks::<20>()
             .0
@@ -206,12 +188,9 @@ fn place(instance: &mut InstanceRecord, half: [f32; 3], center: [f32; 3], yaw: f
 
 #[test]
 fn one_ordinary_bucket_draws_the_legacy_image() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("one_ordinary_bucket_draws_the_legacy_image", None)
-    else {
+    let Some(gpu) = gpu("one_ordinary_bucket_draws_the_legacy_image", None) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     for view in [None, Some(perspective())] {
         let mut scene = SyntheticScene::grid(400).expect("grid");
         if let Some(view) = view {
@@ -238,11 +217,9 @@ fn one_ordinary_bucket_draws_the_legacy_image() {
 /// pipelines. Differences are recorded, not judged.
 #[test]
 fn mirrored_classes_against_the_legacy_route() {
-    let Some(test_gpu) = thrum_test_support::gpu("mirrored_classes_against_the_legacy_route", None)
-    else {
+    let Some(gpu) = gpu("mirrored_classes_against_the_legacy_route", None) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     for (name, mirrored_first) in [("ordinary first", false), ("mirrored first", true)] {
         let mut scene = SyntheticScene::grid(4).expect("grid");
         scene.view = perspective();
@@ -268,12 +245,9 @@ fn mirrored_classes_against_the_legacy_route() {
 
 #[test]
 fn members_follow_activity_churn_like_the_legacy_route() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("members_follow_activity_churn_like_the_legacy_route", None)
-    else {
+    let Some(gpu) = gpu("members_follow_activity_churn_like_the_legacy_route", None) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     let mut scene = SyntheticScene::grid(256).expect("grid");
     scene.view = perspective();
     let mut legacy = gpu.prepare(&scene, None);
@@ -337,12 +311,9 @@ fn mixed_field(count: u32) -> (SyntheticScene, Vec<MeshId>) {
 
 #[test]
 fn frustum_buckets_match_bucket_direct_on_a_mixed_field() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("frustum_buckets_match_bucket_direct_on_a_mixed_field", None)
-    else {
+    let Some(gpu) = gpu("frustum_buckets_match_bucket_direct_on_a_mixed_field", None) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     let (mut scene, meshes) = mixed_field(900);
     let mut direct = gpu.prepare(&scene, Some(meshes.clone()));
     scene.camera_culling = crate::visibility::CullMode::Frustum;
@@ -426,13 +397,12 @@ fn frustum_buckets_match_bucket_direct_on_a_mixed_field() {
 /// against an independent route.
 #[test]
 fn several_class_buckets_draw_the_legacy_image_without_ties() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(gpu) = gpu(
         "several_class_buckets_draw_the_legacy_image_without_ties",
         None,
     ) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     let (scene, _) = mixed_field(900);
     let (legacy, route) = gpu.both(&scene);
     assert_eq!(differing(&legacy, &route), 0);
@@ -442,12 +412,9 @@ fn several_class_buckets_draw_the_legacy_image_without_ties() {
 /// member list gains workgroups the preparation never dispatched.
 #[test]
 fn frustum_buckets_follow_a_growing_member_list() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("frustum_buckets_follow_a_growing_member_list", None)
-    else {
+    let Some(gpu) = gpu("frustum_buckets_follow_a_growing_member_list", None) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     let (mut scene, meshes) = mixed_field(900);
     for (slot, instance) in (0_u32..).zip(&mut scene.instances) {
         instance.set_generation(u32::from(slot % 3 == 0));

@@ -262,8 +262,8 @@ fn missing_or_uncooked_stores_name_the_next_step() {
     let unset = cooked_store(None).unwrap_err();
     assert!(unset.contains("THRUM_ASSET_STORE is not set"), "{unset}");
     assert!(unset.contains("./dev scene"), "{unset}");
-    let root = std::env::temp_dir().join(format!("thrum-sky-store-{}", std::process::id()));
-    std::fs::create_dir_all(&root).unwrap();
+    let scratch = thrum_test_support::Scratch::new("sky-store");
+    let root = scratch.path().to_path_buf();
     let empty = cooked_store(Some(root.clone().into_os_string())).unwrap_err();
     assert!(empty.contains("has no HEAD"), "{empty}");
     std::fs::write(root.join("HEAD"), b"1").unwrap();
@@ -271,7 +271,6 @@ fn missing_or_uncooked_stores_name_the_next_step() {
         cooked_store(Some(root.clone().into_os_string())),
         Ok(root.clone())
     );
-    std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

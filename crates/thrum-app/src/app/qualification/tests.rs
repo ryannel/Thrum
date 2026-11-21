@@ -145,21 +145,24 @@ async fn recover_observer(
     observer.frame(host, 2, 2, true).unwrap();
     let mut reply = reply(report, false);
     reply.device_generation = 8;
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while observer.images.is_empty() {
-        assert!(
-            Instant::now() < deadline,
-            "replacement tap did not deliver an image"
-        );
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(Duration::from_secs(10)),
-            })
-            .unwrap();
-        reply.collect_observer(&watch, host, Some(observer));
-        assert!(matches!(reply.outcome, RenderOutcome::Frame(Ok(_))));
-    }
+    thrum_test_support::wait::until(
+        "replacement tap did not deliver an image",
+        Duration::from_secs(10),
+        || {
+            if !observer.images.is_empty() {
+                return Some(());
+            }
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .unwrap();
+            reply.collect_observer(&watch, host, Some(observer));
+            assert!(matches!(reply.outcome, RenderOutcome::Frame(Ok(_))));
+            None
+        },
+    );
     assert_eq!(reply.device_generation, 8);
     assert_eq!(observer.images.len(), 1);
     assert_eq!(observer.images[0].3, 8);

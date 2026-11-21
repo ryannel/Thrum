@@ -139,12 +139,6 @@ fn prove_mip(
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("exact readback"),
-        size: output.size(),
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
     let array = !matches!(kind, K::D3 { .. });
     let (write, read) = shaders(kind, n, depth, mip);
     let write_pipeline = pipeline(device, &write, None);
@@ -247,26 +241,10 @@ fn prove_mip(
         pass.set_bind_group(0, group, &[]);
         pass.dispatch_workgroups(n, n, depth);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, output.size());
-    let (send, receive) = std::sync::mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("readback receiver");
-    });
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, ..);
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(std::time::Duration::from_secs(30)),
-        })
-        .expect("valid graph-kind fixture");
-    receive
-        .recv()
-        .expect("valid graph-kind fixture")
-        .expect("valid graph-kind fixture");
-    let mapped = readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("valid graph-kind fixture");
+    let mapped = readback.wait(device, submission);
     for z in 0..depth {
         for y in 0..n {
             for x in 0..n {

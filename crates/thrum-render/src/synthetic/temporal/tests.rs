@@ -5,59 +5,19 @@ fn fixture() -> serde_json::Value {
     serde_json::from_str(TEMPORAL_WITNESS_JSON).expect("shared witness definition")
 }
 
-async fn metal(test_gpu: &thrum_test_support::Gpu) -> (DeviceCapabilities, wgpu::Queue) {
-    let adapter = test_gpu.adapter.clone();
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let (device, queue) =
-        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
-    (DeviceCapabilities::capture(&adapter, &device, 41), queue)
-}
-
-fn read_texture(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    texture: &wgpu::Texture,
-    bytes_per_pixel: u32,
-) -> Vec<u8> {
-    let width = texture.width();
-    let stride = (width * bytes_per_pixel).div_ceil(256) * 256;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("M2 attachment readback"),
-        size: u64::from(stride * texture.height()),
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(stride),
-                rows_per_image: Some(texture.height()),
-            },
-        },
-        texture.size(),
-    );
-    let (send, recv) = std::sync::mpsc::channel();
-    encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |r| {
-        send.send(r).expect("M2 mapping reply");
-    });
-    queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("M2 read completion");
-    recv.recv()
-        .expect("M2 read callback")
-        .expect("M2 mapped bytes");
-    let view = buffer
-        .slice(..)
-        .get_mapped_range()
-        .expect("M2 mapped range");
-    view.chunks_exact(stride as usize)
-        .flat_map(|row| row[..(width * bytes_per_pixel) as usize].iter().copied())
-        .collect()
+/// The portable Metal device without optional features, with its capabilities captured as generation 41.
+fn metal(test: &str, backend: Option<wgpu::Backend>) -> Option<(DeviceCapabilities, wgpu::Queue)> {
+    let opened = crate::test_device::open(
+        test,
+        backend,
+        crate::capabilities::DeviceProfile::Portable,
+        &tests::support::NO_FEATURES,
+    )?;
+    assert_eq!(opened.gpu.adapter.get_info().backend, wgpu::Backend::Metal);
+    Some((
+        DeviceCapabilities::capture(&opened.gpu.adapter, &opened.device, 41),
+        opened.queue,
+    ))
 }
 
 fn submit(
@@ -81,14 +41,13 @@ fn submit(
 
 #[test]
 fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((capabilities, queue)) = metal(
         "metal_temporal_reader_storage_and_invalid_geometry_w1_w2",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (capabilities, queue) = metal(&test_gpu).await;
         let device = capabilities.device();
         let expected = fixture();
         let mut baseline = None;
@@ -132,14 +91,15 @@ fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
                         FrameLighting::Diagnostic(SyntheticLight::default()),
                     );
                 }
-                baseline = Some(read_texture(
+                baseline = Some(thrum_test_support::readback::texture(
                     device,
                     &queue,
                     target
                         .textures
                         .texture(&target.ids.output)
                         .expect("normal output"),
-                    4,
+                    thrum_test_support::readback::Mip::level(0),
+                    ..,
                 ));
                 continue;
             }
@@ -152,14 +112,15 @@ fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
                     &scene,
                     FrameLighting::Diagnostic(SyntheticLight::default()),
                 );
-                let reactive = read_texture(
+                let reactive = thrum_test_support::readback::texture(
                     device,
                     &queue,
                     target
                         .textures
                         .texture(&target.ids.reactive)
                         .expect("reactive attachment"),
-                    1,
+                    thrum_test_support::readback::Mip::level(0),
+                    ..,
                 );
                 let value = expected["rows"][row]["reactive"]
                     .as_f64()
@@ -178,14 +139,15 @@ fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
             }
             assert_eq!(
                 baseline.as_ref().expect("disabled control"),
-                &read_texture(
+                &thrum_test_support::readback::texture(
                     device,
                     &queue,
                     target
                         .textures
                         .texture(&target.ids.output)
                         .expect("enabled output"),
-                    4
+                    thrum_test_support::readback::Mip::level(0),
+                    ..
                 ),
                 "stored inputs must not change ordinary colour"
             );
@@ -195,14 +157,13 @@ fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
 
 #[test]
 fn metal_sky_and_star_reactive_edit_then_steady_w4_w5() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((capabilities, queue)) = metal(
         "metal_sky_and_star_reactive_edit_then_steady_w4_w5",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (capabilities, queue) = metal(&test_gpu).await;
         let device = capabilities.device();
         let expected = fixture();
         for night in [false, true] {
@@ -260,14 +221,15 @@ fn metal_sky_and_star_reactive_edit_then_steady_w4_w5() {
                     scene.view = scene.view.with_history_reset(row == "W4");
                 }
                 submit(device, &queue, &mut prepared, &mut target, &scene, lighting);
-                let reactive = read_texture(
+                let reactive = thrum_test_support::readback::texture(
                     device,
                     &queue,
                     target
                         .textures
                         .texture(&target.ids.reactive)
                         .expect("reactive"),
-                    1,
+                    thrum_test_support::readback::Mip::level(0),
+                    ..,
                 );
                 let value = expected["rows"][row]["reactive"]
                     .as_f64()
@@ -307,7 +269,13 @@ pub(in crate::synthetic) fn assert_history_rescale(
         }
     );
     assert_eq!(resolved.format(), wgpu::TextureFormat::R16Float);
-    let bytes = read_texture(device, queue, resolved, 2);
+    let bytes = thrum_test_support::readback::texture(
+        device,
+        queue,
+        resolved,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
+    );
     let actual_exposure = half::f16::from_bits(u16::from_le_bytes(
         bytes[..2].try_into().expect("R16 exposure"),
     ))
@@ -392,7 +360,13 @@ pub(in crate::synthetic) fn assert_history_rescale(
         pass.draw(0..3, 0..1);
     }
     queue.submit([encoder.finish()]);
-    let bytes = read_texture(device, queue, &texture, 2);
+    let bytes = thrum_test_support::readback::texture(
+        device,
+        queue,
+        &texture,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
+    );
     let actual = half::f16::from_bits(u16::from_le_bytes(
         bytes[..2].try_into().expect("one R16Float texel"),
     ))
@@ -414,14 +388,13 @@ pub(in crate::synthetic) fn assert_history_rescale(
 
 #[test]
 fn metal_history_key_uses_output_grid_across_render_extent_changes() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((capabilities, queue)) = metal(
         "metal_history_key_uses_output_grid_across_render_extent_changes",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (capabilities, queue) = metal(&test_gpu).await;
         let device = capabilities.device();
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = scene.view.with_output_extent([128, 72]);

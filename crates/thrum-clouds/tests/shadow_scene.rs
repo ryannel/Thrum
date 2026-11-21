@@ -182,39 +182,11 @@ pub(super) async fn prepare(
 
 pub(super) fn ground(device: &wgpu::Device, queue: &wgpu::Queue, input: &WeatherInput) -> Vec<u8> {
     let (texture, _) = input.ground_product().expect("ground product");
-    let pixel_bytes = texture
-        .format()
-        .block_copy_size(None)
-        .expect("uncompressed ground texel");
-    let stride = (texture.width() * pixel_bytes).div_ceil(256) * 256;
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: u64::from(stride) * u64::from(texture.height()),
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &readback,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(stride),
-                rows_per_image: Some(texture.height()),
-            },
-        },
-        texture.size(),
-    );
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., |r| {
-        r.expect("mapped ground");
-    });
-    queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("completed ground");
-    readback
-        .get_mapped_range(..)
-        .expect("ground bytes")
-        .to_vec()
+    thrum_test_support::readback::texture(
+        device,
+        queue,
+        &texture,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
+    )
 }

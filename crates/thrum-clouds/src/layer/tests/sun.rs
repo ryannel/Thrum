@@ -1,17 +1,15 @@
 //! Cumulative Sun paths must preserve plateaux, slab slopes and Beer bounds.
-use std::{sync::mpsc, time::Duration};
 
 #[test]
 fn cumulative_depth_stays_monotone_without_ringing_or_negative_extinction() {
-    let Some(gpu) =
-        thrum_test_support::gpu("cloud cumulative interpolation", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
+        "cloud cumulative interpolation",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let site = thrum_render::runtime::DeviceSite::untracked(device.clone());
     let source = format!(
         "{}\n{}",
@@ -60,12 +58,6 @@ fn cumulative_depth_stays_monotone_without_ringing_or_negative_extinction() {
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: bytes,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &layout,
@@ -81,24 +73,16 @@ fn cumulative_depth_stays_monotone_without_ringing_or_negative_extinction() {
         pass.set_bind_group(0, &group, &[]);
         pass.dispatch_workgroups(5, 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, bytes);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |r| {
-        send.send(r).expect("receiver");
-    });
+    let readback =
+        thrum_test_support::readback::Readback::buffer(&device, &mut encoder, &output, ..);
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("Metal completion");
-    receive
-        .recv_timeout(Duration::from_secs(30))
-        .expect("callback")
-        .expect("map");
-    let mapped = readback.get_mapped_range(..).expect("output");
-    let values: &[[f32; 4]] = bytemuck::cast_slice(&mapped);
+    let values: Vec<[f32; 4]> = readback
+        .wait(&device, submission)
+        .as_chunks::<16>()
+        .0
+        .iter()
+        .map(|chunk| bytemuck::cast::<[u8; 16], [f32; 4]>(*chunk))
+        .collect();
     for (row, bounds) in [
         (1.0_f32, 2.0),
         (0.0, 0.0),

@@ -1,52 +1,8 @@
 //! A2 render-column lifecycle and steady-state allocation checks.
-use std::{
-    alloc::{GlobalAlloc, Layout, System},
-    cell::Cell,
-};
-
 use thrum_render::extract::{RenderExtractor, SourceTick};
 
-thread_local! {
-    static COUNTING: Cell<bool> = const { Cell::new(false) };
-    static ALLOCATIONS: Cell<usize> = const { Cell::new(0) };
-}
-
-struct CountingAllocator;
 #[global_allocator]
-static ALLOCATOR: CountingAllocator = CountingAllocator;
-
-#[expect(
-    unsafe_code,
-    reason = "test-only allocation observer delegates every allocation to System"
-)]
-// SAFETY: This observer forwards the original pointer and layout unchanged to
-// System. Its thread-local counter has no ownership of allocated memory.
-unsafe impl GlobalAlloc for CountingAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        COUNTING.with(|active| {
-            if active.get() {
-                ALLOCATIONS.with(|count| count.set(count.get() + 1));
-            }
-        });
-        // SAFETY: The allocator contract and layout are forwarded unchanged.
-        unsafe { System.alloc(layout) }
-    }
-
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        // SAFETY: The pointer/layout pair came from the delegated allocator.
-        unsafe { System.dealloc(ptr, layout) }
-    }
-
-    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
-        COUNTING.with(|active| {
-            if active.get() {
-                ALLOCATIONS.with(|count| count.set(count.get() + 1));
-            }
-        });
-        // SAFETY: The pointer/layout pair and requested size are forwarded.
-        unsafe { System.realloc(ptr, layout, new_size) }
-    }
-}
+static ALLOCATOR: thrum_test_support::CountingAllocator = thrum_test_support::CountingAllocator;
 
 fn source(epoch: u128, tick: u64) -> SourceTick {
     SourceTick {
@@ -229,30 +185,29 @@ fn ten_thousand_visuals_reuse_all_allocations_after_warmup() {
             }
         });
     }
-    ALLOCATIONS.with(|count| count.set(0));
-    COUNTING.with(|active| active.set(true));
-    for tick in 2..62 {
-        let report = extractor.extract(source(1, tick), [0.0; 3], |sink| {
-            for slot in 0..10_000u32 {
-                // The last hundred identities churn and reuse physical slots.
-                let id = if slot < 9_900 {
-                    u128::from(slot)
-                } else {
-                    10_000 + u128::from(tick) * 100 + u128::from(slot)
-                };
-                sink.push(
-                    slot,
-                    if slot < 9_900 { 1 } else { tick + 1 },
-                    id,
-                    [0.0; 3],
-                    1,
-                );
-            }
-        });
-        std::hint::black_box(report);
-    }
-    COUNTING.with(|active| active.set(false));
-    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    let ((), counted) = thrum_test_support::allocations::count(|| {
+        for tick in 2..62 {
+            let report = extractor.extract(source(1, tick), [0.0; 3], |sink| {
+                for slot in 0..10_000u32 {
+                    // The last hundred identities churn and reuse physical slots.
+                    let id = if slot < 9_900 {
+                        u128::from(slot)
+                    } else {
+                        10_000 + u128::from(tick) * 100 + u128::from(slot)
+                    };
+                    sink.push(
+                        slot,
+                        if slot < 9_900 { 1 } else { tick + 1 },
+                        id,
+                        [0.0; 3],
+                        1,
+                    );
+                }
+            });
+            std::hint::black_box(report);
+        }
+    });
+    assert_eq!(counted.count, 0);
     assert_eq!(extractor.frame().len(), 10_000);
 }
 
@@ -394,23 +349,22 @@ fn ten_thousand_adjacent_visuals_patch_without_allocations() {
             sink.push(slot, 1, u128::from(slot), [0.0; 3], 1);
         }
     });
-    ALLOCATIONS.with(|count| count.set(0));
-    COUNTING.with(|active| active.set(true));
-    for tick in 2..62 {
-        let report = extractor.extract_adaptive(
-            source(1, tick),
-            Some(source(1, tick - 1)),
-            [0.0; 3],
-            |_| panic!("warm adjacent page must patch"),
-            |sink| {
-                for slot in 0..1_500_u32 {
-                    sink.set(slot, 1, u128::from(slot), [tick as f64, 0.0, 0.0], 1);
-                }
-            },
-        );
-        assert_eq!(report.accepted, 10_000);
-        assert_eq!(report.history_reused, 10_000);
-    }
-    COUNTING.with(|active| active.set(false));
-    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    let ((), counted) = thrum_test_support::allocations::count(|| {
+        for tick in 2..62 {
+            let report = extractor.extract_adaptive(
+                source(1, tick),
+                Some(source(1, tick - 1)),
+                [0.0; 3],
+                |_| panic!("warm adjacent page must patch"),
+                |sink| {
+                    for slot in 0..1_500_u32 {
+                        sink.set(slot, 1, u128::from(slot), [tick as f64, 0.0, 0.0], 1);
+                    }
+                },
+            );
+            assert_eq!(report.accepted, 10_000);
+            assert_eq!(report.history_reused, 10_000);
+        }
+    });
+    assert_eq!(counted.count, 0);
 }

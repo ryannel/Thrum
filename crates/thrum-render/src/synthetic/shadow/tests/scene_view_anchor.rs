@@ -119,14 +119,13 @@ fn render(
 
 #[test]
 fn a_shared_main_height_map_cannot_cover_an_unrestricted_view_camera() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = observer::device(
         "a_shared_main_height_map_cannot_cover_an_unrestricted_view_camera",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = observer::device(&test_gpu).await;
         let mut scene = SyntheticScene::grid(2).expect("scene");
         scene.sun_shadows = true;
         scene.materials[0].base_rgba = [0.8, 0.8, 0.8, 1.0];

@@ -9,9 +9,11 @@ use thrum_sea_model::{Forcing, Spectrum, Swell};
     reason = "the same significant heights are sent as f32 GPU inputs"
 )]
 fn gale_gains_preserve_the_exposed_sea_and_limit_each_layer_into_shallows() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(test_gpu) = thrum_test_support::open(
         "gale_gains_preserve_the_exposed_sea_and_limit_each_layer_into_shallows",
         Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
     ) else {
         return;
     };

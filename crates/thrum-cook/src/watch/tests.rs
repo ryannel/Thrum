@@ -12,18 +12,13 @@ use thrum_asset::{Manifest, Profile};
 use crate::{CookConfig, Cooker, Durability, Quality, demo};
 
 struct Fixture {
-    root: PathBuf,
+    root: thrum_test_support::Scratch,
     source: PathBuf,
 }
 
 impl Fixture {
     fn new(name: &str) -> Self {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tmp/content-loop-m4")
-            .join(format!("{name}-{}", std::process::id()));
-        if root.exists() {
-            std::fs::remove_dir_all(&root).expect("old fixture");
-        }
+        let root = thrum_test_support::Scratch::new(&format!("content-loop-{name}"));
         let source = root.join("source");
         std::fs::create_dir_all(&source).expect("source");
         Self {
@@ -62,12 +57,6 @@ impl Fixture {
             manifest.entries().collect::<Vec<_>>(),
             expected.entries().collect::<Vec<_>>()
         );
-    }
-}
-
-impl Drop for Fixture {
-    fn drop(&mut self) {
-        std::fs::remove_dir_all(&self.root).expect("fixture cleanup");
     }
 }
 

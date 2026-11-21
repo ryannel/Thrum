@@ -5,7 +5,7 @@ use super::super::{AtmospherePrepared, prepare_diffuse};
 use crate::atmosphere::stage::{Chart, Charts};
 use crate::shader_constants::ATMOSPHERE_EXTENTS as EXTENTS;
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
-use std::{f64::consts::PI, sync::mpsc, time::Duration};
+use std::f64::consts::PI;
 use wgpu::util::DeviceExt;
 
 const NORMALS: [[f64; 3]; 14] = [
@@ -57,15 +57,6 @@ struct Gpu {
     queue: wgpu::Queue,
 }
 impl Gpu {
-    async fn new(test_gpu: &thrum_test_support::Gpu) -> Self {
-        let adapter = test_gpu.adapter.clone();
-        #[cfg(target_os = "macos")]
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
-        Self { device, queue }
-    }
-
     fn buffer(&self, size: u64, usage: wgpu::BufferUsages) -> wgpu::Buffer {
         self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("directional diffuse referee"),
@@ -90,30 +81,15 @@ impl Gpu {
         output: &wgpu::Buffer,
         bytes: u64,
     ) -> Vec<[f64; 4]> {
-        let readback = self.buffer(
-            bytes,
-            wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        let readback = thrum_test_support::readback::Readback::buffer(
+            &self.device,
+            &mut encoder,
+            output,
+            ..bytes,
         );
-        encoder.copy_buffer_to_buffer(output, 0, &readback, 0, bytes);
-        let (send, receive) = mpsc::channel();
-        encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).expect("diffuse referee receiver lives");
-        });
         let submission = self.queue.submit([encoder.finish()]);
-        self.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(Duration::from_secs(20)),
-            })
-            .expect("diffuse referee GPU completes");
-        receive
-            .recv()
-            .expect("diffuse map callback")
-            .expect("diffuse mapped");
         readback
-            .slice(..)
-            .get_mapped_range()
-            .expect("diffuse readback")
+            .wait(&self.device, submission)
             .as_chunks::<16>()
             .0
             .iter()
@@ -561,14 +537,14 @@ fn compare(
 
 #[test]
 fn analytic_fields_preserve_direction_colour_and_physical_units() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, _)) = super::open(
         "analytic_fields_preserve_direction_colour_and_physical_units",
         None,
     ) else {
         return;
     };
+    let gpu = Gpu { device, queue };
     pollster::block_on(async {
-        let gpu = Gpu::new(&test_gpu).await;
         let scope = gpu.device.push_error_scope(wgpu::ErrorFilter::Validation);
         for (kind, lux, colour) in [
             (0, 1.0, [1.0; 3]),
@@ -632,14 +608,14 @@ fn analytic_fields_preserve_direction_colour_and_physical_units() {
 
 #[test]
 fn shipping_sky_projection_separates_sampling_from_sh_truncation() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, _)) = super::open(
         "shipping_sky_projection_separates_sampling_from_sh_truncation",
         None,
     ) else {
         return;
     };
+    let gpu = Gpu { device, queue };
     pollster::block_on(async {
-        let gpu = Gpu::new(&test_gpu).await;
         let scope = gpu.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let light = gpu.light();
         let frame = |degrees: i16, azimuth: i16| {

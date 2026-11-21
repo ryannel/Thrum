@@ -734,9 +734,7 @@ mod tests {
 
     #[test]
     fn a_restored_source_retries_an_interrupted_plan_without_another_notice() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tmp/content-loop-m4")
-            .join(format!("restored-plan-{}", std::process::id()));
+        let root = thrum_test_support::Scratch::new("restored-plan");
         let source = root.join("source");
         std::fs::create_dir_all(&source).expect("source");
         crate::demo::write_grid_gltf(&source, "a", 2, 0.1).expect("mesh");
@@ -769,12 +767,11 @@ mod tests {
         assert!(repaired.published.is_some());
         assert!(cooker.sweep(now).expect("unchanged sweep").is_none());
         drop(cooker);
-        std::fs::remove_dir_all(root).expect("cleanup");
     }
 
     #[test]
     fn a_source_edited_during_its_cook_is_not_cached_under_the_old_key() {
-        let root = std::env::temp_dir().join(format!("thrum-cook-race-{}", std::process::id()));
+        let root = thrum_test_support::Scratch::new("cook-race");
         let source = root.join("source");
         std::fs::create_dir_all(&source).expect("dir");
         crate::demo::write_checker_png(&source.join("a.png"), 16, [200, 0, 0]).expect("png");
@@ -808,6 +805,5 @@ mod tests {
         assert_eq!(head.generation, first_head.generation + 1);
         assert_ne!(head.manifest, first_head.manifest);
         drop(cooker);
-        std::fs::remove_dir_all(&root).ok();
     }
 }

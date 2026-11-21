@@ -189,14 +189,13 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
 
 #[test]
 fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let clear_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         assert!(
             observe(&device, &queue, 3.0, 1)
@@ -262,14 +261,13 @@ fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
 
 #[test]
 fn near_and_last_cascades_cover_complementary_blocker_distances() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "near_and_last_cascades_cover_complementary_blocker_distances",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let pipeline = pipeline(&device, CASCADE_HANDOFF);
         let mut samples = [0_f32; SAMPLE_FLOATS];
         samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
@@ -308,14 +306,13 @@ fn near_and_last_cascades_cover_complementary_blocker_distances() {
 
 #[test]
 fn near_clip_plane_hands_excluded_blockers_to_the_last_cascade() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "near_clip_plane_hands_excluded_blockers_to_the_last_cascade",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let pipeline = pipeline(&device, CASCADE_HANDOFF);
         let mut samples = [0_f32; SAMPLE_FLOATS];
         samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());

@@ -80,18 +80,12 @@ impl Rays {
         encoder: &mut wgpu::CommandEncoder,
         uniform: &wgpu::Buffer,
         texture: &wgpu::Texture,
-    ) -> wgpu::Buffer {
+    ) -> thrum_test_support::readback::Readback {
         let size = u64::from(self.count) * 16;
         let output = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("reference sampled radiance"),
             size,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("reference sampled readback"),
-            size,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -127,7 +121,6 @@ impl Rays {
             pass.set_bind_group(0, &group, &[]);
             pass.dispatch_workgroups(self.count.div_ceil(8), 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, size);
-        readback
+        thrum_test_support::readback::Readback::buffer(device, encoder, &output, ..)
     }
 }

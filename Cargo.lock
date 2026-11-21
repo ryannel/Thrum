@@ -3227,6 +3227,7 @@ dependencies = [
  "divan",
  "rayon",
  "smallvec",
+ "thrum-test-support",
  "web-time",
 ]
 
@@ -3311,6 +3312,7 @@ name = "thrum-sim2d"
 version = "0.1.0"
 dependencies = [
  "thrum-core",
+ "thrum-test-support",
 ]
 
 [[package]]
@@ -3345,6 +3347,7 @@ dependencies = [
  "rcgen",
  "rustls",
  "sha2",
+ "thrum-test-support",
  "time",
  "tokio",
  "wasm-bindgen",

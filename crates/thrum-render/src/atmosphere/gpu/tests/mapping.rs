@@ -2,7 +2,7 @@
 //! distinct stored tangent limits. The colour fixture cannot hide cross-filtering.
 
 use super::super::super::model;
-use std::{f64::consts::PI, sync::mpsc, time::Duration};
+use std::f64::consts::PI;
 use wgpu::util::DeviceExt;
 
 const SHADER: &str = concat!(
@@ -111,12 +111,6 @@ fn observe(
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: bytes,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         mag_filter: wgpu::FilterMode::Linear,
         min_filter: wgpu::FilterMode::Linear,
@@ -162,26 +156,10 @@ fn observe(
             1,
         );
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, bytes);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("mapping receiver alive");
-    });
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, ..);
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(10)),
-        })
-        .expect("mapping GPU completion");
-    receive
-        .recv()
-        .expect("mapping callback")
-        .expect("mapping readback");
-    let mapped = readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped records");
+    let mapped = readback.wait(device, submission);
     mapped
         .as_chunks::<48>()
         .0
@@ -201,14 +179,17 @@ fn observe(
 #[test]
 fn gpu_horizon_rows_roundtrip_endpoints_azimuth_and_never_cross_filter_halves() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
             "gpu_horizon_rows_roundtrip_endpoints_azimuth_and_never_cross_filter_halves",
             None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("shipping sky mapping falsifier"),

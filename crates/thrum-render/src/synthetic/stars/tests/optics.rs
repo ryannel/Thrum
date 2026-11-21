@@ -1,6 +1,6 @@
 //! Optical referee using the production star pipeline and a unit transmission LUT.
 
-use std::time::Duration;
+use thrum_test_support::readback::{Mip, Readback};
 
 use glam::{Mat3, Quat, Vec3};
 use wgpu::{self as gpu, util::DeviceExt};
@@ -257,7 +257,6 @@ struct Target {
     motion_view: gpu::TextureView,
     reactive_view: gpu::TextureView,
     depth: gpu::TextureView,
-    readback: gpu::Buffer,
 }
 
 impl Target {
@@ -297,12 +296,6 @@ impl Target {
                 gpu::TextureUsages::RENDER_ATTACHMENT | gpu::TextureUsages::TEXTURE_BINDING,
             )
             .create_view(&gpu::TextureViewDescriptor::default()),
-            readback: device.create_buffer(&gpu::BufferDescriptor {
-                label: None,
-                size: u64::from(CROP * CROP * 8),
-                mapped_at_creation: false,
-                usage: gpu::BufferUsages::COPY_DST | gpu::BufferUsages::MAP_READ,
-            }),
         }
     }
 
@@ -325,44 +318,22 @@ impl Target {
             })
         );
         let [x, y] = centre.map(|value| value as u32 - CROP / 2);
-        let mut source = self.colour.as_image_copy();
-        source.origin = gpu::Origin3d { x, y, z: 0 };
-        encoder.copy_texture_to_buffer(
-            source,
-            gpu::TexelCopyBufferInfo {
-                buffer: &self.readback,
-                layout: gpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(CROP * 8),
-                    rows_per_image: Some(CROP),
-                },
-            },
-            gpu::Extent3d {
-                width: CROP,
-                height: CROP,
-                depth_or_array_layers: 1,
-            },
+        // Read the crop's rows of the whole-width image, then keep the crop's columns.
+        let row = u64::from(self.extent[0]) * 8;
+        let readback = Readback::texture(
+            device,
+            &mut encoder,
+            &self.colour,
+            Mip::level(0),
+            u64::from(y) * row..u64::from(y + CROP) * row,
         );
-        let (send, receive) = std::sync::mpsc::channel();
-        encoder.map_buffer_on_submit(&self.readback, gpu::MapMode::Read, .., move |result| {
-            send.send(result).expect("reader");
-        });
         let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(gpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(Duration::from_secs(10)),
-            })
-            .expect("Metal completion");
-        receive
-            .recv_timeout(Duration::from_secs(10))
-            .expect("map callback")
-            .expect("mapped pixels");
-        let pixels = self
-            .readback
-            .slice(..)
-            .get_mapped_range()
-            .expect("HDR pixels");
+        let columns = x as usize * 8..(x + CROP) as usize * 8;
+        let pixels: Vec<u8> = readback
+            .wait(device, submission)
+            .chunks_exact(usize::try_from(row).expect("small target row"))
+            .flat_map(|row| row[columns.clone()].iter().copied())
+            .collect();
         let mut flux = Footprint::default();
         for (dy, row) in (0..CROP).zip(pixels.as_chunks::<{ CROP as usize * 8 }>().0) {
             for (dx, pixel) in (0..CROP).zip(row.as_chunks::<8>().0) {
@@ -380,8 +351,6 @@ impl Target {
                 }
             }
         }
-        drop(pixels);
-        self.readback.unmap();
         flux
     }
 }
@@ -444,14 +413,13 @@ fn spherical_pixel(extent: [u32; 2], [x, y]: [u32; 2], tan_fov: [f64; 2]) -> f64
 
 #[test]
 fn production_star_pipeline_conserves_flux_and_masks_depth_edges() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, _)) = metal(
         "production_star_pipeline_conserves_flux_and_masks_depth_edges",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue, _) = metal(&test_gpu).await;
         let probe = Probe::new(&device, &queue);
         let mut max_error = 0.0_f64;
         let mut min_ratio = f64::INFINITY;
@@ -543,7 +511,7 @@ fn production_star_pipeline_conserves_flux_and_masks_depth_edges() {
 #[test]
 fn resolved_night_footprints_keep_the_magnitude_order() {
     use super::{OffscreenTarget, PreparedSynthetic, SyntheticScene, atmosphere, capture};
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, capabilities)) = metal(
         "resolved_night_footprints_keep_the_magnitude_order",
         Some(wgpu::Backend::Metal),
     ) else {
@@ -557,7 +525,6 @@ fn resolved_night_footprints_keep_the_magnitude_order() {
             [-0.039_968, 0.799_361, -0.599_521, 1.602_631_7e-7],
             [0.039_968, 0.799_361, -0.599_521, 1.011_592_2e-8],
         ];
-        let (device, queue, capabilities) = metal(&test_gpu).await;
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.star_catalogue = Some(&RECORDS);
         let lighting = atmosphere([0.0, -1.0, 0.0]);

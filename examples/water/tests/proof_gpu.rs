@@ -4,10 +4,7 @@ mod realtime;
 #[cfg(target_os = "macos")]
 mod support;
 use serde_json::json;
-use std::{
-    path::PathBuf,
-    time::{Duration, Instant},
-};
+use std::{path::PathBuf, time::Duration};
 use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource, SubmittedImage};
 use water_scene::floating::WhitewaterDemo;
 use water_scene::island::Wind;
@@ -410,18 +407,13 @@ fn limits() -> CaptureLimits {
 }
 #[cfg(target_os = "macos")]
 fn take_image(fixture: &mut support::Fixture) -> SubmittedImage {
-    let deadline = Instant::now() + Duration::from_secs(30);
-    loop {
+    thrum_test_support::wait::until("tap", Duration::from_secs(30), || {
         fixture
             .device
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("tap poll");
-        if let Some(image) = fixture.host.try_submitted_image().expect("image") {
-            return image;
-        }
-        assert!(Instant::now() < deadline, "tap timeout");
-        std::thread::yield_now();
-    }
+        fixture.host.try_submitted_image().expect("image")
+    })
 }
 fn sample_json(sample: &FrameSample) -> serde_json::Value {
     let Some(gpu) = sample.gpu_pass_ns.as_ref() else {

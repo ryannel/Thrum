@@ -1,6 +1,5 @@
 //! Independent consumer pipeline. Only the lent API appears in its entry point.
 use crate::atmosphere::EnvironmentProducts;
-use std::{sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 
 pub(super) fn sample(
@@ -49,12 +48,6 @@ pub(super) fn sample(
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: length,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &query_layout,
@@ -87,8 +80,20 @@ pub(super) fn sample(
             1,
         );
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, length);
-    collect(device, queue, encoder, &readback)
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, ..);
+    let submission = queue.submit([encoder.finish()]);
+    readback
+        .wait(device, submission)
+        .as_chunks::<16>()
+        .0
+        .iter()
+        .map(|record| {
+            std::array::from_fn(|i| {
+                f32::from_le_bytes(record[i * 4..i * 4 + 4].try_into().expect("one f32 word"))
+            })
+        })
+        .collect()
 }
 
 fn entry(binding: u32, read_only: bool) -> wgpu::BindGroupLayoutEntry {
@@ -104,39 +109,6 @@ fn entry(binding: u32, read_only: bool) -> wgpu::BindGroupLayoutEntry {
     }
 }
 
-pub(super) fn collect(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    encoder: wgpu::CommandEncoder,
-    readback: &wgpu::Buffer,
-) -> Vec<[f32; 4]> {
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("probe receiver remains alive");
-    });
-    let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("probe GPU work completes");
-    receive.recv().expect("map callback").expect("probe mapped");
-    readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped probe output")
-        .as_chunks::<16>()
-        .0
-        .iter()
-        .map(|record| {
-            std::array::from_fn(|i| {
-                f32::from_le_bytes(record[i * 4..i * 4 + 4].try_into().expect("one f32 word"))
-            })
-        })
-        .collect()
-}
-
 pub(super) fn texels(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
@@ -145,59 +117,24 @@ pub(super) fn texels(
     let width = texture.width();
     let height = texture.height();
     let layers = texture.depth_or_array_layers();
-    let stride = (width * 8).div_ceil(256) * 256;
-    let length = u64::from(stride) * u64::from(height) * u64::from(layers);
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("independent stored-texel readback"),
-        size: length,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &readback,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(stride),
-                rows_per_image: Some(height),
-            },
-        },
-        texture.size(),
+    let mapped = thrum_test_support::readback::texture(
+        device,
+        queue,
+        texture,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("texel receiver alive");
-    });
-    let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("stored texel copy completes");
-    receive
-        .recv()
-        .expect("texel map callback")
-        .expect("texels mapped");
-    let mapped = readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped stored texels");
     let mut result = Vec::with_capacity((width * height * layers) as usize);
-    for row in mapped.chunks_exact(stride as usize) {
-        for pixel in row[..width as usize * 8].as_chunks::<8>().0 {
-            result.push(std::array::from_fn(|channel| {
-                f64::from(
-                    half::f16::from_bits(u16::from_le_bytes([
-                        pixel[channel * 2],
-                        pixel[channel * 2 + 1],
-                    ]))
-                    .to_f32(),
-                )
-            }));
-        }
+    for pixel in mapped.as_chunks::<8>().0 {
+        result.push(std::array::from_fn(|channel| {
+            f64::from(
+                half::f16::from_bits(u16::from_le_bytes([
+                    pixel[channel * 2],
+                    pixel[channel * 2 + 1],
+                ]))
+                .to_f32(),
+            )
+        }));
     }
     result
 }

@@ -1,9 +1,10 @@
 //! Shared independent oracle and target readback harness.
-use std::{fmt::Write as _, sync::mpsc, time::Duration};
+use std::{fmt::Write as _, time::Duration};
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
 use thrum_render::timing::TimingCategory;
 use thrum_sea::{Ambient, MAX_QUERIES, PIXELS, Profile};
 use thrum_sea_model::{Forcing, LongWaves, Spectrum};
+use thrum_test_support::readback::Readback;
 
 pub(super) struct Harness {
     pub(super) device: wgpu::Device,
@@ -144,11 +145,11 @@ impl Harness {
             mapped_at_creation: false,
         });
         encoder.resolve_query_set(&timestamps, 0..count * 2, &resolve, 0);
-        let timing = copy(&self.device, &mut encoder, &resolve);
-        let long = copy(&self.device, &mut encoder, self.sea.long_buffer());
-        let cascades = copy(&self.device, &mut encoder, self.sea.cascade_buffer());
-        self.queue.submit([encoder.finish()]);
-        let timing = read(&self.device, &timing);
+        let timing = Readback::buffer(&self.device, &mut encoder, &resolve, ..);
+        let long = Readback::buffer(&self.device, &mut encoder, self.sea.long_buffer(), ..);
+        let cascades = Readback::buffer(&self.device, &mut encoder, self.sea.cascade_buffer(), ..);
+        let submission = self.queue.submit([encoder.finish()]);
+        let timing = timing.wait(&self.device, submission.clone());
         for (pass, bytes) in graph.passes.iter().zip(timing.as_chunks::<16>().0.iter()) {
             let start = u64::from_le_bytes(
                 bytes[..8]
@@ -165,8 +166,8 @@ impl Harness {
                 .expect("valid Metal qualification fixture");
         }
         Some(Output {
-            long: floats(&read(&self.device, &long)),
-            cascades: floats(&read(&self.device, &cascades)),
+            long: floats(&long.wait(&self.device, submission.clone())),
+            cascades: floats(&cascades.wait(&self.device, submission)),
         })
     }
     pub(super) fn save(&self, name: &str) {
@@ -217,42 +218,6 @@ fn check_graph(declaration: &thrum_render::contribution::EffectGraph) {
     );
 }
 
-fn copy(
-    device: &wgpu::Device,
-    encoder: &mut wgpu::CommandEncoder,
-    source: &wgpu::Buffer,
-) -> wgpu::Buffer {
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("sea oracle readback"),
-        size: source.size(),
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    encoder.copy_buffer_to_buffer(source, 0, &buffer, 0, source.size());
-    buffer
-}
-fn read(device: &wgpu::Device, buffer: &wgpu::Buffer) -> Vec<u8> {
-    let (tx, rx) = mpsc::channel();
-    buffer.map_async(wgpu::MapMode::Read, .., move |r| {
-        tx.send(r).expect("valid Metal qualification fixture");
-    });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(Duration::from_secs(120)),
-        })
-        .expect("valid Metal qualification fixture");
-    rx.recv()
-        .expect("valid Metal qualification fixture")
-        .expect("valid Metal qualification fixture");
-    let view = buffer
-        .get_mapped_range(..)
-        .expect("valid Metal qualification fixture");
-    let result = view.to_vec();
-    drop(view);
-    buffer.unmap();
-    result
-}
 fn floats(data: &[u8]) -> Vec<f32> {
     data.as_chunks::<4>()
         .0

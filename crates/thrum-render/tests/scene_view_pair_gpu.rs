@@ -8,14 +8,17 @@ use thrum_render::{
 
 #[test]
 fn each_view_matches_its_alone_bytes_in_either_request_order() {
-    let Some(gpu) = thrum_test_support::gpu("secondary view pair", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary view pair",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let (scene, lighting, second_camera) = lit_view_scene();

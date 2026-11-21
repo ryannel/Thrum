@@ -27,14 +27,14 @@ fn capture(
 #[test]
 fn identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_foreign_reads() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
             "identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_foreign_reads",
             None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
         ) else {
             return;
         };
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scene = SyntheticScene::grid(4).unwrap();
         let prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
             .await
@@ -91,14 +91,14 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
     };
     use std::collections::BTreeSet;
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
             "prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sdr_pixels",
             None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
         ) else {
             return;
         };
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let prepared =
             PreparedSynthetic::prepare(&device, &queue, 1, &SyntheticScene::grid(4).unwrap())
                 .await
@@ -236,43 +236,15 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
                 None,
             )
             .unwrap();
-        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: 512 * 37,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-        encoder.copy_texture_to_buffer(
-            output_texture.as_image_copy(),
-            wgpu::TexelCopyBufferInfo {
-                buffer: &buffer,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(512),
-                    rows_per_image: Some(37),
-                },
-            },
-            output_texture.size(),
+        let readback = thrum_test_support::readback::Readback::texture(
+            &device,
+            &mut encoder,
+            output_texture,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
         );
-        let (send, receive) = std::sync::mpsc::channel();
-        encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).unwrap();
-        });
         let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(std::time::Duration::from_secs(10)),
-            })
-            .unwrap();
-        receive.recv().unwrap().unwrap();
-        let mapped = buffer.slice(..).get_mapped_range().unwrap();
-        let actual: Vec<u8> = mapped
-            .as_chunks::<512>()
-            .0
-            .iter()
-            .flat_map(|row| row[..65 * 4].iter().copied())
-            .collect();
+        let actual = readback.wait(&device, submission);
         assert_eq!(actual, expected);
     });
 }

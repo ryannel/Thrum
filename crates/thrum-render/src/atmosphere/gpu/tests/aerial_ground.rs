@@ -3,7 +3,7 @@
 use super::super::AtmospherePrepared;
 use crate::atmosphere::stage::Chart;
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
-use std::{io::Write as _, path::Path, sync::mpsc, time::Duration};
+use std::{io::Write as _, path::Path};
 
 const ROOT: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -19,8 +19,7 @@ struct Fixture {
 }
 
 impl Fixture {
-    async fn new(test_gpu: &thrum_test_support::Gpu) -> Self {
-        let (device, queue, info) = super::device(test_gpu).await;
+    fn new((device, queue, info): (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo)) -> Self {
         assert_eq!(info.backend, wgpu::Backend::Metal);
         writeln!(std::io::stdout(), "M9 device {info:?}").expect("report device");
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
@@ -101,50 +100,18 @@ impl Fixture {
 }
 
 fn read(device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture) -> Vec<[u16; 4]> {
-    let size = 32 * 32 * 33 * 8;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("M9 raw production volume"),
-        size,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(256),
-                rows_per_image: Some(32),
-            },
-        },
-        texture.size(),
-    );
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("M9 receiver alive");
-    });
-    let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("M9 GPU completes");
-    receive
-        .recv()
-        .expect("mapping callback")
-        .expect("M9 mapped");
-    buffer
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped M9 bytes")
-        .as_chunks::<8>()
-        .0
-        .iter()
-        .map(|pixel| std::array::from_fn(|c| u16::from_le_bytes([pixel[c * 2], pixel[c * 2 + 1]])))
-        .collect()
+    thrum_test_support::readback::texture(
+        device,
+        queue,
+        texture,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
+    )
+    .as_chunks::<8>()
+    .0
+    .iter()
+    .map(|pixel| std::array::from_fn(|c| u16::from_le_bytes([pixel[c * 2], pixel[c * 2 + 1]])))
+    .collect()
 }
 
 struct Volume {
@@ -223,13 +190,11 @@ impl Volume {
 #[test]
 #[ignore = "one-time recording on the unchanged pass before M9; retained bytes are checked below"]
 fn above_ground_bytes_record() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("above_ground_bytes_record", Some(wgpu::Backend::Metal))
-    else {
+    let Some(opened) = super::open("above_ground_bytes_record", Some(wgpu::Backend::Metal)) else {
         return;
     };
+    let fixture = Fixture::new(opened);
     pollster::block_on(async {
-        let fixture = Fixture::new(&test_gpu).await;
         let output = std::env::var_os("THRUM_AERIAL_GROUND_RECORD_DIR")
             .map_or_else(|| Path::new(ROOT).to_path_buf(), std::path::PathBuf::from);
         std::fs::create_dir_all(&output).expect("M9 fixture directory");
@@ -250,13 +215,12 @@ fn above_ground_bytes_record() {
 
 #[test]
 fn above_ground_bytes_preserved() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("above_ground_bytes_preserved", Some(wgpu::Backend::Metal))
+    let Some(opened) = super::open("above_ground_bytes_preserved", Some(wgpu::Backend::Metal))
     else {
         return;
     };
+    let fixture = Fixture::new(opened);
     pollster::block_on(async {
-        let fixture = Fixture::new(&test_gpu).await;
         for h in [3, 245] {
             for pitch in [0, -30] {
                 let v = fixture.volume(
@@ -349,14 +313,14 @@ fn cases() -> Vec<(f64, f64, f64, bool)> {
 
 #[test]
 fn near_ground_reads_match_their_own_column() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(opened) = super::open(
         "near_ground_reads_match_their_own_column",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
+    let fixture = Fixture::new(opened);
     pollster::block_on(async {
-        let fixture = Fixture::new(&test_gpu).await;
         let mut failed = Vec::new();
         for fov in [60.0_f64, 90.0] {
             let t = (fov.to_radians() * 0.5).tan();

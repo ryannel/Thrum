@@ -34,13 +34,17 @@ fn pixels(
 #[test]
 fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(4).expect("four valid cubes");
         let mut prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
             .await
@@ -122,13 +126,17 @@ fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
 #[test]
 fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "active_prefix_matches_fresh_scene_through_churn_and_slot_reuse",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(4).unwrap();
         let mut prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
             .await
@@ -168,13 +176,17 @@ fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
 #[test]
 fn mirrored_row_uses_two_sided_fallback_and_keeps_near_surface() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "mirrored_row_uses_two_sided_fallback_and_keeps_near_surface",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = SyntheticView::perspective(
             [0.0, 0.0, 2.0],
@@ -226,13 +238,17 @@ fn mirrored_row_uses_two_sided_fallback_and_keeps_near_surface() {
 #[test]
 fn front_raster_surface_repairs_a_smoothed_normal_behind_the_view() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "front_raster_surface_repairs_a_smoothed_normal_behind_the_view",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = SyntheticView::perspective(
             [0.0, 0.0, 2.0],

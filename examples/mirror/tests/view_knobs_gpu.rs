@@ -7,7 +7,7 @@ mod view_knobs_gpu {
     #[cfg(target_os = "macos")]
     use std::{
         sync::{Arc, Mutex},
-        time::{Duration, Instant},
+        time::Duration,
     };
 
     #[cfg(target_os = "macos")]
@@ -93,6 +93,7 @@ mod view_knobs_gpu {
     fn sample(
         host: &mut Host,
         device: &wgpu::Device,
+        queue: &wgpu::Queue,
         surface: &SurfaceOutput<'_>,
         witness: &wgpu::Buffer,
     ) -> (Vec<u8>, FrameSample, Vec<u8>) {
@@ -105,44 +106,37 @@ mod view_knobs_gpu {
         let witnessed = encoded.copy_main_draw_witness(witness);
         assert_eq!(witnessed.is_some(), instrumented);
         assert!(encoded.submit(Some(surface)).expect("drive").submitted);
-        let deadline = Instant::now() + Duration::from_secs(15);
         let (mut image, mut sample) = (None, None);
-        loop {
-            device
-                .poll(wgpu::PollType::Wait {
-                    submission_index: None,
-                    timeout: Some(Duration::from_secs(15)),
-                })
-                .expect("Metal wait");
-            sample = sample.or_else(|| host.poll_completed().expect("retire"));
-            image = image.or_else(|| host.try_submitted_image().expect("tap"));
-            if let (Some(frame), Some(report)) = (&image, &sample) {
-                assert_eq!(frame.sample.submission_order, report.submission_order);
-                let data = frame.rgba.clone();
-                host.recycle_submitted_image(image.expect("image"));
-                let witness_bytes = witnessed.map_or_else(Vec::new, |size| {
-                    let (tx, rx) = std::sync::mpsc::channel();
-                    witness.map_async(wgpu::MapMode::Read, 0..size, move |result| {
-                        tx.send(result).expect("map caller");
-                    });
-                    device
-                        .poll(wgpu::PollType::Wait {
-                            submission_index: None,
-                            timeout: Some(Duration::from_secs(15)),
-                        })
-                        .expect("map wait");
-                    rx.recv().expect("map callback").expect("main witness");
-                    let bytes = witness
-                        .get_mapped_range(0..size)
-                        .expect("main draw bytes")
-                        .to_vec();
-                    witness.unmap();
-                    bytes
-                });
-                return (data, sample.expect("timings"), witness_bytes);
-            }
-            assert!(Instant::now() < deadline, "missing submitted output");
-        }
+        let (frame, report) = thrum_test_support::wait::until(
+            "missing submitted output",
+            Duration::from_secs(15),
+            || {
+                device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(15)),
+                    })
+                    .expect("Metal wait");
+                sample = sample
+                    .take()
+                    .or_else(|| host.poll_completed().expect("retire"));
+                image = image
+                    .take()
+                    .or_else(|| host.try_submitted_image().expect("tap"));
+                if image.is_some() && sample.is_some() {
+                    image.take().zip(sample.take())
+                } else {
+                    None
+                }
+            },
+        );
+        assert_eq!(frame.sample.submission_order, report.submission_order);
+        let data = frame.rgba.clone();
+        host.recycle_submitted_image(frame);
+        let witness_bytes = witnessed.map_or_else(Vec::new, |size| {
+            thrum_test_support::readback::buffer(device, queue, witness, 0..size)
+        });
+        (data, report, witness_bytes)
     }
 
     #[cfg(target_os = "macos")]
@@ -233,7 +227,7 @@ mod view_knobs_gpu {
         for value in [25, 100] {
             host.set_quality_knob(&extent.name, value)
                 .expect("set active viewport");
-            drop(sample(host, device, surface, witness));
+            drop(sample(host, device, queue, surface, witness));
             let [width, height, inside, outside] = read_viewport(device, queue, viewport_report);
             assert_eq!([width, height], EXTENT);
             assert!(inside + outside > 0, "{recipe}: empty reflection");
@@ -269,14 +263,17 @@ mod view_knobs_gpu {
 
     thrum_test_support::macos_gpu_test! {
     fn quality_controls_change_only_the_reflection_on_both_recipes() {
-        let Some(gpu) = thrum_test_support::gpu("mirror view knobs", Some(wgpu::Backend::Metal))
+        let Some(thrum_test_support::Opened {
+            gpu, device, queue, ..
+        }) = thrum_test_support::open(
+            "mirror view knobs",
+            Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        )
         else {
             return;
         };
-        let (device, queue) = gpu.device(
-            thrum_test_support::Profile::Portable,
-            &thrum_test_support::Restriction::default(),
-        );
         let output = output_view(&device);
         let surface = SurfaceOutput {
             view: &output,
@@ -285,7 +282,7 @@ mod view_knobs_gpu {
         let witness = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("main draw bytes"),
             size: 65536,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
         for recipe in ["portable", "apple-tile"] {
@@ -334,9 +331,9 @@ mod view_knobs_gpu {
             )
             .expect("linear tap");
             for _ in 0..4 {
-                drop(sample(&mut host, &device, &surface, &witness));
+                drop(sample(&mut host, &device, &queue, &surface, &witness));
             }
-            let (before, baseline, main_draw) = sample(&mut host, &device, &surface, &witness);
+            let (before, baseline, main_draw) = sample(&mut host, &device, &queue, &surface, &witness);
             let objects_before = objects(&device);
             let pipelines = host.pipeline_creation_count();
             if pipelines.is_some() {
@@ -367,7 +364,7 @@ mod view_knobs_gpu {
                     let expected = Expected::endpoint(name, value);
                     host.set_quality_knob(&knob.name, value)
                         .expect("stage discovered knob");
-                    let (pixels, report, main) = sample(&mut host, &device, &surface, &witness);
+                    let (pixels, report, main) = sample(&mut host, &device, &queue, &surface, &witness);
                     assert_eq!(
                         main, main_draw,
                         "{recipe} {}={value} changed main draw bytes",
@@ -411,7 +408,7 @@ mod view_knobs_gpu {
                     );
                     observation.lock().expect("observation").reference =
                         Some(expected.request(camera, eye));
-                    let (reference, _, _) = sample(&mut host, &device, &surface, &witness);
+                    let (reference, _, _) = sample(&mut host, &device, &queue, &surface, &witness);
                     observation.lock().expect("observation").reference = None;
                     assert_eq!(
                         pixels
@@ -447,7 +444,7 @@ mod view_knobs_gpu {
                 host.set_quality_knob(&knob.name, knob.value)
                     .expect("restore default");
             }
-            let (restored, _, _) = sample(&mut host, &device, &surface, &witness);
+            let (restored, _, _) = sample(&mut host, &device, &queue, &surface, &witness);
             assert_eq!(restored, before, "restore every setting byte for byte");
             verify_viewport(
                 &mut host,

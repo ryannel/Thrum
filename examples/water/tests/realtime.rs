@@ -133,18 +133,23 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             std::thread::sleep(wait);
         }
     }
-    let deadline = Instant::now() + Duration::from_secs(30);
-    while runtime.pending_frames() > 0 || frames.len() < submitted {
+    let drained = thrum_test_support::wait::until("capture drain", Duration::from_secs(30), || {
+        if runtime.pending_frames() == 0 && frames.len() >= submitted {
+            return Some(true);
+        }
         device
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("final poll");
-        assert!(
-            drain(&mut runtime, &writer, &mut frames, &mut completed).is_ok(),
-            "writer rejected a frame; underlying outcome: {:?}",
-            writer.finish(Duration::from_secs(60))
-        );
-        assert!(Instant::now() < deadline, "capture drain timeout");
-    }
+        // A rejected frame ends the wait; the writer's outcome is reported below.
+        drain(&mut runtime, &writer, &mut frames, &mut completed)
+            .is_err()
+            .then_some(false)
+    });
+    assert!(
+        drained,
+        "writer rejected a frame; underlying outcome: {:?}",
+        writer.finish(Duration::from_secs(60))
+    );
     for frame in &mut frames {
         let serial = frame["sample"]["submission"].as_u64().expect("serial");
         frame["sample"] =

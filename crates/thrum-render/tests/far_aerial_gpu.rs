@@ -73,12 +73,6 @@ fn probe(
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: bytes,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &layout,
@@ -119,15 +113,21 @@ fn probe(
         pass.set_bind_group(1, &group, &[]);
         pass.dispatch_workgroups(u32::try_from(input.len()).expect("bounded queries"), 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, bytes);
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., |r| {
-        r.expect("mapped observer");
-    });
-    queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("completed observer");
-    bytemuck::cast_slice(&readback.get_mapped_range(..).expect("mapped bytes")).to_vec()
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, ..);
+    let submission = queue.submit([encoder.finish()]);
+    // The returned bytes carry no alignment guarantee, so decode each vec4 by value.
+    readback
+        .wait(device, submission)
+        .as_chunks::<16>()
+        .0
+        .iter()
+        .map(|texel| {
+            std::array::from_fn(|i| {
+                f32::from_le_bytes(texel[i * 4..i * 4 + 4].try_into().expect("four bytes"))
+            })
+        })
+        .collect()
 }
 
 #[test]
@@ -136,14 +136,17 @@ fn probe(
     reason = "bounded reference cases narrow to physical shader inputs"
 )]
 fn lent_air_extends_continuously_and_preserves_the_finite_operation() {
-    let Some(gpu) = thrum_test_support::gpu("far aerial reference", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "far aerial reference",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let rows: Vec<Vec<f64>> = include_str!("data/far_air.txt")
         .lines()
         .filter(|l| !l.starts_with('#'))

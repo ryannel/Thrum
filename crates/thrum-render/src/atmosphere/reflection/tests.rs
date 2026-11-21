@@ -3,7 +3,7 @@
 
 use super::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, ReflectionPrepared};
 use crate::pass_key::AtmosphereStage;
-use std::{f64::consts::PI, sync::mpsc, time::Duration};
+use std::f64::consts::PI;
 use wgpu::util::DeviceExt;
 
 const READ: &str = r"
@@ -125,32 +125,11 @@ fn collect(
     output: &wgpu::Buffer,
     bytes: u64,
 ) -> Vec<[f32; 4]> {
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: bytes,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    encoder.copy_buffer_to_buffer(output, 0, &readback, 0, bytes);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("reflection receiver alive");
-    });
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, output, ..bytes);
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("reflection correctness completes");
-    receive
-        .recv()
-        .expect("reflection map callback")
-        .expect("reflection mapped");
     readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("reflection data")
+        .wait(device, submission)
         .as_chunks::<16>()
         .0
         .iter()
@@ -673,17 +652,26 @@ fn independent_hemisphere_integral_has_analytic_smith_limits() {
 #[test]
 fn gpu_reflection_constant_all_faces_mips_and_independent_dfg() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "gpu_reflection_constant_all_faces_mips_and_independent_dfg",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let mut frame = [0.0_f32; 32];
         frame[19] = 2.0;
         frame[21] = 1.0;

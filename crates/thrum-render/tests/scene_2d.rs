@@ -1,5 +1,12 @@
 //! Metal graph, resource, admission and unchanged 3D closure witnesses.
 
+#[cfg_attr(
+    not(feature = "creation-counters"),
+    expect(
+        dead_code,
+        reason = "only the counted generation inventory opens a later fixture generation"
+    )
+)]
 mod support {
     pub(crate) mod sprite_fixture;
     pub(crate) mod sprite_graph_snapshot;
@@ -51,12 +58,16 @@ fn inputs() -> (fixture::Scene, SpriteScene) {
 #[test]
 #[cfg(feature = "creation-counters")]
 fn generation_prepares_only_the_sprite_and_output_resources() {
-    let Some(gpu) = thrum_test_support::gpu("2D generation inventory", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
     for recipe in fixture::RECIPES {
-        let (device, queue, caps) = fixture::metal(&gpu, recipe, 1);
+        let Some(thrum_test_support::Opened {
+            gpu,
+            device,
+            queue,
+            capabilities: caps,
+        }) = fixture::open("2D generation inventory", recipe)
+        else {
+            return;
+        };
         assert!(caps.features().contains(wgpu::Features::TIMESTAMP_QUERY));
         let (policy, scene) = inputs();
         settle_uploads(&device, &queue);
@@ -266,10 +277,15 @@ fn settle_uploads(device: &wgpu::Device, queue: &wgpu::Queue) {
 
 #[test]
 fn rejects_each_3d_request_without_changing_the_sprite_scene() {
-    let Some(gpu) = thrum_test_support::gpu("2D admission", Some(wgpu::Backend::Metal)) else {
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("2D admission", fixture::RECIPES[0])
+    else {
         return;
     };
-    let (device, queue, caps) = fixture::metal(&gpu, fixture::RECIPES[0], 1);
     let (source, sprites) = inputs();
     let mut host = fixture::host(
         &caps,
@@ -376,11 +392,15 @@ fn assert_unchanged(host: &mut fixture::Host, device: &wgpu::Device, reference: 
 
 #[test]
 fn attaches_and_runs_only_upload_and_simulate_before_sprites() {
-    let Some(gpu) = thrum_test_support::gpu("2D upload and simulate", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("2D upload and simulate", "portable")
     else {
         return;
     };
-    let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
     let (mut source, sprites) = inputs();
     source.centre = [10.0, 5.0];
     source.rows[0].position = [13.0, 3.0];

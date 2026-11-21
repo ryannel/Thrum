@@ -1,5 +1,4 @@
 //! Static scene fixture on the public frame host, with caller-authored weather.
-use std::path::Path;
 use std::time::Duration;
 use thrum_core::{
     WorldEpoch,
@@ -23,71 +22,6 @@ fn tick() -> SourceTick {
     }
 }
 
-pub(super) fn buffer(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Buffer) -> Vec<u8> {
-    let target = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("lighting diagnosis readback"),
-        size: source.size(),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(source, 0, &target, 0, source.size());
-    queue.submit([encoder.finish()]);
-    collect(device, &target)
-}
-
-fn collect(device: &wgpu::Device, target: &wgpu::Buffer) -> Vec<u8> {
-    let (send, receive) = std::sync::mpsc::channel();
-    target.slice(..).map_async(wgpu::MapMode::Read, move |r| {
-        send.send(r).expect("receiver");
-    });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("GPU completion");
-    receive.recv().expect("map callback").expect("map");
-    target.get_mapped_range(..).expect("mapped bytes").to_vec()
-}
-
-pub(super) fn texture(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    source: &wgpu::Texture,
-    path: &Path,
-) {
-    let pixel = source
-        .format()
-        .block_copy_size(None)
-        .expect("uncompressed texture");
-    let row = (source.width() * pixel).div_ceil(256) * 256;
-    let target = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("lighting diagnosis texture"),
-        size: u64::from(row)
-            * u64::from(source.height())
-            * u64::from(source.depth_or_array_layers()),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        source.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &target,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(row),
-                rows_per_image: Some(source.height()),
-            },
-        },
-        source.size(),
-    );
-    queue.submit([encoder.finish()]);
-    let bytes = collect(device, &target);
-    let packed: Vec<_> = bytes
-        .chunks_exact(row as usize)
-        .flat_map(|r| r[..(source.width() * pixel) as usize].iter().copied())
-        .collect();
-    std::fs::write(path, packed).expect("texture snapshot");
-}
 impl FrameWorld for World {
     type Page = SourceTick;
     fn source(&self) -> SourceTick {

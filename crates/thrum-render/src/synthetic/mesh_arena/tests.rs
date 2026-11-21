@@ -34,52 +34,20 @@ fn fan(triangles: u32, scale: f32) -> (Vec<MeshVertex>, Vec<u32>) {
     (vertices, indices)
 }
 
-fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
-    pollster::block_on(async {
-        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
-    })
-}
-
-fn read(device: &wgpu::Device, queue: &wgpu::Queue, buffer: &wgpu::Buffer, bytes: u64) -> Vec<u8> {
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("arena test readback"),
-        size: bytes,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(buffer, 0, &staging, 0, bytes);
-    queue.submit([encoder.finish()]);
-    staging
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, |result| result.expect("map"));
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(std::time::Duration::from_secs(10)),
-        })
-        .expect("poll");
-    staging
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped")
-        .to_vec()
-}
-
 /// The GPU arrays hold every row's own vertices and indices at its offsets.
 fn assert_gpu_matches(arena: &MeshArena, device: &wgpu::Device, queue: &wgpu::Queue) {
     let gpu = arena.buffers().expect("uploaded");
-    let vertices = read(
+    let vertices = thrum_test_support::readback::buffer(
         device,
         queue,
         &gpu.vertices,
-        arena.vertices.len() as u64 * VERTEX_BYTES,
+        ..arena.vertices.len() as u64 * VERTEX_BYTES,
     );
-    let indices = read(
+    let indices = thrum_test_support::readback::buffer(
         device,
         queue,
         &gpu.indices,
-        arena.indices.len() as u64 * INDEX_BYTES,
+        ..arena.indices.len() as u64 * INDEX_BYTES,
     );
     for row in arena.rows() {
         let mut expected = Vec::new();
@@ -215,11 +183,14 @@ fn bounds_come_from_the_referenced_vertices() {
 
 #[test]
 fn growth_keeps_every_row_and_its_offsets() {
-    let Some(test_gpu) = thrum_test_support::gpu("growth_keeps_every_row_and_its_offsets", None)
-    else {
+    let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
+        "growth_keeps_every_row_and_its_offsets",
+        None,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
+    ) else {
         return;
     };
-    let (device, queue) = device(&test_gpu);
     let mut arena = MeshArena::new(ROOMY).expect("arena");
     let first = arena.upload(&device, &queue);
     assert!(first.reallocated);

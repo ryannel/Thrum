@@ -3,7 +3,7 @@ mod support;
 #[cfg(feature = "creation-counters")]
 mod admission {
     use super::support::*;
-    use std::time::{Duration, Instant};
+    use std::time::Duration;
     use thrum_render::{
         capabilities::DeviceCapabilities,
         contribution::{SecondaryViewError, SecondaryViewRequest, ViewAir},
@@ -24,19 +24,15 @@ mod admission {
                 .expect("submit")
                 .submitted
         );
-        let started = Instant::now();
-        loop {
+        thrum_test_support::wait::until("frame retirement", Duration::from_secs(30), || {
             device
                 .poll(wgpu::PollType::Wait {
                     submission_index: None,
                     timeout: Some(Duration::from_secs(30)),
                 })
                 .expect("complete");
-            if let Some(sample) = host.poll_completed().expect("retire") {
-                return sample;
-            }
-            assert!(started.elapsed() < Duration::from_secs(30));
-        }
+            host.poll_completed().expect("retire")
+        })
     }
 
     fn objects(device: &wgpu::Device) -> [isize; 11] {
@@ -58,14 +54,17 @@ mod admission {
 
     #[test]
     fn exact_declared_vertical_admits_all_heights_and_refuses_horizontal_motion() {
-        let Some(gpu) = thrum_test_support::gpu("vertical admission", Some(wgpu::Backend::Metal))
+        let Some(thrum_test_support::Opened {
+            gpu, device, queue, ..
+        }) = thrum_test_support::open(
+            "vertical admission",
+            Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        )
         else {
             return;
         };
-        let (device, queue) = gpu.device(
-            thrum_test_support::Profile::Portable,
-            &thrum_test_support::Restriction::default(),
-        );
         pollster::block_on(async {
             let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
             let surface = device

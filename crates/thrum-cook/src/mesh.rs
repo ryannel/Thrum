@@ -378,8 +378,7 @@ mod tests {
         ));
         assert!(parse.source().expect("glTF parser").is::<gltf::Error>());
 
-        let root = std::env::temp_dir().join(format!("thrum-mesh-error-{}", std::process::id()));
-        std::fs::create_dir_all(&root).expect("fixture directory");
+        let root = thrum_test_support::Scratch::new("mesh-error");
         let path = root.join("absent.gltf");
         let file = cook(&path).expect_err("missing glTF");
         assert!(
@@ -407,7 +406,6 @@ mod tests {
         assert!(
             matches!(source, gltf::Error::Io(error) if error.kind() == std::io::ErrorKind::NotFound)
         );
-        std::fs::remove_dir_all(root).expect("fixture cleanup");
     }
     use std::path::Path;
 
@@ -461,8 +459,7 @@ mod tests {
 
     #[test]
     fn mirrored_nodes_keep_front_faces_counter_clockwise_and_normals_outward() {
-        let root = std::env::temp_dir().join(format!("thrum-cook-mirror-{}", std::process::id()));
-        std::fs::create_dir_all(&root).expect("temp dir");
+        let root = thrum_test_support::Scratch::new("cook-mirror");
         let local = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
         // The triangle authored mirrored in X, still counter-clockwise around its +Z normal, so
         // each mirroring node puts it back where the plain triangle is.
@@ -484,13 +481,12 @@ mod tests {
         ];
         for (case, nodes, positions) in cases {
             for normals in [true, false] {
-                let path = write_triangle(&root, nodes, positions, normals);
+                let path = write_triangle(root.path(), nodes, positions, normals);
                 let product =
                     MeshProduct::open(ProductBytes::copy_from(&cook(&path).expect("cook")))
                         .expect("mesh product");
                 assert_faces_plus_z(&product, &format!("{case}, normals {normals}"));
             }
         }
-        std::fs::remove_dir_all(&root).expect("remove temp dir");
     }
 }

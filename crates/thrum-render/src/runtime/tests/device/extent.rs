@@ -1,18 +1,23 @@
 use super::*;
 
 fn retire(host: &mut Host) {
-    let deadline = std::time::Instant::now() + Duration::from_secs(10);
-    while host.pending_frames() != 0 {
-        let timeout = deadline.saturating_duration_since(std::time::Instant::now());
-        assert!(!timeout.is_zero(), "extent frames did not retire");
-        host.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(timeout),
-            })
-            .expect("complete frames");
-        while host.poll_completed().expect("completion").is_some() {}
-    }
+    thrum_test_support::wait::until(
+        "extent frames did not retire",
+        Duration::from_secs(10),
+        || {
+            if host.pending_frames() == 0 {
+                return Some(());
+            }
+            host.device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("complete frames");
+            while host.poll_completed().expect("completion").is_some() {}
+            None
+        },
+    );
 }
 
 fn verify(host: &mut Host, extent: [u32; 2]) {

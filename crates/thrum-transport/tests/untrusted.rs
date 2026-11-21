@@ -2,57 +2,21 @@
 //! prefix and a ticket's text. They drive the decoders the adapters use (`wire::Decoder`, `wire::hello`,
 //! `wire::prefix` and `Ticket::from_str`) over valid input cut at every byte, the edge lengths and random bytes.
 //! A counting allocator checks that no input makes a decoder allocate more than the lane's cap.
-use std::{
-    alloc::{GlobalAlloc, Layout, System},
-    cell::Cell,
-};
 use thrum_transport::{
     HELLO, RELIABLE_LIMIT, TICKET_LIMIT, Ticket,
     wire::{self, Decoder, Frame, PREFIX_BYTES, WireError},
 };
 
-thread_local! {
-    /// The largest single allocation this thread made while measuring, or `None` when not measuring.
-    static LARGEST: Cell<Option<usize>> = const { Cell::new(None) };
-}
-struct Counting;
-#[expect(
-    unsafe_code,
-    reason = "test-only allocation observer delegates every allocation to System"
-)]
-// SAFETY: every call forwards to the system allocator unchanged; the thread-local only records sizes.
-unsafe impl GlobalAlloc for Counting {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        note(layout.size());
-        // SAFETY: the caller's layout contract is passed through.
-        unsafe { System.alloc(layout) }
-    }
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        // SAFETY: the pointer came from `System` with this layout.
-        unsafe { System.dealloc(ptr, layout) }
-    }
-    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
-        note(new_size);
-        // SAFETY: the caller's realloc contract is passed through.
-        unsafe { System.realloc(ptr, layout, new_size) }
-    }
-}
-fn note(size: usize) {
-    // `try_with` because the allocator also runs while thread-locals are torn down.
-    let _ = LARGEST.try_with(|largest| {
-        if let Some(seen) = largest.get() {
-            largest.set(Some(seen.max(size)));
-        }
-    });
-}
 #[global_allocator]
-static ALLOCATOR: Counting = Counting;
+static ALLOCATOR: thrum_test_support::CountingAllocator = thrum_test_support::CountingAllocator;
 
-/// Run `work` and return its result with the largest single allocation it made.
+/// Run `work` and return its result with the largest single allocation it made on this thread.
 fn measured<T>(work: impl FnOnce() -> T) -> (T, usize) {
-    LARGEST.set(Some(0));
-    let result = work();
-    (result, LARGEST.replace(None).unwrap_or(0))
+    let (result, counted) = thrum_test_support::allocations::count(work);
+    (
+        result,
+        usize::try_from(counted.largest).expect("allocation size fits in usize"),
+    )
 }
 
 /// Deterministic generator, so a failure names a case that reproduces.

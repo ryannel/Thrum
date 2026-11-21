@@ -158,11 +158,15 @@ fn random(seed: &mut u64) -> u32 {
 
 #[test]
 fn overlap_pixels_obey_the_pair_rule_with_travel_chains_and_entity_churn() {
-    let Some(gpu) = thrum_test_support::gpu("retained sprite order", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("retained sprite order", "apple-tile")
     else {
         return;
     };
-    let (device, queue, caps) = fixture::metal(&gpu, "apple-tile", 1);
     let mut host = fixture::configured_host(
         &caps,
         &queue,

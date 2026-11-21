@@ -2,6 +2,7 @@
 
 use thrum_render::capabilities::{DeviceCapabilities, HardwareRequest};
 use thrum_render::synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene};
+use thrum_test_support::readback::Readback;
 use thrum_test_support::{Gpu, Profile, Restriction};
 use wgpu::util::DeviceExt;
 
@@ -92,23 +93,6 @@ pub fn submit_bytes(
         .expect("completed")
 }
 
-/// Collect the bytes of a submitted map-read buffer.
-/// # Panics
-/// The map and its completion callback must succeed.
-pub fn read(device: &wgpu::Device, buffer: &wgpu::Buffer) -> Vec<u8> {
-    let (send, receive) = std::sync::mpsc::sync_channel(1);
-    buffer
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, move |result| {
-            send.send(result).expect("readback channel");
-        });
-    wait(device);
-    receive.recv().expect("map callback").expect("valid map");
-    let data = buffer.slice(..).get_mapped_range().expect("range").to_vec();
-    buffer.unmap();
-    data
-}
-
 /// The diagnostic compute pipeline and its bound scene structure.
 pub struct Probe {
     pipeline: wgpu::ComputePipeline,
@@ -155,7 +139,7 @@ impl Probe {
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         origins: &[[f32; 4]],
-    ) -> wgpu::Buffer {
+    ) -> Readback {
         self.record_timed(device, encoder, origins, None)
     }
 
@@ -168,23 +152,18 @@ impl Probe {
         encoder: &mut wgpu::CommandEncoder,
         origins: &[[f32; 4]],
         timestamp_writes: Option<wgpu::ComputePassTimestampWrites<'_>>,
-    ) -> wgpu::Buffer {
+    ) -> Readback {
         let rays = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("probe origins"),
             contents: bytemuck::cast_slice(origins),
             usage: wgpu::BufferUsages::STORAGE,
         });
-        let bytes = origins.len() as u64 * 4;
-        let buffer = |usage| {
-            device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("probe answers"),
-                size: bytes,
-                usage,
-                mapped_at_creation: false,
-            })
-        };
-        let answers = buffer(wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC);
-        let readback = buffer(wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ);
+        let answers = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("probe answers"),
+            size: origins.len() as u64 * 4,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
         let payload = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("probe rays and answers"),
             layout: &self.pipeline.get_bind_group_layout(1),
@@ -210,14 +189,19 @@ impl Probe {
             let count = u32::try_from(origins.len()).expect("probe ray count fits u32");
             pass.dispatch_workgroups(count.div_ceil(64), 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&answers, 0, &readback, 0, Some(bytes));
-        readback
+        Readback::buffer(device, encoder, &answers, ..)
     }
 }
 
-/// Read the returned logical slots (one-based, with zero for a miss).
-pub fn answers(device: &wgpu::Device, readback: &wgpu::Buffer) -> Vec<u32> {
-    read(device, readback)
+/// Read the returned logical slots (one-based, with zero for a miss) once `submission`,
+/// the one holding the probe, completes.
+pub fn answers(
+    device: &wgpu::Device,
+    readback: Readback,
+    submission: wgpu::SubmissionIndex,
+) -> Vec<u32> {
+    readback
+        .wait(device, submission)
         .as_chunks::<4>()
         .0
         .iter()

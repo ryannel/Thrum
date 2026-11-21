@@ -28,14 +28,17 @@ fn light(height: f32) -> FrameLighting {
 }
 #[test]
 fn every_stored_plane_column_matches_the_ordinary_aerial_pass() {
-    let Some(gpu) = thrum_test_support::gpu("secondary aerial volume", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary aerial volume",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         for height in [0.0, 50.0] {

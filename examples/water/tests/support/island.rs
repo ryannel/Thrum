@@ -11,13 +11,6 @@ use crate::support::Fixture;
 
 pub(crate) const EXTENT: [u32; 2] = [1056, 768];
 
-struct Scratch(PathBuf);
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        std::fs::remove_dir_all(&self.0).expect("remove test's cooked store");
-    }
-}
-
 pub(crate) fn with_cooked_island(name: &str, test: impl FnOnce()) {
     if std::env::var_os("THRUM_ISLAND_TEST_CHILD").is_some() {
         test();
@@ -26,13 +19,8 @@ pub(crate) fn with_cooked_island(name: &str, test: impl FnOnce()) {
     // Set the ordinary game store in a fresh process. The test runtime may
     // have other threads, so never mutate this process's environment.
     let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let scratch = Scratch(
-        source
-            .join("../..")
-            .join("tmp/waters-M4")
-            .join(format!("{name}-{}", std::process::id())),
-    );
-    let store = scratch.0.join("store");
+    let scratch = thrum_test_support::Scratch::new(&format!("island-{name}"));
+    let store = scratch.join("store");
     let config = CookConfig {
         source: source.join("assets"),
         store: store.clone(),

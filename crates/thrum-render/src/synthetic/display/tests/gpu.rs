@@ -1,5 +1,4 @@
 use super::*;
-use std::{sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 
 fn half(bits: u16) -> f64 {
@@ -71,13 +70,6 @@ fn render(
         view_formats: &[],
     });
     let view = target.create_view(&wgpu::TextureViewDescriptor::default());
-    let row_bytes = (width * 4).div_ceil(256) * 256;
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: u64::from(row_bytes),
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -96,44 +88,28 @@ fn render(
         pass.set_bind_group(0, group, &[]);
         pass.draw(0..3, 0..1);
     }
-    encoder.copy_texture_to_buffer(
-        target.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &readback,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(row_bytes),
-                rows_per_image: Some(1),
-            },
-        },
-        target.size(),
+    let readback = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        &target,
+        thrum_test_support::readback::Mip::level(0),
+        ..u64::from(width) * 4,
     );
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).unwrap();
-    });
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(10)),
-        })
-        .unwrap();
-    receive.recv().unwrap().unwrap();
-    readback.slice(..).get_mapped_range().unwrap()[..width as usize * 4].to_vec()
+    readback.wait(device, submission)
 }
 
 #[test]
 fn gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
             "gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range",
             None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
         ) else {
             return;
         };
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         // Exact half input: black/subnormal, knee±one half ULP, neutral and
         // saturated ramps, dominant-channel ties, and the finite fp16 maximum.
@@ -261,14 +237,14 @@ const ZONE_CODES: [[u8; 3]; 13] = [
 #[test]
 fn gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
             "gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain",
             None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
         ) else {
             return;
         };
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let reference = 0.18 / (std::f64::consts::PI * 1.2 * 0.4);
         // Exposed luminance in stops from the reference, each 0.3 stop inside a band, plus

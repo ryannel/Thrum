@@ -87,6 +87,11 @@ fn allocations_count_calls_and_bytes_on_the_calling_thread_only() {
         counted.bytes < 4096,
         "another thread's allocation counted: {counted:?}"
     );
+    assert!(counted.largest >= 200, "{counted:?}");
+    assert!(
+        counted.largest < 4096,
+        "another thread's allocation counted: {counted:?}"
+    );
     let ((), alone) = super::allocations::count(|| {
         std::hint::black_box(Vec::<u8>::with_capacity(100));
         std::hint::black_box(vec![0_u8; 64]);
@@ -98,7 +103,8 @@ fn allocations_count_calls_and_bytes_on_the_calling_thread_only() {
         alone,
         super::allocations::Allocations {
             count: 4,
-            bytes: 100 + 64 + 8 + 24
+            bytes: 100 + 64 + 8 + 24,
+            largest: 100,
         }
     );
     // Outside `count` nothing is counted.

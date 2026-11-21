@@ -11,3 +11,6 @@ workspace = true
 
 [dependencies]
 thrum-core = { path = "../thrum-core" }
+
+[dev-dependencies]
+thrum-test-support = { path = "../thrum-test-support" }

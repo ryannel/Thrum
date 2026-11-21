@@ -1,4 +1,4 @@
-use super::{buffer, texture};
+use super::texture;
 use std::time::Duration;
 use thrum_cloud_model::State;
 use thrum_clouds::{SunLevel, SunPath, SunProfile, WeatherMap};
@@ -213,7 +213,7 @@ fn snapshot(
     }
     queue.submit([encoder.finish()]);
     sun.submitted();
-    let bytes = buffer(device, queue, sun.mapping());
+    let bytes = thrum_test_support::readback::buffer(device, queue, sun.mapping(), ..);
     let mapping = std::array::from_fn(|i| {
         f32::from_le_bytes(bytes[i * 4..i * 4 + 4].try_into().expect("word"))
     });

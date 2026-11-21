@@ -1,4 +1,4 @@
-use std::{sync::mpsc, time::Duration};
+use std::time::Duration;
 use thrum_cloud_model::{Field, Parameters, Profile, State, Type};
 use thrum_clouds::{WeatherMap, WeatherProfile};
 use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
@@ -46,11 +46,18 @@ fn data() -> (Profile, Vec<Type>) {
     reason = "one conformance fixture checks weather and sun products through replacement"
 )]
 pub(super) fn conformance(test: &str, portable: bool) {
-    let Some(gpu) = thrum_test_support::gpu(test, Some(wgpu::Backend::Metal)) else {
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        test,
+        Some(wgpu::Backend::Metal),
+        profile(portable),
+        &thrum_test_support::Restriction::default(),
+    )
+    else {
         return;
     };
     pollster::block_on(async {
-        let (adapter, device, queue) = device(&gpu, portable);
         let site = DeviceSite::untracked(device.clone());
         let (profile, types) = data();
         let field = Field::new(7, profile, types.clone()).expect("fixture");
@@ -234,7 +241,7 @@ pub(super) fn conformance(test: &str, portable: bool) {
         );
         let record = format!(
             "adapter={:?}; portable={portable}; coarsest clear/cloudy centres={first_counts:?}; weather maximum errors [base,top,coverage,type,age,tau]={largest:?}",
-            adapter.get_info()
+            gpu.adapter.get_info()
         );
         std::fs::create_dir_all("../../tmp/clouds-weather").expect("measurement directory");
         std::fs::write("../../tmp/clouds-weather/measurement.txt", record)
@@ -315,7 +322,11 @@ fn replacement(
     portable: bool,
 ) {
     let expected = filled(old_device, old_queue, map, state);
-    let (_, device, queue) = device(gpu, portable);
+    // A fresh adapter on the admitted instance stands in for a replaced physical device.
+    let (device, queue) = gpu.device(
+        profile(portable),
+        &thrum_test_support::Restriction::default(),
+    );
     let (profile, types) = data();
     let mut fresh = WeatherMap::new(
         &DeviceSite::untracked(device.clone()),
@@ -332,17 +343,12 @@ fn replacement(
     );
 }
 
-fn device(
-    gpu: &thrum_test_support::Gpu,
-    portable: bool,
-) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
-    let profile = if portable {
+const fn profile(portable: bool) -> thrum_test_support::Profile {
+    if portable {
         thrum_test_support::Profile::Portable
     } else {
         thrum_test_support::Profile::Native
-    };
-    let (device, queue) = gpu.device(profile, &thrum_test_support::Restriction::default());
-    (gpu.adapter.clone(), device, queue)
+    }
 }
 
 fn hash(i: u32, j: u32, g: u32, stream: u32, seed: u32) -> u32 {
@@ -367,59 +373,30 @@ fn read(
     queue: &wgpu::Queue,
     textures: &[wgpu::Texture; 3],
 ) -> Vec<Vec<u32>> {
-    let buffers: Vec<_> = textures
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    let readbacks: Vec<_> = textures
         .iter()
-        .map(|t| {
-            device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("weather test readback"),
-                size: u64::from(t.width())
-                    * u64::from(t.height())
-                    * u64::from(t.depth_or_array_layers())
-                    * 16,
-                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                mapped_at_creation: false,
-            })
+        .map(|texture| {
+            thrum_test_support::readback::Readback::texture(
+                device,
+                &mut encoder,
+                texture,
+                thrum_test_support::readback::Mip::level(0),
+                ..,
+            )
         })
         .collect();
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    for (texture, buffer) in textures.iter().zip(&buffers) {
-        encoder.copy_texture_to_buffer(
-            texture.as_image_copy(),
-            wgpu::TexelCopyBufferInfo {
-                buffer,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(texture.width() * 16),
-                    rows_per_image: Some(texture.height()),
-                },
-            },
-            texture.size(),
-        );
-    }
-    queue.submit([encoder.finish()]);
-    buffers
-        .iter()
-        .map(|buffer| {
-            let (send, recv) = mpsc::channel();
-            buffer
-                .slice(..)
-                .map_async(wgpu::MapMode::Read, move |result| {
-                    send.send(result).expect("readback receiver");
-                });
-            device
-                .poll(wgpu::PollType::wait_indefinitely())
-                .expect("Metal completion");
-            recv.recv().expect("callback").expect("map");
-            let bytes = buffer.slice(..).get_mapped_range().expect("mapped output");
-            let output = bytes
+    let submission = queue.submit([encoder.finish()]);
+    readbacks
+        .into_iter()
+        .map(|readback| {
+            readback
+                .wait(device, submission.clone())
                 .as_chunks::<4>()
                 .0
                 .iter()
                 .map(|b| u32::from_le_bytes(*b))
-                .collect();
-            drop(bytes);
-            buffer.unmap();
-            output
+                .collect()
         })
         .collect()
 }

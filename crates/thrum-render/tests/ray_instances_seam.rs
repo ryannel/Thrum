@@ -193,9 +193,9 @@ mod metal {
                 &mut encoder,
                 &[[12.0, 0.0, -4.0, 0.0], [20.0, 0.0, -4.0, 0.0]],
             );
-            queue.submit([encoder.finish()]);
+            let submission = queue.submit([encoder.finish()]);
             assert_eq!(
-                ray_support::support::answers(&device, &readback),
+                ray_support::support::answers(&device, readback, submission),
                 [list[1].slot + 1, 0]
             );
         });
@@ -255,9 +255,9 @@ mod metal {
             &mut encoder,
             &[[-0.5, 0.0, -3.0, 0.0], [0.5, 0.0, -3.0, 0.0]],
         );
-        queue.submit([encoder.finish()]);
+        let submission = queue.submit([encoder.finish()]);
         assert_eq!(
-            ray_support::support::answers(&device, &samples),
+            ray_support::support::answers(&device, samples, submission),
             [list[1].slot + 1, list[2].slot + 1]
         );
         let pixel = |x: usize, y: usize| pixels.as_chunks::<4>().0[y * 64 + x];

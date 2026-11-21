@@ -6,7 +6,7 @@ use std::{
         Arc, Mutex,
         atomic::{AtomicUsize, Ordering},
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
 use support::*;
 use thrum_render::{
@@ -133,19 +133,15 @@ fn submit(host: &mut Host, device: &wgpu::Device, output: &wgpu::TextureView, ex
             .expect("submit")
             .submitted
     );
-    let start = Instant::now();
-    loop {
+    thrum_test_support::wait::until("frame completion", Duration::from_secs(30), || {
         device
             .poll(wgpu::PollType::Wait {
                 submission_index: None,
                 timeout: Some(Duration::from_secs(30)),
             })
             .expect("completion");
-        if host.poll_completed().expect("sample").is_some() {
-            return;
-        }
-        assert!(start.elapsed() < Duration::from_secs(30));
-    }
+        host.poll_completed().expect("sample")
+    });
 }
 #[expect(
     clippy::cast_possible_truncation,
@@ -229,14 +225,17 @@ fn observed(
 
 #[test]
 fn the_first_asked_frame_is_whole_after_discard_capture_cut_resize_and_device_replacement() {
-    let Some(gpu) = thrum_test_support::gpu("secondary frame lifetime", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary frame lifetime",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");

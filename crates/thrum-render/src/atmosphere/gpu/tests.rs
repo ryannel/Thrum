@@ -7,16 +7,26 @@ mod multiple_interpolation;
 mod sky_probe;
 mod transmittance;
 
-async fn device(
-    test_gpu: &thrum_test_support::Gpu,
-) -> (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo) {
-    let adapter = test_gpu.adapter.clone();
-    let info = adapter.get_info();
+/// The portable test device on `backend`, with the empty feature mask, and the adapter it opened on.
+fn open(
+    test: &str,
+    backend: Option<wgpu::Backend>,
+) -> Option<(wgpu::Device, wgpu::Queue, wgpu::AdapterInfo)> {
+    let crate::test_device::Opened {
+        gpu, device, queue, ..
+    } = crate::test_device::open(
+        test,
+        backend,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
+    )?;
+    let info = gpu.adapter.get_info();
     #[cfg(target_os = "macos")]
     assert_eq!(info.backend, wgpu::Backend::Metal);
-    let (device, queue) =
-        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
-    (device, queue, info)
+    Some((device, queue, info))
 }
 
 fn sky_samples(device: &wgpu::Device) -> [wgpu::Buffer; 2] {
@@ -31,14 +41,13 @@ fn sky_samples(device: &wgpu::Device) -> [wgpu::Buffer; 2] {
 
 #[test]
 fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, _)) = open(
         "encoded_constant_sky_integrates_in_physical_illuminance_units",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue, _) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("constant sky frame"),
@@ -92,12 +101,6 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("constant sky illuminance readback"),
-            size: crate::light::ENVIRONMENT_BYTES,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
         let sky_view = sky.create_view(&wgpu::TextureViewDescriptor::default());
         // The diffuse stage samples only the sky view.
         let views = crate::atmosphere::stage::Charts::from_fn(|_| sky_view.clone());
@@ -115,33 +118,15 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
             pass.set_bind_group(0, &group, &[]);
             pass.dispatch_workgroups(1, 1, 1);
         }
-        encoder.copy_buffer_to_buffer(
+        let readback = thrum_test_support::readback::Readback::buffer(
+            &device,
+            &mut encoder,
             &directional,
-            0,
-            &readback,
-            0,
-            crate::light::ENVIRONMENT_BYTES,
+            ..crate::light::ENVIRONMENT_BYTES,
         );
-        let (send, receive) = std::sync::mpsc::channel();
-        encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).expect("diffuse readback receiver alive");
-        });
         let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(std::time::Duration::from_secs(20)),
-            })
-            .expect("diffuse units GPU completion");
+        let bytes = readback.wait(&device, submission);
         assert!(scope.pop().await.is_none(), "diffuse pipeline validates");
-        receive
-            .recv()
-            .expect("diffuse mapping callback")
-            .expect("diffuse readback mapped");
-        let bytes = readback
-            .slice(..)
-            .get_mapped_range()
-            .expect("mapped result");
         for (channel, radiance) in [1.0 / 65_536.0, 1.0 / 32_768.0, 1.0 / 16_384.0]
             .into_iter()
             .enumerate()

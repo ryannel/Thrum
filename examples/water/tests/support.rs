@@ -224,17 +224,12 @@ impl Fixture {
             )
             .expect("submitted scene");
         self.witness = self.host.submitted_temporal_witness().cloned();
-        let deadline = std::time::Instant::now() + Duration::from_secs(30);
-        let sample = loop {
+        let sample = thrum_test_support::wait::until("completion", Duration::from_secs(30), || {
             self.device
                 .poll(wgpu::PollType::wait_indefinitely())
                 .expect("poll");
-            if let Some(sample) = self.host.poll_completed().expect("completed") {
-                break sample;
-            }
-            assert!(std::time::Instant::now() < deadline, "completion timeout");
-            std::thread::yield_now();
-        };
+            self.host.poll_completed().expect("completed")
+        });
         assert!(
             self.host.contribution_error().is_none(),
             "{:?}",
@@ -243,9 +238,25 @@ impl Fixture {
         self.last_elapsed = begin.elapsed();
         sample
     }
+    /// The output texture's packed pixels.
+    pub(crate) fn image(&self) -> Vec<u8> {
+        thrum_test_support::readback::texture(
+            &self.device,
+            &self.queue,
+            &self.output,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
+        )
+    }
     pub(crate) fn witness(&self) -> Vec<[f32; 4]> {
         let texture = self.witness.as_ref().expect("temporal input witness");
-        let raw = read_texture(&self.device, &self.queue, texture, 8);
+        let raw = thrum_test_support::readback::texture(
+            &self.device,
+            &self.queue,
+            texture,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
+        );
         raw.as_chunks::<8>()
             .0
             .iter()
@@ -288,48 +299,6 @@ pub(crate) fn world_at(
         depth,
     ))
 }
-pub(crate) fn read_texture(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    texture: &wgpu::Texture,
-    pixel_bytes: u32,
-) -> Vec<u8> {
-    let row = texture.width() * pixel_bytes;
-    let pitch = row.div_ceil(256) * 256;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("proof readback"),
-        size: u64::from(pitch) * u64::from(texture.height()),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(pitch),
-                rows_per_image: None,
-            },
-        },
-        texture.size(),
-    );
-    queue.submit([encoder.finish()]);
-    let (send, receive) = std::sync::mpsc::channel();
-    buffer.slice(..).map_async(wgpu::MapMode::Read, move |r| {
-        send.send(r).expect("readback channel");
-    });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("readback poll");
-    receive.recv().expect("map reply").expect("map");
-    let mapped = buffer.slice(..).get_mapped_range().expect("mapped range");
-    mapped
-        .chunks(pitch as usize)
-        .flat_map(|r| r[..row as usize].iter().copied())
-        .collect()
-}
 fn half_value(bits: u16) -> f32 {
     let sign = if bits & 0x8000 == 0 { 1.0 } else { -1.0 };
     let exponent = i32::from((bits >> 10) & 31);
@@ -349,29 +318,8 @@ pub(crate) fn foam_stocks(fixture: &Fixture, point: &thrum_water::foam::Witness)
 }
 
 pub(crate) fn foam_buffer<T: bytemuck::Pod>(fixture: &Fixture, buffer: &wgpu::Buffer) -> Vec<T> {
-    let staging = fixture.device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("submitted whitewater proof"),
-        size: buffer.size(),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut copy = fixture
-        .device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    copy.copy_buffer_to_buffer(buffer, 0, &staging, 0, None);
-    fixture.queue.submit([copy.finish()]);
-    staging.slice(..).map_async(wgpu::MapMode::Read, |result| {
-        result.expect("foam stock readback");
-    });
-    fixture
-        .device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("foam stock copy");
-    bytemuck::cast_slice(
-        &staging
-            .slice(..)
-            .get_mapped_range()
-            .expect("submitted foam stocks"),
-    )
-    .to_vec()
+    thrum_test_support::readback::buffer(&fixture.device, &fixture.queue, buffer, ..)
+        .chunks_exact(size_of::<T>())
+        .map(bytemuck::pod_read_unaligned)
+        .collect()
 }

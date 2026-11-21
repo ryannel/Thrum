@@ -71,14 +71,17 @@ impl SceneContribution for MainOnly {
 
 #[test]
 fn an_unopted_sibling_has_only_its_ordinary_pass() {
-    let Some(gpu) = thrum_test_support::gpu("main-only contribution", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "main-only contribution",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     pollster::block_on(async {
         let view = support::camera(0.0, -2.0);

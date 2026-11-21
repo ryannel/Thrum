@@ -57,9 +57,9 @@ mod metal {
             .encode(&mut encoder, caps.generation(), &target, None)
             .expect("draw and build");
         let readback = probe.record(&device, &mut encoder, &origins);
-        queue.submit([encoder.finish()]);
+        let submission = queue.submit([encoder.finish()]);
         prepared.commit_frame();
-        assert_eq!(support::answers(&device, &readback), [1, 2, 3, 0, 5, 0]);
+        assert_eq!(support::answers(&device, readback, submission), [1, 2, 3, 0, 5, 0]);
     }
     }
 }

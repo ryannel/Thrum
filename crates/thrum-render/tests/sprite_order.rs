@@ -33,11 +33,15 @@ fn row(frame: u32, x: f64, layer: i32, sort: f64) -> SpriteRow {
 
 #[test]
 fn explicit_keys_hold_in_readback_while_other_rows_upload_and_slots_change_owner() {
-    let Some(gpu) = thrum_test_support::gpu("exact sprite order", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("exact sprite order", "portable")
     else {
         return;
     };
-    let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
     let frames = [0, 1, 2, 3].map(|x| SpriteRect {
         origin: [x, 0],
         size: [1; 2],

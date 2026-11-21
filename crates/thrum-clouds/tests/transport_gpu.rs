@@ -1,5 +1,4 @@
 //! Production transport kernels against retained Python Beer/slab references.
-use std::{sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 
 const QUERY: &str = r"
@@ -30,14 +29,14 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
 
 #[test]
 fn known_slabs_conserve_and_compose_once_at_coarse_and_fine_steps() {
-    let Some(gpu) = thrum_test_support::gpu("cloud slab transport", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
+        "cloud slab transport",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let site = thrum_render::runtime::DeviceSite::untracked(device.clone());
     let rows: Vec<Vec<f32>> = include_str!("data/transport.txt")
         .lines()
@@ -98,12 +97,6 @@ fn known_slabs_conserve_and_compose_once_at_coarse_and_fine_steps() {
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: bytes,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &layout,
@@ -125,24 +118,16 @@ fn known_slabs_conserve_and_compose_once_at_coarse_and_fine_steps() {
         pass.set_bind_group(0, &group, &[]);
         pass.dispatch_workgroups(u32::try_from(inputs.len()).expect("ten cases"), 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, bytes);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |r| {
-        send.send(r).expect("receiver");
-    });
+    let readback =
+        thrum_test_support::readback::Readback::buffer(&device, &mut encoder, &output, ..);
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("submitted probe");
-    receive
-        .recv_timeout(Duration::from_secs(30))
-        .expect("map callback")
-        .expect("mapped output");
-    let mapped = readback.get_mapped_range(..).expect("mapped output range");
-    let actual: &[[f32; 4]] = bytemuck::cast_slice(&mapped);
+    let actual: Vec<[f32; 4]> = readback
+        .wait(&device, submission)
+        .as_chunks::<16>()
+        .0
+        .iter()
+        .map(|chunk| bytemuck::cast::<[u8; 16], [f32; 4]>(*chunk))
+        .collect();
     for (i, (got, want)) in actual.iter().zip(expected).enumerate() {
         for channel in 0..4 {
             if inputs[i][1] < 0.0 && channel != 0 {

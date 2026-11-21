@@ -3,12 +3,19 @@ use super::*;
 
 #[test]
 fn compute_reads_the_forward_material_table() {
-    let Some(test_gpu) = thrum_test_support::gpu("compute_reads_the_forward_material_table", None)
+    let Some(crate::test_device::Opened {
+        gpu, device, queue, ..
+    }) = crate::test_device::open(
+        "compute_reads_the_forward_material_table",
+        None,
+        crate::capabilities::DeviceProfile::Portable,
+        &support::NO_FEATURES,
+    )
     else {
         return;
     };
     pollster::block_on(async {
-        let (adapter, device, queue) = support::device(&test_gpu).await;
+        let adapter = gpu.adapter;
         let caps = DeviceCapabilities::capture(&adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.materials[0].base_rgba = [0.125, 0.25, 0.5, 1.0];
@@ -25,12 +32,6 @@ fn compute_reads_the_forward_material_table() {
             label: Some("compute material read"),
             size: 16,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
-        let mapped = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("material result"),
-            size: 16,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
         let result_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -79,22 +80,10 @@ fn compute_reads_the_forward_material_table() {
             pass.set_bind_group(1, &result, &[]);
             pass.dispatch_workgroups(1, 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&output, 0, &mapped, 0, 16);
-        queue.submit([encoder.finish()]);
-        let (tx, rx) = std::sync::mpsc::channel();
-        mapped
-            .slice(..)
-            .map_async(wgpu::MapMode::Read, move |result| {
-                tx.send(result).expect("map channel");
-            });
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(std::time::Duration::from_secs(20)),
-            })
-            .expect("wait");
-        rx.recv().expect("map callback").expect("map success");
-        let view = mapped.slice(..).get_mapped_range().expect("mapped bytes");
+        let readback =
+            thrum_test_support::readback::Readback::buffer(&device, &mut encoder, &output, ..16);
+        let submission = queue.submit([encoder.finish()]);
+        let view = readback.wait(&device, submission);
         let values: Vec<f32> = view
             .as_chunks::<4>()
             .0

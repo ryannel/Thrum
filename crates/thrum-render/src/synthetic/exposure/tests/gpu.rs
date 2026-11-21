@@ -2,7 +2,6 @@ mod attachment;
 
 use super::super::*;
 use crate::{light::EnvironmentLight, synthetic::*};
-use std::{sync::mpsc, time::Duration};
 
 #[derive(Debug)]
 struct Sample {
@@ -18,26 +17,17 @@ fn read_sample(
     mut encoder: wgpu::CommandEncoder,
     sample: &wgpu::Buffer,
 ) -> Sample {
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("exposure correctness readback"),
-        size: SAMPLE_BYTES,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    encoder.copy_buffer_to_buffer(sample, 0, &readback, 0, SAMPLE_BYTES);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).unwrap();
-    });
+    let readback = thrum_test_support::readback::Readback::buffer(
+        device,
+        &mut encoder,
+        sample,
+        ..SAMPLE_BYTES,
+    );
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(10)),
-        })
-        .unwrap();
-    receive.recv().unwrap().unwrap();
-    let mapped = readback.slice(..).get_mapped_range().unwrap();
+    decode_sample(&readback.wait(device, submission))
+}
+
+fn decode_sample(mapped: &[u8]) -> Sample {
     let words: [u32; 8] = std::array::from_fn(|word| {
         u32::from_le_bytes(mapped[word * 4..word * 4 + 4].try_into().unwrap())
     });
@@ -49,11 +39,17 @@ fn read_sample(
     }
 }
 
-async fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
-    let adapter = test_gpu.adapter.clone();
+/// The portable device without optional features, asserting the Metal backend on macOS.
+fn device(test: &str, backend: Option<wgpu::Backend>) -> Option<(wgpu::Device, wgpu::Queue)> {
+    let opened = crate::test_device::open(
+        test,
+        backend,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
+    )?;
     #[cfg(target_os = "macos")]
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
+    assert_eq!(opened.gpu.adapter.get_info().backend, wgpu::Backend::Metal);
+    Some((opened.device, opened.queue))
 }
 
 fn resolve(
@@ -127,14 +123,13 @@ fn assert_night_policy(
     reason = "the calibration cases share one prepared meter and device"
 )]
 fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let light_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
@@ -353,14 +348,13 @@ fn encode_sample(
 
 #[test]
 fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = scene.view.with_incident_exposure(0.0, 0.0, 18.0).unwrap();

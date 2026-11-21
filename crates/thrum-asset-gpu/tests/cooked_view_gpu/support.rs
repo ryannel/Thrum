@@ -210,29 +210,13 @@ impl Fixture<'_> {
     }
 
     fn read(&self, source: &wgpu::Buffer) -> Vec<[f32; 8]> {
-        let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("cooked comparison readback"),
-            size: source.size(),
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.copy_buffer_to_buffer(source, 0, &readback, 0, source.size());
-        let submit = self.queue.submit([encoder.finish()]);
-        let (send, receive) = std::sync::mpsc::channel();
-        readback.map_async(wgpu::MapMode::Read, .., move |result| {
-            send.send(result).expect("map");
-        });
-        self.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submit),
-                timeout: Some(Duration::from_secs(15)),
-            })
-            .expect("Metal");
-        receive.recv().expect("map callback").expect("readback");
-        bytemuck::cast_slice(&readback.get_mapped_range(..).expect("mapped")).to_vec()
+        let bytes = thrum_test_support::readback::buffer(self.device, self.queue, source, ..);
+        bytes
+            .as_chunks::<32>()
+            .0
+            .iter()
+            .map(|chunk| bytemuck::cast(*chunk))
+            .collect()
     }
 }
 

@@ -13,15 +13,20 @@ fn decode_half(bits: u16) -> f32 {
     f32::from_bits(sign | ((exponent + 112) << 23) | (fraction << 13))
 }
 
-async fn metal(
-    test_gpu: &thrum_test_support::Gpu,
-) -> (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo) {
-    let adapter = test_gpu.adapter.clone();
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let info = adapter.get_info();
-    let (device, queue) =
-        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
-    (device, queue, info)
+/// The portable Metal device without optional features, with its adapter's description.
+fn metal(
+    test: &str,
+    backend: Option<wgpu::Backend>,
+) -> Option<(wgpu::Device, wgpu::Queue, wgpu::AdapterInfo)> {
+    let opened = crate::test_device::open(
+        test,
+        backend,
+        crate::capabilities::DeviceProfile::Portable,
+        &support::NO_FEATURES,
+    )?;
+    let info = opened.gpu.adapter.get_info();
+    assert_eq!(info.backend, wgpu::Backend::Metal);
+    Some((opened.device, opened.queue, info))
 }
 
 fn frame(
@@ -39,56 +44,29 @@ fn frame(
         .upload_instances(queue, &scene.instances, &[0])
         .expect("checked Metal motion witness");
     let [width, height] = target.extent();
-    let stride = (width * 4).div_ceil(256) * 256;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("M1 real motion readback"),
-        size: u64::from(stride * height),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
         .encode(&mut encoder, 41, target, None)
         .expect("checked Metal motion witness");
-    encoder.copy_texture_to_buffer(
-        target
-            .textures
-            .texture(&target.ids.motion)
-            .expect("checked Metal motion witness")
-            .as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(stride),
-                rows_per_image: Some(height),
-            },
-        },
-        wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        },
+    let motion = target
+        .textures
+        .texture(&target.ids.motion)
+        .expect("checked Metal motion witness");
+    let readback = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        motion,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
-    let (send, receive) = std::sync::mpsc::channel();
-    encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("checked Metal motion witness");
-    });
-    queue.submit([encoder.finish()]);
+    let submission = queue.submit([encoder.finish()]);
     prepared.commit_frame();
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("checked Metal motion witness");
-    receive
-        .recv()
-        .expect("checked Metal motion witness")
-        .expect("checked Metal motion witness");
-    let bytes = buffer
-        .slice(..)
-        .get_mapped_range()
-        .expect("checked Metal motion witness");
+    let bytes = readback.wait(device, submission);
     let mut values = Vec::new();
-    for row in bytes.chunks_exact(stride as usize) {
+    for row in bytes
+        .chunks_exact(motion.width() as usize * 4)
+        .take(height as usize)
+    {
         for texel in row[..width as usize * 4].as_chunks::<4>().0 {
             values.push(std::array::from_fn(|axis| {
                 decode_half(u16::from_le_bytes(
@@ -99,21 +77,18 @@ fn frame(
             }));
         }
     }
-    drop(bytes);
-    buffer.unmap();
     values
 }
 
 #[test]
 fn metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, info)) = metal(
         "metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue, info) = metal(&test_gpu).await;
         println!("M1 target mac-metal: {info:?}");
         let mut scene = SyntheticScene::grid(1).expect("checked Metal motion witness");
         scene.view = scene.view.with_jitter_phase(0, [64, 64]);
@@ -237,14 +212,13 @@ fn solar_pixel_motion(angle: f64) -> [f64; 2] {
 
 #[test]
 fn metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, info)) = metal(
         "metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue, info) = metal(&test_gpu).await;
         println!("M1 static infinity target mac-metal: {info:?}");
         let mut scene = SyntheticScene::grid(1).expect("one foreground object");
         scene.instances[0].current[3] = [0.0, 2.0, -3.0, 1.0];
@@ -292,14 +266,13 @@ fn metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter() {
     reason = "the projected fixture star is inside the 64-pixel target"
 )]
 fn metal_sky_pan_and_solar_sidereal_phase_match_independent_projection() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue, info)) = metal(
         "metal_sky_pan_and_solar_sidereal_phase_match_independent_projection",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue, info) = metal(&test_gpu).await;
         println!("M1 target mac-metal: {info:?}");
         let mut scene = SyntheticScene::grid(1).expect("checked Metal motion witness");
         scene.instances[0].deactivate(); // unobstructed infinity witness

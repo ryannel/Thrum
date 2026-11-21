@@ -2,7 +2,9 @@
 
 use std::io::Write as _;
 
-use super::{Sample, device, read_sample};
+use thrum_test_support::readback::Readback;
+
+use super::{SAMPLE_BYTES, Sample, decode_sample, device};
 use crate::atmosphere::AtmosphereFrame;
 use crate::capabilities::DeviceCapabilities;
 use crate::synthetic::{
@@ -27,7 +29,6 @@ struct Probe {
     pipeline: wgpu::ComputePipeline,
     group: wgpu::BindGroup,
     result: wgpu::Buffer,
-    readback: wgpu::Buffer,
 }
 
 impl Probe {
@@ -52,10 +53,6 @@ impl Probe {
             device,
             wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         );
-        let readback = buffer(
-            device,
-            wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        );
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("HDR attachment probe"),
             layout: &pipeline.get_bind_group_layout(0),
@@ -74,7 +71,6 @@ impl Probe {
             pipeline,
             group,
             result,
-            readback,
         }
     }
 
@@ -96,19 +92,20 @@ impl Probe {
             pass.set_bind_group(0, &self.group, &[]);
             pass.dispatch_workgroups(1, 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&self.result, 0, &self.readback, 0, 16);
-        let (send, receive) = std::sync::mpsc::channel();
-        encoder.map_buffer_on_submit(&self.readback, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).unwrap();
-        });
+        let hdr = Readback::buffer(device, &mut encoder, &self.result, ..16);
         let side = prepared.history.write_side();
-        let sample = read_sample(device, queue, encoder, &prepared.exposure.samples[side]);
-        receive.recv().unwrap().unwrap();
+        let sample = Readback::buffer(
+            device,
+            &mut encoder,
+            &prepared.exposure.samples[side],
+            ..SAMPLE_BYTES,
+        );
+        let submission = queue.submit([encoder.finish()]);
+        let sample = decode_sample(&sample.wait(device, submission.clone()));
         let hdr = {
-            let mapped = self.readback.slice(..).get_mapped_range().unwrap();
+            let mapped = hdr.wait(device, submission);
             std::array::from_fn(|i| f32::from_le_bytes(mapped.as_chunks::<4>().0[i]))
         };
-        self.readback.unmap();
         let pixels = pixels.try_collect(GENERATION).unwrap().unwrap();
         let pixel = usize::try_from((SIDE / 2) * (SIDE + 1)).unwrap();
         (sample, hdr, pixels.as_chunks::<4>().0[pixel])
@@ -161,14 +158,13 @@ fn assert_dim_card(sample: &Sample, hdr: [f32; 4], display: [u8; 4]) {
 
 #[test]
 fn dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let capabilities = DeviceCapabilities::capture_device(&device, GENERATION);
         let light = FrameLighting::Atmosphere(
@@ -240,14 +236,13 @@ fn dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse() {
 
 #[test]
 fn falling_twilight_radiance_does_not_brighten_the_metered_sky() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "falling_twilight_radiance_does_not_brighten_the_metered_sky",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let capabilities = DeviceCapabilities::capture_device(&device, GENERATION);
         let mut scene = SyntheticScene::grid(1).unwrap();
         // Approximate the fixed valley upper-sky witness at sea-level-relative

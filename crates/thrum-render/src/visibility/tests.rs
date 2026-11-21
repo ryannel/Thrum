@@ -159,42 +159,33 @@ fn serial_bytes(alpha: f32) -> Vec<u8> {
     bytes
 }
 
-fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
-    pollster::block_on(async {
-        let adapter = test_gpu.adapter.clone();
-        #[cfg(target_os = "macos")]
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
-    })
+/// The portable test device, with the empty feature mask.
+fn open_device(test: &str) -> Option<(wgpu::Device, wgpu::Queue)> {
+    let crate::test_device::Opened {
+        gpu, device, queue, ..
+    } = crate::test_device::open(
+        test,
+        None,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
+    )?;
+    #[cfg(target_os = "macos")]
+    assert_eq!(gpu.adapter.get_info().backend, wgpu::Backend::Metal);
+    #[cfg(not(target_os = "macos"))]
+    drop(gpu);
+    Some((device, queue))
 }
 
 fn read(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Buffer, bytes: u64) -> Vec<u32> {
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("visibility readback"),
-        size: bytes,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(source, 0, &staging, 0, bytes);
-    queue.submit([encoder.finish()]);
-    staging
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, |result| result.expect("map"));
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("poll");
-    let words = staging
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped visibility")
+    thrum_test_support::readback::buffer(device, queue, source, ..bytes)
         .as_chunks::<4>()
         .0
         .iter()
         .map(|word| u32::from_le_bytes(*word))
-        .collect();
-    staging.unmap();
-    words
+        .collect()
 }
 
 struct Fixture {
@@ -215,8 +206,7 @@ const KEY: PipelineKey = PipelineKey {
 };
 
 impl Fixture {
-    fn new(test_gpu: &thrum_test_support::Gpu, capacity: u32) -> Self {
-        let (device, queue) = device(test_gpu);
+    fn new((device, queue): (wgpu::Device, wgpu::Queue), capacity: u32) -> Self {
         let uniform = |label, size| {
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some(label),
@@ -380,12 +370,10 @@ fn perspective(eye: Vec3, target: Vec3, fov: f32) -> Mat4 {
 
 #[test]
 fn compaction_matches_reference_across_changed_cameras() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("compaction_matches_reference_across_changed_cameras", None)
-    else {
+    let Some(gpu) = open_device("compaction_matches_reference_across_changed_cameras") else {
         return;
     };
-    let mut fixture = Fixture::new(&test_gpu, 10_000);
+    let mut fixture = Fixture::new(gpu, 10_000);
     let mut random = Lcg(17);
     let instances = scatter(&mut random, 10_000, 120.0);
     let cameras = [
@@ -413,12 +401,10 @@ fn compaction_matches_reference_across_changed_cameras() {
 
 #[test]
 fn partial_workgroups_and_shrinking_active_prefix() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("partial_workgroups_and_shrinking_active_prefix", None)
-    else {
+    let Some(gpu) = open_device("partial_workgroups_and_shrinking_active_prefix") else {
         return;
     };
-    let mut fixture = Fixture::new(&test_gpu, 1_000);
+    let mut fixture = Fixture::new(gpu, 1_000);
     let mut random = Lcg(3);
     let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
     // Zero active rows still runs the offsets dispatch and writes zero instances.
@@ -453,8 +439,8 @@ struct Occlusion {
 }
 
 impl Occlusion {
-    fn new(test_gpu: &thrum_test_support::Gpu, capacity: u32, depth: &[f32]) -> Self {
-        let fixture = Fixture::new(test_gpu, capacity);
+    fn new(gpu: (wgpu::Device, wgpu::Queue), capacity: u32, depth: &[f32]) -> Self {
+        let fixture = Fixture::new(gpu, capacity);
         let view =
             pyramid::tests::depth_target(&fixture.device, &fixture.queue, depth, DEPTH_EXTENT);
         let pyramid = pyramid::tests::build(&fixture.device, &fixture.queue, &view, DEPTH_EXTENT);
@@ -605,11 +591,6 @@ impl Occlusion {
 /// z row for w, hides the first box; one that inflates it keeps the second.
 #[test]
 fn the_final_cull_uses_the_full_clip_magnitude() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("the_final_cull_uses_the_full_clip_magnitude", None)
-    else {
-        return;
-    };
     let origin = Vec3::new(-400.37, 1.13, 400.71);
     let instance = Instance {
         current: Mat4::from_scale_rotation_translation(
@@ -643,7 +624,11 @@ fn the_final_cull_uses_the_full_clip_magnitude() {
     for (scale, kept) in [(0.5, true), (2.0, false)] {
         let wall = nearest + scale * full;
         let depth = vec![wall; (DEPTH_EXTENT[0] * DEPTH_EXTENT[1]) as usize];
-        let mut occlusion = Occlusion::new(&test_gpu, 1, &depth);
+        // Each wall gets a device of its own.
+        let Some(gpu) = open_device("the_final_cull_uses_the_full_clip_magnitude") else {
+            return;
+        };
+        let mut occlusion = Occlusion::new(gpu, 1, &depth);
         occlusion.frame(view_proj, &[instance], 1.0);
         assert_eq!(
             occlusion.history().contains(&0),
@@ -662,12 +647,6 @@ fn the_final_cull_uses_the_full_clip_magnitude() {
 /// the widening keeps the second.
 #[test]
 fn the_final_cull_widens_the_footprint_by_the_clip_bound() {
-    let Some(test_gpu) = thrum_test_support::gpu(
-        "the_final_cull_widens_the_footprint_by_the_clip_bound",
-        None,
-    ) else {
-        return;
-    };
     let origin = Vec3::new(-400.37, 1.13, 400.71);
     let instance = Instance {
         current: Mat4::from_scale_rotation_translation(
@@ -742,7 +721,11 @@ fn the_final_cull_widens_the_footprint_by_the_clip_bound() {
         let depth: Vec<f32> = (0..height)
             .flat_map(|_| (0..width).map(move |x| if x < open { 1.0 } else { 0.0 }))
             .collect();
-        let mut occlusion = Occlusion::new(&test_gpu, 1, &depth);
+        // Each wall gets a device of its own.
+        let Some(gpu) = open_device("the_final_cull_widens_the_footprint_by_the_clip_bound") else {
+            return;
+        };
+        let mut occlusion = Occlusion::new(gpu, 1, &depth);
         occlusion.frame(view_proj, &[instance], 1.0);
         assert_eq!(
             occlusion.history().contains(&0),
@@ -754,13 +737,11 @@ fn the_final_cull_widens_the_footprint_by_the_clip_bound() {
 
 #[test]
 fn occlusion_phases_never_lose_a_slot_in_view() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("occlusion_phases_never_lose_a_slot_in_view", None)
-    else {
+    let Some(gpu) = open_device("occlusion_phases_never_lose_a_slot_in_view") else {
         return;
     };
     let depth = wall_depth();
-    let mut occlusion = Occlusion::new(&test_gpu, 4_000, &depth);
+    let mut occlusion = Occlusion::new(gpu, 4_000, &depth);
     let mut random = Lcg(29);
     let mut instances = scatter(&mut random, 4_000, 40.0);
     let near = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
@@ -801,14 +782,11 @@ fn occlusion_phases_never_lose_a_slot_in_view() {
 
 #[test]
 fn a_capture_between_displays_keeps_the_displayed_history() {
-    let Some(test_gpu) = thrum_test_support::gpu(
-        "a_capture_between_displays_keeps_the_displayed_history",
-        None,
-    ) else {
+    let Some(gpu) = open_device("a_capture_between_displays_keeps_the_displayed_history") else {
         return;
     };
     let depth = wall_depth();
-    let mut occlusion = Occlusion::new(&test_gpu, 3_000, &depth);
+    let mut occlusion = Occlusion::new(gpu, 3_000, &depth);
     let mut random = Lcg(23);
     let instances = scatter(&mut random, 3_000, 40.0);
     let display = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
@@ -862,13 +840,11 @@ fn past(occlusion: &Occlusion, bound: u32) -> Vec<u32> {
 
 #[test]
 fn history_words_never_outlive_a_shrink_or_capture() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("history_words_never_outlive_a_shrink_or_capture", None)
-    else {
+    let Some(gpu) = open_device("history_words_never_outlive_a_shrink_or_capture") else {
         return;
     };
     let depth = wall_depth();
-    let mut occlusion = Occlusion::new(&test_gpu, 600, &depth);
+    let mut occlusion = Occlusion::new(gpu, 600, &depth);
     let mut random = Lcg(41);
     let instances = scatter(&mut random, 600, 40.0);
     let short = &instances[..200];
@@ -905,12 +881,12 @@ fn history_words_never_outlive_a_shrink_or_capture() {
 
 #[test]
 fn unready_depth_hides_nothing() {
-    let Some(test_gpu) = thrum_test_support::gpu("unready_depth_hides_nothing", None) else {
+    let Some(gpu) = open_device("unready_depth_hides_nothing") else {
         return;
     };
     // A cleared reverse-Z target (all far) is the pyramid of an empty prepass.
     let depth = vec![0.0; (DEPTH_EXTENT[0] * DEPTH_EXTENT[1]) as usize];
-    let mut occlusion = Occlusion::new(&test_gpu, 2_000, &depth);
+    let mut occlusion = Occlusion::new(gpu, 2_000, &depth);
     let mut random = Lcg(5);
     let instances = scatter(&mut random, 2_000, 40.0);
     let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
@@ -923,13 +899,11 @@ fn unready_depth_hides_nothing() {
 /// holds for its members, in the same order.
 #[test]
 fn member_indexed_buckets_match_the_flat_list() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("member_indexed_buckets_match_the_flat_list", None)
-    else {
+    let Some(gpu) = open_device("member_indexed_buckets_match_the_flat_list") else {
         return;
     };
     let count = 3_000_u32;
-    let mut fixture = Fixture::new(&test_gpu, count);
+    let mut fixture = Fixture::new(gpu, count);
     let mut random = Lcg(29);
     let instances = scatter(&mut random, count as usize, 60.0);
     let camera = perspective(Vec3::new(0.0, 10.0, 90.0), Vec3::ZERO, 1.0);

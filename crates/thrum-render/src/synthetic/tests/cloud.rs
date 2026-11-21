@@ -4,7 +4,6 @@ use crate::{
     atmosphere::{AtmosphereFrame, SunOpticalDepth},
     capabilities::DeviceCapabilities,
 };
-use std::{sync::mpsc, time::Duration};
 
 const PROBE: &str = r"
 const CLOUD_TEST_POINTS=array<vec3<f32>,8>(
@@ -137,12 +136,6 @@ fn samples(
         layout: &empty,
         entries: &[],
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: 256,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -173,37 +166,16 @@ fn samples(
         );
         pass.draw(0..3, 0..1);
     }
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &readback,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(256),
-                rows_per_image: Some(1),
-            },
-        },
-        texture.size(),
+    let readback = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        &texture,
+        thrum_test_support::readback::Mip::level(0),
+        ..128,
     );
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("factor receiver alive");
-    });
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("factor draw completes");
-    receive
-        .recv()
-        .expect("factor map callback")
-        .expect("factor mapped");
     readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped factor pixels")[..128]
+        .wait(device, submission)
         .as_chunks::<16>()
         .0
         .iter()
@@ -218,16 +190,19 @@ fn samples(
 #[test]
 fn metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu, device, queue, ..
+        }) = crate::test_device::open(
             "metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support",
             Some(wgpu::Backend::Metal),
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
+        )
+        else {
             return;
         };
-        let adapter = test_gpu.adapter.clone();
+        let adapter = gpu.adapter;
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 151);
         eprintln!(
             "Metal cloud-factor qualification, device sampled-texture limit {}",
@@ -328,16 +303,19 @@ fn metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support() {
 #[test]
 fn metal_production_surface_shade_dims_only_direct_sun_once_at_each_receiver() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu, device, queue, ..
+        }) = crate::test_device::open(
             "metal_production_surface_shade_dims_only_direct_sun_once_at_each_receiver",
             Some(wgpu::Backend::Metal),
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
+        )
+        else {
             return;
         };
-        let adapter = test_gpu.adapter.clone();
+        let adapter = gpu.adapter;
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 151);
         let frame = AtmosphereFrame::new([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 1).unwrap();
         let make = |values: &[f32]| {

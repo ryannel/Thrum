@@ -7,15 +7,12 @@ pub(crate) const EPS_METRES: f64 = 0.00004;
 pub(crate) const EPS_CURRENT: f64 = 0.000_004;
 
 pub(crate) fn probe(
-    gpu: &thrum_test_support::Gpu,
+    gpu: &thrum_test_support::Opened,
     map: &Map,
     inputs: &[[f32; 8]],
 ) -> Vec<[[f32; 4]; 3]> {
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
-    let map = map_gpu::MapGpu::new(&device, &queue, map).expect("map products");
+    let thrum_test_support::Opened { device, queue, .. } = gpu;
+    let map = map_gpu::MapGpu::new(device, queue, map).expect("map products");
     let view = map.view();
     let input = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("water map probe points"),
@@ -34,10 +31,6 @@ pub(crate) fn probe(
     let output = buffer(
         "water map probe answers",
         wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-    );
-    let readback = buffer(
-        "water map proof readback",
-        wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
     );
     let source = map_gpu::declarations_at(0) + include_str!("map_probe.wgsl");
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -80,18 +73,10 @@ pub(crate) fn probe(
             1,
         );
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, size);
-    queue.submit([encoder.finish()]);
-    let slice = readback.slice(..);
-    let (send, receive) = std::sync::mpsc::channel();
-    slice.map_async(wgpu::MapMode::Read, move |result| {
-        send.send(result).expect("callback");
-    });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("Metal completion");
-    receive.recv().expect("callback").expect("mapped");
-    bytemuck::cast_slice(&slice.get_mapped_range().expect("mapped bytes")).to_vec()
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, 0..size);
+    let submission = queue.submit([encoder.finish()]);
+    bytemuck::cast_slice(&readback.wait(device, submission)).to_vec()
 }
 
 pub(crate) fn body(name: &str, kind: BodyKind, level: f64, fetch: f64) -> Body {

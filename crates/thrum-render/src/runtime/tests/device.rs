@@ -352,22 +352,21 @@ mod metal {
 
     /// Collect one timed report per in-flight slot, in submission order.
     pub(super) fn drain_samples(host: &mut Host) -> Vec<FrameSample> {
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
         let mut frames = Vec::with_capacity(IN_FLIGHT);
-        while frames.len() < IN_FLIGHT {
-            if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
-                assert!(
-                    !sample.timing_fault,
-                    "Metal frame timestamp collection failed"
-                );
-                frames.push(sample);
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "Metal frame report timed out"
-            );
-            std::thread::yield_now();
-        }
+        thrum_test_support::wait::until(
+            "Metal frame report timed out",
+            Duration::from_secs(10),
+            || {
+                if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+                    assert!(
+                        !sample.timing_fault,
+                        "Metal frame timestamp collection failed"
+                    );
+                    frames.push(sample);
+                }
+                (frames.len() >= IN_FLIGHT).then_some(())
+            },
+        );
         assert_eq!(host.pending_frames(), 0);
         frames
     }
@@ -474,27 +473,8 @@ mod metal {
             .map(|slot| {
                 let args = crate::synthetic::camera_culling::tests::prepass_args(&slot.target)
                     .expect("occlusion slot");
-                let staging = host.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("prepass args readback"),
-                    size: 20,
-                    usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-                    mapped_at_creation: false,
-                });
-                let mut encoder = host
-                    .device
-                    .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-                encoder.copy_buffer_to_buffer(args, 0, &staging, 0, 20);
-                host.queue.submit([encoder.finish()]);
-                staging
-                    .slice(..)
-                    .map_async(wgpu::MapMode::Read, |result| result.expect("map"));
-                host.device
-                    .poll(wgpu::PollType::Wait {
-                        submission_index: None,
-                        timeout: Some(Duration::from_secs(10)),
-                    })
-                    .expect("poll");
-                let bytes = staging.slice(..).get_mapped_range().expect("mapped");
+                let bytes =
+                    thrum_test_support::readback::buffer(&host.device, &host.queue, args, ..20);
                 u32::from_le_bytes(bytes[4..8].try_into().expect("instance count"))
             })
             .collect()
@@ -766,17 +746,11 @@ mod metal {
             super::super::super::Instant::now(),
         )
         .expect("slot submission");
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
-        loop {
-            if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
-                return sample;
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "Metal frame report timed out"
-            );
-            std::thread::yield_now();
-        }
+        thrum_test_support::wait::until(
+            "Metal frame report timed out",
+            Duration::from_secs(10),
+            || host.poll_completed().expect("poll Metal frame"),
+        )
     }
 
     #[test]
@@ -1274,19 +1248,19 @@ fn finish_capture<W: FrameWorld, V: SceneSource<W::Page>>(
     host: &mut FrameHost<W, V>,
     pending: &mut crate::runtime::PendingCapture,
 ) -> Vec<u8> {
-    for _ in 0..1_000 {
+    // Room for a thousand 10 ms polls.
+    thrum_test_support::wait::until("capture never completed", Duration::from_secs(20), || {
         if let Some(pixels) = host.try_finish_capture(pending).expect("capture progress") {
-            return pixels;
+            return Some(pixels);
         }
         match host.device.poll(wgpu::PollType::Wait {
             submission_index: None,
             timeout: Some(Duration::from_millis(10)),
         }) {
-            Ok(_) | Err(wgpu::PollError::Timeout) => {}
+            Ok(_) | Err(wgpu::PollError::Timeout) => None,
             Err(error) => panic!("capture wait: {error:?}"),
         }
-    }
-    panic!("capture never completed");
+    })
 }
 
 #[test]

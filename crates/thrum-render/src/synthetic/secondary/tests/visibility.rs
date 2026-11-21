@@ -4,39 +4,26 @@ use super::*;
 use crate::synthetic::{CullMode, FrameLighting};
 
 fn count(device: &wgpu::Device, queue: &wgpu::Queue, args: &wgpu::Buffer) -> u32 {
-    let output = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("secondary visibility test arguments"),
-        size: 20,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(args, 0, &output, 0, 20);
-    encoder.map_buffer_on_submit(&output, wgpu::MapMode::Read, .., |result| {
-        result.expect("mapped");
-    });
-    let submitted = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(std::time::Duration::from_secs(30)),
-        })
-        .expect("arguments");
-    let bytes = output.slice(..).get_mapped_range().expect("argument bytes");
+    let bytes = thrum_test_support::readback::buffer(device, queue, args, ..20);
     u32::from_le_bytes(bytes[4..8].try_into().expect("count"))
 }
 
 #[cfg(target_os = "macos")]
 #[test]
 fn secondary_visibility_is_its_own_frustum_even_when_main_uses_occlusion() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened {
+        gpu, device, queue, ..
+    }) = crate::test_device::open(
         "secondary_visibility_is_its_own_frustum_even_when_main_uses_occlusion",
         Some(wgpu::Backend::Metal),
-    ) else {
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
+    )
+    else {
         return;
     };
     pollster::block_on(async {
-        let (adapter, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
+        let adapter = gpu.adapter;
         let capabilities = crate::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
         let camera = |height: f32| {
             SyntheticView::perspective(

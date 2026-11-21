@@ -263,7 +263,7 @@
     {
       "id": "M3",
       "name": "A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -281,8 +281,8 @@
           "ask": "Read the rule's exemptions: is each one a site that does a different job, as the design lists them, and not a readback that was awkward to convert? In ten converted tests across five crates, is every assertion, bound and expected value as it was at the starting commit?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md#m31-readback",
           "verdict": "",
           "review": ""
         },
@@ -291,8 +291,8 @@
           "statement": "A GPU test under `crates/` asks for its GPU and its device in one call, by backend, profile and restriction: the kit's call, or in `thrum-render`'s unit tests the crate's own `test_device`, which asks the kit's gate and opens this build's recipe. A local wrapper is left only where it does something the call does not, and a test that needed Metal still fails without it on this Mac.",
           "ask": "List the local gate-and-device wrappers left under `crates/`: what does each do that the one call does not? How many of `thrum-render`'s unit tests still ask the gate and open a device in two steps? Did any test that asserted Metal become one that skips on this Mac? Did any test's profile, restriction or generation change?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md#m32-prologue",
           "verdict": "",
           "review": ""
         },
@@ -301,8 +301,8 @@
           "statement": "Frame waits, scratch folders, PPM writing and the counting allocator type come from the kit: no test file under `crates/` or in a kit scene defines its own copy of one. Each binary that counts allocations declares its own static of the kit's type and counts what it counted before, allocations or bytes, and no recorded tripwire's percentile rule changed. Hand-written deadline asserts are not swept: `test-deadline` is no higher than at the starting commit.",
           "ask": "Search the test files under `crates/` and the kit scenes for a local frame-wait loop, scratch folder type, PPM writer and `GlobalAlloc` implementation: is any left, and why? For each converted allocator, does the test count the same thing, allocations or bytes, behind the same switch as at the starting commit? Did any wait's deadline get shorter, or any tripwire's percentile rule change?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md#m33-waits-scratch-ppm-allocators",
           "verdict": "",
           "review": ""
         },
@@ -311,8 +311,8 @@
           "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`. That command runs no long test and no test behind a Cargo feature, which M3.6 covers.",
           "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/comparison.log (before.stdout/stderr, after.stdout/stderr)",
           "verdict": "",
           "review": ""
         },
@@ -322,8 +322,8 @@
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Compare the saved log of the main-branch run that covers this commit with the last run before the milestone started, test by test: is any test that ran before missing, ignored or skipped now?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests; baseline run .orchestrate/evidence/TEST-SUPPORT/M3/long-tests-baseline.stdout (0870118d6)",
           "verdict": "",
           "review": ""
         },
@@ -332,8 +332,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

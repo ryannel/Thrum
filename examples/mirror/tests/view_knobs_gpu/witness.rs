@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::sync::{Arc, Mutex};
 
 use mirror_scene::Pool;
 use thrum_render::{
@@ -237,16 +234,6 @@ pub(super) fn read_viewport(
     queue: &wgpu::Queue,
     report: &wgpu::Buffer,
 ) -> [u32; 4] {
-    let (tx, rx) = std::sync::mpsc::channel();
-    wgpu::util::DownloadBuffer::read_buffer(device, queue, &report.slice(..), move |result| {
-        tx.send(result).expect("map caller");
-    });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(Duration::from_secs(15)),
-        })
-        .expect("map viewport report");
-    let bytes = rx.recv().expect("map callback").expect("viewport bytes");
+    let bytes = thrum_test_support::readback::buffer(device, queue, report, ..);
     std::array::from_fn(|i| u32::from_le_bytes(bytes[i * 4..][..4].try_into().expect("word")))
 }

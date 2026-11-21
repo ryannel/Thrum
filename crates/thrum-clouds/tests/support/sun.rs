@@ -1,4 +1,4 @@
-use std::{fmt::Write as _, sync::mpsc, time::Duration};
+use std::{fmt::Write as _, time::Duration};
 use thrum_cloud_model::{Density, Field, Sample, State};
 use thrum_clouds::{SunLevel, SunPath, SunProfile, WeatherMap};
 use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
@@ -90,7 +90,7 @@ pub(super) fn run(
         queue.submit([encoder.finish()]);
         weather.submitted();
         sun.submitted();
-        let mapping = buffer(device, queue, sun.mapping());
+        let mapping = thrum_test_support::readback::buffer(device, queue, sun.mapping(), ..);
         let mapping: Vec<_> = mapping
             .as_chunks::<4>()
             .0
@@ -271,7 +271,7 @@ fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, sun:
             "clear optical depth is exactly zero"
         );
     }
-    let mapping = buffer(device, queue, sun.mapping());
+    let mapping = thrum_test_support::readback::buffer(device, queue, sun.mapping(), ..);
     let far = f32::from_le_bytes(mapping[48..52].try_into().expect("far word"));
     assert_eq!(
         (-far).exp().to_bits(),
@@ -280,54 +280,19 @@ fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, sun:
     );
 }
 
-fn buffer(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Buffer) -> Vec<u8> {
-    let target = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Sun test buffer readback"),
-        size: source.size(),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(source, 0, &target, 0, source.size());
-    queue.submit([encoder.finish()]);
-    collect(device, &target)
-}
-
 fn texture(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Texture) -> Vec<f32> {
-    let row = (source.width() * 8).div_ceil(256) * 256;
-    let target = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Sun test texture readback"),
-        size: u64::from(row)
-            * u64::from(source.height())
-            * u64::from(source.depth_or_array_layers()),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        source.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &target,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(row),
-                rows_per_image: Some(source.height()),
-            },
-        },
-        source.size(),
-    );
-    queue.submit([encoder.finish()]);
-    let bytes = collect(device, &target);
-    bytes
-        .chunks_exact(row as usize)
-        .flat_map(|row| {
-            row[..source.width() as usize * 8]
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|b| half(u16::from_le_bytes(*b)))
-        })
-        .collect()
+    thrum_test_support::readback::texture(
+        device,
+        queue,
+        source,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
+    )
+    .as_chunks::<2>()
+    .0
+    .iter()
+    .map(|b| half(u16::from_le_bytes(*b)))
+    .collect()
 }
 
 fn half(bits: u16) -> f32 {
@@ -339,22 +304,4 @@ fn half(bits: u16) -> f32 {
     } else {
         (1.0 + fraction / 1024.0) * 2.0_f32.powi(i32::from(exponent) - 15)
     }
-}
-
-fn collect(device: &wgpu::Device, source: &wgpu::Buffer) -> Vec<u8> {
-    let (send, recv) = mpsc::channel();
-    source
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, move |result| {
-            send.send(result).expect("readback receiver");
-        });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("Metal completion");
-    recv.recv().expect("callback").expect("map");
-    let bytes = source.slice(..).get_mapped_range().expect("mapped output");
-    let result = bytes.to_vec();
-    drop(bytes);
-    source.unmap();
-    result
 }

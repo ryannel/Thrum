@@ -247,11 +247,14 @@ impl Fixture {
         let device_slot = INTERACTION_DEVICE
             .lock()
             .unwrap_or_else(PoisonError::into_inner);
-        let gpu = thrum_test_support::gpu("interaction waves", Some(wgpu::Backend::Metal))?;
-        let (device, queue) = gpu.device(
+        let thrum_test_support::Opened {
+            gpu, device, queue, ..
+        } = thrum_test_support::open(
+            "interaction waves",
+            Some(wgpu::Backend::Metal),
             thrum_test_support::Profile::Portable,
             &thrum_test_support::Restriction::default(),
-        );
+        )?;
         let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let target = target(&device);
         let view = SyntheticView::perspective(
@@ -412,29 +415,12 @@ impl Fixture {
 
     pub(super) fn read(&self) -> Field {
         let endpoint = self.tap.latest().expect("submitted endpoints");
-        let stage = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("interaction test readback"),
-            size: endpoint.buffer.size(),
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let mut commands = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        commands.copy_buffer_to_buffer(&endpoint.buffer, 0, &stage, 0, None);
-        self.queue.submit([commands.finish()]);
-        stage.slice(..).map_async(wgpu::MapMode::Read, |result| {
-            result.expect("read wake buffer");
-        });
-        self.device
-            .poll(wgpu::PollType::wait_indefinitely())
-            .expect("wake copy completes");
-        let cells = bytemuck::cast_slice(
-            &stage
-                .slice(..)
-                .get_mapped_range()
-                .expect("mapped wake buffer"),
-        )
+        let cells = bytemuck::cast_slice(&thrum_test_support::readback::buffer(
+            &self.device,
+            &self.queue,
+            &endpoint.buffer,
+            ..,
+        ))
         .to_vec();
         Field { endpoint, cells }
     }
@@ -463,25 +449,13 @@ impl Fixture {
             .expect("foam fixture")
             .latest()
             .expect("submitted foam");
-        let stage = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("foam test readback"),
-            size: witness.buffer.size(),
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let mut commands = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        commands.copy_buffer_to_buffer(&witness.buffer, 0, &stage, 0, None);
-        self.queue.submit([commands.finish()]);
-        stage.slice(..).map_async(wgpu::MapMode::Read, |result| {
-            result.expect("map foam test readback");
-        });
-        self.device
-            .poll(wgpu::PollType::wait_indefinitely())
-            .expect("foam readback completes");
-        let cells = bytemuck::cast_slice(&stage.slice(..).get_mapped_range().expect("mapped foam"))
-            .to_vec();
+        let cells = bytemuck::cast_slice(&thrum_test_support::readback::buffer(
+            &self.device,
+            &self.queue,
+            &witness.buffer,
+            ..,
+        ))
+        .to_vec();
         (witness, cells)
     }
 

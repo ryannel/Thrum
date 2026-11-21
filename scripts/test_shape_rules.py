@@ -419,6 +419,21 @@ test_role="fixtures"
         self.write(".config/architecture.toml", "")
         self.assertEqual(len(self.sites("test-readback")), 2)
 
+    def test_test_readback_exempts_a_named_function_only(self):
+        from unittest import mock
+        import shape_matchers
+        code = ('fn retire(b: &wgpu::Buffer) {\n    let f = |x| { x };\n'
+                '    b.map_async(wgpu::MapMode::Read, .., |_| {});\n}\n'
+                'fn read(b: &wgpu::Buffer) { b.map_async(wgpu::MapMode::Read, .., |_| {}); }\n')
+        self.write("crates/engine/tests/gpu.rs", code)
+        self.assertEqual(len(self.sites("test-readback")), 2)
+        exempt = {("crates/engine/tests/gpu.rs", "retire"): "maps a range inside the host's retirement loop"}
+        with mock.patch.dict(shape_matchers.TEST_READBACK_EXEMPT, exempt):
+            self.assertEqual(len(self.sites("test-readback")), 1)
+        other = {("crates/engine/tests/other.rs", "retire"): "another file"}
+        with mock.patch.dict(shape_matchers.TEST_READBACK_EXEMPT, other):
+            self.assertEqual(len(self.sites("test-readback")), 2)
+
     def test_test_readback_is_frozen(self):
         self.frozen("test-readback", self.READBACK,
                     'fn again(b: &wgpu::Buffer) { b.map_async(wgpu::MapMode::Read, .., |_| {}); }',

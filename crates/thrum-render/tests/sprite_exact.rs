@@ -1,5 +1,9 @@
 //! Submitted SDR equality over odd/even extents, clips and whole texel scales.
 
+#[expect(
+    dead_code,
+    reason = "each sprite proof uses a subset of the shared host fixture"
+)]
 mod support {
     pub(crate) mod sprite_fixture;
 }
@@ -21,11 +25,16 @@ const RECT: SpriteRect = SpriteRect {
 
 #[test]
 fn clips_each_edge_and_keeps_asymmetric_texels_exact_on_both_recipes() {
-    let Some(gpu) = thrum_test_support::gpu("sprite exact", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
     for recipe in fixture::RECIPES {
-        let (device, queue, caps) = fixture::metal(&gpu, recipe, 1);
+        let Some(thrum_test_support::Opened {
+            device,
+            queue,
+            capabilities: caps,
+            ..
+        }) = fixture::open("sprite exact", recipe)
+        else {
+            return;
+        };
         let mut host = fixture::host(
             &caps,
             &queue,

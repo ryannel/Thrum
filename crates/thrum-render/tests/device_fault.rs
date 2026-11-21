@@ -2,10 +2,7 @@
 
 #[test]
 fn metal_watch_records_validation_and_loss_and_a_fresh_generation_submits() {
-    use std::{
-        sync::mpsc,
-        time::{Duration, Instant},
-    };
+    use std::{sync::mpsc, time::Duration};
     use thrum_render::capabilities::{DeviceRecipe, FIRST_DEVICE_GENERATION};
 
     let Some(gpu) = thrum_test_support::gpu(
@@ -48,15 +45,10 @@ fn metal_watch_records_validation_and_loss_and_a_fresh_generation_submits() {
         opened.device.poll(wait(submitted)).unwrap();
 
         opened.device.destroy();
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while !opened.watch.is_lost() {
+        thrum_test_support::wait::until("destroy notification", Duration::from_secs(5), || {
             opened.device.poll(wgpu::PollType::Poll).unwrap();
-            assert!(
-                Instant::now() < deadline,
-                "destroy notification did not arrive"
-            );
-            std::thread::yield_now();
-        }
+            opened.watch.is_lost().then_some(())
+        });
         assert_eq!(
             receive.recv_timeout(Duration::from_secs(1)).unwrap(),
             FIRST_DEVICE_GENERATION

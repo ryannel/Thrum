@@ -1,18 +1,9 @@
 //! Watcher batches may publish valid intermediate content. Finishing a save converges.
 
 use std::fs;
-use std::path::PathBuf;
 
 use thrum_asset::{AssetStore, ContentHash, Profile};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-
-struct Fixture(PathBuf);
-
-impl Drop for Fixture {
-    fn drop(&mut self) {
-        fs::remove_dir_all(&self.0).expect("remove preview fixture");
-    }
-}
 
 fn mesh_product(store: &AssetStore) -> ContentHash {
     let head = store.read_head().expect("read HEAD").expect("published");
@@ -27,10 +18,9 @@ fn mesh_product(store: &AssetStore) -> ContentHash {
 
 #[test]
 fn a_valid_intermediate_mesh_publishes_and_the_finished_save_matches_a_fresh_cook() {
-    let fixture =
-        Fixture(std::env::temp_dir().join(format!("thrum-preview-save-{}", std::process::id())));
-    let source = fixture.0.join("source");
-    let staged = fixture.0.join("staged");
+    let fixture = thrum_test_support::Scratch::new("preview-save");
+    let source = fixture.join("source");
+    let staged = fixture.join("staged");
     fs::create_dir_all(&source).expect("source directory");
     fs::create_dir_all(&staged).expect("staged directory");
     demo::write_grid_gltf(&source, "terrain", 16, 0.25).expect("initial mesh");
@@ -42,7 +32,7 @@ fn a_valid_intermediate_mesh_publishes_and_the_finished_save_matches_a_fresh_coo
     let edited_gltf = edited_gltf.replace(r#"{"mesh":0}"#, r#"{"mesh":0,"translation":[3,0,0]}"#);
     let config = CookConfig {
         source: source.clone(),
-        store: fixture.0.join("working-store"),
+        store: fixture.join("working-store"),
         profiles: vec![Profile::Portable],
         quality: Quality::Fast,
         durability: Durability::Process,
@@ -84,7 +74,7 @@ fn a_valid_intermediate_mesh_publishes_and_the_finished_save_matches_a_fresh_coo
     assert_ne!(final_product, preview);
 
     let fresh_config = CookConfig {
-        store: fixture.0.join("fresh-store"),
+        store: fixture.join("fresh-store"),
         ..config
     };
     let fresh_store = AssetStore::new(&fresh_config.store);

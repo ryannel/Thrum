@@ -9,18 +9,27 @@ mod readback;
 
 #[test]
 fn shipping_spectral_twilight_matches_its_written_radiance() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened {
+        gpu: test_gpu,
+        device,
+        queue,
+        ..
+    }) = crate::test_device::open(
         "shipping_spectral_twilight_matches_its_written_radiance",
         None,
-    ) else {
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
+    )
+    else {
         return;
     };
     pollster::block_on(async {
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let [width, height] = crate::atmosphere::stage::Chart::MultipleScattering
             .extent()

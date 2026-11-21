@@ -4,7 +4,7 @@ use super::super::{AtmospherePrepared, EARTH, LUT_SHADER, prepare_compute};
 use crate::pass_key::AtmosphereStage;
 use crate::shader_constants::{ATMOSPHERE_EXTENTS as EXTENTS, ATMOSPHERE_PLANES as LUT_PLANES};
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
-use std::{fmt::Write, sync::mpsc, time::Duration};
+use std::fmt::Write;
 use wgpu::BindingResource::{Sampler, TextureView};
 
 const COLUMNS: [u32; 3] = [32, EXTENTS[1][0], 1024];
@@ -178,31 +178,8 @@ fn observer_pipeline(device: &wgpu::Device) -> wgpu::ComputePipeline {
     })
 }
 
-fn collect(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    encoder: wgpu::CommandEncoder,
-    readback: &wgpu::Buffer,
-) -> Vec<[f64; 3]> {
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("M diagnostic receiver alive");
-    });
-    let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("bounded M interpolation GPU work completes");
-    receive
-        .recv()
-        .expect("M mapping callback")
-        .expect("M observations mapped");
-    let result = readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("M diagnostic data")
+fn collect(bytes: &[u8]) -> Vec<[f64; 3]> {
+    bytes
         .as_chunks::<16>()
         .0
         .iter()
@@ -219,9 +196,7 @@ fn collect(
                 f64::from(value)
             })
         })
-        .collect();
-    readback.unmap();
-    result
+        .collect()
 }
 
 fn luminance(rgb: [f64; 3]) -> f64 {
@@ -273,17 +248,26 @@ fn append_rows(report: &mut String, height: f32, sun: f32, rows: &[[f64; 3]]) {
 #[test]
 fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "multiple_sun_columns_report_same_model_transport_and_irradiance_error",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("M diagnostic atmosphere fixture"),
@@ -342,31 +326,32 @@ fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
         for height in HEIGHTS {
             for sun in sun_degrees() {
                 atmosphere.update(&queue, frame(sun, height), &view, [1, 1]);
-                let readback = device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("M interpolation three-width readback"),
-                    size: BYTES_PER_VARIANT * COLUMNS.len() as u64,
-                    usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                    mapped_at_creation: false,
-                });
                 let mut encoder =
                     device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-                for (index, variant) in variants.iter().enumerate() {
-                    {
-                        let mut pass =
-                            encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-                        pass.set_pipeline(&observer);
-                        pass.set_bind_group(0, &variant.observer_group, &[]);
-                        pass.dispatch_workgroups(1, 1, 1);
-                    }
-                    encoder.copy_buffer_to_buffer(
-                        &output,
-                        0,
-                        &readback,
-                        index as u64 * BYTES_PER_VARIANT,
-                        BYTES_PER_VARIANT,
-                    );
-                }
-                let rows = collect(&device, &queue, encoder, &readback);
+                let readbacks = variants
+                    .iter()
+                    .map(|variant| {
+                        {
+                            let mut pass =
+                                encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+                            pass.set_pipeline(&observer);
+                            pass.set_bind_group(0, &variant.observer_group, &[]);
+                            pass.dispatch_workgroups(1, 1, 1);
+                        }
+                        thrum_test_support::readback::Readback::buffer(
+                            &device,
+                            &mut encoder,
+                            &output,
+                            ..BYTES_PER_VARIANT,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                let submission = queue.submit([encoder.finish()]);
+                let bytes = readbacks
+                    .into_iter()
+                    .flat_map(|readback| readback.wait(&device, submission.clone()))
+                    .collect::<Vec<_>>();
+                let rows = collect(&bytes);
                 append_rows(&mut report, height, sun, &rows);
             }
         }

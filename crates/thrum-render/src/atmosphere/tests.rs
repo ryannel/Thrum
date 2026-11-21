@@ -36,15 +36,24 @@ fn portable_lut_graph_renders_live_sun_and_rejects_mode_changes() {
     };
 
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "portable_lut_graph_renders_live_sun_and_rejects_mode_changes",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 51);
         let mut scene = SyntheticScene::grid(1).expect("one geometry consumer");
         // The visible +Z face points away from the Sun and has no emission or
@@ -180,17 +189,26 @@ fn aerial_transport_changes_a_distant_surface_in_the_live_forward_pass() {
     };
 
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "aerial_transport_changes_a_distant_surface_in_the_live_forward_pass",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 52);
         // A 2 km observer can see the 10 km target over the curved ground;
         // a ground-level observer cannot, so its aerial integral stops early.
@@ -264,12 +282,13 @@ fn aerial_transport_changes_a_distant_surface_in_the_live_forward_pass() {
             if let Some(directory) = std::env::var_os("THRUM_G3S_AERIAL_CAPTURE_DIR") {
                 let directory = std::path::PathBuf::from(directory);
                 std::fs::create_dir_all(&directory).expect("aerial capture directory");
-                let mut ppm = b"P6\n128 64\n255\n".to_vec();
-                for pixel in pixels.as_chunks::<4>().0 {
-                    ppm.extend_from_slice(&pixel[..3]);
-                }
-                std::fs::write(directory.join(format!("aerial-{distance:.0}.ppm")), ppm)
-                    .expect("aerial visual capture");
+                thrum_test_support::ppm::write(
+                    directory.join(format!("aerial-{distance:.0}.ppm")),
+                    [128, 64],
+                    &pixels,
+                    thrum_test_support::ppm::Pixels::Rgba8,
+                )
+                .expect("aerial visual capture");
             }
             centres.push(pixels[(32 * 128 + 64) * 4..(32 * 128 + 64) * 4 + 3].to_vec());
         }
@@ -293,16 +312,26 @@ fn orthographic_sky_keeps_a_finite_solar_disk() {
     use crate::synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene};
 
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("orthographic_sky_keeps_a_finite_solar_disk", None)
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
+            "orthographic_sky_keeps_a_finite_solar_disk",
+            None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
         else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 53);
         let mut scene = SyntheticScene::grid(1).expect("orthographic fixture");
         scene.instances[0].current[3][0] = 10.0;

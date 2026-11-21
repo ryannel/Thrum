@@ -46,15 +46,17 @@ mod terrain {
 
     #[test]
     fn vertical_displacement_and_texel_edge_mirror_match_with_terrain_shadows() {
-        let Some(gpu) =
-            thrum_test_support::gpu("vertical terrain equality", Some(wgpu::Backend::Metal))
+        let Some(thrum_test_support::Opened {
+            gpu, device, queue, ..
+        }) = thrum_test_support::open(
+            "vertical terrain equality",
+            Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        )
         else {
             return;
         };
-        let (device, queue) = gpu.device(
-            thrum_test_support::Profile::Portable,
-            &thrum_test_support::Restriction::default(),
-        );
         pollster::block_on(async {
             let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
             let high = aimed([16.0, 1000.0, 0.0], [-16.0, -1000.0, -3000.0]);
@@ -200,14 +202,17 @@ mod terrain {
 
 #[test]
 fn entities_match_the_ordinary_main_view_at_full_and_quarter_sides() {
-    let Some(gpu) = thrum_test_support::gpu("secondary view equality", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary view equality",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         for side in [64, 16] {
@@ -302,15 +307,17 @@ fn entities_match_the_ordinary_main_view_at_full_and_quarter_sides() {
 fn a_gpu_written_sun_path_mapping_lights_the_view_like_the_main_draw() {
     use thrum_render::atmosphere::{GpuSunMapping, SunOpticalDepth};
     use wgpu::util::DeviceExt;
-    let Some(gpu) =
-        thrum_test_support::gpu("secondary GPU Sun mapping", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary GPU Sun mapping",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let sun = glam::Vec3::new(0.0, 1.0, -1.0).normalize();

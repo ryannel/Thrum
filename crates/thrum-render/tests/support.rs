@@ -721,29 +721,7 @@ impl Observer {
 }
 
 pub(crate) fn output(device: &wgpu::Device, queue: &wgpu::Queue, buffer: &wgpu::Buffer) -> Vec<u8> {
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("view observer readback"),
-        size: buffer.size(),
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(buffer, 0, &staging, 0, buffer.size());
-    encoder.map_buffer_on_submit(&staging, wgpu::MapMode::Read, .., |result| {
-        result.expect("observer mapped");
-    });
-    let submitted = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("observer completion");
-    staging
-        .slice(..)
-        .get_mapped_range()
-        .expect("observer bytes")
-        .to_vec()
+    thrum_test_support::readback::buffer(device, queue, buffer, ..)
 }
 pub(crate) fn pixel(bytes: &[u8], index: usize) -> ([f32; 4], f32) {
     let start = RECORD_BYTES + index * 32;
@@ -1043,28 +1021,7 @@ pub(crate) fn air_output(
     queue: &wgpu::Queue,
     buffer: &wgpu::Buffer,
 ) -> Vec<f32> {
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("aerial observation readback"),
-        size: AIR_BYTES,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(buffer, 0, &staging, 0, AIR_BYTES);
-    encoder.map_buffer_on_submit(&staging, wgpu::MapMode::Read, .., |result| {
-        result.expect("air observation mapped");
-    });
-    let submitted = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("air observation completion");
-    staging
-        .slice(..)
-        .get_mapped_range()
-        .expect("air observation bytes")
+    thrum_test_support::readback::buffer(device, queue, buffer, 0..AIR_BYTES)
         .as_chunks::<4>()
         .0
         .iter()

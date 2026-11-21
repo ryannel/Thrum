@@ -6,8 +6,7 @@
 //! before/after frames for visual review.
 
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 #[expect(
     dead_code,
@@ -18,21 +17,18 @@ use thrum_asset::Profile;
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use viewer::{Viewer, ViewerConfig};
 
-static NEXT: AtomicU32 = AtomicU32::new(0);
-
-fn run_until(viewer: &mut Viewer, generation: u64) -> u64 {
-    let deadline = Instant::now() + Duration::from_secs(10);
-    let mut frames = 0;
-    while viewer.generation() < generation {
-        assert!(
-            Instant::now() < deadline,
-            "generation {generation} never became resident"
-        );
-        viewer.frame(0.0);
-        frames += 1;
-        std::thread::sleep(Duration::from_millis(2));
-    }
-    frames
+fn run_until(viewer: &mut Viewer, generation: u64) {
+    thrum_test_support::wait::until(
+        &format!("generation {generation} never became resident"),
+        Duration::from_secs(10),
+        || {
+            if viewer.generation() >= generation {
+                return Some(());
+            }
+            viewer.frame(0.0);
+            None
+        },
+    );
 }
 
 fn mean_rgb(pixels: &[u8]) -> [f64; 3] {
@@ -62,17 +58,25 @@ fn save(name: &str, extent: [u32; 2], pixels: &[u8]) {
 
 #[test]
 fn texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products() {
-    let Some(gpu) = thrum_test_support::gpu(
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
         "texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products",
         None,
-    ) else {
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(
+                wgpu::Features::TEXTURE_COMPRESSION_BC
+                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
+                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
+            ),
+            ..Default::default()
+        },
+    )
+    else {
         return;
     };
-    let root = std::env::temp_dir().join(format!(
-        "thrum-g5-visible-{}-{}",
-        std::process::id(),
-        NEXT.fetch_add(1, Ordering::Relaxed)
-    ));
+    let root = thrum_test_support::Scratch::new("g5-visible");
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("create");
     std::fs::create_dir_all(source.join("textures")).expect("create");
@@ -89,17 +93,6 @@ fn texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products(
     .expect("open cooker");
     assert!(cooker.cook_all().expect("cook").published.is_some());
 
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction {
-            features: Some(
-                wgpu::Features::TEXTURE_COMPRESSION_BC
-                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
-                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
-            ),
-            ..Default::default()
-        },
-    );
     let mut viewer = Viewer::with_test_device(
         ViewerConfig {
             extent: [320, 180],
@@ -201,8 +194,7 @@ fn texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products(
     drop(records);
     drop(viewer);
     drop(cooker);
-    make_writable(&root);
-    std::fs::remove_dir_all(&root).ok();
+    make_writable(root.path());
 }
 
 fn make_writable(path: &std::path::Path) {

@@ -40,20 +40,7 @@ struct Gpu {
 
 impl Gpu {
     fn read(&self, source: &wgpu::Buffer) -> Vec<u8> {
-        let output = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("caster submission proof"),
-            size: source.size(),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.copy_buffer_to_buffer(source, 0, &output, 0, source.size());
-        encoder.map_buffer_on_submit(&output, wgpu::MapMode::Read, .., |r| r.expect("map"));
-        self.queue.submit([encoder.finish()]);
-        self.wait();
-        output.slice(..).get_mapped_range().expect("bytes").to_vec()
+        thrum_test_support::readback::buffer(&self.device, &self.queue, source, ..)
     }
 
     fn wait(&self) {
@@ -161,36 +148,19 @@ impl Gpu {
             .enumerate()
             .map(|(index, slot)| {
                 asks.requests[index].map(|_| {
-                    let output = self.device.create_buffer(&wgpu::BufferDescriptor {
-                        label: Some("secondary caster colour proof"),
-                        size: u64::from(SIDE * SIDE * 8),
-                        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                        mapped_at_creation: false,
-                    });
-                    encoder.copy_texture_to_buffer(
-                        slot.handle.colour.as_image_copy(),
-                        wgpu::TexelCopyBufferInfo {
-                            buffer: &output,
-                            layout: wgpu::TexelCopyBufferLayout {
-                                offset: 0,
-                                bytes_per_row: Some(SIDE * 8),
-                                rows_per_image: Some(SIDE),
-                            },
-                        },
-                        wgpu::Extent3d {
-                            width: SIDE,
-                            height: SIDE,
-                            depth_or_array_layers: 1,
-                        },
+                    let colour = &slot.handle.colour;
+                    let readback = thrum_test_support::readback::Readback::texture(
+                        &self.device,
+                        &mut encoder,
+                        colour,
+                        thrum_test_support::readback::Mip::level(0),
+                        ..,
                     );
-                    encoder.map_buffer_on_submit(&output, wgpu::MapMode::Read, .., |r| {
-                        r.expect("colour map");
-                    });
-                    output
+                    (readback, colour.width())
                 })
             })
             .collect();
-        self.queue.submit([encoder.finish()]);
+        let submission = self.queue.submit([encoder.finish()]);
         self.wait();
         Frame {
             main: main.try_collect(1).expect("main").expect("main bytes"),
@@ -199,10 +169,16 @@ impl Gpu {
                 .as_ref()
                 .map(|target| self.list_members(prepared, target.visible(), target.args())),
             colours: colours
-                .iter()
-                .map(|b| {
-                    b.as_ref()
-                        .map(|b| b.slice(..).get_mapped_range().expect("colour").to_vec())
+                .into_iter()
+                .map(|colour| {
+                    colour.map(|(readback, width)| {
+                        readback
+                            .wait(&self.device, submission.clone())
+                            .chunks_exact(width as usize * 8)
+                            .take(SIDE as usize)
+                            .flat_map(|row| row[..SIDE as usize * 8].iter().copied())
+                            .collect()
+                    })
                 })
                 .collect(),
             main_casters: prepared
@@ -273,15 +249,20 @@ fn scene() -> SyntheticScene {
 
 #[test]
 fn secondary_caster_lists_preserve_off_camera_members_and_match_direct() {
-    let Some(admitted) =
-        thrum_test_support::gpu("secondary caster compaction", Some(wgpu::Backend::Metal))
+    let Some(crate::test_device::Opened {
+        gpu: admitted,
+        device,
+        queue,
+        ..
+    }) = crate::test_device::open(
+        "secondary caster compaction",
+        Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = admitted.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let gpu = Gpu {
         capabilities: crate::capabilities::DeviceCapabilities::capture(
             &admitted.adapter,

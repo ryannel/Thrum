@@ -12,7 +12,7 @@ fn shadow_pipelines_are_closed_when_each_generation_is_ready() {
     use glam::Vec3;
     use ray_shadow_support as fixture;
     use ray_support::support as metal;
-    use std::time::{Duration, Instant};
+    use std::time::Duration;
     use thrum_render::{
         atmosphere::AtmosphereFrame,
         present::SurfaceProfile,
@@ -118,14 +118,11 @@ fn shadow_pipelines_are_closed_when_each_generation_is_ready() {
                 .submitted
             );
             metal::wait(device);
-            let deadline = Instant::now() + Duration::from_secs(20);
-            let sample = loop {
-                if let Some(sample) = host.poll_completed().expect("poll") {
-                    break sample;
-                }
-                assert!(Instant::now() < deadline, "frame sample did not complete");
-                std::thread::yield_now();
-            };
+            let sample = thrum_test_support::wait::until(
+                "frame sample",
+                Duration::from_secs(20),
+                || host.poll_completed().expect("poll"),
+            );
             assert_eq!(sample.shadow_selection.sun, SunShadowMethod::Traced);
             assert!(sample.shadow_selection.lamps && sample.shadow_selection.fallback.is_none());
             assert_eq!(

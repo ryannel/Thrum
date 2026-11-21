@@ -68,12 +68,16 @@ fn lay_over(dst: [f64; 3], index: usize) -> [f64; 3] {
 
 #[test]
 fn all_orders_in_one_pass_match_the_cpu_blend_with_an_additive_middle() {
-    let Some(gpu) = thrum_test_support::gpu("interleaved sprite blend", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("interleaved sprite blend", "portable")
     else {
         return;
     };
     let extent = [48, 16];
-    let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
     let frames = [0, 1, 2].map(|x| SpriteRect {
         origin: [x, 0],
         size: [1; 2],

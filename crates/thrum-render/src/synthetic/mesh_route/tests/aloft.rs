@@ -81,66 +81,40 @@ fn read_layers(gpu: &Gpu, scene: &SyntheticScene) -> Vec<u8> {
         .textures
         .texture(target.ids.shadow.as_ref().expect("map resource"))
         .expect("Sun maps");
-    let staging = gpu.device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Sun map layer readback"),
-        size: u64::from(ROW_BYTES * shadow::SIZE * shadow::LAYERS),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let mut encoder = gpu
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
         .encode(&mut encoder, gpu.capabilities.generation(), &target, None)
         .expect("draw scene");
-    encoder.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture: maps,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::DepthOnly,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &staging,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(ROW_BYTES),
-                rows_per_image: Some(shadow::SIZE),
-            },
-        },
-        wgpu::Extent3d {
-            width: shadow::SIZE,
-            height: shadow::SIZE,
-            depth_or_array_layers: shadow::LAYERS,
-        },
+    let readback = thrum_test_support::readback::Readback::texture(
+        &gpu.device,
+        &mut encoder,
+        maps,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
-    encoder.map_buffer_on_submit(&staging, wgpu::MapMode::Read, .., |result| {
-        result.expect("map");
-    });
     let submission = gpu.queue.submit([encoder.finish()]);
-    gpu.device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(30)),
-        })
-        .expect("readback complete");
-    staging
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped depths")
-        .to_vec()
+    readback.wait(&gpu.device, submission)
 }
 
 #[test]
 fn aloft_casters_draw_into_both_cascades_only() {
     let backend = cfg!(target_os = "macos").then_some(wgpu::Backend::Metal);
-    let Some(admitted) = thrum_test_support::gpu("aloft casters", backend) else {
+    let Some(crate::test_device::Opened {
+        gpu: admitted,
+        device,
+        queue,
+        ..
+    }) = crate::test_device::open(
+        "aloft casters",
+        backend,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction::default(),
+    )
+    else {
         return;
     };
-    let (device, queue) = admitted.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let gpu = Gpu {
         capabilities: DeviceCapabilities::capture(&admitted.adapter, &device, 41),
         device,

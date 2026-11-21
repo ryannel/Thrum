@@ -10,6 +10,7 @@ use thrum_render::graph::{
     Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceScope, TextureKind,
 };
 use thrum_render::timing::TimingCategory;
+use thrum_test_support::readback::{Mip, Readback};
 
 fn fixture_graph() -> thrum_render::graph::CompiledGraph {
     let mut graph = FrameGraph::default();
@@ -306,56 +307,6 @@ impl Textures {
     }
 }
 
-fn readback(
-    device: &wgpu::Device,
-    encoder: &mut wgpu::CommandEncoder,
-    texture: &wgpu::Texture,
-) -> wgpu::Buffer {
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("exact native fixture readback"),
-        size: 1024,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(256),
-                rows_per_image: Some(4),
-            },
-        },
-        EXTENT,
-    );
-    buffer
-}
-
-fn bytes(device: &wgpu::Device, buffer: &wgpu::Buffer) -> Vec<u8> {
-    let (send, receive) = std::sync::mpsc::channel();
-    buffer
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, move |result| {
-            send.send(result).expect("map result");
-        });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(std::time::Duration::from_secs(10)),
-        })
-        .expect("poll");
-    receive
-        .recv_timeout(std::time::Duration::from_secs(1))
-        .expect("map callback")
-        .expect("readback");
-    buffer
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped bytes")
-        .to_vec()
-}
-
 #[expect(clippy::print_stdout, reason = "report the submitted boundary proof")]
 pub(super) fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit(
     gpu: &thrum_test_support::Gpu,
@@ -424,21 +375,15 @@ fn wgpu_copy(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
     encoder.copy_buffer_to_buffer(&buffer(), 0, &buffer(), 0, 8);
 }
 
-pub(super) fn locked_wgpu_refuses_raw_then_wgpu_even_for_noop_raw_callback(
-    gpu: &thrum_test_support::Gpu,
-) {
-    let (device, _queue) = gpu.portable(Some(wgpu::Features::empty()));
+pub(super) fn locked_wgpu_refuses_raw_then_wgpu_even_for_noop_raw_callback(device: &wgpu::Device) {
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     raw_noop(&mut encoder);
-    assert_mixed_encoding_panics(|| wgpu_copy(&device, &mut encoder));
+    assert_mixed_encoding_panics(|| wgpu_copy(device, &mut encoder));
 }
 
-pub(super) fn locked_wgpu_refuses_wgpu_then_raw_even_for_noop_raw_callback(
-    gpu: &thrum_test_support::Gpu,
-) {
-    let (device, _queue) = gpu.portable(Some(wgpu::Features::empty()));
+pub(super) fn locked_wgpu_refuses_wgpu_then_raw_even_for_noop_raw_callback(device: &wgpu::Device) {
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    wgpu_copy(&device, &mut encoder);
+    wgpu_copy(device, &mut encoder);
     assert_mixed_encoding_panics(|| raw_noop(&mut encoder));
 }
 
@@ -563,22 +508,23 @@ fn fixture(gpu: &thrum_test_support::Gpu, fault: Fault) -> (Vec<Vec<u8>>, Vec<u8
                 pass.set_bind_group(0, &binds[usize::from(frame % 2)], &[]);
                 pass.dispatch_workgroups(1, 1, 1);
             }
-            let buffers = [&native.output, &native.next, &twin.output, &twin.next]
-                .map(|t| readback(&device, &mut consumer, t));
+            // A 32-texel Rgba16Float row is 256 bytes, so packed rows match the old copy layout.
+            let readbacks = [&native.output, &native.next, &twin.output, &twin.next]
+                .map(|t| Readback::texture(&device, &mut consumer, t, Mip::level(0), ..));
             let mut commands = [
                 Some(producer.finish()),
                 Some(raw.finish()),
                 Some(consumer.finish()),
             ];
-            queue.submit(
+            let submission = queue.submit(
                 graph
                     .pass_order
                     .iter()
                     .map(|&pass| commands[pass].take().expect("one encoder per graph pass")),
             );
-            let result = buffers
-                .iter()
-                .map(|b| bytes(&device, b))
+            let result = readbacks
+                .into_iter()
+                .map(|readback| readback.wait(&device, submission.clone()))
                 .collect::<Vec<_>>();
             if fault == Fault::None {
                 assert_eq!(result[0], result[2], "frame {frame} output");

@@ -80,12 +80,6 @@ impl Gpu {
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        let staging = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("caster cull test depth staging"),
-            size: bytes,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
         let shader = self
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -125,14 +119,11 @@ impl Gpu {
             pass.set_bind_group(0, &group, &[]);
             pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, shadow::LAYERS);
         }
-        encoder.copy_buffer_to_buffer(&out, 0, &staging, 0, bytes);
-        self.queue.submit([encoder.finish()]);
-        staging.slice(..).map_async(wgpu::MapMode::Read, |result| {
-            result.expect("map");
-        });
-        self.wait();
-        let mapped = staging.slice(..).get_mapped_range().expect("mapped");
-        mapped
+        let readback =
+            thrum_test_support::readback::Readback::buffer(&self.device, &mut encoder, &out, ..);
+        let submission = self.queue.submit([encoder.finish()]);
+        readback
+            .wait(&self.device, submission)
             .as_chunks::<4>()
             .0
             .iter()
@@ -329,13 +320,12 @@ fn compare(
 
 #[test]
 fn per_pass_caster_lists_draw_the_unculled_depth_and_image() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(gpu) = gpu(
         "per_pass_caster_lists_draw_the_unculled_depth_and_image",
         None,
     ) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     let (scene, slots) = field();
     let total = u32::try_from(scene.instances.len()).expect("small");
     let rows = compare(&gpu, &scene, &slots);

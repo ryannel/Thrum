@@ -35,14 +35,17 @@ fn improper_requests_and_declarations_are_refused_by_name() {
 
 #[test]
 fn a_contribution_reads_its_own_colour_depth_and_record_through_the_public_seam() {
-    let Some(gpu) = thrum_test_support::gpu("secondary public seam", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary public seam",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");

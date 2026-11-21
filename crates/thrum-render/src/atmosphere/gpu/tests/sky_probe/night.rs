@@ -63,17 +63,26 @@ fn error(actual: f64, expected: f64) -> f64 {
 #[test]
 fn night_profile_survives_sky_sampling_and_the_incident_reduction() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "night_profile_survives_sky_sampling_and_the_incident_reduction",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directions = ELEVATIONS.map(|degrees| {
             let (sin, cos) = degrees.to_radians().sin_cos();

@@ -11,6 +11,7 @@ thread_local! {
     static COUNTING: Cell<bool> = const { Cell::new(false) };
     static COUNT: Cell<u64> = const { Cell::new(0) };
     static BYTES: Cell<u64> = const { Cell::new(0) };
+    static LARGEST: Cell<u64> = const { Cell::new(0) };
 }
 
 /// Allocations counted on one thread. A reallocation counts as one allocation of its new size.
@@ -20,6 +21,8 @@ pub struct Allocations {
     pub count: u64,
     /// Bytes those calls asked for.
     pub bytes: u64,
+    /// The most bytes one of those calls asked for.
+    pub largest: u64,
 }
 
 /// The system allocator, counting allocations on a thread inside [`count`].
@@ -36,6 +39,9 @@ fn record(size: usize) {
                     .unwrap_or_default();
                 BYTES
                     .try_with(|bytes| bytes.set(bytes.get() + size as u64))
+                    .unwrap_or_default();
+                LARGEST
+                    .try_with(|largest| largest.set(largest.get().max(size as u64)))
                     .unwrap_or_default();
             }
         })
@@ -90,6 +96,7 @@ pub fn count<R>(work: impl FnOnce() -> R) -> (R, Allocations) {
     assert!(!COUNTING.with(Cell::get), "allocation counts do not nest");
     COUNT.with(|count| count.set(0));
     BYTES.with(|bytes| bytes.set(0));
+    LARGEST.with(|largest| largest.set(0));
     COUNTING.with(|counting| counting.set(true));
     let stop = Stop;
     let result = work();
@@ -97,6 +104,7 @@ pub fn count<R>(work: impl FnOnce() -> R) -> (R, Allocations) {
     let counted = Allocations {
         count: COUNT.with(Cell::get),
         bytes: BYTES.with(Cell::get),
+        largest: LARGEST.with(Cell::get),
     };
     (result, counted)
 }

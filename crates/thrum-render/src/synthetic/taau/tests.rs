@@ -98,14 +98,19 @@ fn depth_probe_texture(device: &wgpu::Device, format: wgpu::TextureFormat) -> wg
 
 #[test]
 fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened {
+        gpu, device, queue, ..
+    }) = crate::test_device::open(
         "taau_depth_reprojection_rejects_mixed_surfaces_on_metal",
         Some(wgpu::Backend::Metal),
-    ) else {
+        crate::capabilities::DeviceProfile::Portable,
+        &tests::support::NO_FEATURES,
+    )
+    else {
         return;
     };
     pollster::block_on(async {
-        let (adapter, device, queue) = tests::support::device(&test_gpu).await;
+        let adapter = gpu.adapter;
         let pipeline = depth_probe_pipeline(&device);
         // Independent scene model: reciprocal view depth is the affine plane
         // 0.031*x + 0.019*y + 0.12. Evaluate the requested ray directly.
@@ -169,12 +174,6 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: 160,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
         let colour_view = colour.create_view(&wgpu::TextureViewDescriptor::default());
         let depth_view = depth.create_view(&wgpu::TextureViewDescriptor::default());
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -206,15 +205,10 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
             pass.set_bind_group(0, &group, &[]);
             pass.dispatch_workgroups(5, 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, 160);
-        let (send, receive) = std::sync::mpsc::channel();
-        encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).unwrap();
-        });
-        queue.submit([encoder.finish()]);
-        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-        receive.recv().unwrap().unwrap();
-        let mapped = readback.slice(..).get_mapped_range().unwrap();
+        let readback =
+            thrum_test_support::readback::Readback::buffer(&device, &mut encoder, &output, ..160);
+        let submission = queue.submit([encoder.finish()]);
+        let mapped = readback.wait(&device, submission);
         let values: Vec<[f32; 4]> = mapped
             .as_chunks::<16>()
             .0
@@ -264,14 +258,15 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
 
 #[test]
 fn taau_prepares_and_resets_on_real_metal() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
         "taau_prepares_and_resets_on_real_metal",
         Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &tests::support::NO_FEATURES,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (_adapter, device, queue) = tests::support::device(&test_gpu).await;
         let mut scene = SyntheticScene::grid(4).unwrap();
         scene.view = scene
             .view

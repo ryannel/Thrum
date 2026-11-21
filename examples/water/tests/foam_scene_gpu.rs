@@ -15,10 +15,6 @@ use water_scene::{
 
 static DEVICE: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-fn metal(name: &str) -> Option<thrum_test_support::Gpu> {
-    thrum_test_support::gpu(name, Some(wgpu::Backend::Metal))
-}
-
 fn current<'a>(
     witness: &'a Witness,
     stocks: &'a [[f32; 4]],
@@ -82,7 +78,7 @@ fn ten_minutes_moored_and_wind_sweep() {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     support::island::with_cooked_island("ten_minutes_moored_and_wind_sweep", || {
-        let Some(gpu) = metal("whitewater wind and calm") else {
+        let Some(gpu) = thrum_test_support::gpu("whitewater wind and calm", Some(wgpu::Backend::Metal)) else {
             return;
         };
         for lake in [false, true] {
@@ -195,7 +191,7 @@ fn craft_trail_outlives_removed_source_and_spreads() {
     let _serial = DEVICE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some(gpu) = metal("removed craft's material") else {
+    let Some(gpu) = thrum_test_support::gpu("removed craft's material", Some(wgpu::Backend::Metal)) else {
         return;
     };
     let scene = build_wake(
@@ -248,7 +244,7 @@ fn beach_births_follow_lost_power_and_the_film_leaves_ground_depth() {
     support::island::with_cooked_island(
         "beach_births_follow_lost_power_and_the_film_leaves_ground_depth",
         || {
-            let Some(gpu) = metal("shore film and power") else {
+            let Some(gpu) = thrum_test_support::gpu("shore film and power", Some(wgpu::Backend::Metal)) else {
                 return;
             };
             shore_power(&gpu);
@@ -438,7 +434,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     control.warm_cooked();
     control.frame_without_timings(8.0);
     let ground = control.witness();
-    let ground_pixels = support::read_texture(&control.device, &control.queue, &control.output, 4);
+    let ground_pixels = control.image();
     drop(control);
 
     let (game, report, map, probes) = build_foam(Wind::Gale, true, true).expect("beach film");
@@ -530,7 +526,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
         .query
         .drain(481, std::time::Duration::from_nanos(16_666_667));
     let output = fixture.witness();
-    let image = support::read_texture(&fixture.device, &fixture.queue, &fixture.output, 4);
+    let image = fixture.image();
     assert_eq!(answer.len(), 1, "submitted public shoreline query");
     let mut dry_film = 0;
     let mut reactive_foam = 0;

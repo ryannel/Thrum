@@ -42,13 +42,14 @@ fn reference(input: [f32; 4]) -> f64 {
 
 #[test]
 fn unresolved_grazing_slopes_do_not_become_a_flat_perfect_mirror() {
-    let Some(gpu) = thrum_test_support::gpu("water Fresnel", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
+        "water Fresnel",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let inputs = [
         [0.3_f32, 0.0, 0.0, 0.0],
         [0.01, 0.01, 0.0, 0.01],
@@ -64,12 +65,6 @@ fn unresolved_grazing_slopes_do_not_become_a_flat_perfect_mirror() {
         label: Some("Fresnel results"),
         size: 32,
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-        mapped_at_creation: false,
-    });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Fresnel readback"),
-        size: 32,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
     let source = format!(
@@ -117,18 +112,10 @@ fn unresolved_grazing_slopes_do_not_become_a_flat_perfect_mirror() {
         pass.set_bind_group(0, &group, &[]);
         pass.dispatch_workgroups(1, 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, 32);
-    queue.submit([encoder.finish()]);
-    let slice = readback.slice(..);
-    let (send, receive) = std::sync::mpsc::channel();
-    slice.map_async(wgpu::MapMode::Read, move |result| {
-        send.send(result).expect("callback");
-    });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("GPU completion");
-    receive.recv().expect("callback").expect("mapped");
-    let mapped = slice.get_mapped_range().expect("mapped bytes");
+    let readback =
+        thrum_test_support::readback::Readback::buffer(&device, &mut encoder, &output, 0..32);
+    let submission = queue.submit([encoder.finish()]);
+    let mapped = readback.wait(&device, submission);
     let values: &[f32] = bytemuck::cast_slice(&mapped);
     for (index, input) in inputs.into_iter().enumerate() {
         let flat = f64::from(values[index * 2]);

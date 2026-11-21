@@ -67,14 +67,17 @@ async fn row_host(
 
 #[test]
 fn detached_extent_keeps_ready_rows_and_commits_after_candidate_preparation() {
-    let Some(gpu) = thrum_test_support::gpu("extent row inheritance", Some(wgpu::Backend::Metal))
+    let Some(crate::test_device::Opened {
+        gpu, device, queue, ..
+    }) = crate::test_device::open(
+        "extent row inheritance",
+        Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     pollster::block_on(async {
         for committed in [false, true] {

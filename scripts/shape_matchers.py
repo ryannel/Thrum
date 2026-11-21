@@ -130,9 +130,37 @@ MAP_READ = re.compile(r'\bMapMode\s*::\s*Read\b')
 DEADLINE_ASSERT = re.compile(r'\bassert\s*!\s*\(\s*(?:(?:::\s*)?std\s*::\s*time\s*::\s*)?Instant\s*::\s*now\s*\(\s*\)\s*<')
 
 
-def readback_sites(code):
-    """Offsets of a buffer mapped for reading: a map call whose arguments name `MapMode::Read`."""
+# Test readbacks that do a different job from the kit's, by file and enclosing function, each with its reason.
+# Add one only for a site that is not a readback the kit could do; see docs/plans/TEST-SUPPORT/DESIGN.md#the-kit.
+TEST_READBACK_EXEMPT = {
+    ("examples/mirror/tests/pool_gpu/retire.rs", "copy_buffer"):
+        "shared by the native and wasm pool fixtures; on wasm it yields to a browser timer between polls, which a blocking wait cannot",
+}
+FUNCTION = re.compile(r'\bfn\s+(\w+)')
+
+
+def enclosing_function(code, offset):
+    """Name of the innermost function whose body holds `offset`, in masked code."""
+    name = None
+    for function in FUNCTION.finditer(code, 0, offset):
+        body = code.find("{", function.end())
+        if body < 0 or body > offset:
+            continue
+        end, depth = body + 1, 1
+        while end < len(code) and depth:
+            depth += (code[end] == "{") - (code[end] == "}")
+            end += 1
+        if end > offset:
+            name = function.group(1)
+    return name
+
+
+def readback_sites(code, relative=""):
+    """Offsets of a buffer mapped for reading: a map call whose arguments name `MapMode::Read`, outside the
+    sites `TEST_READBACK_EXEMPT` names."""
     for match in MAP_CALL.finditer(code):
+        if (relative, enclosing_function(code, match.start())) in TEST_READBACK_EXEMPT:
+            continue
         end, depth = match.end(), 1
         while end < len(code) and depth:
             depth += (code[end] == "(") - (code[end] == ")")
@@ -328,7 +356,7 @@ def rust_sites(root, relative, text, package, manifest, registry):
         for match in re.finditer(r'#!\s*\[\s*cfg\s*\([^\]]*\b(?:target_(?:os|family)\s*=|(?:unix|windows)\b)', code):
             yield "whole-file-gpu-gate", match.start()
     if test_file(relative) and not support_package(relative, registry):
-        for offset in readback_sites(code):
+        for offset in readback_sites(code, relative):
             yield "test-readback", offset
         for match in DEADLINE_ASSERT.finditer(code):
             yield "test-deadline", match.start()

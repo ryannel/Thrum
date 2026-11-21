@@ -3,8 +3,8 @@
 use super::super::{AtmospherePrepared, EARTH};
 use crate::atmosphere::stage::Chart;
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
+use std::fmt::Write;
 use std::io::Write as _;
-use std::{fmt::Write, sync::mpsc, time::Duration};
 
 use wgpu::BindingResource::{Sampler, TextureView};
 use wgpu::TextureFormat::{Rgba16Float, Rgba32Float};
@@ -128,30 +128,15 @@ impl Output {
             pass.dispatch_workgroups(SIDE / 8, SIDE / 8, 1);
         }
         let wide = self.scatter.format() == Rgba32Float;
-        let row_bytes = SIDE * if wide { 16 } else { 8 };
-        let output = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("aerial storage bytes"),
-            size: u64::from(row_bytes * SIDE * LAYERS),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-        encoder.copy_texture_to_buffer(
-            self.scatter.as_image_copy(),
-            wgpu::TexelCopyBufferInfo {
-                buffer: &output,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(row_bytes),
-                    rows_per_image: Some(SIDE),
-                },
-            },
-            self.scatter.size(),
+        let readback = thrum_test_support::readback::Readback::texture(
+            device,
+            &mut encoder,
+            &self.scatter,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
         );
-        submit(device, queue, encoder, &output);
-        let mapped = output
-            .slice(..)
-            .get_mapped_range()
-            .expect("aerial storage mapped");
+        let submission = queue.submit([encoder.finish()]);
+        let mapped = readback.wait(device, submission);
         mapped
             .chunks_exact(if wide { 4 } else { 2 })
             .map(|value| {
@@ -204,29 +189,6 @@ fn pipeline(device: &wgpu::Device, source: &str, entry: &str) -> wgpu::ComputePi
         compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     })
-}
-
-fn submit(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    encoder: wgpu::CommandEncoder,
-    output: &wgpu::Buffer,
-) {
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(output, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("aerial precision receiver alive");
-    });
-    let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(20)),
-        })
-        .expect("aerial precision GPU completion");
-    receive
-        .recv()
-        .expect("aerial mapping callback")
-        .expect("aerial mapped");
 }
 
 fn half(bits: u16) -> f32 {
@@ -310,17 +272,26 @@ fn report(degrees: f32, reference: &[f32], raw: &[f32], encoded: &[f32]) -> Stri
 #[test]
 fn aerial_storage_matches_float32_transport_and_consumer_units() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "aerial_storage_matches_float32_transport_and_consumer_units",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
@@ -475,12 +446,6 @@ fn finite_night() {
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: 16,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let first = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &pipeline.get_bind_group_layout(0),
@@ -503,28 +468,36 @@ fn finite_night() {
         pass.set_bind_group(1, &second, &[]);
         pass.dispatch_workgroups(1, 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, 16);
-    submit(device, queue, encoder, &readback);
-    let mapped = readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("consumer units mapped");
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, ..);
+    let submission = queue.submit([encoder.finish()]);
+    let mapped = readback.wait(device, submission);
     std::array::from_fn(|index| f32::from_le_bytes(mapped.as_chunks::<4>().0[index]))
 }
 
 #[test]
 fn finite_night_radiance_survives_the_aerial_composite() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("finite_night_radiance_survives_the_aerial_composite", None)
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
+            "finite_night_radiance_survives_the_aerial_composite",
+            None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
         else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,

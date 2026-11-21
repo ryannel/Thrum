@@ -17,13 +17,6 @@ const LOW_RANK: &[u8] = &[
     0, 1, 215, 227, 72, 253, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
 ];
 
-struct Scratch(PathBuf);
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        std::fs::remove_dir_all(&self.0).expect("remove owned foam lease store");
-    }
-}
-
 fn cooker(root: &std::path::Path) -> Cooker {
     Cooker::open(CookConfig {
         source: root.join("assets"),
@@ -41,20 +34,15 @@ fn cooked_pattern_is_lent_and_invalidates_at_submission() {
         running_scene(&PathBuf::from(root));
         return;
     }
-    let root = Scratch(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../..")
-            .join("tmp/waters-M7")
-            .join(format!("lease-{}", std::process::id())),
-    );
-    let textures = root.0.join("assets/textures");
+    let root = thrum_test_support::Scratch::new("foam-lease");
+    let textures = root.join("assets/textures");
     std::fs::create_dir_all(&textures).expect("owned asset root");
     std::fs::write(
         textures.join("foam-rank.png"),
         include_bytes!("../assets/textures/foam-rank.png"),
     )
     .expect("copy cooked pattern source");
-    let first = cooker(&root.0).cook_all().expect("initial cook");
+    let first = cooker(root.path()).cook_all().expect("initial cook");
     assert!(first.failed.is_empty(), "{first:?}");
     let status = std::process::Command::new(std::env::current_exe().expect("lease test binary"))
         .args([
@@ -62,8 +50,8 @@ fn cooked_pattern_is_lent_and_invalidates_at_submission() {
             "cooked_pattern_is_lent_and_invalidates_at_submission",
             "--nocapture",
         ])
-        .env(thrum_app::sky::STORE_VARIABLE, root.0.join("store"))
-        .env("THRUM_FOAM_LEASE_TEST", &root.0)
+        .env(thrum_app::sky::STORE_VARIABLE, root.join("store"))
+        .env("THRUM_FOAM_LEASE_TEST", root.path())
         .status()
         .expect("run lease proof against isolated store");
     assert!(status.success());
@@ -105,7 +93,7 @@ fn running_scene(root: &std::path::Path) {
         fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
     }
     let time = 240.0 * 0.016_666_667;
-    let old = support::read_texture(&fixture.device, &fixture.queue, &fixture.output, 4);
+    let old = fixture.image();
 
     std::fs::write(root.join("assets/textures/foam-rank.png"), LOW_RANK).expect("edit pattern");
     let changed = cooker(root).cook_all().expect("cook edited pattern");
@@ -120,7 +108,7 @@ fn running_scene(root: &std::path::Path) {
     }
     assert!(next.foam_pattern.is_some() && next.foam_pattern != first.foam_pattern);
     assert_eq!(next.foam_pattern_invalidations, 2);
-    let edited = support::read_texture(&fixture.device, &fixture.queue, &fixture.output, 4);
+    let edited = fixture.image();
     let changed_pixels = old
         .as_chunks::<4>()
         .0
@@ -146,7 +134,7 @@ fn running_scene(root: &std::path::Path) {
     fixture.replace_device(&gpu);
     fixture.frame_without_timings(time + 0.1);
     assert_eq!(report.lock().expect("water report").foam_pattern, None);
-    let after_loss = support::read_texture(&fixture.device, &fixture.queue, &fixture.output, 4);
+    let after_loss = fixture.image();
     assert!(
         after_loss
             .as_chunks::<4>()

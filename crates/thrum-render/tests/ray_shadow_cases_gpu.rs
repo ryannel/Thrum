@@ -69,7 +69,6 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
             direction,
             normal,
             [centre, clear_point],
-            support::read,
         );
         assert_eq!(
             visibility.map(f32::to_bits),
@@ -84,7 +83,6 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
                 direction,
                 normal,
                 [centre + direction * (distance + 0.01), clear_point],
-                support::read,
             );
             assert_eq!(beyond.map(f32::to_bits), [1.0_f32.to_bits(); 2]);
         } else {
@@ -130,7 +128,6 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
                 direction,
                 normal,
                 [moved_point, moved_point + Vec3::NEG_X * 1.6],
-                support::read,
             );
             assert_eq!(
                 moved_answers.map(f32::to_bits),

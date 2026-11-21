@@ -11,7 +11,6 @@ use crate::{
     capabilities::DeviceCapabilities,
     synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene},
 };
-use std::{sync::mpsc, time::Duration};
 
 const QUERY: &str = r"
 @group(1) @binding(0) var<storage,read_write> result: array<vec4<f32>>;
@@ -32,16 +31,25 @@ fn query() {
 #[test]
 fn metal_contribution_compiles_all_lent_operations_and_observes_environment_replacement() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "metal_contribution_compiles_all_lent_operations_and_observes_environment_replacement",
             Some(wgpu::Backend::Metal),
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 120);
         let scene = SyntheticScene::grid(1).unwrap();
         let frame = AtmosphereFrame::new([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 1)
@@ -96,12 +104,6 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: 112,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &output_layout,
@@ -126,20 +128,10 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
             pass.set_bind_group(1, &group, &[]);
             pass.dispatch_workgroups(1, 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, 112);
-        let (send, receive) = mpsc::channel();
-        encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).unwrap();
-        });
+        let readback =
+            thrum_test_support::readback::Readback::buffer(&device, &mut encoder, &output, ..112);
         let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(Duration::from_secs(30)),
-            })
-            .unwrap();
-        receive.recv().unwrap().unwrap();
-        let mapped = readback.slice(..).get_mapped_range().unwrap();
+        let mapped = readback.wait(&device, submission);
         let words: Vec<_> = mapped
             .as_chunks::<4>()
             .0

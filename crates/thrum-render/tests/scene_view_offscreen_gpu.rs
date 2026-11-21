@@ -24,15 +24,17 @@ fn instance(slot: u32, material: u32, position: [f32; 3], half: [f32; 3]) -> Ins
 }
 #[test]
 fn views_draw_behind_the_main_camera_and_its_occluding_wall_on_both_routes() {
-    let Some(gpu) =
-        thrum_test_support::gpu("secondary offscreen instances", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary offscreen instances",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         for bucket in [false, true] {

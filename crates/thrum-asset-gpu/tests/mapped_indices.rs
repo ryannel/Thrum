@@ -52,14 +52,14 @@ fn mapped_section_is_retained_without_an_index_allocation() {
 
 #[test]
 fn metal_receives_the_mapped_index_bytes() {
-    let Some(gpu) = thrum_test_support::gpu("mapped mesh indices", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
+        "mapped mesh indices",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let mesh = product();
     let upload = MeshUpload::new(Arc::clone(&mesh)).expect("coverage");
     let bytes = bytemuck::cast_slice(upload.indices());
@@ -68,28 +68,8 @@ fn metal_receives_the_mapped_index_bytes() {
         contents: bytes,
         usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_SRC,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("index readback"),
-        size: bytes.len() as u64,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(&buffer, 0, &readback, 0, bytes.len() as u64);
-    queue.submit([encoder.finish()]);
-    let (send, receive) = std::sync::mpsc::channel();
-    readback.map_async(wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("map reply");
-    });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(std::time::Duration::from_secs(10)),
-        })
-        .expect("GPU");
-    receive.recv().expect("map reply").expect("mapped readback");
     assert_eq!(
-        &*readback.get_mapped_range(..).expect("readback"),
+        thrum_test_support::readback::buffer(&device, &queue, &buffer, ..),
         bytemuck::cast_slice::<u32, u8>(mesh.indices())
     );
 }

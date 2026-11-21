@@ -110,7 +110,6 @@ pub fn probe_sun(
     direction: Vec3,
     normal: Vec3,
     points: [Vec3; 2],
-    read: impl FnOnce(&wgpu::Device, &wgpu::Buffer) -> Vec<u8>,
 ) -> [f32; 2] {
     use wgpu::util::DeviceExt;
 
@@ -175,10 +174,6 @@ pub fn probe_sun(
         "probe visibility",
         wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
     );
-    let readback = buffer(
-        "probe visibility readback",
-        wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-    );
     let payload = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &pipeline.get_bind_group_layout(2),
@@ -202,9 +197,10 @@ pub fn probe_sun(
         pass.set_bind_group(2, &payload, &[]);
         pass.dispatch_workgroups(2, 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&values, 0, &readback, 0, 8);
-    queue.submit([encoder.finish()]);
-    let bytes = read(device, &readback);
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &values, ..);
+    let submission = queue.submit([encoder.finish()]);
+    let bytes = readback.wait(device, submission);
     std::array::from_fn(|index| {
         f32::from_le_bytes(bytes[index * 4..][..4].try_into().expect("f32"))
     })

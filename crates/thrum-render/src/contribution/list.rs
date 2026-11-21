@@ -445,14 +445,18 @@ mod tests {
 
     #[test]
     fn every_hook_reaches_a_member_behind_the_list() {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("every_hook_reaches_a_member_behind_the_list", None)
-        else {
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
+            "every_hook_reaches_a_member_behind_the_list",
+            None,
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        ) else {
             return;
         };
         pollster::block_on(async {
-            let (device, queue) =
-                crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
             let scene = crate::synthetic::SyntheticScene::grid(1).expect("scene");
             let prepared = crate::synthetic::PreparedSynthetic::prepare(&device, &queue, 1, &scene)
                 .await

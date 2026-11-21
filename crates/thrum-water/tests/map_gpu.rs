@@ -4,9 +4,11 @@ use probe_support as support;
 
 #[test]
 fn continuous_map_matches_the_cpu_at_scattered_points_and_shores() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(test_gpu) = thrum_test_support::open(
         "continuous_map_matches_the_cpu_at_scattered_points_and_shores",
         Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
     ) else {
         return;
     };

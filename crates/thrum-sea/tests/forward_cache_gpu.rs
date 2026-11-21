@@ -4,7 +4,7 @@
     reason = "shared harness includes other independent sea oracles"
 )]
 mod support;
-use std::{fmt::Write as _, sync::mpsc, time::Duration};
+use std::fmt::Write as _;
 
 #[test]
 fn forward_fields_and_full_lean_pyramids_match_the_model() {
@@ -204,58 +204,16 @@ fn half(bits: u16) -> f64 {
     }
 }
 fn read(device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture, mip: u32) -> Vec<f64> {
-    let width = texture.width() >> mip;
-    let layers = texture.depth_or_array_layers();
-    let pitch = (width * 8).div_ceil(256) * 256;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("forward LEAN readback"),
-        size: u64::from(pitch) * u64::from(width) * u64::from(layers),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture,
-            mip_level: mip,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(pitch),
-                rows_per_image: Some(width),
-            },
-        },
-        wgpu::Extent3d {
-            width,
-            height: width,
-            depth_or_array_layers: layers,
-        },
-    );
-    queue.submit([encoder.finish()]);
-    let (tx, rx) = mpsc::channel();
-    buffer.map_async(wgpu::MapMode::Read, .., move |r| {
-        tx.send(r).expect("map callback");
-    });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(Duration::from_secs(120)),
-        })
-        .expect("GPU completion");
-    rx.recv().expect("callback").expect("map");
-    let bytes = buffer.get_mapped_range(..).expect("mapped bytes");
-    bytes
-        .chunks_exact(pitch as usize)
-        .flat_map(|row| {
-            row[..(width * 8) as usize]
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|b| half(u16::from_le_bytes(*b)))
-        })
-        .collect()
+    thrum_test_support::readback::texture(
+        device,
+        queue,
+        texture,
+        thrum_test_support::readback::Mip::level(mip),
+        ..,
+    )
+    .as_chunks::<2>()
+    .0
+    .iter()
+    .map(|b| half(u16::from_le_bytes(*b)))
+    .collect()
 }

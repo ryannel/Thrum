@@ -13,18 +13,23 @@ use crate::runtime::{
 use std::time::Instant;
 
 fn retire(host: &mut Host) {
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while host.pending_frames() != 0 {
-        let timeout = deadline.saturating_duration_since(Instant::now());
-        assert!(!timeout.is_zero(), "creation test frame did not retire");
-        host.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(timeout),
-            })
-            .expect("wait for frame");
-        while host.poll_completed().expect("collect frame").is_some() {}
-    }
+    thrum_test_support::wait::until(
+        "creation test frame did not retire",
+        Duration::from_secs(10),
+        || {
+            if host.pending_frames() == 0 {
+                return Some(());
+            }
+            host.device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("wait for frame");
+            while host.poll_completed().expect("collect frame").is_some() {}
+            None
+        },
+    );
 }
 
 /// The host generation's site, as its capabilities hold it.

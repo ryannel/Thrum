@@ -3,45 +3,13 @@
 mod fixture;
 
 use fixture::{IDENTITY, LIMIT, Rules, digest, image, runtime};
-use std::{
-    alloc::{GlobalAlloc, Layout, System},
-    cell::Cell,
-};
 use thrum_core::{
     profile::StateDecodeError,
     sim::{GameRuntime, RuleSetIdentity, WorldImageError},
 };
 
-thread_local! {
-    static ALLOCATED: Cell<Option<usize>> = const { Cell::new(None) };
-}
-
-struct CountAllocations;
-
-#[expect(
-    unsafe_code,
-    reason = "test allocator forwards each allocation to System unchanged"
-)]
-// SAFETY: the allocation contract is delegated unchanged to System.
-unsafe impl GlobalAlloc for CountAllocations {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        let _ = ALLOCATED.try_with(|total| {
-            if let Some(bytes) = total.get() {
-                total.set(Some(bytes + layout.size()));
-            }
-        });
-        // SAFETY: the caller provides the layout required by GlobalAlloc.
-        unsafe { System.alloc(layout) }
-    }
-
-    unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-        // SAFETY: pointer and layout originated from the same allocator.
-        unsafe { System.dealloc(pointer, layout) }
-    }
-}
-
 #[global_allocator]
-static ALLOCATOR: CountAllocations = CountAllocations;
+static ALLOCATOR: thrum_test_support::CountingAllocator = thrum_test_support::CountingAllocator;
 
 fn refuse(
     world: &mut GameRuntime<Rules>,
@@ -50,11 +18,10 @@ fn refuse(
     limit: usize,
 ) -> (WorldImageError, usize) {
     let before = digest(world, game);
-    ALLOCATED.set(Some(0));
-    let outcome = world.restore_world_image(IDENTITY, &mut game.resource, bytes, limit);
-    let allocated = ALLOCATED
-        .replace(None)
-        .expect("allocation observation active");
+    let (outcome, counted) = thrum_test_support::allocations::count(|| {
+        world.restore_world_image(IDENTITY, &mut game.resource, bytes, limit)
+    });
+    let allocated = usize::try_from(counted.bytes).expect("allocated bytes fit in memory");
     assert!(
         allocated <= limit,
         "restore allocated {allocated} bytes above {limit}"

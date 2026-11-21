@@ -18,13 +18,24 @@ impl Lcg {
     }
 }
 
-fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
-    pollster::block_on(async {
-        let adapter = test_gpu.adapter.clone();
-        #[cfg(target_os = "macos")]
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
-    })
+/// The portable test device, with the empty feature mask.
+fn open_device(test: &str) -> Option<(wgpu::Device, wgpu::Queue)> {
+    let crate::test_device::Opened {
+        gpu, device, queue, ..
+    } = crate::test_device::open(
+        test,
+        None,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
+    )?;
+    #[cfg(target_os = "macos")]
+    assert_eq!(gpu.adapter.get_info().backend, wgpu::Backend::Metal);
+    #[cfg(not(target_os = "macos"))]
+    drop(gpu);
+    Some((device, queue))
 }
 
 fn bytes(values: &[f32]) -> Vec<u8> {
@@ -211,53 +222,18 @@ fn read_mip(
     let size = texture
         .size()
         .mip_level_size(level, wgpu::TextureDimension::D2);
-    let row = (size.width * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("pyramid readback"),
-        size: u64::from(row * size.height),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture,
-            mip_level: level,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &staging,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(row),
-                rows_per_image: None,
-            },
-        },
-        size,
-    );
-    queue.submit([encoder.finish()]);
-    staging
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, |result| result.expect("map"));
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("poll");
-    let mapped = staging
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped pyramid");
-    let mut texels = Vec::with_capacity((size.width * size.height) as usize);
-    for y in 0..size.height {
-        let start = (y * row) as usize;
-        let line = &mapped[start..start + (size.width * 4) as usize];
-        texels.extend(
-            line.as_chunks::<4>()
-                .0
-                .iter()
-                .map(|word| f32::from_le_bytes(*word)),
-        );
-    }
+    let texels = thrum_test_support::readback::texture(
+        device,
+        queue,
+        texture,
+        thrum_test_support::readback::Mip::level(level),
+        ..,
+    )
+    .as_chunks::<4>()
+    .0
+    .iter()
+    .map(|word| f32::from_le_bytes(*word))
+    .collect();
     (texels, [size.width, size.height])
 }
 
@@ -281,10 +257,9 @@ fn depth_field(extent: [u32; 2], random: &mut Lcg) -> Vec<f32> {
 
 #[test]
 fn every_gpu_mip_equals_the_reference() {
-    let Some(test_gpu) = thrum_test_support::gpu("every_gpu_mip_equals_the_reference", None) else {
+    let Some((device, queue)) = open_device("every_gpu_mip_equals_the_reference") else {
         return;
     };
-    let (device, queue) = device(&test_gpu);
     for extent in [[1, 1], [3, 5], [7, 1], [64, 48], [1281, 719], [1280, 720]] {
         let mut random = Lcg(u64::from(extent[0]) * 977 + u64::from(extent[1]));
         let depth = depth_field(extent, &mut random);
@@ -399,12 +374,6 @@ fn gpu_occluded(
             },
         ],
     });
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("occlusion probe readback"),
-        size: result_bytes,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
@@ -416,15 +385,14 @@ fn gpu_occluded(
             1,
         );
     }
-    encoder.copy_buffer_to_buffer(&results, 0, &staging, 0, result_bytes);
-    queue.submit([encoder.finish()]);
-    staging
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, |result| result.expect("map"));
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("poll");
-    let mapped = staging.slice(..).get_mapped_range().expect("mapped probe");
+    let readback = thrum_test_support::readback::Readback::buffer(
+        device,
+        &mut encoder,
+        &results,
+        ..result_bytes,
+    );
+    let submission = queue.submit([encoder.finish()]);
+    let mapped = readback.wait(device, submission);
     mapped
         .as_chunks::<4>()
         .0
@@ -435,11 +403,9 @@ fn gpu_occluded(
 
 #[test]
 fn gpu_test_decisions_equal_the_reference() {
-    let Some(test_gpu) = thrum_test_support::gpu("gpu_test_decisions_equal_the_reference", None)
-    else {
+    let Some((device, queue)) = open_device("gpu_test_decisions_equal_the_reference") else {
         return;
     };
-    let (device, queue) = device(&test_gpu);
     for extent in [[7, 1], [64, 48], [1281, 719]] {
         let mut random = Lcg(u64::from(extent[0]) << 16 | u64::from(extent[1]));
         let depth = depth_field(extent, &mut random);
@@ -499,12 +465,10 @@ fn gpu_test_decisions_equal_the_reference() {
 /// required to agree; the flip itself may differ by the divides' rounding.
 #[test]
 fn gpu_slack_matches_the_reference_at_its_boundary() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("gpu_slack_matches_the_reference_at_its_boundary", None)
+    let Some((device, queue)) = open_device("gpu_slack_matches_the_reference_at_its_boundary")
     else {
         return;
     };
-    let (device, queue) = device(&test_gpu);
     let extent = [64, 48];
     let farthest = 0.25_f32;
     let depth = vec![farthest; 64 * 48];
@@ -563,12 +527,9 @@ fn gpu_slack_matches_the_reference_at_its_boundary() {
 /// the second. With no clip term both are hidden.
 #[test]
 fn gpu_footprint_widening_matches_the_reference() {
-    let Some(test_gpu) =
-        thrum_test_support::gpu("gpu_footprint_widening_matches_the_reference", None)
-    else {
+    let Some((device, queue)) = open_device("gpu_footprint_widening_matches_the_reference") else {
         return;
     };
-    let (device, queue) = device(&test_gpu);
     let extent = [64, 48];
     let depth: Vec<f32> = (0..64 * 48)
         .map(|index| if index % 64 < 32 { 0.9 } else { 0.0 })

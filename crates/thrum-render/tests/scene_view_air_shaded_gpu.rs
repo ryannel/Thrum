@@ -214,14 +214,22 @@ fn check_wrong_stretch(
     }
 }
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one proof walks every plane case through the crossing and the wrong-stretch controls"
+)]
 fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches() {
-    let Some(gpu) = thrum_test_support::gpu("plane shaded air", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "plane shaded air",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    )
+    else {
+        return;
+    };
     pollster::block_on(async {
         let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         for (below, distance, horizon) in [

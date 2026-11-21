@@ -116,11 +116,6 @@ fn shade_device_limit_keeps_its_error_kind_in_a_contribution_list() {
 
 #[test]
 fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
-    let Some(gpu) =
-        thrum_test_support::gpu("shadow-only cloud capability", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
     let config = shade_config();
     let field =
         Field::new(config.seed, config.model, config.types.clone()).expect("authored test weather");
@@ -174,7 +169,17 @@ fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
             (thrum_test_support::Profile::Portable, "portable"),
             (thrum_test_support::Profile::Native, "apple-tile"),
         ] {
-            let (device, queue) = gpu.device(profile, &thrum_test_support::Restriction::default());
+            let Some(thrum_test_support::Opened {
+                gpu, device, queue, ..
+            }) = thrum_test_support::open(
+                "shadow-only cloud capability",
+                Some(wgpu::Backend::Metal),
+                profile,
+                &thrum_test_support::Restriction::default(),
+            )
+            else {
+                return;
+            };
             let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1)
                 .with_recipe_override(recipe)
                 .expect("recipe admitted");

@@ -1,6 +1,5 @@
 #[cfg(target_os = "macos")]
 use super::super::*;
-use std::sync::mpsc;
 
 #[cfg(target_os = "macos")]
 fn half_to_f32(bits: u16) -> f32 {
@@ -50,78 +49,41 @@ fn submitted_motion_x_at_alpha(
     prepared
         .upload_instances(queue, &scene.instances, changed)
         .expect("instance upload");
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("motion test readback"),
-        size: 64 * 256,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
         .encode(&mut encoder, 41, target, None)
         .expect("scene with motion");
-    encoder.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture: target
-                .textures
-                .texture(&target.ids.motion)
-                .expect("motion target"),
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(256),
-                rows_per_image: Some(64),
-            },
-        },
-        wgpu::Extent3d {
-            width: 64,
-            height: 64,
-            depth_or_array_layers: 1,
-        },
+    let readback = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        target
+            .textures
+            .texture(&target.ids.motion)
+            .expect("motion target"),
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("readback receiver");
-    });
     let submission = queue.submit([encoder.finish()]);
     prepared.commit_frame();
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(std::time::Duration::from_secs(10)),
-        })
-        .expect("motion submission");
-    receive
-        .recv()
-        .expect("readback callback")
-        .expect("map motion");
-    let mapped = buffer.slice(..).get_mapped_range().expect("mapped motion");
+    let mapped = readback.wait(device, submission);
     let offset = 32 * 256 + x as usize * 4;
-    let value = half_to_f32(u16::from_le_bytes(
+    half_to_f32(u16::from_le_bytes(
         mapped[offset..offset + 2].try_into().unwrap(),
-    ));
-    drop(mapped);
-    buffer.unmap();
-    value
+    ))
 }
 
 #[cfg(target_os = "macos")]
 #[test]
 fn metal_motion_history_uses_interpolated_display_samples() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
             "metal_motion_history_uses_interpolated_display_samples",
             None,
+            crate::capabilities::DeviceProfile::Portable,
+            &tests::support::NO_FEATURES,
         ) else {
             return;
         };
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let mut scene = SyntheticScene::grid(1).expect("one instance");
         let mut prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await
@@ -163,14 +125,14 @@ fn metal_motion_history_uses_interpolated_display_samples() {
 #[test]
 fn metal_motion_history_follows_submitted_frames_and_resets() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
             "metal_motion_history_follows_submitted_frames_and_resets",
             None,
+            crate::capabilities::DeviceProfile::Portable,
+            &tests::support::NO_FEATURES,
         ) else {
             return;
         };
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let mut scene = SyntheticScene::grid(1).expect("one instance");
         let mut prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await

@@ -276,56 +276,13 @@ impl Drawable {
         }
     }
     fn pixels(&self, gpu: &Gpu) -> Vec<u8> {
-        let stride = (self.extent[0] * 4).div_ceil(256) * 256;
-        let buffer = gpu.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("host surface readback"),
-            size: u64::from(stride) * u64::from(self.extent[1]),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-        let mut encoder = gpu
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture: &self.texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &buffer,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(stride),
-                    rows_per_image: Some(self.extent[1]),
-                },
-            },
-            wgpu::Extent3d {
-                width: self.extent[0],
-                height: self.extent[1],
-                depth_or_array_layers: 1,
-            },
-        );
-        let (send, receive) = std::sync::mpsc::channel();
-        encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).expect("readback receiver");
-        });
-        gpu.queue.submit([encoder.finish()]);
-        gpu.wait();
-        receive
-            .recv_timeout(Duration::from_secs(20))
-            .expect("surface callback")
-            .expect("surface map");
-        let pixels = {
-            let mapped = buffer.slice(..).get_mapped_range().expect("mapped surface");
-            mapped
-                .chunks_exact(stride as usize)
-                .flat_map(|row| row[..self.extent[0] as usize * 4].iter().copied())
-                .collect()
-        };
-        buffer.unmap();
-        pixels
+        thrum_test_support::readback::texture(
+            &gpu.device,
+            &gpu.queue,
+            &self.texture,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
+        )
     }
 }
 fn frame(gpu: &Gpu, host: &mut Host, drawable: &Drawable, now: Duration) -> (FrameSample, Vec<u8>) {
@@ -342,12 +299,15 @@ fn frame(gpu: &Gpu, host: &mut Host, drawable: &Drawable, now: Duration) -> (Fra
         report.submitted && report.surface_presented,
         "real presenter submits the drawable"
     );
-    let sample = loop {
-        gpu.wait();
-        if let Some(sample) = host.poll_completed().expect("completion") {
-            break sample;
-        }
-    };
+    // Each attempt waits up to 20 s for the queue; the old loop had no overall bound.
+    let sample = thrum_test_support::wait::until(
+        "host frame completion",
+        thrum_test_support::readback::WAIT,
+        || {
+            gpu.wait();
+            host.poll_completed().expect("completion")
+        },
+    );
     assert!(sample.surface_presented);
     assert_eq!(sample.tick, host.world().source().tick);
     (sample, drawable.pixels(gpu))
@@ -356,12 +316,13 @@ fn retain(label: &str, mode: CullMode, pixels: &[u8], extent: [u32; 2]) {
     if let Some(path) = std::env::var_os("THRUM_CULLING_LIFECYCLE_EVIDENCE") {
         let path = std::path::PathBuf::from(path);
         std::fs::create_dir_all(&path).expect("lifecycle evidence directory");
-        let mut ppm = format!("P6\n{} {}\n255\n", extent[0], extent[1]).into_bytes();
-        for pixel in pixels.as_chunks::<4>().0 {
-            ppm.extend_from_slice(&pixel[..3]);
-        }
-        std::fs::write(path.join(format!("{label}-{mode:?}.ppm")), ppm)
-            .expect("lifecycle surface pixels");
+        thrum_test_support::ppm::write(
+            path.join(format!("{label}-{mode:?}.ppm")),
+            extent,
+            pixels,
+            thrum_test_support::ppm::Pixels::Rgba8,
+        )
+        .expect("lifecycle surface pixels");
     }
 }
 #[expect(

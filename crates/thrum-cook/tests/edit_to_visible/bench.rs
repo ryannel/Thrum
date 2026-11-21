@@ -93,8 +93,7 @@ const RULES: &[Rule] = &[
 ];
 
 fn main() {
-    let root = std::env::temp_dir().join(format!("thrum-g5-bench-{}", std::process::id()));
-    std::fs::create_dir_all(&root).expect("bench root");
+    let root = thrum_test_support::Scratch::new("g5-bench");
     let mut report = String::new();
     writeln!(report, "# G5 edit-to-visible tripwires").ok();
     writeln!(
@@ -115,8 +114,8 @@ fn main() {
         );
     }
     let ran = edit_loop(&root.join("loop"), &mut report, &mut metrics);
-    make_writable(&root);
-    std::fs::remove_dir_all(&root).ok();
+    make_writable(root.path());
+    drop(root);
     if !ran {
         return;
     }
@@ -196,6 +195,23 @@ struct Publication {
     cook: Duration,
 }
 
+/// The gate's GPU and a portable device keeping only the texture compression features.
+fn open_device() -> Option<thrum_test_support::Opened> {
+    thrum_test_support::open(
+        "edit_to_visible bench",
+        None,
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(
+                wgpu::Features::TEXTURE_COMPRESSION_BC
+                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
+                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
+            ),
+            ..Default::default()
+        },
+    )
+}
+
 fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) -> bool {
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("dir");
@@ -240,22 +256,14 @@ fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) -> bool {
     }
 
     let start = Instant::now();
-    let Some(gpu) = thrum_test_support::gpu("edit_to_visible bench", None) else {
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = open_device()
+    else {
         stop.store(true, Ordering::Relaxed);
         watcher.join().expect("watcher");
         return false;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction {
-            features: Some(
-                wgpu::Features::TEXTURE_COMPRESSION_BC
-                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
-                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
-            ),
-            ..Default::default()
-        },
-    );
     let mut viewer = Viewer::with_test_device(
         ViewerConfig::demo(root.join("store")),
         &gpu.adapter,

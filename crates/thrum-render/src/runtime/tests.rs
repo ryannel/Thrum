@@ -216,15 +216,24 @@ impl SceneSource<SourceTick> for StaticScene {
 #[test]
 fn lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submission() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submission",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 7);
         let published = SourceTick {
             epoch: 2,
@@ -316,11 +325,12 @@ fn lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submi
     });
 }
 
-async fn prepared_host(test_gpu: &thrum_test_support::Gpu) -> FrameHost<StaticWorld, StaticScene> {
-    let adapter = test_gpu.adapter.clone();
-    let (device, queue) =
-        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, 7);
+async fn prepared_host(
+    crate::test_device::Opened {
+        gpu, device, queue, ..
+    }: crate::test_device::Opened,
+) -> FrameHost<StaticWorld, StaticScene> {
+    let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 7);
     let source = SourceTick {
         epoch: 2,
         tick: 0,
@@ -360,14 +370,19 @@ fn progress(host: &FrameHost<StaticWorld, StaticScene>) -> super::DriveReport {
 
 #[test]
 fn refused_policy_keeps_changed_rows_pending_for_a_same_source_retry() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(opened) = crate::test_device::open(
         "refused_policy_keeps_changed_rows_pending_for_a_same_source_retry",
         None,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
     ) else {
         return;
     };
     pollster::block_on(async {
-        let mut host = prepared_host(&test_gpu).await;
+        let mut host = prepared_host(opened).await;
         let before = host.scene.instances[0].current;
         host.world.authority.tick = 1;
         host.world.publication = host.world.authority;
@@ -401,14 +416,19 @@ fn refused_policy_keeps_changed_rows_pending_for_a_same_source_retry() {
 
 #[test]
 fn invalid_lighting_retains_upload_work_after_cpu_scene_mutation() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(opened) = crate::test_device::open(
         "invalid_lighting_retains_upload_work_after_cpu_scene_mutation",
         None,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
     ) else {
         return;
     };
     pollster::block_on(async {
-        let mut host = prepared_host(&test_gpu).await;
+        let mut host = prepared_host(opened).await;
         host.world.authority.tick = 1;
         host.world.publication = host.world.authority;
         host.source.invalid_lighting.set(true);
@@ -438,14 +458,19 @@ fn invalid_lighting_retains_upload_work_after_cpu_scene_mutation() {
 
 #[test]
 fn changing_mapping_at_a_fixed_world_source_reextracts_and_uploads_the_new_rows() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(opened) = crate::test_device::open(
         "changing_mapping_at_a_fixed_world_source_reextracts_and_uploads_the_new_rows",
         None,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
     ) else {
         return;
     };
     pollster::block_on(async {
-        let mut host = prepared_host(&test_gpu).await;
+        let mut host = prepared_host(opened).await;
         let before = host.scene.instances[0].current;
         host.source_mut().offset = 0.5;
         let frame = host

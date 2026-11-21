@@ -17,14 +17,13 @@ fn observe(@builtin(global_invocation_id) id:vec3<u32>) {
 
 #[test]
 fn a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some((device, queue)) = device(
         "a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain",
         None,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = device(&test_gpu).await;
         let (matrix, _) = height_matrix(Vec3::ZERO, Some((0.0, 0.0))).expect("height map fit");
         let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
         let depth = matrix.row(2);

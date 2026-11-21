@@ -10,15 +10,17 @@ use thrum_render::{
 
 #[test]
 fn turning_the_main_camera_does_not_change_the_held_view() {
-    let Some(gpu) =
-        thrum_test_support::gpu("secondary camera independence", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary camera independence",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let (mut scene, lighting, view) = lit_view_scene();

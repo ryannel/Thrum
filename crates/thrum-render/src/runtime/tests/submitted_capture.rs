@@ -2,51 +2,9 @@
 
 use super::*;
 use crate::{present::SurfaceProfile, runtime::SurfaceOutput};
-use std::time::Instant;
-use std::{
-    alloc::{GlobalAlloc, Layout, System},
-    cell::Cell,
-};
 
-thread_local! {
-    static COUNTING: Cell<bool> = const { Cell::new(false) };
-    static ALLOCATIONS: Cell<usize> = const { Cell::new(0) };
-}
-struct AllocationObserver;
 #[global_allocator]
-static ALLOCATOR: AllocationObserver = AllocationObserver;
-#[expect(
-    unsafe_code,
-    reason = "test-only allocation observer forwards unchanged pointers and layouts to System"
-)]
-// SAFETY: The observer never owns memory; every operation delegates unchanged
-// to System. Counters are thread-local and only active in the scoped test.
-unsafe impl GlobalAlloc for AllocationObserver {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        COUNTING.with(|active| {
-            if active.get() {
-                ALLOCATIONS.with(|count| count.set(count.get() + 1));
-            }
-        });
-        // SAFETY: The original layout is passed unchanged to System.
-        unsafe { System.alloc(layout) }
-    }
-    unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-        // SAFETY: The pointer/layout came from the delegated System allocator.
-        unsafe {
-            System.dealloc(pointer, layout);
-        }
-    }
-    unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
-        COUNTING.with(|active| {
-            if active.get() {
-                ALLOCATIONS.with(|count| count.set(count.get() + 1));
-            }
-        });
-        // SAFETY: Original pointer/layout and requested size are forwarded.
-        unsafe { System.realloc(pointer, layout, size) }
-    }
-}
+static ALLOCATOR: thrum_test_support::CountingAllocator = thrum_test_support::CountingAllocator;
 
 #[test]
 fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass() {
@@ -57,21 +15,20 @@ fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass(
         return;
     };
     let mut disabled = None;
-    ALLOCATIONS.with(|count| count.set(0));
-    COUNTING.with(|active| active.set(true));
-    for _ in 0..10000 {
-        assert!(
-            super::super::submitted_capture::reserve(
-                &mut disabled,
-                1,
-                [65, 37],
-                crate::synthetic::CaptureSource::Sdr
-            )
-            .is_none()
-        );
-    }
-    COUNTING.with(|active| active.set(false));
-    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    let ((), allocations) = thrum_test_support::allocations::count(|| {
+        for _ in 0..10000 {
+            assert!(
+                super::super::submitted_capture::reserve(
+                    &mut disabled,
+                    1,
+                    [65, 37],
+                    crate::synthetic::CaptureSource::Sdr
+                )
+                .is_none()
+            );
+        }
+    });
+    assert_eq!(allocations.count, 0);
     pollster::block_on(async {
         let (host, _) = Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         let off = host.prepared.graph(&host.slots[0].target, false).unwrap();
@@ -149,25 +106,29 @@ fn submit(host: &mut FrameHost<StaticWorld, StaticScene>, output: &wgpu::Texture
         "ordinary paused-world surface gate must submit"
     );
     assert_eq!(report.tick, 0);
-    let deadline = Instant::now() + Duration::from_secs(5);
     let mut completed = None;
-    while host.pending_frames() != 0 {
-        completed = host.poll_completed().unwrap().or(completed);
-        assert!(Instant::now() < deadline);
-        std::thread::yield_now();
-    }
+    thrum_test_support::wait::until(
+        "ordinary submitted frame completes",
+        Duration::from_secs(5),
+        || {
+            if host.pending_frames() == 0 {
+                return Some(());
+            }
+            completed = host.poll_completed().unwrap().or(completed.take());
+            None
+        },
+    );
     completed.expect("ordinary submitted frame completed")
 }
 
 fn image(host: &mut FrameHost<StaticWorld, StaticScene>) -> super::super::SubmittedImage {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    loop {
+    thrum_test_support::wait::until("submitted image", Duration::from_secs(5), || {
         if let Some(image) = host.try_submitted_image().unwrap() {
-            return image;
+            return Some(image);
         }
         drop(host.poll_completed().unwrap());
-        assert!(Instant::now() < deadline);
-    }
+        None
+    })
 }
 
 #[test]
@@ -218,47 +179,13 @@ fn submitted_tap_matches_the_actual_odd_width_surface_and_preserves_history() {
             assert_eq!(image.history_epoch, host.submitted_view_history_epoch);
             // Independently copy the exact output consumed by the presenter; no
             // second scene render or endpoint capture participates in comparison.
-            let buffer = host.device.create_buffer(&wgpu::BufferDescriptor {
-                label: None,
-                size: 512 * 37,
-                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                mapped_at_creation: false,
-            });
-            let mut encoder = host
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-            encoder.copy_texture_to_buffer(
-                output.as_image_copy(),
-                wgpu::TexelCopyBufferInfo {
-                    buffer: &buffer,
-                    layout: wgpu::TexelCopyBufferLayout {
-                        offset: 0,
-                        bytes_per_row: Some(512),
-                        rows_per_image: Some(37),
-                    },
-                },
-                wgpu::Extent3d {
-                    width: 65,
-                    height: 37,
-                    depth_or_array_layers: 1,
-                },
+            let mut expected = thrum_test_support::readback::texture(
+                &host.device,
+                &host.queue,
+                &output,
+                thrum_test_support::readback::Mip::level(0),
+                ..,
             );
-            let (send, receive) = std::sync::mpsc::channel();
-            encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
-                send.send(result).unwrap();
-            });
-            host.queue.submit([encoder.finish()]);
-            host.device
-                .poll(wgpu::PollType::wait_indefinitely())
-                .unwrap();
-            receive.recv().unwrap().unwrap();
-            let mapped = buffer.slice(..).get_mapped_range().unwrap();
-            let mut expected: Vec<_> = mapped
-                .as_chunks::<512>()
-                .0
-                .iter()
-                .flat_map(|row| row[..65 * 4].iter().copied())
-                .collect();
             if format == wgpu::TextureFormat::Bgra8Unorm {
                 for pixel in expected.as_chunks_mut::<4>().0 {
                     pixel.swap(0, 2);

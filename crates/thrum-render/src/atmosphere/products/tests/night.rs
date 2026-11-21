@@ -9,16 +9,25 @@ use crate::{
 #[test]
 fn metal_lent_night_sky_diffuse_and_finite_aerial_preserve_absolute_units() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "metal_lent_night_sky_diffuse_and_finite_aerial_preserve_absolute_units",
             Some(wgpu::Backend::Metal),
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 140);
         for (height, rays, horizon, lux) in [
             (

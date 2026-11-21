@@ -4,7 +4,6 @@
 use super::super::{EARTH, LUT_SHADER};
 use crate::atmosphere::model;
 use crate::shader_constants::{ATMOSPHERE_EXTENTS as EXTENTS, ATMOSPHERE_PLANES as LUT_PLANES};
-use std::{sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 
 const RADIUS: f64 = 6_371_000.0;
@@ -123,12 +122,6 @@ fn observe(
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: bytes,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
     let producer = pipeline(device, shader, "transmittance_main");
     let lookup = pipeline(
         device,
@@ -199,26 +192,11 @@ fn observe(
             1,
         );
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, bytes);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("transmittance receiver alive");
-    });
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, ..);
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(20)),
-        })
-        .expect("transmittance GPU completion");
-    receive
-        .recv()
-        .expect("transmittance callback")
-        .expect("transmittance mapped");
     readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("transmittance records")
+        .wait(device, submission)
         .as_chunks::<48>()
         .0
         .iter()
@@ -300,17 +278,26 @@ fn check_producer(queries: &[[f32; 4]], records: &[[f32; 12]]) {
 #[test]
 fn near_ground_sun_lookup_and_producer_endpoints_agree_with_cpu_authority() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "near_ground_sun_lookup_and_producer_endpoints_agree_with_cpu_authority",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("production transmittance and test-only observer"),
@@ -447,17 +434,26 @@ fn check_receiver_case(
 #[test]
 fn surface_sun_uses_receiver_height_and_local_horizon_not_camera_transmission() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = crate::test_device::open(
             "surface_sun_uses_receiver_height_and_local_horizon_not_camera_transmission",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::capabilities::DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("production surface Sun and isolated observer"),

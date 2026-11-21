@@ -272,13 +272,24 @@ fn offscreen_sun_casters_still_shadow_visible_receivers() {
 #[test]
 fn frustum_pass_is_timed_within_the_scene_pass_budget() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("frustum_pass_is_timed_within_the_scene_pass_budget", None)
+        let Some(thrum_test_support::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = thrum_test_support::open(
+            "frustum_pass_is_timed_within_the_scene_pass_budget",
+            None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: None,
+                ..Default::default()
+            },
+        )
         else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
-        let (device, queue) = test_gpu.portable(None);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let view = view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]);
         let mut counts = Vec::new();
@@ -446,14 +457,27 @@ fn walled(mut scene: SyntheticScene) -> SyntheticScene {
 
 #[test]
 fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(thrum_test_support::Opened {
+        gpu: test_gpu,
+        device,
+        queue,
+        ..
+    }) = thrum_test_support::open(
         "occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame",
         None,
-    ) else {
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
+    )
+    else {
         return;
     };
+    let adapter = test_gpu.adapter.clone();
+    #[cfg(target_os = "macos")]
+    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
     pollster::block_on(async {
-        let (adapter, device, queue) = device(&test_gpu);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         // Grazing views along the grid occlude most of it; one sits inside
         // the cube layer (near-plane crossings), one looks away (empty).
@@ -778,14 +802,27 @@ fn a_box_flush_with_a_prepass_wall_keeps_its_ties_near_and_far() {
 /// - a cut to a view from the other side.
 #[test]
 fn stale_bits_after_a_swap_or_a_reveal_keep_direct_images() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(thrum_test_support::Opened {
+        gpu: test_gpu,
+        device,
+        queue,
+        ..
+    }) = thrum_test_support::open(
         "stale_bits_after_a_swap_or_a_reveal_keep_direct_images",
         None,
-    ) else {
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
+    )
+    else {
         return;
     };
+    let adapter = test_gpu.adapter.clone();
+    #[cfg(target_os = "macos")]
+    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
     pollster::block_on(async {
-        let (adapter, device, queue) = device(&test_gpu);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 53);
         let camera = view([0.0, 0.0, -1.5], [0.0, 0.0, 0.5]);
         let mut hidden = SyntheticScene::grid(2).expect("grid");

@@ -3,7 +3,7 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -12,14 +12,8 @@ use thrum_cook::{
     AllowedOrigins, CookConfig, Cooker, DevServer, Durability, Publications, Quality, demo, watch,
 };
 
-static NEXT: AtomicU32 = AtomicU32::new(0);
-
-fn fixture() -> (PathBuf, CookConfig) {
-    let root = std::env::temp_dir().join(format!(
-        "thrum-g5-serve-{}-{}",
-        std::process::id(),
-        NEXT.fetch_add(1, Ordering::Relaxed)
-    ));
+fn fixture() -> (thrum_test_support::Scratch, CookConfig) {
+    let root = thrum_test_support::Scratch::new("g5-serve");
     let source = root.join("source");
     std::fs::create_dir_all(source.join("textures")).expect("create");
     demo::write_checker_png(&source.join("textures/checker.png"), 32, [200, 40, 40]).expect("png");
@@ -129,7 +123,7 @@ fn the_dev_server_serves_head_verified_products_and_long_polls() {
         "woken by publication, not timeout"
     );
     drop(server);
-    cleanup(&root);
+    cleanup(root.path());
 }
 
 #[test]
@@ -170,7 +164,7 @@ fn web_pages_cannot_read_the_dev_server() {
     assert_eq!(status, 204);
     assert!(!header.contains("Access-Control"));
     drop(server);
-    cleanup(&root);
+    cleanup(root.path());
 }
 
 /// A page served from another device reads the server only when its exact origin is listed;
@@ -228,7 +222,7 @@ fn only_listed_page_origins_beyond_loopback_may_read_the_dev_server() {
     )
     .expect_err("wildcard bind with listed origins");
     assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
-    cleanup(&root);
+    cleanup(root.path());
 }
 
 #[test]
@@ -295,7 +289,7 @@ fn the_watcher_publishes_an_edited_source() {
 
     stop.store(true, Ordering::Relaxed);
     thread.join().expect("watcher");
-    cleanup(&root);
+    cleanup(root.path());
 }
 
 fn cleanup(root: &Path) {
@@ -316,5 +310,4 @@ fn cleanup(root: &Path) {
         }
     }
     writable(root);
-    std::fs::remove_dir_all(root).ok();
 }

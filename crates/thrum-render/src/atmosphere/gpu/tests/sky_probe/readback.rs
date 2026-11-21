@@ -1,9 +1,6 @@
 //! Read the production LUTs through sampled access, without adding test-only
 //! resource usages or paths to the renderer.
 
-use std::sync::mpsc;
-use std::time::Duration;
-
 use crate::atmosphere::AtmosphereFrame;
 use crate::atmosphere::gpu::AtmospherePrepared;
 use crate::atmosphere::stage::Chart;
@@ -103,10 +100,10 @@ impl Probe {
             &self.atmosphere.uniform,
             &self.atmosphere.textures.sky_view,
         );
-        submit(device, queue, encoder, [&rays_full]);
+        let submission = queue.submit([encoder.finish()]);
         self.transport_ready = true;
         Sky {
-            rays_full: decode(&rays_full, 1024.0),
+            rays_full: decode(&rays_full.wait(device, submission), 1024.0),
         }
     }
 
@@ -121,9 +118,9 @@ impl Probe {
             &self.atmosphere.textures.multiple_scattering,
         );
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        snapshot.encode(&mut encoder, &self.reader);
-        submit(device, queue, encoder, [&snapshot.readback]);
-        snapshot.collect(1.0)
+        let readback = snapshot.encode(device, &mut encoder, &self.reader);
+        let submission = queue.submit([encoder.finish()]);
+        decode(&readback.wait(device, submission), 1.0)
     }
 
     pub(super) fn night(
@@ -139,12 +136,6 @@ impl Probe {
             .update(queue, frame, &SyntheticView::default(), [1, 1]);
         let texture = &self.atmosphere.textures.sky_view;
         let snapshot = Snapshot::new(device, &self.reader, texture);
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("night meter and diffuse readback"),
-            size: self.environment.size(),
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         if !self.transport_ready {
             for chart in [
@@ -162,27 +153,22 @@ impl Probe {
             pass.set_bind_group(0, &self.atmosphere.diffuse_group, &[]);
             pass.dispatch_workgroups(1, 1, 1);
         }
-        snapshot.encode(&mut encoder, &self.reader);
+        let grid = snapshot.encode(device, &mut encoder, &self.reader);
         let rays = self
             .rays
             .observe(device, &mut encoder, &self.atmosphere.uniform, texture);
-        encoder.copy_buffer_to_buffer(&self.environment, 0, &readback, 0, readback.size());
-        submit(
+        let environment = thrum_test_support::readback::Readback::buffer(
             device,
-            queue,
-            encoder,
-            [&snapshot.readback, &rays, &readback],
+            &mut encoder,
+            &self.environment,
+            ..,
         );
+        let submission = queue.submit([encoder.finish()]);
         self.transport_ready = true;
         NightSky {
-            grid: snapshot.collect(1.0),
-            rays: decode(&rays, 1.0),
-            environment: bytemuck::pod_read_unaligned(
-                &readback
-                    .slice(..)
-                    .get_mapped_range()
-                    .expect("mapped environment light"),
-            ),
+            grid: decode(&grid.wait(device, submission.clone()), 1.0),
+            rays: decode(&rays.wait(device, submission.clone()), 1.0),
+            environment: bytemuck::pod_read_unaligned(&environment.wait(device, submission)),
         }
     }
 
@@ -207,35 +193,6 @@ pub(super) struct NightSky {
     pub environment: EnvironmentLight,
 }
 
-fn submit<const N: usize>(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    encoder: wgpu::CommandEncoder,
-    buffers: [&wgpu::Buffer; N],
-) {
-    let receivers = buffers.map(|buffer| {
-        let (send, receive) = mpsc::channel();
-        encoder.map_buffer_on_submit(buffer, wgpu::MapMode::Read, .., move |result| {
-            send.send(result)
-                .expect("reference readback receiver remains alive");
-        });
-        receive
-    });
-    let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(Duration::from_secs(10)),
-        })
-        .expect("reference GPU work completes");
-    for receiver in receivers {
-        receiver
-            .recv()
-            .expect("reference map callback runs")
-            .expect("reference GPU buffer maps");
-    }
-}
-
 fn frame(degrees: f32, height: f32) -> AtmosphereFrame {
     let (sin, cos) = degrees.to_radians().sin_cos();
     AtmosphereFrame::new([cos, sin, 0.0], 1.0, [1.0; 3], height, 1)
@@ -244,7 +201,6 @@ fn frame(degrees: f32, height: f32) -> AtmosphereFrame {
 
 struct Snapshot {
     output: wgpu::Buffer,
-    readback: wgpu::Buffer,
     group: wgpu::BindGroup,
     width: u32,
     height: u32,
@@ -265,12 +221,6 @@ impl Snapshot {
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("reference mapped LUT snapshot"),
-            size,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("reference readback resources"),
@@ -288,33 +238,29 @@ impl Snapshot {
         });
         Self {
             output,
-            readback,
             group,
             width,
             height,
         }
     }
 
-    fn encode(&self, encoder: &mut wgpu::CommandEncoder, pipeline: &wgpu::ComputePipeline) {
+    fn encode(
+        &self,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        pipeline: &wgpu::ComputePipeline,
+    ) -> thrum_test_support::readback::Readback {
         {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             pass.set_pipeline(pipeline);
             pass.set_bind_group(0, &self.group, &[]);
             pass.dispatch_workgroups(self.width.div_ceil(8), self.height.div_ceil(8), 1);
         }
-        encoder.copy_buffer_to_buffer(&self.output, 0, &self.readback, 0, self.output.size());
-    }
-
-    fn collect<const N: usize>(&self, gain: f64) -> Vec<[f64; N]> {
-        decode(&self.readback, gain)
+        thrum_test_support::readback::Readback::buffer(device, encoder, &self.output, ..)
     }
 }
 
-fn decode<const N: usize>(readback: &wgpu::Buffer, gain: f64) -> Vec<[f64; N]> {
-    let mapped = readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("reference buffer is mapped");
+fn decode<const N: usize>(mapped: &[u8], gain: f64) -> Vec<[f64; N]> {
     mapped
         .as_chunks::<16>()
         .0

@@ -25,14 +25,17 @@ fn step(value: f32) -> f32 {
 
 #[test]
 fn clip_and_inverse_record_keep_the_world_point_at_twenty_metres_and_three_kilometres() {
-    let Some(gpu) = thrum_test_support::gpu("secondary clip and depth", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary clip and depth",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         for distance in [20.0, 3000.0] {
@@ -126,15 +129,17 @@ fn clip_and_inverse_record_keep_the_world_point_at_twenty_metres_and_three_kilom
 
 #[test]
 fn clipping_discards_the_ground_over_the_camera_and_clamps_a_near_plane() {
-    let Some(gpu) =
-        thrum_test_support::gpu("secondary camera below ground", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary camera below ground",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let mut scene = SyntheticScene::grid(2).expect("scene");

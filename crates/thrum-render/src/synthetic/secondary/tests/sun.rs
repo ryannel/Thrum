@@ -55,14 +55,15 @@ async fn ordinary(
 #[cfg(target_os = "macos")]
 #[test]
 fn view_sun_profiles_match_ordinary_main_without_borrowing_its_cascades() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
         "view_sun_profiles_match_ordinary_main_without_borrowing_its_cascades",
         Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let camera = |forward| {
             SyntheticView::perspective(
                 [0.0, 6.0, 0.0],

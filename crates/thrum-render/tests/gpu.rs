@@ -16,12 +16,17 @@ use thrum_render::timing::{GpuTimings, TimingError};
 #[cfg(target_os = "macos")]
 fn scene_depth_uses_32_bit_float() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("scene_depth_uses_32_bit_float", Some(wgpu::Backend::Metal))
-        else {
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
+            "scene_depth_uses_32_bit_float",
+            Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let depth = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("production scene depth format regression"),
             size: wgpu::Extent3d {
@@ -37,12 +42,6 @@ fn scene_depth_uses_32_bit_float() {
             view_formats: &[],
         });
         let view = depth.create_view(&wgpu::TextureViewDescriptor::default());
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("depth32 readback"),
-            size: 256,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         {
             let _pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -61,43 +60,15 @@ fn scene_depth_uses_32_bit_float() {
                 multiview_mask: None,
             });
         }
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture: &depth,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::DepthOnly,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &readback,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(256),
-                    rows_per_image: Some(1),
-                },
-            },
-            wgpu::Extent3d {
-                width: 1,
-                height: 1,
-                depth_or_array_layers: 1,
-            },
+        let readback = thrum_test_support::readback::Readback::texture(
+            &device,
+            &mut encoder,
+            &depth,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
         );
-        let (send, receive) = std::sync::mpsc::channel();
-        encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).expect("depth readback receiver");
-        });
         let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(std::time::Duration::from_secs(10)),
-            })
-            .expect("depth submission");
-        receive
-            .recv()
-            .expect("depth callback")
-            .expect("mapped depth");
-        let mapped = readback.slice(..).get_mapped_range().expect("depth bytes");
+        let mapped = readback.wait(&device, submission);
         let value = f32::from_le_bytes(mapped[..4].try_into().expect("four depth bytes"));
         assert!(
             (value - 0.25).abs() < 1e-6,
@@ -114,15 +85,29 @@ fn scene_depth_uses_32_bit_float() {
 )]
 fn prepared_scene_pixels_timestamps_and_disabled_path() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("prepared_scene_pixels_timestamps_and_disabled_path", None)
+        // The profile can only enable timing features the adapter has, so this mask is
+        // `DeviceCapabilities::requested_timing_features` of the admitted adapter.
+        let Some(thrum_test_support::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = thrum_test_support::open(
+            "prepared_scene_pixels_timestamps_and_disabled_path",
+            None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(
+                    wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS,
+                ),
+                ..Default::default()
+            },
+        )
         else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         let info = adapter.get_info();
-        let features = DeviceCapabilities::requested_timing_features(&adapter);
-        let (device, queue) = test_gpu.portable(Some(features));
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         assert_eq!(capabilities.adapter().name, info.name);
         assert_eq!(capabilities.features(), device.features());
@@ -610,11 +595,14 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             "10k lit geometry must cover meaningful pixels"
         );
         if let Ok(path) = std::env::var("THRUM_RENDER_CAPTURE") {
-            let mut ppm = b"P6\n# sRGB encoded after authored exposure and tone/gamut mapping\n1920 1080\n255\n".to_vec();
-            for pixel in rgba.as_chunks::<4>().0 {
-                ppm.extend_from_slice(&pixel[..3]);
-            }
-            std::fs::write(path, ppm).unwrap();
+            // sRGB encoded after authored exposure and tone/gamut mapping.
+            thrum_test_support::ppm::write(
+                path,
+                [1920, 1080],
+                &rgba,
+                thrum_test_support::ppm::Pixels::Rgba8,
+            )
+            .unwrap();
         }
         // Feature not enabled on a device means successful unsupported behavior,
         // even when the physical adapter does support timestamps.
@@ -650,13 +638,17 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
 #[test]
 fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "live_frame_matches_fresh_preparation_without_recreating_the_target",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let view = |eye| {
             SyntheticView::perspective(eye, [0.0; 3], [0.0, 1.0, 0.0], 1.0, 1.0, 0.1, 20.0)
                 .expect("finite camera")
@@ -736,13 +728,17 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
 #[test]
 fn two_submitted_views_keep_their_own_camera_and_exposure_pixels() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "two_submitted_views_keep_their_own_camera_and_exposure_pixels",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let view = |eye| {
             SyntheticView::perspective(eye, [0.0; 3], [0.0, 1.0, 0.0], 1.0, 1.0, 0.1, 20.0)
                 .expect("finite camera")
@@ -839,13 +835,17 @@ fn two_submitted_views_keep_their_own_camera_and_exposure_pixels() {
 #[test]
 fn clustered_local_light_changes_only_its_receiver_region() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "clustered_local_light_changes_only_its_receiver_region",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(1).expect("fixture");
         scene.instances[0].current = [
             [0.6, 0.0, 0.0, 0.0],
@@ -912,13 +912,17 @@ fn clustered_local_light_changes_only_its_receiver_region() {
 #[test]
 fn perspective_cluster_and_target_aux_light_visible_pixels() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "perspective_cluster_and_target_aux_light_visible_pixels",
             None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(1).expect("fixture");
         scene.view = SyntheticView::perspective(
             [0.0, 0.0, 2.0],
@@ -1029,13 +1033,17 @@ fn place_box(instance: &mut InstanceRecord, center: [f32; 3], scale: [f32; 3]) {
 #[cfg(target_os = "macos")]
 fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters",
             Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
         ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let light = SyntheticLight {
             direction_to_light: [1.0, 0.0, 1.0],
             irradiance: [4.0; 3],
@@ -1193,12 +1201,17 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
 #[test]
 fn cascade_overlap_keeps_caster_occlusion_across_split() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("cascade_overlap_keeps_caster_occlusion_across_split", None)
-        else {
+        let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
+            "cascade_overlap_keeps_caster_occlusion_across_split",
+            None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        ) else {
             return;
         };
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let light = SyntheticLight {
             direction_to_light: [1.0, 0.0, 1.0],
             irradiance: [4.0; 3],

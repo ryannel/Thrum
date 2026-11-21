@@ -1,5 +1,9 @@
 //! Submitted SDR and scene-linear checks for the display-referred output half.
 
+#[expect(
+    dead_code,
+    reason = "each sprite proof uses a subset of the shared host fixture"
+)]
 mod support {
     pub(crate) mod sprite_fixture;
 }
@@ -33,9 +37,6 @@ fn encode(value: f64) -> f64 {
 
 #[test]
 fn completes_the_srgb_round_trip_and_keeps_the_linear_checkpoint() {
-    let Some(gpu) = thrum_test_support::gpu("sprite colour", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
     let mut art: Vec<_> = (0..=255_u8)
         .flat_map(|code| [code, code, code, 255])
         .collect();
@@ -84,7 +85,15 @@ fn completes_the_srgb_round_trip_and_keeps_the_linear_checkpoint() {
     ];
     rows[4].tint[0] = 2.0;
     for recipe in fixture::RECIPES {
-        let (device, queue, caps) = fixture::metal(&gpu, recipe, 1);
+        let Some(thrum_test_support::Opened {
+            device,
+            queue,
+            capabilities: caps,
+            ..
+        }) = fixture::open("sprite colour", recipe)
+        else {
+            return;
+        };
         let mut host = fixture::host(
             &caps,
             &queue,

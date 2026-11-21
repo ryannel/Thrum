@@ -29,14 +29,15 @@ fn lighting(height: f32) -> FrameLighting {
 #[cfg(target_os = "macos")]
 #[test]
 fn plane_volume_matches_every_channel_of_the_ordinary_observer() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
         "plane_volume_matches_every_channel_of_the_ordinary_observer",
         Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let capabilities = DeviceCapabilities::capture_device(&device, 1);
         for height in [0.0, 50.0] {
             for below in [2.0, 40.0] {
@@ -164,52 +165,21 @@ pub(super) fn volume(
     queue: &wgpu::Queue,
     textures: [&wgpu::Texture; 2],
 ) -> Vec<u16> {
-    let bytes = u64::from(textures[0].width())
-        * u64::from(textures[0].height())
-        * u64::from(textures[0].depth_or_array_layers())
-        * 8;
-    let output = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("aerial comparison readback"),
-        size: bytes * 2,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    for (index, texture) in (0_u64..).zip(textures) {
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &output,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: bytes * index,
-                    bytes_per_row: Some(texture.width() * 8),
-                    rows_per_image: Some(texture.height()),
-                },
-            },
-            texture.size(),
-        );
-    }
-    let (send, receive) = std::sync::mpsc::channel();
-    encoder.map_buffer_on_submit(&output, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("callback receiver");
+    let readbacks = textures.map(|texture| {
+        thrum_test_support::readback::Readback::texture(
+            device,
+            &mut encoder,
+            texture,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
+        )
     });
     let submitted = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(std::time::Duration::from_secs(30)),
-        })
-        .expect("readback completion");
-    receive.recv().expect("callback").expect("map");
-    output
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped volume")
+    readbacks
+        .into_iter()
+        .flat_map(|readback| readback.wait(device, submitted.clone()))
+        .collect::<Vec<u8>>()
         .as_chunks::<2>()
         .0
         .iter()

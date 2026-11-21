@@ -30,13 +30,12 @@ fn triangle() -> SyntheticMesh {
 
 #[test]
 fn invalid_selections_are_refused_and_a_valid_one_prepares() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(gpu) = gpu(
         "invalid_selections_are_refused_and_a_valid_one_prepares",
         None,
     ) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     let prepare = |scene: &SyntheticScene| {
         pollster::block_on(PreparedSynthetic::prepare_with_capabilities(
             &gpu.capabilities,

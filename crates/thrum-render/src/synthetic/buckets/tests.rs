@@ -118,14 +118,14 @@ fn unknown_keys_are_refused_and_leave_the_slot() {
 
 #[test]
 fn members_follow_upload_activity_churn() {
-    let Some(test_gpu) = thrum_test_support::gpu("members_follow_upload_activity_churn", None)
-    else {
+    let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
+        "members_follow_upload_activity_churn",
+        None,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
+    ) else {
         return;
     };
-    let (device, queue) = pollster::block_on(crate::test_device::portable(
-        &test_gpu,
-        Some(wgpu::Features::empty()),
-    ));
     let count = 96_u32;
     let mesh_of = |slot: u32| {
         if slot.is_multiple_of(3) {

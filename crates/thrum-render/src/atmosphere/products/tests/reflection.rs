@@ -3,8 +3,9 @@ use super::{filtered, observer};
 use crate::pass_key::AtmosphereStage;
 use crate::{
     atmosphere::{AtmosphereFrame, reflection::tests as reference},
-    capabilities::DeviceCapabilities,
+    capabilities::{DeviceCapabilities, DeviceProfile, DeviceRestriction},
     synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene},
+    test_device::{Opened, open},
 };
 use std::fmt::Write as _;
 
@@ -15,16 +16,22 @@ use std::fmt::Write as _;
 )]
 fn metal_h5_lent_reflection_direction_roughness_source_night_and_exposure() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(Opened {
+            gpu, device, queue, ..
+        }) = open(
             "metal_h5_lent_reflection_direction_roughness_source_night_and_exposure",
             Some(wgpu::Backend::Metal),
-        ) else {
+            DeviceProfile::Portable,
+            &DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
+        else {
             return;
         };
-        let adapter = test_gpu.adapter.clone();
+        let adapter = gpu.adapter;
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 140);
         let scene = SyntheticScene::grid(1).unwrap();
         let frame = AtmosphereFrame::new([1.0, 0.0, 0.0], 1.0, [1.0; 3], 2.0, 1).unwrap();

@@ -93,10 +93,10 @@ mod metal {
             let origins =
                 [hit, previous_hit, slot.current[3][0] + centre].map(|x| [x, 1.1, -4.0, 0.0]);
             let readback = probe.record(&device, &mut encoder, &origins);
-            queue.submit([encoder.finish()]);
+            let submission = queue.submit([encoder.finish()]);
             prepared.commit_frame();
             assert_eq!(
-                support::answers(&device, &readback),
+                support::answers(&device, readback, submission),
                 [1, 0, 0],
                 "frame {frame}"
             );

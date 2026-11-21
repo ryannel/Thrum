@@ -104,15 +104,14 @@ fn affine_texture(device: &wgpu::Device, queue: &wgpu::Queue) -> wgpu::Texture {
 
 #[test]
 fn reconstructed_moments_have_no_magnified_texel_lattice() {
-    let Some(gpu) =
-        thrum_test_support::gpu("water moment reconstruction", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
+        "water moment reconstruction",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let texture = affine_texture(&device, &queue);
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         mag_filter: wgpu::FilterMode::Linear,
@@ -125,12 +124,6 @@ fn reconstructed_moments_have_no_magnified_texel_lattice() {
         label: Some("reconstructed moments"),
         contents: &[0; 98 * 64],
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-    });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("moment readback"),
-        size: output.size(),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
     });
     let source = format!(
         "{}\n{}",
@@ -190,18 +183,10 @@ fn reconstructed_moments_have_no_magnified_texel_lattice() {
         pass.set_bind_group(0, &group, &[]);
         pass.dispatch_workgroups(98, 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, output.size());
-    queue.submit([encoder.finish()]);
-    let slice = readback.slice(..);
-    let (send, receive) = std::sync::mpsc::channel();
-    slice.map_async(wgpu::MapMode::Read, move |result| {
-        send.send(result).expect("callback");
-    });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("complete");
-    receive.recv().expect("callback").expect("mapped");
-    let mapped = slice.get_mapped_range().expect("bytes");
+    let readback =
+        thrum_test_support::readback::Readback::buffer(&device, &mut encoder, &output, ..);
+    let submission = queue.submit([encoder.finish()]);
+    let mapped = readback.wait(&device, submission);
     let values: &[[f32; 4]] = bytemuck::cast_slice(&mapped);
     let mut old_variance = Vec::new();
     let mut max_moment_error = 0.0_f64;

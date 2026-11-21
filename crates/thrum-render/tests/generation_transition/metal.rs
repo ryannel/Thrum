@@ -7,7 +7,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         mpsc,
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
 #[cfg(target_os = "macos")]
 use thrum_render::{
@@ -142,17 +142,12 @@ fn submit(host: &mut support::Host, view: &wgpu::TextureView, extent: [u32; 2]) 
 
 #[cfg(target_os = "macos")]
 fn complete(host: &mut support::Host, device: &wgpu::Device) -> FrameSample {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    loop {
+    thrum_test_support::wait::until("completed Metal frame", Duration::from_secs(5), || {
         device
             .poll(wgpu::PollType::Poll)
             .expect("transition fixture");
-        if let Some(sample) = host.poll_completed().expect("transition fixture") {
-            return sample;
-        }
-        assert!(Instant::now() < deadline, "no completed Metal frame");
-        std::thread::yield_now();
-    }
+        host.poll_completed().expect("transition fixture")
+    })
 }
 
 #[cfg(target_os = "macos")]
@@ -177,18 +172,14 @@ fn prepare(
 
 #[cfg(target_os = "macos")]
 fn captured(host: &mut support::Host, device: &wgpu::Device) -> SubmittedImage {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    loop {
-        device.poll(wgpu::PollType::Poll).expect("capture progress");
-        if let Some(image) = host.try_submitted_image().expect("capture mapping") {
-            return image;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "capture did not drain through the switch"
-        );
-        std::thread::yield_now();
-    }
+    thrum_test_support::wait::until(
+        "capture drained through the switch",
+        Duration::from_secs(5),
+        || {
+            device.poll(wgpu::PollType::Poll).expect("capture progress");
+            host.try_submitted_image().expect("capture mapping")
+        },
+    )
 }
 
 #[cfg(target_os = "macos")]
@@ -226,15 +217,14 @@ fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_compari
     let _metal = METAL
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some(gpu) =
-        thrum_test_support::gpu("kept extent history control", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { gpu, device, queue, .. }) = thrum_test_support::open(
+        "kept extent history control",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let output = view(&device, OLD);
     let reset = independent_reset(&cap, &device, &queue, &output, OLD, 1);
@@ -253,22 +243,18 @@ fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_compari
             ..old
         };
         let mut transition = ExtentTransition::new(old);
-        let deadline = Instant::now() + Duration::from_secs(5);
-        let candidate = loop {
-            transition
-                .advance(scale_changed, old, Duration::ZERO, || {
-                    Ok(prepare(&host, OLD, Dispatch::none()))
-                })
-                .expect("scale build");
-            if let Some(candidate) = transition.ready() {
-                break candidate;
-            }
-            assert!(
-                Instant::now() < deadline,
-                "scale change did not build immediately"
-            );
-            std::thread::yield_now();
-        };
+        let candidate = thrum_test_support::wait::until(
+            "scale change built immediately",
+            Duration::from_secs(5),
+            || {
+                transition
+                    .advance(scale_changed, old, Duration::ZERO, || {
+                        Ok(prepare(&host, OLD, Dispatch::none()))
+                    })
+                    .expect("scale build");
+                transition.ready()
+            },
+        );
         assert_eq!(
             transition
                 .surface
@@ -315,14 +301,14 @@ fn a_detached_extent_preserves_current_capture_admission() {
     let _metal = METAL
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some(gpu) = thrum_test_support::gpu("extent capture admission", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { gpu, device, queue, .. }) = thrum_test_support::open(
+        "extent capture admission",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let old_output = view(&device, OLD);
     let new_output = view(&device, NEW);
@@ -388,15 +374,14 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     let _metal = METAL
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some(gpu) =
-        thrum_test_support::gpu("extent generation transition", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened { gpu, device, queue, .. }) = thrum_test_support::open(
+        "extent generation transition",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    ) else {
+        return;
+    };
     let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let mut host = host(&cap, &queue, OLD);
     host.enable_submitted_capture_with_limits(7, CaptureLimits::default())
@@ -469,22 +454,18 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     assert_eq!(transition.surface.record().configure_calls, 0);
     release.send(()).expect("transition fixture");
 
-    let deadline = Instant::now() + Duration::from_secs(10);
-    let candidate = loop {
-        transition
-            .advance(new, old, ms(202), || {
-                Ok(prepare(&host, NEW, dispatch.clone()))
-            })
-            .expect("transition fixture");
-        if let Some(ready) = transition.ready() {
-            break ready;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "latest build did not become ready"
-        );
-        std::thread::yield_now();
-    };
+    let candidate = thrum_test_support::wait::until(
+        "latest build ready",
+        Duration::from_secs(10),
+        || {
+            transition
+                .advance(new, old, ms(202), || {
+                    Ok(prepare(&host, NEW, dispatch.clone()))
+                })
+                .expect("transition fixture");
+            transition.ready()
+        },
+    );
     assert!(host.admits_extent(&candidate));
     assert_eq!(
         transition
@@ -601,12 +582,15 @@ fn failed_and_lost_builds_never_take_the_surface() {
     let _metal = METAL
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some(gpu) = thrum_test_support::gpu("failed extent generation", Some(wgpu::Backend::Metal))
-    else {
+    let restriction = thrum_test_support::Restriction::default();
+    let Some(thrum_test_support::Opened { gpu, device, queue, .. }) = thrum_test_support::open(
+        "failed extent generation",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &restriction,
+    ) else {
         return;
     };
-    let restriction = thrum_test_support::Restriction::default();
-    let (device, queue) = gpu.device(thrum_test_support::Profile::Portable, &restriction);
     let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let mut host = host(&cap, &queue, OLD);
     let old_output = view(&device, OLD);
@@ -622,14 +606,11 @@ fn failed_and_lost_builds_never_take_the_surface() {
             Ok(|_: &AtomicBool| Err(FrameError::Gpu("forced allocation failure".into())))
         })
         .expect("transition fixture");
-    let deadline = Instant::now() + Duration::from_secs(5);
-    let failure = loop {
-        if let Err(error) = transition.advance(stale, old, ms(101), unexpected_build) {
-            break error;
-        }
-        assert!(Instant::now() < deadline);
-        std::thread::yield_now();
-    };
+    let failure = thrum_test_support::wait::until(
+        "forced build failure",
+        Duration::from_secs(5),
+        || transition.advance(stale, old, ms(101), unexpected_build).err(),
+    );
     assert!(failure.to_string().contains("forced allocation failure"));
     transition
         .advance(stale, old, ms(900), unexpected_build)
@@ -680,19 +661,18 @@ fn failed_and_lost_builds_never_take_the_surface() {
     let new = request(NEW, 2);
     transition.recovered(old, true);
     transition.observe(new, old, ms(1200));
-    let deadline = Instant::now() + Duration::from_secs(5);
-    let ready = loop {
-        transition
-            .advance(new, old, ms(1300), || {
-                Ok(prepare(&host, NEW, Dispatch::none()))
-            })
-            .expect("transition fixture");
-        if let Some(ready) = transition.ready() {
-            break ready;
-        }
-        assert!(Instant::now() < deadline);
-        std::thread::yield_now();
-    };
+    let ready = thrum_test_support::wait::until(
+        "recovered build ready",
+        Duration::from_secs(5),
+        || {
+            transition
+                .advance(new, old, ms(1300), || {
+                    Ok(prepare(&host, NEW, Dispatch::none()))
+                })
+                .expect("transition fixture");
+            transition.ready()
+        },
+    );
     assert_eq!(transition.surface.record().configure_calls, 0);
     assert!(host.admits_extent(&ready));
     assert!(host.publish_extent(ready));

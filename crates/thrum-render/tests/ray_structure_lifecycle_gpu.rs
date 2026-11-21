@@ -59,9 +59,9 @@ mod metal {
             .encode(&mut submitted, 1, &target, None)
             .expect("replayed first build");
         let readback = probe.record(&device, &mut submitted, &origins);
-        queue.submit([submitted.finish()]);
+        let submission = queue.submit([submitted.finish()]);
         prepared.commit_frame();
-        assert_eq!(support::answers(&device, &readback), [0, 1, 0]);
+        assert_eq!(support::answers(&device, readback, submission), [0, 1, 0]);
 
         let (replacement, new_queue, new_caps) = support::device(&gpu, "ray-query", 2);
         assert!(!caps.matches(&replacement));
@@ -82,8 +82,8 @@ mod metal {
             .encode(&mut encoder, 2, &new_target, None)
             .expect("first replacement frame");
         let readback = probe.record(&replacement, &mut encoder, &origins);
-        new_queue.submit([encoder.finish()]);
-        assert_eq!(support::answers(&replacement, &readback), [0, 0, 1]);
+        let submission = new_queue.submit([encoder.finish()]);
+        assert_eq!(support::answers(&replacement, readback, submission), [0, 0, 1]);
     }
     }
 }

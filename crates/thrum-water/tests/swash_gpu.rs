@@ -177,39 +177,17 @@ fn plane() -> SyntheticMesh {
 }
 
 fn read_row(device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture) -> Vec<[u16; 4]> {
+    // The middle row of eight-byte texels, sliced from the packed mip.
+    let start = u64::from(EXTENT[1] / 2) * u64::from(texture.width()) * 8;
     let size = u64::from(EXTENT[0]) * 8;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("submitted swash depth"),
-        size,
-        mapped_at_creation: false,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    let mut source = texture.as_image_copy();
-    source.origin.y = EXTENT[1] / 2;
-    encoder.copy_texture_to_buffer(
-        source,
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout::default(),
-        },
-        wgpu::Extent3d {
-            width: EXTENT[0],
-            height: 1,
-            depth_or_array_layers: 1,
-        },
-    );
-    queue.submit([encoder.finish()]);
-    let slice = buffer.slice(..);
-    let (send, receive) = std::sync::mpsc::channel();
-    slice.map_async(wgpu::MapMode::Read, move |r| {
-        send.send(r).expect("map callback");
-    });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("retired depth");
-    receive.recv().expect("callback").expect("map");
-    bytemuck::cast_slice(&slice.get_mapped_range().expect("mapped bytes")).to_vec()
+    bytemuck::cast_slice(&thrum_test_support::readback::texture(
+        device,
+        queue,
+        texture,
+        thrum_test_support::readback::Mip::level(0),
+        start..start + size,
+    ))
+    .to_vec()
 }
 
 fn plane_scanline(view: &SyntheticView) -> Vec<[f64; 2]> {
@@ -235,13 +213,17 @@ fn plane_scanline(view: &SyntheticView) -> Vec<[f64; 2]> {
 
 #[test]
 fn submitted_depth_waterline_matches_the_cpu_wave_at_display_time() {
-    let Some(gpu) = thrum_test_support::gpu("swash depth", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
-    let (device, queue) = gpu.device(
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "swash depth",
+        Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
-    );
+    )
+    else {
+        return;
+    };
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let surface = SurfaceProfile {
         format: OUTPUT_FORMAT,
@@ -313,17 +295,13 @@ fn submitted_depth_waterline_matches_the_cpu_wave_at_display_time() {
             .submitted_temporal_witness()
             .expect("submitted reactive and depth")
             .clone();
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
-        let sample = loop {
-            device
-                .poll(wgpu::PollType::wait_indefinitely())
-                .expect("frame");
-            if let Some(frame) = host.poll_completed().expect("ready") {
-                break frame;
-            }
-            assert!(std::time::Instant::now() < deadline, "completed frame");
-            std::thread::yield_now();
-        };
+        let sample =
+            thrum_test_support::wait::until("completed frame", Duration::from_secs(10), || {
+                device
+                    .poll(wgpu::PollType::wait_indefinitely())
+                    .expect("frame");
+                host.poll_completed().expect("ready")
+            });
         (sample, read_row(&device, &queue, &texture))
     };
     drop(submit(&mut host, 0.0));

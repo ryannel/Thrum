@@ -1,14 +1,22 @@
 //! Shared GPU readback for the production Sun visibility referees.
-use std::{sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 
 pub(super) const SAMPLE_FLOATS: usize = super::super::SAMPLE_BYTES / 4;
 
-pub(super) async fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
-    let adapter = test_gpu.adapter.clone();
+/// The portable device without optional features, asserting the Metal backend on macOS.
+pub(super) fn device(
+    test: &str,
+    backend: Option<wgpu::Backend>,
+) -> Option<(wgpu::Device, wgpu::Queue)> {
+    let opened = crate::test_device::open(
+        test,
+        backend,
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
+    )?;
     #[cfg(target_os = "macos")]
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
+    assert_eq!(opened.gpu.adapter.get_info().backend, wgpu::Backend::Metal);
+    Some((opened.device, opened.queue))
 }
 
 pub(super) fn constant_depth_maps(
@@ -141,12 +149,6 @@ pub(super) fn read_visibility(
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
     let observation = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &pipeline.get_bind_group_layout(2),
@@ -164,23 +166,11 @@ pub(super) fn read_visibility(
         pass.set_bind_group(2, &observation, &[]);
         pass.dispatch_workgroups(count.div_ceil(64), 1, 1);
     }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, size);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("shadow observation receiver");
-    });
+    let readback =
+        thrum_test_support::readback::Readback::buffer(device, &mut encoder, &output, ..size);
     let submitted = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(Duration::from_secs(20)),
-        })
-        .expect("shadow observation completes");
-    receive.recv().unwrap().unwrap();
     readback
-        .slice(..)
-        .get_mapped_range()
-        .unwrap()
+        .wait(device, submitted)
         .as_chunks::<4>()
         .0
         .iter()

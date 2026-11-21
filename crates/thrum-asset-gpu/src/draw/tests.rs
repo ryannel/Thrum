@@ -21,21 +21,22 @@ struct FragmentOutput { @location(0) colour:vec4<f32>, @location(1) motion:vec2<
 
 #[test]
 fn metal_cooked_march_uses_each_world_sample_and_preserves_sky() {
-    let Some(gpu) = thrum_test_support::gpu(
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
         "metal_cooked_march_uses_each_world_sample_and_preserves_sky",
         Some(wgpu::Backend::Metal),
-    ) else {
-        return;
-    };
-    let adapter = &gpu.adapter;
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let (device, queue) = gpu.device(
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction {
             features: Some(wgpu::Features::empty()),
             ..Default::default()
         },
-    );
+    )
+    else {
+        return;
+    };
+    let adapter = &gpu.adapter;
+    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
     let cloud = thrum_render::atmosphere::CLOUD_SHADER_SOURCE;
     let volume = super::cooked_source("", true);
     let volume = volume
@@ -278,12 +279,6 @@ fn draw(
     output: &wgpu::Texture,
     reactive: &wgpu::Texture,
 ) -> [f32; 4] {
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: 512,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
         let attachments = views.map(|view| {
@@ -311,66 +306,40 @@ fn draw(
         }
         pass.draw(0..3, 0..1);
     }
-    encoder.copy_texture_to_buffer(
-        output.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &readback,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(256),
-                rows_per_image: Some(1),
-            },
-        },
-        output.size(),
+    let output = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        output,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
-    encoder.copy_texture_to_buffer(
-        reactive.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &readback,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 256,
-                bytes_per_row: Some(256),
-                rows_per_image: Some(1),
-            },
-        },
-        reactive.size(),
+    let reactive = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        reactive,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
-    let (send, receive) = std::sync::mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result)
-            .expect("valid Metal qualification fixture");
-    });
     let submission = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(std::time::Duration::from_secs(30)),
-        })
-        .expect("valid Metal qualification fixture");
-    receive
-        .recv()
-        .expect("valid Metal qualification fixture")
-        .expect("valid Metal qualification fixture");
-    let bytes = readback
-        .slice(..)
-        .get_mapped_range()
-        .expect("valid Metal qualification fixture");
+    let reactive = reactive.wait(device, submission.clone());
+    let bytes = output.wait(device, submission);
+    let reactive = reactive[0];
     let alpha = f32::from_le_bytes(bytes[12..16].try_into().expect("alpha bytes"));
     let definition: serde_json::Value =
         serde_json::from_str(thrum_render::synthetic::TEMPORAL_WITNESS_JSON)
             .expect("shared temporal definition");
     assert_eq!(definition["rows"]["W3"]["reactive"], "volume alpha");
     assert_eq!(
-        u64::from(bytes[256]),
+        u64::from(reactive),
         definition["volume"]["expected_central_byte"]
             .as_u64()
             .expect("fixture reactive byte")
     );
     assert!(
-        (f32::from(bytes[256]) / 255.0 - alpha).abs() <= 1.0 / 255.0,
+        (f32::from(reactive) / 255.0 - alpha).abs() <= 1.0 / 255.0,
         "W3 cooked reactive must equal volume alpha"
     );
-    println!("M2 W3 cooked alpha={alpha} reactive={}", bytes[256]);
+    println!("M2 W3 cooked alpha={alpha} reactive={reactive}");
     std::array::from_fn(|i| {
         f32::from_le_bytes(
             bytes[i * 4..i * 4 + 4]

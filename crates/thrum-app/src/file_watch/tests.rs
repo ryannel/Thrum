@@ -1,5 +1,5 @@
 use std::{
-    path::{Path, PathBuf},
+    path::Path,
     sync::{
         Arc,
         atomic::{AtomicUsize, Ordering},
@@ -10,31 +10,6 @@ use std::{
 use super::{FileWatch, Kinds, MISSING_GRACE, Reload, TICK, deliver};
 
 const TEST_TICK: Duration = Duration::from_millis(25);
-
-/// A fresh folder under the system temporary directory, removed when dropped.
-struct Folder(PathBuf);
-
-impl Folder {
-    fn new(name: &str) -> Self {
-        let path = std::env::temp_dir().join(format!(
-            "thrum-file-watch-{name}-{}-{:?}",
-            std::process::id(),
-            Instant::now()
-        ));
-        std::fs::create_dir_all(&path).expect("temporary folder");
-        Self(path)
-    }
-
-    fn file(&self, name: &str) -> PathBuf {
-        self.0.join(name)
-    }
-}
-
-impl Drop for Folder {
-    fn drop(&mut self) {
-        drop(std::fs::remove_dir_all(&self.0));
-    }
-}
 
 struct Watching {
     watch: FileWatch,
@@ -78,8 +53,8 @@ impl Watching {
 
 #[test]
 fn an_in_place_save_is_delivered_once_with_its_kind() {
-    let folder = Folder::new("in-place");
-    let params = folder.file("starter.params.json");
+    let folder = thrum_test_support::Scratch::new("file-watch-in-place");
+    let params = folder.join("starter.params.json");
     std::fs::write(&params, "{}").expect("write");
     let watching = watch(&[(&params, Kinds::PARAMS)]);
     std::fs::write(&params, r#"{"sun.elevation": 30}"#).expect("save");
@@ -90,11 +65,11 @@ fn an_in_place_save_is_delivered_once_with_its_kind() {
 
 #[test]
 fn a_rename_save_is_delivered_once() {
-    let folder = Folder::new("rename");
-    let material = folder.file("material.wgsl");
+    let folder = thrum_test_support::Scratch::new("file-watch-rename");
+    let material = folder.join("material.wgsl");
     std::fs::write(&material, "// a").expect("write");
     let watching = watch(&[(&material, Kinds::GAME)]);
-    let temporary = folder.file(".material.wgsl.tmp");
+    let temporary = folder.join(".material.wgsl.tmp");
     std::fs::write(&temporary, "// b").expect("write temporary");
     std::fs::rename(&temporary, &material).expect("rename");
     assert_eq!(watching.settled(1), 1);
@@ -103,8 +78,8 @@ fn a_rename_save_is_delivered_once() {
 
 #[test]
 fn a_burst_of_writes_is_delivered_once() {
-    let folder = Folder::new("burst");
-    let params = folder.file("p.json");
+    let folder = thrum_test_support::Scratch::new("file-watch-burst");
+    let params = folder.join("p.json");
     std::fs::write(&params, "0").expect("write");
     // The window's own tick: an editor's burst lands well inside it.
     let watching = watch_every(&[(&params, Kinds::PARAMS)], TICK);
@@ -117,8 +92,8 @@ fn a_burst_of_writes_is_delivered_once() {
 
 #[test]
 fn a_touch_or_an_identical_rewrite_is_never_delivered() {
-    let folder = Folder::new("same");
-    let params = folder.file("p.json");
+    let folder = thrum_test_support::Scratch::new("file-watch-same");
+    let params = folder.join("p.json");
     std::fs::write(&params, "{}").expect("write");
     let watching = watch(&[(&params, Kinds::PARAMS)]);
     std::thread::sleep(TEST_TICK * 2);
@@ -128,7 +103,7 @@ fn a_touch_or_an_identical_rewrite_is_never_delivered() {
         .and_then(|file| file.set_modified(std::time::SystemTime::now()))
         .expect("touch");
     std::fs::write(&params, "{}").expect("rewrite");
-    let temporary = folder.file("p.tmp");
+    let temporary = folder.join("p.tmp");
     std::fs::write(&temporary, "{}").expect("write temporary");
     std::fs::rename(&temporary, &params).expect("rename the same bytes");
     assert_eq!(watching.settled(0), 0);
@@ -136,8 +111,8 @@ fn a_touch_or_an_identical_rewrite_is_never_delivered() {
 
 #[test]
 fn a_delete_then_create_save_is_delivered_once_and_a_lasting_absence_is_delivered() {
-    let folder = Folder::new("missing");
-    let params = folder.file("p.json");
+    let folder = thrum_test_support::Scratch::new("file-watch-missing");
+    let params = folder.join("p.json");
     std::fs::write(&params, "a").expect("write");
     let watching = watch(&[(&params, Kinds::PARAMS)]);
     std::fs::remove_file(&params).expect("delete");
@@ -158,8 +133,8 @@ fn a_delete_then_create_save_is_delivered_once_and_a_lasting_absence_is_delivere
 
 #[test]
 fn a_file_missing_at_start_is_delivered_when_created() {
-    let folder = Folder::new("late");
-    let material = folder.file("material.wgsl");
+    let folder = thrum_test_support::Scratch::new("file-watch-late");
+    let material = folder.join("material.wgsl");
     let watching = watch(&[(&material, Kinds::GAME)]);
     assert_eq!(watching.settled(0), 0);
     std::fs::write(&material, "// new").expect("create");
@@ -168,9 +143,9 @@ fn a_file_missing_at_start_is_delivered_when_created() {
 
 #[test]
 fn saves_to_both_kinds_before_the_event_loop_runs_coalesce_into_one_take() {
-    let folder = Folder::new("both");
-    let params = folder.file("p.json");
-    let material = folder.file("m.wgsl");
+    let folder = thrum_test_support::Scratch::new("file-watch-both");
+    let params = folder.join("p.json");
+    let material = folder.join("m.wgsl");
     std::fs::write(&params, "a").expect("write");
     std::fs::write(&material, "a").expect("write");
     let watching = watch(&[(&params, Kinds::PARAMS), (&material, Kinds::GAME)]);
@@ -182,8 +157,8 @@ fn saves_to_both_kinds_before_the_event_loop_runs_coalesce_into_one_take() {
 
 #[test]
 fn stopping_joins_without_waiting_for_a_tick_and_no_wake_follows() {
-    let folder = Folder::new("stop");
-    let params = folder.file("p.json");
+    let folder = thrum_test_support::Scratch::new("file-watch-stop");
+    let params = folder.join("p.json");
     std::fs::write(&params, "a").expect("write");
     let wakes = Arc::new(AtomicUsize::new(0));
     let counted = Arc::clone(&wakes);

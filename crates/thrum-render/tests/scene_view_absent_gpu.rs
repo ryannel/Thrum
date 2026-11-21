@@ -119,14 +119,17 @@ fn every_main_shader_variant_retains_its_pre_view_bytes() {
         capabilities::DeviceCapabilities,
         synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
     };
-    let Some(gpu) = thrum_test_support::gpu("unchanged main shader", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "unchanged main shader",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     // Independently composed from the original scene_source.rs/air_shadow.rs
     // and WGSL files at pre-view main commit 67ed516e2; these are source bytes,
@@ -167,7 +170,7 @@ fn every_main_shader_variant_retains_its_pre_view_bytes() {
     }
 }
 #[cfg(feature = "creation-counters")]
-use std::time::{Duration, Instant};
+use std::time::Duration;
 #[cfg(feature = "creation-counters")]
 use support::Host;
 #[cfg(feature = "creation-counters")]
@@ -192,22 +195,19 @@ fn frame(host: &mut Host, device: &wgpu::Device, surface: &wgpu::TextureView) ->
             .expect("submit scene")
             .submitted
     );
-    let started = Instant::now();
-    loop {
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(Duration::from_secs(30)),
-            })
-            .expect("frame completion");
-        if let Some(sample) = host.poll_completed().expect("completed sample") {
-            return sample;
-        }
-        assert!(
-            started.elapsed() < Duration::from_secs(30),
-            "submitted frame must retire"
-        );
-    }
+    thrum_test_support::wait::until(
+        "submitted frame retirement",
+        Duration::from_secs(30),
+        || {
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(30)),
+                })
+                .expect("frame completion");
+            host.poll_completed().expect("completed sample")
+        },
+    )
 }
 #[cfg(feature = "creation-counters")]
 fn objects(device: &wgpu::Device) -> [isize; 11] {
@@ -231,14 +231,17 @@ fn objects(device: &wgpu::Device) -> [isize; 11] {
 #[test]
 fn declarations_and_asks_leave_the_default_shader_and_main_frame_unchanged() {
     use support::*;
-    let Some(gpu) = thrum_test_support::gpu("secondary views absent", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary views absent",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");

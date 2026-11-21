@@ -69,28 +69,14 @@ fn traced_skips_surface_cascades_but_keeps_air_and_sun_off() {
                 continue;
             }
             let texture = target.air_shadow_witness().expect("air shadow heights");
-            let readback = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("air shadow heights readback"),
-                size: u64::from(texture.width()) * u64::from(texture.height()) * 8,
-                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                mapped_at_creation: false,
-            });
-            let mut encoder =
-                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-            encoder.copy_texture_to_buffer(
-                texture.as_image_copy(),
-                wgpu::TexelCopyBufferInfo {
-                    buffer: &readback,
-                    layout: wgpu::TexelCopyBufferLayout {
-                        offset: 0,
-                        bytes_per_row: Some(texture.width() * 8),
-                        rows_per_image: Some(texture.height()),
-                    },
-                },
-                texture.size(),
+            let bytes = thrum_test_support::readback::texture(
+                &device,
+                &queue,
+                texture,
+                thrum_test_support::readback::Mip::level(0),
+                ..,
             );
-            queue.submit([encoder.finish()]);
-            let bytes = support::read(&device, &readback);
+            let byte_count = bytes.len();
             if let Some(maps) = &heights {
                 assert!(maps == &bytes, "air shadow height textures differ");
             } else {
@@ -104,10 +90,7 @@ fn traced_skips_surface_cascades_but_keeps_air_and_sun_off() {
                 );
                 heights = Some(bytes);
             }
-            println!(
-                "{method:?}: {cascades} cascades, {} air-shadow bytes",
-                readback.size()
-            );
+            println!("{method:?}: {cascades} cascades, {byte_count} air-shadow bytes");
         }
     }
 }

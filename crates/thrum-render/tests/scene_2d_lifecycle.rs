@@ -14,11 +14,16 @@ use thrum_render::{
 
 #[test]
 fn redraws_at_the_surface_grid_after_host_transitions_and_device_replacement() {
-    let Some(gpu) = thrum_test_support::gpu("sprite lifecycle", Some(wgpu::Backend::Metal)) else {
-        return;
-    };
     for recipe in fixture::RECIPES {
-        let (device, queue, caps) = fixture::metal(&gpu, recipe, 1);
+        let Some(thrum_test_support::Opened {
+            gpu,
+            device,
+            queue,
+            capabilities: caps,
+        }) = fixture::open("sprite lifecycle", recipe)
+        else {
+            return;
+        };
         let art = fixture::sheet(
             [2, 2],
             &[

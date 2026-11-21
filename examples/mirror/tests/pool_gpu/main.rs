@@ -381,15 +381,17 @@ fn compare(
 #[cfg(target_os = "macos")]
 #[test]
 fn the_pool_composes_both_stretches_once() {
-    let Some(gpu) =
-        thrum_test_support::gpu("pool transport composition", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "pool transport composition",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let report = pollster::block_on(prove(&device, &queue, &caps));
     eprintln!("worst composition difference relative to its allowance: {report:?}");

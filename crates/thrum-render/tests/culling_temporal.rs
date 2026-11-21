@@ -10,15 +10,26 @@ use thrum_render::{
 #[test]
 fn culled_modes_equal_direct_over_full_temporal_cycle() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("culled_modes_equal_direct_over_full_temporal_cycle", None)
+        let Some(thrum_test_support::Opened {
+            gpu: test_gpu,
+            device,
+            queue,
+            ..
+        }) = thrum_test_support::open(
+            "culled_modes_equal_direct_over_full_temporal_cycle",
+            None,
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            },
+        )
         else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let caps = DeviceCapabilities::capture(&adapter, &device, 1);
         let mut scene = SyntheticScene::grid(10_000).expect("scene");
         scene.view = thrum_render::synthetic::SyntheticView::perspective(

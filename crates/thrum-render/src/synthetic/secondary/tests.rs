@@ -55,14 +55,15 @@ impl SceneContribution for Asker {
 #[cfg(target_os = "macos")]
 #[test]
 fn slot_asks_draw_a_camera_and_clip_without_touching_the_main_view() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
         "slot_asks_draw_a_camera_and_clip_without_touching_the_main_view",
         Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = SyntheticView::perspective(
             [0.0, 0.0, -2.0],
@@ -166,7 +167,6 @@ fn render(
 ) -> (Vec<[f32; 4]>, Vec<u8>) {
     let asked = asker.request.is_some();
     let [width, height] = asker.slot.maximum_extent();
-    let stride = (width * 8).div_ceil(256) * 256;
     let mut main = target.readback(device);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
@@ -181,59 +181,39 @@ fn render(
             &mut Vec::new(),
         )
         .expect("encode");
-    let output = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("secondary test readback"),
-        size: u64::from(stride) * u64::from(height),
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    if asked {
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture: &prepared.secondary_handles[0].colour,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &output,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(stride),
-                    rows_per_image: Some(height),
-                },
-            },
-            wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-        );
-    }
-    let (send, receive) = std::sync::mpsc::channel();
-    encoder.map_buffer_on_submit(&output, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("receiver");
+    let colour = &prepared.secondary_handles[0].colour;
+    let readback = asked.then(|| {
+        thrum_test_support::readback::Readback::texture(
+            device,
+            &mut encoder,
+            colour,
+            thrum_test_support::readback::Mip::level(0),
+            ..,
+        )
     });
     let submitted = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(std::time::Duration::from_secs(30)),
-        })
-        .expect("readback");
-    receive.recv().expect("callback").expect("mapped");
-    let view = output
-        .slice(..)
-        .get_mapped_range()
-        .expect("pixels")
-        .chunks(stride as usize)
-        .flat_map(|row| row[..width as usize * 8].as_chunks::<8>().0)
-        .map(|pixel| {
-            std::array::from_fn(|channel| {
-                half::f16::from_le_bytes([pixel[channel * 2], pixel[channel * 2 + 1]]).to_f32()
+    let view = if let Some(readback) = readback {
+        let pixels = readback.wait(device, submitted);
+        pixels
+            .chunks_exact(colour.width() as usize * 8)
+            .take(height as usize)
+            .flat_map(|row| row[..width as usize * 8].as_chunks::<8>().0)
+            .map(|pixel| {
+                std::array::from_fn(|channel| {
+                    half::f16::from_le_bytes([pixel[channel * 2], pixel[channel * 2 + 1]]).to_f32()
+                })
             })
-        })
-        .collect();
+            .collect()
+    } else {
+        // Nothing asked: the slot's view stays cleared, and the main readback needs the frame done.
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submitted),
+                timeout: Some(std::time::Duration::from_secs(30)),
+            })
+            .expect("readback");
+        vec![[0.0; 4]; width as usize * height as usize]
+    };
     let mut bytes = Vec::new();
     assert!(main.try_collect_into(1, &mut bytes).expect("main readback"));
     (view, bytes)
@@ -242,14 +222,15 @@ fn render(
 #[cfg(target_os = "macos")]
 #[test]
 fn slot_local_lights_match_the_ordinary_view_with_the_main_camera_away() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(crate::test_device::Opened { device, queue, .. }) = crate::test_device::open(
         "slot_local_lights_match_the_ordinary_view_with_the_main_camera_away",
         Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::synthetic::tests::support::NO_FEATURES,
     ) else {
         return;
     };
     pollster::block_on(async {
-        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let camera = |x| {
             SyntheticView::perspective(
                 [0.0, x, -2.0],

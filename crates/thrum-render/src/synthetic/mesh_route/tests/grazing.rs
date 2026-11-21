@@ -47,13 +47,12 @@ fn half_reds(pixels: &[u8]) -> [u64; 2] {
 
 #[test]
 fn mirrored_meshes_repair_grazing_normals_like_ordinary_ones() {
-    let Some(test_gpu) = thrum_test_support::gpu(
+    let Some(gpu) = gpu(
         "mirrored_meshes_repair_grazing_normals_like_ordinary_ones",
         None,
     ) else {
         return;
     };
-    let gpu = gpu(&test_gpu);
     let light = SyntheticLight {
         direction_to_light: [0.5, 0.0, 1.0],
         irradiance: [4.0; 3],

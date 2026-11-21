@@ -1,6 +1,6 @@
 // Shared Metal device, frame source, drawable and capture for the sprite proofs.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use thrum_core::{
     WorldEpoch,
     sim::{SnapshotId, WorldAdvance, WorldPublication},
@@ -24,6 +24,20 @@ pub(crate) const RECIPES: [&str; 2] = ["portable", "apple-tile"];
 pub(crate) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 pub(crate) type Host = FrameHost<World, Scene>;
 
+/// The Metal test device at generation 1 with `recipe` selected.
+/// None means the gate reported a skip.
+pub(crate) fn open(test: &str, recipe: &str) -> Option<thrum_test_support::Opened> {
+    let mut opened = thrum_test_support::open(
+        test,
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Native,
+        &thrum_test_support::Restriction::default(),
+    )?;
+    opened.capabilities = with_recipe(opened.capabilities, recipe);
+    Some(opened)
+}
+
+/// Another Metal device on an admitted adapter, at a later `generation`, with `recipe` selected.
 pub(crate) fn metal(
     gpu: &thrum_test_support::Gpu,
     recipe: &str,
@@ -37,11 +51,15 @@ pub(crate) fn metal(
             &[],
         )
         .expect("prepare the Metal test device");
+    (device, queue, with_recipe(caps, recipe))
+}
+
+fn with_recipe(caps: DeviceCapabilities, recipe: &str) -> DeviceCapabilities {
     let caps = caps
         .with_recipe_override(recipe)
         .expect("Metal supports the requested recipe");
     assert_eq!(caps.adapter().backend, wgpu::Backend::Metal);
-    (device, queue, caps)
+    caps
 }
 
 pub(crate) struct World {
@@ -278,18 +296,12 @@ pub(crate) fn capture(
         }))
         .expect("submit the recorded frame");
     assert!(report.surface_presented && report.submitted);
-    let deadline = Instant::now() + Duration::from_secs(10);
-    let image = loop {
-        host.poll_completed().expect("GPU polling remains healthy");
-        if let Some(image) = host
-            .try_submitted_image()
-            .expect("read the submitted image")
-        {
-            break image;
-        }
-        assert!(Instant::now() < deadline, "submitted-image tap timed out");
-        std::thread::sleep(Duration::from_millis(1));
-    };
+    let image =
+        thrum_test_support::wait::until("submitted-image tap", Duration::from_secs(10), || {
+            host.poll_completed().expect("GPU polling remains healthy");
+            host.try_submitted_image()
+                .expect("read the submitted image")
+        });
     assert!(image.sample.surface_presented);
     assert_eq!(image.extent, extent);
     assert_eq!(image.pixel_source, source);
@@ -300,16 +312,12 @@ pub(crate) fn capture(
 }
 
 pub(crate) fn drain(host: &mut Host) -> Vec<thrum_render::runtime::FrameSample> {
-    let deadline = Instant::now() + Duration::from_secs(10);
     let mut samples = Vec::new();
-    loop {
+    thrum_test_support::wait::until("frame retirement", Duration::from_secs(10), || {
         while let Some(sample) = host.poll_completed().expect("GPU polling remains healthy") {
             samples.push(sample);
         }
-        if host.pending_frames() == 0 {
-            return samples;
-        }
-        assert!(Instant::now() < deadline, "frame retirement timed out");
-        std::thread::sleep(Duration::from_millis(1));
-    }
+        (host.pending_frames() == 0).then_some(())
+    });
+    samples
 }

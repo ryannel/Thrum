@@ -1,24 +1,17 @@
 //! End-to-end cook cycles over a real temporary source tree and store.
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU32, Ordering};
 
 use thrum_asset::{AssetStore, HeadWatcher, Ktx2, Ktx2Format, MeshProduct, ProductKind, Profile};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 
-static NEXT: AtomicU32 = AtomicU32::new(0);
-
 struct Fixture {
-    root: PathBuf,
+    root: thrum_test_support::Scratch,
 }
 
 impl Fixture {
     fn new() -> Self {
-        let root = std::env::temp_dir().join(format!(
-            "thrum-cook-test-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
+        let root = thrum_test_support::Scratch::new("cook-test");
         std::fs::create_dir_all(root.join("source/meshes")).expect("create source");
         std::fs::create_dir_all(root.join("source/textures")).expect("create source");
         demo::write_grid_gltf(&root.join("source/meshes"), "terrain", 24, 0.3).expect("write gltf");
@@ -49,8 +42,7 @@ impl Fixture {
 
 impl Drop for Fixture {
     fn drop(&mut self) {
-        make_writable(&self.root);
-        std::fs::remove_dir_all(&self.root).ok();
+        make_writable(self.root.path());
     }
 }
 

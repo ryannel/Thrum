@@ -10,14 +10,17 @@ use thrum_render::{
 
 #[test]
 fn a_cooked_view_matches_the_ordinary_camera_on_each_draw_path() {
-    let Some(gpu) = thrum_test_support::gpu("cooked secondary view", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "cooked secondary view",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     let native = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     for (caps, path) in [
         (native.clone(), CookedDrawPath::Indirect),

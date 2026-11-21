@@ -111,15 +111,17 @@ fn every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key() 
 
 #[test]
 fn a_secondary_view_aerial_volume_reads_the_aerial_stage_table() {
-    let Some(gpu) =
-        thrum_test_support::gpu("secondary aerial stage table", Some(wgpu::Backend::Metal))
+    let Some(thrum_test_support::Opened {
+        gpu, device, queue, ..
+    }) = thrum_test_support::open(
+        "secondary aerial stage table",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let view = |height: f32| {

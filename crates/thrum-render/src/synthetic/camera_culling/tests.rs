@@ -18,25 +18,7 @@ pub(crate) fn prepass_args(target: &OffscreenTarget) -> Option<&wgpu::Buffer> {
 }
 
 fn instances(device: &wgpu::Device, queue: &wgpu::Queue, args: &wgpu::Buffer) -> u32 {
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("culling test args"),
-        size: visibility::ARGS_BYTES,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(args, 0, &staging, 0, visibility::ARGS_BYTES);
-    queue.submit([encoder.finish()]);
-    staging.slice(..).map_async(wgpu::MapMode::Read, |result| {
-        result.expect("map");
-    });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(std::time::Duration::from_secs(10)),
-        })
-        .expect("poll");
-    let bytes = staging.slice(..).get_mapped_range().expect("mapped");
+    let bytes = thrum_test_support::readback::buffer(device, queue, args, ..visibility::ARGS_BYTES);
     u32::from_le_bytes(bytes[4..8].try_into().expect("instance count"))
 }
 
@@ -58,15 +40,18 @@ fn wall(scene: &mut SyntheticScene) {
 #[test]
 fn the_grazing_view_hides_slots_and_replays_its_visible_set() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu, device, queue, ..
+        }) = crate::test_device::open(
             "the_grazing_view_hides_slots_and_replays_its_visible_set",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
+        )
+        else {
             return;
         };
-        let adapter = test_gpu.adapter.clone();
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
+        let adapter = gpu.adapter;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let view = grazing();
         let mut counts = Vec::new();
@@ -288,42 +273,15 @@ fn list_depth(
             .expect("bind");
         pass.draw_indexed_indirect(prepass.target.prepass().args(), 0);
     }
-    let row = PARITY[0] * 4;
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("parity readback"),
-        size: u64::from(row * PARITY[1]),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    encoder.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture: &depth,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::DepthOnly,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &staging,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(row),
-                rows_per_image: None,
-            },
-        },
-        size,
+    let readback = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        &depth,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
-    queue.submit([encoder.finish()]);
-    staging
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, |result| result.expect("map"));
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("poll");
-    staging
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped")
-        .to_vec()
+    let submission = queue.submit([encoder.finish()]);
+    readback.wait(device, submission)
 }
 
 /// Prepass parity (design, *Prepass parity*): the depth-only pipeline writes
@@ -334,15 +292,18 @@ fn list_depth(
 #[test]
 fn the_depth_prepass_writes_the_forward_depth_of_the_same_list() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu, device, queue, ..
+        }) = crate::test_device::open(
             "the_depth_prepass_writes_the_forward_depth_of_the_same_list",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
+        )
+        else {
             return;
         };
-        let adapter = test_gpu.adapter.clone();
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
+        let adapter = gpu.adapter;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         for (origin, two_sided) in [[0.0; 3], FAR_ORIGIN]
             .into_iter()
@@ -435,15 +396,18 @@ fn place(instance: &mut crate::abi::InstanceRecord, half: [f32; 3], center: [f32
 #[test]
 fn an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu, device, queue, ..
+        }) = crate::test_device::open(
             "an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
+        )
+        else {
             return;
         };
-        let adapter = test_gpu.adapter.clone();
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
+        let adapter = gpu.adapter;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
         let mut cases = Vec::new();
@@ -748,15 +712,18 @@ async fn veiled_frames(
 #[test]
 fn a_blended_contribution_stays_on_top_while_occlusion_hides_a_slot() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu(
+        let Some(crate::test_device::Opened {
+            gpu, device, queue, ..
+        }) = crate::test_device::open(
             "a_blended_contribution_stays_on_top_while_occlusion_hides_a_slot",
             None,
-        ) else {
+            crate::capabilities::DeviceProfile::Portable,
+            &crate::synthetic::tests::support::NO_FEATURES,
+        )
+        else {
             return;
         };
-        let adapter = test_gpu.adapter.clone();
-        let (device, queue) =
-            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
+        let adapter = gpu.adapter;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let gpu = (&capabilities, &device, &queue);
         let mut scene = SyntheticScene::grid(2).expect("grid");
