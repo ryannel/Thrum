@@ -223,7 +223,7 @@
     {
       "id": "M7",
       "name": "A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -236,8 +236,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m7/record.md (gate-time worktree; the permission guard refused the evidence folder), .orchestrate/evidence/GATE-TIME/M7/replay.json, whole-start.*, pair/",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         },
         {
           "id": "M7.2",
@@ -247,8 +247,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "cargo test -p xtask selection: 10 passed; .orchestrate/evidence/GATE-TIME/M7/scratch/rain-model.txt, core.txt, pair/2-selected-check.stdout",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         },
         {
           "id": "M7.3",
@@ -257,8 +257,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M7/scratch/lockfile-only.txt, toolchain-only.txt, new-top-level-folder.txt, unchanged-main-tip.txt, markdown-and-script.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         },
         {
           "id": "M7.9",
@@ -267,8 +267,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M7/scratch/asset-gpu-src.txt, asset-gpu-edge-run.txt, asset-gpu-test-only.txt; readers.py; record section on the search",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         },
         {
           "id": "M7.4",
@@ -277,8 +277,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M7/binaries.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         },
         {
           "id": "M7.5",
@@ -288,8 +288,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "./dev help lists check-all; ORCHESTRATE.md Main-branch check workspace-tests, timeout 60m",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         },
         {
           "id": "M7.6",
@@ -298,8 +298,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check workspace-tests, after the merge",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         },
         {
           "id": "M7.8",
@@ -308,8 +308,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
         }
       ]
     },
