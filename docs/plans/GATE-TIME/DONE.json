@@ -213,8 +213,8 @@
           "ask": "Does the record show the test failing with `capture readback incomplete` on the code before the change in each of ten runs, and passing in each of ten after it, with its time? Read the test: do its other threads poll the same device the host captures on? Is the wait in `capture_pixels`, with its test, the only change the milestone makes under `crates/`, and can it change a pixel a capture returns or anything a frame records?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md#round-3-m89-the-capture-wait: the test's sixteen threads poll host.device.clone(), the device the host captures on. Before the fix (capture_pixels at ebddf70da) the check failed 10 of 10 runs, 1 to 13 of 300 captures with capture readback incomplete (m8.9/before-write.log); with the fix (7cbd2921a) it passed 10 of 10, 0.85 to 0.91 s (m8.9/after-write.log). Only changes under crates/: capture_pixels's wait and the test.",
           "verdict": "",
           "review": ""
         }
