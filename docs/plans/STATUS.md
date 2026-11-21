@@ -312,7 +312,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk (HOST M3): Not Started · [plan](HOST/PLAN.md)
 - The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges (RAY-TRACING M3): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/M3-review.md)
 - A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it (GATE-TIME M8): In Progress · [plan](GATE-TIME/PLAN.md) · [latest review](../../.orchestrate/evidence/GATE-TIME/M8-review.md)
-- No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms (DEAD-TOOLS M4): In Progress · [plan](DEAD-TOOLS/PLAN.md)
+- No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms (DEAD-TOOLS M4): Ready for Review · [plan](DEAD-TOOLS/PLAN.md)
 - A scene contribution writes only the hooks it uses (DEAD-CODE M2): In Progress · [plan](DEAD-CODE/PLAN.md) · [latest review](../../.orchestrate/evidence/DEAD-CODE/M2-review.md)
 
 ### Recently done
@@ -399,7 +399,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3), 14 Nov · [review](../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/M3-review.md)
 - The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2), 14 Nov · [review](../../.orchestrate/evidence/CREATOR/M2-review.md)
 - The GPU computes the same sea as the CPU model at every frame's time, after a day of running, through pauses, hitches and a replaced device (SEA M2), 14 Nov · [review](../../.orchestrate/evidence/SEA/M2-review.md)
-- G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3), 14 Nov · [review](../../.orchestrate/evidence/APPLE-TILE/M3-review.md)
 
 ## All modules
 
@@ -439,5 +438,5 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | M3 of 6 · In Progress |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Waiting: On Dependency, SHOWCASE:M8 |
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the water scene's slow tests; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the contributor guide | M8 of 9 · In Progress |
-| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone | M4 of 6 · In Progress |
+| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone | M4 of 6 · Ready for Review |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers | M2 of 6 · In Progress |
