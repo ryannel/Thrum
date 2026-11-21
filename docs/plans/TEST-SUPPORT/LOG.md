@@ -1,5 +1,12 @@
 # TEST-SUPPORT log
 
+- 2026-11-21 Fixed M3's review findings: four frame waits again give each poll what is left of one deadline, the
+  last local frame waits in the runtime tests and the two-cascade PPM writer use the kit, and the cook bench and water
+  query wrappers are gone. Verified on Metal: a required-GPU `cargo test --workspace` at `2a83415dc` passes with no
+  skip line, and each of the 12 tests out of it since `4592e88cb` was taken out by `GATE-TIME` M9 (split into named
+  cases) or `DEAD-CODE` M5; each of the 21 long tests out since `0870118d6` by `GATE-TIME` M2 or `DEAD-CODE` M5.
+  [Evidence](../../../.orchestrate/evidence/TEST-SUPPORT/M3/README.md).
+
 - 2026-11-21 Built M3, the conversion, in four workers with disjoint files. `test-readback` is 0 under `crates/` and
   the kit scenes (70 sites), with one named exemption, the mirror pool's wasm timer-yield; `test-deadline` fell from
   128 to 105. 132 tests open through the one call; the gate calls left are wrappers for a generation, a fresh
