@@ -7,6 +7,7 @@ import tempfile
 import subprocess
 import unittest
 
+import shape_matchers
 import shape_rules as shapes
 
 
@@ -376,6 +377,8 @@ test_role="fixtures"
         """One more site than the committed count fails the check, which names the kit and the patterns."""
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         self.write(path, bad)
+        # The test file is a target of its own, which no plan names here.
+        self.write(".config/unplanned-test-binaries.txt", f"engine {Path(path).stem}\n")
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(shapes.check(self.root, tighten=True), [])
         git = ["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t"]
@@ -441,6 +444,208 @@ test_role="fixtures"
     def test_test_deadline_is_frozen(self):
         self.frozen("test-deadline", self.DEADLINE,
                     'fn again() { assert!(Instant::now() < deadline); }', "crates/engine/tests/clock.rs")
+
+
+    # The three counts that hold the test tiers' habits: GATE-TIME mechanism 12.
+
+    def committed(self):
+        """Record the counts as they stand and commit them, as a landing does."""
+        if not (self.root / ".git").exists():
+            subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(shapes.check(self.root, tighten=True), [])
+        git = ["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run([*git, "add", "-A"], check=True)
+        subprocess.run([*git, "commit", "-qm", "landing"], check=True)
+
+    def refused(self, rule):
+        with contextlib.redirect_stdout(io.StringIO()):
+            errors = shapes.check(self.root, rule)
+            whole = shapes.check(self.root)
+        self.assertTrue(errors, rule)
+        self.assertTrue(whole, rule)
+        return "\n".join(errors)
+
+    def passes(self, rule):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(shapes.check(self.root, rule), [])
+
+    NEXTEST = """[profile.default]
+slow-timeout = { period = "10s", terminate-after = 6 }
+
+[[profile.default.overrides]]
+filter = 'package(engine) & binary(=gpu)'
+test-group = 'gpu'
+
+[[profile.default.overrides]]
+filter = \'\'\'
+    (binary_id(=engine::scene) & test(=settles))
+  | (binary_id(=engine::scene) & test(=module::drifts))
+\'\'\'
+slow-timeout = { period = "10s" }
+"""
+
+    def test_limit_exempt_counts_names_and_only_falls(self):
+        self.write(".config/nextest.toml", self.NEXTEST)
+        self.assertEqual(self.sites("limit-exempt"), [(".config/nextest.toml", 10), (".config/nextest.toml", 11)])
+        self.committed()
+        self.passes("limit-exempt")
+        # A name added fails, with the remedy and the pattern entry that names the rule.
+        self.write(".config/nextest.toml", self.NEXTEST.replace(
+            "test(=module::drifts))\n", "test(=module::drifts))\n  | (binary_id(=engine::scene) & test(=slow))\n"))
+        errors = self.refused("limit-exempt")
+        self.assertIn(".config/nextest.toml:12: limit-exempt: ", errors)
+        self.assertIn("make the test fast", errors)
+        self.assertIn("patterns.md#the-smallest-world", errors)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(shapes.check(self.root, tighten=True), "tighten cannot grant the new name")
+        # A name removed is recorded, after which the count stands lower.
+        self.write(".config/nextest.toml", self.NEXTEST.replace("  | (binary_id(=engine::scene) & test(=module::drifts))\n", ""))
+        self.committed()
+        self.write(".config/nextest.toml", self.NEXTEST)
+        self.assertIn("exceeds historical low 1", self.refused("limit-exempt"))
+
+    def test_limit_exempt_refuses_a_wide_override_and_a_later_default(self):
+        self.write(".config/nextest.toml", self.NEXTEST)
+        self.committed()
+        for wide in ("binary_id(=engine::scene)", "package(engine)",
+                     "(binary_id(=engine::scene) & test(settles))",
+                     "(binary_id(=engine::scene) & test(=settles)) | binary(=gpu)"):
+            self.write(".config/nextest.toml", self.NEXTEST + f"\n[[profile.default.overrides]]\nfilter = '{wide}'\n"
+                       "slow-timeout = { period = \"10s\" }\n")
+            errors = self.refused("limit-exempt")
+            self.assertIn(".config/nextest.toml:15: limit-exempt: an override that changes the limit", errors)
+            self.assertIn("patterns.md#the-smallest-world", errors)
+        # An override that changes no limit is not counted, whatever it names.
+        self.write(".config/nextest.toml", self.NEXTEST + "\n[[profile.default.overrides]]\nfilter = 'package(x)'\n"
+                   "threads-required = 4\n")
+        self.passes("limit-exempt")
+        for default in ('{ period = "10s", terminate-after = 7 }', '{ period = "61s", terminate-after = 1 }',
+                        '{ period = "10s" }', '"10s"', '{ period = "2m", terminate-after = 1 }'):
+            self.write(".config/nextest.toml", self.NEXTEST.replace(
+                'slow-timeout = { period = "10s", terminate-after = 6 }', f"slow-timeout = {default}"))
+            errors = self.refused("limit-exempt")
+            self.assertIn(".config/nextest.toml:2: limit-exempt: the default limit on one test is later", errors)
+        self.write(".config/nextest.toml", self.NEXTEST.replace("terminate-after = 6", "terminate-after = 3"))
+        self.passes("limit-exempt")
+
+    LONG = '#[test]\n#[ignore = "long: `./dev long-tests` runs it on main"]\nfn {name}() {{}}\n'
+
+    def test_main_tier_counts_entries_and_long_tests(self):
+        self.write(".config/long-tests.txt", "# a comment\nengine scene release\n\nengine features=probe\n")
+        self.write("crates/engine/tests/scene.rs", self.LONG.format(name="settles"))
+        self.assertEqual(sorted(self.sites("main-tier")), [(".config/long-tests.txt", 2), (".config/long-tests.txt", 4),
+                                                           ("crates/engine/tests/scene.rs", 2)])
+        # A comment or a string that spells the attribute is not a long test.
+        self.write("crates/engine/src/other.rs", '// #[ignore = "long: x"]\nconst S: &str = "#[ignore = \\"long: x\\"]";\n')
+        self.assertEqual(len(self.sites("main-tier")), 3)
+        self.committed()
+        self.passes("main-tier")
+        # A long test added to a binary the list already names adds no line, and still fails.
+        self.write("crates/engine/tests/scene.rs", self.LONG.format(name="settles") + self.LONG.format(name="drifts"))
+        errors = self.refused("main-tier")
+        self.assertIn("crates/engine/tests/scene.rs:", errors)
+        self.assertIn("make the test fast", errors)
+        self.assertIn("LOG.md for a planner", errors)
+        self.assertIn("patterns.md#a-main-tier-test", errors)
+        self.write("crates/engine/tests/scene.rs", self.LONG.format(name="settles"))
+        self.passes("main-tier")
+        self.write(".config/long-tests.txt", "# a comment\nengine scene release\n\nengine features=probe\nengine flow release\n")
+        errors = self.refused("main-tier")
+        self.assertIn(".config/long-tests.txt:", errors)
+        self.assertIn("patterns.md#a-main-tier-test", errors)
+
+    def test_main_tier_rises_only_through_its_version(self):
+        self.write(".config/long-tests.txt", "engine scene release\n")
+        self.write("crates/engine/tests/scene.rs", self.LONG.format(name="settles"))
+        self.committed()
+        self.write("crates/engine/tests/scene.rs", self.LONG.format(name="settles") + self.LONG.format(name="drifts"))
+        self.refused("main-tier")
+        # The landing a done-when item asks for raises the version, and the count starts again from it.
+        version, section, remedy = shapes.RULES["main-tier"]
+        self.addCleanup(shapes.RULES.__setitem__, "main-tier", (version, section, remedy))
+        shapes.RULES["main-tier"] = (version + 1, section, remedy)
+        self.refused("main-tier")  # the recorded counts are stale until the landing records them
+        self.committed()
+        self.passes("main-tier")
+        self.write("crates/engine/tests/scene.rs", self.LONG.format(name="settles") + self.LONG.format(name="drifts")
+                   + self.LONG.format(name="sinks"))
+        self.assertIn("main-tier: total 4 exceeds historical low 3", self.refused("main-tier"))
+
+    UNPLANNED = ".config/unplanned-test-binaries.txt"
+
+    def plan_check(self, check, status="not_started"):
+        plan = {"milestones": [{"id": "M1", "status": status, "items": [{"id": "M1.1", "check": check}]}]}
+        self.write("docs/plans/OTHER/DONE.json", json.dumps(plan))
+
+    def test_test_binary_holds_targets_no_plan_names(self):
+        self.write("crates/engine/tests/scene.rs", "#[test]\nfn settles() {}\n")
+        self.write("crates/engine/tests/flow/main.rs", "mod helper;\n")
+        self.write("crates/engine/tests/flow/helper.rs", "")
+        self.write("crates/engine/tests/support/mod.rs", "")
+        self.write("crates/engine/tests/it.rs", "mod scene_more;\n")
+        self.write("crates/listed/Cargo.toml", '[package]\nname = "listed"\nautotests = false\n\n'
+                   '[[test]]\nname = "kept"\npath = "tests/support/kept.rs"\n')
+        self.write("crates/listed/tests/support/kept.rs", "")
+        self.write("crates/listed/tests/ignored.rs", "")
+        self.write(self.UNPLANNED, "# <package> <test target>\nengine scene\nlisted kept\n")
+        self.plan_check("cargo test -p engine --test flow -- --test-threads=1", "done")
+        # A helper module, a module of another target and a file under autotests = false are not targets.
+        found = sorted((p, n) for p, n, *_ in shape_matchers.test_targets(self.root, shapes.files_in(self.root),
+                                                                  self.manifests()))
+        self.assertEqual(found, [("engine", "flow"), ("engine", "it"), ("engine", "scene"), ("listed", "kept")])
+        self.committed()
+        self.passes("test-binary")
+        # A new test file that Cargo finds fails, and names its target.
+        self.write("crates/engine/tests/drift.rs", "#[test]\nfn drifts() {}\n")
+        errors = self.refused("test-binary")
+        self.assertIn("crates/engine/tests/drift.rs:1: test-binary: test target engine drift", errors)
+        self.assertIn("add the test to a test file that exists", errors)
+        self.assertIn("patterns.md#an-existing-test-binary", errors)
+        # So does a [[test]] table in a package that lists its targets, at the table's name.
+        self.write("crates/listed/Cargo.toml", '[package]\nname = "listed"\nautotests = false\n\n'
+                   '[[test]]\nname = "kept"\npath = "tests/support/kept.rs"\n\n[[test]]\nname = "ignored"\n')
+        self.assertIn("crates/listed/Cargo.toml:10: test-binary: test target listed ignored", self.refused("test-binary"))
+        # An open done-when item whose check runs it with --test names it.
+        self.plan_check("sh -c 'cargo test -p engine --test=drift && cargo test -p listed --test ignored "
+                        "&& cargo test -p engine --test flow'")
+        self.passes("test-binary")
+        # Listing one instead raises the count, which only falls.
+        self.plan_check("cargo test -p listed --test ignored && cargo test -p engine --test flow")
+        self.write(self.UNPLANNED, "# <package> <test target>\nengine scene\nlisted kept\nengine drift\n")
+        errors = self.refused("test-binary")
+        self.assertIn(f"{self.UNPLANNED}:", errors)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(shapes.check(self.root, tighten=True), "tighten cannot grant the new line")
+
+    def test_test_binary_refuses_a_line_whose_target_is_gone(self):
+        self.write("crates/engine/tests/scene.rs", "")
+        self.write("crates/engine/tests/floating.rs", "")
+        self.write(".config/long-tests.txt", "engine floating release\n")
+        self.write(self.UNPLANNED, "engine scene\n")
+        self.committed()
+        (self.root / "crates/engine/tests/scene.rs").unlink()
+        errors = self.refused("test-binary")
+        self.assertIn(f"{self.UNPLANNED}:1: test-binary: engine has no test target scene: remove the line", errors)
+        self.write(self.UNPLANNED, "")
+        self.committed()
+        self.passes("test-binary")
+        # The main-tier list names a target too.
+        self.write(".config/long-tests.txt", "")
+        self.assertIn("test target engine floating", self.refused("test-binary"))
+
+    def manifests(self):
+        import tomllib
+        return {path.parent.relative_to(self.root): tomllib.loads(path.read_text())
+                for path in self.root.rglob("Cargo.toml")}
+
+    def test_the_pattern_entries_exist_and_name_their_rules(self):
+        patterns = (Path(shapes.ROOT) / shapes.PATTERNS).read_text()
+        for rule in ("limit-exempt", "main-tier", "test-binary"):
+            section = shapes.RULES[rule][1]
+            self.assertIn(f'<a id="{section}"></a>', patterns)
+            entry = patterns.split(f'<a id="{section}"></a>', 1)[1].split("<a id=", 1)[0]
+            self.assertIn(f"`{rule}`", entry, rule)
 
 
 if __name__ == "__main__":

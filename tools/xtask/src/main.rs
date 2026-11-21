@@ -671,8 +671,44 @@ impl CheckRecord {
                 writeln!(out, "  {:>8.1} s  {}", test.seconds, label(test))?;
             }
         }
+        for line in summed_times(&self.tests) {
+            writeln!(out, "{line}")?;
+        }
         Ok(())
     }
+}
+
+/// Whether a test counts as a GPU test in the closing lines: its binary or its name says `gpu` or
+/// `metal`, as GATE-TIME's measurement of 21 November counted them. A GPU test named otherwise is not
+/// counted.
+fn gpu_named(test: &TestTime) -> bool {
+    let name = test.name.to_ascii_lowercase();
+    name.contains("gpu") || name.contains("metal")
+}
+
+/// The two closing lines on the tests' time: the summed time of every test the run ran, and of its
+/// GPU tests. Reports only; nothing fails on either.
+fn summed_times(tests: &[TestTime]) -> [String; 2] {
+    let all = tests.iter().fold(0.0_f64, |sum, test| sum + test.seconds);
+    let gpu: Vec<&TestTime> = tests.iter().filter(|test| gpu_named(test)).collect();
+    let gpu_seconds = gpu.iter().fold(0.0_f64, |sum, test| sum + test.seconds);
+    let share = if all > 0.0 {
+        100.0 * gpu_seconds / all
+    } else {
+        0.0
+    };
+    [
+        format!(
+            "tests' summed time: {all:.1} s over the {} tests this run ran, each test's own time added up \
+             (a report, never a gate)",
+            tests.len()
+        ),
+        format!(
+            "GPU tests' summed time: {gpu_seconds:.1} s over {} tests, {share:.0}% of the summed time; a GPU \
+             test here is one whose binary or name says `gpu` or `metal`, so one named otherwise is not counted",
+            gpu.len()
+        ),
+    ]
 }
 
 /// cargo-nextest's store, relative to the workspace root, as `[store] dir` in `.config/nextest.toml`
@@ -857,7 +893,7 @@ fn print_selection(root: &Path, flag: Option<&str>) -> TaskResult {
 /// `./dev help`, one command to a line so that edits to different commands merge cleanly.
 const HELP: &[&str] = &[
     "Thrum contributor commands:",
-    "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, game Wasm Clippy, the Rust tests of the packages the change since the merge base with origin/main can reach, side by side through cargo-nextest (including Mac Metal; one over 60 s fails; it prints what it selected and why), then each step's time and the slowest tests",
+    "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, game Wasm Clippy, the Rust tests of the packages the change since the merge base with origin/main can reach, side by side through cargo-nextest (including Mac Metal; one over 60 s fails; it prints what it selected and why), then each step's time, the slowest tests, and the summed time of the tests and of the GPU-named ones",
     "  Exact images are verified on main by the main-branch check exact-images; python3 scripts/exact_baselines.py verify asks it",
     "  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.",
     "  check-all              Everything check runs, with every test binary of the workspace whatever changed; the main-branch check workspace-tests runs it",
@@ -958,7 +994,46 @@ fn main() -> TaskResult {
 
 #[cfg(test)]
 mod tests {
-    use super::{NEXTEST_STORE, junit_times, main_tier_list, nextest_version};
+    use super::{
+        NEXTEST_STORE, TestTime, junit_times, main_tier_list, nextest_version, summed_times,
+    };
+
+    /// The closing lines add every test's time, and the times of those named `gpu` or `metal`.
+    #[test]
+    fn summed_times_add_every_test_and_the_gpu_named_ones() {
+        let test = |name: &str, seconds: f64, probe: bool| TestTime {
+            name: name.to_owned(),
+            seconds,
+            timed_out: false,
+            probe,
+        };
+        let tests = [
+            test("thrum-sea::frames_gpu wind_change", 3.0, false),
+            test("thrum-render metal::pipeline_cache_survives", 1.5, false),
+            test("v1-game::cooked_assets_gpu adapter_less", 0.5, true),
+            test("thrum-core::clock advances", 5.0, false),
+            test("thrum-render::contracts GPU_upper_case", 2.0, false),
+        ];
+        let [all, gpu] = summed_times(&tests);
+        assert!(
+            all.starts_with("tests' summed time: 12.0 s over the 5 tests"),
+            "{all}"
+        );
+        assert!(
+            gpu.starts_with("GPU tests' summed time: 7.0 s over 4 tests, 58% of"),
+            "{gpu}"
+        );
+        assert!(
+            gpu.contains("binary or name says `gpu` or `metal`"),
+            "{gpu}"
+        );
+        let [none, none_gpu] = summed_times(&[]);
+        assert!(
+            none.starts_with("tests' summed time: 0.0 s over the 0 tests"),
+            "{none}"
+        );
+        assert!(none_gpu.contains("0%"), "{none_gpu}");
+    }
 
     /// The check reads cargo-nextest's report from the store `.config/nextest.toml` names.
     #[test]

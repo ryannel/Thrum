@@ -14,8 +14,9 @@ import sys
 import tomllib
 import evidence_store
 
-from shape_matchers import (CODE, RULES, dependency_sites, evidence_path_lines, mask, package_for, path_attributes,
-                            rust_sites, test_edge_sites, uncalled_scripts, unrun_benches)
+from shape_matchers import (CODE, RULES, dependency_sites, evidence_path_lines, limit_exempt, main_tier_lines, mask,
+                            package_for, path_attributes, rust_sites, test_binary, test_edge_sites, uncalled_scripts,
+                            unrun_benches, LONG_TESTS)
 
 BASELINE = ".config/shape-baseline.json"
 PATTERNS = ".agents/skills/thrum-engineering/references/patterns.md"
@@ -80,6 +81,11 @@ def inventory(root, honor_pins=False):
     sites["evidence-size"] = [(p, 1) for p in evidence_store.oversized(root, evidence_paths)]
     sites["script-caller"] = [(p, 1) for p in uncalled_scripts(root, paths)]
     sites["bench-runner"] = list(unrun_benches(root, paths, manifests))
+    sites["limit-exempt"], refused = limit_exempt(root, paths)
+    sites["main-tier"] = [(LONG_TESTS, line) for line, _ in main_tier_lines(root, paths)]
+    sites["test-binary"], unplanned = test_binary(root, paths, manifests)
+    refusals = [(path, line, "limit-exempt", why) for path, line, why in refused]
+    refusals += [(path, line, "test-binary", why) for path, line, why in unplanned]
     for relative in paths:
         path = Path(relative)
         if not path.parts or path.parts[0] not in {"crates", "examples", "tools", "scripts"}:
@@ -131,8 +137,10 @@ def inventory(root, honor_pins=False):
                         if destination.is_relative_to(root / "examples"):
                             match = re.search(r'(?m)^\s*' + re.escape(name) + r'\s*=', text)
                             sites["package-reach"].append((relative, text.count("\n", 0, match.start()) + 1 if match else 1))
-    counts = {rule: {"version": RULES[rule][0], "files": dict(sorted(Counter(p for p, _ in values).items()))}
-              for rule, values in sites.items()}
+    counts = {rule: {"version": RULES[rule][0], "files": dict(sorted(Counter(p for p, _ in sites[rule]).items()))}
+              for rule in RULES}
+    # Refusals ride beside the sites: no count records them, and check() fails on any.
+    sites["refused"] = refusals
     return {"schema": 1, "rules": counts}, sites, pins
 
 
@@ -277,6 +285,11 @@ def check(root, rule=None, zero=None, tighten=False):
             if candidate in sources or any(candidate.is_relative_to(path) for path in paths):
                 errors.append(f"{relative}:{line}: {rule}: {guidance(rule)}")
         return errors
+    # What a rule refuses outright, whatever the counts: a site it cannot count, or one outside its list.
+    refused = [f"{relative}:{line}: {name}: {why}; {guidance(name)}"
+               for relative, line, name, why in sites["refused"] if rule in (None, name)]
+    if refused:
+        return sorted(set(refused))
     path = root / BASELINE
     if not path.exists() and not tighten:
         return [f"{BASELINE}: missing; initialise with shape_rules.py tighten"]

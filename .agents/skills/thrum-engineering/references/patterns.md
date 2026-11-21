@@ -184,6 +184,10 @@ assertion could still fail, such as a grid whose solve takes more than a few ste
 valley. Build it once in the test, not once per case. When the behaviour only appears at full size, keep the small
 test that proves the behaviour itself, and treat the full-size run as [a main-tier test](#a-main-tier-test).
 
+Rule: `limit-exempt` counts the tests `.config/nextest.toml` exempts from the limit on one test, and the count only
+falls: make a slow test fast rather than exempt it. An override that changes the limit names its tests one by one,
+and the default limit is no later than the test tiers'.
+
 <a id="logic-without-a-device"></a>
 
 *Test logic on the CPU, and open a device only for what a GPU alone can show.* A selection, a layout, a state
@@ -221,6 +225,10 @@ a module of it, declared there and run as `cargo test -p <package> --test it <fi
 because the test must run apart, such as behind a Cargo feature or with `harness = false`, the item that asks for
 it says so.
 
+Rule: `test-binary` fails a test target that no plan names and `.config/unplanned-test-binaries.txt` does not list.
+A plan names one when a done-when item's check runs it with `--test`, or the main-tier list names it. The list only
+shrinks, and a line whose target is gone fails until it is removed.
+
 <a id="a-main-tier-test"></a>
 
 *A full-size or long run is a main-tier test and needs a plan's say.* It needs a done-when item that says what
@@ -229,6 +237,10 @@ proposal, with the fault it would catch, in the module's `LOG.md` for a planner,
 item, mark the test `#[ignore = "long: ..."]`, name its binary in `.config/long-tests.txt` with the fault it
 leaves unguarded before a merge, and run it with `./dev long-tests`, which the main-branch check `long-tests`
 runs on main.
+
+Rule: `main-tier` counts the entries of `.config/long-tests.txt` and the tests marked `long:`, and the count only
+falls. The landing an item asks for raises the rule's version in `scripts/shape_matchers.py`, which starts the count
+again, and its reviewer holds the raise against the item.
 
 **Older shapes not to copy:**
 - Support shared by `#[path = "..."]` includes, which rely on implicit `super::` names.

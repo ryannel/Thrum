@@ -25,6 +25,10 @@ RULES = {
     "test-readback": (1, "tests", "read back with thrum_test_support::readback::{buffer, texture}, or append a Readback to the encoder under test and wait on its submission"),
     "test-deadline": (1, "tests", "wait with thrum_test_support::wait::until, which fails the test at its deadline"),
     "shader-text-edit": (1, "shader-source", "make the variant a separate entry point or a generated constant prepended to the shader, not a .replace( of WGSL text"),
+    "limit-exempt": (1, "the-smallest-world", "make the test fast, on the smallest world that shows its behaviour; no landing adds a test to the overrides of .config/nextest.toml that exempt it from the limit on one test, and an override that changes the limit names its tests one by one, as (binary_id(=<package>::<binary>) & test(=<test>))"),
+    # Raise the version only in a landing that a done-when item asks for: a new version starts its count again.
+    "main-tier": (1, "a-main-tier-test", "make the test fast; an entry in .config/long-tests.txt or a test marked #[ignore = \"long: ...\"] needs a done-when item that asks for it, and that item's landing raises this rule's version in scripts/shape_matchers.py; a builder with no such item writes the proposal, with the fault it would catch, in its module's LOG.md for a planner"),
+    "test-binary": (1, "an-existing-test-binary", "add the test to a test file that exists, or to the unit tests of the module it tests; a new test target needs a done-when item whose check runs it with --test, and .config/unplanned-test-binaries.txt only shrinks"),
 }
 # Built in two parts so this file does not name the folder it matches.
 EVIDENCE_FOLDER = "docs/" + "evidence/"
@@ -34,6 +38,7 @@ EVIDENCE_STORE = {"scripts/evidence_store.py", "scripts/test_evidence_store.py"}
 SOURCE_SUFFIXES = {".rs", ".py", ".mjs", ".js", ".sh", ".ps1", ".swift", ".c", ".h", ".cpp", ".mm", ".ts",
                    ".tsx", ".jsx", ".kt", ".wgsl", ".metal", ".html", ".in"}
 TEXT_EDIT = re.compile(r'\.\s*replacen?\s*\(')
+LONG_IGNORE = re.compile(r'#\[\s*ignore\s*=\s*"long:')
 CODE = re.compile(r"(?i)(?:^|[^a-z0-9])(?:g[0-9]+[a-z]?|t2|a1|m[0-9]+[a-z]?)(?=$|[^a-z0-9])")
 # Raw strings, quoted strings, chars (not lifetimes), nested block comments and
 # line comments are scanned rather than stripped with a single greedy regex.
@@ -328,6 +333,8 @@ def rust_sites(root, relative, text, package, manifest, registry):
             yield "test-deadline", match.start()
     for offset in os_test_module_sites(root, relative, code, text):
         yield "whole-file-gpu-gate", offset
+    for match in LONG_IGNORE.finditer(comments):
+        yield "main-tier", match.start()
     # Coarse on purpose: any text edit in a non-test file that mentions WGSL anywhere.
     if not test_file(relative) and re.search(r'(?i)wgsl', text):
         for match in TEXT_EDIT.finditer(without_test_modules(code)):
@@ -519,3 +526,184 @@ def unrun_benches(root, paths, manifests):
             if name and name not in runners:
                 match = re.search(r'(?m)^\s*name\s*=\s*["\x27]' + re.escape(name) + r'["\x27]', text)
                 yield relative, (text.count("\n", 0, match.start()) + 1 if match else 1)
+
+
+NEXTEST = ".config/nextest.toml"
+LONG_TESTS = ".config/long-tests.txt"
+UNPLANNED_TESTS = ".config/unplanned-test-binaries.txt"
+# The test tiers' limit on one test in a merge's check, in seconds: the default may not be later.
+TEST_LIMIT_SECONDS = 60
+EXEMPT_TERM = re.compile(r'\(\s*binary_id\(=([\w-]+)::([\w-]+)\)\s*&\s*test\(=(\w+(?:::\w+)*)\)\s*\)')
+EXEMPT_FILTER = re.compile(r'\s*' + EXEMPT_TERM.pattern + r'(?:\s*\|\s*' + EXEMPT_TERM.pattern + r')*\s*')
+DURATION = re.compile(r'(\d+(?:\.\d+)?)\s*(ms|s|m|h)')
+TEST_FLAG = re.compile(r'--test(?:=|\s+)["\x27]?([\w-]+)')
+
+
+def line_of(text, offset):
+    return text.count("\n", 0, max(offset, 0)) + 1
+
+
+def seconds(duration):
+    """A cargo-nextest duration such as `10s` or `1m 30s`, in seconds; None if it reads otherwise."""
+    if not isinstance(duration, str) or not re.fullmatch(r'(?:\s*' + DURATION.pattern + r')+\s*', duration):
+        return None
+    scale = {"ms": 0.001, "s": 1, "m": 60, "h": 3600}
+    return sum(float(value) * scale[unit] for value, unit in DURATION.findall(duration))
+
+
+def limit_exempt(root, paths):
+    """The tests exempt from the limit on one test, and the overrides that cannot be counted.
+
+    Returns ([(path, line)] for each test an override names, [(path, line, why)] refused outright).
+    An override that changes the limit is one with a `slow-timeout`; it names its tests one by one, exactly.
+    """
+    if NEXTEST not in paths:
+        return [], []
+    text = read(root, NEXTEST)
+    try:
+        config = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as error:
+        return [], [(NEXTEST, 1, f"cannot read the runner's configuration: {error}")]
+    profile = config.get("profile", {}).get("default", {})
+    sites, refused = [], []
+    timeout = profile.get("slow-timeout")
+    if isinstance(timeout, str):
+        timeout = {"period": timeout}
+    if timeout is not None:
+        period = seconds(timeout.get("period")) if isinstance(timeout, dict) else None
+        after = timeout.get("terminate-after") if isinstance(timeout, dict) else None
+        match = re.search(r'(?m)^[ \t]*slow-timeout\s*=', text)
+        line = line_of(text, match.start()) if match else 1
+        if period is None or not isinstance(after, int) or period * after > TEST_LIMIT_SECONDS:
+            refused.append((NEXTEST, line, f"the default limit on one test is later than the test tiers' "
+                            f"{TEST_LIMIT_SECONDS} s, or never stops a test: keep slow-timeout's period times "
+                            f"terminate-after at {TEST_LIMIT_SECONDS} s or less"))
+    # The n-th table header in the text is the n-th override, so each site has its own line.
+    headers = [match.start() for match in re.finditer(r'(?m)^[ \t]*\[\[\s*profile\.default\.overrides\s*\]\]', text)]
+    for index, override in enumerate(profile.get("overrides", [])):
+        if "slow-timeout" not in override:
+            continue
+        start = headers[index] if index < len(headers) else 0
+        filter_text = override.get("filter")
+        if not isinstance(filter_text, str) or not EXEMPT_FILTER.fullmatch(filter_text):
+            refused.append((NEXTEST, line_of(text, start), "an override that changes the limit on one test names "
+                            "something wider than single tests, so its tests cannot be counted"))
+            continue
+        found = text.find(filter_text, start)
+        for term in EXEMPT_TERM.finditer(filter_text):
+            sites.append((NEXTEST, line_of(text, found + term.start()) if found >= 0 else line_of(text, start)))
+    return sites, refused
+
+
+def main_tier_lines(root, paths):
+    """Each entry of the main-tier list, as (line, fields)."""
+    if LONG_TESTS not in paths:
+        return []
+    entries = []
+    for number, line in enumerate(read(root, LONG_TESTS).splitlines(), 1):
+        fields = line.split("#", 1)[0].split()
+        if fields:
+            entries.append((number, fields))
+    return entries
+
+
+def main_tier_binaries(entries):
+    """(package, binary) for each test binary the main-tier list names."""
+    named = set()
+    for _, fields in entries:
+        if len(fields) < 2:
+            continue
+        if fields[1] == "not-run":
+            named.update((fields[0], name) for name in fields[2:3])
+        elif fields[1].startswith("features="):
+            named.update((fields[0], name) for name in fields[2:])
+        else:
+            named.add((fields[0], fields[1]))
+    return named
+
+
+def test_targets(root, paths, manifests):
+    """Each integration test target as Cargo finds it: (package, name, source path, manifest line).
+
+    A `[[test]]` table is a target; with `autotests` on (Cargo's default), so is each `tests/<name>.rs`
+    and `tests/<name>/main.rs` that no table already builds. A helper module in a folder under `tests/`
+    is not a target.
+    """
+    files = set(paths)
+    targets = []
+    for folder, manifest in sorted(manifests.items()):
+        package = manifest.get("package", {})
+        name = package.get("name")
+        if not name:
+            continue
+        relative = (folder / "Cargo.toml").as_posix()
+        text = read(root, relative)
+        explicit_names, explicit_paths = set(), set()
+        for table in manifest.get("test", []):
+            target = table.get("name")
+            if not target:
+                continue
+            source = table.get("path")
+            if source is None:
+                single = (folder / "tests" / f"{target}.rs").as_posix()
+                source = single if single in files else (folder / "tests" / target / "main.rs").as_posix()
+            else:
+                source = (folder / source).as_posix()
+            match = re.search(r'(?m)^\s*name\s*=\s*["\x27]' + re.escape(target) + r'["\x27]', text)
+            targets.append((name, target, source, relative, line_of(text, match.start()) if match else 1))
+            explicit_names.add(target)
+            explicit_paths.add(Path(source).as_posix())
+        if package.get("autotests", True) is False:
+            continue
+        prefix = (folder / "tests").as_posix() + "/"
+        for path in sorted(files):
+            if not path.startswith(prefix):
+                continue
+            rest = path[len(prefix):].split("/")
+            if len(rest) == 1 and rest[0].endswith(".rs"):
+                target = rest[0][:-3]
+            elif len(rest) == 2 and rest[1] == "main.rs":
+                target = rest[0]
+            else:
+                continue
+            if target in explicit_names or path in explicit_paths:
+                continue
+            targets.append((name, target, path, path, 1))
+    return targets
+
+
+def test_binary(root, paths, manifests):
+    """The lines of the list of test targets no plan names, and the targets refused outright.
+
+    Returns ([(path, line)] for each line of the list, [(path, line, why)]). A plan names a target when a
+    done-when item's check, open or Done, runs it with `--test`, or when the main-tier list names it. A
+    package's one target `it` needs neither a name nor a line.
+    """
+    planned = set()
+    for check in done_when_checks(root):
+        planned.update(TEST_FLAG.findall(check))
+    in_main_tier = main_tier_binaries(main_tier_lines(root, paths))
+    targets = test_targets(root, paths, manifests)
+    existing = {(package, name) for package, name, *_ in targets}
+    listed, sites, refused = set(), [], []
+    if UNPLANNED_TESTS in paths:
+        for number, line in enumerate(read(root, UNPLANNED_TESTS).splitlines(), 1):
+            fields = line.split("#", 1)[0].split()
+            if not fields:
+                continue
+            sites.append((UNPLANNED_TESTS, number))
+            if len(fields) != 2:
+                refused.append((UNPLANNED_TESTS, number, "expected `<package> <test target>`"))
+                continue
+            key = (fields[0], fields[1])
+            if key in listed:
+                refused.append((UNPLANNED_TESTS, number, f"{fields[0]} {fields[1]} is listed twice: remove a line"))
+            elif key not in existing:
+                refused.append((UNPLANNED_TESTS, number, f"{fields[0]} has no test target {fields[1]}: remove the line"))
+            listed.add(key)
+    for package, name, source, where, line in targets:
+        if name == "it" or name in planned or (package, name) in in_main_tier or (package, name) in listed:
+            continue
+        refused.append((where, line, f"test target {package} {name} ({source}) is named by no plan and not listed in "
+                        f"{UNPLANNED_TESTS}"))
+    return sites, refused

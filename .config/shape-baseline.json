@@ -82,6 +82,22 @@
         "examples/v1-game/src/window/capture.rs": 8
       }
     },
+    "limit-exempt": {
+      "version": 1,
+      "files": {
+        ".config/nextest.toml": 12
+      }
+    },
+    "main-tier": {
+      "version": 1,
+      "files": {
+        ".config/long-tests.txt": 10,
+        "crates/thrum-water-model/tests/shore_blend.rs": 1,
+        "examples/v1-game/tests/exit_scene.rs": 1,
+        "examples/v1-game/tests/support/field_occlusion_gpu.rs": 2,
+        "examples/water/tests/floating_gpu.rs": 1
+      }
+    },
     "package-reach": {
       "version": 1,
       "files": {
@@ -156,6 +172,12 @@
         "examples/v1-game/src/host/world_thread.rs": 1,
         "examples/v1-game/src/scene.rs": 1,
         "examples/v1-game/src/window.rs": 3
+      }
+    },
+    "test-binary": {
+      "version": 1,
+      "files": {
+        ".config/unplanned-test-binaries.txt": 43
       }
     },
     "test-crate-edges": {
