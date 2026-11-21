@@ -503,14 +503,26 @@ struct TestTime {
 fn xml_attribute(tag: &str, attribute: &str) -> Option<String> {
     let start = tag.find(&format!(" {attribute}=\""))? + attribute.len() + 3;
     let value = &tag[start..start + tag[start..].find('"')?];
-    Some(
-        value
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&quot;", "\"")
-            .replace("&apos;", "'")
-            .replace("&amp;", "&"),
-    )
+    let mut text = String::with_capacity(value.len());
+    let mut rest = value;
+    while let Some(at) = rest.find('&') {
+        text.push_str(&rest[..at]);
+        rest = &rest[at..];
+        let entity = [
+            ("&lt;", '<'),
+            ("&gt;", '>'),
+            ("&quot;", '"'),
+            ("&apos;", '\''),
+            ("&amp;", '&'),
+        ]
+        .into_iter()
+        .find(|(entity, _)| rest.starts_with(entity));
+        let (skip, character) = entity.map_or((1, '&'), |(entity, c)| (entity.len(), c));
+        text.push(character);
+        rest = &rest[skip..];
+    }
+    text.push_str(rest);
+    Some(text)
 }
 
 /// Every test case of a cargo-nextest JUnit report. A case whose failure says it timed out was
