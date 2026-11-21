@@ -317,6 +317,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it (GATE-TIME M2), 21 Nov · [review](../../.orchestrate/evidence/GATE-TIME/M2-review.md)
 - A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge (GATE-TIME M7), 21 Nov · [review](../../.orchestrate/evidence/GATE-TIME/M7-review.md)
 - The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk (HOST M3), 21 Nov · [review](../../.orchestrate/evidence/HOST/M3-review.md)
 - A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it (GATE-TIME M8), 21 Nov · [review](../../.orchestrate/evidence/GATE-TIME/M8-review.md)
