@@ -2,7 +2,7 @@
 use thrum_render::binding;
 use thrum_render::{
     contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass},
-    graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
+    graph::{AccessKind, ResourceDescriptor, ResourceScope},
     runtime::DeviceSite,
 };
 
@@ -179,16 +179,7 @@ impl Filtered {
         let offset = graph.resources.len();
         for texture in &self.textures {
             graph.resources.push((
-                ResourceDescriptor::Texture {
-                    dimension: TextureKind::D2,
-                    width: texture.width(),
-                    height: texture.height(),
-                    layers: texture.depth_or_array_layers(),
-                    mips: texture.mip_level_count(),
-                    samples: 1,
-                    format: FORMAT,
-                    usage: USAGE,
-                },
+                ResourceDescriptor::of_texture(texture),
                 ResourceScope::Transient,
             ));
         }
