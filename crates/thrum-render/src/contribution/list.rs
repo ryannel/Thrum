@@ -458,7 +458,7 @@ mod tests {
                 .await
                 .expect("prepared");
             let seen = Seen::default();
-            let mut list = SceneContributions::new(vec![Box::new(Probe(seen.clone()))]);
+            let mut list = SceneContributions::new(vec![Box::new(Probe(Arc::clone(&seen)))]);
             let frame = prepared.contribution_frame();
 
             let passes = reaches(&seen, "passes", || list.passes());
