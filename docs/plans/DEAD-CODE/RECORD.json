@@ -142,6 +142,40 @@
         "by": "plan",
         "task": "Diagnose DEAD-CODE M2, whose first review failed on a fault in the item, not the build. Read the review at .claude/workt",
         "at": "2026-11-21T02:29:28Z"
+      },
+      "ready_for_review": {
+        "commit": "7ef9fdc5ca63b7e02f3332a1f5088157491f77f5",
+        "checked": "7ef9fdc5ca63b7e02f3332a1f5088157491f77f5",
+        "at": "2026-11-21T03:41:10Z",
+        "reused": [
+          "Test command",
+          "M2.1",
+          "M2.2",
+          "M2.5",
+          "M2.3"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 60412,
+          "cached": 1923164,
+          "output": 11950,
+          "cost_usd": 1.106657,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 60412,
+          "cached": 1923164,
+          "output": 11950,
+          "cost_usd": 1.106657,
+          "turns": 1
+        }
       }
     },
     "M3": {
