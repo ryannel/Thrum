@@ -328,7 +328,7 @@
       }
     },
     "M3": {
-      "definitions": "78850e1081b90ccd76aa19f264fecf771a0d1a77598ccc89b8c5f02628eb0a25",
+      "definitions": "58120d939b3ecaed412a3cb186ad7e5ba10ecd1da5f99d568c5419e8690b9867",
       "reviews": [
         {
           "verdict": "fail",
@@ -390,41 +390,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
-        "at": "2026-11-20T12:18:24Z"
-      },
-      "ready_for_review": {
-        "commit": "b63faa90bbc34381fa3f36ac05f594b33973ab11",
-        "checked": "b63faa90bbc34381fa3f36ac05f594b33973ab11",
-        "at": "2026-11-21T19:34:52Z",
-        "reused": [
-          "Test command",
-          "M3.1",
-          "M3.6",
-          "M3.5"
-        ],
-        "host": "claude",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "observed": {
-          "model": "claude-opus-5-5"
-        },
-        "cli": "2.1.319 (Claude Code)",
-        "path": "headless",
-        "usage": {
-          "input": 186998,
-          "cached": 14107483,
-          "output": 56061,
-          "cost_usd": 27.92905,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 186998,
-          "cached": 14107483,
-          "output": 56061,
-          "cost_usd": 27.92905,
-          "turns": 1
-        }
+        "task": "Diagnose TEST-SUPPORT M3, which failed review on a fault in an item. The review is .orchestrate/evidence/TEST-SUPPORT/M3",
+        "at": "2026-11-21T19:45:53Z"
       }
     },
     "M4": {
@@ -611,11 +578,15 @@
     {
       "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small worlds, CPU first, few binaries, long runs off the merge path) hold without anyone remembering them. What must hold every time goes in the merge check, because Codex and Claude builders both pass through it; no Claude hooks, since Codex builders never run them. Place the work in GATE-TIME and/or TEST-SUPPORT as milestones with provable items; a planner step just before you placed four related test-speed changes (read its commit and notes first, and build on them rather than duplicating). Don't change any milestone that has started.\nMerge-check rules, beside the ratchet rules in scripts/shape_rules.py:\n1. A test over the limit is stopped and fails. .config/nextest.toml has it at 60 s (slow at 10 s, stopped after 6 periods); it drops to 10 s once GATE-TIME M9 lands.\n2. The tests exempt from that limit (the override filter in .config/nextest.toml, eight today) can only shrink.\n3. The main-tier list .config/long-tests.txt (11 entries today) can only shrink unless a plan says otherwise. shape_rules.py never grants an increase over Git history, so state how a plan raises the count (for example the rule's version).\n4. The number of test binaries can only go down (265 in GATE-TIME M8's runs). This depends on the fewer-binaries change: freeze the count first, then consolidate.\nNot a gate: the check's report already prints step times and slowest tests; add summed test time and GPU-test seconds. A gate on total time would fail good work (load averages of 19 to 23 during checks).\nAlso settle: the hourly `workspace-tests` main-branch check (`./dev check-all`, ORCHESTRATE.md) takes no `lock gpu` yet runs the 221 GPU tests, so it contends with builders unqueued. Decide whether it takes the lock or its GPU tests move elsewhere, unless the previous step already did.\nEngineering skill (.agents/skills/thrum-engineering/SKILL.md): one short block on writing a test that replaces the \"Unit tests\" and \"GPU tests\" rows rather than adding to them, with pattern entries the new rules' messages link to: prove a behaviour on the smallest world that shows it; test logic on the CPU and open a device only for what a GPU alone can show, at the test kit's small target; step simulated time, never wait on the clock; add to an existing test binary; a full-size or long run is a main-tier test and needs a plan's say. The owner keeps always-loaded text short: the block stays about that size and AGENTS.md gets nothing. \"The test kit's small target\" doesn't exist yet; it belongs with TEST-SUPPORT M3 or M4 (not started).\nORCHESTRATE.md \"What is proved, and how hard\": each done-when item says whether its check is a guard that stays (and so meets the limits) or a record that runs once and whose tools are deleted at close; a plan that adds a GPU test or a main-tier test says what only that test can show; a reviewer reruns the tests a change touches, not the whole check, and questions any new test over about a second. No lint can tell a GPU test should have been a CPU test; that stays with the reviewer line.\nThe owner accepted the 10 s limit and that a new long test needs a plan decision. Done when the plans, and any ORCHESTRATE.md text that is the planner's to write, are amended and committed with a short note saying where each part went.",
       "at": "2026-11-21T09:09:42Z"
+    },
+    {
+      "task": "Diagnose TEST-SUPPORT M3, which failed review on a fault in an item. The review is .orchestrate/evidence/TEST-SUPPORT/M3-review.md (commit 3cc944afa on build/test-support, not merged; read it with git show). M3.6 compares the test set against the run before work started, but GATE-TIME M2 (dbe1cac8d) and DEAD-CODE M5 (ac62118e4) deliberately deleted tests in between, as their approved items asked, so no builder can meet M3.6 literally. Decide how a deletion that another module's approved item made counts in M3.6's comparison, so the check still catches a test M3 itself loses, and amend M3's items and done-when file to match. The review's other findings (M3.2, M3.3) are ordinary builder fixes; leave them to the builder unless the items themselves are at fault. Don't change other modules' milestones. Keep the owner's bar: merge-tier checks fast and targeted.\nDone when M3's items and done-when file are amended and committed, with a short diagnosis note naming what changed and why.",
+      "at": "2026-11-21T19:45:53Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-21T09:09:42Z"
+    "at": "2026-11-21T19:45:53Z"
   },
   "design_history": [
     {
