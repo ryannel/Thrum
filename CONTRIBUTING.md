@@ -12,7 +12,9 @@ fingerprints after revision changes; the gate therefore does not reuse that quer
 | Command | What it does |
 | --- | --- |
 | `./dev help` | List implemented contributor commands |
-| `./dev check` | Repository checks and their tests, rustfmt, Clippy, workspace tests (including Mac Metal) and V1 game Wasm Clippy |
+| `./dev check` | Repository checks and their tests, rustfmt, Clippy and V1 game Wasm Clippy for the whole workspace, then the Rust tests (including Mac Metal) of the packages the change since the merge base with `origin/main` can reach; it prints what it selected and why, and runs every test where it cannot be sure |
+| `./dev check-all` | The same with every Rust test of the workspace, whatever changed; main runs it hourly |
+| `./dev selection` | What `./dev check` would select for this checkout's change, and why |
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
 | `./dev check-web` | Lint/compile the V1 game, starter and kit test targets for `wasm32-unknown-unknown` |
 | `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android, plus the starter facade for iOS simulator |

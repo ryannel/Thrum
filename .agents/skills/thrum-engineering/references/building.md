@@ -55,6 +55,11 @@ most of the GPU's time proving again what a rebase had just made stale.
 - **Prove a milestone through `merge` and the main-branch checks, not a pipeline of your own.** Chains of jobs
   that each assert the last one passed (a "qualified landing") rebuild the proof-before-merge this section
   removes, and count every real failure twice.
+- **A merge's `./dev check` runs the tests of the packages your change can reach**, by Cargo's graph, and prints
+  what it selected and why; the main-branch check `workspace-tests` runs them all. A test that reads another
+  package's files when it runs is invisible to that graph: declare the edge in `tools/xtask/src/selection.rs`
+  in the same landing. If your merge fails in a test your change cannot reach, read
+  `python3 "$ORCHESTRATE_SCRIPT" main-check workspace-tests` before you debug it.
 - **One capture pass for a visual milestone, after your last merge.** A capture from before a rebase shows a
   different build from the one under review.
 
