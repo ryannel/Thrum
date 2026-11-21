@@ -486,7 +486,7 @@ test_role="fixtures"
             self.assertEqual(shapes.check(self.root, rule), [])
 
     NEXTEST = """[profile.default]
-slow-timeout = { period = "10s", terminate-after = 6 }
+slow-timeout = { period = "10s", terminate-after = 1 }
 
 [[profile.default.overrides]]
 filter = 'package(engine) & binary(=gpu)'
@@ -535,22 +535,23 @@ slow-timeout = { period = "10s" }
         self.write(".config/nextest.toml", self.NEXTEST + "\n[[profile.default.overrides]]\nfilter = 'package(x)'\n"
                    "threads-required = 4\n")
         self.passes("limit-exempt")
-        for default in ('{ period = "10s", terminate-after = 7 }', '{ period = "61s", terminate-after = 1 }',
-                        '{ period = "10s" }', '"10s"', '{ period = "2m", terminate-after = 1 }'):
+        for default in ('{ period = "10s", terminate-after = 2 }', '{ period = "11s", terminate-after = 1 }',
+                        '{ period = "10s", terminate-after = 6 }', '{ period = "10s" }', '"10s"',
+                        '{ period = "2m", terminate-after = 1 }'):
             self.write(".config/nextest.toml", self.NEXTEST.replace(
-                'slow-timeout = { period = "10s", terminate-after = 6 }', f"slow-timeout = {default}"))
+                'slow-timeout = { period = "10s", terminate-after = 1 }', f"slow-timeout = {default}"))
             errors = self.refused("limit-exempt")
             self.assertIn(".config/nextest.toml:2: limit-exempt: the default limit on one test is missing, later", errors)
-        self.write(".config/nextest.toml", self.NEXTEST.replace("terminate-after = 6", "terminate-after = 3"))
+        self.write(".config/nextest.toml", self.NEXTEST.replace('"10s", terminate-after = 1', '"5s", terminate-after = 2'))
         self.passes("limit-exempt")
         # A deleted default is cargo-nextest's own, which stops no test.
         self.write(".config/nextest.toml", self.NEXTEST.replace(
-            'slow-timeout = { period = "10s", terminate-after = 6 }\n', ""))
+            'slow-timeout = { period = "10s", terminate-after = 1 }\n', ""))
         self.assertIn(".config/nextest.toml:1: limit-exempt: the default limit on one test is missing",
                       self.refused("limit-exempt"))
         # A default written as a sub-table is read, and refused at its own header.
-        table = '[profile.default.slow-timeout]\nperiod = "30s"\nterminate-after = {after}\n'
-        config = self.NEXTEST.replace('slow-timeout = { period = "10s", terminate-after = 6 }\n', "")
+        table = '[profile.default.slow-timeout]\nperiod = "5s"\nterminate-after = {after}\n'
+        config = self.NEXTEST.replace('slow-timeout = { period = "10s", terminate-after = 1 }\n', "")
         self.write(".config/nextest.toml", config + "\n" + table.format(after=4))
         self.assertIn(".config/nextest.toml:14: limit-exempt: the default limit", self.refused("limit-exempt"))
         self.write(".config/nextest.toml", config + "\n" + table.format(after=2))
@@ -673,7 +674,7 @@ slow-timeout = { period = "10s" }
     def test_a_refusal_does_not_hide_another_rules_errors(self):
         self.write(".config/nextest.toml", self.NEXTEST)
         self.committed()
-        self.write(".config/nextest.toml", self.NEXTEST.replace("terminate-after = 6", "terminate-after = 9"))
+        self.write(".config/nextest.toml", self.NEXTEST.replace("terminate-after = 1", "terminate-after = 9"))
         self.write("crates/engine/src/lib.rs", "pub fn load() -> Result<(), String> { todo!() }")
         with contextlib.redirect_stdout(io.StringIO()):
             errors = "\n".join(shapes.check(self.root))

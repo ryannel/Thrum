@@ -17,9 +17,11 @@ dir = "target/nextest"
 # that fails one time in ten.
 fail-fast = false
 retries = 0
-# A test over ten seconds is reported as slow; one still running at sixty is stopped and fails
-# the check. Sixty is six times the merge tier's bound, because the check runs beside builders.
-slow-timeout = { period = "10s", terminate-after = 6 }
+# A test still running at ten seconds, the merge tier's bound for one test, is stopped. Because the
+# check runs beside builders, `./dev check` runs each test it stopped once more, alone, after the
+# others, under the same limit, and the test fails the check unless it then passes (GATE-TIME
+# mechanism 13). The rule `limit-exempt` refuses a default later than ten seconds.
+slow-timeout = { period = "10s", terminate-after = 1 }
 final-status-level = "slow"
 
 [profile.default.junit]
@@ -75,7 +77,7 @@ threads-required = 4
 
 # The exempt list: each test over ten seconds alone on the test build `./dev check` uses, as
 # GATE-TIME M8 measured it, under the milestone that makes it fast or moves it to the main tier.
-# It is still reported as slow, but not stopped at sixty seconds. No other module adds a name.
+# It is still reported as slow, but not stopped at ten seconds. No other module adds a name.
 # Times alone are M8's record. M2 has no test here: the cloud conformance tests take about 5 s.
 # GATE-TIME M9 made its eight fast and took them off.
 

@@ -560,8 +560,9 @@ def unrun_benches(root, paths, manifests):
 NEXTEST = ".config/nextest.toml"
 LONG_TESTS = ".config/long-tests.txt"
 UNPLANNED_TESTS = ".config/unplanned-test-binaries.txt"
-# The test tiers' limit on one test in a merge's check, in seconds: the default may not be later.
-TEST_LIMIT_SECONDS = 60
+# The test tiers' limit on one test in a merge's check, in seconds: the default may not be later
+# (GATE-TIME mechanism 13; `./dev check` runs a test it stops once more, alone, under the same limit).
+TEST_LIMIT_SECONDS = 10
 EXEMPT_TERM = re.compile(r'\(\s*binary_id\(=([\w-]+)::([\w-]+)\)\s*&\s*test\(=(\w+(?:::\w+)*)\)\s*\)')
 EXEMPT_FILTER = re.compile(r'\s*' + EXEMPT_TERM.pattern + r'(?:\s*\|\s*' + EXEMPT_TERM.pattern + r')*\s*')
 DURATION = re.compile(r'(\d+(?:\.\d+)?)\s*(ms|s|m|h)')

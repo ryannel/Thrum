@@ -272,9 +272,9 @@ before. The two rules for how a test is written need nothing built: they bind a 
   its steps and its ten slowest tests, and from `GATE-TIME` M12 with the summed time of its tests and of its GPU
   tests. Those are reports: nothing fails on how long a check takes, because checks run beside builders. Four
   rules do fail a merge, beside the other counts that only fall. *(owner, 21 Nov 2026: "Yes, plan it")*
-  - *The limit on one test.* A test that runs for over ten seconds is reported, and one that runs for over sixty
-    is stopped and fails. From `GATE-TIME` M13 the stop is at ten seconds, and a test it stops is run once more,
-    alone: it fails unless it then passes within ten. *(the owner accepted ten seconds; the second run is the
+  - *The limit on one test.* A test still running at ten seconds is stopped (`GATE-TIME` M13), and the check
+    runs it once more, alone, after the others: it fails unless it then passes within ten, and the closing lines
+    name it with its time alone. A test that fails any other way is not run again. *(the owner accepted ten seconds; the second run is the
     planner's assumption until the owner answers, because load alone takes a short test past ten)*
   - *The exempt list only shrinks*, from M12. A test is exempt from the limit only by its exact name in
     `.config/nextest.toml`. `GATE-TIME` empties the list, and no landing adds a name or loosens the limit.
