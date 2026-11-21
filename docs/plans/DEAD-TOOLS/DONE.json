@@ -220,7 +220,7 @@
     {
       "id": "M4",
       "name": "No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -237,8 +237,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (rule at zero; moved blobs in M4/blobs.txt)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -247,8 +247,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (script-by-script table; before/after outputs in M4/before and M4/after)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -258,8 +258,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (route exact, exit-arm and timing runs in M4/after)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -268,8 +268,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
         }
       ]
     }
