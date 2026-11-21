@@ -71,8 +71,18 @@ the matching section before you write code that does one of these jobs.
 | Pass names | A named `const PASS: &str` in the owning module, used by the graph, timing and benches | `crates/thrum-render/src/visibility.rs` |
 | Device request | `DeviceRecipe` selects the profile, applies restrictions, and returns the device, capability record and fault watch | `crates/thrum-render/src/capabilities/device.rs` |
 | Modules | `foo.rs` plus a `foo/` folder; no `mod.rs` (lint-enforced) | any crate |
-| Unit tests | `#[cfg(test)] mod tests;` with the body in `foo/tests.rs` once it passes a screen or two | `crates/thrum-render/src/visibility.rs` and `visibility/tests.rs` |
-| GPU tests | Ask the shared gate for admission; skips write a visible reason and fail when a GPU is required. Gate only GPU tests, never a whole file | `crates/thrum-test-support/src/lib.rs` |
+
+**Writing a test.** Each line links to its entry. [Patterns' Tests](references/patterns.md#tests) also gives the
+unit-test layout and the GPU gate.
+- Prove a behaviour on [the smallest world](references/patterns.md#the-smallest-world) that shows it.
+- Test [logic on the CPU](references/patterns.md#logic-without-a-device) and open a device only for what a GPU alone
+  can show, at the test kit's small target.
+- [Step simulated time](references/patterns.md#simulated-time), never wait on the clock.
+- Add to [an existing test binary](references/patterns.md#an-existing-test-binary).
+- A full-size or long run is [a main-tier test](references/patterns.md#a-main-tier-test) and needs a plan's say.
+
+| Job | Adopted shape | Reference |
+|---|---|---|
 | Construction | `new(..) -> Result<Self, E>` that validates up front; a documented `*Config` struct for many settings | `CookConfig` in `crates/thrum-cook/src/cooker.rs` |
 | Names | Say what the thing does (`transmittance`, `PublicationPage`). Milestone and gate codes (`g2s_`, `G5`, `t2_`) stay in plans and evidence | — |
 | GPU labels | Spaced plain words: `"camera visibility"` | `crates/thrum-render/src/visibility.rs` |

@@ -1,11 +1,12 @@
-//! The test kit: GPU admission, the test device, readback, waiting, scratch folders, PPM images and allocation
-//! counts. This package is a dev-dependency only.
+//! The test kit: GPU admission, the test device, the small render target, readback, waiting, scratch folders, PPM
+//! images and allocation counts. This package is a dev-dependency only.
 use std::io::Write as _;
 
 pub mod allocations;
 pub mod ppm;
 pub mod readback;
 mod scratch;
+pub mod target;
 pub mod wait;
 
 pub use allocations::CountingAllocator;

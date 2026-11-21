@@ -218,7 +218,7 @@
     {
       "id": "M6",
       "name": "A GPU test draws to the test kit's one small target, and the engineering skill says in one short block how to write a test",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -231,8 +231,8 @@
           "ask": "Read the kit's test of the target: would it fail if the target were another size than the constant, or if the draw wrote nothing? Is anything the call takes or returns typed by an engine crate?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M6/README.md",
           "verdict": "",
           "review": ""
         },
@@ -242,19 +242,19 @@
           "check": "sh -c 'f=.agents/skills/thrum-engineering/SKILL.md; ! grep -q \"^| Unit tests |\" $f && ! grep -q \"^| GPU tests |\" $f && test \"$(wc -w < $f)\" -le 1700 && for a in the-smallest-world logic-without-a-device simulated-time an-existing-test-binary a-main-tier-test; do grep -q \"references/patterns.md#$a\" $f || exit 1; done && ./dev check-docs'",
           "ask": "Does each of the five lines link to its own entry, and is the unit-test layout and the GPU gate, which the two rows gave, one link from the block? Did this milestone's commits change `AGENTS.md` or `CLAUDE.md`, or add test guidance to the skill outside the block?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M6/README.md",
           "verdict": "",
           "review": ""
         },
         {
           "id": "M6.3",
-          "statement": "The Tests section of the patterns reference has an entry for each of the five habits, each under an anchor written out as `<a id=\"\u2026\">` so that its heading can change: `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test`. Each says what to write, with a call or a command to copy where there is one, and what a builder does when the habit cannot hold: for a full-size or long run, that it needs a done-when item that says what only it can show, so a builder with none writes the proposal in the module's log for a planner. The entries state no limit of their own: they link to the test tiers of the project settings. Record: the check adds nothing to the tree.",
+          "statement": "The Tests section of the patterns reference has an entry for each of the five habits, each under an anchor written out as `<a id=\"…\">` so that its heading can change: `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test`. Each says what to write, with a call or a command to copy where there is one, and what a builder does when the habit cannot hold: for a full-size or long run, that it needs a done-when item that says what only it can show, so a builder with none writes the proposal in the module's log for a planner. The entries state no limit of their own: they link to the test tiers of the project settings. Record: the check adds nothing to the tree.",
           "check": "sh -c 'for a in the-smallest-world logic-without-a-device simulated-time an-existing-test-binary a-main-tier-test; do grep -q \"id=\\\"$a\\\"\" .agents/skills/thrum-engineering/references/patterns.md || exit 1; done && ./dev check-docs'",
           "ask": "Take each entry beside the test tiers of `ORCHESTRATE.md`: does it say the same, and state no number the tiers do not? Does the entry on logic without a device show the kit's target call as the kit now has it? Does the entry on simulated time show how a test steps the engine's clock, and say what a wait on the device uses?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M6/README.md",
           "verdict": "",
           "review": ""
         }

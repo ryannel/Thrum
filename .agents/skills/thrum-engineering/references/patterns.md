@@ -160,6 +160,9 @@ validation cases use portable limits and feature facts and compile on every targ
   submit their own copy and wait at most `readback::WAIT`; texture bytes come back packed, without row padding.
   A test that must read inside the encoder under test appends `Readback::buffer` or `Readback::texture` to it and
   calls `wait(device, submission)`.
+- `target::new(&device, target::Depth::Without)` (or `Depth::With`) returns the one small render target a GPU test
+  draws to: `target::SIZE` texels square in `target::FORMAT`, with a depth target where asked, and
+  `Target::read(device, queue)` reads its colour back packed.
 - `wait::until(what, limit, || -> Option<T>)` for anything else a test waits on, failing at its deadline.
 - `Scratch::new(name)`, a temporary folder removed on drop; `ppm::write` for an image a person opens.
 - `CountingAllocator` with `allocations::count(|| ..)`, counting allocations and bytes on the calling thread. Each
@@ -168,6 +171,64 @@ validation cases use portable limits and feature facts and compile on every targ
 **Test devices.** Integration tests can enable the support package's `render` feature and open the admitted
 adapter with a portable or native profile. Restrictions remove features or lower limits. Renderer unit tests
 call their own build of `DeviceRecipe` so they use the same renderer types as the code under test.
+
+**Writing a test.** Five habits, which the skill's block links to. The limits they serve, the ten-second bound
+and the tiers, are in [the test tiers](../../../../ORCHESTRATE.md#test-tiers); these entries state none of
+their own.
+
+<a id="the-smallest-world"></a>
+
+*Prove a behaviour on the smallest world that shows it.* A world is what the test builds to run on: a grid, a
+cooked store, a count of entities, ticks or frames. Choose the smallest one where the behaviour appears and each
+assertion could still fail, such as a grid whose solve takes more than a few steps rather than the showcase
+valley. Build it once in the test, not once per case. When the behaviour only appears at full size, keep the small
+test that proves the behaviour itself, and treat the full-size run as [a main-tier test](#a-main-tier-test).
+
+<a id="logic-without-a-device"></a>
+
+*Test logic on the CPU, and open a device only for what a GPU alone can show.* A selection, a layout, a state
+machine, a record's bytes, a refusal or arithmetic a model shares with a shader is a test that asks for no GPU. A
+GPU test covers what only a device shows: a shader compiles and a pipeline is accepted under its limits,
+submitted output or GPU state equals what the CPU side states, a device's lifecycle holds. It asks the gate, draws
+to the kit's target for the fewest frames that show it, and reads back through the kit:
+
+```rust
+let Some(gpu) = thrum_test_support::gpu("draws_the_quad", None) else { return };
+let (device, queue) = gpu.portable(None); // or `open(..)`, or the crate's own test device
+let target = thrum_test_support::target::new(&device, thrum_test_support::target::Depth::Without);
+// draw to target.colour.view; a test driving a host passes target::SIZE to it
+let texels = target.read(&device, &queue);
+```
+
+A test whose subject is a size, such as a resize or a tiled recipe, keeps its own target and says why in a
+comment. A plan item that adds a GPU test says what only the device shows.
+
+<a id="simulated-time"></a>
+
+*Step simulated time, never wait on the clock.* The engine's clock takes time as an argument, so a test that
+needs the world to advance passes the times it wants: `TickClock::new(config, Duration::ZERO)` then
+`clock.advance(Duration::from_millis(300), budget, step)`, or `ClockedWorld::advance(now)`, or a fixed number of
+ticks or frames. It never sleeps or reads `Instant::now()` to make time pass. A wait on the device or another
+thread is not simulated time: a readback waits through `readback::buffer` or `readback::texture`, and anything
+else through `wait::until(what, limit, attempt)`, which fails at its deadline.
+
+<a id="an-existing-test-binary"></a>
+
+*Add to an existing test binary.* Each file under `tests/` is a binary that macOS checks the first time it runs.
+Put a new test in a test file that already exists for its subject, or in the unit tests of the module it tests
+(`#[cfg(test)] mod tests;`), which add no binary. Where a package has the one test target `it`, a new test file is
+a module of it, declared there and run as `cargo test -p <package> --test it <file>::`. When neither fits,
+because the test must run apart, such as behind a Cargo feature or with `harness = false`, the item that asks for
+it says so.
+
+<a id="a-main-tier-test"></a>
+
+*A full-size or long run is a main-tier test and needs a plan's say.* It needs a done-when item that says what
+only it can show, which the smallest world cannot. A builder with no such item does not add it: write the
+proposal, with the fault it would catch, in the module's `LOG.md` for a planner, and keep the small test. With an
+item, mark the test `#[ignore = "long: ..."]`, name its binary in `.config/long-tests.txt` with the fault it
+leaves unguarded before a merge, and run it with `./dev long-tests`, which the main-branch check `long-tests`
+runs on main.
 
 **Older shapes not to copy:**
 - Support shared by `#[path = "..."]` includes, which rely on implicit `super::` names.

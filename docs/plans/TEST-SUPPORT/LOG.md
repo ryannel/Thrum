@@ -1,5 +1,13 @@
 # TEST-SUPPORT log
 
+- 2026-11-21 Built M6: the kit's `target` module (`target::new(&device, Depth)`, a 64-texel `Rgba8Unorm` colour
+  target with an optional `Depth32Float` one, wgpu types only, `target::SIZE` for hosts) and its two tests, which draw
+  a left-half quad and read colour and depth back through the kit. Verified on Metal with `THRUM_REQUIRE_GPU=1`; a
+  32-texel target and a removed draw each fail both tests. The skill's "Unit tests" and "GPU tests" rows became the
+  five-line block (1,695 words); patterns.md gained the five anchored entries, linked to the settings' test tiers.
+  The tests sit inline in `target.rs` because `.gitignore` ignores every `target/` folder.
+  [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M6/README.md).
+
 - 2026-11-20 Built M5, the kit: readback of a buffer, a texture mip or layer, or a byte range, on its own
   submission or appended to the caller's encoder, with one 120 s wait; `open` (gate, then recipe) in the kit and
   in `thrum-render`'s `test_device`; `wait::until`, `Scratch`, `ppm::write` and `CountingAllocator`. Each has a
