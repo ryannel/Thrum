@@ -12,7 +12,8 @@
 #   debug    the debug build, for a test that failed in release; docs/plans/GATE-TIME/LOG.md gives
 #            the release failure and names the module that owns the test
 water-scene floating_gpu release
-water-scene foam_scene_gpu release
+water-scene foam_scene_gpu release # ten_minutes_moored_on_the_sea_and_the_lake: whitewater that grows from nothing in a calm, on the sea or the lake, only after tens of seconds to ten minutes of a moored craft
+water-scene it release # wake_scene_gpu::moored_craft_keeps_*: a moored craft whose draft drifts, or whose start-up wave persists, only after 12 to 30 s of its own wake, with every body reaction or one level admitted. wake_scene_gpu::float_twenty_metres_off_track_*: a float 20 m off a passing craft's track that does not heave with its wake through the public query, or keeps heaving 20 s after the craft stops; the island lake wake test still holds query answers to the GPU wake before a merge
 v1-game exit_scene release
 v1-game field_occlusion_gpu release
 thrum-water-model shore_blend release

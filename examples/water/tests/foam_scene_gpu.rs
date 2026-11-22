@@ -73,12 +73,13 @@ fn shore_queries(
 }
 
 thrum_test_support::macos_gpu_test! {
-fn ten_minutes_moored_and_wind_sweep() {
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
+fn ten_minutes_moored_on_the_sea_and_the_lake() {
     let _serial = DEVICE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    support::island::with_cooked_island("ten_minutes_moored_and_wind_sweep", || {
-        let Some(gpu) = thrum_test_support::gpu("whitewater wind and calm", Some(wgpu::Backend::Metal)) else {
+    support::island::with_cooked_island("ten_minutes_moored_on_the_sea_and_the_lake", || {
+        let Some(gpu) = thrum_test_support::gpu("whitewater calm", Some(wgpu::Backend::Metal)) else {
             return;
         };
         for lake in [false, true] {
@@ -124,6 +125,19 @@ fn ten_minutes_moored_and_wind_sweep() {
                 "Metal moored scene lake={lake}: all four submitted stocks zero through 600 s"
             );
         }
+    });
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn wind_sweep_raises_the_mean_foam_cover() {
+    let _serial = DEVICE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    support::island::with_cooked_island("wind_sweep_raises_the_mean_foam_cover", || {
+        let Some(gpu) = thrum_test_support::gpu("whitewater wind", Some(wgpu::Backend::Metal)) else {
+            return;
+        };
         let mut covers = Vec::new();
         for wind in [Wind::Trade, Wind::Strong, Wind::Gale] {
             let scene = build_wake(
@@ -237,20 +251,77 @@ fn craft_trail_outlives_removed_source_and_spreads() {
 }
 
 thrum_test_support::macos_gpu_test! {
-fn beach_births_follow_lost_power_and_the_film_leaves_ground_depth() {
+fn a_calm_beach_births_nothing() {
     let _serial = DEVICE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    support::island::with_cooked_island(
-        "beach_births_follow_lost_power_and_the_film_leaves_ground_depth",
-        || {
-            let Some(gpu) = thrum_test_support::gpu("shore film and power", Some(wgpu::Backend::Metal)) else {
-                return;
-            };
-            shore_power(&gpu);
-            film_depth_and_query(&gpu);
-        },
-    );
+    support::island::with_cooked_island("a_calm_beach_births_nothing", || {
+        let Some(gpu) = thrum_test_support::gpu("calm shore power", Some(wgpu::Backend::Metal)) else {
+            return;
+        };
+        assert_eq!(shore_power(&gpu, Wind::Calm, 0), [0.0; 2]);
+    });
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn beach_births_rise_with_the_wind() {
+    let _serial = DEVICE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    support::island::with_cooked_island("beach_births_rise_with_the_wind", || {
+        let Some(gpu) = thrum_test_support::gpu("shore power by wind", Some(wgpu::Backend::Metal)) else {
+            return;
+        };
+        let means = [Wind::Trade, Wind::Gale].map(|wind| shore_power(&gpu, wind, 0));
+        assert!(
+            means[1][0] > means[0][0] && means[1][1] > means[0][1],
+            "{means:?}"
+        );
+    });
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn lake_beach_births_follow_its_share_of_lost_power() {
+    let _serial = DEVICE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    support::island::with_cooked_island("lake_beach_births_follow_its_share_of_lost_power", || {
+        let Some(gpu) = thrum_test_support::gpu("lake shore power", Some(wgpu::Backend::Metal)) else {
+            return;
+        };
+        let means = [0, 1].map(|body| shore_power(&gpu, Wind::Trade, body));
+        let lake_foam_share = means[1][0] / means[0][0];
+        let lake_power_share = means[1][1] / means[0][1];
+        assert!(
+            lake_foam_share > 0.0 && lake_power_share > 0.0 && lake_foam_share < 0.32,
+            "{means:?}"
+        );
+        // Exposure of wet cells and the bounded cover cap affect the accumulated
+        // ratio. The lake must stay in the same order of magnitude as its power share.
+        assert!(
+            (0.1..8.0).contains(&(lake_foam_share / lake_power_share)),
+            "{means:?}"
+        );
+        eprintln!(
+            "Lake vs beach share of film {lake_foam_share:.5}, of depth-limited power {lake_power_share:.5}"
+        );
+    });
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn the_film_leaves_ground_depth() {
+    let _serial = DEVICE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    support::island::with_cooked_island("the_film_leaves_ground_depth", || {
+        let Some(gpu) = thrum_test_support::gpu("shore film", Some(wgpu::Backend::Metal)) else {
+            return;
+        };
+        film_depth_and_query(&gpu);
+    });
 }
 }
 
@@ -259,14 +330,10 @@ fn beach_births_follow_lost_power_and_the_film_leaves_ground_depth() {
     reason = "keep shoreline power and stock measurements in target evidence"
 )]
 #[cfg(target_os = "macos")]
-fn shore_power(gpu: &thrum_test_support::Gpu) {
-    let mut means = Vec::new();
-    for (wind, body) in [
-        (Wind::Calm, 0),
-        (Wind::Trade, 0),
-        (Wind::Gale, 0),
-        (Wind::Trade, 1),
-    ] {
+/// The beach's mean film cover and mean depth-limited power loss over its shoreline cells, for
+/// one wind on the sea's beach (body 0) or the lake's (body 1), with the per-cell assertions.
+fn shore_power(gpu: &thrum_test_support::Gpu, wind: Wind, body: usize) -> [f64; 2] {
+    {
         let (game, report, map, probes) = build_foam(wind, true, true).expect("island whitewater");
         let probes = probes.expect("shore probes");
         let tap = probes.foam;
@@ -397,28 +464,8 @@ fn shore_power(gpu: &thrum_test_support::Gpu) {
                 "Metal {wind:?}: {newly_dry_stocks} stocked dry midpoint columns aged without movement or birth"
             );
         }
-        means.push(means_for_view);
+        means_for_view
     }
-    assert_eq!(means[0], [0.0; 2]);
-    assert!(
-        means[2][0] > means[1][0] && means[2][1] > means[1][1],
-        "{means:?}"
-    );
-    let lake_foam_share = means[3][0] / means[1][0];
-    let lake_power_share = means[3][1] / means[1][1];
-    assert!(
-        lake_foam_share > 0.0 && lake_power_share > 0.0 && lake_foam_share < 0.32,
-        "{means:?}"
-    );
-    // Exposure of wet cells and the bounded cover cap affect the accumulated
-    // ratio. The lake must stay in the same order of magnitude as its power share.
-    assert!(
-        (0.1..8.0).contains(&(lake_foam_share / lake_power_share)),
-        "{means:?}"
-    );
-    eprintln!(
-        "Lake vs beach share of film {lake_foam_share:.5}, of depth-limited power {lake_power_share:.5}"
-    );
 }
 
 #[expect(

@@ -11,7 +11,12 @@ use crate::support::Fixture;
 
 pub(crate) const EXTENT: [u32; 2] = [1056, 768];
 
-/// `name` is the test's whole name in its binary, as `--exact` takes it.
+/// `name` is the test's whole name in its binary, as `--exact` takes it. The child runs it
+/// whether or not it is ignored: the parent already chose to run it.
+#[expect(
+    clippy::print_stderr,
+    reason = "a long test's log shows that its child ran the test and what that child measured"
+)]
 pub(crate) fn with_cooked_island(name: &str, test: impl FnOnce()) {
     if std::env::var_os("THRUM_ISLAND_TEST_CHILD").is_some() {
         test();
@@ -35,7 +40,7 @@ pub(crate) fn with_cooked_island(name: &str, test: impl FnOnce()) {
         .expect("cook island");
     assert!(report.failed.is_empty(), "{report:?}");
     let status = std::process::Command::new(std::env::current_exe().expect("current test"))
-        .args(["--exact", name, "--nocapture"])
+        .args(["--exact", name, "--include-ignored", "--nocapture"])
         .env(STORE_VARIABLE, store)
         .env("THRUM_ISLAND_TEST_CHILD", "1")
         .output()
@@ -52,6 +57,13 @@ pub(crate) fn with_cooked_island(name: &str, test: impl FnOnce()) {
         stdout.contains("running 1 test"),
         "{name}: the child ran no test of that name\n{stdout}"
     );
+    for line in stdout.lines().chain(stderr.lines()).filter(|line| {
+        line.starts_with("running ")
+            || line.starts_with("test result:")
+            || line.starts_with("Metal ")
+    }) {
+        eprintln!("{name} child: {line}");
+    }
 }
 
 pub(crate) fn fixture(gpu: &thrum_test_support::Gpu, draw_water: bool) -> (Fixture, SharedMap) {

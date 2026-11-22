@@ -85,17 +85,18 @@
     "limit-exempt": {
       "version": 1,
       "files": {
-        ".config/nextest.toml": 4
       }
     },
     "main-tier": {
-      "version": 1,
+      "version": 2,
       "files": {
-        ".config/long-tests.txt": 10,
+        ".config/long-tests.txt": 11,
         "crates/thrum-water-model/tests/shore_blend.rs": 1,
         "examples/v1-game/tests/exit_scene.rs": 1,
         "examples/v1-game/tests/support/field_occlusion_gpu.rs": 2,
-        "examples/water/tests/floating_gpu.rs": 1
+        "examples/water/tests/floating_gpu.rs": 1,
+        "examples/water/tests/foam_scene_gpu.rs": 1,
+        "examples/water/tests/wake_scene_gpu.rs": 3
       }
     },
     "package-reach": {

@@ -15,6 +15,7 @@ use water_scene::floating::{Body, Hull, WakeDemo, build_wake};
 use water_scene::island::Wind;
 
 thrum_test_support::macos_gpu_test! {
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity",
@@ -101,6 +102,7 @@ fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
 }
 
 thrum_test_support::macos_gpu_test! {
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn moored_craft_keeps_its_draft_when_only_one_level_admits_pressure() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "moored_craft_keeps_its_draft_when_only_one_level_admits_pressure",
@@ -268,6 +270,7 @@ fn calm_spectrum() -> Spectrum {
 }
 
 thrum_test_support::macos_gpu_test! {
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn float_twenty_metres_off_track_responds_to_the_public_query() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "float_twenty_metres_off_track_responds_to_the_public_query",

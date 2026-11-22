@@ -78,17 +78,5 @@ filter = 'package(thrum-render) & test(gpu_capture_pixels_waits_for_a_readback_a
 threads-required = 4
 
 # The exempt list: each test over ten seconds alone on the test build `./dev check` uses, as
-# GATE-TIME M8 measured it, under the milestone that makes it fast or moves it to the main tier.
-# It is still reported as slow, but not stopped at ten seconds. No other module adds a name.
-# Times alone are M8's record. M2 has no test here: the cloud conformance tests take about 5 s.
-# GATE-TIME M9 made its eight fast and took them off.
-
-[[profile.default.overrides]]
-# GATE-TIME M3.
-filter = '''
-    (binary_id(=water-scene::foam_scene_gpu) & test(=ten_minutes_moored_and_wind_sweep))
-  | (binary_id(=water-scene::it) & test(=wake_scene_gpu::moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity))
-  | (binary_id(=water-scene::it) & test(=wake_scene_gpu::moored_craft_keeps_its_draft_when_only_one_level_admits_pressure))
-  | (binary_id(=water-scene::it) & test(=wake_scene_gpu::float_twenty_metres_off_track_responds_to_the_public_query))
-'''
-slow-timeout = { period = "10s" }
+# GATE-TIME M8 measured it. It is empty: GATE-TIME M2, M9 and M3 made each test fast or moved it to
+# the main tier. No landing adds a name (the rule `limit-exempt`).
