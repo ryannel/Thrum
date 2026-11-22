@@ -100,9 +100,10 @@ is how to work with them.
 
 | Command | When it runs | What it runs | How long it takes |
 | --- | --- | --- | --- |
-| `./dev check` | Before every merge, in the merge's own checkout | The whole workspace's guards, script suites, build and lints, and the fast tests of the packages the change can reach | Planned at about five minutes for a typical landing. In the 30 merges to 22 November 2026 the median was 6.4 minutes, and the four after the last speed-up 3.3 to 4.4 |
+| `./dev check` | Before every merge, in the merge's own checkout | The whole workspace's guards, script suites, build and lints, and the fast tests of the packages the change can reach | Planned at about five minutes for a typical landing. The 30 merges before `14a4a7c83` (22 November 2026) had a median of 6.4 minutes; the four that ran tests from `b69c9812f`, where the check took its present shape, took 3.3 to 4.4 |
 | `./dev check-all` | On main after merges, at most once an hour (`workspace-tests`) | The same, with every fast test of the workspace | Six to eight minutes |
 | `./dev long-tests` | On main after merges, at most every four hours (`long-tests`) | The long tests in release with overflow checks on, and the tests behind a Cargo feature with their features on, a GPU required | About 17 to 20 minutes, one binary at a time |
+| `bash scripts/check_cross_target.sh` | On main after merges, at most once an hour (`cross-target`) | A type-check, with nothing linked, of every target of every workspace package for Linux and Windows | Under a minute when the build is warm |
 
 **What `./dev check` runs.** In order: the selection, the 2D profile guard, the exact-baseline reference guard,
 the repository guards, the script suites, rustfmt, Clippy for the workspace, Clippy for the V1 game's Wasm
@@ -152,9 +153,12 @@ test target that no plan names fails the check, so in a package with no `it` yet
 test to a file that exists. The `[[test]]` entries left in a package's `Cargo.toml` are files that something names
 by binary or that have to run apart, each with its reason beside it.
 
-**After the merge, on main.** The script runs `./dev check-all` and `./dev long-tests` on main's tip as the
-`Main-branch check` lines of [ORCHESTRATE.md](ORCHESTRATE.md#rules) say. A failure there is run again once, then
-traced to the first commit that fails, and that commit's module fixes it. A merge doesn't wait for either.
+**After the merge, on main.** The script runs three main-branch checks on main's tip, as the `Main-branch check`
+lines of [ORCHESTRATE.md](ORCHESTRATE.md#rules) say: `workspace-tests` runs `./dev check-all`, `long-tests` runs
+`./dev long-tests`, and `cross-target` runs `bash scripts/check_cross_target.sh`, which type-checks the workspace for
+Linux and Windows from the Mac (it needs `rustup target add x86_64-unknown-linux-gnu x86_64-pc-windows-msvc`). A
+failure there is run again once, then traced to the first commit that fails, and that commit's module fixes it. A
+merge doesn't wait for any of them.
 
 **Running tests by hand.** From the repository root, with the toolchain `./dev` uses:
 

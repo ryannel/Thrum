@@ -808,7 +808,7 @@
     {
       "id": "M5",
       "name": "The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -823,7 +823,7 @@
           "ask": "Recompute from the saved checks under `.git/orchestrate/checks`: is every merge from `b69c9812f` on, before the claimed commit, in the record; is each merge whose check selected a Rust test binary counted, and no other; are at least five counted; and how many of them took over five minutes: is that within the limit the design's goal gives for the count? For each run over ten minutes, does the record's reason match that run's own step times?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M5/record.md",
           "verdict": "",
           "review": ""
         },
@@ -832,8 +832,8 @@
           "statement": "`CONTRIBUTING.md` says what `./dev check` runs, how it selects, that tests run side by side and what that asks of a test, that a test takes about ten seconds or less or is a long test, that a test proves its behaviour on the smallest world that shows it and tests logic without a device, that a package's test files are modules of one test binary and how to add one, what runs on main after the merge (`./dev check-all`, `./dev long-tests` and the main-branch check `cross-target`), how to run one test, one file's tests or one long test by hand, and how to read the times the check prints.",
           "ask": "Does `CONTRIBUTING.md` name the three commands and the `cross-target` check, and say each of those things? Follow its lines for running one file's tests and one long test by hand: does each run what it says?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M5/record.md#m52-the-contributor-guide",
           "verdict": "",
           "review": ""
         }
