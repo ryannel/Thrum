@@ -53,9 +53,20 @@ fn cooked_pattern_is_lent_and_invalidates_at_submission() {
         ])
         .env(thrum_app::sky::STORE_VARIABLE, root.join("store"))
         .env("THRUM_FOAM_LEASE_TEST", root.path())
-        .status()
+        .output()
         .expect("run lease proof against isolated store");
-    assert!(status.success());
+    let stdout = String::from_utf8_lossy(&status.stdout);
+    let stderr = String::from_utf8_lossy(&status.stderr);
+    assert!(
+        status.status.success(),
+        "{}\n{stdout}\n{stderr}",
+        status.status
+    );
+    // libtest passes when no test matches `--exact`, so a renamed test would otherwise run nothing.
+    assert!(
+        stdout.contains("running 1 test"),
+        "the lease proof's child ran no test of that name\n{stdout}"
+    );
 }
 }
 

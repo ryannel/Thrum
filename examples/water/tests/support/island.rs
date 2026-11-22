@@ -38,9 +38,20 @@ pub(crate) fn with_cooked_island(name: &str, test: impl FnOnce()) {
         .args(["--exact", name, "--nocapture"])
         .env(STORE_VARIABLE, store)
         .env("THRUM_ISLAND_TEST_CHILD", "1")
-        .status()
+        .output()
         .expect("test child");
-    assert!(status.success(), "{name}: {status}");
+    let stdout = String::from_utf8_lossy(&status.stdout);
+    let stderr = String::from_utf8_lossy(&status.stderr);
+    assert!(
+        status.status.success(),
+        "{name}: {}\n{stdout}\n{stderr}",
+        status.status
+    );
+    // libtest passes when no test matches `--exact`, so a renamed test would otherwise run nothing.
+    assert!(
+        stdout.contains("running 1 test"),
+        "{name}: the child ran no test of that name\n{stdout}"
+    );
 }
 
 pub(crate) fn fixture(gpu: &thrum_test_support::Gpu, draw_water: bool) -> (Fixture, SharedMap) {
