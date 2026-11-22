@@ -335,12 +335,12 @@
       }
     },
     "M5": {
-      "definitions": "e6b8a301ec98213c472b4135209efa215904efa19a364dcf992eb16b64214d9f",
+      "definitions": "e2c17e12bb44aac9a8c0d8ad2cc2445bd45ee86cb53f224e53704f20e2091851",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "GATE-TIME M5 is Blocked (needs context). Read the handoff .orchestrate/evidence/GATE-TIME/M5-handoff.md and the record .",
-        "at": "2026-11-22T14:48:32Z"
+        "task": "Answer the GATE-TIME design review's Must Fix (.orchestrate/evidence/GATE-TIME/design-review.md, eighth round): M5.1 clo",
+        "at": "2026-11-22T14:57:33Z"
       }
     },
     "M6": {
@@ -1222,11 +1222,15 @@
     {
       "task": "GATE-TIME M5 is Blocked (needs context). Read the handoff .orchestrate/evidence/GATE-TIME/M5-handoff.md and the record .orchestrate/evidence/GATE-TIME/M5/record.md on branch build/gate-time at 32366cd1e (unmerged; read with git show). M5.1 asks for a median ./dev check of about five minutes over the 30 latest merges. The record shows 6.4 min, but the four merges since M11's fix round (b69c9812f) took 198 to 263 s; the median is held up by merges from before package selection and M11's binary consolidation landed.\nLead's decision: rescope M5.1 to judge only merges since b69c9812f, the point at which the merge check took its current shape, and keep the 30-merge figure in the record as the trend. Accept it on the merges available now rather than waiting days for thirty, but state the smallest sample you judge honest and say why; if the merges since b69c9812f fall short of it, say what M5 waits for. Keep the owner's five-minute bar and the BLOCKED ending if the median over the counted merges exceeds it. Don't change other modules' milestones.\nDone when M5's items and done-when file are amended and committed, with a short note naming what changed and why.",
       "at": "2026-11-22T14:48:32Z"
+    },
+    {
+      "task": "Answer the GATE-TIME design review's Must Fix (.orchestrate/evidence/GATE-TIME/design-review.md, eighth round): M5.1 closes on the median of at least five counted merges, but the design's reason for five (a chance of at most 1 in 32 that five merges look fast when a typical check is over five minutes) holds only if none of the five is over five minutes. Make M5.1's rule and the design's reasoning agree, choosing whichever rule you judge honest for a small sample, and keep the owner's five-minute bar, the BLOCKED ending and the ban on landing a merge just to be counted. Take the review's Suggestions where they are cheap. Don't change other modules' milestones.\nDone when the design, M5.1 and M5's notes agree and are committed, with a short note.",
+      "at": "2026-11-22T14:57:33Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-22T14:48:32Z"
+    "at": "2026-11-22T14:57:33Z"
   },
   "design_history": [
     {
