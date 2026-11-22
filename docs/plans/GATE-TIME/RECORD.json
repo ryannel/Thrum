@@ -744,7 +744,46 @@
     },
     "M11": {
       "definitions": "e0017e093c26635de33437495cbf61a781aaebeec38dff70caf3f183c376867f",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "cf7a694ef5e839d9e77686d8419da15f5e0ef178",
+          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md",
+          "items": {
+            "M11.1": "fail",
+            "M11.2": "pass",
+            "M11.3": "pass",
+            "M11.4": "pass",
+            "M11.5": "pass",
+            "M11.6": "pass",
+            "M11.7": "pass",
+            "M11.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "record misattributes the first-run cost to the link",
+              "item": "M11.1",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 154382,
+            "cached": 6808420,
+            "output": 45450,
+            "cost_usd": 3.505188,
+            "turns": 1
+          },
+          "at": "2026-11-22T02:02:19Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
