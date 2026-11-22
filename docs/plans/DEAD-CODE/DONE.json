@@ -279,7 +279,7 @@
     {
       "id": "M6",
       "name": "Bind-group layout entries and graph declarations are each written through one helper",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -298,8 +298,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; .orchestrate/evidence/DEAD-CODE/M6/M6-notes.md, binding-conversions.md, render-tests.log, crates-tests.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
         },
         {
           "id": "M6.2",
@@ -310,8 +310,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; per-site equality asserts in .orchestrate/evidence/DEAD-CODE/M6/of-texture-asserts.log and of-texture-hits.log, summary in M6-notes.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
         },
         {
           "id": "M6.4",
@@ -320,8 +320,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
         },
         {
           "id": "M6.5",
@@ -332,8 +332,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; serial run on 15ed94d9f in .orchestrate/evidence/DEAD-CODE/M6/mesh-stage-gpu.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
         },
         {
           "id": "M6.3",
@@ -342,8 +342,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
         }
       ]
     }
