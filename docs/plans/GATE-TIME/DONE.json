@@ -808,7 +808,7 @@
     {
       "id": "M5",
       "name": "The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -837,7 +837,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "GATE-TIME M5.1 counts only four merges from `b69c9812f` and needs five; one more landing from another module whose check runs Rust tests in five minutes or less would let it pass.",
+        "work": {
+          "commit": "039ac3b9f6c7cb225fad8dbba7f99929efc21369",
+          "branch": "build/gate-time",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/GATE-TIME/M5-handoff.md"
+      }
     }
   ]
 }
