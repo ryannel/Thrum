@@ -61,24 +61,51 @@ the engineering skill on writing a test, and the project settings three rules fo
 ## The goal
 
 **A typical landing's merge check takes about five minutes of wall clock on this Mac, while builders work.** Five
-minutes is an assumption in [the plan](PLAN.md) that the owner may change. A typical landing is the middle one: the
-goal is met when the median of the merge checks the script saves is five minutes or less. M5, the last milestone,
-proves it from those saved checks, and M8 and M7 each record how far they brought it.
+minutes is an assumption in [the plan](PLAN.md) that the owner may change. A typical landing is the middle one, so
+the goal is that the median merge check takes five minutes or less. M5, the last milestone, shows it from the
+merge checks the script saves, by the rule below, and M8 and M7 each record how far they brought it.
 
-The median is taken over the merges from `b69c9812f` on, the first merge after M11 gave each package one test
-binary. From there the check has its present shape: the selection, the side-by-side run and one binary a package.
-An earlier merge timed a check that no longer runs, or was M11's own landing, which started every new binary for
-the first time. So M5's record keeps the thirty merges before `14a4a7c83`, its first landing, as the trend, and
-they are not judged. A merge is counted when its check ran at least one test. One
-that ran none, such as a change to Markdown alone, takes about a minute whatever the tests cost, so it is listed and
-not counted.
+The merges judged are those from `b69c9812f` on, the first merge after M11 gave each package one test binary.
+From there the check has its present shape: the selection, the side-by-side run and one binary a package. An
+earlier merge timed a check that no longer runs, or was M11's own landing, which started every new binary for the
+first time. So M5's record keeps the thirty merges before `14a4a7c83`, its first landing, as the trend, and they
+are not judged. A merge is counted when its check selected at least one Rust test binary. One whose check prints
+`selected: no Rust test binary`, such as a change to Markdown alone, takes about a minute whatever the tests cost,
+so it is listed and not counted. Every other merge in the span is counted, however slow.
 
-At least five merges are counted, and M5 closes on those that have landed without waiting for thirty. Five is the
-smallest count that carries the claim: if a typical check took over five minutes, at least half the merges would be
-over it, and five with none over would then turn up at most once in 32 times, where four would once in 16. That
-figure treats the merges as independent, and merges that share a day and a machine's load are not, so the record
-gives each landing's subject and a reader can see whose landings a small sample holds. The check records no load.
-The median still decides, as above, and a run over ten minutes is explained.
+M5 closes on the merges that have landed, without waiting for thirty, and a few merges cannot be judged by their
+median: if half of all checks took over five minutes, three or more of five would still be under it one time in
+two. So M5 counts the merges that took over five minutes, and the goal is shown when they are few enough. Few
+enough means that, if a typical check took over five minutes, and so at least half of all merges did, a sample
+that good would turn up at most once in 32 times.
+
+| Counted merges | Over five minutes, at most |
+|---|---|
+| 5 to 8 | none |
+| 9 to 11 | 1 |
+| 12 or 13 | 2 |
+| 14 to 16 | 3 |
+| 17 to 19 | 4 |
+
+Beyond nineteen the limit is found the same way, and
+[the planner's script](../../../.orchestrate/evidence/GATE-TIME/planning/sample_limit.py) prints it for any
+count: the largest number for which that many or fewer heads, in as many tosses of a fair coin as there are
+counted merges, has a chance of 1 in 32 or less. Five is the smallest count that can show the goal: five with none
+over turns up once in 32 times, where four would once in 16. A sample inside its limit has a median of five
+minutes or less, and the record gives that median as the typical time.
+
+A sample over its limit is one of two things. If its median is over five minutes, it says the goal is missed, and
+the plan has to change. If its median is five minutes or less, it is too small to say either way, and M5 waits
+for more landings: with one of five over, for four more with none over. No merge is landed to be counted, because
+a merge made for the count is not a typical landing.
+
+One in 32 is the chance at one count of independent merges, and M5 meets neither condition fully. It may count
+again after a wait, and with half of all merges over five minutes, a count made after every landing up to the
+nineteenth would pass about once in 15 times.
+Merges that share a day and a machine's load are not independent, so the record gives each landing's subject and
+module, and says how many of the counted are this module's own landings and how many selected the whole
+workspace: a reader can see whose landings a small sample holds, and whether they make it slower or faster than
+a typical one. The check records no load. A run over ten minutes is explained.
 
 Two rules follow from the goal, and [the test tiers](../../../ORCHESTRATE.md#test-tiers) state both:
 
@@ -538,7 +565,8 @@ take the same routes to a test that is under ten seconds alone and over it in th
   `no_step_is_taken_beyond_the_budget` is the example: it solves `valley(0.25)` 43 times to prove that no step is
   taken past a budget, which the smallest grid whose solve takes more than a few steps also proves. A world, a
   fixture or a run is made smaller only where every assertion still means what it meant: the log gives the old
-  and new size and why. Setup that several tests repeat is built once and read by each. A run whose length or
+  and new size and why. Setup that several tests repeat is built once, on disk, and read by each: every test is
+  a process of its own, so a static is built again for each test. A run whose length or
   size is what it tests, such as a soak, is not shortened: it is a long test. Where full size shows a fault the
   small world cannot, the full-size run is a long test as well, and the small test stays because it proves the
   behaviour itself. That is not the shortened run mechanism 1 refuses, which proves only part of what its long
@@ -708,7 +736,7 @@ of 21 November.
 | The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules and declared edges of mechanism 4; `./dev check-all` runs the whole workspace | Every builder. A module that adds a folder outside a package gets the whole workspace on every change there until it adds a path rule. A module that adds a test reading another package's files at run time declares the edge in the same landing |
 | The runner, from M8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. One that runs over ten seconds is reported, and one that runs over sixty fails the check; from M13 one is stopped at ten seconds, run once more alone, and fails unless it then passes within ten. The runner's configuration, `.config/nextest.toml`, holds the groups of tests that take turns and the tests counted as heavy | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
 | Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
-| The guard rules, from M12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
+| The guard rules, from M12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
 | The check's closing lines, from M8 and M12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and M5's record |
 | One test binary a package, from M11: a test file under a package's `tests/` folder is a module of the package's `it` target, and runs as `cargo test -p <package> --test it <file>::`. The repository guards fail a file there that no target compiles. A file is a target of its own only while something [mechanism 10](#one-test-binary-a-package) lists holds it | Every module that adds a test file, and every planner who writes a check that runs one |
 
@@ -732,9 +760,9 @@ owner.
 ## Files each milestone touches
 
 The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
-outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`. Three files are
-everyone's: `.config/shape-baseline.json`, `docs/design/maturity.json` and `Cargo.lock`. Change them when your
-landing moves them, whatever your row says. The rows are in build order.
+outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`. Four files are
+everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`, `docs/design/maturity.json` and
+`Cargo.lock`. Change them when your landing moves them, whatever your row says. The rows are in build order.
 
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
@@ -822,8 +850,8 @@ declared edge, and by the record of what it saves, made before it is switched on
 the reviewer's comparison of what it asserted with what it asserts, case by case, and by its time in the record.
 A deleted duplicate is proved by the reviewer's list of where each of its assertions still runs. A retired
 reference is proved by the test that replaces it, which the reviewer reads. The goal is proved by the wall time of
-the merge checks the script saved, read from the check's own lines: the median over
-[the merges the goal counts](#the-goal) is five minutes or less.
+the merge checks the script saved, read from the check's own lines: of
+[the merges the goal counts](#the-goal), no more took over five minutes than the goal allows for that count.
 
 One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by
 the count of test targets; by a check that no open item lost the binary it names; by a scratch test file that the

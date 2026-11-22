@@ -10,7 +10,7 @@ another module's: change nothing those tests assert about the engine. The milest
 
 ## Open for the human
 
-- Assumption: a merge's check takes about five minutes for a typical landing: the median of real merges on this Mac while builders work, counted since the check took its present shape, at least five that ran tests. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure.
+- Assumption: a merge's check takes about five minutes for a typical landing, on this Mac while builders work. It is judged on real merges since the check took its present shape: at least five that ran Rust tests, and too few of them over five minutes to be chance, which is none while fewer than nine are counted. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure.
 - Assumption: a test stopped at ten seconds is run once more, alone, and fails the check only if it is over ten seconds again. Load took a test of under ten seconds past it in 8 of the last 18 whole checks, 22 tests in one. The other choice fails at the first stop.
 - Assumption: "the number of test binaries can only go down" counts the binaries no plan names, 43 of 275 today, because approved open items name 147 not yet written; M11 takes the whole number from 263 to about 110. The other choice rewrites the 176 binary names in 17 modules' open items now, and freezes the whole number.
 - Assumption: the stepped hour, the foam's ten-minute moored run, the three field flythroughs and the shore-blend solve run whole on main after merges, like the gale. The other choice keeps a short run of any in every merge's check.
@@ -63,8 +63,10 @@ another module's: change nothing those tests assert about the engine. The milest
 
 The times come from the checks the script saved, `.git/orchestrate/checks`. The first builder's record, with its
 script `landing_times.py`, is in `.orchestrate/evidence/GATE-TIME/M5/`: its thirty merges are the trend, and
-[the goal](DESIGN.md#the-goal) says which merges are counted and why at least five. Before anything else, count the
-merges that qualify. With fewer than five, end `BLOCKED` saying how many more M5 waits for, and land nothing to make one: a merge made to be counted is
-not a typical landing. If the counted median is over five minutes, say where the time goes and end `BLOCKED`: the
-plan is what has to change. `CONTRIBUTING.md`'s `./dev check` row quotes the trend's median: make it agree with the
-record you close on.
+[the goal](DESIGN.md#the-goal) says which merges are counted and how many of them may be over five minutes. Before
+anything else, count the merges that qualify, and those of them over five minutes. With fewer than five counted,
+or with more over than the goal allows while the counted median is five minutes or less, end `BLOCKED` saying how
+many more landings M5 waits for at the least, and land nothing to make one: a merge made to be counted is not a
+typical landing. If the counted median is over five minutes, say where the time goes and end `BLOCKED`: the plan
+is what has to change. `CONTRIBUTING.md`'s `./dev check` row quotes the trend's median: make it agree with the
+record you close on. Its section on tests doesn't name the `cross-target` check, which M5.2 asks for.
