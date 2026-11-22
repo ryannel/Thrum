@@ -279,7 +279,7 @@
     {
       "id": "M6",
       "name": "Bind-group layout entries and graph declarations are each written through one helper",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
