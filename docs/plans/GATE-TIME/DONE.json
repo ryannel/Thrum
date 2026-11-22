@@ -679,7 +679,7 @@
     {
       "id": "M3",
       "name": "The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -695,8 +695,8 @@
           "ask": "Compare the two tests with the starting commit's one: does the ignored test make every moored assertion, at every tick it was made, and the wind-sweep test every wind assertion? When the ignored test is run, does its child process run the test and not skip it? Is the moored run's name off the runner's exempt list?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md (long tests in release: long-tests-branch.log; the item check on the merged commit)",
           "verdict": "",
           "review": ""
         },
@@ -705,8 +705,8 @@
           "statement": "The ten-minute moored run passes in the main-branch check `long-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests; branch run in release: .orchestrate/evidence/GATE-TIME/M3/long-tests-branch.log",
           "verdict": "",
           "review": "",
           "ask": "Read the log of the main-branch run that covers this commit: does the moored test's child process report `running 1 test` and one test passed, not an ignored test?"
@@ -716,8 +716,8 @@
           "statement": "No test of the water scene that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every water-scene test the runner's exempt list held and for every other one that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median. The list is empty but for any test the design leaves to its own module's planner, which the log names with what was tried.",
           "ask": "Read the record and the exempt list. Is every water-scene test the list held at the starting commit, and every other one the saved checks showed over ten seconds, now under about ten seconds alone and in the record's three runs, or a long test, or named in the log for its module's planner with what was tried? Run two of them alone: do their times match the record? Is anything else left on the list?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md#before-and-now (alone-before.txt, alone-now.txt, check-all-1..3.log, check-medians.txt, saved-checks.txt)",
           "verdict": "",
           "review": ""
         },
@@ -726,8 +726,8 @@
           "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. This item and M3.1 ask for each of them, so the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on.",
           "ask": "For each water-scene test this milestone changed or marked, compare it with the starting commit: is every case and assertion still there, in that test or in the device-free test the log names for it, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md#what-each-change-keeps-m34",
           "verdict": "",
           "review": ""
         }
