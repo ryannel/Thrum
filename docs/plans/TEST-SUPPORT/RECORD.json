@@ -448,7 +448,35 @@
     },
     "M4": {
       "definitions": "65ae8f51dc92c3451e1558b9486e5157bb4f7a493d51b46dd1ddafc55cab1925",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "d6816e5a00af2cde3582afe9de9f021513ff5833",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "pass",
+            "M4.3": "pass",
+            "M4.4": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 141040,
+            "cached": 5773964,
+            "output": 26711,
+            "cost_usd": 2.816837,
+            "turns": 1
+          },
+          "at": "2026-11-22T02:04:48Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
@@ -467,6 +495,13 @@
         "effort": "medium",
         "observed": {},
         "cli": "2.1.319 (Claude Code)"
+      },
+      "done": {
+        "by": "review",
+        "commit": "d6816e5a00af2cde3582afe9de9f021513ff5833",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md",
+        "checked": "c37c3fd0c4a3c9d10a1ea72684b277245ff32b40",
+        "at": "2026-11-22T02:04:48Z"
       }
     },
     "M5": {
