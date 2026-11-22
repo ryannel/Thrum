@@ -679,7 +679,7 @@
     {
       "id": "M3",
       "name": "The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -697,8 +697,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md (long tests in release: long-tests-branch.log; the item check on the merged commit)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -707,8 +707,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests; branch run in release: .orchestrate/evidence/GATE-TIME/M3/long-tests-branch.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md",
           "ask": "Read the log of the main-branch run that covers this commit: does the moored test's child process report `running 1 test` and one test passed, not an ignored test?"
         },
         {
@@ -718,8 +718,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md#before-and-now (alone-before.txt, alone-now.txt, check-all-1..3.log, check-medians.txt, saved-checks.txt)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -728,8 +728,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md#what-each-change-keeps-m34",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md"
         }
       ]
     },
