@@ -135,7 +135,7 @@ DEADLINE_ASSERT = re.compile(r'\bassert\s*!\s*\(\s*(?:(?:::\s*)?std\s*::\s*time\
 # Add one only for a site that is not a readback the kit could do; see docs/plans/TEST-SUPPORT/DESIGN.md#the-kit.
 TEST_READBACK_EXEMPT = {
     ("examples/mirror/tests/pool_gpu/retire.rs", "copy_buffer"):
-        "shared by the native and wasm pool fixtures; on wasm it yields to a browser timer between polls, which a blocking wait cannot",
+        "the wasm view fixture's readback; it yields to a browser timer between polls, which a blocking wait cannot",
 }
 FUNCTION = re.compile(r'\bfn\s+(\w+)')
 

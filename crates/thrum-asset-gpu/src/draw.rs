@@ -1066,13 +1066,26 @@ pub(crate) fn cooked_vertex_source(scene: &str) -> String {
     source.into()
 }
 
+/// The cooked entries for `scene`; with `cloud`, the volume's Sun term is also
+/// multiplied by the scene's cloud factor.
+///
+/// # Panics
+/// Panics if the cloud-factor variant's replacement does not match exactly once
+/// in `cooked.wgsl`, which would silently draw volumes without cloud shadow.
 fn cooked_source(scene: &str, cloud: bool) -> String {
+    const SUN_TERM: &str = "light.irradiance.rgb * exp(-optical)";
     let source = cooked_vertex_source(scene);
     if cloud {
-        source.replace(
-                "light.irradiance.rgb * exp(-optical)",
-                "light.irradiance.rgb * cloud_factor((cooked_volume.model * vec4(p, 1.0)).xyz) * exp(-optical)",
-            )
+        assert_eq!(
+            source.matches(SUN_TERM).count(),
+            1,
+            "the cooked volume's Sun term for the cloud-factor variant"
+        );
+        source.replacen(
+            SUN_TERM,
+            "light.irradiance.rgb * cloud_factor((cooked_volume.model * vec4(p, 1.0)).xyz) * exp(-optical)",
+            1,
+        )
     } else {
         source
     }

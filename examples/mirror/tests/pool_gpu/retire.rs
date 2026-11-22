@@ -37,6 +37,7 @@ pub(crate) async fn pause() {
     std::thread::sleep(Duration::from_millis(1));
 }
 
+#[cfg(target_arch = "wasm32")]
 pub(crate) async fn copy_buffer(
     device: &wgpu::Device,
     queue: &wgpu::Queue,

@@ -3157,7 +3157,6 @@ dependencies = [
  "glam",
  "half",
  "pollster",
- "serde_json",
  "thrum-asset",
  "thrum-core",
  "thrum-render",
