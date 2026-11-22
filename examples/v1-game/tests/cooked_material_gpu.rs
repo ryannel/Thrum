@@ -5,9 +5,7 @@
 //! validates on the new device. `THRUM_G6_MATERIAL_CAPTURE_DIR` keeps the captures as PPM files.
 #![cfg(not(target_arch = "wasm32"))]
 
-mod support {
-    pub(crate) mod cooked;
-}
+use crate::support;
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};

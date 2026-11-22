@@ -9,6 +9,7 @@ mod clouds_display_phase_gpu;
 mod clouds_frame_contract_gpu;
 mod clouds_shade_gpu;
 mod clouds_weather_gpu;
+mod cooked_material_gpu;
 mod cooked_rows_gpu;
 mod effect_after_opaque_gpu;
 mod effect_cadence_gpu;

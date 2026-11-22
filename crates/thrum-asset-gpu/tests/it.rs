@@ -5,3 +5,4 @@
 mod await_drawn;
 mod cooked_view_gpu;
 mod mapped_indices;
+mod wgsl_records;

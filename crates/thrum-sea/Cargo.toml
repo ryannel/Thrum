@@ -11,10 +11,6 @@ autotests = false
 [[test]]
 name = "error_types"
 
-# A target of its own: its check is named by open item TEST-SUPPORT M4.1.
-[[test]]
-name = "wgsl_records"
-
 [lints]
 workspace = true
 

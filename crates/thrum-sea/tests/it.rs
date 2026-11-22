@@ -13,3 +13,4 @@ mod portable_limits_gpu;
 mod recipe_limits;
 mod upload_bytes;
 mod upload_cost;
+mod wgsl_records;

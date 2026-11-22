@@ -46,7 +46,3 @@ path = "tests/it.rs"
 name = "error_types"
 path = "tests/error_types.rs"
 
-# A target of its own: its check is named by open item TEST-SUPPORT M4.1.
-[[test]]
-name = "wgsl_records"
-path = "tests/wgsl_records.rs"

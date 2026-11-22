@@ -1,6 +1,9 @@
 //! Shared native devices and state-script runner for the effect diagnostics.
 use std::path::Path;
 
+/// The cooked game the cooked tests of the `it` target build.
+pub(crate) mod cooked;
+
 /// Engine-owned presentation texture for submitted display-frame tests.
 pub fn presentation(
     device: &wgpu::Device,

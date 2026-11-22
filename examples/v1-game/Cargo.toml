@@ -105,17 +105,11 @@ path = "tests/it.rs"
 name = "clouds_selection_gpu"
 path = "tests/clouds_selection_gpu.rs"
 
-# A target of its own: its check is named by open item TEST-SUPPORT M4.2; the main-tier list names
-# it for its tests behind a feature; it holds tests behind a Cargo feature; run by name from
-# tools/xtask/src/main.rs.
+# A target of its own: the main-tier list names it for its tests behind a feature; it holds tests
+# behind a Cargo feature; run by name from tools/xtask/src/main.rs.
 [[test]]
 name = "cooked_assets_gpu"
 path = "tests/cooked_assets_gpu.rs"
-
-# A target of its own: its check is named by open item TEST-SUPPORT M4.2.
-[[test]]
-name = "cooked_material_gpu"
-path = "tests/cooked_material_gpu.rs"
 
 # A target of its own: its check is named by open item GAME-SPLIT M3.2.
 [[test]]

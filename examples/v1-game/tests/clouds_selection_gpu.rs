@@ -1,5 +1,9 @@
 //! The real game selects Weather and Shade through public engine interfaces.
 /// Shared native diagnostic device policy.
+#[expect(
+    dead_code,
+    reason = "the shared module also holds the cooked game, which only the cooked tests build"
+)]
 pub mod support;
 
 use std::time::{Duration, Instant};
