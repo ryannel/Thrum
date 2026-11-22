@@ -392,6 +392,22 @@
         "by": "plan",
         "task": "Diagnose TEST-SUPPORT M3, which failed review on a fault in an item. The review is .orchestrate/evidence/TEST-SUPPORT/M3",
         "at": "2026-11-21T19:45:53Z"
+      },
+      "ready_for_review": {
+        "commit": "cf7a694ef5e839d9e77686d8419da15f5e0ef178",
+        "checked": "46987285e5e5ecf2ce4751409dd152206e9f7825",
+        "at": "2026-11-22T01:48:13Z",
+        "reused": [
+          "Test command",
+          "M3.1",
+          "M3.6",
+          "M3.5"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {},
+        "cli": "2.1.319 (Claude Code)"
       }
     },
     "M4": {

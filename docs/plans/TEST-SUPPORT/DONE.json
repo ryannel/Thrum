@@ -263,7 +263,7 @@
     {
       "id": "M3",
       "name": "A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
