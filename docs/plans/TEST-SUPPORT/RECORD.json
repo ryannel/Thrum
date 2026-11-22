@@ -333,7 +333,7 @@
         {
           "verdict": "fail",
           "commit": "3cc944afa2b8fda18bc043ab493c3aa8dc5fa183",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "fail",
@@ -386,6 +386,35 @@
             "turns": 1
           },
           "at": "2026-11-21T19:40:10Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "4f452c5157687cc43ddf5d7deec92b1aafea5fbf",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.6": "pass",
+            "M3.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 120582,
+            "cached": 2532480,
+            "output": 11446,
+            "turns": 1
+          },
+          "at": "2026-11-22T01:53:26Z"
         }
       ],
       "authorised": {
@@ -408,6 +437,13 @@
         "effort": "medium",
         "observed": {},
         "cli": "2.1.319 (Claude Code)"
+      },
+      "done": {
+        "by": "review",
+        "commit": "4f452c5157687cc43ddf5d7deec92b1aafea5fbf",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md",
+        "checked": "46987285e5e5ecf2ce4751409dd152206e9f7825",
+        "at": "2026-11-22T01:53:26Z"
       }
     },
     "M4": {

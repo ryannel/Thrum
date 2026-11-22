@@ -263,7 +263,7 @@
     {
       "id": "M3",
       "name": "A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
@@ -283,8 +283,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md (M3.1 readback)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -293,8 +293,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md (finding 5; M3.2 prologue)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -303,8 +303,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md (findings 2-4; M3.3)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -313,8 +313,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/comparison-2.log and workspace-attribution.log (before.*, after-2.*)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -324,8 +324,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/long-tests-attribution-d22b9d203.log; covering run: main-branch check long-tests",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -334,8 +334,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
         }
       ],
       "diagnosed_for_planner_finding": true
