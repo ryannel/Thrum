@@ -597,8 +597,8 @@
           "statement": "The record gives, at the starting commit and at the claimed one, how many test binaries a whole run of the check builds and runs, and what a freshly linked set costs before its first test starts: the link, and the first run of each new binary, which macOS checks. Each is timed twice from the same starting state, with the load. Both later timings are shorter than both earlier ones.",
           "ask": "Were the four timings made the same way and from the same starting state? Is each of the later pair shorter than each of the earlier pair? Does the record's count of binaries match what the runner lists at the claimed commit?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M11/record.md#m111-binaries-and-what-a-freshly-linked-set-costs",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
         },
