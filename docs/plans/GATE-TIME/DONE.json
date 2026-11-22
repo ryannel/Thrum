@@ -736,7 +736,7 @@
     {
       "id": "M4",
       "name": "Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -752,8 +752,8 @@
           "ask": "Would the test that is left fail if the pool's contribution drew nothing, or was never prepared? Is anything still compared with a bound worked out from a model?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m41-the-mirror-pool",
           "verdict": "",
           "review": ""
         },
@@ -764,8 +764,8 @@
           "ask": "Compare the view fixture and the script's `view` case with the starting commit: is every comparison and bound as it was?",
           "target": "chrome-webgpu",
           "lock": "chrome",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M4/m4.2-browser-view-branch.log",
           "verdict": "",
           "review": ""
         },
@@ -776,8 +776,8 @@
           "ask": "Does the new test reach the cloud-factor variant of the cooked shader through the contribution a game uses, with no slicing of shader text in the test? Would it fail if the replacement that makes the variant matched nothing?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m43-the-cooked-march",
           "verdict": "",
           "review": ""
         },
@@ -788,8 +788,8 @@
           "ask": "Does a test in this file run with default features and cover all four variants? Are the two observers it compares different, one empty and one that declares an idle view slot? Would a view record or binding that reached the main shader of a scene with no view in use fail it?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m44-the-scene-view-shader",
           "verdict": "",
           "review": ""
         },
@@ -798,8 +798,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#milestone-check-agent_looppy-check---module-gate-time---milestone-m4-on-49b76c286",
           "verdict": "",
           "review": ""
         }
