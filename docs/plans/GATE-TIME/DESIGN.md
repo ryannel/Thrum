@@ -65,7 +65,22 @@ minutes is an assumption in [the plan](PLAN.md) that the owner may change. A typ
 goal is met when the median of the merge checks the script saves is five minutes or less. M5, the last milestone,
 proves it from those saved checks, and M8 and M7 each record how far they brought it.
 
-Two rules follow from it, and [the test tiers](../../../ORCHESTRATE.md#test-tiers) state both:
+The median is taken over the merges from `b69c9812f` on, the first merge after M11 gave each package one test
+binary. From there the check has its present shape: the selection, the side-by-side run and one binary a package.
+An earlier merge timed a check that no longer runs, or was M11's own landing, which started every new binary for
+the first time. So M5's record keeps the thirty merges before `14a4a7c83`, its first landing, as the trend, and
+they are not judged. A merge is counted when its check ran at least one test. One
+that ran none, such as a change to Markdown alone, takes about a minute whatever the tests cost, so it is listed and
+not counted.
+
+At least five merges are counted, and M5 closes on those that have landed without waiting for thirty. Five is the
+smallest count that carries the claim: if a typical check took over five minutes, at least half the merges would be
+over it, and five with none over would then turn up at most once in 32 times, where four would once in 16. That
+figure treats the merges as independent, and merges that share a day and a machine's load are not, so the record
+gives each landing's subject and a reader can see whose landings a small sample holds. The check records no load.
+The median still decides, as above, and a run over ten minutes is explained.
+
+Two rules follow from the goal, and [the test tiers](../../../ORCHESTRATE.md#test-tiers) state both:
 
 - **A test in the merge tier is fast: it takes about ten seconds or less**, run alone on this Mac in the build the
   check uses. A test that takes longer is made fast where the time comes from how it was written or built, and
@@ -807,7 +822,8 @@ declared edge, and by the record of what it saves, made before it is switched on
 the reviewer's comparison of what it asserted with what it asserts, case by case, and by its time in the record.
 A deleted duplicate is proved by the reviewer's list of where each of its assertions still runs. A retired
 reference is proved by the test that replaces it, which the reviewer reads. The goal is proved by the wall time of
-the merge checks the script saved, read from the check's own lines: the median is five minutes or less.
+the merge checks the script saved, read from the check's own lines: the median over
+[the merges the goal counts](#the-goal) is five minutes or less.
 
 One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by
 the count of test targets; by a check that no open item lost the binary it names; by a scratch test file that the

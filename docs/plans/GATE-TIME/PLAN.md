@@ -10,7 +10,7 @@ another module's: change nothing those tests assert about the engine. The milest
 
 ## Open for the human
 
-- Assumption: a merge's check takes about five minutes for a typical landing: the median of real merges on this Mac while builders work. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure.
+- Assumption: a merge's check takes about five minutes for a typical landing: the median of real merges on this Mac while builders work, counted since the check took its present shape, at least five that ran tests. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure.
 - Assumption: a test stopped at ten seconds is run once more, alone, and fails the check only if it is over ten seconds again. Load took a test of under ten seconds past it in 8 of the last 18 whole checks, 22 tests in one. The other choice fails at the first stop.
 - Assumption: "the number of test binaries can only go down" counts the binaries no plan names, 43 of 275 today, because approved open items name 147 not yet written; M11 takes the whole number from 263 to about 110. The other choice rewrites the 176 binary names in 17 modules' open items now, and freezes the whole number.
 - Assumption: the stepped hour, the foam's ten-minute moored run, the three field flythroughs and the shore-blend solve run whole on main after merges, like the gale. The other choice keeps a short run of any in every merge's check.
@@ -35,65 +35,36 @@ another module's: change nothing those tests assert about the engine. The milest
 ## M7 A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge: done
 [review](../../../.orchestrate/evidence/GATE-TIME/M7-review.md)
 
-## M2 Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it
+## M2 Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M2-review.md)
 
-`query_gpu.rs` uses `swash_gpu::{Clock, Source}` and `swash_gpu::beach`, so it cannot just drop `mod swash_gpu;`:
-remove the `swash_gpu` `[[test]]` entry so the test runs only inside `query_gpu`, or move the helpers. The Done
-item `CULLING` M1.2 names the binary `field_occlusion_gpu` and nothing names `field_gpu`, so the flythroughs are
-cheapest to keep under the first name; the main-tier list follows. In the atmosphere's reference folder,
-`gpu/night.rs`, `gpu/readback.rs` and `gpu/query.rs` use none of the Monte Carlo code, and the twilight guard is
-`shipping_spectral_twilight` in `reference/gpu.rs`, called today only from
-`gpu_transport_reference_reports_every_prescribed_row`. Where a test you delete is on the runner's exempt list,
-take its name off.
+## M10 A record shows where a builder's session goes: the model's own time, each kind of command and each wait: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M10-review.md)
 
-## M10 A record shows where a builder's session goes: the model's own time, each kind of command and each wait
+## M12 A merge's check refuses a new test-limit exemption, main-tier test or test binary that no plan asked for, and reports the tests' summed time and the GPU tests' share: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M12-review.md)
 
-Measure, and change nothing else: [mechanism 11](DESIGN.md#mechanisms) says what the record splits and where its
-sources are. Much of a session is inside commands, so say what each command was waiting for.
+## M9 Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M9-review.md)
 
-## M12 A merge's check refuses a new test-limit exemption, main-tier test or test binary that no plan asked for, and reports the tests' summed time and the GPU tests' share
+## M13 A test over ten seconds in a merge's check is stopped, and fails the check unless it passes within ten seconds alone: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M13-review.md)
 
-In the rule engine `script-caller` already reads every done-when item's check, and `scripts/repo_check.py`
-parses the main-tier list. Change no test and neither list.
+## M11 Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M11-review.md)
 
-## M9 Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down
+## M3 The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M3-review.md)
 
-The work is every name on the runner's exempt list that M9 owns, and five of the game's tests that are off it
-and over ten seconds in every check, which [the design](DESIGN.md#every-test-over-about-ten-seconds) names. Its
-table gives the planner's measurement of each test and the route it expects, and M8's record the times on the
-build the check now uses. Measure each alone before and after. Mechanism 9's example of the smallest world is
-the river model's `no_step_is_taken_beyond_the_budget`.
-
-## M13 A test over ten seconds in a merge's check is stopped, and fails the check unless it passes within ten seconds alone
-
-Until M3 the foam scene's `beach_births` test is expected to be run again. If a test outside the water scene is
-stopped in every run and a group or a heavy count does not cure it, end `BLOCKED` with the record: making a test
-fast is M9's work.
-
-## M11 Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time
-
-Measure first: if M11.1's later timings are not shorter, end `BLOCKED` with the record. Each test file declares
-`mod support;` for itself, which resolves elsewhere once the file is a module, and the rule `path-attribute`
-refuses `#[path]`. The water scene's `with_cooked_island` starts a test again with `--exact <name>`. Before
-folding a file, search `scripts/` and `tools/xtask` for its binary as well as the open items M11.4 reads.
-
-## M3 The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep
-
-The moored test is `ten_minutes_moored_and_wind_sweep` in `examples/water/tests/foam_scene_gpu.rs`. It runs itself
-again by name as a child process, through `with_cooked_island`, which passes `--exact <name> --nocapture`. The
-file's other tests waited behind its device mutex under `cargo test`, so their own times are in M8's record, not in
-older logs.
-
-## M4 Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text
-
-In `examples/mirror/tests/pool_gpu/`, `view.rs`, `retire.rs` and the wasm dev-dependencies serve the Chrome
-equality of a secondary view with the main view, which stays. In `scene_view_absent_gpu.rs` the empty observer is
-`Observer::new(0)`, which the test labels "no declaration", and the observer with an idle view slot is
-`Observer::new(1)`. `SCENE-VIEWS` M2.3 and M3.1 are Done and their checks run these tests: write in this module's
-log what those checks no longer prove.
+## M4 Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M4-review.md)
 
 ## M5 The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs
 
-The times come from the checks the script saved, `.git/orchestrate/checks`, each of which ends with its own step
-times since M8. If the median is over five minutes, say where the time goes and end `BLOCKED`: the plan is what
-has to change.
+The times come from the checks the script saved, `.git/orchestrate/checks`. The first builder's record, with its
+script `landing_times.py`, is in `.orchestrate/evidence/GATE-TIME/M5/`: its thirty merges are the trend, and
+[the goal](DESIGN.md#the-goal) says which merges are counted and why at least five. Before anything else, count the
+merges that qualify. With fewer than five, end `BLOCKED` saying how many more M5 waits for, and land nothing to make one: a merge made to be counted is
+not a typical landing. If the counted median is over five minutes, say where the time goes and end `BLOCKED`: the
+plan is what has to change. `CONTRIBUTING.md`'s `./dev check` row quotes the trend's median: make it agree with the
+record you close on.

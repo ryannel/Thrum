@@ -819,8 +819,8 @@
       "items": [
         {
           "id": "M5.1",
-          "statement": "The record lists the run of `./dev check` that the script saved for each of at least the thirty latest merges before the claimed commit, with the wall time and the tests' time the check printed. The median wall time is five minutes or less. For each run over ten minutes the record says where the time went. It also gives how long one run of each main-branch check, `long-tests` and `workspace-tests`, takes now.",
-          "ask": "Recompute the median from the saved checks under `.git/orchestrate/checks`: is every merge's check of that span in the record, and is the median five minutes or less? For each run over ten minutes, does the record's reason match that run's own step times?",
+          "statement": "The record lists the run of `./dev check` that the script saved for each merge from `b69c9812f` on, where the check took its present shape, before the claimed commit, with the wall time and the tests' time the check printed, what the check selected and the landing's subject. A merge whose check ran at least one test is counted; one whose check ran none is listed and not counted. At least five are counted, and the median of their wall times is five minutes or less. The record keeps the thirty merges before `14a4a7c83` and their median as the trend, which is not judged. For each run over ten minutes in either list it says where the time went. It also gives how long one run of each main-branch check, `long-tests` and `workspace-tests`, takes now.",
+          "ask": "Recompute from the saved checks under `.git/orchestrate/checks`: is every merge from `b69c9812f` on, before the claimed commit, in the record; did the check of each counted merge run tests; are at least five counted; and is their median five minutes or less? For each run over ten minutes, does the record's reason match that run's own step times?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ".orchestrate/evidence/GATE-TIME/M5/record.md",
