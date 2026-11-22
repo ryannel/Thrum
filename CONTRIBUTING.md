@@ -12,8 +12,9 @@ fingerprints after revision changes; the gate therefore does not reuse that quer
 | Command | What it does |
 | --- | --- |
 | `./dev help` | List implemented contributor commands |
-| `./dev check` | Repository checks and their tests, rustfmt, Clippy and V1 game Wasm Clippy for the whole workspace, then the Rust tests (including Mac Metal) of the packages the change since the merge base with `origin/main` can reach; it prints what it selected and why, and runs every test where it cannot be sure |
-| `./dev check-all` | The same with every Rust test of the workspace, whatever changed; main runs it hourly |
+| `./dev check` | The merge tier, which runs before every merge: repository checks and their tests, rustfmt, Clippy and V1 game Wasm Clippy for the whole workspace, then the Rust tests (including Mac Metal) of the packages the change since the merge base with `origin/main` can reach, side by side; it prints what it selected and why, runs every test where it cannot be sure, and ends with where its time went. [Tests and the check](#tests-and-the-check) says more |
+| `./dev check-all` | The same with every Rust test of the workspace, whatever changed; the main-branch check `workspace-tests` runs it on main after merges, at most once an hour |
+| `./dev long-tests` | The main tier's long tests and the tests behind a Cargo feature, from `.config/long-tests.txt`, with a GPU required; the main-branch check `long-tests` runs it on main after merges, at most every four hours |
 | `./dev selection` | What `./dev check` would select for this checkout's change, and why |
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
 | `./dev check-web` | Lint/compile the V1 game, starter and kit test targets for `wasm32-unknown-unknown` |
@@ -91,6 +92,92 @@ input and complete committed outcomes; for lifecycle work cover interruption and
 fixtures deterministic within a stated envelope. No timing/performance claim follows from unit tests.
 Run the affected target/feature combinations when added; whole-engine optimization needs the named
 integrated workload and unchanged quality/correctness constraints in [AI performance](docs/design/AI-PERFORMANCE.md).
+
+## Tests and the check
+
+[The test tiers](ORCHESTRATE.md#test-tiers) say which tests run when, and the risk each tier accepts. This section
+is how to work with them.
+
+| Command | When it runs | What it runs | How long it takes |
+| --- | --- | --- | --- |
+| `./dev check` | Before every merge, in the merge's own checkout | The whole workspace's guards, script suites, build and lints, and the fast tests of the packages the change can reach | Planned at about five minutes for a typical landing. In the 30 merges to 22 November 2026 the median was 6.4 minutes, and the four after the last speed-up 3.3 to 4.4 |
+| `./dev check-all` | On main after merges, at most once an hour (`workspace-tests`) | The same, with every fast test of the workspace | Six to eight minutes |
+| `./dev long-tests` | On main after merges, at most every four hours (`long-tests`) | The long tests in release with overflow checks on, and the tests behind a Cargo feature with their features on, a GPU required | About 17 to 20 minutes, one binary at a time |
+
+**What `./dev check` runs.** In order: the selection, the 2D profile guard, the exact-baseline reference guard,
+the repository guards, the script suites, rustfmt, Clippy for the workspace, Clippy for the V1 game's Wasm
+build, and Clippy for the tests behind a Cargo feature, which are built and linted at every merge but run only
+on main. Then the selected Rust tests side by side through cargo-nextest, the doc tests, and the game's four
+draw-probe tests. Everything but the tests covers the whole workspace whatever changed, and an unchanged
+crate's build is reused.
+
+**How it selects.** The change is every path that differs from the merge base with `origin/main`, uncommitted
+and untracked paths included. The check runs the tests of each workspace package that holds a changed path and
+of every package that depends on one, through Cargo's graph. A test that reads another package's files when it
+runs is a dependency the graph can't show, so it needs a declared edge in `tools/xtask/src/selection.rs`, added
+in the landing that adds the reader. A shared input selects the whole workspace: the root `Cargo.toml`,
+`Cargo.lock`, `rust-toolchain.toml`, `clippy.toml`, `.cargo/`, `dev`, `dev.ps1`, `tools/xtask`,
+`.config/long-tests.txt` and `.config/nextest.toml`. Markdown, `docs/` outside `docs/evidence`, `.agents/`,
+`.github/`, `scripts/` and the rest of `.config/` select no tests. Any other path, a checkout with no merge base
+and a checkout that doesn't differ from main also select the whole workspace. The check prints what it selected
+and why, and `./dev selection` prints that without running anything.
+
+**Tests run side by side.** Each test runs in a process of its own, as many at once as the machine has cores,
+across every test binary. So a test can't rely on another test having run first, or on a static it shares with
+another test, and a mutex in a test file no longer makes tests take turns. A test that needs a device to itself
+joins a test group in `.config/nextest.toml`, and one that starts a thread pool is given `threads-required`
+there, in the landing that adds it. A failed test is never run again, so a test that fails one time in ten
+fails the check.
+
+**A test takes about ten seconds or less, or is a long test.** Ten seconds is measured with the test run alone,
+in the build the check uses. The check stops a test still running at ten seconds, runs each stopped test once
+more alone after the others, and fails unless it passes within ten seconds then. A test that can't be made fast
+is a long test: it is marked `#[ignore = "long: …"]`, its binary is listed in `.config/long-tests.txt` with the
+fault it leaves unguarded before a merge written beside it, and only `./dev long-tests` runs it. A new long test
+needs a plan's done-when item that asks for it, and no shortened copy of it stays in the merge tier.
+
+**A test proves its behaviour on the smallest world that shows it, and tests logic without a device.** The world
+is the grid, valley, cooked store, count of entities, ticks or frames the test builds to run on. Use the
+smallest one on which each assertion could still fail. What a CPU can decide, such as a selection, a layout, a
+state machine, a record's bytes or a refusal, is tested without a GPU, and a GPU test covers only what a device
+alone can show, at the smallest target and for the fewest frames that show it. [The test
+tiers](ORCHESTRATE.md#test-tiers) give the full rules, and [the engineering
+patterns](.agents/skills/thrum-engineering/references/patterns.md#tests) show how.
+
+**A package's test files are modules of one test binary.** A package's integration tests build into one test
+target, `it`, whose root is `tests/it.rs`, so the check links and starts one binary for the package rather than one
+for each file. To add a test file, write `tests/<file>.rs` and add `mod <file>;` to `tests/it.rs`; its tests are
+then named `<file>::<test>`. A file under `tests/` that no target compiles fails the repository guards, and a new
+test target that no plan names fails the check, so in a package with no `it` yet, such as `thrum-render`, add the
+test to a file that exists. The `[[test]]` entries left in a package's `Cargo.toml` are files that something names
+by binary or that have to run apart, each with its reason beside it.
+
+**After the merge, on main.** The script runs `./dev check-all` and `./dev long-tests` on main's tip as the
+`Main-branch check` lines of [ORCHESTRATE.md](ORCHESTRATE.md#rules) say. A failure there is run again once, then
+traced to the first commit that fails, and that commit's module fixes it. A merge doesn't wait for either.
+
+**Running tests by hand.** From the repository root, with the toolchain `./dev` uses:
+
+- one file's tests: `cargo nextest run --locked --offline -p thrum-core --test it -E 'test(/^clock::/)'`;
+- one test: `cargo nextest run --locked --offline -p thrum-core --test it -E 'test(=clock::display_callbacks_do_not_set_simulation_rate)'`;
+- one long test, the way `./dev long-tests` runs it:
+  `CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true THRUM_REQUIRE_GPU=1 cargo test --locked --offline --release -p v1-game --test exit_scene -- --ignored --exact movers_keep_their_authored_loops_after_a_stepped_hour`.
+  Leave out `--release` for a binary the list builds `debug`;
+- the whole main tier: `./dev long-tests`.
+
+`cargo test -p <package> --test it <file>::` also runs one file's tests, but in one process on several threads,
+not side by side as the check runs them.
+
+**Reading the times the check prints.** It ends, pass or fail, with:
+
+- `./dev check step times (wall)`: each step's wall time and the total. The tests step includes building and
+  listing the test binaries as well as running them, so it is the longest, and it is the step to read first;
+- the ten slowest tests, each timed side by side, where a test can take up to about twice its time alone;
+- how many tests ran over ten seconds, and each test stopped at ten seconds with its time side by side and alone;
+- the tests' summed time, and the share of it in tests whose binary or name says `gpu` or `metal`.
+
+None of these times fails the check except the ten-second stop. A check's length follows the load other work puts
+on the machine, so compare a step with the same step in other checks rather than reading one total on its own.
 
 ## Review and evidence
 
