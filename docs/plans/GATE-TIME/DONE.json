@@ -736,7 +736,7 @@
     {
       "id": "M4",
       "name": "Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -754,8 +754,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m41-the-mirror-pool",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -766,8 +766,8 @@
           "lock": "chrome",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M4/m4.2-browser-view-branch.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -778,8 +778,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m43-the-cooked-march",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -790,8 +790,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m44-the-scene-view-shader",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -800,8 +800,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#milestone-check-agent_looppy-check---module-gate-time---milestone-m4-on-49b76c286",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
         }
       ]
     },
