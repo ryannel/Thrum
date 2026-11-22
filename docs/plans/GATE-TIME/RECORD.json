@@ -262,6 +262,40 @@
         "by": "plan",
         "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
         "at": "2026-11-20T10:47:17Z"
+      },
+      "ready_for_review": {
+        "commit": "d96b41b77439b53de557c3cd3cc55d106e8d744b",
+        "checked": "d96b41b77439b53de557c3cd3cc55d106e8d744b",
+        "at": "2026-11-22T14:23:35Z",
+        "reused": [
+          "Test command",
+          "M4.1",
+          "M4.2",
+          "M4.3",
+          "M4.4"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 147984,
+          "cached": 8132780,
+          "output": 43036,
+          "cost_usd": 3.670548,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 147984,
+          "cached": 8132780,
+          "output": 43036,
+          "cost_usd": 3.670548,
+          "turns": 1
+        }
       }
     },
     "M5": {
