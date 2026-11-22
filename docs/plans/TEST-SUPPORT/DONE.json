@@ -343,7 +343,7 @@
     {
       "id": "M4",
       "name": "Each crate's WGSL records are held to its Rust structs by one shared check, and the proving ground's cooked tests build their game through one fixture",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
