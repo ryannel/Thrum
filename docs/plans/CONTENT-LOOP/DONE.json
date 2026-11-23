@@ -473,7 +473,7 @@
     {
       "id": "M5",
       "name": "Small cooked publications prove supersession and safe reuse",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
