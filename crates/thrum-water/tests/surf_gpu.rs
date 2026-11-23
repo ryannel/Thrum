@@ -283,6 +283,7 @@ fn measure_cache(
     let sheets = [0, 1].map(|body| map.surf_sheet(field, body, time).expect("model"));
     let [ox, oz] = witness.anchor.map(f32::floor);
     let mut counts = [0; 2];
+    let mut lag_difference = 0.0_f64;
     for (&[x, z, spacing, slot], actual) in nodes.iter().zip(samples) {
         let body = usize::from(slot != 0.0);
         if counts[body] == 1024 || actual[3] == 0.0 {
@@ -296,9 +297,9 @@ fn measure_cache(
         } else {
             [f64::from(x), f64::from(z)]
         };
-        if map.sample(point).is_none_or(|row| row.body != body) {
+        let Some(row) = map.sample(point).filter(|row| row.body == body) else {
             continue;
-        }
+        };
         let expected = sheets[body].forward(point);
         for (got, target) in actual[..3].iter().zip([
             expected.world[0] - point[0],
@@ -310,8 +311,69 @@ fn measure_cache(
                 "cache node {point:?} in {body}: {got:.5} m vs {target:.5} m"
             );
         }
+        if body == 0
+            && lag_difference <= HEIGHT_TOLERANCE * 2.0
+            && let Some(omitted) = without_lag_height(map, field, point, time, row)
+        {
+            lag_difference = lag_difference.max((f64::from(actual[1]) - omitted).abs());
+        }
         counts[body] += 1;
     }
     assert_eq!(counts, [1024; 2]);
+    assert!(
+        lag_difference > HEIGHT_TOLERANCE * 2.0,
+        "the lag-only control is indistinguishable from the model"
+    );
     counts.iter().sum()
+}
+
+// Remove phase lag alone, retaining the model's shoaling, exposure, depth
+// cap and section. These wet sea probes are below the swash fade.
+fn without_lag_height(
+    map: &Map,
+    field: &Field,
+    point: [f64; 2],
+    time: f64,
+    row: thrum_water_model::MapSample,
+) -> Option<f64> {
+    let surf = map.surf_profile().expect("surf");
+    let transform = map.shore_transform(0).expect("sea transform");
+    let stage = map.body(0).expect("sea").stage.value;
+    let depth = row.depth.max(surf.lag_floor);
+    let limit = thrum_water_model::limit(row.row, row.depth, field.variances(), map.profile());
+    if row.depth <= 0.5 * limit.swash_depth {
+        return None;
+    }
+    let [mut re, mut im, mut variance] = [0.0_f64; 3];
+    for wave in field.layers[0].components() {
+        let [kx, kz] = wave.wave_vector;
+        let k = kx.hypot(kz);
+        let angle = kz.atan2(kx).rem_euclid(TAU);
+        let sector = (0_u8..8)
+            .min_by(|&a, &b| {
+                let score = |i| (angle - f64::from(i) * TAU / 8.0).cos();
+                score(b).total_cmp(&score(a))
+            })
+            .map(usize::from)
+            .expect("eight sectors");
+        if !transform
+            .sample(sector, TAU / k, stage, point)
+            .0
+            .is_finite()
+        {
+            return None;
+        }
+        let gain =
+            thrum_water_model::shoaling(k, depth) * transform.exposure(sector, stage, point).sqrt();
+        let a = wave.amplitude * row.row.gains[0] * gain;
+        let (sin, cos) = wave.anchored_phase(point, time).sin_cos();
+        re += a * cos;
+        im += a * sin;
+        variance += 0.5 * a * a;
+    }
+    let envelope = re.hypot(im);
+    let index = 2.0 * envelope / (surf.breaker_ratio * depth);
+    let section = surf.section.sample(im.atan2(re), index);
+    let scale = (0.6 * (row.depth + limit.swash_depth) / (4.0 * variance.sqrt())).min(1.0);
+    Some(section.height * envelope * scale)
 }
