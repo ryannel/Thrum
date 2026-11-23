@@ -20,7 +20,7 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
         return;
     };
     let mut scene = fixture::scene(false, true, false);
-    let light = fixture::light(true, 1);
+    let light = fixture::daylight(true, 1);
     let (mut prepared, mut target) = gpu.prepare(&scene, light);
     let before = objects(&gpu.device);
     let fresh = fixture::render(&gpu, &mut prepared, &mut target, &scene, light);
@@ -57,17 +57,21 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
             .1,
         1
     );
-    let equal = |expected: &fixture::Witness, actual: &fixture::Witness| {
+    let equal = |transition, expected: &fixture::Witness, actual: &fixture::Witness| {
         assert!(
-            expected.scatter == actual.scatter
-                && expected.transmission == actual.transmission
-                && expected.image == actual.image,
-            "reset must fill the same volume that a cold frame fills"
+            expected.scatter == actual.scatter,
+            "{transition}: cold scatter"
         );
+        assert!(
+            expected.transmission == actual.transmission,
+            "{transition}: cold transmission"
+        );
+        assert!(expected.image == actual.image, "{transition}: cold image");
     };
     let original_view = scene.view;
     scene.view = original_view.with_history_reset(true);
     equal(
+        "camera cut",
         &fresh,
         &fixture::render(&gpu, &mut prepared, &mut target, &scene, light),
     );
@@ -79,8 +83,9 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
         2
     );
     scene.view = original_view;
-    let next_epoch = fixture::light(true, 2);
+    let next_epoch = fixture::daylight(true, 2);
     equal(
+        "profile epoch",
         &fresh,
         &fixture::render(&gpu, &mut prepared, &mut target, &scene, next_epoch),
     );
@@ -97,6 +102,34 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
         }
         last = next;
     }
+    let nightglow = next_epoch.with_nightglow();
+    let cold_night = {
+        let (mut cold, mut cold_target) = gpu.prepare(&scene, nightglow);
+        fixture::render(&gpu, &mut cold, &mut cold_target, &scene, nightglow)
+    };
+    let day = prepared
+        .atmosphere_witness()
+        .expect("day environment")
+        .0
+        .epoch;
+    let lit_night = fixture::render(&gpu, &mut prepared, &mut target, &scene, nightglow);
+    let night = prepared
+        .atmosphere_witness()
+        .expect("night environment")
+        .0
+        .epoch;
+    assert_ne!(night, day);
+    equal("nightglow enabled", &cold_night, &lit_night);
+    let lit_day = fixture::render(&gpu, &mut prepared, &mut target, &scene, next_epoch);
+    assert_eq!(
+        prepared
+            .atmosphere_witness()
+            .expect("day environment")
+            .0
+            .epoch,
+        day
+    );
+    equal("nightglow disabled", &fresh, &lit_day);
     assert_eq!(
         objects(&gpu.device),
         before,
@@ -114,5 +147,5 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
         0
     );
     let replaced = fixture::render(&replacement, &mut prepared, &mut target, &scene, next_epoch);
-    equal(&fresh, &replaced);
+    equal("replacement device", &fresh, &replaced);
 }

@@ -40,7 +40,11 @@ impl Taau {
             super::Reconstruction::Taau
         }
     }
-    pub(super) fn new(device: &crate::runtime::DeviceSite, reference: bool) -> Self {
+    pub(super) fn new(
+        device: &crate::runtime::DeviceSite,
+        reference: bool,
+        view_volume: bool,
+    ) -> Self {
         let entries: Vec<_> = (0..=11)
             .filter(|binding| !reference || [0, 4, 6, 7, 9].contains(binding))
             .map(|binding| {
@@ -90,6 +94,8 @@ impl Taau {
         });
         let shader = if reference {
             crate::shaders::Shader::Reference
+        } else if view_volume {
+            crate::shaders::Shader::VolumeReconstruction
         } else {
             crate::shaders::Shader::Reconstruction
         }

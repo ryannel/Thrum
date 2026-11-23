@@ -316,7 +316,7 @@ impl AtmospherePrepared {
     ) {
         if self.frame.view_volume() {
             let mut volume = view_volume::ViewVolume::new(device, self, cascades, cloud);
-            volume.update(queue, self.frame, view);
+            volume.update(queue, self.environment.epoch(), view);
             self.view_volume = Some(Box::new(volume));
         }
     }
@@ -335,10 +335,10 @@ impl AtmospherePrepared {
             aerosol::write(queue, aerosol, frame.aerosol.unwrap_or_default());
         }
         self.frame = frame;
-        if let Some(volume) = &mut self.view_volume {
-            volume.update(queue, frame, view);
-        }
         self.environment.update(frame);
+        if let Some(volume) = &mut self.view_volume {
+            volume.update(queue, self.environment.epoch(), view);
+        }
         if frame.profile_epoch != self.epoch {
             self.validity &= DFG_VALID;
             self.epoch = frame.profile_epoch;

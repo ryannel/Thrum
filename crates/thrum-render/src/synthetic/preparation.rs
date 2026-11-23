@@ -828,7 +828,7 @@ impl PreparedSynthetic {
             .reconstruction()
             .then(|| match capabilities.reconstructor() {
                 crate::capabilities::Reconstructor::Taau => {
-                    taau::Taau::new(device, scene.view.reconstruction_reference())
+                    taau::Taau::new(device, scene.view.reconstruction_reference(), view_volume)
                 }
             });
         let traced_view = (scene.view.traced_geometry() && ray_structure.is_some())

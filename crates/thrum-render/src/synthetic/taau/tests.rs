@@ -13,6 +13,9 @@ fn depth_probe_source() -> String {
 fn taau_shaders_validate() {
     for source in [
         crate::shaders::wgsl!("synthetic/taau.wgsl").to_owned(),
+        crate::shaders::Shader::VolumeReconstruction
+            .source()
+            .into_owned(),
         crate::shaders::wgsl!("synthetic/reference.wgsl").to_owned(),
         depth_probe_source(),
     ] {

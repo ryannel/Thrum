@@ -71,15 +71,19 @@ impl EnvironmentState {
         self.frame = frame;
     }
 
+    pub(super) fn epoch(&self) -> EnvironmentEpoch {
+        EnvironmentEpoch {
+            profile: self.frame.profile_epoch,
+            lut_generation: self.lut_generation,
+            nightglow: self.frame.nightglow,
+        }
+    }
+
     pub(super) fn sample(&self) -> EnvironmentFrame {
         let frame = self.frame;
         let (toward_sun, irradiance_lux) = frame.directional();
         EnvironmentFrame {
-            epoch: EnvironmentEpoch {
-                profile: frame.profile_epoch,
-                lut_generation: self.lut_generation,
-                nightglow: frame.nightglow,
-            },
+            epoch: self.epoch(),
             simulation_time_seconds: frame.simulation_time_seconds,
             true_sun: TrueSun {
                 toward_sun: frame.toward_sun,

@@ -367,6 +367,7 @@ shader_catalog! {
                     wgsl!("synthetic/air_shadow.wgsl")
                 );
     Reconstruction => wgsl!("synthetic/taau.wgsl");
+    VolumeReconstruction => volume_reconstruction_source();
     Reference => wgsl!("synthetic/reference.wgsl");
     DisplayReferred => crate::synthetic::display::DISPLAY_REFERRED_SHADER;
     Display => crate::synthetic::display::SHADER;
@@ -470,6 +471,20 @@ fn compile(device: &wgpu::Device, label: &str, source: Cow<'_, str>) -> wgpu::Sh
 
 fn visibility_source() -> &'static str {
     concat!(wgsl!("visibility.wgsl"), wgsl!("visibility/occlusion.wgsl"))
+}
+
+fn volume_reconstruction_source() -> String {
+    let (before, after) = wgsl!("synthetic/taau.wgsl")
+        .split_once("let filtered = max(vec3(0.0),centre+source/source_weight);")
+        .expect("TAAU spatial reconstruction");
+    // Negative Mitchell weights can subtract much more than the background
+    // radiance at a high-contrast solar limb. Use the centre sky sample when
+    // spatial reconstruction falls below its neighbourhood's luminance.
+    format!(
+        "{before}let spatial = centre+source/source_weight;
+    let undershoot = textureLoad(depth,p,0) == 0.0 && ycocg(spatial).x < low.x;
+    let filtered = max(vec3(0.0), select(spatial, centre, undershoot));{after}"
+    )
 }
 
 fn casters_source() -> String {
@@ -662,6 +677,11 @@ mod tests {
             ),
             (
                 Shader::Reconstruction,
+                &["reconstruct"][..],
+                square(RECONSTRUCTION_WORKGROUP_EDGE),
+            ),
+            (
+                Shader::VolumeReconstruction,
                 &["reconstruct"][..],
                 square(RECONSTRUCTION_WORKGROUP_EDGE),
             ),

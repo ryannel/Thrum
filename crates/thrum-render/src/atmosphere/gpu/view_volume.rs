@@ -1,5 +1,5 @@
 use crate::{
-    atmosphere::{AtmosphereFrame, CloudPrepared, SunOpticalDepth},
+    atmosphere::{CloudPrepared, EnvironmentEpoch, SunOpticalDepth},
     binding,
     graph::{Access, AccessKind, FrameGraph, GraphError, ResourceDescriptor, ResourceScope},
     records::VolumeHistory,
@@ -43,8 +43,8 @@ pub(crate) struct ViewVolume {
     compare: Option<wgpu::Sampler>,
     histories: [[wgpu::Texture; 2]; 2],
     motion: wgpu::Buffer,
-    submitted: Option<(SyntheticView, u64)>,
-    pending: Option<(SyntheticView, u64)>,
+    submitted: Option<(SyntheticView, EnvironmentEpoch)>,
+    pending: Option<(SyntheticView, EnvironmentEpoch)>,
     phase: u16,
 }
 
@@ -370,15 +370,15 @@ impl ViewVolume {
     pub(super) fn update(
         &mut self,
         queue: &wgpu::Queue,
-        frame: AtmosphereFrame,
+        epoch: EnvironmentEpoch,
         view: &SyntheticView,
     ) {
-        let previous = self.submitted.filter(|(previous, epoch)| {
-            *epoch == frame.profile_epoch
+        let previous = self.submitted.filter(|(previous, submitted_epoch)| {
+            *submitted_epoch == epoch
                 && previous.history_epoch() == view.history_epoch()
                 && !view.history_reset()
         });
-        let (previous_view, _) = previous.unwrap_or((*view, frame.profile_epoch));
+        let previous_view = previous.map_or(*view, |(view, _)| view);
         let eye = glam::Vec3::from_array(view.camera_position());
         let world = Mat4::from_cols_array_2d(&view.inverse_view_proj_columns())
             * Vec4::new(0.0, 0.0, 0.0, 1.0);
@@ -392,7 +392,7 @@ impl ViewVolume {
             current_view_forward_phase: forward.extend(f32::from(phase)).to_array(),
         };
         queue.write_buffer(&self.motion, 0, bytemuck::bytes_of(&record));
-        self.pending = Some((*view, frame.profile_epoch));
+        self.pending = Some((*view, epoch));
     }
 
     pub(super) fn submitted(&mut self) {

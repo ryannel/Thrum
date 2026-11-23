@@ -84,9 +84,12 @@ pub(crate) fn view(eye: [f32; 3]) -> SyntheticView {
 }
 
 pub(crate) fn light(volume: bool, epoch: u64) -> AtmosphereFrame {
+    daylight(volume, epoch).with_nightglow()
+}
+
+pub(crate) fn daylight(volume: bool, epoch: u64) -> AtmosphereFrame {
     let frame = AtmosphereFrame::new([0.985, 0.173, 0.0], SUN_LUX, [1.0; 3], 2.0, epoch)
         .expect("Sun")
-        .with_nightglow()
         .with_aerosol(Aerosol::new(0.000_184, 0.0).expect("haze"));
     if volume {
         frame.with_view_volume()
