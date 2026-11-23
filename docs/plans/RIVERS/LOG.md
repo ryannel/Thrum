@@ -158,3 +158,10 @@
 | 7.216 | `thrum-river-model::it chart::the_map_takes_the_chart_and_joins_it_to_the_lake_at_both_ends_of_its_stage` |
 | 7.070 | `thrum-river-model::it samples::a_spring_fed_stream_is_solved_at_its_declared_discharges_and_gauged_at_its_spring` |
 | 6.716 | `thrum-river-model::it chop::the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the_pool` |
+
+- 2026-11-23 M8.1 built. The stopping, file and discharge checks use a short spring-to-pool reach.
+  The valley retains its terrain features at 0.5 m spacing, and the sampling checks use prepared charts
+  and fall records. Verified on the M3 Max with default Nextest. All 19 cases passed in isolation and as
+  one focused batch, with a maximum of 0.957 s in each run. The padding control held the declaration,
+  interior bed and wet mask fixed while doubling the rectangle with dry rows.
+  [Per-case coverage and timings](../../../.orchestrate/evidence/RIVERS/M8/M8.1.md)
