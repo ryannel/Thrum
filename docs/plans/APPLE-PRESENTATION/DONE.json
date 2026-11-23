@@ -516,7 +516,7 @@
     {
       "id": "M15",
       "name": "Chrome's SDR valley matches the retained frames again",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Match the registered APPLE-TILE records byte for byte. Meet M6's float headroom and undithered H = 1 identity bounds on Metal.",
       "items": [
         {

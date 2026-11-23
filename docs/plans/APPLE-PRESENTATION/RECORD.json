@@ -1092,6 +1092,35 @@
         "by": "plan",
         "task": "The main-branch check exact-images fails deterministically: baseline chrome-day-sdr (owner APPLE-TILE), stage chrome-day",
         "at": "2026-11-23T21:14:30Z"
+      },
+      "ready_for_review": {
+        "commit": "2faa2e22dc7a7ea831f904425d15429750a8d4bd",
+        "checked": "2faa2e22dc7a7ea831f904425d15429750a8d4bd",
+        "at": "2026-11-23T22:46:08Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 131164,
+          "cached": 6877952,
+          "output": 15478,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 131164,
+          "cached": 6877952,
+          "output": 15478,
+          "turns": 1
+        }
       }
     }
   },
