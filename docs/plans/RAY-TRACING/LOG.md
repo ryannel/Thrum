@@ -143,3 +143,18 @@
   increased forward cost with tracing. Main's workspace check failed independently of this branch.
   M3.11 and M3.16 remain open for the registered checks after integration.
   [Verification and captures](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/README.md).
+- 2026-11-23 The scene preparation checkpoint merged at `f8f2250a5` with the typed renderer errors
+  from REVIEW-RENDER M4. The merge gate passed. On the merged Metal build I inspected 44 fixed frames
+  and three sets of six consecutive realtime shadow frames. The realtime run retained 1,472
+  submissions with zero capture omissions.
+  [Merged Metal inspection](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/merged/README.md).
+  The registered exact-image check failed at `portable-sdr-approach` on `8eb94b243300` with
+  M3 included. The bisect reproduced the same failure on earlier main revision `65e73b3aebc2`.
+  M3.11 remains open pending a passing registered run.
+  [Main failure](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/exact-images-merged-failure.json) ·
+  [Pre-M3 bisect failure](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/exact-images-pre-M3-bisect-failure.json).
+- 2026-11-23 The first M3-covered long-test run found two ray-membership fixtures using legacy
+  attachment and found that same-device attachment replaced the opted-in ray-build observer.
+  The fixtures now stage their geometry through the public contribution candidate API. The
+  renderer carries the observer with the same-device mesh snapshot, and a replacement device
+  prepares its own snapshot. [Focused Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/long-regressions-metal.log).

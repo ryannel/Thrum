@@ -34,14 +34,14 @@ pub(super) async fn prepare(
     ]
     .map(|filter| device.push_error_scope(filter));
     let structure = (|| {
-        let scene = SceneStructure::new(capabilities, slots).ok()?;
-        if let Some(RetainedRayMeshes(meshes)) = retained {
+        let scene = SceneStructure::new(capabilities, slots, retained.as_ref()).ok()?;
+        if let Some(retained) = retained {
             // The candidate belongs to the same host and device. At publication
             // live rows transfer their whole arena, including any later edits.
-            if meshes.len() != arena.rows().len() {
+            if retained.meshes.len() != arena.rows().len() {
                 return None;
             }
-            arena.enable_ray_demand(meshes);
+            arena.enable_ray_demand(retained.meshes);
             return Some(scene);
         }
         let meshes = arena
@@ -93,9 +93,13 @@ pub(super) fn binding(id: usize) -> RecordBinding<SceneFamily> {
     })
 }
 
-/// A same-device visual candidate's snapshot of the host's prepared meshes.
+/// A same-device candidate's snapshot of prepared meshes and build observation.
 #[derive(Clone)]
-pub(crate) struct RetainedRayMeshes(Vec<MeshStructure>);
+pub(crate) struct RetainedRayMeshes {
+    meshes: Vec<MeshStructure>,
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    probe: Option<RayBuildProbe>,
+}
 
 #[derive(Clone)]
 pub(super) struct MeshStructure {
@@ -166,11 +170,17 @@ struct SceneInstances {
 }
 
 impl SceneStructure {
-    fn new(capabilities: &DeviceCapabilities, slots: u32) -> Result<Self, RenderError> {
+    fn new(
+        capabilities: &DeviceCapabilities,
+        slots: u32,
+        retained: Option<&RetainedRayMeshes>,
+    ) -> Result<Self, RenderError> {
         let device = capabilities.site();
         if slots > MAX_IDENTITIES || slots > device.limits().max_tlas_instance_count {
             return Err(RenderError::RayInstanceLimit);
         }
+        #[cfg(not(all(feature = "creation-counters", target_os = "macos")))]
+        let _ = retained;
         Ok(Self {
             state: Mutex::new(SceneInstances {
                 tlas: create_tlas(device, slots),
@@ -183,9 +193,14 @@ impl SceneStructure {
             }),
             slots,
             #[cfg(all(feature = "creation-counters", target_os = "macos"))]
-            probe: (capabilities.observe_ray_preparation
-                && device.features().contains(wgpu::Features::TIMESTAMP_QUERY))
-            .then(|| RayBuildProbe::new(device)),
+            probe: retained.map_or_else(
+                || {
+                    (capabilities.observe_ray_preparation
+                        && device.features().contains(wgpu::Features::TIMESTAMP_QUERY))
+                    .then(|| RayBuildProbe::new(device))
+                },
+                |retained| retained.probe.clone(),
+            ),
         })
     }
 
@@ -392,9 +407,11 @@ impl PreparedSynthetic {
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn retained_ray_meshes(&self) -> Option<RetainedRayMeshes> {
         self.ray_structure.as_ref()?;
-        Some(RetainedRayMeshes(
-            self.mesh_arena.mesh_structures().to_vec(),
-        ))
+        Some(RetainedRayMeshes {
+            meshes: self.mesh_arena.mesh_structures().to_vec(),
+            #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+            probe: self.ray_build_probe(),
+        })
     }
 }
 

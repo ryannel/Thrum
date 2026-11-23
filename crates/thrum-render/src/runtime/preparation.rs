@@ -489,7 +489,10 @@ impl<W: super::FrameWorld, V: super::SceneSource<W::Page>> super::FrameHost<W, V
                             inputs.presenter.is_some(),
                             ContributionPasses::default(),
                             crate::contribution::EffectGraph::default(),
-                            if selection == RayStructureSelection::Enabled {
+                            if selection == RayStructureSelection::Enabled
+                                && **inputs.capabilities.device()
+                                    == **self.prepared.capabilities().device()
+                            {
                                 self.prepared.retained_ray_meshes()
                             } else {
                                 None

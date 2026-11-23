@@ -11,9 +11,11 @@ mod metal {
     use super::{ray_support, support};
     #[cfg(target_os = "macos")]
     use thrum_render::contribution::{
-        ContributionFrame, ContributionPasses, RayInstances, SceneContribution, SceneContributions,
-        SceneSurface,
+        ContributionCandidate, ContributionFrame, ContributionPasses, RayInstances,
+        SceneContribution, SceneContributions, SceneSurface,
     };
+    #[cfg(target_os = "macos")]
+    use thrum_render::runtime::FrameError;
     #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{
         DisplayOverlay, FrameLighting, SyntheticLight, SyntheticScene, SyntheticView,
@@ -79,6 +81,27 @@ mod metal {
                 upload: true,
                 compute: false,
             }
+        }
+
+        fn supports_candidate_preparation(&self) -> bool {
+            true
+        }
+
+        fn prepare_candidate(
+            &self,
+            surface: &SceneSurface<'_>,
+        ) -> Result<ContributionCandidate, FrameError> {
+            let mut staged = Self::new(Vec::new());
+            staged.prebuild = self.prebuild;
+            staged.rebuild(surface).map_err(FrameError::Scene)?;
+            Ok(ContributionCandidate::new(
+                self.passes(),
+                self.effect_graph(),
+                move |owner: &mut Self| {
+                    owner.mesh = staged.mesh;
+                    owner.vertices = staged.vertices;
+                },
+            ))
         }
 
         fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
