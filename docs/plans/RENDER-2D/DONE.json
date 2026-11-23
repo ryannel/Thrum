@@ -380,10 +380,10 @@
           "check": "node scripts/check_v1_browser.mjs --case sprites-crisp",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/chrome-bound-verification.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.8",
