@@ -891,7 +891,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         scale: crate::synthetic::RenderScale,
     ) -> Result<(), FrameError> {
         if scale != crate::synthetic::RenderScale::Native
-            && self.reconstruction() != crate::synthetic::Reconstruction::Taau
+            && !self
+                .prepared
+                .three_d()
+                .is_some_and(PreparedSynthetic::supports_render_scale)
         {
             return Err(FrameError::InvalidState(
                 "reduced render scale requires TAAU",
@@ -1979,7 +1982,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .prepared
             .record_mesh_rows(&self.queue)
             .map_err(|error| FrameError::Gpu(format!("mesh row update: {error:?}")))?;
-        let scale = if self.reconstruction() == crate::synthetic::Reconstruction::Taau {
+        let scale = if self
+            .prepared
+            .three_d()
+            .is_some_and(PreparedSynthetic::supports_render_scale)
+        {
             self.render_scale
         } else {
             crate::synthetic::RenderScale::Native

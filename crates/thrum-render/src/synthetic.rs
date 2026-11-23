@@ -1182,6 +1182,10 @@ impl PreparedSynthetic {
     pub fn shadowed(&self) -> bool {
         self.shadow.is_some()
     }
+    pub(crate) fn supports_render_scale(&self) -> bool {
+        self.reconstruction() == Reconstruction::Taau && self.native.is_none()
+    }
+
     /// Update one live view and its directional, local-light and cascade data.
     /// Pipelines, bind groups and target textures stay prepared. Call after the
     /// previous frame was submitted, then commit the view only after this frame
@@ -1200,9 +1204,7 @@ impl PreparedSynthetic {
         self.check_owner(target)?;
         let output = target.extent();
         let drawn = scene.view.render_scale().extent(output);
-        if drawn != output
-            && (self.reconstruction() != Reconstruction::Taau || target.native.is_some())
-        {
+        if drawn != output && !self.supports_render_scale() {
             return Err(RenderError::UnsupportedRenderScale);
         }
         let view = if scene.view.jitter_enabled() || scene.view.reconstruction() {
