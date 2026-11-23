@@ -22,6 +22,7 @@ LOOKOUT_EYE = [0, 244.9226672381398, 16]
 # The cooked terrain triangle under x=0, z=16 is at 239.925172 m.
 NEAR_EYE = [0, 241.92517205618816, 16]
 SHAFT_EYE = [500, 145, 425]
+ACROSS_SHAFT_EYE = [520, 150, 600]
 EXTENT = [1280, 720]
 AERIAL = 'atmosphere aerial perspective'
 
@@ -283,9 +284,10 @@ def inspection(output, targets, builds, group):
                         checkpoint(target_root / f'haze-{sun}-{height}m-{km}km-{kind}', target,
                                    builds, pose, haze=f'{km},{kind}')
         if group in ('all', 'shafts'):
-            for yaw, name in [(-74, 'toward'), (-54, 'across')]:
+            for eye, yaw, name in [(SHAFT_EYE, -74, 'toward'),
+                                  (ACROSS_SHAFT_EYE, -36, 'across')]:
                 for cloud in [False, True]:
-                    pose = {'eye': SHAFT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
+                    pose = {'eye': eye, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
                     checkpoint(target_root / f'shaft-{name}-{cloud}', target, builds, pose,
                                haze='20,0', cloud=cloud)
         if group in ('all', 'motion'):
