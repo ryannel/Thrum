@@ -1,30 +1,27 @@
 {
   "module": "CREATOR",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/CREATOR/design-review.md",
-    "commit": "ca5808154680bbc892ce048a21e70ac5acefb6e9",
+    "commit": "d0c5487521c0cdd26e4adfc86544963c440ad8a5",
     "hash": "9d03e4a1467e463f21efa78cfdae793916ad82742c9ce7e9e262bd117b414267",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6-astra",
+    "model": "gpt-6.2-astra",
     "effort": "high",
     "observed": {
-      "model": "gpt-6-astra",
+      "model": "gpt-6.2-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 85122,
-      "cached": 872320,
-      "output": 5630,
+      "input": 72443,
+      "cached": 1112448,
+      "output": 3992,
       "turns": 1
     },
-    "at": "2026-11-17T19:31:05Z",
-    "items_owed": [
-      "M4"
-    ]
+    "at": "2026-11-23T22:02:34Z"
   },
   "milestones": {
     "M1": {
@@ -523,6 +520,32 @@
         "turns": 1
       },
       "at": "2026-11-11T04:47:42Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/CREATOR/design-review-5.md",
+      "commit": "ca5808154680bbc892ce048a21e70ac5acefb6e9",
+      "hash": "9d03e4a1467e463f21efa78cfdae793916ad82742c9ce7e9e262bd117b414267",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 85122,
+        "cached": 872320,
+        "output": 5630,
+        "turns": 1
+      },
+      "at": "2026-11-17T19:31:05Z",
+      "items_owed": [
+        "M4"
+      ]
     }
   ]
 }
