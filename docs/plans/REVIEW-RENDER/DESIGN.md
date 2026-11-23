@@ -120,6 +120,11 @@ zero. An atmosphere stage is one key whose chart inputs are one table, from whic
 graph accesses are built, so the barrier the graph emits cannot differ from what the shader samples. Pass names
 stay exported constants: the frame timing feed gives `CREATOR`'s profiler the names it gave.
 
+M6 checks the stage registry on the smallest production-graph fixture that exposes all fourteen stages. Check
+graph reads, table bindings, distinct roles, validity bits and timing buckets on the CPU wherever the metadata
+can be constructed without a device. Use a tiny target for any prepared timestamp capacity check that needs
+Metal. The milestone runs all cases that together prove the regression.
+
 **6. Errors (T3).** The render error moves to the crate's own error module with `Display` and `Error`; a bad
 instance transform gets its own variant and the capacity variant is split into the limits it stood for. Leaf
 error enums implement `Error`, `FrameError` carries typed sources, and the effect graph's validation returns an

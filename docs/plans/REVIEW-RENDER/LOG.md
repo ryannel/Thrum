@@ -70,3 +70,7 @@
   identify the limits they checked. Verified 547 tests on Metal with the GPU required, plus the separate
   public error contract test and string-error check on the M3 Max. The registered image comparison is
   assigned to the shared main-branch run. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M4/README.md).
+- 2026-11-23 Addressed Must Fix 1 of the M6 design review. M6.1 selects the stage registry cases by their
+  shared prefix and fails on an empty selection. The design names the CPU and prepared-capacity coverage, and
+  the item asks the reviewer to confirm that every replacement case ran.
+  [Design review](../../../.orchestrate/evidence/REVIEW-RENDER/design-review.md).

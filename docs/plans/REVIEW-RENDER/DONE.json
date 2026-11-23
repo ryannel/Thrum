@@ -213,9 +213,9 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "The stage-table case stays fast and checks all fourteen stages\u2019 graph reads, table, distinct roles, timing buckets, validity bits and timestamp capacity. Guard: the stage registry regression in the renderer suite.",
-          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test atmosphere_stage_table -E 'test(=every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key)' --no-tests=fail",
-          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Which remaining assertions, if any, require a device?",
+          "statement": "For all fourteen stages, graph reads match the table, the table lists the expected chart bindings, and each key supplies a distinct role, its timing bucket and a nonzero validity bit. The prepared scene and target each have enough timestamp slots for every timed pass in the fixture. Each selected case passes on its first run within the existing ten-second limit.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test atmosphere_stage_table -E 'test(/^stage_registry_/)' --no-tests=fail",
+          "ask": "Does the M6.1 run include every case that replaces the listed regression, and do those cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Which remaining assertions, if any, require a device?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",

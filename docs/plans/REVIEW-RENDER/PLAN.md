@@ -44,9 +44,9 @@ the Mac qualification read pass names and buckets from the frame timing feed: th
 
 ## M6 The atmosphere stage registry is checked on a small fixture
 
-Audit the graph and table on the CPU wherever the metadata can be constructed without a device. Use the
-minimum variants needed to see all fourteen keys. Any device case still needed to establish the actual
-bind or timing slots uses a tiny target.
+Name each case of the stage registry regression with the `stage_registry_` prefix in the
+`atmosphere_stage_table` test target. M6.1 selects the whole group whether the proof uses one case or
+separate CPU and Metal cases, and fails on an empty selection.
 
 Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
 record before and after per-test times on the Mac in the default nextest test build used by the workspace
