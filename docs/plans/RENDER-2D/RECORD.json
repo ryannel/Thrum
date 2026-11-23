@@ -394,7 +394,66 @@
     },
     "M3": {
       "definitions": "3f327d7c99e6c5a645e81df977c65ead739a293da56707557b96a25531e5ba00",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "8d77229f4b4a8bf571ac9fa13bdecf1ec2ff20ad",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "fail",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "fail",
+            "M3.8": "fail",
+            "M3.9": "pass",
+            "M3.10": "fail",
+            "M3.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Fine patterns pulse during Metal scroll",
+              "item": "M3.8",
+              "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
+              "repeat": false
+            },
+            {
+              "name": "Fine patterns pulse during Chrome scroll",
+              "item": "M3.10",
+              "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
+              "repeat": false
+            },
+            {
+              "name": "Bleed witness has no left neighbour in the sampled atlas",
+              "item": "M3.4",
+              "repeat": false
+            },
+            {
+              "name": "Chrome weight check never moves the camera",
+              "item": "M3.7",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 132542,
+            "cached": 5034112,
+            "output": 16387,
+            "turns": 1
+          },
+          "at": "2026-11-23T15:30:42Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix fin",

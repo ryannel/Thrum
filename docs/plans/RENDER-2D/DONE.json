@@ -312,8 +312,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-coverage.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -324,8 +324,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -335,8 +335,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -346,10 +346,10 @@
           "ask": "Are the frames in the bleed test packed against frames of a contrasting colour on every side? Does the tile test sweep fractional scales and offsets over a background colour that neither tile contains?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
@@ -358,8 +358,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -370,8 +370,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-window-final.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -380,20 +380,20 @@
           "check": "node scripts/check_v1_browser.mjs --case sprites-crisp",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/chrome-bound-verification.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.8",
           "statement": "In real time on the Mac, pixel art scrolling slowly on a diagonal and fast, at scales of 1.5, 2 and 2.37, stays still: no texel changes width, no line thickens and thins, nothing sparkles or crawls, and no seam opens between ground tiles. Rotating sprites keep clean edges.",
           "inspect": "Capture the sprite scene at 1920\u00d71080 with T2 engine capture in `realtime` mode: a diagonal scroll of less than a pixel a frame and a fast one, at each of the three scales, over the test card, a tiled ground and a field of pixel-art sprites, some of them rotating. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, checker areas, tile seams and sprite outlines.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-motion.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.9",
@@ -401,8 +401,8 @@
           "inspect": "Capture `fixed` stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234: pixel sprites at scales of 1, 1.5, 2.37, 4 and 6, and smooth sprites at 0.25, 0.5, 1 and 2, over light and dark backgrounds. Judge each frame whole and in native-size crops of outlines, thin lines and the gaps between neighbouring sprites.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-stills.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -410,10 +410,10 @@
           "statement": "In real time in Chrome, at device pixel ratios of 1 and 2, scrolling pixel art stays still and tile seams stay closed, as on the Mac.",
           "inspect": "Capture the same slow and fast scrolls in Chrome with T2 engine capture in `realtime` mode at each ratio, at a scale of 1.5 and of 2.37. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, tile seams and sprite outlines.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/chrome-motion.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.11",
@@ -421,16 +421,40 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Pixel stability as in Celeste: a texel never changes size, swims or sparkles as the view moves, at any window size. Edges as clean as the painted sprites of Hades or Hollow Knight: no fringe, no halo, no bleed from a neighbouring frame, no seam between ground tiles."
+      "status": "in_progress",
+      "quality_bar": "Pixel stability as in Celeste: a texel never changes size, swims or sparkles as the view moves, at any window size. Edges as clean as the painted sprites of Hades or Hollow Knight: no fringe, no halo, no bleed from a neighbouring frame, no seam between ground tiles.",
+      "findings": [
+        {
+          "name": "Fine patterns pulse during Metal scroll",
+          "item": "M3.8",
+          "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
+          "repeat": false
+        },
+        {
+          "name": "Fine patterns pulse during Chrome scroll",
+          "item": "M3.10",
+          "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
+          "repeat": false
+        },
+        {
+          "name": "Bleed witness has no left neighbour in the sampled atlas",
+          "item": "M3.4",
+          "repeat": false
+        },
+        {
+          "name": "Chrome weight check never moves the camera",
+          "item": "M3.7",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M4",
