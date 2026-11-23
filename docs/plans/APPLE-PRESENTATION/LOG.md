@@ -378,3 +378,11 @@
   drawable bounds through the headroom step and SDR lease continuity on the iPhone simulator. Builder and
   independent visual inspection pass the Sun, sky and four night lamp cores at H=2 and H=8.
   [Target receipts and crops](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/README.md).
+
+- 2026-11-23 M6 review fixes. The ordinary Mac window retains its display mode under control observation. Visual
+  publication seeds the new present pass from current headroom. An open default capture tap follows surface format
+  and drains older images in order. The night-light fixture sits outside the public route, and the standard Mac
+  command presented two frames. Metal checks reproduced the forced headroom step, the first drawable from a
+  replacement visual and one capture session across both formats. The iOS preflight separately reproduces the HOST
+  M4 dead-code diagnostic from `626798f4f`.
+  [Target receipts](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix/README.md).

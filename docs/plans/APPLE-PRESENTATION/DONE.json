@@ -524,10 +524,10 @@
           "lock": "gpu",
           "ask": "Where are `preferredDynamicRange` and `contentsHeadroom` set, on which thread, and through which reference to the layer? Does any path take wgpu's layer lock? Is the display's real record kept as a witness beside the forced one the arm uses?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix/edr/edr.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D6.2",
@@ -570,10 +570,10 @@
           "check": "python3 scripts/apple_presentation.py edr-headroom --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D6.6",
@@ -582,10 +582,10 @@
           "lock": "gpu",
           "ask": "Does engine capture read the float target the surface was given in this mode, without changing what it records in the 8-bit mode?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix/route/edr-route.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D6.7",
