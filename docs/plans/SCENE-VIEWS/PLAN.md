@@ -40,11 +40,12 @@ Use only the panels, views and frames needed for the crossing. Preserve the real
 matching main and secondary air and Sun shade, and retain the wrong-stretch controls whose outputs must
 differ. Check camera or coordinate arithmetic on the CPU when it needs no submission.
 
-Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
-record before and after per-test times on the Mac in the default nextest test build used by the workspace
-check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
-normal builder work. Use the supplied run for the starting times where available. The batch passes the
-existing ten-second limit on its first run.
+If splitting the test, keep the GPU cases in the existing `scene_view_air_shaded_gpu` test binary.
+Record the listed test’s disposition and map its original coverage to the cases that ran in the focused
+batch. For each fast case, record before and after per-test times on the Mac in the default nextest test
+build used by the workspace check, excluding compilation. Measure the revised cases alone and run the
+whole binary as a focused batch alongside normal builder work. Use the supplied run for the starting
+times where available. The batch passes the existing ten-second limit on its first run.
 
 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
 

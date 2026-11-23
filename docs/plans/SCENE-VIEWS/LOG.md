@@ -317,3 +317,8 @@
   recipes for both workloads and every control arm. The evidence, author guide and maturity ledger
   describe the figures as taken under load. The second field slot's excess keeps its scheduling and
   tile-store follow-up. [Cost record and investigations](../../../.orchestrate/evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost)
+
+- 2026-11-23 M4 design review Must Fix. M4.1 now runs the whole existing panel test binary with a required
+  GPU and fails on an empty selection, so a renamed or split test still runs in full. The design names the
+  retained crossing controls and the plan asks for a mapping from their original assertions to the cases run.
+  [Design review](../../../.orchestrate/evidence/SCENE-VIEWS/design-review.md)

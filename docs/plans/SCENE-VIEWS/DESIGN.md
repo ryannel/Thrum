@@ -618,6 +618,11 @@ the lead batches for every module. No milestone waits for that window.
   own product from the plane, to [the allowances above](#what-a-views-air-is-held-to), and never with an
   independent quadrature. A larger difference has a cause to find and is never recorded as the bound. A
   builder who cannot close one ends `BLOCKED` with the measurement.
+- **Panel-crossing regression (M4).** The compact GPU readback keeps M1.12's comparison to the ordinary
+  main camera at the crossing, including the stored-step allowances, the wrong camera stretch, the grazing
+  horizon control and the casters that shade before and beyond the plane. The acceptance run covers all
+  cases in the existing `scene_view_air_shaded_gpu` test binary. The fixture may split those cases into
+  separately named tests in that binary.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/scene-views-<milestone>/`, selected
   evidence in `.orchestrate/evidence/SCENE-VIEWS/`.
 - **Dependencies.** The example's package is registered in `.config/architecture.toml`.
