@@ -101,7 +101,7 @@ struct PlacedSample {
 // The common source returns extinction, vertical optical depth, both height
 // bounds and the life envelope. Erosion is relative to the body's extinction
 // at its current envelope, so condensate can fade without crossing a cutoff.
-fn placed_sample(point: vec3<f32>, footprint: f32) -> PlacedSample {
+fn placed_sample(point: vec3<f32>, footprint: f32, edge_footprint: f32) -> PlacedSample {
     let clear = PlacedSample(vec4(0.0), 0.0);
     if !placed_inside_bounds(point.xz) { return clear; }
     let optical = placed_instances.optical;
@@ -130,8 +130,15 @@ fn placed_sample(point: vec3<f32>, footprint: f32) -> PlacedSample {
             let slab_y = (local_y - shape.geometry.y) / extent;
             let texel = extent * scale / f32(shape.footprint.x);
             let level = log2(max(1.0, footprint / texel));
-            density += weights.y * placed_volume(shape, vec3(uv.x, slab_y, uv.y), level)
-                * shape.form.y * optical.x;
+            let address = vec3(uv.x, slab_y, uv.y);
+            var voxel = placed_volume(shape, address, level);
+            // The slab carries details smaller than the weather's billows.
+            // Filter the boundary in metres and only remove density, so the
+            // filter cannot fill a clear column or spread into a neighbour slab.
+            if edge_footprint > max(texel, footprint) && voxel > 0.0 {
+                voxel = min(voxel, placed_volume(shape, address, log2(edge_footprint / texel)));
+            }
+            density += weights.y * voxel * shape.form.y * optical.x;
         }
         return PlacedSample(vec4(density, integral, bottom, top), shape.form.y);
     }

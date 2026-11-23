@@ -13,7 +13,7 @@ fn placed_sun_depth(midpoint: vec3<f32>, height_span: f32) -> f32 {
     for (var j = 0u; j < count; j++) {
         let offset = p.direction.xyz * ((f32(j) + 0.5) * step - 0.5 * span);
         let point = centre + offset;
-        let sample = placed_sample(point, 0.0);
+        let sample = placed_sample(point, 0.0, 0.0);
         let sigma = sample.column.x;
         if sigma > 0.0 && p.physical.z > 0.0 && p.physical.w > 0.0 {
             let uv = (midpoint + offset) / 6400.0 + vec3(p.erosion.y, 0.0, p.erosion.z);
