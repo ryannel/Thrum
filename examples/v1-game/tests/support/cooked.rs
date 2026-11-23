@@ -34,13 +34,18 @@ pub(crate) struct Sources {
 impl Sources {
     /// Write the sources; nothing is cooked and no store is opened.
     pub(crate) fn new(name: &str, tree: Tree) -> Self {
+        Self::with_sizes(name, tree, 128, 512)
+    }
+
+    /// Write the demo tree with a specified terrain grid and checker edge.
+    pub(crate) fn with_sizes(name: &str, tree: Tree, grid: u32, checker: u32) -> Self {
         let scratch = Scratch::new(name);
         let source = scratch.join("source");
         for directory in ["meshes", "textures"] {
             std::fs::create_dir_all(source.join(directory)).expect("source tree");
         }
-        demo::write_grid_gltf(&source.join("meshes"), "terrain", 128, 0.25).expect("mesh");
-        demo::write_checker_png(&source.join("textures/checker.png"), 512, tree.checker)
+        demo::write_grid_gltf(&source.join("meshes"), "terrain", grid, 0.25).expect("mesh");
+        demo::write_checker_png(&source.join("textures/checker.png"), checker, tree.checker)
             .expect("texture");
         demo::write_cloud_volume(&source.join("cloud.tvol"), tree.volume, 1).expect("volume");
         let cook = CookConfig {

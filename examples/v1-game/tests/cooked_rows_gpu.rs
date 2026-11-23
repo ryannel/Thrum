@@ -349,6 +349,10 @@ fn repeated_products_keep_each_initial_row_identity_without_overlap_space() {
 
 #[test]
 fn supersession_discarded_protected_switch_and_retired_space_reuse() {
+    // Both edited rows still exceed one production write slice.
+    const SUPERSEDED_GRID: u32 = 124;
+    const REUSED_GRID: u32 = 123;
+
     let Some(gpu) =
         thrum_test_support::gpu("row supersession and reuse", Some(wgpu::Backend::Metal))
     else {
@@ -377,10 +381,19 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
         let first = generation(&cook);
         let mut old = settle(&mut live, &stats, first);
         let updates = live.cooked_rows().expect("rows").updates();
-        // Every edit here is half the grid it was (512 and 256 cells became 256 and 128): the
-        // superseded upload still spans five bounded slices, the protected and reused rows two,
-        // and each frame draws a quarter of the triangles, which the entities repeat.
-        let uploading = edit(&cook, &mut cooker, 256, 1.8);
+        // Keep only the live host and one fresh endpoint alive at a time.
+        let endpoint = |generation| {
+            let cook = &cook;
+            let device = &device;
+            let queue = &queue;
+            let caps = &caps;
+            async move {
+                let (mut fresh, fresh_stats) =
+                    host(cook, device, queue, caps, CullMode::Occlusion, true, None).await;
+                settle(&mut fresh, &fresh_stats, generation)
+            }
+        };
+        let uploading = edit(&cook, &mut cooker, SUPERSEDED_GRID, 1.8);
         staged(&stats, uploading);
         // First capture takes the mailbox; the second records only the first bounded slice.
         for _ in 0..2 {
@@ -390,20 +403,14 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
             updates.status(uploading),
             Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Writing)
         );
-        assert!(updates.report().last_write_bytes > 0);
+        assert_eq!(
+            updates.report().last_write_bytes,
+            thrum_render::synthetic::mesh_rows::ROW_WRITE_BYTES
+        );
         let superseding = edit(&cook, &mut cooker, 5, 0.04);
         staged(&stats, superseding);
-        let (mut fresh, fresh_stats) = host(
-            &cook,
-            &device,
-            &queue,
-            &caps,
-            CullMode::Occlusion,
-            true,
-            None,
-        )
-        .await;
-        let new = settle(&mut fresh, &fresh_stats, superseding);
+        let new = endpoint(superseding).await;
+        assert_ne!(old, new, "the superseding row must change the frame");
         only_old_or_new(&mut live, &stats, superseding, &old, &new);
         assert!(
             !stats
@@ -414,19 +421,10 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
                 .any(|s| s.generation == uploading)
         );
         old = new;
-        let protected = edit(&cook, &mut cooker, 128, 0.8);
+        let protected = edit(&cook, &mut cooker, REUSED_GRID, 0.8);
         staged(&stats, protected);
-        let (mut fresh, fresh_stats) = host(
-            &cook,
-            &device,
-            &queue,
-            &caps,
-            CullMode::Occlusion,
-            true,
-            None,
-        )
-        .await;
-        let middle = settle(&mut fresh, &fresh_stats, protected);
+        let middle = endpoint(protected).await;
+        assert_ne!(old, middle, "the protected row must change the frame");
         let deadline = Instant::now() + Duration::from_secs(90);
         while updates.status(protected)
             != Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready)
@@ -447,36 +445,18 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
         staged(&stats, behind);
         assert_eq!(live.capture_pixels().expect("replayed switch"), middle);
         assert_eq!(stats.lock().expect("stats").drawn, Some(protected));
-        let (mut fresh, fresh_stats) = host(
-            &cook,
-            &device,
-            &queue,
-            &caps,
-            CullMode::Occlusion,
-            true,
-            None,
-        )
-        .await;
-        let newest = settle(&mut fresh, &fresh_stats, behind);
+        let newest = endpoint(behind).await;
+        assert_ne!(middle, newest, "the deferred row must change the frame");
         only_old_or_new(&mut live, &stats, behind, &middle, &newest);
         old = newest;
         let high_water = updates.report().high_water;
-        for (size, amplitude) in [(128, 0.9), (4, 0.1), (128, 0.7), (4, 0.05)] {
+        for (size, amplitude) in [(REUSED_GRID, 0.9), (4, 0.1), (REUSED_GRID, 0.7), (4, 0.05)] {
             let next = edit(&cook, &mut cooker, size, amplitude);
             let prepared = rows(&cook, &device).selection(Vec::new());
             let mesh = &prepared.meshes[0];
             let expected_bytes = (mesh.vertices.len() * 48 + mesh.indices.len() * 4) as u64;
-            let (mut fresh, fresh_stats) = host(
-                &cook,
-                &device,
-                &queue,
-                &caps,
-                CullMode::Occlusion,
-                true,
-                None,
-            )
-            .await;
-            let reference = settle(&mut fresh, &fresh_stats, next);
+            let reference = endpoint(next).await;
+            assert_ne!(old, reference, "each reused row must change the frame");
             let before = updates.report().submitted_bytes;
             let pipelines = live.pipeline_creation_count();
             only_old_or_new(&mut live, &stats, next, &old, &reference);

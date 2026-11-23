@@ -1626,26 +1626,44 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let sources = Sources::new("g5-supersede", tree(256));
+    // Each R8 row pads to 256 bytes. A 128³ edit would fit exactly in the ring.
+    const EDIT_EDGE: u32 = 129;
+    let mut sources = Sources::with_sizes("g5-supersede", tree(16), 4, 16);
+    sources.cook.profiles = vec![Profile::Portable];
     let cook = &sources.cook;
     let (mut cooker, report) = sources.cook_all();
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
+        let extent = [thrum_test_support::target::SIZE; 2];
         let Game { mut host, device } =
-            game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
+            game(gpu, DEVICE, 1, path, FrameConfig::offscreen(extent)).await;
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
+        wait_posted(&stats, 1);
         wait_for(&mut host, &device, &stats, 1, &mut clock);
-        for (generation, seed) in [(2, 2), (3, 3)] {
-            demo::write_cloud_volume(&cook.source.join("cloud.tvol"), 256, seed).expect("edit");
+        assert!(stats.lock().expect("stats").staging_bytes < STAGING_BOUND);
+
+        let publish = |cooker: &mut thrum_cook::Cooker, generation| {
+            demo::write_cloud_volume(&cook.source.join("cloud.tvol"), EDIT_EDGE, generation)
+                .expect("edit");
             let report = cooker.cook_all().expect("recook");
             assert!(report.failed.is_empty(), "{:?}", report.failed);
-            wait_posted(&stats, generation);
-        }
+            wait_posted(&stats, u64::from(generation));
+        };
+        publish(&mut cooker, 2);
+        // With no frames submitted since generation 1, the loader can fill the ring but
+        // cannot finish the larger upload. Wait for that pressure before publishing again.
+        thrum_test_support::wait::until(
+            "generation 2 fills staging",
+            Duration::from_secs(30),
+            || (stats.lock().expect("stats").staging_bytes == STAGING_BOUND).then_some(()),
+        );
+        assert_eq!(stats.lock().expect("stats").drawn, Some(1));
+        publish(&mut cooker, 3);
         wait_for(&mut host, &device, &stats, 3, &mut clock);
         let stats = stats.lock().expect("stats");
         assert!(stats.errors.is_empty(), "{:?}", stats.errors);
@@ -1655,7 +1673,16 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
             [1, 3],
             "generation 2 was superseded before it was drawn"
         );
+        let uploaded = stats.swaps[1].uploaded_bytes;
+        assert!(
+            uploaded > STAGING_BOUND,
+            "the edited volume must outgrow staging even without the unchanged mesh and texture"
+        );
         assert_staging_bounded(&stats);
+        eprintln!(
+            "{path:?}: generation 2 reached {STAGING_BOUND} staging bytes without a frame; \
+             generation 3 copied {uploaded} bytes; submitted generations {swapped:?}"
+        );
     });
 }
 
