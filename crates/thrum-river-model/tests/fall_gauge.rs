@@ -122,9 +122,18 @@ fn a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge() {
             }
             let p = s.plunge(&sheet, level_at(&map)).unwrap();
             let births = s.births(&plunge, &p);
+            let middle = s.path.len() / 2;
+            assert!(
+                middle > 0 && middle + 1 < s.path.len(),
+                "part {id} at {g} has no interior sheet probe"
+            );
+            assert!(
+                s.path[0].height > s.path[middle].height && s.path[middle].height > end.height,
+                "part {id} at {g}"
+            );
             now.push([
                 s.discharge,
-                s.sheet(&sheet, s.path.len() / 2).thickness,
+                s.sheet(&sheet, middle).thickness,
                 births.foam + births.air,
                 s.impulse_rms(&plunge, &p),
             ]);
@@ -139,7 +148,7 @@ fn a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge() {
         if step % 6 == 0 {
             let m = &now[ids.len() / 2];
             println!(
-                "gauge {g:.3} m: middle part {:.4} m²/s, sheet {:.1} mm thick half way down, \
+                "gauge {g:.3} m: middle part {:.4} m²/s, sheet {:.1} mm thick at the interior point, \
                  plunge {:.0} W, impulse rms {:.3} N·s",
                 m[0],
                 m[1] * 1e3,
@@ -184,6 +193,8 @@ fn a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting() {
     let mut checked = 0;
     for &(b, wg) in &upper {
         assert!(wg > gauges[1] && wg < gauges[2]);
+        let midpoint = f64::midpoint(gauges[1], gauges[2]);
+        assert!((wg - midpoint).abs() > 1e-3, "part {}", b.id);
         let find = |g: f64| {
             file.falls_at(g)
                 .into_iter()
@@ -192,8 +203,13 @@ fn a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting() {
         };
         // Nothing up to the wetting: no record, so no sheet, births or impulses.
         for g in [gauges[1], f64::midpoint(gauges[1], wg), wg - 1e-3, wg] {
-            assert!(find(g).is_none(), "{} at {g}", b.id);
+            assert!(
+                find(g).is_none(),
+                "part {} runs before wetting at {g}",
+                b.id
+            );
         }
+        assert_eq!(find(midpoint).is_some(), midpoint > wg, "part {}", b.id);
         // From there it rises from nothing: over a tenth of the gauge above the wetting it holds
         // a tenth of the discharge and the launch depth, and each grows at every step.
         let near = find(wg + 1e-3).unwrap();

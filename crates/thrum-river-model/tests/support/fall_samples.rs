@@ -11,7 +11,8 @@ use thrum_water_model::{
 const WIDTH: usize = 15;
 const HEIGHT: usize = 12;
 const SIZE: usize = WIDTH * HEIGHT;
-const WETTING: f64 = 3.55;
+// Away from the sample midpoint so wetting must use the recorded gauge.
+const WETTING: f64 = 3.58;
 const MAIN: &str = "main reach";
 const TERRACE: &str = "terrace";
 const LAKE_SEED: [f64; 2] = [2.5, 7.5];
@@ -96,6 +97,14 @@ fn segment(
     let run = (end[0] - place[0]).hypot(end[1] - place[1]);
     let time = (2.0 * drop / GRAVITY).sqrt();
     let speed = run / time;
+    let middle = [
+        f64::midpoint(place[0], end[0]),
+        f64::midpoint(place[1], end[1]),
+    ];
+    // With constant horizontal speed and free fall, half the time gives a quarter of the drop.
+    let middle_height = launch - 0.25 * drop;
+    let first_length = (0.5 * run).hypot(launch - middle_height);
+    let second_length = (0.5 * run).hypot(middle_height - height);
     FallSegment {
         id,
         lip,
@@ -111,10 +120,16 @@ fn segment(
                 distance: 0.0,
             },
             PathPoint {
+                place: middle,
+                height: middle_height,
+                time: 0.5 * time,
+                distance: first_length,
+            },
+            PathPoint {
                 place: end,
                 height,
                 time,
-                distance: run.hypot(drop),
+                distance: first_length + second_length,
             },
         ],
     }
