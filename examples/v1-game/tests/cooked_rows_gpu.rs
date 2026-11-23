@@ -68,6 +68,21 @@ fn rows(cook: &CookConfig, device: &wgpu::Device) -> CookedRows {
     .expect("row conversion")
 }
 
+#[derive(Clone, Copy)]
+struct HostLimits {
+    extent: [u32; 2],
+    binding: Option<u64>,
+}
+
+impl Default for HostLimits {
+    fn default() -> Self {
+        Self {
+            extent: EXTENT,
+            binding: None,
+        }
+    }
+}
+
 async fn host(
     cook: &CookConfig,
     device: &wgpu::Device,
@@ -75,10 +90,10 @@ async fn host(
     caps: &DeviceCapabilities,
     mode: CullMode,
     coupled: bool,
-    binding: Option<u64>,
+    limits: HostLimits,
 ) -> (Host, Stats) {
     let rows = rows(cook, device);
-    if let Some(binding) = binding {
+    if let Some(binding) = limits.binding {
         drop(rows.updates().with_binding_limit(binding));
     }
     let mut host = GameSetup {
@@ -91,10 +106,10 @@ async fn host(
         queue,
         caps,
         FrameConfig {
-            render_extent: EXTENT,
+            render_extent: limits.extent,
             surface: Some(thrum_render::present::SurfaceProfile {
                 format: wgpu::TextureFormat::Bgra8Unorm,
-                extent: EXTENT,
+                extent: limits.extent,
             }),
         },
         Some(rows.clone()),
@@ -216,7 +231,7 @@ fn a_recreated_store_with_the_same_generation_replaces_its_rows() {
             &caps,
             CullMode::Occlusion,
             true,
-            None,
+            HostLimits::default(),
         )
         .await;
         let old = settle(&mut live, &stats, first.generation);
@@ -240,7 +255,7 @@ fn a_recreated_store_with_the_same_generation_replaces_its_rows() {
             &caps,
             CullMode::Occlusion,
             true,
-            None,
+            HostLimits::default(),
         )
         .await;
         let new = settle(&mut fresh, &fresh_stats, next.generation);
@@ -352,6 +367,11 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
     // Both edited rows still exceed one production write slice.
     const SUPERSEDED_GRID: u32 = 124;
     const REUSED_GRID: u32 = 123;
+    const LIMITS: HostLimits = HostLimits {
+        extent: [thrum_test_support::target::SIZE; 2],
+        // Even two overlapping 124-cell rows fit per binding.
+        binding: Some(2 << 20),
+    };
 
     let Some(gpu) =
         thrum_test_support::gpu("row supersession and reuse", Some(wgpu::Backend::Metal))
@@ -375,7 +395,7 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
             &caps,
             CullMode::Occlusion,
             true,
-            None,
+            LIMITS,
         )
         .await;
         let first = generation(&cook);
@@ -389,7 +409,7 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
             let caps = &caps;
             async move {
                 let (mut fresh, fresh_stats) =
-                    host(cook, device, queue, caps, CullMode::Occlusion, true, None).await;
+                    host(cook, device, queue, caps, CullMode::Occlusion, true, LIMITS).await;
                 settle(&mut fresh, &fresh_stats, generation)
             }
         };
@@ -521,7 +541,10 @@ fn refusal_keeps_the_whole_publication_then_recovers_resizes_and_replaces_device
             &caps,
             CullMode::Occlusion,
             true,
-            Some(64 << 10),
+            HostLimits {
+                binding: Some(64 << 10),
+                ..HostLimits::default()
+            },
         )
         .await;
         let old = settle(&mut live, &stats, first);
@@ -571,7 +594,7 @@ fn refusal_keeps_the_whole_publication_then_recovers_resizes_and_replaces_device
             &caps,
             CullMode::Occlusion,
             true,
-            None,
+            HostLimits::default(),
         )
         .await;
         assert_eq!(new, settle(&mut fresh, &fresh_stats, good));
@@ -589,7 +612,7 @@ fn refusal_keeps_the_whole_publication_then_recovers_resizes_and_replaces_device
             &caps,
             CullMode::Occlusion,
             true,
-            None,
+            HostLimits::default(),
         )
         .await;
         assert_eq!(newest, settle(&mut fresh, &fresh_stats, latest));
@@ -768,7 +791,16 @@ fn edited_rows_equal_fresh_game(mode: CullMode, coupled: bool) {
             .expect("HEAD")
             .expect("first")
             .generation;
-        let (mut live, stats) = host(&cook, &device, &queue, &caps, mode, coupled, None).await;
+        let (mut live, stats) = host(
+            &cook,
+            &device,
+            &queue,
+            &caps,
+            mode,
+            coupled,
+            HostLimits::default(),
+        )
+        .await;
         let mut old = settle(&mut live, &stats, first);
         let updates = live.cooked_rows().expect("rows").updates();
         let mut clock = Duration::ZERO;
@@ -781,8 +813,16 @@ fn edited_rows_equal_fresh_game(mode: CullMode, coupled: bool) {
                 .expect("HEAD")
                 .expect("edit")
                 .generation;
-            let (mut fresh, fresh_stats) =
-                host(&cook, &device, &queue, &caps, mode, coupled, None).await;
+            let (mut fresh, fresh_stats) = host(
+                &cook,
+                &device,
+                &queue,
+                &caps,
+                mode,
+                coupled,
+                HostLimits::default(),
+            )
+            .await;
             let new = settle(&mut fresh, &fresh_stats, generation);
             let pipelines = live.pipeline_creation_count();
             assert_ne!(old, new, "fixture must visibly change {mode:?}");
@@ -898,7 +938,8 @@ async fn environment_reference(
     mode: CullMode,
     product: Environment,
 ) -> Vec<u8> {
-    let (mut fresh, stats) = host(cook, device, queue, caps, mode, true, None).await;
+    let (mut fresh, stats) =
+        host(cook, device, queue, caps, mode, true, HostLimits::default()).await;
     settle(&mut fresh, &stats, generation(cook));
     let mut candidate = prepare_environment(fresh.visual_prepare_inputs(), product).await;
     assert!(fresh.publish_visual(&mut candidate).expect("fresh publish"));
@@ -996,7 +1037,16 @@ fn visual_rebuild_preserves_rows(mode: CullMode, phase: u8) {
             &cook, &device, &queue, &caps, mode, product,
         ))
         .await;
-        let (mut live, stats) = host(&cook, &device, &queue, &caps, mode, true, None).await;
+        let (mut live, stats) = host(
+            &cook,
+            &device,
+            &queue,
+            &caps,
+            mode,
+            true,
+            HostLimits::default(),
+        )
+        .await;
         settle(&mut live, &stats, generation(&cook));
         let updates = live.cooked_rows().expect("rows").updates();
         let mut candidate = if phase == 3 {
@@ -1100,7 +1150,7 @@ fn a_device_candidate_prepared_before_a_row_commit_is_refused_without_changing_t
             &caps,
             CullMode::Occlusion,
             true,
-            None,
+            HostLimits::default(),
         )
         .await;
         let old = settle(&mut live, &stats, generation(&cook));
@@ -1147,7 +1197,7 @@ fn a_device_candidate_prepared_before_a_row_commit_is_refused_without_changing_t
             &replacement_caps,
             CullMode::Occlusion,
             true,
-            None,
+            HostLimits::default(),
         )
         .await;
         assert_eq!(

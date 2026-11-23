@@ -1626,7 +1626,7 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    // Each R8 row pads to 256 bytes. A 128³ edit would fit exactly in the ring.
+    // Each R8 row pads to 256 bytes, so the base level alone exceeds the ring.
     const EDIT_EDGE: u32 = 129;
     let mut sources = Sources::with_sizes("g5-supersede", tree(16), 4, 16);
     sources.cook.profiles = vec![Profile::Portable];
