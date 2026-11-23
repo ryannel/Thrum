@@ -495,8 +495,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
         let mut tap = Tap::empty(spec, source, limits, self.generation, self.render_extent);
         tap.grow(
-            limits.staging_slots,
-            limits.cpu_buffers,
+            tap.limits.staging_slots,
+            tap.limits.cpu_buffers,
             target,
             self.prepared.capabilities(),
             &self.queue,
