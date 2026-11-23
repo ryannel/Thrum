@@ -781,6 +781,35 @@
         "by": "plan",
         "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps faili",
         "at": "2026-11-23T12:27:04Z"
+      },
+      "ready_for_review": {
+        "commit": "20a4c35d9ae42845a04d35205b4065f0156fd859",
+        "checked": "20a4c35d9ae42845a04d35205b4065f0156fd859",
+        "at": "2026-11-23T15:43:40Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 148115,
+          "cached": 12739456,
+          "output": 18923,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 148115,
+          "cached": 12739456,
+          "output": 18923,
+          "turns": 1
+        }
       }
     },
     "M14": {
