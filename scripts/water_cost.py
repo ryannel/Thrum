@@ -336,6 +336,7 @@ def measure_surf():
     output = ROOT / 'tmp/waters-M13/cost'
     output.mkdir(parents=True, exist_ok=True)
     (output / 'surf-cost.json').unlink(missing_ok=True)
+    revision = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
     store = output / 'store'
     run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
          'cook', 'examples/water/assets', str(store)])
@@ -348,10 +349,11 @@ def measure_surf():
     assert record['target'] == 'mac-metal' and record['extent'] == prior['extent'] == [2560, 1440]
     assert record['capture'] is False and record['camera'] == prior['camera']
     assert record['wind'] == prior['wind'] == 'Gale'
-    record.update(commit=run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip(),
+    recipe = 'portable' if env.get('THRUM_WATER_RECIPE') == 'portable' else 'native'
+    record.update(commit=revision, recipe=recipe,
                   host=platform.platform(), load=run(['uptime'], capture_output=True, text=True).stdout.strip(),
                   prior=prior,
-                  comparison='The current arms share forcing and camera. The M7 record shares the camera and gale preset, with the earlier swell forcing.')
+                  comparison='The current arms share forcing, recipe and camera. The M7 record shares the camera and gale preset, with the earlier swell forcing.')
     arms = dict(zip(('surf', 'surf-disabled', 'water-absent'), record['arms'], strict=True))
     control = arms['surf-disabled']['frames']
     phases = [(f['tick'], f['alpha']) for f in control]
