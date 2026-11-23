@@ -648,3 +648,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   the abrupt receiver distance and normal change. The 6.1 h prop rays also hit the east terrain.
   A ruling with SHOWCASE and APPLE-TILE is needed to change the scene and refresh the sunset references.
   [Evidence](../../../.orchestrate/evidence/ATMOSPHERE/M6/README.md) and [handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md)
+- 2026-11-23 M6 reran the six fixed stops, scrub and Ground E pan on the SHOWCASE M9 valley in Metal and Chrome.
+  The sunrise props cast shadows and the lookout's top shades to its depth edge. Terrain rays account for the warm
+  17.9 h crest without direct light. The motion driver uses continuous solar time and yaw to avoid the interactive
+  slider's 0.01 h steps. The paired Metal run records startup excursions and scrub holds under shared load.
+  H1–H4 and existing guard expectations are unchanged by M6. H5 adds the stored-product comparisons and retains
+  the P7/P8 differences as records. The exact sets remain under the shared verifier. A small dark edge on the
+  moving solar disc is visible in both targets. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M6/README.md)
