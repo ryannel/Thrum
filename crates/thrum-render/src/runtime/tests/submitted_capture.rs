@@ -283,7 +283,7 @@ fn surface_resize_admits_only_the_configured_drawable_in_sdr_and_edr() {
                 (&new, original, false),
                 (&new, resized, true),
             ] {
-                let view = texture.create_view(&Default::default());
+                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
                 let output = SurfaceOutput {
                     view: &view,
                     extent,

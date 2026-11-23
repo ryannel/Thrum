@@ -343,3 +343,10 @@
   with the GPU required. D6.3 stayed within one 8-bit code at all six checkpoints on both native recipes.
   The full matrix runs through the shared `exact-images` check on main.
   [Target receipts](../../../.orchestrate/evidence/APPLE-PRESENTATION/M15/README.md).
+
+- 2026-11-23 M6 third review fixes. SDR and EDR share drawable extent validation and the letterboxed viewport.
+  Capture charges pending staging and writer-held images to the session across extent and format changes. Metal
+  tests prove stale drawable recovery and capture omissions under the slot, lease and byte limits, with presentation
+  continuing and capture resuming in the same session. All seven named target checks passed. The fresh Metal route's
+  raw pixels and previews match the previous route byte for byte and pass the visual inspection.
+  [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix-3/README.md).
