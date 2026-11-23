@@ -73,6 +73,11 @@ filter = 'package(thrum-river-model)'
 threads-required = 4
 
 [[profile.default.overrides]]
+# The forced mover route starts a Rayon pool to exercise multi-chunk rollback.
+filter = 'package(=v1-game) & binary(=simulation) & test(=parallel_movers_match_the_straight_corrected_run_in_a_small_world)'
+threads-required = 4
+
+[[profile.default.overrides]]
 # Sixteen threads poll the device for two seconds while this capture test runs.
 filter = 'package(thrum-render) & test(gpu_capture_pixels_waits_for_a_readback_another_thread_delivers)'
 threads-required = 4

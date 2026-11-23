@@ -1849,12 +1849,206 @@ fn parallel_corrected_run(mode: ExecutionMode) -> (u64, u64) {
 }
 
 #[test]
+#[ignore = "long: 100,000-entity corrected replay runs in the main tier"]
 fn parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal() {
     let serial = parallel_corrected_run(ExecutionMode::Serial);
     // Requested Rayon is a serial fallback while its crossover is None: this
     // row checks routing only. RayonForced runs the parallel path.
     assert_eq!(parallel_corrected_run(ExecutionMode::Rayon), serial);
     assert_eq!(parallel_corrected_run(ExecutionMode::RayonForced), serial);
+}
+
+const COMPACT_REPLAY_MOVERS: usize = 4_096 + 1;
+
+fn compact_replay_world() -> Simulation {
+    let mut sim =
+        Simulation::new(WorldEpoch(25), config(COMPACT_REPLAY_MOVERS)).expect("compact replay");
+    let binding = |id| Ownership {
+        peer: PeerId(id),
+        connection_epoch: 1,
+        actor: ActorId(id),
+    };
+    for id in 0..COMPACT_REPLAY_MOVERS as u64 {
+        let mut mover = entity(u128::from(id), 0.05);
+        mover.visual = Some(id);
+        mover.ownership = (1..=4).contains(&id).then(|| binding(id));
+        sim.seed(mover).expect("mover");
+    }
+    for id in 1..=4 {
+        let handle = sim.handle(StableId(u128::from(id))).expect("peer mover");
+        sim.register_peer(binding(id), handle)
+            .expect("peer binding");
+    }
+    sim
+}
+
+fn assert_replay_refusal_preserves_authority(
+    sim: &mut Simulation,
+    history: &mut SimulationHistory,
+    ids: &[StableId],
+    commands: &[Command],
+    stage: &str,
+) {
+    let before = whole_world_hash(sim, ids);
+    assert_eq!(
+        history.step(sim, commands),
+        Err(SimError::NonFinite),
+        "{stage} must refuse"
+    );
+    assert_eq!(whole_world_hash(sim, ids), before, "{stage} refusal");
+}
+
+fn nonfinite_velocity(sim: &Simulation) -> [Command; 1] {
+    [Command::SetVelocity(
+        sim.handle(StableId(9)).expect("mover"),
+        Velocity([f64::NAN, 0.0, 0.0]),
+    )]
+}
+
+#[test]
+fn parallel_movers_match_the_straight_corrected_run_in_a_small_world() {
+    const OVERFLOW_TICK: u64 = 3;
+    const REPLAY_REFUSAL_TICK: u64 = 8;
+    // One full production chunk and one partial chunk, even after slot reuse.
+    for (mode, expected_dispatches) in [
+        (ExecutionMode::Serial, 0),
+        (ExecutionMode::Rayon, 0), // the requested path falls back to serial
+        (ExecutionMode::RayonForced, 20), // 12 forward ticks and 8 replayed ticks
+    ] {
+        let mut predicted = compact_replay_world();
+        let mut straight = compact_replay_world();
+        predicted.set_execution_mode(mode);
+        let mut history = predicted
+            .begin_history(NonZeroUsize::new(16).expect("retained window"))
+            .expect("history");
+        let mut ids = (0..COMPACT_REPLAY_MOVERS as u128)
+            .map(StableId)
+            .collect::<Vec<_>>();
+        let mut replay_refusal_ids = Vec::new();
+        for tick in 1..=12_u64 {
+            for peer in 1..=4 {
+                predicted
+                    .admit_frame(correction_frame(peer, tick, false))
+                    .expect("predicted input");
+                straight
+                    .admit_frame(correction_frame(peer, tick, true))
+                    .expect("straight corrected input");
+            }
+            if tick == OVERFLOW_TICK + 1 {
+                // The replacement appended at tick 3 overflows in the second chunk.
+                assert_replay_refusal_preserves_authority(
+                    &mut predicted,
+                    &mut history,
+                    &ids,
+                    &[],
+                    "kernel",
+                );
+            }
+            if tick == 7 {
+                // Resolve rejects the command after the mover kernel wrote tentatively.
+                let nan = nonfinite_velocity(&predicted);
+                assert_replay_refusal_preserves_authority(
+                    &mut predicted,
+                    &mut history,
+                    &ids,
+                    &nan,
+                    "Resolve",
+                );
+            }
+
+            // Tick 4 retires the overflowing mover before it can integrate again.
+            let victim_tick = if tick == OVERFLOW_TICK + 1 {
+                OVERFLOW_TICK
+            } else {
+                tick
+            };
+            let slot = 32 + usize::try_from(victim_tick).expect("small tick");
+            let victim = ids[slot];
+            let mut replacement = entity(COMPACT_REPLAY_MOVERS as u128 + u128::from(tick), 0.05);
+            replacement.visual = Some(tick);
+            if tick == OVERFLOW_TICK {
+                replacement.position = Position([f64::MAX, 0.0, 0.0]);
+                replacement.velocity = Velocity([f64::MAX, 0.0, 0.0]);
+            }
+            let commands = |sim: &Simulation| {
+                [
+                    Command::Despawn(sim.handle(victim).expect("live victim")),
+                    Command::Spawn(replacement),
+                ]
+            };
+            let old_handle = predicted.handle(victim).expect("live victim");
+            let predicted_commands = commands(&predicted);
+            history
+                .step(&mut predicted, &predicted_commands)
+                .expect("retained tick");
+            straight.step(&commands(&straight)).expect("straight tick");
+            let new_handle = predicted.handle(replacement.id).expect("replacement");
+            assert_eq!(new_handle.slot, old_handle.slot);
+            assert_ne!(new_handle, old_handle, "reuse advances the slot generation");
+            assert_eq!(predicted.handle(victim), None);
+            ids[slot] = replacement.id;
+            if tick == REPLAY_REFUSAL_TICK {
+                replay_refusal_ids.clone_from(&ids);
+            }
+        }
+
+        let reference = whole_world_hash(&straight, &ids);
+        assert_ne!(
+            whole_world_hash(&predicted, &ids),
+            reference,
+            "correction must change the endpoint in {mode:?}"
+        );
+        history
+            .rewind(&mut predicted, 8)
+            .expect("rewind eight ticks");
+        history
+            .amend_input(&predicted, correction_frame(2, 5, true))
+            .expect("amend retained input");
+        for tick in 4..12 {
+            assert_eq!(predicted.tick(), tick);
+            if tick == REPLAY_REFUSAL_TICK {
+                let nan = nonfinite_velocity(&predicted);
+                assert_replay_refusal_preserves_authority(
+                    &mut predicted,
+                    &mut history,
+                    &replay_refusal_ids,
+                    &nan,
+                    "corrected replay",
+                );
+            }
+            assert!(
+                history
+                    .replay_next(&mut predicted)
+                    .expect("corrected replay")
+            );
+        }
+        assert!(
+            !history
+                .replay_next(&mut predicted)
+                .expect("future exhausted")
+        );
+        assert_eq!(predicted.tick(), 12);
+        assert_eq!(
+            predicted.kernel_dispatches(),
+            expected_dispatches,
+            "{mode:?}"
+        );
+        assert_eq!(whole_world_hash(&predicted, &ids), reference, "{mode:?}");
+        let corrected_page = predicted.published_page().expect("corrected page");
+        let straight_page = straight.published_page().expect("straight page");
+        assert_eq!(corrected_page.id(), straight_page.id());
+        assert_eq!(corrected_page.len(), COMPACT_REPLAY_MOVERS);
+        assert_eq!(straight_page.len(), corrected_page.len());
+        corrected_page.visit(|handle, id, position, visual| {
+            assert_eq!(straight_page.stable_id(handle.slot), Some(id));
+            assert_eq!(straight_page.position(handle), Some(position));
+            assert_eq!(
+                straight_page.velocity(handle),
+                corrected_page.velocity(handle)
+            );
+            assert_eq!(straight_page.visual(handle), visual);
+        });
+    }
 }
 
 #[test]

@@ -16,6 +16,7 @@ water-scene foam_scene_gpu release # ten_minutes_moored_on_the_sea_and_the_lake:
 water-scene it release # wake_scene_gpu::moored_craft_keeps_*: a moored craft whose draft drifts, or whose start-up wave persists, only after 12 to 30 s of its own wake, with every body reaction or one level admitted. wake_scene_gpu::float_twenty_metres_off_track_*: a float 20 m off a passing craft's track that does not heave with its wake through the public query, or keeps heaving 20 s after the craft stops; the island lake wake test still holds query answers to the GPU wake before a merge
 v1-game exit_scene release
 v1-game field_occlusion_gpu release
+v1-game simulation release # parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal: faults at 100,000 entities across four mover chunks and widely separated reused slots can escape the two-chunk merge-tier rollback and publication checks
 thrum-water-model shore_blend release
 thrum-sea it release # forward_cache_gpu portable light and high wind: base-texel addressing, edge-block averaging and high/low carry faults in production-size filtered fields through the last mip, early and a day in
 
