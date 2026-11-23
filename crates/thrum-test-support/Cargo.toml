@@ -19,3 +19,4 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 
 [features]
 render = ["dep:thrum-render"]
+render-registry = ["render", "thrum-render/test-support"]

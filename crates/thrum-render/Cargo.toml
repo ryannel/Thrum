@@ -14,6 +14,7 @@ workspace = true
 # Opt-in G3t D0.3 diagnostic: GPU object creation counts by phase and the
 # after-readiness pipeline guard (`runtime::FrameHost::creation_report`).
 creation-counters = ["wgpu/counters", "dep:profiling"]
+test-support = []
 
 [dependencies]
 thrum-core = { path = "../thrum-core" }
@@ -41,7 +42,7 @@ profiling = { version = "=1.0.18", default-features = false, features = ["profil
 
 [dev-dependencies]
 thrum-fixtures = { path = "../thrum-fixtures" }
-thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
+thrum-test-support = { path = "../thrum-test-support", features = ["render-registry"] }
 serde_json = "=1.0.154"
 pollster = "=1.0.1"
 tracing = { version = "=0.1.44", default-features = false, features = ["std"] }

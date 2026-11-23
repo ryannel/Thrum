@@ -52,6 +52,42 @@ pub fn pipeline_pass_count(graph: &CompiledGraph) -> usize {
     graph.pipeline_pass_count()
 }
 
+/// Metadata supplied by an atmosphere stage key before device preparation.
+#[cfg(feature = "test-support")]
+pub struct StageKeyAudit {
+    /// The stage's pass name.
+    pub name: &'static str,
+    /// The charts and bindings in the stage table.
+    pub table_reads: Vec<(String, u32)>,
+    /// The stage's pipeline role.
+    pub role: Option<u32>,
+    /// The stage's cache bit.
+    pub validity: u8,
+}
+
+/// Metadata for each atmosphere stage in declaration order.
+#[cfg(feature = "test-support")]
+pub fn atmosphere_stage_keys() -> impl Iterator<Item = StageKeyAudit> {
+    AtmosphereStage::ORDER
+        .into_iter()
+        .map(|stage| StageKeyAudit {
+            name: stage.name(),
+            table_reads: stage_table_reads(stage),
+            role: PassKey::Atmosphere(stage)
+                .pipeline_role()
+                .map(crate::pass_key::PipelineRole::value),
+            validity: stage.validity(),
+        })
+}
+
+fn stage_table_reads(stage: AtmosphereStage) -> Vec<(String, u32)> {
+    stage
+        .chart_reads()
+        .iter()
+        .map(|read| (format!("{:?}", read.chart), read.binding))
+        .collect()
+}
+
 /// One atmosphere stage pass, its graph reads beside its table.
 #[derive(Clone, Debug)]
 pub struct StageAudit {
@@ -102,11 +138,7 @@ pub fn atmosphere_stages(graph: &CompiledGraph) -> Vec<StageAudit> {
             Some(StageAudit {
                 name: pass.name.clone(),
                 graph_reads,
-                table_reads: stage
-                    .chart_reads()
-                    .iter()
-                    .map(|read| (format!("{:?}", read.chart), read.binding))
-                    .collect(),
+                table_reads: stage_table_reads(stage),
                 role: pass.pipeline.map(|pipeline| pipeline.role),
                 key_role: pass
                     .key

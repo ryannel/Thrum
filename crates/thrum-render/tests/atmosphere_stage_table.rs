@@ -2,10 +2,9 @@
 //! are the charts its table lists, which its bind group is built from, and
 //! its role, cache bit and timing bucket come from the key.
 
-mod registry_support;
 mod support;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use support::{AIR_EXTENT, AirProbe, host_with_extent};
 use thrum_render::{
     atmosphere::AtmosphereFrame,
@@ -13,7 +12,10 @@ use thrum_render::{
     contribution::{SecondaryViewRequest, ViewAir, ViewClipPlane},
     graph::CompiledGraph,
     registry_audit::{self, StageAudit},
-    synthetic::{FrameLighting, SyntheticScene, SyntheticView},
+    synthetic::{
+        CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene,
+        SyntheticView,
+    },
 };
 
 fn check(label: &str, graph: &CompiledGraph, stages: &mut BTreeMap<String, StageAudit>) {
@@ -43,32 +45,23 @@ fn check(label: &str, graph: &CompiledGraph, stages: &mut BTreeMap<String, Stage
 }
 
 #[test]
-fn every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key() {
-    let Some(variants) = registry_support::variants("atmosphere stage table") else {
-        return;
-    };
-    let mut stages = BTreeMap::new();
-    for variant in &variants {
-        // Every timed pass has a slot, atmosphere stages included.
+fn stage_registry_keys_list_chart_bindings_roles_and_cache_bits() {
+    let mut table = BTreeMap::new();
+    let mut roles = BTreeSet::new();
+    for stage in registry_audit::atmosphere_stage_keys() {
+        let name = stage.name;
         assert!(
-            usize::try_from(variant.scene_pass_count.min(variant.target_pass_count))
-                .is_ok_and(|slots| slots >= registry_audit::pipeline_pass_count(&variant.graph)),
-            "{}: fewer timestamp slots than timed passes",
-            variant.label
+            table.insert(name, stage.table_reads).is_none(),
+            "duplicate stage {name}"
         );
-        check(&variant.label, &variant.graph, &mut stages);
+        let role = stage
+            .role
+            .unwrap_or_else(|| panic!("{name} has no pipeline role"));
+        assert!(roles.insert(role), "{name} reuses role {role}");
+        assert_ne!(stage.validity, 0, "{name} has no cache bit");
     }
-    // All fourteen stages were seen, each with its own role.
-    assert_eq!(stages.len(), 14, "stages seen: {:?}", stages.keys());
-    let mut roles: Vec<_> = stages.values().map(|stage| stage.key_role).collect();
-    roles.sort_unstable();
-    roles.dedup();
-    assert_eq!(roles.len(), 14);
+    assert_eq!(table.len(), 14, "stages seen: {:?}", table.keys());
     // The table, as the bind groups are built from it.
-    let table: BTreeMap<_, _> = stages
-        .iter()
-        .map(|(name, stage)| (name.as_str(), stage.table_reads.clone()))
-        .collect();
     let reads = |charts: &[(&str, u32)]| -> Vec<(String, u32)> {
         charts
             .iter()
@@ -106,6 +99,77 @@ fn every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key() 
             table[format!("atmosphere reflection mip {mip}").as_str()],
             reads(&[("SkyView", 1)])
         );
+    }
+}
+
+#[test]
+fn stage_registry_prepared_graph_reads_its_keys_and_has_timestamp_slots() {
+    let Some(thrum_test_support::Opened {
+        gpu,
+        device,
+        queue,
+        capabilities,
+    }) = thrum_test_support::open(
+        "atmosphere stage registry prepared graph",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
+    else {
+        return;
+    };
+    assert_eq!(gpu.adapter.get_info().backend, wgpu::Backend::Metal);
+
+    // The production graph reads prepared textures and pipeline keys, so bind it on Metal.
+    // A single lit instance exposes all stages without recording a frame.
+    let capabilities = capabilities
+        .with_recipe_override("portable")
+        .expect("portable recipe");
+    let scene = SyntheticScene::grid(1).expect("atmosphere fixture");
+    let lighting = FrameLighting::Atmosphere(
+        AtmosphereFrame::new([0.5, 0.707, 0.5], 100_000.0, [1.0; 3], 2.0, 1).expect("air"),
+    );
+    let prepared = pollster::block_on(PreparedSynthetic::prepare_with_capabilities(
+        &capabilities,
+        &queue,
+        &scene,
+        lighting,
+        1.0,
+    ))
+    .expect("prepare atmosphere fixture");
+    let scene_slots = usize::try_from(prepared.scene_pass_count()).expect("scene slot count");
+    let expected: BTreeSet<_> = registry_audit::atmosphere_stage_keys()
+        .map(|stage| stage.name)
+        .collect();
+    let size = thrum_test_support::target::SIZE;
+    for source in [CaptureSource::Sdr, CaptureSource::SceneLinear] {
+        let target = OffscreenTarget::with_capture_source(&device, &prepared, size, size, source)
+            .expect("bind atmosphere graph");
+        let target_slots = usize::try_from(registry_audit::target_timed_pass_count(&target))
+            .expect("target slot count");
+        for readback in [false, true] {
+            let label = format!("{source:?} readback={readback}");
+            let graph = prepared
+                .graph(&target, readback)
+                .expect("compiled atmosphere graph");
+            let timed = registry_audit::pipeline_pass_count(&graph);
+            assert!(
+                scene_slots >= timed,
+                "{label}: scene has {scene_slots} slots for {timed} timed passes"
+            );
+            assert!(
+                target_slots >= timed,
+                "{label}: target has {target_slots} slots for {timed} timed passes"
+            );
+
+            let mut stages = BTreeMap::new();
+            check(&label, &graph, &mut stages);
+            let seen: BTreeSet<_> = stages.keys().map(String::as_str).collect();
+            assert_eq!(
+                seen, expected,
+                "{label}: atmosphere stages in the compiled graph"
+            );
+        }
     }
 }
 
