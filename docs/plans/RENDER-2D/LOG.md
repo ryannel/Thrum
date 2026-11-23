@@ -96,3 +96,8 @@
   to the one sprite pass. Both Metal recipes preserved authored SDR bytes at whole-number scales. In the retained
   scene-linear sweep, the largest colour error was 0.00298 and the largest single-texel area error was 0.01363
   output pixels. Both sampling controls had greater colour error at each fractional scale.
+- 2026-11-23 M3's window proof matched the aligned card at all three Retina sizes and at the first presented
+  extent after resize. Chrome matched both CSS grids before and after resize at DPR 1 and 2 and measured
+  the same 0.01363-pixel weight bound. The original engine taps verified six Metal and eight Chrome motion
+  takes. The [M3 evidence](../../../.orchestrate/evidence/RENDER-2D/M3/README.md) includes the full frames,
+  native-size crops, playback and source submission hashes.
