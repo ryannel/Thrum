@@ -2307,7 +2307,7 @@ async function main() {
   finally {
     cook?.kill();
     // The reflection referee releases its WebGPU probe resources when its tab closes.
-    const drainGpuResources = args.case === 'environment' || args.case.startsWith('sprites-field');
+    const drainGpuResources = args.case === 'environment' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
     try { await cleanup(child, () => ended, cdp, server, profile, drainGpuResources ? 45000 : undefined,
       args.case === 'sprites-field-cost' && results.length === 1); }
     catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
