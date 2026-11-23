@@ -597,6 +597,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
         };
     };
     let mut geometry = Geometry::default();
+    let surf = map.surf_profile().is_some();
     for body in 0..map_gpu::BODY_LIMIT {
         let Some(declaration) = map.body(body) else {
             break;
@@ -611,6 +612,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
                     0.25 * 2.0_f32.powi(level),
                     0.0,
                     level > 0,
+                    surf,
                 );
             }
         } else if let Some([min, max]) = map.surface_bounds(body) {
@@ -620,7 +622,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             let spacing = 0.5_f32.max((span / 1024.0) as f32);
             let start = min.map(|x| (x / f64::from(spacing)).floor() as i32);
             let end = max.map(|x| (x / f64::from(spacing)).ceil() as i32);
-            geometry.grid(start, end, spacing, (body + 1) as f32, false);
+            geometry.grid(start, end, spacing, (body + 1) as f32, false, surf);
         }
         geometry.bodies.push((
             declaration.name.clone(),
@@ -667,7 +669,15 @@ impl Geometry {
         ))
     }
 
-    fn grid(&mut self, start: [i32; 2], end: [i32; 2], spacing: f32, body: f32, ring: bool) {
+    fn grid(
+        &mut self,
+        start: [i32; 2],
+        end: [i32; 2],
+        spacing: f32,
+        body: f32,
+        ring: bool,
+        surf: bool,
+    ) {
         let base = u32::try_from(self.vertices.len()).expect("bounded mesh");
         let width = u32::try_from(end[0] - start[0] + 1).expect("grid width");
         for (row, z) in (0..).zip(start[1]..=end[1]) {
@@ -677,8 +687,14 @@ impl Geometry {
                 let centre = ring && (-16..16).contains(&x) && (-16..16).contains(&z);
                 if x < end[0] && z < end[1] && !centre {
                     let a = base + row * width + column;
-                    self.indices
-                        .extend([a, a + width, a + 1, a + 1, a + width, a + width + 1]);
+                    if surf {
+                        // Match the diagonal used by the highest-surface cut.
+                        let d = a + width + 1;
+                        self.indices.extend([a, a + width, d, a, d, a + 1]);
+                    } else {
+                        self.indices
+                            .extend([a, a + width, a + 1, a + 1, a + width, a + width + 1]);
+                    }
                 }
             }
         }
