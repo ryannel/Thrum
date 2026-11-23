@@ -7,6 +7,7 @@ pub mod qualification;
 
 mod library;
 pub use library::PlacedSky;
+pub(crate) use library::PlacementDemo;
 
 pub(crate) const GROUND_SIZE: u32 = 1024;
 

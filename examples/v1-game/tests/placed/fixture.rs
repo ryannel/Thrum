@@ -23,6 +23,10 @@ pub(super) struct Fixture {
 
 impl Fixture {
     pub(super) fn new(resident: bool) -> Self {
+        Self::with_placements(resident, &CENTRES, [0.0; 2])
+    }
+
+    pub(super) fn with_placements(resident: bool, centres: &[[f64; 2]], wind: [f64; 2]) -> Self {
         let source = Scratch::new("game-placed");
         let inputs = source.join("source");
         fs::create_dir(&inputs).expect("source");
@@ -74,7 +78,7 @@ impl Fixture {
             Parameters {
                 coverage: 0.0,
                 kind: 1.0,
-                wind: [0.0; 2],
+                wind,
                 time_scale: 60.0,
             },
             0.5,
@@ -93,13 +97,20 @@ impl Fixture {
             growth: 0.0,
             growth_target: 0.0,
         };
-        for (id, centre) in CENTRES.into_iter().enumerate() {
+        for (id, &centre) in centres.iter().enumerate() {
             state
-                .add_from_library(shape_at(10 + id as u64, centre), ShapeSource::Library(0))
+                .add_from_library(
+                    shape_at([2, 1][id], centre),
+                    if id == 1 {
+                        ShapeSource::Growth
+                    } else {
+                        ShapeSource::Library(0)
+                    },
+                )
                 .expect("admitted directed shape");
         }
         assert_eq!(
-            state.add_from_library(shape_at(12, CENTRES[0]), ShapeSource::Library(0)),
+            state.add_from_library(shape_at(4, centres[0]), ShapeSource::Library(0)),
             Err(thrum_cloud_model::Error::Overlap)
         );
         let mut profile = v1_game::clouds::shade_config();

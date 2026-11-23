@@ -11,3 +11,12 @@ fn cloud_erode(sigma: f32, extinction: f32, strength: f32, billow: f32, detail: 
     let shape = clamp((signal - threshold) / edge, 0.0, 1.0);
     return sigma * max(0.0, shape - strength * detail * (1.0 - shape));
 }
+
+// Authored slabs already contain their billows. Use the shared noise to
+// break up the soft boundary without cutting a second, thin shell into it.
+fn placed_erode(sigma: f32, extinction: f32, strength: f32, billow: f32, detail: f32) -> f32 {
+    let signal = min(1.0, sigma / extinction);
+    let threshold = 0.45 * strength * (1.0 - billow);
+    let edge = smoothstep(threshold, threshold + 0.28, signal);
+    return sigma * edge * (1.0 - 0.20 * strength * detail * (1.0 - edge));
+}

@@ -384,6 +384,7 @@ impl Field {
         weight: f64,
     ) -> f64 {
         self.density_with_footprint(point, state, fidelity, volume, weight, false)
+            .0
     }
 
     // Visibility knows a missing volume only by its integral and outline.
@@ -396,10 +397,11 @@ impl Field {
         volume: impl Fn(u64) -> Option<&'a Shape>,
         weight: f64,
         preserve_footprint: bool,
-    ) -> f64 {
+    ) -> (f64, bool) {
         let air = state.to_air([point[0], point[2]]);
         let p = state.parameters();
-        let extinction = self.kind(p.kind).extinction();
+        let kind = self.kind(p.kind);
+        let extinction = kind.extinction();
         let point_air = [air[0], point[1], air[1]];
         let noise = std::cell::LazyCell::new(|| {
             let shape = self.shape_noise(point_air);
@@ -409,7 +411,7 @@ impl Field {
             };
             (shape, detail)
         });
-        let erode = |sigma, extinction| {
+        let erode = |sigma, extinction, placed| {
             if sigma <= 0.0
                 || extinction <= 0.0
                 || self.profile.erosion == 0.0
@@ -417,11 +419,12 @@ impl Field {
             {
                 sigma
             } else {
-                self.erode(sigma, extinction, noise.0, noise.1)
+                self.erode(sigma, extinction, noise.0, noise.1, placed)
             }
         };
         let column = self.column(air, state.time(), p);
-        let mut sigma = erode(column_density(column, point[1]), extinction);
+        let mut sigma = erode(column_density(column, point[1]), extinction, false);
+        let mut used_footprint = false;
         let hashed = self.hashed_at(air, state);
         for (shape, selection) in state
             .shapes()
@@ -431,30 +434,48 @@ impl Field {
         {
             let column = self.placed_column(air, shape, selection, state);
             let column_sigma = column_density(column, point[1]);
-            let local = local(air, shape);
             let voxels = volume(shape.id);
+            used_footprint |= voxels.is_none()
+                && column.optical_depth > 0.0
+                && point[1] >= column.base
+                && point[1] <= column.top;
             if preserve_footprint && voxels.is_none() {
                 sigma += column_sigma;
                 continue;
             }
             let volume_sigma = voxels.map_or(column_sigma, |v| {
+                let local = local(air, shape);
+                let floor = selection
+                    .and_then(|source| state.library()?.geometry(source))
+                    .map_or(0.0, |slab| slab.floor);
                 v.density([
                     local[0],
-                    (point[1] - self.kind(p.kind).base) / shape.scale,
+                    (point[1] - kind.base) / shape.scale - floor,
                     local[1],
                 ]) * shape.envelope
-                    * self.kind(p.kind).extinction()
+                    * extinction
             });
             let reference_extinction = extinction * selection.map_or(1.0, |_| shape.envelope);
-            sigma += erode(volume_sigma, reference_extinction) * weight.clamp(0.0, 1.0)
-                + erode(column_sigma, reference_extinction) * (1.0 - weight.clamp(0.0, 1.0));
+            if selection.is_some() {
+                let sigma_blended = volume_sigma * weight.clamp(0.0, 1.0)
+                    + column_sigma * (1.0 - weight.clamp(0.0, 1.0));
+                sigma += erode(sigma_blended, reference_extinction, true);
+            } else {
+                sigma += erode(volume_sigma, reference_extinction, false) * weight.clamp(0.0, 1.0)
+                    + erode(column_sigma, reference_extinction, false)
+                        * (1.0 - weight.clamp(0.0, 1.0));
+            }
         }
-        sigma
+        (sigma, used_footprint)
     }
 
-    fn erode(&self, sigma: f64, extinction: f64, shape: f64, detail: f64) -> f64 {
+    fn erode(&self, sigma: f64, extinction: f64, shape: f64, detail: f64, placed: bool) -> f64 {
         let signal = (sigma / extinction).min(1.0);
         let threshold = self.profile.erosion * (1.0 - shape);
+        if placed {
+            let edge = smooth((signal - 0.45 * threshold) / 0.28);
+            return sigma * edge * (1.0 - 0.20 * self.profile.erosion * detail * (1.0 - edge));
+        }
         let edge = (1.0 - threshold).clamp(0.0001, 0.12);
         let shaped = ((signal - threshold) / edge).clamp(0.0, 1.0);
         let eroded = (shaped - self.profile.erosion * detail * (1.0 - shaped)).max(0.0);

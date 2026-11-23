@@ -126,6 +126,7 @@ impl Weather<'_> {
         volume: impl Fn(u64) -> Option<&'v Shape>,
     ) -> f64 {
         self.density_with_footprint(point, state, fidelity, volume, false)
+            .value
     }
 
     // Only visibility queries preserve a footprint's integral. Lighting and
@@ -137,25 +138,31 @@ impl Weather<'_> {
         fidelity: Density,
         volume: impl Fn(u64) -> Option<&'v Shape>,
         preserve_footprint: bool,
-    ) -> f64 {
-        let cloud = if state.parameters().coverage == 0.0 && state.shapes().is_empty() {
-            0.0
-        } else {
-            self.field.density_with_footprint(
-                point,
-                state,
-                fidelity,
-                volume,
-                1.0,
-                preserve_footprint,
-            )
-        };
-        match (self.surface, self.ground) {
-            (Some(s), Some(g)) => {
-                let fog = g.density(s, self.field, point, state, fidelity);
-                if fog == 0.0 { cloud } else { cloud + fog }
-            }
+    ) -> Answer {
+        let (cloud, used_footprint) =
+            if state.parameters().coverage == 0.0 && state.shapes().is_empty() {
+                (0.0, false)
+            } else {
+                self.field.density_with_footprint(
+                    point,
+                    state,
+                    fidelity,
+                    volume,
+                    1.0,
+                    preserve_footprint,
+                )
+            };
+        let value = match (self.surface, self.ground) {
+            (Some(s), Some(g)) => cloud + g.density(s, self.field, point, state, fidelity),
             _ => cloud,
+        };
+        Answer {
+            value,
+            fidelity: if used_footprint {
+                Fidelity::Footprint
+            } else {
+                Fidelity::Exact
+            },
         }
     }
 
@@ -167,10 +174,7 @@ impl Weather<'_> {
         state: &State,
         volume: impl Fn(u64) -> Option<&'v Shape>,
     ) -> Answer {
-        Answer {
-            value: self.density_with_footprint(point, state, Density::Coarse, &volume, true),
-            fidelity: self.fidelity(point, state, volume),
-        }
+        self.density_with_footprint(point, state, Density::Coarse, volume, true)
     }
 
     /// Condensate plus clear-air visual range by Koschmieder (metres).
@@ -226,11 +230,10 @@ impl Weather<'_> {
         for n in 0..steps {
             let t = (f64::from(n) + 0.5) / f64::from(steps);
             let p = std::array::from_fn(|i| from[i] + t * delta[i]);
-            answer.value +=
-                self.density_with_footprint(p, state, density, &volume, preserve_footprint)
-                    * length
-                    / f64::from(steps);
-            if self.fidelity(p, state, &volume) == Fidelity::Footprint {
+            let sample =
+                self.density_with_footprint(p, state, density, &volume, preserve_footprint);
+            answer.value += sample.value * length / f64::from(steps);
+            if sample.fidelity == Fidelity::Footprint {
                 answer.fidelity = Fidelity::Footprint;
             }
         }
@@ -283,28 +286,5 @@ impl Weather<'_> {
             optical_depth,
             surface_blocked,
         })
-    }
-
-    fn fidelity<'v>(
-        &self,
-        point: [f64; 3],
-        state: &State,
-        volume: impl Fn(u64) -> Option<&'v Shape>,
-    ) -> Fidelity {
-        let air = state.to_air([point[0], point[2]]);
-        for shape in state.shapes() {
-            let local = crate::field::local(air, shape);
-            let c = shape.footprint.column(local);
-            let y = (point[1] - self.field.kind(state.parameters().kind).base) / shape.scale;
-            if shape.envelope > 0.0
-                && c[0] > 0.0
-                && y >= c[1]
-                && y <= c[2]
-                && volume(shape.id).is_none()
-            {
-                return Fidelity::Footprint;
-            }
-        }
-        Fidelity::Exact
     }
 }

@@ -9,12 +9,27 @@ use thrum_core::{
 };
 
 #[derive(Clone, PartialEq)]
-pub(super) struct Weather(pub(super) Arc<thrum_cloud_model::State>);
+pub(crate) struct Weather {
+    pub(super) state: Arc<thrum_cloud_model::State>,
+    demo: Option<crate::clouds::PlacementDemo>,
+}
+
+impl Weather {
+    pub(crate) fn new(
+        state: thrum_cloud_model::State,
+        demo: Option<crate::clouds::PlacementDemo>,
+    ) -> Self {
+        Self {
+            state: Arc::new(state),
+            demo,
+        }
+    }
+}
 
 pub(super) fn register(registry: &mut ComponentRegistry) -> Result<ComponentKey, SimError> {
     let key = registry
         .register_with_snapshot::<Weather>(ComponentSchemaId(6), Clone::clone, |_| {
-            size_of::<thrum_cloud_model::State>() + 2 * size_of::<usize>()
+            size_of::<thrum_cloud_model::State>() + size_of::<Weather>() + size_of::<usize>()
         })
         .map_err(|_| SimError::InvalidConfig)?;
     registry
@@ -47,26 +62,9 @@ impl Permits {
         let mut value = world
             .with(&self.read, handle, Clone::clone)
             .map_err(|_| SimError::InvalidHandle)?;
-        let state = Arc::make_mut(&mut value.0);
-        let time = state.time();
-        let smooth = |unit: f64| {
-            let t = unit.clamp(0.0, 1.0);
-            t * t * (3.0 - 2.0 * t)
-        };
-        if state.shape_source(1) == Some(thrum_cloud_model::ShapeSource::Growth) {
-            let growth = ((time - 12.0) / 120.0).clamp(0.0, 1.0);
-            let forming = smooth(time / 18.0).max(1e-6);
-            let thinning = 1.0 - smooth((time - 174.0) / 60.0);
-            state
-                .direct(1, forming * thinning, growth)
-                .map_err(|_| SimError::InvalidConfig)?;
-        }
-        if state.shape_source(2).is_some() {
-            let forming = smooth(time / 8.0).max(1e-6);
-            let thinning = 1.0 - smooth((time - 22.0) / 65.0);
-            state
-                .direct(2, forming * thinning, 0.0)
-                .map_err(|_| SimError::InvalidConfig)?;
+        let state = Arc::make_mut(&mut value.state);
+        if let Some(demo) = value.demo {
+            demo.step(state).map_err(|_| SimError::InvalidConfig)?;
         }
         state.step(tick, dt).map_err(|_| SimError::NonFinite)?;
         world
@@ -77,10 +75,7 @@ impl Permits {
 }
 
 impl Simulation {
-    pub(crate) fn seed_weather(
-        &mut self,
-        state: Option<thrum_cloud_model::State>,
-    ) -> Result<(), SimError> {
+    pub(crate) fn seed_weather(&mut self, state: Option<Weather>) -> Result<(), SimError> {
         if let Some(permits) = &mut self.rules.weather {
             let initial = state.ok_or(SimError::InvalidConfig)?;
             let handle = self
@@ -88,7 +83,7 @@ impl Simulation {
                 .seed(StableId(u128::MAX), |writer| {
                     writer.add(super::Position([0.0; 3]))?;
                     writer.add(super::Health(1))?;
-                    writer.add(Weather(Arc::new(initial)))?;
+                    writer.add(initial)?;
                     Ok(())
                 })
                 .map_err(super::map_runtime)?;

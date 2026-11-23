@@ -124,3 +124,74 @@ fn no_lease() {
     let expected = field.query(point, &state).optical_depth;
     assert!((expected - f64::from(column.1)).abs() < 0.001);
 }
+
+thrum_test_support::macos_gpu_test! {
+    fn placement_upload_touches_only_changed_rows() {
+        placement_upload();
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn placement_upload() {
+    use v1_game::GameHost as _;
+    let Some(gpu) = thrum_test_support::open(
+        "game placement upload",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    ) else {
+        return;
+    };
+    let fixture = fixture::Fixture::with_placements(true, &[[0.0, -12_000.0]], [40.0, 0.0]);
+    let mut host = pollster::block_on(fixture.host(&gpu));
+    let mut frames = fixture::Frames::new(&gpu);
+    frames.placed_submitted(&mut host, |row| row.volume_instances == 1);
+    let placement = |host: &fixture::Host| {
+        let (_, _, state) = host
+            .cloud_placed_input()
+            .expect("Shapes")
+            .placed_map()
+            .expect("submitted map");
+        (
+            fixture::report(host)
+                .expect("submitted placement report")
+                .placement_upload_bytes,
+            state.travel(),
+        )
+    };
+    frames.submit(&mut host);
+    let (bytes_before, travel_before) = placement(&host);
+    frames.submit(&mut host);
+    let (bytes_after, travel_after) = placement(&host);
+    assert_ne!(
+        travel_before.map(f64::to_bits),
+        travel_after.map(f64::to_bits)
+    );
+    // Only the weight in one row changes as it drifts through the fade band.
+    assert_eq!([bytes_before, bytes_after], [80; 2]);
+    host.set_scene_camera(
+        v1_game::SceneCamera::perspective(
+            [2_500.0, 40.0, 0.0],
+            [2_500.0, 1_700.0, -1_700.0],
+            0.75,
+            1.0,
+            200_000.0,
+        )
+        .expect("camera beyond the previous weather anchor"),
+    )
+    .expect("move camera across the weather anchor");
+    frames.submit(&mut host);
+    assert_eq!(
+        placement(&host).0,
+        64 + 80,
+        "anchor changes the header and one row"
+    );
+    host.world_mut().pause().expect("pause the inline weather");
+    frames.submit(&mut host);
+    // A stopped camera and weather, with the same lease, touch no placement bytes.
+    host.capture_pixels().expect("first paused draw");
+    frames.retire(&mut host);
+    host.capture_pixels().expect("repeated paused draw");
+    frames.retire(&mut host);
+    assert_eq!(placement(&host).0, 0);
+}

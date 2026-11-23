@@ -35,6 +35,20 @@ fn run() {
         .expect("Shapes")
         .placed_map()
         .expect("submitted map");
+    assert_eq!(
+        state
+            .shapes()
+            .iter()
+            .map(|shape| shape.id)
+            .collect::<Vec<_>>(),
+        [2, 1]
+    );
+    assert!(
+        state
+            .shapes()
+            .iter()
+            .all(|shape| shape.target.to_bits() == 1.0_f64.to_bits())
+    );
     let raw = thrum_test_support::readback::texture(
         &gpu.device,
         &gpu.queue,

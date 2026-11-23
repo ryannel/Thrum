@@ -6,6 +6,7 @@ mod page;
 mod rules;
 mod types;
 mod weather;
+pub(crate) use weather::Weather;
 
 use std::mem::size_of;
 

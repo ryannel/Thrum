@@ -60,6 +60,8 @@ pub struct ShapesReport {
     pub volume_refusals: usize,
     /// Placement operations the authoritative weather state refused.
     pub directed_refusals: u64,
+    /// Placement buffer bytes queued by this recording, excluding cooked products.
+    pub placement_upload_bytes: usize,
     /// Whether this recording observed a pending lease change.
     pub history_invalid: bool,
     /// Lease changes consumed by advancing submissions.
@@ -78,20 +80,64 @@ struct Instance {
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct Instances {
+struct InstanceHeader {
     bounds: [f32; 4],
     optical: [f32; 4],
     count: [u32; 4],
     grid: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct Instances {
+    header: InstanceHeader,
     slots: [u32; MAX_BLOCKS],
     items: [Instance; MAX_INSTANCES],
 }
+
+impl Instances {
+    fn upload_changed(
+        &self,
+        queue: &wgpu::Queue,
+        buffer: &wgpu::Buffer,
+        uploaded: &mut Self,
+    ) -> usize {
+        // Inactive rows are unreachable through the header. Retain their last
+        // uploaded values so reactivating a row can still be compared correctly.
+        let slots = self.header.count[1] as usize * self.header.count[2] as usize;
+        let items = self.header.count[0] as usize;
+        upload_changes(
+            queue,
+            buffer,
+            0,
+            std::slice::from_ref(&self.header),
+            std::slice::from_mut(&mut uploaded.header),
+        ) + upload_changes(
+            queue,
+            buffer,
+            std::mem::offset_of!(Instances, slots),
+            &self.slots[..slots],
+            &mut uploaded.slots[..slots],
+        ) + upload_changes(
+            queue,
+            buffer,
+            std::mem::offset_of!(Instances, items),
+            &self.items[..items],
+            &mut uploaded.items[..items],
+        )
+    }
+}
+
+type Candidate = (Directed, ShapeSource, Option<usize>);
 
 pub(crate) struct Shapes {
     config: ShapesConfig,
     field: Field,
     device: DeviceSite,
     instances: wgpu::Buffer,
+    candidates: Vec<Candidate>,
+    staging: Box<Instances>,
+    uploaded: Box<Instances>,
     footprints: wgpu::Buffer,
     sampler: wgpu::Sampler,
     empty: wgpu::TextureView,
@@ -114,6 +160,8 @@ impl Shapes {
         config: ShapesConfig,
         weather: &WeatherMap,
     ) -> Result<Self, Error> {
+        use bytemuck::Zeroable;
+
         let slab_side = u32::try_from(config.library.shapes()[0].footprint.layout().0[0])
             .map_err(|_| Error::Unsupported("placed slab resolution"))?;
         let footprints: Vec<[f32; 4]> = config
@@ -205,6 +253,9 @@ impl Shapes {
             field,
             device: device.clone(),
             instances,
+            candidates: Vec::new(),
+            staging: Box::new(Instances::zeroed()),
+            uploaded: Box::new(Instances::zeroed()),
             footprints,
             sampler,
             empty,
@@ -376,9 +427,10 @@ impl Shapes {
     ) -> Result<(), Error> {
         use bytemuck::Zeroable;
         self.offer(generation);
-        let mut data = Box::new(Instances::zeroed());
+        let data = &mut self.staging;
+        data.header = InstanceHeader::zeroed();
         let origin = weather.origins()[0];
-        data.optical = [
+        data.header.optical = [
             kind.extinction() as f32,
             kind.base as f32,
             kind.profile[0] as f32,
@@ -400,13 +452,14 @@ impl Shapes {
         let distance = |centre: [f64; 2]| {
             (centre[0] + travel[0] - camera[0]).hypot(centre[1] + travel[1] - camera[1])
         };
-        let mut active = self.candidates(state, weather, &mut data)?;
-        active.sort_by(|(a, _, _), (b, _, _)| {
+        let active = &mut self.candidates;
+        Self::collect_candidates(&self.field, state, weather, data, active)?;
+        active.sort_unstable_by(|(a, _, _), (b, _, _)| {
             distance(a.centre)
                 .total_cmp(&distance(b.centre))
                 .then(a.id.cmp(&b.id))
         });
-        for (shape, source, block) in active {
+        for (shape, source, block) in active.drain(..) {
             let Some(slab) = self.config.library.geometry(source) else {
                 continue;
             };
@@ -434,7 +487,7 @@ impl Shapes {
                 u32::try_from(self.config.library.shapes().len()).expect("volume stack size")
             };
             let start = keys.map(|key| (offset + key) * self.slab_side * self.slab_side);
-            data.items[data.count[0] as usize] = Instance {
+            data.items[data.header.count[0] as usize] = Instance {
                 centre_yaw: [centre[0] as f32, centre[1] as f32, cos as f32, sin as f32],
                 form: [
                     shape.scale as f32,
@@ -446,15 +499,16 @@ impl Shapes {
                 keys: [keys[0], keys[1], start[0], start[1]],
                 footprint: [self.slab_side, u32::from(stack != 0), 0, 0],
             };
-            data.count[0] += 1;
+            data.header.count[0] += 1;
             if let Some(block) = block {
-                data.slots[block] = data.count[0];
+                data.slots[block] = data.header.count[0];
             }
         }
-        if data.count[0] > 0 {
-            data.bounds = bounds.map(|value| value as f32);
+        if data.header.count[0] > 0 {
+            data.header.bounds = bounds.map(|value| value as f32);
         }
-        queue.write_buffer(&self.instances, 0, bytemuck::bytes_of(data.as_ref()));
+        pending.placement_upload_bytes =
+            data.upload_changed(queue, &self.instances, &mut self.uploaded);
         self.pending = pending;
         Ok(())
     }
@@ -463,19 +517,26 @@ impl Shapes {
         clippy::cast_possible_truncation,
         reason = "block grid uses floor coordinates relative to the weather anchor"
     )]
-    fn candidates(
-        &self,
+    fn collect_candidates(
+        field: &Field,
         state: &State,
         weather: &WeatherMap,
         data: &mut Instances,
-    ) -> Result<Vec<(Directed, ShapeSource, Option<usize>)>, Error> {
-        let Some(block_width) = self.field.placed_block_width(state) else {
-            return Ok(state
-                .shapes()
-                .iter()
-                .filter(|shape| shape.envelope > 0.0)
-                .filter_map(|shape| Some((shape.clone(), state.shape_source(shape.id)?, None)))
-                .collect());
+        active: &mut Vec<Candidate>,
+    ) -> Result<(), Error> {
+        active.clear();
+        let Some(block_width) = field.placed_block_width(state) else {
+            active.extend(
+                state
+                    .shapes()
+                    .iter()
+                    .filter(|shape| shape.envelope > 0.0)
+                    .filter_map(|shape| Some((shape.clone(), state.shape_source(shape.id)?, None))),
+            );
+            if active.len() > MAX_INSTANCES {
+                return Err(Error::DeviceLimit("directed column-form instances"));
+            }
+            return Ok(());
         };
         let outer = weather.origins()[3];
         let span = weather.profile().texels[3] * f64::from(weather.profile().size);
@@ -491,18 +552,18 @@ impl Shapes {
             return Err(Error::DeviceLimit("placed block coverage"));
         }
         let origin = weather.origins()[0];
-        data.grid = [
+        data.header.grid = [
             (bounds[0][0] as f64 * block_width - origin[0]) as f32,
             (bounds[1][0] as f64 * block_width - origin[1]) as f32,
             block_width as f32,
             0.0,
         ];
-        data.count[1] = u32::try_from(dimensions[0]).expect("bounded grid width");
-        data.count[2] = u32::try_from(dimensions[1]).expect("bounded grid height");
-        let mut active = Vec::new();
+        data.header.count[1] = u32::try_from(dimensions[0]).expect("bounded grid width");
+        data.header.count[2] = u32::try_from(dimensions[1]).expect("bounded grid height");
+        data.slots[..dimensions[0] * dimensions[1]].fill(0);
         for z in bounds[1][0]..bounds[1][1] {
             for x in bounds[0][0]..bounds[0][1] {
-                if let Some((shape, source)) = self.field.hashed_shape([x, z], state) {
+                if let Some((shape, source)) = field.hashed_shape([x, z], state) {
                     let column = usize::try_from(x - bounds[0][0]).expect("within block bounds");
                     let row = usize::try_from(z - bounds[1][0]).expect("within block bounds");
                     active.push((shape, source, Some(row * dimensions[0] + column)));
@@ -512,7 +573,7 @@ impl Shapes {
         if active.len() > MAX_INSTANCES {
             return Err(Error::DeviceLimit("placed column-form instances"));
         }
-        Ok(active)
+        Ok(())
     }
 
     pub(crate) fn history_invalid(&self) -> bool {
@@ -529,6 +590,29 @@ impl Shapes {
             ..self.pending
         }
     }
+}
+
+fn upload_changes<T: bytemuck::Pod>(
+    queue: &wgpu::Queue,
+    buffer: &wgpu::Buffer,
+    offset: usize,
+    staging: &[T],
+    uploaded: &mut [T],
+) -> usize {
+    let mut run_start = None;
+    let mut written = 0;
+    for i in 0..=staging.len() {
+        if i < staging.len() && bytemuck::bytes_of(&staging[i]) != bytemuck::bytes_of(&uploaded[i])
+        {
+            run_start.get_or_insert(i);
+        } else if let Some(start) = run_start.take() {
+            let bytes = bytemuck::cast_slice(&staging[start..i]);
+            queue.write_buffer(buffer, (offset + start * size_of::<T>()) as u64, bytes);
+            uploaded[start..i].copy_from_slice(&staging[start..i]);
+            written += bytes.len();
+        }
+    }
+    written
 }
 
 fn smooth_range(value: f64, range: [f64; 2]) -> f64 {

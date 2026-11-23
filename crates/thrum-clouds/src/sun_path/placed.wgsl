@@ -18,7 +18,7 @@ fn placed_sun_depth(midpoint: vec3<f32>, height_span: f32) -> f32 {
         if sigma > 0.0 && p.physical.z > 0.0 && p.physical.w > 0.0 {
             let uv = (midpoint + offset) / 6400.0 + vec3(p.erosion.y, 0.0, p.erosion.z);
             let billow = textureSampleLevel(shape_noise, noise_sampler, uv, 0.0).r;
-            tau += cloud_erode(sigma, p.physical.z * sample.envelope, p.physical.w, billow, p.erosion.x) * step;
+            tau += placed_erode(sigma, p.physical.z * sample.envelope, p.physical.w, billow, p.erosion.x) * step;
         } else {
             tau += sigma * step;
         }

@@ -54,7 +54,7 @@ impl PublishedPage {
         let handle = self.0.handle(slot)?;
         self.0
             .component::<super::weather::Weather>(handle)
-            .map(|weather| Arc::clone(&weather.0))
+            .map(|weather| Arc::clone(&weather.state))
     }
     /// Old branch endpoint this inverse patch can update.
     pub fn patch_source(&self) -> Option<(SnapshotId, u64)> {

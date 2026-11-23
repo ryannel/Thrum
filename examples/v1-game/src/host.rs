@@ -410,7 +410,7 @@ impl GameSetup {
 fn clouded_weather(
     setup: GameSetup,
     shapes: Option<&crate::PlacedSky>,
-) -> Result<Option<thrum_cloud_model::State>, runtime::FrameError> {
+) -> Result<Option<crate::simulation::Weather>, runtime::FrameError> {
     if setup.clouds == crate::CloudSelection::Off {
         return Ok(None);
     }
@@ -419,7 +419,12 @@ fn clouded_weather(
         |placed| placed.state(setup.cloud_weather),
     );
     state
-        .map(Some)
+        .map(|state| {
+            Some(crate::simulation::Weather::new(
+                state,
+                shapes.and_then(crate::PlacedSky::demo),
+            ))
+        })
         .map_err(|error| runtime::FrameError::World(error.to_string()))
 }
 

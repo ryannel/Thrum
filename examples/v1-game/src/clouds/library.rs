@@ -11,6 +11,63 @@ const KEYS: usize = 11;
 const SIDE: usize = 128;
 const WORDS: usize = 5 + 3 * SIDE * SIDE;
 
+const TOWER: u64 = 1;
+const FAIR: u64 = 2;
+const DISTANT: u64 = 3;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PlacementDemo {
+    Tower,
+    Mixed,
+}
+
+impl PlacementDemo {
+    pub(crate) fn step(self, state: &mut State) -> Result<(), thrum_cloud_model::Error> {
+        let time = state.time();
+        let smooth = |unit: f64| {
+            let t = unit.clamp(0.0, 1.0);
+            t * t * (3.0 - 2.0 * t)
+        };
+        let update = |state: &mut State, id, forming: f64, thinning, growth| {
+            if state.shape_source(id).is_some() {
+                state.direct(id, forming.max(1e-6) * thinning, growth)?;
+            }
+            Ok(())
+        };
+        let growth = ((time - 12.0) / 120.0).clamp(0.0, 1.0);
+        let tower = match self {
+            Self::Tower => smooth(time / 18.0),
+            Self::Mixed => smooth(time / 36.0).powi(2),
+        };
+        update(
+            state,
+            TOWER,
+            tower,
+            1.0 - smooth((time - 174.0) / 60.0),
+            growth,
+        )?;
+        if self == Self::Mixed {
+            // At 60x, a delayed frame can span several weather seconds.
+            // Keep initial optical depths small even for the far bank's thickest voxels.
+            update(
+                state,
+                FAIR,
+                smooth(time / 24.0).powi(2),
+                1.0 - smooth((time - 25.0) / 65.0),
+                0.0,
+            )?;
+            update(
+                state,
+                DISTANT,
+                smooth(time / 42.0).powi(2),
+                1.0 - smooth((time - 205.0) / 95.0),
+                0.0,
+            )?;
+        }
+        Ok(())
+    }
+}
+
 /// The game's placed sky, including the cooked publication and authoritative placement controls.
 #[derive(Clone, Debug)]
 pub struct PlacedSky {
@@ -90,6 +147,17 @@ impl PlacedSky {
         self
     }
 
+    pub(crate) fn demo(&self) -> Option<PlacementDemo> {
+        if self.initial.is_some() || self.weather_share.is_some() {
+            return None;
+        }
+        Some(if self.directed {
+            PlacementDemo::Tower
+        } else {
+            PlacementDemo::Mixed
+        })
+    }
+
     pub(crate) fn state(
         &self,
         mut parameters: Parameters,
@@ -113,12 +181,12 @@ impl PlacedSky {
         }
         state.set_library(Arc::clone(&self.library))?;
         let placements = if self.directed {
-            &[(1, [-6_900.0, -2_600.0], ShapeSource::Growth)]
+            &[(TOWER, [-6_900.0, -2_600.0], ShapeSource::Growth)]
         } else {
             &[
-                (1, [-6_900.0, -4_650.0], ShapeSource::Growth),
-                (2, [-4_610.0, -6_700.0], ShapeSource::Library(4)),
-                (3, [-10_600.0, -15_800.0], ShapeSource::Library(8)),
+                (TOWER, [-6_900.0, -4_650.0], ShapeSource::Growth),
+                (FAIR, [-4_610.0, -6_700.0], ShapeSource::Library(4)),
+                (DISTANT, [-10_600.0, -15_800.0], ShapeSource::Library(8)),
             ][..]
         };
         for &(id, centre, source) in placements {
