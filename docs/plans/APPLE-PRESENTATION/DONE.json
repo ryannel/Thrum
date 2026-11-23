@@ -468,7 +468,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Dynamic resolution as in a shipped game that hides it well, such as Spider-Man 2 or Forza Horizon 5: the picture softens a little at lower scale and never pops, flashes, shimmers at the step or loses its history. Judged in motion from the running game on the Mac and in Chrome."
     },
     {
