@@ -179,6 +179,7 @@ pub trait Game {
     }
 }
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 pub(crate) fn apply_frame_edits<G: Game>(
     game: &mut G,
     host: &mut FrameHost<G::World, G::Scene>,
