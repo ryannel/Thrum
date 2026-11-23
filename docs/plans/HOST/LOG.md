@@ -64,3 +64,6 @@
   edit before the first replacement submission. In Chrome, an ordinary game using only the shared recovery
   button exposed it after real device loss and presented on generation 2 after a click.
   [Device replacement evidence](../../../.orchestrate/evidence/HOST/M4/recovery-fixes/README.md)
+- 2026-11-23 Matched the replay helper's target predicate to its macOS offscreen and Wasm browser callers.
+  The iPhone simulator's strict Clippy check and release build passed with the helper excluded.
+  [Target reruns](../../../.orchestrate/evidence/HOST/M4/target-checks/README.md)
