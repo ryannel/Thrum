@@ -176,6 +176,16 @@ records! {
         colour_pre_exposure: [f32; 4],
         sky_mapping: [f32; 4],
     }
+    AerosolUniform {
+        extinction: [[f32; 4]; 2],
+        scattering: [[f32; 4]; 2],
+        surface_extinction: [f32; 4],
+    }
+    VolumeHistory {
+        previous_view_projection: Matrix,
+        previous_eye_valid: [f32; 4],
+        current_view_forward_phase: [f32; 4],
+    }
     SkyMotion { camera_delta: Matrix, current: Matrix, extent: [f32; 4], solar_delta: Matrix }
     StarView {
         clip_from_catalogue: Matrix,

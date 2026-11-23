@@ -48,11 +48,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
         include_str!("../night.wgsl")
     );
     for source in [
-        EARTH.shader(&format!(
-            "{common}\n{spectral}\n{}\n{}",
-            include_str!("../lut.wgsl"),
-            include_str!("../ground.wgsl")
-        )),
+        crate::shaders::Shader::AtmosphereLuts.source().into_owned(),
         format!("{common}\n{}", crate::shaders::wgsl!("atmosphere/sky.wgsl")),
         format!(
             "{common}\n{}\n{}",

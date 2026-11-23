@@ -1,6 +1,7 @@
 use crate::{
     atmosphere::Aerosol,
     binding,
+    records::AerosolUniform,
     shaders::{Shader, wgsl},
 };
 
@@ -8,14 +9,6 @@ use super::EARTH;
 
 const BINDING: u32 = 8;
 pub(in crate::atmosphere) const BYTES: u64 = size_of::<AerosolUniform>() as u64;
-
-#[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct AerosolUniform {
-    extinction: [[f32; 4]; 2],
-    scattering: [[f32; 4]; 2],
-    surface_extinction: [f32; 4],
-}
 
 impl AerosolUniform {
     fn new(aerosol: Aerosol) -> Self {
@@ -58,26 +51,23 @@ pub(super) fn compile(
     if aerosol.is_none() {
         return shader.compile(device, label);
     }
-    device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some(label),
-        source: wgpu::ShaderSource::Wgsl(source(shader).into()),
-    })
+    match shader {
+        Shader::AtmosphereLuts => Shader::AtmosphereAerosolLuts,
+        Shader::AtmosphereAerial => Shader::AtmosphereAerosolAerial,
+        _ => unreachable!("aerosol is a variant of the atmosphere compute stages"),
+    }
+    .compile(device, label)
 }
 
-pub(super) fn source(shader: Shader) -> String {
-    let entry = match shader {
-        Shader::AtmosphereLuts => concat!(
-            wgsl!(@lut "atmosphere/aerosol_multiple.wgsl", "atmosphere/aerosol_sky_view.wgsl"),
-            wgsl!("atmosphere/ground.wgsl")
-        ),
-        Shader::AtmosphereAerial => wgsl!("atmosphere/aerosol_aerial.wgsl"),
-        _ => unreachable!("aerosol is a variant of the atmosphere compute stages"),
-    };
-    if matches!(shader, Shader::AtmosphereLuts) {
-        assemble(entry)
-    } else {
-        aerial_source(entry)
-    }
+pub(crate) fn lut_source() -> String {
+    assemble(concat!(
+        wgsl!(@lut "atmosphere/aerosol_multiple.wgsl", "atmosphere/aerosol_sky_view.wgsl"),
+        wgsl!("atmosphere/ground.wgsl")
+    ))
+}
+
+pub(crate) fn aerial_chart_source() -> String {
+    aerial_source(wgsl!("atmosphere/aerosol_aerial.wgsl"))
 }
 
 pub(super) fn aerial_source(entry: &str) -> String {
@@ -99,13 +89,8 @@ fn assemble(entry: &str) -> String {
     );
     let transport = EARTH.shader(&body);
     format!(
-        "struct AerosolUniform {{
-            extinction: array<vec4<f32>, 2>,
-            scattering: array<vec4<f32>, 2>,
-            surface_extinction: vec4<f32>,
-        }}
-        @group(0) @binding({BINDING}) var<uniform> aerosol: AerosolUniform;
-        {transport}"
+        "{}\n@group(0) @binding({BINDING}) var<uniform> aerosol: AerosolUniform;\n{transport}",
+        wgsl!("records/aerosol.wgsl")
     )
 }
 
@@ -115,8 +100,11 @@ mod tests {
 
     #[test]
     fn variable_aerosol_record_matches_the_compiled_shaders() {
-        for shader in [Shader::AtmosphereLuts, Shader::AtmosphereAerial] {
-            let module = wgpu::naga::front::wgsl::parse_str(&source(shader)).expect("WGSL");
+        for shader in [
+            Shader::AtmosphereAerosolLuts,
+            Shader::AtmosphereAerosolAerial,
+        ] {
+            let module = wgpu::naga::front::wgsl::parse_str(&shader.source()).expect("WGSL");
             wgpu::naga::valid::Validator::new(
                 wgpu::naga::valid::ValidationFlags::all(),
                 wgpu::naga::valid::Capabilities::empty(),

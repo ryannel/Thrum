@@ -90,6 +90,16 @@ def witness_baseline_archive(base, output):
            '    #[doc = "Read the prepared shader for the parity check."]\n'
            '    pub fn scene_shader_source(&self) -> Option<&str> {\n'
            '        Some(self.prepared.three_d()?.scene_shader_source())\n    }')
+    baseline_runtime = output / 'crates/thrum-render/src/runtime.rs'
+    before = baseline_runtime.read_text()
+    graph_slot = '''        self.prepared
+            .graph(&self.slots[0].target, capture)
+            .map_err(|error| FrameError::gpu("graph inspection", error))'''
+    if before.count(graph_slot) != 1:
+        raise ValueError('archive graph probe marker moved')
+    baseline_runtime.write_text(before.replace(graph_slot, '''        self.slots.iter()
+            .find_map(|slot| self.prepared.graph(&slot.target, capture).ok())
+            .ok_or_else(|| FrameError::gpu("graph inspection", RenderError::StaleTarget))'''))
     insert('examples/v1-game/src/browser.rs', '    pub fn set_cloud_capture_eye(',
            '    #[doc = "Read the prepared shader and resource graph."]\n'
            '    pub fn renderer_signature(&self) -> String {\n'
@@ -103,10 +113,18 @@ def witness_baseline_archive(base, output):
            '        result["renderer_signature"] = json!({"shader": host.scene_shader_source(),\n'
            '            "graph": format!("{:?}", host.scene_graph().map_err(|err|err.to_string())?)});\n'
            '    }')
+    baseline_capture = output / 'examples/v1-game/src/window/capture.rs'
+    before = baseline_capture.read_text()
+    begin = 'fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {'
+    end = '\nfn capture_settings()'
+    current = (ROOT / baseline_capture.relative_to(output)).read_text()
+    warmup = current.split(begin, 1)[1].split(end, 1)[0]
+    start, original = before.split(begin, 1)
+    baseline_capture.write_text(start + begin + warmup + end + original.split(end, 1)[1])
 
 
 def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=False, motion=None,
-               cost=False):
+               cost=False, assets_source=None):
     native, cook, web, store = builds
     mode = 'realtime' if motion else 'fixed'
     scenario = 'ground-pan' if motion else 'checkpoint'
@@ -142,6 +160,8 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
             extra += ['--renderer-signature', 'on']
         if cost:
             extra += ['--control', 'off']
+        if assets_source:
+            extra += ['--assets-source', assets_source]
         run('node', 'scripts/capture_v1_browser.mjs', '--atmosphere', scenario,
             '--cook', cook, '--web-root', web, *common, *extra, log=output.with_suffix('.log'))
         warnings = (output / 'chrome.log').read_text()
@@ -170,11 +190,15 @@ def off_parity(output, targets, builds):
             log=output / 'base-web-build.log')
         base_web = base_target / 'v1-game-web'
         shutil.copyfile(ROOT / 'examples/v1-game/web/capture.mjs', base_web / 'capture.mjs')
-    base_builds = (base_target / 'release/v1-game', cook, base_target / 'v1-game-web', store)
+    assets = source / 'examples/v1-game/assets/showcase'
+    base_store = output / 'base-store'
+    run(cook, 'cook', assets, base_store, log=output / 'base-cook.log')
+    base_builds = (base_target / 'release/v1-game', cook, base_target / 'v1-game-web', base_store)
     pose = {'eye': LOOKOUT_EYE, 'solar_hours': 12.0, 'yaw_degrees': 0, 'motion': None}
     report = {'base': base, 'commit': git_commit(), 'targets': {}}
     for target in targets:
-        prior, reference = checkpoint(output / f'{target}-base', target, base_builds, pose, signature=True)
+        prior, reference = checkpoint(output / f'{target}-base', target, base_builds, pose,
+                                      signature=True, assets_source=assets)
         current, result = checkpoint(output / f'{target}-current', target, builds, pose, signature=True)
         before, after = prior['renderer_signature'], current['renderer_signature']
         if not before['shader'] or not before['graph'] or before != after:

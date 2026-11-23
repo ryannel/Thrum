@@ -2,7 +2,8 @@ use crate::{
     atmosphere::{AtmosphereFrame, CloudPrepared, SunOpticalDepth},
     binding,
     graph::{Access, AccessKind, FrameGraph, GraphError, ResourceDescriptor, ResourceScope},
-    shaders::wgsl,
+    records::VolumeHistory,
+    shaders::{CloudVariant, Shader, wgsl},
     synthetic::SyntheticView,
 };
 use glam::{Mat4, Vec4};
@@ -30,14 +31,6 @@ pub(crate) fn aerial_source() -> String {
         wgsl!(@bytes "synthetic_aerial_decode.wgsl"),
         grid_source(),
     )
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct VolumeHistory {
-    previous_view_projection: [[f32; 4]; 4],
-    previous_eye_valid: [f32; 4],
-    current_view_forward_phase: [f32; 4],
 }
 
 const MOTION_BYTES: u64 = size_of::<VolumeHistory>() as u64;
@@ -88,7 +81,7 @@ fn write_volume(binding: u32) -> wgpu::BindGroupLayoutEntry {
     )
 }
 
-fn source(cascades: bool, provider: Option<&SunOpticalDepth>) -> String {
+pub(crate) fn source(cascades: bool, cloud: CloudVariant) -> String {
     let cascade = if cascades {
         concat!(
             wgsl!("records/shadow_cascades.wgsl"),
@@ -97,20 +90,19 @@ fn source(cascades: bool, provider: Option<&SunOpticalDepth>) -> String {
     } else {
         "fn volume_terrain_visibility(point: vec3<f32>, depth: f32) -> f32 { return 1.0; }"
     };
-    let cloud = provider.map_or_else(
-        || "fn cloud_factor(point: vec3<f32>) -> f32 { return 1.0; }".to_owned(),
-        |field| {
-            let source = if field.gpu_written() {
-                wgsl!("atmosphere/cloud_gpu.wgsl")
-            } else {
-                wgsl!("atmosphere/cloud.wgsl")
-            };
-            format!(
-                "@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n\
-                 @group(1) @binding(4) var aerial_sampler: sampler;\n{source}"
-            )
-        },
-    );
+    let cloud = if cloud.present() {
+        let source = if cloud.gpu() {
+            wgsl!("atmosphere/cloud_gpu.wgsl")
+        } else {
+            wgsl!("atmosphere/cloud.wgsl")
+        };
+        format!(
+            "@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n\
+             @group(1) @binding(4) var aerial_sampler: sampler;\n{source}"
+        )
+    } else {
+        "fn cloud_factor(point: vec3<f32>) -> f32 { return 1.0; }".to_owned()
+    };
     format!(
         "{}\n{}\n{cascade}\n{cloud}",
         super::aerosol::aerial_source(wgsl!("atmosphere/view_volume.wgsl")),
@@ -278,12 +270,11 @@ impl ViewVolume {
             bind_group_layouts: &[Some(&layout), Some(&scene_layout)],
             immediate_size: 0,
         });
-        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("view volume integration"),
-            source: wgpu::ShaderSource::Wgsl(
-                source(cascades, cloud.map(|(field, _)| field)).into(),
-            ),
-        });
+        let module = Shader::ViewVolume(
+            cascades,
+            CloudVariant::from_provider(cloud.map(|(field, _)| field)),
+        )
+        .compile(device, "view volume integration");
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("view volume integration"),
             layout: Some(&pipeline_layout),
@@ -462,8 +453,9 @@ mod tests {
     #[test]
     fn volume_history_layout_and_portable_sources_validate() {
         for cascades in [false, true] {
-            let module = wgpu::naga::front::wgsl::parse_str(&source(cascades, None))
-                .expect("view volume WGSL");
+            let module =
+                wgpu::naga::front::wgsl::parse_str(&source(cascades, CloudVariant::Absent))
+                    .expect("view volume WGSL");
             wgpu::naga::valid::Validator::new(
                 wgpu::naga::valid::ValidationFlags::all(),
                 wgpu::naga::valid::Capabilities::empty(),

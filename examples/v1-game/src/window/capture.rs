@@ -459,7 +459,19 @@ fn start_writer(
 
 fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
     let warmup = Instant::now();
-    while warmup.elapsed() < Duration::from_secs(3) {
+    let parity_checkpoint = std::env::var_os("THRUM_CAPTURE_RENDERER_SIGNATURE").is_some();
+    let last_warmup_submission = driver.host().last_submission().map_or(127, |id| id + 128);
+    while if parity_checkpoint {
+        driver
+            .host()
+            .last_submission()
+            .is_none_or(|id| id < last_warmup_submission)
+    } else {
+        warmup.elapsed() < Duration::from_secs(3)
+    } {
+        if warmup.elapsed() >= Duration::from_secs(30) {
+            return Err("fixed checkpoint warmup submission timeout".to_owned());
+        }
         driver.step()?;
         while driver.completed()?.is_some() {}
         std::thread::sleep(Duration::from_millis(8));

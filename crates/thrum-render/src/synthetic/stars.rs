@@ -72,20 +72,11 @@ impl StarPrepared {
         });
         // The same footprint constants drive rasterization and the daylight bound.
         let shader = if view_volume {
-            device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some(PASS_NAME),
-                source: wgpu::ShaderSource::Wgsl(
-                    format!(
-                        "{}\n{}",
-                        shader_source(),
-                        wgsl!("synthetic/stars_volume.wgsl")
-                    )
-                    .into(),
-                ),
-            })
+            crate::shaders::Shader::VolumeStars
         } else {
-            crate::shaders::Shader::Stars.compile(device, PASS_NAME)
-        };
+            crate::shaders::Shader::Stars
+        }
+        .compile(device, PASS_NAME);
         let blend = wgpu::BlendComponent {
             src_factor: wgpu::BlendFactor::One,
             dst_factor: wgpu::BlendFactor::One,

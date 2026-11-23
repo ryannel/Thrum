@@ -22,7 +22,7 @@ use super::{
 mod uniform;
 use uniform::AtmosphereUniform;
 mod aerial_view;
-pub(super) mod aerosol;
+pub(crate) mod aerosol;
 pub(crate) use aerial_view::SecondaryAerial;
 pub(crate) mod view_volume;
 
@@ -865,23 +865,12 @@ fn prepare_sky(
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let base = crate::shaders::Shader::AtmosphereSky;
     let shader = if volume.is_some() {
-        device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("atmosphere sky with view volume"),
-            source: wgpu::ShaderSource::Wgsl(
-                concat!(
-                    wgsl!("atmosphere/storage.wgsl"),
-                    wgsl!("atmosphere/geometry.wgsl"),
-                    wgsl!("atmosphere/common.wgsl"),
-                    wgsl!("atmosphere/volume_sky.wgsl")
-                )
-                .into(),
-            ),
-        })
+        crate::shaders::Shader::AtmosphereVolumeSky
     } else {
-        base.compile(device, "atmosphere sky")
-    };
+        crate::shaders::Shader::AtmosphereSky
+    }
+    .compile(device, "atmosphere sky");
     let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("atmosphere background in forward pass"),
         layout: Some(&pipeline_layout),

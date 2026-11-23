@@ -303,6 +303,7 @@ macro_rules! shader_catalog {
             $($name,)*
             Scene(SceneVariant),
             SecondaryScene(SceneVariant),
+            ViewVolume(bool, CloudVariant),
         }
 
         impl Shader {
@@ -310,6 +311,7 @@ macro_rules! shader_catalog {
                 match self {
                     $(Self::$name => ($source).into(),)*
                     Self::Scene(variant) => crate::synthetic::scene_source::main_source(variant).into(),
+                    Self::ViewVolume(cascades, cloud) => crate::atmosphere::gpu::view_volume::source(cascades, cloud).into(),
                     Self::SecondaryScene(variant) => crate::synthetic::secondary::composed_source(variant).into(),
                 }
             }
@@ -365,9 +367,22 @@ shader_catalog! {
     Display => crate::synthetic::display::SHADER;
     DisplayPattern => wgsl!("synthetic/display/capture_pattern.wgsl");
     Stars => crate::synthetic::stars::shader_source();
+    VolumeStars => format!(
+        "{}\n{}",
+        crate::synthetic::stars::shader_source(),
+        wgsl!("synthetic/stars_volume.wgsl")
+    );
     EnvironmentProducts => crate::atmosphere::products::library(false);
     EnvironmentProductsFar => crate::atmosphere::products::library(true);
     AtmosphereLuts => crate::atmosphere::gpu::lut_source();
+    AtmosphereAerosolLuts => crate::atmosphere::gpu::aerosol::lut_source();
+    AtmosphereAerosolAerial => crate::atmosphere::gpu::aerosol::aerial_chart_source();
+    AtmosphereVolumeSky => concat!(
+        wgsl!("atmosphere/storage.wgsl"),
+        wgsl!("atmosphere/geometry.wgsl"),
+        wgsl!("atmosphere/common.wgsl"),
+        wgsl!("atmosphere/volume_sky.wgsl")
+    );
     AtmosphereDiffuse => concat!(
                 concat!(
                     wgsl!("atmosphere/storage.wgsl"),
@@ -476,6 +491,15 @@ fn secondary_visibility_source() -> String {
 #[doc(hidden)]
 pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
     let mut sources: Vec<_> = fixed_sources().collect();
+    for cascades in [false, true] {
+        for cloud in [
+            CloudVariant::Absent,
+            CloudVariant::Sampled,
+            CloudVariant::Gpu,
+        ] {
+            sources.push(("ViewVolume", Shader::ViewVolume(cascades, cloud).source()));
+        }
+    }
     for atmosphere in [
         AtmosphereVariant::Absent,
         AtmosphereVariant::Clear,

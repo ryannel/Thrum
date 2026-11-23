@@ -1610,9 +1610,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let FrameTarget::TwoD(target) = &self.slots[0].target {
             return Ok(target.plan(capture).clone());
         }
-        self.prepared
-            .graph(&self.slots[0].target, capture)
-            .map_err(|error| FrameError::gpu("graph inspection", error))
+        // A slot that has not submitted since a cooked visual publication
+        // can still carry the previous frame revision.
+        let mut slots = self.slots.iter();
+        slots
+            .find_map(|slot| self.prepared.graph(&slot.target, capture).ok())
+            .ok_or_else(|| FrameError::gpu("graph inspection", RenderError::StaleTarget))
     }
     /// Read-only reconstruction witness of the latest submitted frame, before report retirement.
     /// This texture is queue ordered after that frame. With reconstruction enabled, select
