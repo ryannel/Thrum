@@ -1271,10 +1271,14 @@ impl PreparedSynthetic {
         }
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
+        let mut record = view.view_record(&self.view_sample, f32::from_bits(self.exposure_bits));
+        if view.reconstruction() {
+            record.mip_bias = (drawn[0] as f32 / output[0] as f32).log2() - 1.0;
+        }
         queue.write_buffer(
             &self.view_buffer,
             u64::from(view_offset),
-            &view.pack_view(&self.view_sample, f32::from_bits(self.exposure_bits)),
+            bytemuck::bytes_of(&record),
         );
         queue.write_buffer(&target.aux_buffer, 0, &view.pack_aux(drawn[0], drawn[1]));
         target.draw_stars =

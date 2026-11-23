@@ -496,6 +496,10 @@ impl SyntheticView {
         self
     }
 
+    pub(super) fn jitter_extent(&self) -> Option<[u32; 2]> {
+        self.jitter_sample.map(|(_, extent)| extent)
+    }
+
     pub(super) fn jitter_enabled(&self) -> bool {
         self.jitter_sample.is_some()
     }
@@ -555,11 +559,7 @@ impl SyntheticView {
             camera_xyz_time: self.camera.extend(0.0).to_array(),
             pre_exposure_inv_exposure_jitter: [super::PRE_EXPOSURE, inverse, jx, jy],
             unjittered_view_proj: self.view_proj.to_cols_array_2d(),
-            mip_bias: if self.reconstruction() {
-                (self.render_scale.percent() as f32 / 100.0).log2() - 1.0
-            } else {
-                0.0
-            },
+            mip_bias: if self.reconstruction() { -1.0 } else { 0.0 },
             jitter_phase: phase,
             padding: [0; 2],
         }

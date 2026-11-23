@@ -377,7 +377,7 @@ impl TaauTarget {
         let prior = previous.view_record(previous, 1.0);
         let [_, _, jx, jy] = current.pre_exposure_inv_exposure_jitter;
         let [_, _, px, py] = prior.pre_exposure_inv_exposure_jitter;
-        let [previous_width, previous_height] = previous.render_scale().extent(output);
+        let [previous_width, previous_height] = previous.jitter_extent().unwrap_or(output);
         let record = crate::records::ReconstructionParams {
             inverse: view.inverse_view_proj_columns(),
             previous_view: matrix(previous).to_cols_array_2d(),

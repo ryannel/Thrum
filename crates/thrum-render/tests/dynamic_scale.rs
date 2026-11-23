@@ -284,7 +284,7 @@ fn drawn_rectangle_protects_reconstruction_inputs_and_motion() {
                         [41.0_f32, -29.0].map(f32::to_bits)
                     );
                 }
-                let expected_bias = (f64::from(scale.percent()) / 100.0).log2() - 1.0;
+                let expected_bias = (f64::from(w) / f64::from(EXTENT[0])).log2() - 1.0;
                 assert!((f64::from(bias) - expected_bias).abs() < 1e-6);
             }
             let (_, stationary, _) = frame(&device, &queue, &mut renderer, &mut target, &scene);

@@ -36,11 +36,14 @@ def check_pixels(raw, extent):
     return hashlib.sha256(raw).hexdigest()
 
 
-def mac_binary():
+def mac_binary(*, cook=False):
     env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     env.update(CARGO_TARGET_DIR=str(ROOT / "target"), RUSTC_WRAPPER="")
+    targets = ["-p", "v1-game", "--bin", "v1-game"]
+    if cook:
+        targets += ["-p", "thrum-cook", "--bin", "thrum-cook"]
     run("rustup", "run", "stable", "cargo", "build", "--locked", "--offline", "--release",
-        "-p", "v1-game", "--bin", "v1-game", "-p", "thrum-cook", "--bin", "thrum-cook", env=env, timeout=900)
+        *targets, env=env, timeout=900)
     return ROOT / "target/release/v1-game", env
 
 
@@ -369,7 +372,7 @@ SCALE_STEPS = {36: 85, 72: 75, 108: 67, 144: 50, 180: 67, 224: 75, 260: 85, 300:
 def scale_environment(output):
     from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
 
-    binary, env = mac_binary()
+    binary, env = mac_binary(cook=True)
     store = output / "store"
     run(str(ROOT / "target/release/thrum-cook"), "cook", str(SOURCE), str(store))
     route = json.loads(MOVING_ROUTE.read_text())
