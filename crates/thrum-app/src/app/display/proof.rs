@@ -83,6 +83,7 @@ impl DisplayProof {
         if self.tap {
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
             while self.collected < self.submitted {
+                drop(host.poll_completed()?);
                 self.collect(host)?;
                 if host.submitted_capture_omissions() != 0 || std::time::Instant::now() >= deadline
                 {

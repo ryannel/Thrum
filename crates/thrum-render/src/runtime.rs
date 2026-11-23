@@ -2234,23 +2234,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let FrameTarget::ThreeD(target) = &mut slot.target {
             target.arm_culling_stats();
         }
-        let edr_capture = self
-            .submitted_capture
-            .as_ref()
-            .is_some_and(|tap| tap.source == crate::synthetic::CaptureSource::Edr);
         let capture = submitted_capture::reserve(
             &mut self.submitted_capture,
             self.generation,
             self.render_extent,
-            if edr_capture {
-                crate::synthetic::CaptureSource::Edr
-            } else {
-                slot.target.capture_source()
-            },
+            slot.target.capture_source(),
         );
         let capture_slot = capture.as_ref().map(|(index, _)| *index);
         let timings = self.timing_requested.then_some(&mut slot.timings);
-        let readback = capture.and_then(|(_, readback)| (!edr_capture).then_some(readback));
+        let readback = capture.map(|(_, readback)| readback);
         let contribution = self.contribution.as_deref_mut();
         let encoded = match (&self.prepared, &slot.target) {
             (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => scene
@@ -2369,7 +2361,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             surface,
             &mut encoder,
             sample.timing_requested,
-            capture_slot.is_some() && !edr_capture,
+            capture_slot.is_some(),
             report,
         );
         if self.presenter.is_some() && !surface_presented {
@@ -2395,7 +2387,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         if edr_capture {
             capture_slot = submitted_capture::copy_drawable(
-                self.submitted_capture.as_mut().zip(capture_slot),
+                self.submitted_capture.as_mut(),
                 surface.filter(|_| surface_presented),
                 self.prepared.three_d(),
                 &mut encoder,

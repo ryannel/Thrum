@@ -1059,12 +1059,25 @@ impl FrameGraph {
                 }
             }
             if let Some((surface, pass)) = surface {
-                let live_scene = self.compile(generation, prepared)?.pass_order;
+                let scene = self.compile(generation, prepared)?;
                 let present = self.declare(PassKey::Surface, pass);
-                // All pre-acquire work, including independent copy epilogues,
-                // must precede the only surface consumer.
-                for scene in live_scene {
-                    self.dependency(scene, present)?;
+                // Joining the scene sinks orders every pre-acquire pass without
+                // nominating every prior writer as a producer of surface inputs.
+                let mut predecessors: BTreeSet<_> = scene.pass_order.into_iter().collect();
+                for (producer, _) in scene.dependencies {
+                    predecessors.remove(&producer);
+                }
+                for access in &self.passes[present].accesses {
+                    if access.kind.reads() {
+                        predecessors.extend(
+                            self.selected_producers(present, access, false)?
+                                .into_iter()
+                                .map(|(producer, _)| producer),
+                        );
+                    }
+                }
+                for producer in predecessors {
+                    self.dependency(producer, present)?;
                 }
                 self.compile_late_surface(
                     generation,

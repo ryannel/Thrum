@@ -142,39 +142,35 @@ pub(super) fn reserve(
     source: CaptureSource,
 ) -> Option<(usize, &mut PixelReadback)> {
     tap.as_mut()
+        .filter(|tap| tap.source != CaptureSource::Edr)
         .and_then(|tap| tap.reserve(generation, extent, source))
 }
 
 pub(super) fn copy_drawable(
-    reserved: Option<(&mut Tap, usize)>,
+    tap: Option<&mut Tap>,
     surface: Option<&super::SurfaceOutput<'_>>,
     scene: Option<&crate::synthetic::PreparedSynthetic>,
     encoder: &mut wgpu::CommandEncoder,
 ) -> Result<Option<usize>, FrameError> {
-    let Some((tap, index)) = reserved else {
+    let (Some(tap), Some(surface), Some(scene)) = (tap, surface, scene) else {
         return Ok(None);
     };
-    if let (Some(surface), Some(scene)) = (surface, scene)
-        && surface
-            .view
-            .texture()
-            .usage()
-            .contains(wgpu::TextureUsages::COPY_SRC)
-    {
-        let result = tap.copy_edr(
-            index,
-            encoder,
-            surface.view.texture(),
-            scene.pending_exposure_sample(),
-        );
-        if result.is_err() {
-            tap.abandon(index);
-        }
-        result.map(|()| Some(index))
-    } else {
-        tap.abandon(index);
-        Ok(None)
+    let texture = surface.view.texture();
+    if !texture.usage().contains(wgpu::TextureUsages::COPY_SRC) {
+        tap.omitted += 1;
+        return Ok(None);
     }
+    let Some((index, readback)) = tap.reserve(tap.generation, surface.extent, CaptureSource::Edr)
+    else {
+        return Ok(None);
+    };
+    if let Err(error) =
+        readback.copy_texture(encoder, texture, Some(scene.pending_exposure_sample()))
+    {
+        tap.abandon(index);
+        return Err(FrameError::gpu("EDR drawable copy", error));
+    }
+    Ok(Some(index))
 }
 
 impl Tap {
@@ -286,19 +282,6 @@ impl Tap {
 
     pub(super) fn submitted(&mut self, index: usize, stamp: &Stamp) {
         self.slots[index].sample = Some(stamp.clone());
-    }
-
-    pub(super) fn copy_edr(
-        &mut self,
-        index: usize,
-        encoder: &mut wgpu::CommandEncoder,
-        texture: &wgpu::Texture,
-        exposure: &wgpu::Buffer,
-    ) -> Result<(), FrameError> {
-        self.slots[index]
-            .readback
-            .copy_texture(encoder, texture, Some(exposure))
-            .map_err(|error| FrameError::gpu("EDR drawable copy", error))
     }
 
     pub(super) fn finish_timing(
