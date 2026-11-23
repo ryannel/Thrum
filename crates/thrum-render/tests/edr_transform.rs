@@ -147,7 +147,7 @@ fn read_float_target(
 }
 @fragment fn fragment(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
     let sample = samples[u32(p.y) * WIDTH + u32(p.x)];
-    return vec4(neutral_highlights(sample.xyz, 1.0, sample.w), 1.0);
+    return vec4(neutral_highlights(sample.xyz, 1.0, sample.w, true), 1.0);
 }
 "
     );

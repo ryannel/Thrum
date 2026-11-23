@@ -49,7 +49,7 @@ fn reinhard(stored: vec3<f32>) -> vec3<f32> {
         let high = pow((encoded + vec3(SRGB_OFFSET)) / SRGB_SCALE, vec3(SRGB_GAMMA));
         return vec4(select(high, low, encoded <= vec3(SRGB_ENCODED_KNEE)), 1.0);
     }
-    let mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y, edr_headroom.x);
+    let mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y, edr_headroom.x, true);
     // A drawable rounded to binary16 must still respect the current f32 limit.
     return vec4(min(mapped, vec3(edr_headroom.y)), 1.0);
 }
@@ -91,7 +91,7 @@ fn sdr_pixel(position: vec4<f32>) -> vec4<f32> {
     }
     var mapped: vec3<f32>;
     if (selectors & TONE_MAP_MASK) == TONE_MAP_NEUTRAL_HIGHLIGHTS {
-        mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y, 1.0);
+        mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y, 1.0, false);
     } else {
         mapped = reinhard(stored);
     }

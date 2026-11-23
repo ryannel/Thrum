@@ -12,7 +12,7 @@
 // avoid exposed RGB overflow. This is not the standard PBR Neutral operator.
 // Input: nonnegative finite pre-exposed Rec.709 RGB, A=p*inverse_camera_gain.
 // Output: display-linear Rec.709 RGB relative to SDR display white, in [0,headroom].
-fn neutral_highlights(stored: vec3<f32>, storage_inverse_gain: f32, headroom: f32) -> vec3<f32> {
+fn neutral_highlights(stored: vec3<f32>, storage_inverse_gain: f32, headroom: f32, edr: bool) -> vec3<f32> {
     let maximum = max(stored.r, max(stored.g, stored.b));
     if maximum == 0.0 {
         return vec3(0.0);
@@ -24,10 +24,15 @@ fn neutral_highlights(stored: vec3<f32>, storage_inverse_gain: f32, headroom: f3
     }
     let chromaticity = stored / maximum;
     let q = storage_inverse_gain / maximum;
-    // Express H - k and H - 2k relative to H = 1 to preserve the SDR constants.
-    let extra = headroom - 1.0;
-    let d = 0.24 + extra;
-    let peak = headroom - d * d * q / (1.0 + (extra - 0.52) * q);
+    var peak: f32;
+    if edr {
+        let extra = headroom - 1.0;
+        let d = 0.24 + extra;
+        peak = headroom - d * d * q / (1.0 + (extra - 0.52) * q);
+    } else {
+        // Preserve the SDR operation order through quantization to 8-bit sRGB.
+        peak = 1.0 - (0.24 * 0.24) * q / (1.0 - 0.52 * q);
+    }
     let retained_colour = q / (0.15 * (1.0 - peak * q) + q);
     return mix(vec3(peak), chromaticity * peak, retained_colour);
 }
