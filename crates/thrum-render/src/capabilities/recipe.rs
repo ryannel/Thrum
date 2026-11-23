@@ -18,6 +18,21 @@ pub enum RecipeError {
     UnsupportedAppleTile,
 }
 
+impl std::fmt::Display for RecipeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidOverride => {
+                f.write_str("Expected the portable or apple-tile hardware recipe")
+            }
+            Self::UnsupportedAppleTile => f.write_str(
+                "The apple-tile recipe requires Metal, unified memory and transient storage",
+            ),
+        }
+    }
+}
+
+impl std::error::Error for RecipeError {}
+
 pub(super) fn resolve(
     backend: wgpu::Backend,
     unified: Option<bool>,

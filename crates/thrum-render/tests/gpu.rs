@@ -153,7 +153,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         assert!(matches!(
             other_preparation.encode(&mut stale_encoder, 41, &target, None),
-            Err(thrum_render::synthetic::RenderError::StaleTarget)
+            Err(thrum_render::error::RenderError::StaleTarget)
         ));
         let graph = prepared.graph(&target, true).unwrap();
         // Reactive and the 1x1 temporal exposure texture add two distinct slots.
@@ -177,7 +177,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             assert!(matches!(
                 prepared.encode(&mut encoder, 41, &target, Some(&mut one_pass)),
-                Err(thrum_render::synthetic::RenderError::Timing(
+                Err(thrum_render::error::RenderError::Timing(
                     TimingError::Capacity
                 ))
             ));
@@ -697,7 +697,7 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         assert!(matches!(
             prepared.encode(&mut encoder, 41, &stale, None),
-            Err(thrum_render::synthetic::RenderError::StaleTarget)
+            Err(thrum_render::error::RenderError::StaleTarget)
         ));
         let after = render_pixels_bound(&device, &queue, &prepared, &target);
         prepared.commit_frame();
@@ -999,7 +999,7 @@ fn perspective_cluster_and_target_aux_light_visible_pixels() {
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         assert!(matches!(
             moved.encode(&mut stale_encoder, 41, &lit_target, None),
-            Err(thrum_render::synthetic::RenderError::StaleTarget)
+            Err(thrum_render::error::RenderError::StaleTarget)
         ));
         scene.view = original_view;
         scene.local_lights[0].position = [5.0, 0.0, 0.8];
@@ -1125,7 +1125,7 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                 assert!(
                     matches!(
                         other.encode(&mut encoder, 41, &target, None),
-                        Err(thrum_render::synthetic::RenderError::StaleTarget)
+                        Err(thrum_render::error::RenderError::StaleTarget)
                     ),
                     "target cannot sample a previous Sun projection"
                 );

@@ -74,7 +74,7 @@ impl PreparedDevice {
                 "candidate has no surface presenter",
             ))?
             .resize(self.capabilities.device(), extent)
-            .map_err(|error| FrameError::Gpu(format!("replacement surface resize: {error:?}")))
+            .map_err(|error| FrameError::gpu("replacement surface resize", error))
     }
     /// Refit both candidate scene targets and presenter after an oriented resize.
     /// # Errors
@@ -94,7 +94,7 @@ impl PreparedDevice {
             .region(CreationPhase::Build, "device-scene-resize");
         let presenter = presenter
             .refit(extent, extent)
-            .map_err(|error| FrameError::Gpu(format!("replacement scene resize: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("replacement scene resize", error))?;
         let mut slots = super::preparation::prepare_slots(
             &scene.prepared,
             &self.queue,
@@ -171,9 +171,7 @@ impl DevicePrepareInputs {
             Some(profile) => Some(
                 SurfacePresenter::prepare(capabilities, render_extent, profile)
                     .await
-                    .map_err(|error| {
-                        FrameError::Gpu(format!("replacement presenter: {error:?}"))
-                    })?,
+                    .map_err(|error| FrameError::gpu("replacement presenter", error))?,
             ),
             None => None,
         };
@@ -271,9 +269,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .map_err(FrameError::Scene)?
                 .view
                 .clip_scale(candidate.render_extent)
-                .map_err(|error| {
-                    FrameError::Scene(format!("replacement sprite view: {error:?}"))
-                })?;
+                .map_err(FrameError::Render)?;
             None
         };
         // A contribution compiles against the candidate's light group and

@@ -4,8 +4,9 @@ pub mod ray_support;
 
 #[cfg(feature = "creation-counters")]
 mod metal {
-    #[cfg(target_os = "macos")]
     use super::ray_support::support;
+    #[cfg(target_os = "macos")]
+    use thrum_render::error::RenderError;
 
     #[cfg(target_os = "macos")]
     use std::sync::Arc;
@@ -13,7 +14,7 @@ mod metal {
     use thrum_render::abi::InstanceRecord;
     #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{
-        FrameLighting, RenderError, SyntheticMeshChoice, SyntheticMeshes, SyntheticScene,
+        FrameLighting, SyntheticMeshChoice, SyntheticMeshes, SyntheticScene,
     };
 
     thrum_test_support::macos_gpu_test! {

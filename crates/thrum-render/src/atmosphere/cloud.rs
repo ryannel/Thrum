@@ -1,8 +1,8 @@
 //! Optional Sun-path optical depth. The provider owns its immutable contents.
 use std::sync::Arc;
 
+use crate::error::RenderError;
 use crate::records::CloudField;
-use crate::synthetic::RenderError;
 
 const CLOUD_FIELD_BYTES: usize = size_of::<CloudField>();
 
@@ -283,7 +283,7 @@ impl CloudPrepared {
         seconds: f64,
     ) -> Result<Self, RenderError> {
         if field.width.max(field.height) > device.limits().max_texture_dimension_2d {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::CloudTextureExtent);
         }
         if field.allocate_gpu {
             let texture = device.create_texture(&wgpu::TextureDescriptor {
@@ -329,7 +329,7 @@ impl CloudPrepared {
             });
         }
         if field.width.max(field.height) > device.limits().max_texture_dimension_2d {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::CloudTextureExtent);
         }
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Sun-path optical depth"),

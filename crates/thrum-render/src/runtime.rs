@@ -1,6 +1,7 @@
 //! Bounded committed-world presentation using the prepared V1 renderer.
 
 #[cfg(not(target_arch = "wasm32"))]
+use crate::error::RenderError;
 pub(crate) use std::time::Instant;
 use std::{
     collections::VecDeque,
@@ -19,7 +20,7 @@ use crate::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::{PresentError, PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic, RenderError,
+        CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic,
         SceneApplyReport, SceneTimingLayout, SyntheticScene, SyntheticView, pass_durations,
     },
     timing::{GpuTimings, TimingError},
@@ -202,12 +203,38 @@ pub struct SceneFrame {
 /// A frame operation failed; authoritative ticks already committed remain valid.
 #[derive(Debug)]
 pub enum FrameError {
-    /// Clock, publication or resident world failure.
+    /// Diagnostic from the world port during clock, publication or resident world work.
     World(String),
-    /// Game presentation mapping failure.
+    /// Diagnostic from a scene or contribution callback.
     Scene(String),
     /// GPU preparation, recording, polling or readback failure.
-    Gpu(String),
+    Gpu {
+        /// Frame operation that failed.
+        operation: &'static str,
+        /// Underlying failure.
+        error: crate::error::FrameGpuError,
+    },
+    /// Device generation was retired by its owner.
+    DeviceLost(String),
+    /// An external contribution reported an unavailable device capability.
+    ContributionDeviceLimit(String),
+    /// The effect graph declaration could not be scheduled.
+    EffectGraph(crate::error::EffectGraphError),
+    /// A secondary view declaration is invalid.
+    SecondaryView(crate::contribution::SecondaryViewError),
+    /// 2D scenes do not support 3D camera culling.
+    SpriteCulling(CullMode),
+    /// 2D scenes do not support a 3D reconstructor.
+    SpriteReconstruction(crate::synthetic::Reconstruction),
+    /// A scene or sprite input was refused by the renderer.
+    Render(RenderError),
+    /// Timestamp completion failed, and discarding the failed batch also failed.
+    TimingDiscard {
+        /// Completion failure.
+        finish: TimingError,
+        /// Cleanup failure.
+        discard: TimingError,
+    },
     /// Surface encoding failed permanently for this prepared frame.
     SurfaceEncode {
         /// Drive outcome, including the kind of surface fault.
@@ -228,8 +255,26 @@ impl std::fmt::Display for FrameError {
         match self {
             Self::World(message) => write!(f, "frame world: {message}"),
             Self::Scene(message) => write!(f, "frame scene: {message}"),
-            Self::Gpu(message) => write!(f, "frame GPU: {message}"),
-            Self::SurfaceEncode { error, .. } => write!(f, "frame surface encode: {error:?}"),
+            Self::Gpu { operation, error } => write!(f, "frame GPU: {operation}: {error}"),
+            Self::DeviceLost(message) => write!(f, "frame GPU: {message}"),
+            Self::ContributionDeviceLimit(message) => write!(f, "frame GPU: {message}"),
+            Self::EffectGraph(error) => write!(f, "frame scene: {error}"),
+            Self::SecondaryView(error) => write!(f, "frame scene: {error}"),
+            Self::SpriteCulling(mode) => write!(
+                f,
+                "frame scene: 2D scene refuses camera culling mode {mode:?}"
+            ),
+            Self::SpriteReconstruction(mode) => {
+                write!(f, "frame scene: 2D scene refuses reconstructor {mode:?}")
+            }
+            Self::Render(error) => write!(f, "frame scene: {error}"),
+            Self::TimingDiscard { finish, discard } => {
+                write!(
+                    f,
+                    "frame GPU: could not discard timestamps after {finish}: {discard}"
+                )
+            }
+            Self::SurfaceEncode { error, .. } => write!(f, "frame surface encode: {error}"),
             Self::NativeCommandBuffer { generation } => write!(
                 f,
                 "native command buffer failed in device generation {generation}"
@@ -238,7 +283,36 @@ impl std::fmt::Display for FrameError {
         }
     }
 }
-impl std::error::Error for FrameError {}
+impl std::error::Error for FrameError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Gpu { error, .. } => Some(error),
+            Self::SurfaceEncode { error, .. } | Self::Render(error) => Some(error),
+            Self::EffectGraph(error) => Some(error),
+            Self::SecondaryView(error) => Some(error),
+            Self::TimingDiscard { finish, .. } => Some(finish),
+            _ => None,
+        }
+    }
+}
+
+impl FrameError {
+    /// A GPU-facing operation failed with a typed source.
+    pub fn gpu(operation: &'static str, error: impl Into<crate::error::FrameGpuError>) -> Self {
+        Self::Gpu {
+            operation,
+            error: error.into(),
+        }
+    }
+
+    fn contribution_diagnostic(&self) -> String {
+        match self {
+            Self::Scene(message) | Self::ContributionDeviceLimit(message) => message.clone(),
+            Self::Gpu { operation, error } => format!("{operation}: {error}"),
+            _ => self.to_string(),
+        }
+    }
+}
 
 /// For a caller whose errors are still strings, such as a game shell or a capture tool,
 /// so it can use `?` on frame host calls.
@@ -263,6 +337,32 @@ pub enum SurfaceFault {
     Graph,
     /// Another renderer failure prevented the surface pass.
     Render,
+}
+
+impl std::fmt::Display for SurfaceFault {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MissingBinding => f.write_str("Frame slot has no presentation binding"),
+            Self::StaleBinding => f.write_str("Surface binding belongs to another preparation"),
+            Self::ExtentMismatch => {
+                f.write_str("Acquired surface extent differs from the presenter")
+            }
+            Self::Timing(error) => write!(f, "Surface pass timing: {error}"),
+            Self::Graph => {
+                f.write_str("Surface graph has no matching pass recorder or attachments")
+            }
+            Self::Render => f.write_str("Renderer could not encode the surface pass"),
+        }
+    }
+}
+
+impl std::error::Error for SurfaceFault {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Timing(error) => Some(error),
+            _ => None,
+        }
+    }
 }
 
 impl SurfaceFault {
@@ -684,12 +784,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn set_scene_contribution(
         &mut self,
         contribution: Box<dyn SceneContribution>,
-    ) -> Result<(), String> {
+    ) -> Result<(), FrameError> {
         self.attach_scene_contribution(contribution)
-            .map_err(|error| match error {
-                FrameError::Scene(message) | FrameError::Gpu(message) => message,
-                other => other.to_string(),
-            })
     }
 
     /// Attach a contribution with classified preparation failures.
@@ -766,10 +862,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 match self.attach_sprite_contribution(contribution.as_mut()) {
                     Ok(()) => self.contribution = Some(contribution),
                     Err(error) => {
-                        self.contribution_error = Some(match error {
-                            FrameError::Scene(message) => message,
-                            other => other.to_string(),
-                        });
+                        self.record_contribution_error(&error);
                     }
                 }
             }
@@ -820,10 +913,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     fn record_contribution_error(&mut self, error: &FrameError) {
-        self.contribution_error = Some(match error {
-            FrameError::Scene(message) | FrameError::Gpu(message) => message.clone(),
-            other => other.to_string(),
-        });
+        self.contribution_error = Some(error.contribution_diagnostic());
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -1035,7 +1125,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         PresentError::UnsupportedFormat => {
                             FrameError::InvalidState("unsupported surface format")
                         }
-                        error => FrameError::Gpu(format!("surface prepare: {error:?}")),
+                        error => FrameError::gpu("surface prepare", error),
                     })?,
             ),
             None => None,
@@ -1080,9 +1170,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             ));
         }
         if let Some(mode) = requests.culling {
-            return Err(FrameError::Scene(format!(
-                "2D scene refuses camera culling mode {mode:?}"
-            )));
+            return Err(FrameError::SpriteCulling(mode));
         }
         DeviceCapabilities::no_reconstructor(requests.reconstruction)?;
         let extent = config
@@ -1100,7 +1188,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .map_err(FrameError::Scene)?
             .view
             .clip_scale(extent)
-            .map_err(|error| FrameError::Scene(format!("initial sprite view: {error:?}")))?;
+            .map_err(FrameError::Render)?;
         let creations = capabilities.site().ledger();
         let build = creations.region(CreationPhase::Build, "host");
         let mut gpu =
@@ -1115,7 +1203,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         PresentError::UnsupportedFormat => {
                             FrameError::InvalidState("unsupported surface format")
                         }
-                        error => FrameError::Gpu(format!("sprite surface prepare: {error:?}")),
+                        error => FrameError::gpu("sprite surface prepare", error),
                     })?,
             ),
             None => None,
@@ -1393,7 +1481,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             inherited_rows = replacement
                 .prepared
                 .inherit_mesh_rows(&mut self.prepared, queue)
-                .map_err(|error| FrameError::Gpu(format!("replacement mesh rows: {error:?}")))?;
+                .map_err(|error| FrameError::gpu("replacement mesh rows", error))?;
             replacement
                 .prepared
                 .synchronize_history(queue, authority.epoch, authority.timeline);
@@ -1407,7 +1495,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     frame.lighting,
                     alpha,
                 )
-                .map_err(|error| FrameError::Gpu(format!("replacement frame: {error:?}")))?;
+                .map_err(|error| FrameError::gpu("replacement frame", error))?;
             self.changed_slots.clear();
             let count = u32::try_from(self.scene.instances.len())
                 .map_err(|_| FrameError::InvalidState("scene instance slots exceed u32"))?;
@@ -1415,7 +1503,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             replacement
                 .prepared
                 .upload_instances(queue, &self.scene.instances, &self.changed_slots)
-                .map_err(|error| FrameError::Gpu(format!("replacement full upload: {error:?}")))?;
+                .map_err(|error| FrameError::gpu("replacement full upload", error))?;
             Ok(())
         })();
         self.scene.view = previous;
@@ -1513,7 +1601,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         self.prepared
             .graph(&self.slots[0].target, capture)
-            .map_err(|error| FrameError::Gpu(format!("graph inspection: {error:?}")))
+            .map_err(|error| FrameError::gpu("graph inspection", error))
     }
     /// Read-only reconstruction witness of the latest submitted frame, before report retirement.
     /// This texture is queue ordered after that frame. With reconstruction enabled, select
@@ -1657,7 +1745,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .resize(&self.device, extent)
             .map_err(|error| match error {
                 PresentError::Extent => FrameError::InvalidState("invalid surface extent"),
-                error => FrameError::Gpu(format!("surface resize: {error:?}")),
+                error => FrameError::gpu("surface resize", error),
             })?;
         preparation::bind_presenter(&self.prepared, &mut self.slots, self.presenter.as_ref())?;
         self.presenter_generation += 1;
@@ -1981,7 +2069,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.history_reset_pending |= self
             .prepared
             .record_mesh_rows(&self.queue)
-            .map_err(|error| FrameError::Gpu(format!("mesh row update: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("mesh row update", error))?;
         let scale = if self
             .prepared
             .three_d()
@@ -2005,7 +2093,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             frame.presentation_alpha,
         ) {
             self.retry_upload();
-            return Err(FrameError::Gpu(format!("live view update: {error:?}")));
+            return Err(FrameError::gpu("live view update", error));
         }
         let view_update_cpu = view_update_start.elapsed();
         let uploaded = match self.prepared.upload_instances(
@@ -2016,7 +2104,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Ok(uploaded) => uploaded,
             Err(error) => {
                 self.retry_upload();
-                return Err(FrameError::Gpu(format!("instance update: {error:?}")));
+                return Err(FrameError::gpu("instance update", error));
             }
         };
         self.upload_reset_pending = false;
@@ -2198,9 +2286,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
             self.flush_staged_uploads()?;
-            discarded
-                .map_err(|timing| FrameError::Gpu(format!("render timing discard: {timing:?}")))?;
-            return Err(FrameError::Gpu(format!("render encode: {error:?}")));
+            discarded.map_err(|timing| FrameError::gpu("render timing discard", timing))?;
+            return Err(FrameError::gpu("render encode", error));
         }
         Ok(RecordedScene {
             native,
@@ -2260,7 +2347,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             slot.timings
                 .discard_unsubmitted(self.generation)
-                .map_err(|e| FrameError::Gpu(format!("submission discard: {e:?}")))?;
+                .map_err(|e| FrameError::gpu("submission discard", e))?;
             self.history_reset_pending = true;
             return Err(error);
         }
@@ -2322,9 +2409,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             slot.timings
                 .discard_unsubmitted(self.generation)
-                .map_err(|error| {
-                    FrameError::Gpu(format!("native presentation discard: {error:?}"))
-                })?;
+                .map_err(|error| FrameError::gpu("native presentation discard", error))?;
             self.history_reset_pending = true;
             self.flush_staged_uploads()?;
             report.wall = wall_start.elapsed();
@@ -2343,10 +2428,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
             self.flush_staged_uploads()?;
-            discarded.map_err(|timing| {
-                FrameError::Gpu(format!("failed timing discard after {error:?}: {timing:?}"))
+            discarded.map_err(|discard| FrameError::TimingDiscard {
+                finish: error,
+                discard,
             })?;
-            return Err(FrameError::Gpu(format!("finish timestamps: {error:?}")));
+            return Err(FrameError::gpu("finish timestamps", error));
         }
         if let Some(index) = capture_slot
             && let Some(tap) = self.submitted_capture.as_mut()
@@ -2441,7 +2527,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Returns a GPU encode, completion or readback error.
     pub fn capture_pixels(&mut self) -> Result<Vec<u8>, FrameError> {
         let mut pending = self.begin_capture()?;
-        self.wait(pending.submitted.clone(), "capture")?;
+        self.wait(pending.submitted.clone(), "capture poll")?;
         // The submission being complete does not mean the readback's map callback has run here:
         // another thread's poll of the same device can collect the callback and fire it a moment
         // later. Keep polling until this capture's pixels arrive, within the same GPU_WAIT bound.
@@ -2559,7 +2645,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.history_reset_pending |= self
             .prepared
             .record_mesh_rows(&self.queue)
-            .map_err(|error| FrameError::Gpu(format!("capture mesh row update: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("capture mesh row update", error))?;
         self.scene.view = self
             .view_with_history_reset(&frame_scene.view)
             .without_jitter();
@@ -2584,9 +2670,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Ok(uploaded) => uploaded,
             Err(error) => {
                 self.retry_upload();
-                return Err(FrameError::Gpu(format!(
-                    "capture instance update: {error:?}"
-                )));
+                return Err(FrameError::gpu("capture instance update", error));
             }
         };
         self.upload_reset_pending = false;
@@ -2605,7 +2689,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.render_extent[0],
             self.render_extent[1],
         )
-        .map_err(|error| FrameError::Gpu(format!("capture target: {error:?}")))?;
+        .map_err(|error| FrameError::gpu("capture target", error))?;
         if let Err(error) = self.prepared.update_frame(
             &self.queue,
             &mut target,
@@ -2614,7 +2698,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             capture_alpha,
         ) {
             self.retry_upload();
-            return Err(FrameError::Gpu(format!("capture view update: {error:?}")));
+            return Err(FrameError::gpu("capture view update", error));
         }
         let source = self.world.source();
         self.prepared
@@ -2642,7 +2726,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 None,
                 &mut Vec::new(),
             )
-            .map_err(|error| FrameError::Gpu(format!("capture render/readback: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("capture render/readback", error))?;
         let submitted = self.queue.submit([encoder.finish()]);
         self.prepared.submit_mesh_rows();
         if let Some(contribution) = self.contribution.as_mut() {
@@ -2674,20 +2758,24 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         self.device
             .poll(wgpu::PollType::Poll)
-            .map_err(|error| FrameError::Gpu(format!("capture poll: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("capture poll", error))?;
         pending
             .pixels
             .try_collect(self.generation)
-            .map_err(|error| FrameError::Gpu(format!("capture collect: {error:?}")))
+            .map_err(|error| FrameError::gpu("capture collect", error))
     }
 
-    fn wait(&self, submitted: wgpu::SubmissionIndex, operation: &str) -> Result<(), FrameError> {
+    fn wait(
+        &self,
+        submitted: wgpu::SubmissionIndex,
+        operation: &'static str,
+    ) -> Result<(), FrameError> {
         self.device
             .poll(wgpu::PollType::Wait {
                 submission_index: Some(submitted),
                 timeout: Some(GPU_WAIT),
             })
-            .map_err(|error| FrameError::Gpu(format!("{operation} poll: {error:?}")))?;
+            .map_err(|error| FrameError::gpu(operation, error))?;
         Ok(())
     }
 
@@ -2725,7 +2813,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.check_native_completion()?;
         self.device
             .poll(wgpu::PollType::Poll)
-            .map_err(|error| FrameError::Gpu(format!("GPU poll: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("GPU poll", error))?;
         // Inspect every completed native segment before resolving any slot's
         // queries: a later failed slot must also forbid earlier readback work.
         self.check_native_completion()?;
@@ -2842,7 +2930,7 @@ fn new_timings(
     capacity: u32,
 ) -> Result<GpuTimings, FrameError> {
     GpuTimings::new(capabilities, queue, capacity)
-        .map_err(|error| FrameError::Gpu(format!("GPU timing recovery: {error:?}")))
+        .map_err(|error| FrameError::gpu("GPU timing recovery", error))
 }
 
 fn duration_ns_u32(value: Duration) -> u32 {

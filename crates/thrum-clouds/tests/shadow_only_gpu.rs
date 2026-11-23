@@ -108,7 +108,7 @@ fn shade_device_limit_keeps_its_error_kind_in_a_contribution_list() {
             .attach_scene_contribution(contribution)
             .expect_err("device cannot prepare Shade");
         assert!(
-            matches!(&error, FrameError::Gpu(reason) if reason.contains("weather map texture limits")),
+            matches!(&error, FrameError::ContributionDeviceLimit(reason) if reason.contains("weather map texture limits")),
             "{route}: {error:?}"
         );
     }

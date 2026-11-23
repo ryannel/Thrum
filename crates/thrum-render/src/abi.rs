@@ -350,6 +350,22 @@ pub enum AbiError {
     TableCapacity,
 }
 
+impl std::fmt::Display for AbiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidFactor => f.write_str("Material factor is outside its finite domain"),
+            Self::InvalidTransform => f.write_str("Model or normal transform is nonfinite"),
+            Self::MaterialIndex => f.write_str("Material index is outside the admitted table"),
+            Self::TextureLayer => f.write_str("Texture layer is outside its declared class"),
+            Self::TextureClass => f.write_str("Texture class violates its layout or mip policy"),
+            Self::DeviceLimits => f.write_str("Device binding limits cannot support the scene ABI"),
+            Self::TableCapacity => f.write_str("Scene table is empty or exceeds storage limits"),
+        }
+    }
+}
+
+impl std::error::Error for AbiError {}
+
 /// Validate storage-table sizes before allocation, including the queried binding
 /// size limit. No truncation, implicit chunking or per-object uniform fallback.
 ///

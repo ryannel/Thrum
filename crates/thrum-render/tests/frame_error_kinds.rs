@@ -131,5 +131,5 @@ fn usage_world_and_gpu_faults_have_distinct_kinds() {
         scene,
         1.0,
     ));
-    assert!(matches!(preparation, Err(FrameError::Gpu(_))));
+    assert!(matches!(preparation, Err(FrameError::Gpu { .. })));
 }

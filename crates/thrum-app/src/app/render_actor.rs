@@ -92,7 +92,13 @@ pub(super) enum RecoveryFailure {
 impl RecoveryFailure {
     fn frame(error: FrameError) -> Self {
         match error {
-            FrameError::Gpu(message) => Self::Unavailable(message),
+            FrameError::Gpu { operation, error } => {
+                Self::Unavailable(format!("{operation}: {error}"))
+            }
+            FrameError::DeviceLost(message) | FrameError::ContributionDeviceLimit(message) => {
+                Self::Unavailable(message)
+            }
+            error @ FrameError::TimingDiscard { .. } => Self::Unavailable(error.to_string()),
             other => Self::Fatal(other.to_string()),
         }
     }
@@ -796,13 +802,17 @@ impl<G: Game> Actor<G> {
                     continue;
                 }
                 Ok(None) => {}
-                Err(FrameError::NativeCommandBuffer { .. }) => {
+                Err(FrameError::NativeCommandBuffer { .. } | FrameError::DeviceLost(_)) => {
                     return Ok(Finished {
                         samples,
                         lost_device: true,
                     });
                 }
-                Err(FrameError::Gpu(_)) if self.gpu.watch.is_lost() => {
+                Err(
+                    FrameError::Gpu { .. }
+                    | FrameError::ContributionDeviceLimit(_)
+                    | FrameError::TimingDiscard { .. },
+                ) if self.gpu.watch.is_lost() => {
                     return Ok(Finished {
                         samples,
                         lost_device: true,
@@ -855,7 +865,7 @@ fn check_encoded_device<'a, W: FrameWorld, V: SceneSource<W::Page>>(
 
 fn ensure_device(watch: &DeviceWatch) -> Result<(), FrameError> {
     if watch.is_lost() {
-        Err(FrameError::Gpu(
+        Err(FrameError::DeviceLost(
             watch
                 .loss_message()
                 .unwrap_or("device generation retired")
@@ -874,8 +884,16 @@ fn ensure_running(stopped: &AtomicBool) -> Result<(), FrameError> {
 }
 fn frame_failure(error: FrameError, lost: bool) -> RenderOutcome {
     match error {
-        FrameError::NativeCommandBuffer { .. } => RenderOutcome::DeviceLost,
-        FrameError::Gpu(_) if lost => RenderOutcome::DeviceLost,
+        FrameError::NativeCommandBuffer { .. } | FrameError::DeviceLost(_) => {
+            RenderOutcome::DeviceLost
+        }
+        FrameError::Gpu { .. }
+        | FrameError::ContributionDeviceLimit(_)
+        | FrameError::TimingDiscard { .. }
+            if lost =>
+        {
+            RenderOutcome::DeviceLost
+        }
         other => RenderOutcome::Frame(Err(other.to_string())),
     }
 }

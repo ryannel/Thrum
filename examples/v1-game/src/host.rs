@@ -507,6 +507,7 @@ impl GameHost for Runtime {
         let contribution =
             crate::clouds::with_shade(contribution, source.cloud_input.as_ref(), source.cloud_sky)?;
         self.set_scene_contribution(contribution)
+            .map_err(String::from)
     }
     fn set_game_quality_knob(
         &mut self,

@@ -114,9 +114,7 @@ impl DeviceCapabilities {
         if requested == Reconstruction::Off {
             Ok(())
         } else {
-            Err(crate::runtime::FrameError::Scene(format!(
-                "2D scene refuses reconstructor {requested:?}"
-            )))
+            Err(crate::runtime::FrameError::SpriteReconstruction(requested))
         }
     }
 

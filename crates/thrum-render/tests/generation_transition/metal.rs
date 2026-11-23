@@ -603,7 +603,7 @@ fn failed_and_lost_builds_never_take_the_surface() {
     transition.observe(stale, old, ms(0));
     transition
         .advance(stale, old, ms(100), || {
-            Ok(|_: &AtomicBool| Err(FrameError::Gpu("forced allocation failure".into())))
+            Ok(|_: &AtomicBool| Err(FrameError::gpu("forced allocation failure", thrum_render::error::RenderError::TargetExtent)))
         })
         .expect("transition fixture");
     let failure = thrum_test_support::wait::until(

@@ -52,15 +52,15 @@ pub(super) fn admit_meshes(
         limits.vertices = limits.vertices.min(selected.vertices);
         limits.indices = limits.indices.min(selected.indices);
     }
-    let mut arena = MeshArena::new(limits).map_err(|_| RenderError::SceneCapacity)?;
+    let mut arena = MeshArena::new(limits).map_err(RenderError::Arena)?;
     let Some(meshes) = scene.meshes.as_deref() else {
         if !scene.aloft_mesh_rows.is_empty() {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::InvalidAloftMesh);
         }
         return Ok((arena, None));
     };
     if meshes.slots.len() != scene.instances.len() {
-        return Err(RenderError::SceneCapacity);
+        return Err(RenderError::MeshSlotCount);
     }
     let current = meshes
         .updates
@@ -78,7 +78,7 @@ pub(super) fn admit_meshes(
         .map(|mesh| {
             let id = arena
                 .insert(&mesh.vertices, &mesh.indices)
-                .map_err(|_| RenderError::SceneCapacity)?;
+                .map_err(RenderError::Arena)?;
             let bounded = arena.row(id).is_some_and(|row| {
                 row.bounds
                     .iter()
@@ -88,7 +88,9 @@ pub(super) fn admit_meshes(
             if bounded {
                 Ok(id)
             } else {
-                Err(RenderError::SceneCapacity)
+                Err(RenderError::Arena(
+                    crate::error::ArenaError::CoordinateLimit,
+                ))
             }
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -97,7 +99,7 @@ pub(super) fn admit_meshes(
         .iter()
         .map(|&index| rows.get(usize::try_from(index).ok()?).copied())
         .collect::<Option<Vec<_>>>()
-        .ok_or(RenderError::SceneCapacity)?;
+        .ok_or(RenderError::InvalidAloftMesh)?;
     let slots = meshes
         .slots
         .iter()
@@ -106,7 +108,7 @@ pub(super) fn admit_meshes(
             SyntheticMeshChoice::Mesh(index) => rows.get(usize::try_from(index).ok()?).copied(),
         })
         .collect::<Option<Vec<_>>>()
-        .ok_or(RenderError::SceneCapacity)?;
+        .ok_or(RenderError::InvalidMeshSlot)?;
     arena.retain_geometry(current.unwrap_or_default());
     Ok((arena, Some(MeshSelection { slots, aloft })))
 }
@@ -210,11 +212,10 @@ impl BucketRoute {
         arena: &MeshArena,
     ) -> Result<Vec<super::shadow::CasterBox>, RenderError> {
         for (key, range) in self.buckets.keys().iter().zip(&mut self.ranges) {
-            let row = arena.row(key.mesh).ok_or(RenderError::SceneCapacity)?;
+            let row = arena.row(key.mesh).ok_or(RenderError::MissingMeshRow)?;
             *range = (
                 row.first_index..row.first_index + row.index_count,
-                row.draw_base_vertex()
-                    .map_err(|_| RenderError::SceneCapacity)?,
+                row.draw_base_vertex().map_err(RenderError::Arena)?,
             );
         }
         self.lay_out_casters();
@@ -224,7 +225,7 @@ impl BucketRoute {
                 arena
                     .row(mesh)
                     .map(|row| super::shadow::CasterBox::from_bounds(row.bounds))
-                    .ok_or(RenderError::SceneCapacity)
+                    .ok_or(RenderError::MissingMeshRow)
             })
             .collect()
     }
@@ -248,27 +249,27 @@ impl BucketRoute {
                 .iter()
                 .any(|&mesh| arena.row(mesh).is_none())
         {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::MissingMeshRow);
         }
         let limits = BucketLimits::of(&device.limits());
         let meshes: std::collections::BTreeSet<MeshId> = selection.slots.iter().copied().collect();
         let keys = meshes
             .into_iter()
             .flat_map(|mesh| CLASSES.map(|class| BucketKey { mesh, class }));
-        let mut buckets =
-            Buckets::new(keys, instances.len(), limits).map_err(|_| RenderError::SceneCapacity)?;
-        let slots = u64::try_from(instances.len()).map_err(|_| RenderError::SceneCapacity)?;
+        let mut buckets = Buckets::new(keys, instances.len(), limits).map_err(bucket_error)?;
+        let slots =
+            u64::try_from(instances.len()).map_err(|_| RenderError::BucketMemberCapacity)?;
         let segment_bytes = slots
             .max(1)
             .next_multiple_of(u64::from(SEGMENT_ALIGN))
             .checked_mul(4)
-            .ok_or(RenderError::SceneCapacity)?;
+            .ok_or(RenderError::BucketMemberCapacity)?;
         let member_bytes = buckets
             .worst_member_bytes()
             .checked_add(segment_bytes)
-            .ok_or(RenderError::SceneCapacity)?;
+            .ok_or(RenderError::BucketMemberCapacity)?;
         if segment_bytes > limits.max_storage_binding {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::BucketMemberCapacity);
         }
         let members = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("synthetic bucket members"),
@@ -291,14 +292,12 @@ impl BucketRoute {
             .keys()
             .iter()
             .map(|key| {
-                let row = arena.row(key.mesh).ok_or(RenderError::SceneCapacity)?;
-                let base = row
-                    .draw_base_vertex()
-                    .map_err(|_| RenderError::SceneCapacity)?;
+                let row = arena.row(key.mesh).ok_or(RenderError::MissingMeshRow)?;
+                let base = row.draw_base_vertex().map_err(RenderError::Arena)?;
                 let end = row
                     .first_index
                     .checked_add(row.index_count)
-                    .ok_or(RenderError::SceneCapacity)?;
+                    .ok_or(RenderError::MeshIndexRange)?;
                 Ok((row.first_index..end, base))
             })
             .collect::<Result<Vec<_>, RenderError>>()?;
@@ -432,9 +431,9 @@ impl BucketRoute {
     pub(super) fn shape(&self) -> Result<MemberShape, RenderError> {
         Ok(MemberShape {
             buckets: u32::try_from(self.segments().len())
-                .map_err(|_| RenderError::SceneCapacity)?,
+                .map_err(|_| RenderError::BucketMemberCapacity)?,
             worst_members: u32::try_from(self.buckets.worst_member_bytes() / 4)
-                .map_err(|_| RenderError::SceneCapacity)?,
+                .map_err(|_| RenderError::BucketMemberCapacity)?,
             segment_bytes: self.segment_bytes,
         })
     }
@@ -562,9 +561,9 @@ impl BucketRoute {
 fn bucket_error(error: BucketError) -> RenderError {
     match error {
         BucketError::UnknownBucket | BucketError::Mapping => RenderError::InvalidInstanceUpdate,
-        BucketError::BucketCount | BucketError::Capacity | BucketError::DeviceLimit => {
-            RenderError::SceneCapacity
-        }
+        BucketError::BucketCount => RenderError::BucketCount,
+        BucketError::Capacity => RenderError::BucketMemberCapacity,
+        BucketError::DeviceLimit => RenderError::BucketDeviceLimits,
     }
 }
 

@@ -12,7 +12,8 @@ use crate::{
     },
     graph_record::{ExecutableGraph, RecordBinding, RecordFamily},
     pass_key::{PassKey, PipelineRole},
-    synthetic::{OUTPUT_FORMAT, OffscreenTarget},
+    render_config::OUTPUT_FORMAT,
+    synthetic::OffscreenTarget,
     timing::{GpuTimings, TimingError},
 };
 
@@ -45,7 +46,36 @@ pub enum PresentError {
     /// Optional timestamp batch lacks this pass or belongs to another generation.
     Timing(TimingError),
     /// The GPU rejected the prepared shader or pipeline.
-    Validation(String),
+    Validation(wgpu::Error),
+}
+
+impl std::fmt::Display for PresentError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnsupportedFormat => {
+                f.write_str("Surface format is outside the supported SDR profile")
+            }
+            Self::Extent => f.write_str("Surface extent is zero, oversized or stale"),
+            Self::StaleTarget => {
+                f.write_str("Surface binding belongs to another presenter or device generation")
+            }
+            Self::Graph(error) => write!(f, "Presentation graph: {error}"),
+            Self::GraphPassMismatch => f.write_str("Presentation graph lacks a matching recorder"),
+            Self::Timing(error) => write!(f, "Presentation timing: {error}"),
+            Self::Validation(error) => write!(f, "GPU refused the presentation pipeline: {error}"),
+        }
+    }
+}
+
+impl std::error::Error for PresentError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Graph(error) => Some(error),
+            Self::Timing(error) => Some(error),
+            Self::Validation(error) => Some(error),
+            _ => None,
+        }
+    }
 }
 
 /// Bound source texture retained by one host frame slot. A new surface texture
@@ -244,7 +274,7 @@ impl SurfacePresenter {
             cache: None,
         });
         if let Some(error) = scope.pop().await {
-            return Err(PresentError::Validation(error.to_string()));
+            return Err(PresentError::Validation(error));
         }
         Ok(Self {
             device: wgpu::Device::clone(device),

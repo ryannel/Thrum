@@ -224,7 +224,10 @@ fn m2_forced_submission_refusal_resets_without_publishing_the_candidate() {
             .unwrap();
         let recorded = host.encode_scene_only(0, sample).unwrap();
         let result = host.finish_encoded_with(recorded, &mut report, None, Instant::now(), || {
-            Err(super::FrameError::Gpu("forced submission refusal".into()))
+            Err(super::FrameError::gpu(
+                "forced submission refusal",
+                crate::error::RenderError::TargetExtent,
+            ))
         });
         assert!(result.is_err());
         assert_eq!(host.prepared.history_identity(), prior);

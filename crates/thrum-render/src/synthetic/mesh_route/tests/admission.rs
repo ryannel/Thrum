@@ -1,12 +1,13 @@
 //! The public mesh selection: every invalid slot, index or mesh is refused
 //! before GPU work, and a valid selection prepares the bucket route.
 
+use crate::error::RenderError;
 use std::sync::Arc;
 
 use super::gpu;
 use crate::synthetic::{
-    FrameLighting, PreparedSynthetic, RenderError, SyntheticLight, SyntheticMesh,
-    SyntheticMeshChoice, SyntheticMeshes, SyntheticScene, SyntheticVertex,
+    FrameLighting, PreparedSynthetic, SyntheticLight, SyntheticMesh, SyntheticMeshChoice,
+    SyntheticMeshes, SyntheticScene, SyntheticVertex,
 };
 use crate::visibility::CullMode;
 use SyntheticMeshChoice::{Cube, Mesh};
@@ -71,27 +72,34 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
     large.vertices[1].position = [1e29, 0.0, 0.0];
     let mut occlusion = with(vec![triangle()], vec![Cube, Mesh(0), Cube]);
     occlusion.camera_culling = CullMode::Occlusion;
-    for (case, scene) in [
+    use crate::error::ArenaError;
+    let short = with(vec![triangle()], vec![Cube, Mesh(0)]);
+    let long = with(vec![], vec![Cube; 4]);
+    assert!(matches!(prepare(&short), Err(RenderError::MeshSlotCount)));
+    assert!(matches!(prepare(&long), Err(RenderError::MeshSlotCount)));
+    let unknown = with(vec![triangle()], vec![Cube, Mesh(1), Cube]);
+    assert!(matches!(
+        prepare(&unknown),
+        Err(RenderError::InvalidMeshSlot)
+    ));
+    for (mesh, expected) in [
         (
-            "short slot list",
-            with(vec![triangle()], vec![Cube, Mesh(0)]),
+            out_of_range,
+            ArenaError::IndexOutOfRange {
+                index: 3,
+                vertex_count: 3,
+            },
         ),
-        ("long slot list", with(vec![], vec![Cube; 4])),
-        (
-            "unknown mesh",
-            with(vec![triangle()], vec![Cube, Mesh(1), Cube]),
-        ),
-        (
-            "index past vertices",
-            with(vec![out_of_range], vec![Cube; 3]),
-        ),
-        ("partial triangle", with(vec![not_triangles], vec![Cube; 3])),
-        ("non-finite vertex", with(vec![non_finite], vec![Cube; 3])),
-        ("extreme bounds", with(vec![extreme], vec![Cube; 3])),
+        (not_triangles, ArenaError::NotTriangles),
+        (non_finite, ArenaError::NonFinite),
+        (extreme, ArenaError::CoordinateLimit),
     ] {
         assert!(
-            matches!(prepare(&scene), Err(RenderError::SceneCapacity)),
-            "{case} is refused"
+            matches!(
+                prepare(&with(vec![mesh], vec![Cube; 3])),
+                Err(RenderError::Arena(actual)) if actual == expected
+            ),
+            "mesh must be refused with {expected}"
         );
     }
     assert_eq!(

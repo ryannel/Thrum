@@ -71,15 +71,15 @@ impl Witness {
         let deadline = Instant::now() + Duration::from_secs(2);
         while !gpu.watch.is_lost() && Instant::now() < deadline {
             if let Err(error) = gpu.device.poll(wgpu::PollType::Poll) {
-                return FrameError::Gpu(format!("M1 loss maintenance: {error:?}"));
+                return FrameError::gpu("M1 loss maintenance", error);
             }
             std::thread::yield_now();
         }
         if gpu.watch.is_lost() {
             eprintln!("m1 loss callback generation={generation} sequence={sequence}");
-            FrameError::Gpu("device loss reported by callback".into())
+            FrameError::DeviceLost("device loss reported by callback".into())
         } else {
-            FrameError::Gpu("M1 destroy fired but loss notification was absent".into())
+            FrameError::InvalidState("M1 destroy fired but loss notification was absent")
         }
     }
 

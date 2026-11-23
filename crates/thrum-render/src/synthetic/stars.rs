@@ -50,10 +50,10 @@ impl StarPrepared {
         max_storage_bytes: u64,
         light: &DirectionalLight,
     ) -> Result<Self, RenderError> {
-        let count = u32::try_from(records.len()).map_err(|_| RenderError::SceneCapacity)?;
+        let count = u32::try_from(records.len()).map_err(|_| RenderError::StarTableCapacity)?;
         let bytes = u64::from(count) * 16;
         if count == 0 || bytes > max_storage_bytes {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::StarTableCapacity);
         }
         for &[x, y, z, lux] in records {
             let norm = Vec3::new(x, y, z).length_squared();

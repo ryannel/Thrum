@@ -72,7 +72,7 @@ impl ExtentPrepareInputs {
             let presenter = self
                 .presenter
                 .prepare(self.extent, self.extent)
-                .map_err(|error| FrameError::Gpu(format!("scene presenter extent: {error:?}")))?;
+                .map_err(|error| FrameError::gpu("scene presenter extent", error))?;
             let mut slots = self.targets.prepare_slots(
                 &self.queue,
                 self.extent,
@@ -115,7 +115,7 @@ impl ExtentPrepareInputs {
             return Ok(None);
         }
         if let Some(error) = validation_error.or(allocation_error) {
-            return Err(FrameError::Gpu(format!("extent preparation: {error}")));
+            return Err(FrameError::gpu("extent preparation", error));
         }
         result
     }
@@ -163,7 +163,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let (Some(scene), Some(contribution)) = (self.prepared.three_d(), &self.contribution) {
             let slots = contribution.secondary_view_slots();
             SecondaryViewSlot::validate(&slots, extent, self.prepared.capabilities().limits())
-                .map_err(|error| FrameError::Scene(error.to_string()))?;
+                .map_err(FrameError::SecondaryView)?;
             let extents: Vec<_> = slots.iter().map(|slot| slot.extent(extent)).collect();
             if extents.iter().copied().ne(scene.secondary_extents()) {
                 let job = contribution
@@ -317,12 +317,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .map_err(FrameError::Scene)?
                 .view
                 .clip_scale(extent)
-                .map_err(|error| FrameError::Scene(format!("resized sprite view: {error:?}")))?;
+                .map_err(FrameError::Render)?;
             None
         };
         let presenter = presenter
             .refit(extent, extent)
-            .map_err(|error| FrameError::Gpu(format!("scene presenter resize: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("scene presenter resize", error))?;
         let mut slots = preparation::prepare_slots(
             &self.prepared,
             &self.queue,

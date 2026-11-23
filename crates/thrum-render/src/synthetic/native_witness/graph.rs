@@ -1,10 +1,10 @@
+use crate::error::RenderError;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, FrameGraph, PassScope, ResourceDescriptor, ResourceId, ResourceScope,
     TextureKind,
 };
 use crate::pass_key::PassKey;
-use crate::synthetic::RenderError;
 
 pub(crate) struct Resources {
     pub(crate) output: ResourceId,

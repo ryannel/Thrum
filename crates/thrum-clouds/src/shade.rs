@@ -20,7 +20,7 @@ mod tests;
 
 fn frame_prepare_error(error: &Error) -> FrameError {
     match error {
-        Error::DeviceLimit(_) => FrameError::Gpu(error.to_string()),
+        Error::DeviceLimit(_) => FrameError::ContributionDeviceLimit(error.to_string()),
         Error::Model(_) | Error::Unsupported(_) => FrameError::Scene(error.to_string()),
         Error::InputUnavailable => FrameError::InvalidState("cloud mailbox unavailable"),
     }
@@ -167,7 +167,7 @@ impl Shade {
     /// Declare the shared GPU field in the scene before preparing it.
     /// # Errors
     /// Rejects an empty target extent.
-    pub fn provider(&self) -> Result<SunOpticalDepth, thrum_render::synthetic::RenderError> {
+    pub fn provider(&self) -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
         SunOpticalDepth::gpu_target([self.config.sun.ground_size; 2], 1)
     }
     /// Frames dropped for unavailable or mismatched publication inputs.
@@ -215,7 +215,9 @@ impl SceneContribution for Shade {
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
         self.rebuild_for_attachment(surface)
             .map_err(|error| match error {
-                FrameError::Scene(message) | FrameError::Gpu(message) => message,
+                FrameError::Scene(message) | FrameError::ContributionDeviceLimit(message) => {
+                    message
+                }
                 other => other.to_string(),
             })
     }

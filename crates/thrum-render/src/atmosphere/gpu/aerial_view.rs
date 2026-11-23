@@ -3,6 +3,7 @@
 //! of the column volume. There is no second transport integrator.
 
 use super::{AERIAL_EXTENT, AtmospherePrepared, AtmosphereUniform, UNIFORM_BYTES};
+use crate::error::RenderError;
 use crate::graph::PassBody;
 use crate::pass_key::{AtmosphereStage, PassKey, SecondaryStage};
 use crate::{
@@ -11,7 +12,7 @@ use crate::{
         ResourceScope,
     },
     shader_constants::AERIAL_WORKGROUP_EDGE,
-    synthetic::{RenderError, SyntheticView},
+    synthetic::SyntheticView,
 };
 use std::collections::BTreeSet;
 

@@ -2,9 +2,10 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::time::Duration;
+use thrum_render::error::RenderError;
 
 use thrum_render::synthetic::{
-    OffscreenTarget, PreparedSynthetic, RenderError, SyntheticLight, SyntheticScene, SyntheticView,
+    OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene, SyntheticView,
 };
 
 fn pixels(

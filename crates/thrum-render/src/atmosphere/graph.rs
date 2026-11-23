@@ -288,12 +288,12 @@ pub(crate) fn stage_reads(
     graph: &FrameGraph,
     stage: AtmosphereStage,
     inherited: &[Access],
-) -> Result<Vec<Access>, crate::synthetic::RenderError> {
+) -> Result<Vec<Access>, crate::error::RenderError> {
     // The atmosphere declares its charts before any view that samples them.
     let charts = Charts::try_from_fn(|chart| {
         graph
             .persistent(LUT_OWNER_BASE + chart.owner_offset())
-            .ok_or(crate::synthetic::RenderError::GraphPassMismatch)
+            .ok_or(crate::error::RenderError::GraphPassMismatch)
     })?;
     let is_chart = |access: &Access| {
         [

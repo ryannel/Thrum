@@ -109,7 +109,7 @@ impl Pool {
         eye: [f32; 3],
         level: f32,
         extent: [u32; 2],
-    ) -> Result<SyntheticView, thrum_render::synthetic::RenderError> {
+    ) -> Result<SyntheticView, thrum_render::error::RenderError> {
         Self::reflected_view_with_far(camera, eye, level, extent, 32_000.0)
     }
 
@@ -119,7 +119,7 @@ impl Pool {
         level: f32,
         extent: [u32; 2],
         far: f32,
-    ) -> Result<SyntheticView, thrum_render::synthetic::RenderError> {
+    ) -> Result<SyntheticView, thrum_render::error::RenderError> {
         let target = [
             camera.target[0],
             2.0 * level - camera.target[1],

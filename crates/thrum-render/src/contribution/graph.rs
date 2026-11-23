@@ -120,20 +120,22 @@ impl EffectGraph {
     /// Refuse declarations whose runtime skips could violate the compiled graph.
     /// # Errors
     /// Returns a named preparation error for a cadence, producer or binding misuse.
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> Result<(), crate::error::EffectGraphError> {
+        use crate::error::EffectGraphError as Error;
+
         let mut owners = BTreeSet::new();
         for (_, scope) in &self.resources {
             if let ResourceScope::Persistent { owner, .. } | ResourceScope::History { owner, .. } =
                 scope
                 && !owners.insert(*owner)
             {
-                return Err("DuplicateEffectOwner".into());
+                return Err(Error::DuplicateEffectOwner);
             }
         }
         let mut names = BTreeSet::new();
         for pass in &self.after_opaque {
             if pass.write_depth && (pass.depth || pass.kind != super::AfterOpaqueKind::Render) {
-                return Err(format!("AfterOpaqueDepthConflict: {}", pass.name));
+                return Err(Error::AfterOpaqueDepthConflict(pass.name.clone()));
             }
             if pass.kind == super::AfterOpaqueKind::Render
                 && pass.accesses.iter().any(|access| {
@@ -146,12 +148,12 @@ impl EffectGraph {
                     )
                 })
             {
-                return Err(format!("AfterOpaqueUsesSceneAttachments: {}", pass.name));
+                return Err(Error::AfterOpaqueUsesSceneAttachments(pass.name.clone()));
             }
             if pass.kind == super::AfterOpaqueKind::Render
                 && pass.cadence != EffectCadence::EveryFrame
             {
-                return Err(format!("CadenceRequiresRetainedOutput: {}", pass.name));
+                return Err(Error::CadenceRequiresRetainedOutput(pass.name.clone()));
             }
             if pass.kind == super::AfterOpaqueKind::Compute
                 && pass.accesses.iter().any(|access| {
@@ -166,7 +168,7 @@ impl EffectGraph {
                     )
                 })
             {
-                return Err(format!("AfterOpaqueRequiresComputeAccess: {}", pass.name));
+                return Err(Error::AfterOpaqueRequiresComputeAccess(pass.name.clone()));
             }
         }
         let mut producers = vec![None; self.resources.len()];
@@ -174,7 +176,7 @@ impl EffectGraph {
             if let Some(name) = name
                 && !names.insert(name)
             {
-                return Err(format!("DuplicateEffectPass: {name}"));
+                return Err(Error::DuplicateEffectPass(name.to_owned()));
             }
             for access in accesses {
                 if async_eligible
@@ -188,15 +190,14 @@ impl EffectGraph {
                             | AccessKind::IndexRead
                     )
                 {
-                    return Err(format!(
-                        "AsyncRequiresCompute: {}",
-                        name.unwrap_or("opaque reads")
+                    return Err(Error::AsyncRequiresCompute(
+                        name.unwrap_or("opaque reads").to_owned(),
                     ));
                 }
                 let (_, scope) = self
                     .resources
                     .get(access.resource)
-                    .ok_or("UnknownEffectResource")?;
+                    .ok_or(Error::UnknownEffectResource)?;
                 let writes = matches!(
                     access.kind,
                     AccessKind::StorageWrite
@@ -206,7 +207,7 @@ impl EffectGraph {
                         | AccessKind::AttachmentClear
                 );
                 if name.is_none() && (writes || access.kind == AccessKind::CopyRead) {
-                    return Err("OpaqueReadRequiresReadAccess".into());
+                    return Err(Error::OpaqueReadRequiresReadAccess);
                 }
                 if writes
                     && cadence != EffectCadence::EveryFrame
@@ -215,33 +216,31 @@ impl EffectGraph {
                         ResourceScope::Persistent { .. } | ResourceScope::History { .. }
                     ) || matches!(access.kind, AccessKind::AttachmentLoad))
                 {
-                    return Err(format!(
-                        "CadenceRequiresRetainedOutput: {}",
-                        name.unwrap_or("opaque reads")
+                    return Err(Error::CadenceRequiresRetainedOutput(
+                        name.unwrap_or("opaque reads").to_owned(),
                     ));
                 }
                 if matches!(scope, ResourceScope::History { .. }) {
                     if writes {
                         if cadence == EffectCadence::TimeSliced {
-                            return Err(format!(
-                                "TimeSlicedHistory: {}",
-                                name.unwrap_or("opaque reads")
+                            return Err(Error::TimeSlicedHistory(
+                                name.unwrap_or("opaque reads").to_owned(),
                             ));
                         }
                         if access.history != Some(HistoryBinding::Next) {
-                            return Err("HistoryWriteRequiresNext".into());
+                            return Err(Error::HistoryWriteRequiresNext);
                         }
                         if let Some(previous) = producers[access.resource]
                             && previous != index
                         {
-                            return Err("DuplicateHistoryProducer".into());
+                            return Err(Error::DuplicateHistoryProducer);
                         }
                         producers[access.resource] = Some(index);
                     } else if access.history.is_none() {
-                        return Err("HistoryBindingRequired".into());
+                        return Err(Error::HistoryBindingRequired);
                     }
                 } else if access.history.is_some() {
-                    return Err("HistoryBindingOnNonHistory".into());
+                    return Err(Error::HistoryBindingOnNonHistory);
                 }
             }
         }
@@ -250,7 +249,7 @@ impl EffectGraph {
                 if access.history == Some(HistoryBinding::Result)
                     && producers[access.resource].is_none_or(|producer| producer >= index)
                 {
-                    return Err("ResultBeforeProducer".into());
+                    return Err(Error::ResultBeforeProducer);
                 }
             }
         }
@@ -262,9 +261,8 @@ impl EffectGraph {
         graph: &mut FrameGraph,
         base: PipelineKey,
         keys: &mut BTreeSet<PipelineKey>,
-    ) -> Result<EffectResources, crate::synthetic::RenderError> {
-        self.validate()
-            .map_err(crate::synthetic::RenderError::Validation)?;
+    ) -> Result<EffectResources, crate::error::RenderError> {
+        self.validate()?;
         let mut owners = std::collections::BTreeMap::new();
         let pairs = self
             .resources
@@ -293,7 +291,7 @@ impl EffectGraph {
         };
         for (index, pass) in self.passes.iter().enumerate() {
             let key = PipelineRole::Effect(
-                u32::try_from(index).map_err(|_| crate::synthetic::RenderError::SceneCapacity)?,
+                u32::try_from(index).map_err(|_| crate::error::RenderError::EffectPassCount)?,
             )
             .key(base);
             keys.insert(key);

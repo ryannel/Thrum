@@ -1,6 +1,7 @@
 //! EFFECT-GRAPH M2 submission clock and independent-history contract.
 use std::time::Duration;
 use thrum_render::contribution::{EffectState, EffectStep, EffectTime, HistoryBinding as H};
+use thrum_render::error::EffectGraphError;
 
 #[test]
 fn late_depth_writes_refuse_sampling_and_compute_but_allow_a_surface() {
@@ -21,20 +22,16 @@ fn late_depth_writes_refuse_sampling_and_compute_but_allow_a_surface() {
     };
     graph.validate().expect("a surface may attach depth");
     graph.after_opaque[0].depth = true;
-    assert!(
-        graph
-            .validate()
-            .expect_err("attachment cannot be sampled")
-            .contains("AfterOpaqueDepthConflict")
-    );
+    assert!(matches!(
+        graph.validate(),
+        Err(EffectGraphError::AfterOpaqueDepthConflict(_))
+    ));
     graph.after_opaque[0].depth = false;
     graph.after_opaque[0].kind = AfterOpaqueKind::Compute;
-    assert!(
-        graph
-            .validate()
-            .expect_err("compute cannot attach depth")
-            .contains("AfterOpaqueDepthConflict")
-    );
+    assert!(matches!(
+        graph.validate(),
+        Err(EffectGraphError::AfterOpaqueDepthConflict(_))
+    ));
 }
 
 fn time(tick: u64) -> EffectTime {
@@ -152,12 +149,10 @@ fn declaration(scope: S, cadence: C) -> EffectGraph {
 fn cadence_refuses_transients_imports_and_loaded_attachments() {
     for cadence in [C::Skippable, C::TimeSliced] {
         for scope in [S::Transient, S::Imported { initialized: true }] {
-            assert!(
-                declaration(scope, cadence)
-                    .validate()
-                    .expect_err("skip requires retained output")
-                    .starts_with("CadenceRequiresRetainedOutput")
-            );
+            assert!(matches!(
+                declaration(scope, cadence).validate(),
+                Err(EffectGraphError::CadenceRequiresRetainedOutput(_))
+            ));
         }
         let mut graph = declaration(
             S::Persistent {
@@ -168,12 +163,10 @@ fn cadence_refuses_transients_imports_and_loaded_attachments() {
             cadence,
         );
         graph.passes[0].accesses[0].kind = A::AttachmentLoad;
-        assert!(
-            graph
-                .validate()
-                .expect_err("loaded attachment cannot skip")
-                .starts_with("CadenceRequiresRetainedOutput")
-        );
+        assert!(matches!(
+            graph.validate(),
+            Err(EffectGraphError::CadenceRequiresRetainedOutput(_))
+        ));
     }
 }
 #[test]
@@ -183,12 +176,10 @@ fn history_refuses_partial_updates_duplicate_producers_and_early_result() {
         epoch: 1,
         initialized: true,
     };
-    assert!(
-        declaration(scope, C::TimeSliced)
-            .validate()
-            .expect_err("partial history write")
-            .starts_with("TimeSlicedHistory")
-    );
+    assert!(matches!(
+        declaration(scope, C::TimeSliced).validate(),
+        Err(EffectGraphError::TimeSlicedHistory(_))
+    ));
     for cadence in [C::Skippable, C::EveryFrame] {
         let mut graph = declaration(scope, C::Skippable);
         let mut other = graph.passes[0].clone();
@@ -197,7 +188,7 @@ fn history_refuses_partial_updates_duplicate_producers_and_early_result() {
         graph.passes.push(other);
         assert_eq!(
             graph.validate().expect_err("second producer"),
-            "DuplicateHistoryProducer"
+            EffectGraphError::DuplicateHistoryProducer
         );
     }
     let mut graph = declaration(scope, C::Skippable);
@@ -208,7 +199,7 @@ fn history_refuses_partial_updates_duplicate_producers_and_early_result() {
     graph.passes.insert(0, reader);
     assert_eq!(
         graph.validate().expect_err("consumer before producer"),
-        "ResultBeforeProducer"
+        EffectGraphError::ResultBeforeProducer
     );
 }
 
@@ -248,7 +239,7 @@ fn a_second_declaration_cannot_hide_a_second_producer_of_the_same_pair() {
         graph
             .validate()
             .expect_err("logical pair identities must be unique"),
-        "DuplicateEffectOwner"
+        EffectGraphError::DuplicateEffectOwner
     );
 }
 
@@ -275,7 +266,7 @@ fn async_eligibility_refuses_non_compute_accesses() {
         graph.passes[0].accesses[0].kind = kind;
         assert_eq!(
             graph.validate().expect_err("compute only"),
-            "AsyncRequiresCompute: producer"
+            EffectGraphError::AsyncRequiresCompute("producer".into())
         );
     }
 }
@@ -314,7 +305,7 @@ fn late_passes_share_history_validation_and_refuse_unrecordable_accesses_at_prep
     graph.after_opaque.swap(0, 1);
     assert_eq!(
         graph.validate().expect_err("early result"),
-        "ResultBeforeProducer"
+        EffectGraphError::ResultBeforeProducer
     );
     graph.after_opaque = vec![reader];
     for kind in [
@@ -328,13 +319,13 @@ fn late_passes_share_history_validation_and_refuse_unrecordable_accesses_at_prep
             graph
                 .validate()
                 .expect_err("unsupported local render access"),
-            "AfterOpaqueUsesSceneAttachments: late result"
+            EffectGraphError::AfterOpaqueUsesSceneAttachments("late result".into())
         );
     }
     graph.after_opaque = vec![late];
     graph.after_opaque[0].cadence = C::TimeSliced;
     assert_eq!(
         graph.validate().expect_err("partial late history"),
-        "TimeSlicedHistory: late producer"
+        EffectGraphError::TimeSlicedHistory("late producer".into())
     );
 }

@@ -145,10 +145,12 @@ impl ExtentTransition {
             .is_some_and(|build| build.job.is_finished())
             && let Some(build) = self.build.take()
         {
-            let result = build
-                .job
-                .join()
-                .map_err(|_| FrameError::Gpu("extent preparation thread stopped".into()));
+            let result = build.job.join().map_err(|_| {
+                FrameError::gpu(
+                    "extent preparation",
+                    crate::error::FrameGpuError::ExtentWorkerStopped,
+                )
+            });
             if build.request == request && !build.cancelled.load(Ordering::Acquire) {
                 self.ready = result??;
             } else if let Ok(Ok(Some(obsolete))) = result {
@@ -179,7 +181,7 @@ impl ExtentTransition {
                 drop(discarded);
                 inputs.map_or(Ok(None), |build| build(&flag))
             })
-            .map_err(|error| FrameError::Gpu(format!("start extent preparation: {error}")))?;
+            .map_err(|error| FrameError::gpu("start extent preparation", error))?;
         self.build = Some(Build {
             request,
             cancelled,

@@ -14,7 +14,7 @@ impl AtmosphereUniform {
             inverse_view_projection: view.inverse_view_proj_columns(),
             camera_altitude: [x, y, z, altitude],
             sun_lux: [sx, sy, sz, frame.solar_illuminance_lux],
-            colour_pre_exposure: [r, g, b, crate::synthetic::PRE_EXPOSURE],
+            colour_pre_exposure: [r, g, b, crate::render_config::PRE_EXPOSURE],
             sky_mapping: crate::atmosphere::model::sky_mapping(
                 altitude.clamp(0.0, crate::shader_constants::ATMOSPHERE_TOP),
             ),
@@ -78,7 +78,7 @@ mod tests {
                 .chain(frame.toward_sun)
                 .chain([frame.solar_illuminance_lux])
                 .chain(frame.solar_colour)
-                .chain([crate::synthetic::PRE_EXPOSURE])
+                .chain([crate::render_config::PRE_EXPOSURE])
                 .chain(crate::atmosphere::model::sky_mapping(
                     frame.camera_altitude_m,
                 )),

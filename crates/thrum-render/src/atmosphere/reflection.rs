@@ -1,9 +1,9 @@
 //! Disk-free sky reflection products. All passes record into the existing
 //! frame graph; generation/profile validity is owned by AtmospherePrepared.
 
+use crate::error::RenderError;
 use crate::pass_key::AtmosphereStage;
 use crate::shaders::wgsl;
-use crate::synthetic::RenderError;
 
 pub(super) const CUBE_SIZE: u32 = 64;
 pub(super) const MIP_COUNT: u32 = 7;

@@ -439,7 +439,12 @@ fn invalid_lighting_retains_upload_work_after_cpu_scene_mutation() {
         let mut report = progress(&host);
         assert!(matches!(
             host.prepare_extracted(0, &mut report, first),
-            Err(super::FrameError::Gpu(_))
+            Err(super::FrameError::Gpu {
+                error: crate::error::FrameGpuError::Render(
+                    crate::error::RenderError::InvalidLighting
+                ),
+                ..
+            })
         ));
         host.source.invalid_lighting.set(false);
         let retry = host

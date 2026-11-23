@@ -70,7 +70,7 @@ impl PreparedSynthetic {
             )
             .await
             {
-                Err(RenderError::RayPreparation | RenderError::Validation(_))
+                Err(RenderError::RayPreparation | RenderError::Gpu(_))
                     if admission == RayStructureSelection::Enabled =>
                 {
                     admission = RayStructureSelection::PreparationFailed;
@@ -154,26 +154,29 @@ impl PreparedSynthetic {
                 )
             })
             .transpose()?;
-        if [local_light_bytes, cluster_head_bytes, cluster_index_bytes]
-            .into_iter()
-            .any(|bytes| bytes > limits.max_storage_buffer_binding_size)
-        {
-            return Err(RenderError::SceneCapacity);
+        for (bytes, error) in [
+            (local_light_bytes, RenderError::LocalLightBufferCapacity),
+            (cluster_head_bytes, RenderError::ClusterHeadBufferCapacity),
+            (cluster_index_bytes, RenderError::ClusterIndexBufferCapacity),
+        ] {
+            if bytes > limits.max_storage_buffer_binding_size {
+                return Err(error);
+            }
         }
         let classes = TextureClasses::defaults(limits)?;
         let (material_bytes, instance_bytes) =
             abi::table_bytes(scene.materials.len(), scene.instances.len(), limits)?;
         let material_count =
-            u32::try_from(scene.materials.len()).map_err(|_| RenderError::SceneCapacity)?;
+            u32::try_from(scene.materials.len()).map_err(|_| RenderError::MaterialTableCapacity)?;
         let instance_count =
-            u32::try_from(scene.instances.len()).map_err(|_| RenderError::SceneCapacity)?;
+            u32::try_from(scene.instances.len()).map_err(|_| RenderError::InstanceTableCapacity)?;
         if u64::from(instance_count) * history_gpu::ENTRY_BYTES
             > limits.max_storage_buffer_binding_size
         {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::TransformHistoryCapacity);
         }
         let mut packed_materials = Vec::with_capacity(
-            usize::try_from(material_bytes).map_err(|_| RenderError::SceneCapacity)?,
+            usize::try_from(material_bytes).map_err(|_| RenderError::MaterialTableCapacity)?,
         );
         for material in &scene.materials {
             // This is a single opaque static closure, not admission for all PBR flags.
@@ -239,10 +242,10 @@ impl PreparedSynthetic {
             .checked_add(view_alignment - 1)
             .map(|bytes| bytes / view_alignment * view_alignment)
             .filter(|stride| *stride <= u32::MAX / VIEW_SLOTS)
-            .ok_or(RenderError::SceneCapacity)?;
+            .ok_or(RenderError::ViewBufferCapacity)?;
         let view_capacity = u64::from(view_stride) * u64::from(VIEW_SLOTS);
         if view_capacity > limits.max_buffer_size {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::ViewBufferCapacity);
         }
         let view_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("synthetic ABI2 view"),
@@ -474,8 +477,10 @@ impl PreparedSynthetic {
                 let base = row.draw_base_vertex().ok()?;
                 Some((row.first_index..row.first_index + row.index_count, base))
             })
-            .ok_or(RenderError::SceneCapacity)?;
-        let arena_buffers = mesh_arena.buffers().ok_or(RenderError::SceneCapacity)?;
+            .ok_or(RenderError::MissingMeshRow)?;
+        let arena_buffers = mesh_arena
+            .buffers()
+            .ok_or(RenderError::MissingMeshBuffers)?;
         let caster_boxes = meshes
             .map(|selection| {
                 selection
@@ -487,7 +492,7 @@ impl PreparedSynthetic {
                             .map(|row| CasterBox::from_bounds(row.bounds))
                     })
                     .collect::<Option<Vec<_>>>()
-                    .ok_or(RenderError::SceneCapacity)
+                    .ok_or(RenderError::MissingMeshRow)
             })
             .transpose()?;
         let instance_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -854,12 +859,7 @@ impl PreparedSynthetic {
             });
         }
         if let Some(error) = pipeline_error {
-            return Err(match error {
-                wgpu::Error::Validation { .. } => RenderError::Validation(error.to_string()),
-                wgpu::Error::Internal { .. } | wgpu::Error::OutOfMemory { .. } => {
-                    RenderError::RayPreparation
-                }
-            });
+            return Err(RenderError::Gpu(error));
         }
         Ok(Self {
             native: if scene.view.native_witness() == NativeWitness::Off {

@@ -154,7 +154,7 @@ impl Tap {
                 let mut readback = target.readback(capabilities.device());
                 readback
                     .enable_copy_timing(capabilities, queue)
-                    .map_err(|error| FrameError::Gpu(format!("copy timing prepare: {error:?}")))?;
+                    .map_err(|error| FrameError::gpu("copy timing prepare", error))?;
                 Ok(Slot {
                     readback,
                     reserved: false,
@@ -229,7 +229,7 @@ impl Tap {
         self.slots[index]
             .readback
             .finish_copy_timing(encoder)
-            .map_err(|e| FrameError::Gpu(format!("copy timing: {e:?}")))
+            .map_err(|e| FrameError::gpu("copy timing", e))
     }
     pub(super) fn abandon(&mut self, index: usize) {
         let slot = &mut self.slots[index];
@@ -489,9 +489,7 @@ impl Tap {
                 if slot.sample.is_some() {
                     slot.readback
                         .resolve_copy_timing(&mut encoder)
-                        .map_err(|e| {
-                            FrameError::Gpu(format!("copy timestamp resolution: {e:?}"))
-                        })?;
+                        .map_err(|e| FrameError::gpu("copy timestamp resolution", e))?;
                 }
             }
             queue.submit([encoder.finish()]);
@@ -530,7 +528,7 @@ impl Tap {
                     slot.sample = None;
                     tap.omitted += 1;
                     tap.free_cpu.push(rgba);
-                    return Err(FrameError::Gpu(format!("submitted readback: {error:?}")));
+                    return Err(FrameError::gpu("submitted readback", error));
                 }
                 Ok(true) => {}
             }

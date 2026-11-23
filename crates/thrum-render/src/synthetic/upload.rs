@@ -25,13 +25,14 @@ impl PackedInstances {
         instances: &[InstanceRecord],
         material_count: u32,
     ) -> Result<Self, RenderError> {
-        let count = u32::try_from(instances.len()).map_err(|_| RenderError::SceneCapacity)?;
+        let count =
+            u32::try_from(instances.len()).map_err(|_| RenderError::InstanceTableCapacity)?;
         let mut physical_to_slot = Vec::with_capacity(instances.len());
         for active in [true, false] {
             for (slot, instance) in instances.iter().enumerate() {
                 if instance.is_active() == active {
                     physical_to_slot
-                        .push(u32::try_from(slot).map_err(|_| RenderError::SceneCapacity)?);
+                        .push(u32::try_from(slot).map_err(|_| RenderError::InstanceTableCapacity)?);
                 }
             }
         }
@@ -41,12 +42,12 @@ impl PackedInstances {
                 .filter(|instance| instance.is_active())
                 .count(),
         )
-        .map_err(|_| RenderError::SceneCapacity)?;
+        .map_err(|_| RenderError::InstanceTableCapacity)?;
         let mut slot_to_physical = vec![0; instances.len()];
         let mut rows = Vec::with_capacity(instances.len());
         for (physical, &slot) in physical_to_slot.iter().enumerate() {
             slot_to_physical[slot as usize] =
-                u32::try_from(physical).map_err(|_| RenderError::SceneCapacity)?;
+                u32::try_from(physical).map_err(|_| RenderError::InstanceTableCapacity)?;
             rows.push(validate_synthetic_instance(
                 &instances[slot as usize],
                 material_count,
@@ -169,7 +170,7 @@ impl InstanceUpload {
         shadow_depth_clamped: impl Fn(usize, &InstanceRecord) -> bool,
     ) -> Result<InstanceUploadReport, RenderError> {
         if instances.len() != self.instance_count as usize {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::InstanceCountMismatch);
         }
         self.staged.clear();
         self.staged_shadow.clear();
@@ -378,7 +379,7 @@ fn validate_synthetic_instance(
         || instance.current[2][3] != 0.0
         || instance.current[3][3].to_bits() != 1.0_f32.to_bits()
     {
-        return Err(RenderError::InvalidLighting);
+        return Err(RenderError::InvalidInstanceTransform);
     }
     instance.validate(material_count)?;
     Ok(*instance)

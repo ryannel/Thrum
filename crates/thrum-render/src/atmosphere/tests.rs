@@ -1,4 +1,5 @@
 use super::{AtmosphereFrame, model};
+use crate::error::RenderError;
 
 mod cache;
 
@@ -31,8 +32,8 @@ fn sample_admission_and_direct_transport_have_physical_limits() {
 fn portable_lut_graph_renders_live_sun_and_rejects_mode_changes() {
     use crate::capabilities::DeviceCapabilities;
     use crate::synthetic::{
-        FrameLighting, OffscreenTarget, PreparedSynthetic, RenderError, SyntheticLight,
-        SyntheticScene, SyntheticView,
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
+        SyntheticView,
     };
 
     pollster::block_on(async {

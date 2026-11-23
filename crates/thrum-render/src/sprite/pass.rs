@@ -4,16 +4,17 @@ use super::{
     EmbeddedSheet, SpriteFrame, SpriteFrameStats, SpriteRect, SpriteScene,
     world::{self, OrderedRow, SpritePose, SpriteWorld},
 };
+use crate::error::RenderError;
 use crate::{
     capabilities::DeviceCapabilities,
     extract::SourceTick,
     graph::{CompiledPass, GraphColorAttachment, PipelineKey, ResourceId},
     records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView},
+    render_config::SCENE_FORMAT,
     runtime::Instant,
     shader_constants::{
         SRGB_ENCODED_KNEE, SRGB_GAMMA_F32, SRGB_OFFSET, SRGB_SCALE, SRGB_SLOPE_F32,
     },
-    synthetic::{RenderError, SCENE_FORMAT},
     timing::GpuTimings,
 };
 use bytemuck::Zeroable;
@@ -86,10 +87,10 @@ impl SpritePass {
         key: PipelineKey,
     ) -> Result<Self, RenderError> {
         if let Some(excess) = scene.sheets.get(SHEET_SLOTS) {
-            return Err(RenderError::Validation(format!(
-                "sprite sheet '{}' exceeds the {SHEET_SLOTS} sheet slots",
-                excess.name
-            )));
+            return Err(RenderError::SpriteSheetLimit {
+                name: excess.name.clone(),
+                limit: SHEET_SLOTS,
+            });
         }
         let limits = capabilities.limits();
         let max_binding = limits
@@ -98,17 +99,16 @@ impl SpritePass {
         let total = scene
             .world_capacity
             .checked_add(scene.row_capacity)
-            .ok_or(RenderError::SceneCapacity)?;
+            .ok_or(RenderError::SpriteRowCapacity)?;
         let rows_bytes = u64::from(total) * size_of::<GpuRow>() as u64;
-        if total == 0
-            || rows_bytes > max_binding
-            || scene.sheets.is_empty()
-            || !scene.order_band.is_finite()
-            || scene.order_band < 0.0
-        {
-            return Err(RenderError::Validation(
-                "invalid sprite sheets, row capacity or order band".into(),
-            ));
+        if total == 0 || rows_bytes > max_binding {
+            return Err(RenderError::SpriteRowCapacity);
+        }
+        if scene.sheets.is_empty() {
+            return Err(RenderError::MissingSpriteSheets);
+        }
+        if !scene.order_band.is_finite() || scene.order_band < 0.0 {
+            return Err(RenderError::InvalidSpriteOrderBand);
         }
         let frame_count: usize = scene
             .sheets
@@ -116,7 +116,7 @@ impl SpritePass {
             .map(|entry| entry.sheet.frames.len())
             .sum();
         if frame_count as u64 > max_binding / size_of::<GpuRect>() as u64 {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::SpriteFrameCapacity);
         }
         for entry in &scene.sheets {
             let source = &entry.sheet;
@@ -139,10 +139,7 @@ impl SpritePass {
                     })
                 })
             {
-                return Err(RenderError::Validation(format!(
-                    "invalid embedded sprite sheet '{}'",
-                    entry.name
-                )));
+                return Err(RenderError::InvalidSpriteSheet(entry.name.clone()));
             }
         }
         let device = capabilities.site();
@@ -150,7 +147,8 @@ impl SpritePass {
         let mut frame_bases = Vec::with_capacity(scene.sheets.len());
         let mut sheets = Vec::with_capacity(SHEET_SLOTS);
         for entry in &scene.sheets {
-            frame_bases.push(u32::try_from(table.len()).map_err(|_| RenderError::SceneCapacity)?);
+            frame_bases
+                .push(u32::try_from(table.len()).map_err(|_| RenderError::SpriteFrameCapacity)?);
             table.extend(entry.sheet.frames.iter().map(|rect| GpuRect {
                 origin: rect.origin,
                 size: rect.size,
@@ -350,7 +348,7 @@ impl SpritePass {
                 frame_bytes += write_rows(queue, &self.rows, &self.cpu_rows, first, slot);
             }
             self.frame_order
-                .push(u32::try_from(slot).map_err(|_| RenderError::SceneCapacity)?);
+                .push(u32::try_from(slot).map_err(|_| RenderError::SpriteRowCapacity)?);
             self.frame_keys.push(key);
             coverage += area;
         }
@@ -367,7 +365,7 @@ impl SpritePass {
             );
         }
         let uploaded_frame_rows = u32::try_from(frame_bytes / size_of::<GpuRow>())
-            .map_err(|_| RenderError::SceneCapacity)?;
+            .map_err(|_| RenderError::SpriteRowCapacity)?;
 
         let start = Instant::now();
         let key = |slot: u32| {
@@ -409,10 +407,10 @@ impl SpritePass {
         );
 
         bindings.count =
-            u32::try_from(self.current_order.len()).map_err(|_| RenderError::SceneCapacity)?;
+            u32::try_from(self.current_order.len()).map_err(|_| RenderError::SpriteRowCapacity)?;
         stats.world_rows =
-            u32::try_from(self.visible_world.len()).map_err(|_| RenderError::SceneCapacity)?;
-        stats.frame_rows = u32::try_from(count).map_err(|_| RenderError::SceneCapacity)?;
+            u32::try_from(self.visible_world.len()).map_err(|_| RenderError::SpriteRowCapacity)?;
+        stats.frame_rows = u32::try_from(count).map_err(|_| RenderError::SpriteRowCapacity)?;
         stats.shaded_pixels = coverage;
         Ok(crate::sprite::graph::SpriteUpload {
             rows: stats.world_upload_rows + uploaded_frame_rows,

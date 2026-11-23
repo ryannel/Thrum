@@ -10,7 +10,7 @@ impl PreparedSynthetic {
         let start = crate::runtime::Instant::now();
         let switched = rows
             .record(&mut self.mesh_arena, self.capabilities.device(), queue)
-            .map_err(|_| RenderError::SceneCapacity)?;
+            .map_err(RenderError::Arena)?;
         rows.observe(start.elapsed());
         if switched {
             self.refresh_mesh_rows(queue)?;
@@ -61,7 +61,7 @@ impl PreparedSynthetic {
                 &self
                     .mesh_arena
                     .buffers()
-                    .ok_or(RenderError::SceneCapacity)?
+                    .ok_or(RenderError::MissingMeshBuffers)?
                     .vertices,
             );
             Ok(())

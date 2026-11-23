@@ -20,21 +20,21 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let PreparedRenderer::TwoD(prepared) = &mut self.prepared else {
             unreachable!()
         };
-        check_stages(contribution).map_err(FrameError::Scene)?;
+        check_stages(contribution)?;
         let graph = contribution.effect_graph();
         if !graph.after_opaque.is_empty() {
             return Err(FrameError::InvalidState(
                 "2D scene refuses contribution after-opaque stage",
             ));
         }
-        graph.validate().map_err(FrameError::Scene)?;
+        graph.validate().map_err(FrameError::EffectGraph)?;
         contribution
             .rebuild_2d(&SpriteContributionSurface {
                 capabilities: &prepared.capabilities,
                 queue: &self.queue,
             })
             .map_err(FrameError::Scene)?;
-        check_stages(contribution).map_err(FrameError::Scene)?;
+        check_stages(contribution)?;
         let graph = contribution.effect_graph();
         if !graph.after_opaque.is_empty() {
             return Err(FrameError::InvalidState(
@@ -106,7 +106,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 frame.presentation_alpha,
                 self.timing_requested,
             )
-            .map_err(|error| FrameError::Scene(format!("sprite view update: {error:?}")))?;
+            .map_err(FrameError::Render)?;
         let upload_cpu = start.elapsed();
         Ok(Some(PreparedSample {
             sample: FrameSample {
@@ -180,14 +180,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         drop(snapshot);
         let mut target =
             SpriteTarget::prepare(prepared, self.render_extent, CaptureSource::Sdr, None)
-                .map_err(|error| FrameError::Gpu(format!("capture sprite target: {error:?}")))?;
+                .map_err(|error| FrameError::gpu("capture sprite target", error))?;
         let frame = self
             .source
             .sprites(source, 1.0, target.extent)
             .map_err(FrameError::Scene)?;
         let upload = prepared
             .upload(&self.queue, &mut target, frame, 1.0, false)
-            .map_err(|error| FrameError::Gpu(format!("capture sprite update: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("capture sprite update", error))?;
         self.dropped_capture_rows = self
             .dropped_capture_rows
             .saturating_add(u64::from(upload.dropped));
@@ -214,7 +214,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 None,
                 time,
             )
-            .map_err(|error| FrameError::Gpu(format!("capture sprite encode: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("capture sprite encode", error))?;
         let submitted = self.queue.submit([encoder.finish()]);
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(false);
@@ -223,21 +223,26 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 }
 
-fn check_stages(contribution: &dyn SceneContribution) -> Result<(), String> {
+fn check_stages(contribution: &dyn SceneContribution) -> Result<(), FrameError> {
     if let Some(stage) = contribution.draw_stages().first() {
-        return Err(format!(
-            "2D scene refuses contribution {} stage",
-            match stage {
-                crate::contribution::SceneDrawStage::Shadow => "shadow",
-                crate::contribution::SceneDrawStage::Opaque => "opaque",
+        return Err(FrameError::InvalidState(match stage {
+            crate::contribution::SceneDrawStage::Shadow => {
+                "2D scene refuses contribution shadow stage"
             }
-        ));
+            crate::contribution::SceneDrawStage::Opaque => {
+                "2D scene refuses contribution opaque stage"
+            }
+        }));
     }
     if !contribution.secondary_view_slots().is_empty() {
-        return Err("2D scene refuses contribution secondary views".into());
+        return Err(FrameError::InvalidState(
+            "2D scene refuses contribution secondary views",
+        ));
     }
     if !contribution.effect_graph().opaque_reads.is_empty() {
-        return Err("2D scene refuses contribution opaque reads".into());
+        return Err(FrameError::InvalidState(
+            "2D scene refuses contribution opaque reads",
+        ));
     }
     Ok(())
 }

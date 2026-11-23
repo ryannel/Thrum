@@ -6,7 +6,7 @@
 //! a checked constant-light presentation handoff and the general render scene
 //! remain open.
 
-use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
+use crate::abi::{self, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::atmosphere::{AtmosphereFrame, AtmospherePrepared, CloudPrepared, SunOpticalDepth};
 use crate::capabilities::{DeviceCapabilities, RayStructureSelection};
 pub use crate::capabilities::{ShadowSelection, SunShadowMethod};
@@ -14,13 +14,13 @@ use crate::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SurfaceParts,
 };
 use crate::graph::{
-    CompiledPass, GraphColorAttachment, GraphDepthAttachment, GraphError, GraphTextures,
-    PipelineKey, ResourceId,
+    CompiledPass, GraphColorAttachment, GraphDepthAttachment, GraphTextures, PipelineKey,
+    ResourceId,
 };
 use crate::graph_record::{ExecutableGraph, RecordFamily};
 use crate::light::{DIRECTIONAL_BYTES, DirectionalLight};
 use crate::pass_key::PipelineRole;
-use crate::timing::{GpuTimings, TimingError};
+use crate::timing::GpuTimings;
 use crate::visibility::casters::{CasterCulling, CasterInputs};
 use crate::visibility::{VisibilityPrepared, VisibilityTarget};
 pub use camera_culling::{CountedFrame, CullMode, CullingCounts, CullingReason, CullingSelection};
@@ -102,21 +102,17 @@ use upload::{InstanceUpload, PackedInstances};
 pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
-/// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 18;
-/// Portable reversed-Z opaque depth, sampled by the optional star composite.
-pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+use crate::error::RenderError;
+pub use crate::render_config::{DEPTH_FORMAT, OUTPUT_FORMAT, SYNTHETIC_REVISION};
+use crate::render_config::{PRE_EXPOSURE, SCENE_FORMAT};
+
 const VIEW_BYTES: usize = view::VIEW_BYTES;
 const VIEW_SLOTS: u32 = 2;
-pub(crate) const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
-pub(crate) const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const MOTION_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
 const CUBE_INDICES: [u16; 36] = [
     0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18,
     18, 17, 19, 20, 21, 22, 22, 21, 23,
 ];
-/// Explicit shader sRGB encoding after exposure, tone and gamut mapping.
-pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 /// Immutable CPU scene, converted at prepare time rather than each draw.
 #[derive(Clone, Debug)]
@@ -185,7 +181,7 @@ pub enum SyntheticMeshChoice {
 /// means preparing again.
 ///
 /// Preparation checks the whole selection before any GPU work and refuses it
-/// with [`RenderError::SceneCapacity`] when:
+/// when:
 /// - `slots` does not hold exactly one choice per scene instance;
 /// - a choice names an index outside `meshes`;
 /// - a mesh has no triangles, an index count that is not a multiple of
@@ -236,7 +232,7 @@ impl SyntheticScene {
     /// Refuses zero instances or more than one million diagnostic instances.
     pub fn grid(count: u32) -> Result<Self, RenderError> {
         if count == 0 || count > 1_000_000 {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::GridInstanceCount);
         }
         let side = (count - 1).isqrt() + 1;
         let cell = 1.8 / side as f32;
@@ -487,64 +483,6 @@ fn caster_box(boxes: Option<&[CasterBox]>, slot: usize) -> CasterBox {
 
 fn packed_light_direction(data: &DirectionalLight) -> Vec3 {
     glam::Vec4::from_array(data.direction_to_light).truncate()
-}
-
-/// Expected failures before a view can be encoded or published ready.
-#[derive(Debug)]
-pub enum RenderError {
-    /// Requested hardware recipe is invalid or unsupported.
-    Recipe(crate::capabilities::RecipeError),
-    /// Surface binding or recording was rejected.
-    Present(crate::present::PresentError),
-    /// ABI validation failed.
-    Abi(AbiError),
-    /// Typed graph failed validation.
-    Graph(GraphError),
-    /// Optional timestamp lifecycle failure.
-    Timing(TimingError),
-    /// Pipeline/resource creation was rejected by the device.
-    Validation(String),
-    /// Preparing the optional scene ray structure failed.
-    RayPreparation,
-    /// Empty/unreasonably large synthetic fixture.
-    SceneCapacity,
-    /// Changed instance slots were out of bounds, duplicated or unordered.
-    InvalidInstanceUpdate,
-    /// A record's logical GPU slot does not match its scene row.
-    InvalidInstanceIdentity,
-    /// Unsupported semantic flags, skinning or mapped normals in this diagnostic.
-    UnsupportedSyntheticMaterial,
-    /// Invalid directional source or degenerate/unsupported diagnostic transform.
-    InvalidLighting,
-    /// Nonfinite or degenerate camera projection.
-    InvalidView,
-    /// Reduced render scale was requested on a target without portable TAAU.
-    UnsupportedRenderScale,
-    /// Exposure gain is unrepresentable or incident EV settings are unsupported.
-    InvalidExposure,
-    /// Target/readback belongs to another generation, grid or prepared exposure.
-    StaleTarget,
-    /// Target dimensions exceed device limits or overflow readback arithmetic.
-    TargetExtent,
-    /// A compiled pass has no recorder for this prepared scene.
-    GraphPassMismatch,
-    /// Readback is already pending or failed.
-    Readback,
-}
-impl From<AbiError> for RenderError {
-    fn from(error: AbiError) -> Self {
-        Self::Abi(error)
-    }
-}
-impl From<GraphError> for RenderError {
-    fn from(error: GraphError) -> Self {
-        Self::Graph(error)
-    }
-}
-impl From<TimingError> for RenderError {
-    fn from(error: TimingError) -> Self {
-        Self::Timing(error)
-    }
 }
 
 /// Work enqueued for one instance-table update. Bytes count payload sent to
@@ -1218,12 +1156,13 @@ impl PreparedSynthetic {
         match (&self.cloud, &scene.sun_optical_depth) {
             (None, None) => {}
             (Some(cloud), Some(field)) if cloud.accepts(field) => {}
-            _ => return Err(RenderError::SceneCapacity),
+            _ => return Err(RenderError::CloudFieldLayout),
         }
         if scene.instances.len()
-            != usize::try_from(self.instance_count).map_err(|_| RenderError::SceneCapacity)?
+            != usize::try_from(self.instance_count)
+                .map_err(|_| RenderError::InstanceCountMismatch)?
         {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::InstanceCountMismatch);
         }
         let (light_data, background, clamps) = pack_frame_lighting(lighting)?;
         if self.cluster_compute.is_some() {
@@ -1231,15 +1170,26 @@ impl PreparedSynthetic {
         } else {
             self.clusters.rebuild(&scene.local_lights, &view)?;
         }
-        if [
-            (self.clusters.lights.len(), self.local_light_bytes),
-            (self.clusters.heads.len(), self.cluster_head_bytes),
-            (self.clusters.indices.len(), self.cluster_index_bytes),
-        ]
-        .into_iter()
-        .any(|(len, capacity)| u64::try_from(len).map_or(true, |len| len > capacity))
-        {
-            return Err(RenderError::SceneCapacity);
+        for (len, capacity, error) in [
+            (
+                self.clusters.lights.len(),
+                self.local_light_bytes,
+                RenderError::LocalLightBufferCapacity,
+            ),
+            (
+                self.clusters.heads.len(),
+                self.cluster_head_bytes,
+                RenderError::ClusterHeadBufferCapacity,
+            ),
+            (
+                self.clusters.indices.len(),
+                self.cluster_index_bytes,
+                RenderError::ClusterIndexBufferCapacity,
+            ),
+        ] {
+            if u64::try_from(len).map_or(true, |len| len > capacity) {
+                return Err(error);
+            }
         }
         let light_data = light_data.with_local_lights(self.clusters.active);
         if let Some(shadow) = self.shadow.as_mut() {

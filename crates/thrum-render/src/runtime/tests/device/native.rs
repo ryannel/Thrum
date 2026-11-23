@@ -270,7 +270,10 @@ fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
                     &mut report,
                     Some(&surface),
                     std::time::Instant::now(),
-                    || Err(FrameError::Gpu("forced native submission refusal".into()))
+                    || Err(FrameError::gpu(
+                        "forced native submission refusal",
+                        crate::error::RenderError::TargetExtent
+                    ))
                 )
                 .is_err()
         );

@@ -132,7 +132,7 @@ impl ClusterTable {
         view: &SyntheticView,
     ) -> Result<Self, RenderError> {
         if lights.len() > 4096 {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::LocalLightCount);
         }
         let mut table = Self::empty();
         table.max_lights = lights.len();
@@ -152,7 +152,7 @@ impl ClusterTable {
         view: &SyntheticView,
     ) -> Result<Self, RenderError> {
         if lights.is_empty() || lights.len() > GPU_MAX_SOURCES {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::GpuLocalLightCount);
         }
         let mut table = Self::empty();
         table.max_lights = lights.len();
@@ -261,7 +261,7 @@ impl ClusterTable {
             let Some((lo, hi)) = bounds(light, view) else {
                 continue;
             };
-            let index = u32::try_from(index).map_err(|_| RenderError::SceneCapacity)?;
+            let index = u32::try_from(index).map_err(|_| RenderError::LocalLightCount)?;
             let score_position = score_geometry.light_position(light.position);
             let intensity = light.candela.into_iter().fold(0.0, f32::max);
             for z in lo[2]..=hi[2] {
@@ -309,7 +309,7 @@ impl ClusterTable {
             let len = usize::from(slot.len);
             slot.candidates[..len].sort_unstable_by_key(|candidate| candidate.index);
             let offset = u32::try_from(self.indices.len() / size_of::<u32>())
-                .map_err(|_| RenderError::SceneCapacity)?;
+                .map_err(|_| RenderError::ClusterIndexCapacity)?;
             self.heads.extend_from_slice(bytes_of(&ClusterHead {
                 offset,
                 count: u32::from(slot.len),

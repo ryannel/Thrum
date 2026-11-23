@@ -310,7 +310,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             if let Some(held) = self.held_contribution.take()
                 && let Err(error) = self.host.set_scene_contribution(held)
             {
-                self.attach_error = Some(error);
+                self.attach_error = Some(error.to_string());
             }
         }
         if self.graphics.is_lost() {
@@ -533,7 +533,9 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             return Ok(());
         }
         self.held_contribution = None;
-        self.host.set_scene_contribution(contribution)
+        self.host
+            .set_scene_contribution(contribution)
+            .map_err(String::from)
     }
 
     /// The refusal of a held contribution attached on a replacement device, once.

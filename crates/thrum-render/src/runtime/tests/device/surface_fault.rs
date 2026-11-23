@@ -1,9 +1,9 @@
 use super::*;
 use crate::{
+    error::RenderError,
     present::{PresentError, SurfacePresenter},
     runtime::{FrameTarget, SpriteSceneRequests, SurfaceFault, SurfaceOutput},
     sprite::{EmbeddedSheet, SpriteRect, SpriteScene},
-    synthetic::RenderError,
     timing::{GpuTimings, TimingError},
 };
 

@@ -301,6 +301,25 @@ pub enum TimingError {
     },
 }
 
+impl std::fmt::Display for TimingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidCapacity => f.write_str("Timestamp query capacity or period is invalid"),
+            Self::Capacity => f.write_str("All timestamp query pairs are in use"),
+            Self::Busy => f.write_str("A timestamp readback is already pending"),
+            Self::MapFailed => f.write_str("Timestamp readback mapping failed"),
+            Self::StaleGeneration => {
+                f.write_str("Timestamp batch belongs to a retired device generation")
+            }
+            Self::InvalidTimestamp { start, end } => {
+                write!(f, "Invalid timestamp interval from {start} to {end}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for TimingError {}
+
 struct Enabled {
     query: wgpu::QuerySet,
     resolve: wgpu::Buffer,

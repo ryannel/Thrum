@@ -493,7 +493,7 @@ impl FitInputs {
         light_direction: Vec3,
     ) -> Result<Self, RenderError> {
         if casters.is_some_and(|casters| casters.len() != instances.len()) {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::ShadowCasterCount);
         }
         let rotation = light_rotation(light_direction);
         let set = (instances, casters);

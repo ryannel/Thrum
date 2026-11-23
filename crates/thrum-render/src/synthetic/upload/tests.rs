@@ -1,7 +1,7 @@
 use super::{
     MAX_PARTIAL_WRITES, PackedInstances, build_runs, needs_two_sided, validate_synthetic_instance,
 };
-use crate::{abi, synthetic::RenderError};
+use crate::{abi, error::RenderError};
 
 impl super::InstanceUpload {
     /// Physical row order and its packed rows, for layout witnesses.
@@ -64,7 +64,7 @@ fn shared_pack_validation_refuses_invalid_updates() {
     instance.current[3][0] = f32::NAN;
     assert!(matches!(
         validate_synthetic_instance(&instance, 1, 0),
-        Err(RenderError::InvalidLighting)
+        Err(RenderError::InvalidInstanceTransform)
     ));
     instance.current[3][0] = 0.0;
     instance.set_material(1);

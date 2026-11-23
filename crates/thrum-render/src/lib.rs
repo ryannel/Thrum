@@ -15,6 +15,7 @@ pub mod atmosphere;
 pub mod binding;
 pub mod capabilities;
 pub mod contribution;
+pub mod error;
 pub mod extract;
 pub mod frame;
 pub mod graph;
@@ -26,6 +27,7 @@ pub mod present;
 mod records;
 #[doc(hidden)]
 pub mod registry_audit;
+pub mod render_config;
 pub mod runtime;
 mod shader_constants;
 mod shaders;

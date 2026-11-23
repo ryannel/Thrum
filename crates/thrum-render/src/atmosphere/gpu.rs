@@ -2,11 +2,12 @@
 //! the caller's existing compiled graph; this owner never submits GPU work.
 
 use crate::binding;
+use crate::error::RenderError;
 use crate::graph::{CompiledPass, PipelineKey};
 use crate::pass_key::{AtmosphereStage, PipelineRole, REFLECTION_MIPS};
 use crate::shaders::wgsl;
-use crate::synthetic::{DEPTH_FORMAT, RenderError, SyntheticView};
 use crate::timing::GpuTimings;
+use crate::{render_config::DEPTH_FORMAT, synthetic::SyntheticView};
 
 use super::{
     AtmosphereFrame,
@@ -339,7 +340,7 @@ impl AtmospherePrepared {
 
     pub(crate) fn key(&self, stage: AtmosphereStage) -> PipelineKey {
         PipelineRole::Atmosphere(stage)
-            .pipeline_key(self.generation, super::super::synthetic::SYNTHETIC_REVISION)
+            .pipeline_key(self.generation, crate::render_config::SYNTHETIC_REVISION)
     }
 
     pub(crate) fn aerial_sampled(

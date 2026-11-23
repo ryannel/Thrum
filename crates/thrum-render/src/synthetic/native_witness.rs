@@ -226,7 +226,7 @@ impl Factory {
         let mut extents = self
             .extents
             .lock()
-            .map_err(|_| RenderError::Validation("native preparation lock poisoned".into()))?;
+            .map_err(|_| RenderError::NativePreparationPoisoned)?;
         extents.retain(|_, value| value.strong_count() != 0);
         let provider = if let Some(provider) = extents.get(&extent).and_then(Weak::upgrade) {
             provider
@@ -378,7 +378,7 @@ impl Binding {
         provider
             .reserved
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-            .map_err(|_| RenderError::Validation("native candidate already encoded".into()))?;
+            .map_err(|_| RenderError::NativeCandidateReserved)?;
         let reset = cut || !provider.valid.load(Ordering::Acquire);
         let phase = if reset {
             0

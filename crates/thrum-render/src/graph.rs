@@ -534,6 +534,85 @@ pub enum GraphError {
     },
 }
 
+impl std::fmt::Display for GraphError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NativeResource { pass } => write!(
+                f,
+                "Native pass {pass} requires retained resources and cannot use render attachments"
+            ),
+            Self::NativeSurface { pass } => {
+                write!(f, "Native pass {pass} cannot access a platform surface")
+            }
+            Self::InvalidVolume => {
+                f.write_str("Volume texture cannot have array layers or multisampling")
+            }
+            Self::InvalidCube => {
+                f.write_str("Cube texture requires six square single-sampled faces")
+            }
+            Self::InvalidTextureView { pass } => {
+                write!(f, "Pass {pass} uses an incompatible texture view")
+            }
+            Self::CubeStorageView { pass } => write!(f, "Pass {pass} uses a cube view for storage"),
+            Self::VolumeAttachment { pass } => {
+                write!(f, "Pass {pass} uses a volume texture as an attachment")
+            }
+            Self::TextureExtentLimit => f.write_str("Texture extent exceeds device limits"),
+            Self::StorageFormat { pass } => write!(
+                f,
+                "Pass {pass} uses a format that does not support the requested storage access"
+            ),
+            Self::StorageTextureLimit { pass } => {
+                write!(f, "Pass {pass} exceeds the storage-texture binding limit")
+            }
+            Self::SurfacePhase => {
+                f.write_str("Acquisition phase conflicts with surface dependencies")
+            }
+            Self::EmptyResource => f.write_str("Resource descriptor has an empty or invalid range"),
+            Self::DuplicatePersistentOwner { owner } => {
+                write!(f, "Persistent owner {owner} names multiple resources")
+            }
+            Self::InvalidRange { pass } => write!(
+                f,
+                "Pass {pass} uses a missing, empty or out-of-bounds resource range"
+            ),
+            Self::UsageMismatch { pass } => write!(
+                f,
+                "Resource usage does not permit the access in pass {pass}"
+            ),
+            Self::ConflictingPassAccess { pass } => {
+                write!(f, "Pass {pass} declares conflicting resource accesses")
+            }
+            Self::UninitializedRead { pass, resource } => write!(
+                f,
+                "Pass {pass} reads undefined or discarded resource {resource:?}"
+            ),
+            Self::PipelineNotReady { pass } => {
+                write!(f, "Pass {pass} requires a missing or retired pipeline")
+            }
+            Self::InvalidDependency => {
+                f.write_str("Explicit dependency points to a missing pass or to itself")
+            }
+            Self::AmbiguousProducer { pass, resource } => write!(
+                f,
+                "Pass {pass} does not select a producer for resource {resource:?}"
+            ),
+            Self::DependencyCycle => f.write_str("Live pass dependencies form a cycle"),
+            Self::UnknownRecorder { pass } => {
+                write!(f, "Recorder refers to missing or removed pass {pass}")
+            }
+            Self::DuplicateRecorder { pass } => write!(f, "Pass {pass} has more than one recorder"),
+            Self::MissingRecorder { pass } => write!(f, "Pass {pass} has no recorder"),
+            Self::RecorderKindMismatch { pass } => write!(
+                f,
+                "Recorder for pass {pass} cannot encode its declared accesses"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for GraphError {}
+
 /// A dependency with an overlapping write. These are API-independent reasons
 /// for ordering, not additional explicit wgpu barriers.
 #[derive(Clone, Debug, Eq, PartialEq)]

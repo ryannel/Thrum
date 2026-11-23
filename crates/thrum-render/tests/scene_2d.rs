@@ -363,7 +363,7 @@ fn rejects_each_3d_request_without_changing_the_sprite_scene() {
             ..Default::default()
         };
         let error = host.set_scene_contribution(Box::new(entry)).unwrap_err();
-        assert!(error.contains(label), "{error}");
+        assert!(error.to_string().contains(label), "{error}");
         assert_unchanged(&mut host, &device, &reference);
     }
 }

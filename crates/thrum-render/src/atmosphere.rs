@@ -4,7 +4,7 @@
 use crate::shaders::wgsl;
 use glam::Vec3;
 
-use crate::synthetic::RenderError;
+use crate::error::RenderError;
 
 mod cloud;
 mod environment;

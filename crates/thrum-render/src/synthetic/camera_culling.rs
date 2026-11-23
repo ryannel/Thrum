@@ -137,7 +137,7 @@ pub(super) fn prepare(
     let Some(route) = route else {
         let row = arena
             .row(super::mesh_arena::MeshId::CUBE)
-            .ok_or(RenderError::SceneCapacity)?;
+            .ok_or(RenderError::MissingMeshRow)?;
         // The legacy forward pass binds only the selected cube row’s index slice.
         let mesh = MeshRecord {
             first_index: 0,
@@ -176,9 +176,7 @@ fn mesh_record(row: &super::mesh_arena::MeshRow) -> Result<MeshRecord, RenderErr
     Ok(MeshRecord {
         first_index: row.first_index,
         index_count: row.index_count,
-        base_vertex: row
-            .draw_base_vertex()
-            .map_err(|_| RenderError::SceneCapacity)?,
+        base_vertex: row.draw_base_vertex().map_err(RenderError::Arena)?,
         bounds_min: row.bounds[0],
         bounds_max: row.bounds[1],
     })

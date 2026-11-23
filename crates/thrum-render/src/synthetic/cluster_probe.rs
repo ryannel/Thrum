@@ -23,8 +23,8 @@ impl LightListProbe {
         let oracle = ClusterTable::build(&scene.local_lights, &scene.view)?;
         let mut expected = oracle.heads;
         expected.extend_from_slice(&oracle.indices);
-        let size = u64::try_from(expected.len()).map_err(|_| RenderError::SceneCapacity)?;
-        let words = u32::try_from(size / 4).map_err(|_| RenderError::SceneCapacity)?;
+        let size = u64::try_from(expected.len()).map_err(|_| RenderError::ClusterProbeCapacity)?;
+        let words = u32::try_from(size / 4).map_err(|_| RenderError::ClusterProbeCapacity)?;
         let site = prepared.capabilities.site();
         if size
             > prepared
@@ -32,7 +32,7 @@ impl LightListProbe {
                 .limits()
                 .max_storage_buffer_binding_size
         {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::ClusterProbeCapacity);
         }
         let output = site.create_buffer(&wgpu::BufferDescriptor {
             label: Some("light list probe output"),

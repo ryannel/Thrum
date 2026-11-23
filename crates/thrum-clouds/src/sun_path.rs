@@ -310,7 +310,7 @@ impl SunPath {
     pub fn provider(
         &self,
         epoch: u64,
-    ) -> Result<SunOpticalDepth, thrum_render::synthetic::RenderError> {
+    ) -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
         SunOpticalDepth::from_gpu(self.ground.clone(), self.mapping.clone(), epoch)
     }
     /// Reconstruct the simulation clock with the product's device generation.

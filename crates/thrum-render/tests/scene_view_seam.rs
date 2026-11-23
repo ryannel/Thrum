@@ -74,7 +74,13 @@ fn a_contribution_reads_its_own_colour_depth_and_record_through_the_public_seam(
         let error = host
             .set_scene_contribution(Box::new(invalid))
             .expect_err("over profile count");
-        assert!(error.contains("secondary view slot limit"), "{error}");
+        assert!(
+            matches!(
+                error,
+                thrum_render::runtime::FrameError::SecondaryView(SecondaryViewError::SlotLimit)
+            ),
+            "{error}"
+        );
         host.capture_pixels().expect("old contribution retained");
         let (first, first_control) = Observer::new(1);
         let (second, second_control) = Observer::new(2);

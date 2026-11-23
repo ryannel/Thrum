@@ -158,6 +158,26 @@ mod native {
         Closed(Request),
     }
 
+    impl<Request> std::fmt::Debug for SendFault<Request> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str(match self {
+                Self::Busy(_) => "SendFault::Busy",
+                Self::Closed(_) => "SendFault::Closed",
+            })
+        }
+    }
+
+    impl<Request> std::fmt::Display for SendFault<Request> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str(match self {
+                Self::Busy(_) => "Frame worker already has a pending request",
+                Self::Closed(_) => "Frame worker is closed",
+            })
+        }
+    }
+
+    impl<Request> std::error::Error for SendFault<Request> {}
+
     impl<Request: Send + 'static, Reply: Send + 'static> FrameWorker<Request, Reply> {
         /// Start one resident worker. `wake` signals the shell after a reply is
         /// published; it must not process the reply inside the callback.

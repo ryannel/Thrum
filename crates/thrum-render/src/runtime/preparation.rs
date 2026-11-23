@@ -56,8 +56,10 @@ pub(super) fn rebuild_3d_contribution(
             .map_err(|error| match error {
                 SecondaryViewError::RecordLimit
                 | SecondaryViewError::LightingLimit
-                | SecondaryViewError::ShaderLimit => FrameError::Gpu(error.to_string()),
-                _ => FrameError::Scene(error.to_string()),
+                | SecondaryViewError::ShaderLimit => {
+                    FrameError::gpu("secondary view preparation", error)
+                }
+                _ => FrameError::SecondaryView(error),
             })?;
         let surface =
             prepared.scene_surface_with_views(queue, contribution.secondary_views_enabled());
@@ -67,7 +69,7 @@ pub(super) fn rebuild_3d_contribution(
             contribution.rebuild(&surface).map_err(FrameError::Scene)?;
         }
         let graph = contribution.effect_graph();
-        graph.validate().map_err(FrameError::Scene)?;
+        graph.validate().map_err(FrameError::EffectGraph)?;
         let mut passes = contribution.passes();
         passes.upload |= prepared.secondary_view_count() != 0;
         if !attaching
@@ -93,9 +95,7 @@ pub(super) fn rebuild_3d_contribution(
     let result = if let Some(scopes) = scopes {
         let errors = scopes.map(|scope| pollster::block_on(scope.pop()));
         match errors.into_iter().flatten().next() {
-            Some(error) => Err(FrameError::Gpu(format!(
-                "contribution preparation: {error}"
-            ))),
+            Some(error) => Err(FrameError::gpu("contribution preparation", error)),
             None => result,
         }
     } else {
@@ -169,7 +169,10 @@ impl TargetPreparation {
         };
         let views = inputs.resize_secondary(extents);
         let replacement = job(views.handles())?;
-        replacement.graph.validate().map_err(FrameError::Scene)?;
+        replacement
+            .graph
+            .validate()
+            .map_err(FrameError::EffectGraph)?;
         inputs.effect_graph.clone_from(&replacement.graph);
         Ok((views, replacement))
     }
@@ -208,16 +211,12 @@ impl TargetPreparation {
                         (TargetInputs::ThreeD(inputs), FrameTarget::ThreeD(target)) => {
                             target
                                 .bind_surface_graph_with_inputs(inputs, presenter.profile())
-                                .map_err(|error| {
-                                    FrameError::Gpu(format!("merged surface graph: {error:?}"))
-                                })?;
+                                .map_err(|error| FrameError::gpu("merged surface graph", error))?;
                             presenter.bind_target(device, target)
                         }
                         _ => unreachable!("targets come from the same preparation"),
                     }
-                    .map_err(|error| {
-                        FrameError::Gpu(format!("replacement surface binding: {error:?}"))
-                    })?,
+                    .map_err(|error| FrameError::gpu("replacement surface binding", error))?,
                 );
         }
         Ok(())
@@ -372,7 +371,7 @@ pub(super) fn prepare_maps_fallback(
         frame.lighting,
         exposure,
     ))
-    .map_err(|error| FrameError::Gpu(format!("fallback Maps scene: {error:?}")))?;
+    .map_err(|error| FrameError::gpu("fallback Maps scene", error))?;
     let prepared = PreparedRenderer::ThreeD(Box::new(prepared));
     let mut slots = prepare_slots(
         &prepared,
@@ -401,18 +400,18 @@ pub(super) fn bind_presenter(
                     )
                 })
                 .transpose()
-                .map_err(|error| FrameError::Gpu(format!("sprite surface binding: {error:?}")))?;
+                .map_err(|error| FrameError::gpu("sprite surface binding", error))?;
             continue;
         }
         if let Some(presenter) = presenter {
             slot.target
                 .bind_surface_graph(prepared, presenter.profile())
-                .map_err(|error| FrameError::Gpu(format!("merged surface graph: {error:?}")))?;
+                .map_err(|error| FrameError::gpu("merged surface graph", error))?;
         }
         slot.presentation = presenter
             .map(|presenter| presenter.bind_target(device, &slot.target))
             .transpose()
-            .map_err(|error| FrameError::Gpu(format!("replacement surface binding: {error:?}")))?;
+            .map_err(|error| FrameError::gpu("replacement surface binding", error))?;
     }
     Ok(())
 }
@@ -438,7 +437,7 @@ pub(super) async fn prepare_scene(
         retained_ray_meshes,
     )
     .await
-    .map_err(|error| FrameError::Gpu(format!("scene prepare: {error:?}")))?;
+    .map_err(|error| FrameError::gpu("scene prepare", error))?;
     prepared.set_contribution_passes(contribution_passes);
     prepared.set_effect_graph(effect_graph);
     let prepared = PreparedRenderer::ThreeD(Box::new(prepared));
@@ -455,7 +454,7 @@ pub(super) async fn prepare_sprites(
 ) -> Result<PreparedScene, FrameError> {
     let scene = PreparedSprites::prepare(capabilities, queue, scene)
         .await
-        .map_err(|error| FrameError::Gpu(format!("sprite scene prepare: {error:?}")))?;
+        .map_err(|error| FrameError::gpu("sprite scene prepare", error))?;
     let prepared = PreparedRenderer::TwoD(Box::new(scene));
     let slots = prepare_slots(&prepared, queue, extent, profile)?;
     Ok(PreparedScene { prepared, slots })
@@ -513,7 +512,7 @@ impl TargetPreparation {
                         extent[1],
                         source,
                     )
-                    .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
+                    .map_err(|error| FrameError::gpu("scene target", error))?;
                     if let Some(first) = slots.first() {
                         target.share_reconstruction_history(prepared, &first.target);
                     }
@@ -523,7 +522,7 @@ impl TargetPreparation {
                 }
                 TargetInputs::TwoD(prepared) => {
                     let target = SpriteTarget::prepare(prepared, extent, source, profile)
-                        .map_err(|error| FrameError::Gpu(format!("sprite target: {error:?}")))?;
+                        .map_err(|error| FrameError::gpu("sprite target", error))?;
                     (
                         FrameTarget::TwoD(Box::new(target)),
                         None,
@@ -535,7 +534,7 @@ impl TargetPreparation {
                 target,
                 presentation: None,
                 timings: GpuTimings::new(capabilities, queue, passes + u32::from(surface))
-                    .map_err(|error| FrameError::Gpu(format!("scene timings: {error:?}")))?,
+                    .map_err(|error| FrameError::gpu("scene timings", error))?,
                 timing_layout,
                 timing_readback: false,
                 render_done: Arc::new(AtomicBool::new(false)),

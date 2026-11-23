@@ -18,11 +18,17 @@ fn only_gpu_failures_with_a_device_loss_signal_become_recovery() {
         ));
     }
     assert!(matches!(
-        frame_failure(FrameError::Gpu("validation".into()), false),
+        frame_failure(
+            FrameError::gpu(
+                "validation",
+                thrum_render::error::RenderError::InvalidLighting
+            ),
+            false
+        ),
         RenderOutcome::Frame(Err(_))
     ));
     assert!(matches!(
-        frame_failure(FrameError::Gpu("lost".into()), true),
+        frame_failure(FrameError::DeviceLost("lost".into()), false),
         RenderOutcome::DeviceLost
     ));
 }

@@ -104,7 +104,7 @@ impl<G: Game> Offscreen<G> {
                         submission_index: None,
                         timeout: Some(Duration::from_secs(10)),
                     })
-                    .map_err(|error| FrameError::Gpu(format!("native fault wait: {error:?}")))?;
+                    .map_err(|error| FrameError::gpu("native fault wait", error))?;
                 if !matches!(
                     self.host.poll_completed(),
                     Err(FrameError::NativeCommandBuffer { .. })

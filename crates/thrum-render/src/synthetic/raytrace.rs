@@ -106,7 +106,7 @@ pub(super) struct MeshStructure {
 impl MeshStructure {
     pub(super) fn new(device: &wgpu::Device, row: MeshRow) -> Result<Self, RenderError> {
         if row.index_count / 3 > device.limits().max_blas_primitive_count {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::RayPrimitiveLimit);
         }
         let size = wgpu::BlasTriangleGeometrySizeDescriptor {
             vertex_format: wgpu::VertexFormat::Float32x3,
@@ -168,7 +168,7 @@ impl SceneStructure {
     fn new(capabilities: &DeviceCapabilities, slots: u32) -> Result<Self, RenderError> {
         let device = capabilities.site();
         if slots > MAX_IDENTITIES || slots > device.limits().max_tlas_instance_count {
-            return Err(RenderError::SceneCapacity);
+            return Err(RenderError::RayInstanceLimit);
         }
         Ok(Self {
             state: Mutex::new(SceneInstances {
@@ -241,7 +241,7 @@ impl SceneStructure {
             contribution.ray_instances(&mut instances);
             if instances.overflowed {
                 contributed.clear();
-                return Err(RenderError::SceneCapacity);
+                return Err(RenderError::RayInstanceLimit);
             }
         }
         let count = entity_count + contributed.len();
@@ -252,7 +252,7 @@ impl SceneStructure {
                 .min(scene.capabilities.device().limits().max_tlas_instance_count as usize);
             *tlas = create_tlas(
                 scene.capabilities.device(),
-                u32::try_from(capacity).map_err(|_| RenderError::SceneCapacity)?,
+                u32::try_from(capacity).map_err(|_| RenderError::RayInstanceLimit)?,
             );
             *previous_count = 0;
             *traced_group = None;
@@ -260,7 +260,7 @@ impl SceneStructure {
         }
         let list = tlas
             .get_mut_slice(0..count.max(*previous_count))
-            .ok_or(RenderError::SceneCapacity)?;
+            .ok_or(RenderError::RayInstanceLimit)?;
         let (active, retired) = list.split_at_mut(count);
         let alpha = scene.history.presentation_alpha();
         let meshes = arena.mesh_structures();

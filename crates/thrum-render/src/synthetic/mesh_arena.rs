@@ -114,35 +114,7 @@ impl MeshRow {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-/// A mesh failed admission before any geometry was written or drawn.
-pub enum ArenaError {
-    /// No triangles, or an index count that is not a multiple of three.
-    NotTriangles,
-    /// An index at or past the mesh's own vertex count.
-    IndexOutOfRange {
-        /// The first invalid index.
-        index: u32,
-        /// Number of available vertices.
-        vertex_count: u32,
-    },
-    /// A non-finite vertex component.
-    NonFinite,
-    /// A referenced position exceeds the supported coordinate range.
-    CoordinateLimit,
-    /// The arena's vertex or index limit would be exceeded.
-    Capacity,
-    /// A `MeshId` this arena never allocated.
-    UnknownMesh,
-}
-
-impl std::fmt::Display for ArenaError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "mesh arena: {self:?}")
-    }
-}
-
-impl std::error::Error for ArenaError {}
+pub use crate::error::ArenaError;
 
 /// Vertex and index limits, in elements.
 #[derive(Clone, Copy, Debug)]

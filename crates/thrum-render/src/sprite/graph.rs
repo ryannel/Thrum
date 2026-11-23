@@ -21,10 +21,14 @@ use crate::{
     pass_key::{PassKey, PipelineRole},
     present::{self, PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        CaptureSource, OUTPUT_FORMAT, PixelReadback, RenderError, SCENE_FORMAT,
+        CaptureSource, PixelReadback,
         display::{DISPLAY_REFERRED_PASS, DisplayReferredStage},
     },
     timing::{GpuTimings, PassTiming, SceneGpuTimings, TimingCategory},
+};
+use crate::{
+    error::RenderError,
+    render_config::{OUTPUT_FORMAT, SCENE_FORMAT},
 };
 
 pub(crate) struct PreparedSprites {
@@ -121,7 +125,7 @@ impl PreparedSprites {
         )?;
         let tone = DisplayReferredStage::new(device);
         if let Some(error) = scope.pop().await {
-            return Err(RenderError::Validation(error.to_string()));
+            return Err(RenderError::Gpu(error));
         }
         Ok(Self {
             capabilities: capabilities.clone(),
@@ -310,9 +314,7 @@ impl SpriteTarget {
             .ok_or(RenderError::TargetExtent)?;
         let readback_bytes = u64::from(row_bytes) * u64::from(extent[1]) + 32;
         if !matches!(source, CaptureSource::Sdr | CaptureSource::SceneLinear) {
-            return Err(RenderError::Validation(format!(
-                "2D scene has no {source:?} capture source"
-            )));
+            return Err(RenderError::UnsupportedSpriteCapture);
         }
         if extent
             .into_iter()

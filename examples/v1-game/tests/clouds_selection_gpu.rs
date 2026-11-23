@@ -70,7 +70,9 @@ fn cloud_attachment_reports_the_device_limit_as_a_gpu_error() {
     };
     assert!(prepare(CloudSelection::Off).is_ok());
     match prepare(CloudSelection::Shade) {
-        Err(FrameError::Gpu(reason)) => assert!(reason.contains("weather map texture limits")),
+        Err(FrameError::ContributionDeviceLimit(reason)) => {
+            assert!(reason.contains("weather map texture limits"))
+        }
         Err(other) => panic!("expected a GPU device limit, got {other:?}"),
         Ok(_) => panic!("Shade prepared without enough storage textures"),
     }

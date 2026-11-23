@@ -21,7 +21,7 @@ impl SpriteView {
     pub(crate) fn clip_scale(
         self,
         extent: [u32; 2],
-    ) -> Result<[f32; 2], crate::synthetic::RenderError> {
+    ) -> Result<[f32; 2], crate::error::RenderError> {
         let scale = extent.map(|side| self.pixels_per_unit / side as f32 * 2.0);
         let limit = f64::from(f32::MAX) / 16.0;
         if self
@@ -34,7 +34,7 @@ impl SpriteView {
         {
             Ok(scale)
         } else {
-            Err(crate::synthetic::RenderError::InvalidView)
+            Err(crate::error::RenderError::InvalidView)
         }
     }
 }
