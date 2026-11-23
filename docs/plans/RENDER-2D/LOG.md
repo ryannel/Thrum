@@ -101,3 +101,8 @@
   the same 0.01363-pixel weight bound. The original engine taps verified six Metal and eight Chrome motion
   takes. The [M3 evidence](../../../.orchestrate/evidence/RENDER-2D/M3/README.md) includes the full frames,
   native-size crops, playback and source submission hashes.
+- 2026-11-23 M3.11 passed in the shared exact-image run on main at `d1ef5f918792`, which includes
+  the M3 source at `e764c0ea7f34`. The verifier passed both Metal matrices and all four Chrome captures
+  after APPLE-PRESENTATION M14 refreshed the references for the corrected spatial mip bias.
+  [Coverage receipt](../../../.orchestrate/evidence/RENDER-2D/M3/exact-images-covered.json) ·
+  [Verifier record](../../../.orchestrate/evidence/RENDER-2D/M3/exact-images-d1ef5f918-record.json)
