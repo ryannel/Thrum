@@ -1056,7 +1056,9 @@
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M17.2",
@@ -1066,7 +1068,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M17.3",
@@ -1074,7 +1078,9 @@
           "ask": "Do both portable cases retain their original dimensions, two time checkpoints, base-texel comparisons and direct base-block averages through the final mip with the original high/low carry tolerances? Does the default runner skip both and does the long-tier list register their binary once, for release with overflow checks, with the production-size fault recorded?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M17.4",
@@ -1083,7 +1089,9 @@
           "ask": "Does the covering log show the light- and high-wind portable sweeps running and passing in the long tier on a main commit that includes this repair?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
