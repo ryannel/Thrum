@@ -391,8 +391,8 @@
           "ask": "Read the scale arm. Is the frame after a step compared with an independently reset render of the same state, and is the jitter sequence shown to continue across the step?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/scale.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -403,8 +403,8 @@
           "ask": "Read the test. Does a control that reallocates at a step make the counters move?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/metal-attachments.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -414,10 +414,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is the marker border written into the attachments themselves, outside the subrectangle, at each of the five scales, and compared against a run without it over the whole output?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/metal-attachments.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D5.4",
@@ -426,8 +426,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/scale.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -437,8 +437,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/chrome/scale-steps.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -446,10 +446,10 @@
           "statement": "On the Mac a step between any two neighbouring scales is not seen as an event: no hitch, flash or jump in the picture, and at 0.67 and 0.5 the terrain silhouette, the grid fixture and thin props are softer but do not break up, crawl or shimmer.",
           "inspect": "Capture the route with a scripted scale trace that visits every step, with T2 engine capture in `realtime` mode. Watch each step at 1x and judge native-size crops of the three features just before and after it. Say that you watched motion.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/realtime/README.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D5.7",
@@ -459,17 +459,29 @@
           "ask": "Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/scale-costs.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Dynamic resolution as in a shipped game that hides it well, such as Spider-Man 2 or Forza Horizon 5: the picture softens a little at lower scale and never pops, flashes, shimmers at the step or loses its history. Judged in motion from the running game on the Mac and in Chrome."
+      "status": "in_progress",
+      "quality_bar": "Dynamic resolution as in a shipped game that hides it well, such as Spider-Man 2 or Forza Horizon 5: the picture softens a little at lower scale and never pops, flashes, shimmers at the step or loses its history. Judged in motion from the running game on the Mac and in Chrome.",
+      "findings": [
+        {
+          "name": "Cloud bank pops at a render-scale step",
+          "item": "D5.6",
+          "repeat": false
+        },
+        {
+          "name": "Native spatial view publishes zero mip bias",
+          "item": "D5.3",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M6",

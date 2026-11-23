@@ -550,7 +550,50 @@
     },
     "M5": {
       "definitions": "3bb8bafb9b4d10ffa3a21de74ca5c659798302b60c79d97e5583a53801a4ede4",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "c3ae0a47ae425fa5f228a2bae440f664a93cec7b",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "items": {
+            "D5.1": "pass",
+            "D5.2": "pass",
+            "D5.3": "fail",
+            "D5.4": "pass",
+            "D5.5": "pass",
+            "D5.6": "fail",
+            "D5.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Cloud bank pops at a render-scale step",
+              "item": "D5.6",
+              "repeat": false
+            },
+            {
+              "name": "Native spatial view publishes zero mip bias",
+              "item": "D5.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 169404,
+            "cached": 7321600,
+            "output": 17609,
+            "turns": 1
+          },
+          "at": "2026-11-23T11:44:35Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Two tasks in one pass.",
