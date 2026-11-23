@@ -1622,6 +1622,10 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled() {
     }
 }
 
+#[expect(
+    clippy::print_stderr,
+    reason = "record each draw path's staging witness in Nextest"
+)]
 fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
