@@ -36,7 +36,14 @@ that work on this Mac.
 
 ## M3 The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges
 
-Ruling 6 is built here. `sun_visibility` and `local_radiance` are in `synthetic.wgsl`, the cascades in `synthetic/shadow.rs`, and the air's shadow heights in `synthetic/air_shadow.rs`, which read the caster height map alone. `cluster_probe.wgsl` shows how a probe evaluates shader code at chosen points. The proving ground gains a selection for each request, off by default. `ATMOSPHERE` M6 reviews the sky with the map method, which this leaves as it is. M3.10's record is the first of this module to need ruling 7's timed-pass span: add it to `thrum-render`'s `timing.rs` if `MESH-SHADING` M2 has not, and use it as found if it has. The design review of 19 November replaced the facet correction this milestone first built: [the passage](DESIGN.md#a-rounded-meshs-own-facets) takes the place of the candidate filter in `raytrace/sun.wgsl`, and M3.13 proves it. The fragment already has the tangent-plane data as `shadow_surface`, written in `synthetic/scene_source.rs` and `thrum-asset-gpu`'s `draw.rs`. [The third probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/PATCH.md) has the rule on the CPU. The stills M3.2 passed on were taken under the old rule, so capture them again.
+The shadow shaders, proving-ground selections, timed-pass span and [terminator passage](DESIGN.md#a-rounded-meshs-own-facets)
+are built. M3.6 and M3.14–M3.15 close [the preparation boundary](DESIGN.md#scene-preparation-and-maps-fallback-m3).
+`thrum-render/src/runtime/preparation.rs` owns 3D preparation, and `contribution/list.rs` dispatches
+to members. The secondary resize job already separates preparation from publication. The current
+`CookedAssets::rebuild_inner` validates one member and then installs live state.
+[The final review's probe](../../../.orchestrate/evidence/RAY-TRACING/M3-review/c7cbfaf/composed-retry.diff)
+shows the two-member failure. Keep the merge regression in `thrum-asset-gpu`'s `it` binary and the
+device-free checks in `thrum-render`'s library tests.
 
 ## M4 Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge
 

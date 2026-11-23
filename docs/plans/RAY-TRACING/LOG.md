@@ -122,3 +122,10 @@
   retry with Maps reuses the resident draw buffers and retires the ray structures. On Metal, the first
   submitted fallback image matched the no-request control with zero upload bytes for a receiver that
   initially required more than one upload budget. [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md#resident-cooked-fallback).
+- 2026-11-23 M3 diagnosis. The reviews followed failures from native pipeline error handling through device
+  replacement and attachment to the first submitted frame after a visual change. Per-member validation
+  still let an early member evict its Maps residency before a later member failed. M3 now requires one
+  commit for the scene and the whole list, so Maps retries from the original accepted state. M3.6 checks
+  selection and primary pipeline fallback. M3.14 checks the shared boundary on the CPU and M3.15 compares
+  the first submitted bytes and residency on Metal in a small, bounded-upload fixture.
+  [Final review and previous finding](../../../.orchestrate/evidence/RAY-TRACING/M3-review.md).

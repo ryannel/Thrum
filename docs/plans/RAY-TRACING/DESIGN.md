@@ -564,12 +564,9 @@ lags in the same way. A darkening still visible after that is a trail, and fails
   first builds it and the other uses it as found.
 - **Resolution, with a plain fallback.** One function of the registry resolves the requests against the
   generation, before anything is allocated. A ray request that cannot be met resolves to what the portable
-  path has: `Traced` to `Maps`, lamp shadows and ambient occlusion to off, the structure to none. The scene is
-  then prepared as if it had not asked, so it submits the bytes of the same scene with no request. No ray
-  request is refused, and none fails a scene.
-- **A traced scene that fails to prepare.** If a structure or a traced pipeline does not build, every ray
-  request of the scene resolves as above, the scene is prepared without them before it is ready, and what the
-  failed attempt made is released.
+  path has: `Traced` to `Maps`, lamp shadows and ambient occlusion to off, the structure to none. The scene
+  prepares Maps directly on the resolved recipe. If an admitted traced candidate fails while the device is
+  usable, [prepare Maps once from the inputs to the same operation](#scene-preparation-and-maps-fallback-m3).
 - **Report.** For each request: what was asked, what it resolved to and, where the two differ, why. The
   reasons are that the device did not enable ray queries, that the recipe lists no ray effect, and that
   preparation failed. With them go the hardware names the launch gave, which were enabled, and why any was
@@ -703,16 +700,56 @@ lags in the same way. A darkening still visible after that is a trail, and fails
   build in one frame. M2 records that time against triangle count. `CONTENT-LOOP`'s promise of no late frame
   on an edit stands for the portable method; on a scene with a structure it is the recorded build.
 
+### Scene preparation and Maps fallback (M3)
+
+The first submission after a successful fallback has the bytes, content and streaming progress of the
+ordinary Maps submission for the same operation. Compare the same device generation and recipe, visual
+revision, frame inputs, and starting raster content and upload readiness. Match the first submissions by
+order. On the same device, a receiver that Maps could already draw stays drawable with the same resident
+buffers and without uploading them again, even when the traced candidate needs different buffers. A new
+attachment or a replacement device starts with the residency and upload budget of the ordinary Maps path
+for that operation. Compare both from the start of streaming. A fallback neither warms up the scene nor
+speeds up its uploads to make the comparison pass.
+
+The frame host owns one prepare-and-commit boundary for traced 3D preparation and its Maps retry.
+Attachment, same-device visual publication and device replacement all use it when they admit a traced
+attempt. The boundary covers the scene and the full ordered contribution list, including a
+single contribution, an empty list and lists inside lists. Every member participates through the
+`SceneContribution` seam. Its prepare operation yields a candidate with the resources and declarations it
+will install, and its commit takes that candidate. The host uses the candidate declarations to validate the
+combined graph, secondary views, frame targets and presenter bindings. All fallible work finishes before
+publication. This includes structure and pipeline creation and resolving the GPU error scopes for
+validation, internal errors and out-of-memory errors on the usable device. Commit installs the scene and
+members together on the render owner at the existing safe boundary.
+
+Both attempts start from the same accepted state and use the same publication inputs. Until commit, the
+live scene, list routing, raster residency and bindings, loader and upload progress, material selection,
+product leases, and mesh-row publication state remain with the current owner. Only commit can replace or
+invalidate them for the transition. Members can borrow compatible live resources for reading or stage
+replacements. Candidate writes, lease offers and row switches stay private until the appropriate
+publication boundary. A candidate for ray demand can stage incompatible draw buffers while the resident
+Maps set stays live. An abandoned candidate releases its owned resources under C06. A successful Maps
+commit may retire ray-only resources under the same lifetime rules and keeps normal cooked publication
+semantics under C05. Each submitted frame still commits uploads and history at its existing submission
+boundary.
+
+Failure at any member or in the remaining scene preparation aborts the whole candidate. Drop the abandoned
+candidate before preparing Maps. A successful retry publishes the requested operation and reports
+`PreparationFailed` for the ray requests it replaced. If the retry fails too, the host reports the error
+without publishing a partial scene or detaching a member. The ordinary recovery policy still applies to
+operations that resolve directly to Maps. On a lost device the accepted CPU inputs remain available for
+recovery under C06.
+
 ## The system as it runs
 
 1. **Launch.** The launch's list names `ray-query`, required or preferred. The device enables it and the
    registry records it. A preferred name that cannot be met is left out, and the registry records why. The
    recipe resolves from its name, or from the host's preference where none was named, and the registry
    records which and why.
-2. **Preparation.** The scene resolves its requests, to the map frame's where rays cannot run. With ray demand, the arena and each resident cooked
-   mesh are created with the build usage and build their mesh structures, the shader is composed with the
-   traced operations, and pipelines are created through the device's creation authority. Without it the scene
-   is prepared as it is today.
+2. **Preparation.** The scene resolves its requests before trying a candidate. With ray demand, the arena and
+   cooked meshes use the structure-build usage and build their mesh structures, the shader is composed with the
+   traced operations, and pipelines are created through the device's creation authority. The host commits the
+   complete candidate under [the preparation boundary](#scene-preparation-and-maps-fallback-m3).
 3. **Each frame.** Uploads are reconciled. The structure pass sets one instance for each active entity and
    each placement a contribution offers, and rebuilds the scene structure. The caster height map is drawn;
    cascades only if something reads them. The forward pass shades: each Sun-facing fragment traces the centre
@@ -769,6 +806,9 @@ it for each method, and no sentence drawn from it speaks of the whole frame's GP
 
 - **Structure memory.** One mesh structure for each mesh, not each instance, plus an instance record for each
   thing in the scene. M1 and M2 record resident bytes.
+- **Preparation overlap.** A transition retains the live resources and one candidate. Reuse compatible
+  raster buffers by reference and allocate incompatible storage only for the candidate that needs it.
+  The preparation boundary adds no work to the frame loop.
 - **Each frame, CPU.** One instance write for each entity and placement in the scene.
 - **Each frame, GPU.** The scene structure's rebuild, which M1 records for a still scene, for the
   representative movers and with every instance moving. Hard Sun: one ray for each shaded opaque pixel that
@@ -827,7 +867,11 @@ that moved, through a third mask bit.
   not admit Apple tile, through the registry's functions, and a failed device request, structure or pipeline
   through a fault the test injects.
 - Tests that need only entities live in `thrum-render`'s tests. Proofs that need cooked meshes or the valley
-  run in the proving ground through a script, so a check names no game package.
+  run in the proving ground through a script, except M3's fallback regression. That proof uses the existing
+  `thrum-asset-gpu` integration test binary and a receiver just large enough to need a second upload. Exercise
+  failure and commit order on the CPU through the production preparation path and use Metal for the first
+  submitted bytes and upload evidence. Both regression checks run in the merge tier without opt-in Cargo
+  features.
 - Visual items use T2 engine capture on `mac-metal`, `fixed` for stills and `realtime` for motion, in the
   proving ground's valley with each effect and the traced view behind a selection that is off by default.
 - An item that judges motion names its frames: the frame occlusion changed, and each frame after it up to the
