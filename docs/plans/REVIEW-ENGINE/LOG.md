@@ -193,3 +193,11 @@
 - 2026-11-16 Planner: the dependency M3 is blocked on, a shared exact-images run that covers its merged commit,
   is planned as `T2-CAPTURE` M3, which owns the capture that dropped frames. No item or `depends_on` changes
   here, since a run can pass before then. [Ruling](../ARCHITECTURE.md#ruling-on-a-capture-that-drops-frames).
+
+- 2026-11-24 M6 design review, workspace timing. M6.1 now uses the default workspace build with a focused
+  nextest filter. Its acceptance requires a per-test timing record under 6 s alone, the slow-case cutoff from
+  the planning request, and a first-attempt pass under ordinary builder load within the existing 10 s limit.
+  About 2 s remains the planning target. [Review](../../../.orchestrate/evidence/REVIEW-ENGINE/design-review.md).
+- 2026-11-24 M6 design review, rollback. The design and M6.1 require complete authority comparisons immediately
+  before and after each of the kernel, Resolve and corrected-replay refusals in the compact case. The final
+  complete authority and published-page comparisons against the straight corrected run remain required.

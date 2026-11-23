@@ -48,25 +48,20 @@ Take each paired record at the commit you claim and say what else the machine wa
 ## M6 Corrected replay stays fast and the 100,000-entity run stays covered
 
 This is the V1 game’s G2S replay test, which exercises the simulation and sparse undo paths maintained
-here. The fast `parallel_movers_match_the_straight_corrected_run_in_a_small_world` case in `simulation`
-uses the minimum mover population that actually dispatches multiple kernel chunks, including a partial
-chunk. It keeps slot churn, kernel, Resolve and replay refusal, forced dispatch and requested-mode
-fallback routing, an effective correction, complete authority equality and published-page comparison. Move
-the existing 100,000-entity test whole to the long tier. It forces four production-sized mover chunks and
-widely separated live and reused slots across forward and replay ticks, exposing scale-dependent undo,
-publication and partition failures the minimal world cannot. Mark each named long test with an ignore
-reason beginning with `long:`. List its existing binary in `.config/long-tests.txt` (release with overflow
-checks) with the fault that would reach main before the long run catches it. Raise the `main-tier` rule
-version as the settings require. Run these cases in that build on the branch, then take the covering
-`long-tests` record on main. Verify that the normal runner skips the moved cases and the long runner
-executes each once.
+here. The fast `parallel_movers_match_the_straight_corrected_run_in_a_small_world` case in `simulation` carries
+the rollback and corrected-replay comparisons described in the design. Move the existing 100,000-entity
+test whole to the long tier with an ignore reason beginning with `long:`. List its existing binary in
+`.config/long-tests.txt` (release with overflow checks) with the fault that would reach main before the
+long run catches it. Raise the `main-tier` rule version as the settings require. Run the original case
+in that build on the branch, then take the covering `long-tests` record on main. Verify that the normal
+runner skips it and the long runner executes it once.
 
-Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
-record before and after per-test times on the Mac in the default nextest test build used by the workspace
-check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
-normal builder work. Use the supplied run for the starting times where available. The batch passes the
-existing ten-second limit on its first run.
+Record the disposition of the original test and the coverage that replaces it in the fast tier. Use the
+supplied workspace run for the starting time. Record both new per-test times from nextest on the Mac,
+with the tested revision and the activity on the machine. Use M6.1's command for the isolated
+measurement. For the first-attempt result, run a focused selection including the compact case with
+the same build and profile alongside ordinary builder work.
 
-These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+Starting time from the passing `747909d1c` workspace check:
 
 - 7.965 s — `v1-game::simulation parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal`

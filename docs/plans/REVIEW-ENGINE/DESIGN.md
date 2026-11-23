@@ -82,6 +82,24 @@ error.
 
 The packed transform changes the sea's bits within `SEA`'s bounds; nothing exact reads the sea yet.
 
+**7. Corrected replay in both test tiers (G2S).** The fast CPU test uses the smallest mover population that
+dispatches multiple production kernel chunks, including a partial chunk. It keeps slot churn and exercises
+serial execution, requested Rayon with serial fallback, and forced parallel dispatch, with counters that show
+which route ran. For each of the three original refusals, compare complete authority immediately before and
+after the rejected step, before any further step or replay. Compare at the kernel refusal, at the Resolve
+refusal after tentative kernel writes, and at the refusal inside the corrected replay window. The retained
+input amendment must change the endpoint. After replay, compare complete authority and the published page
+with the straight corrected run, retaining the published-page assertions for page identity and each live
+row's stable identity, position, velocity and visual.
+
+The original 100,000-entity test moves intact to the main tier and keeps the G2S qualification at scale.
+Its four production-sized mover chunks and widely separated live and reused slots stress undo, publication
+and partitioning. The fast test's timing proof uses the workspace runner's stable toolchain, nonincremental
+build and default nextest profile, then filters which tests run. It records the compact case's per-test time
+alone and under ordinary builder load. The isolated run takes under 6 s, the cutoff used to identify the
+slow cases, with about 2 s as the planning target. The loaded run passes the existing 10 s limit on its
+first attempt.
+
 ## Parked, with the reason
 
 - **M71, one indirect draw for each meshlet on Metal.** The fix is a new Apple culling recipe. `CULLING`'s plan
@@ -94,7 +112,7 @@ The packed transform changes the sea's bits within `SEA`'s bounds; nothing exact
 ## What it must not do
 
 Change the cooked format; edit an assertion, bound or reference in a test another module left; touch
-`thrum-cloud-model` or `thrum-water-model`; add a numeric budget. Cost is recorded as paired rows.
+`thrum-cloud-model` or `thrum-water-model`; add a numeric engine performance budget. Cost is recorded as paired rows.
 
 ## Proof
 
