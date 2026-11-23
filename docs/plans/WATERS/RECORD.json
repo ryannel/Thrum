@@ -1321,7 +1321,8 @@
         "by": "plan",
         "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
         "at": "2026-11-20T10:47:17Z"
-      }
+      },
+      "ends_stretch": true
     },
     "M12": {
       "definitions": "791f4bb9101f66609520c1592ade85fc3820a19ce2d1bc28285c6d72f9b892d3",
@@ -1412,12 +1413,12 @@
       }
     },
     "M13": {
-      "definitions": "03ed8017ca3e30395ac2bd11c798e678503c04b507f2b88844d80bbbc502524f",
+      "definitions": "84ebc13842e162eee4b600c08b8c8eeb92104b716ec05b49540e173316e369bb",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "WATERS M13 is blocked with needs_context. The builder's question: M13.6 can't be met as written until the plan says wher",
+        "at": "2026-11-23T11:07:43Z"
       }
     },
     "M15": {
@@ -1512,11 +1513,15 @@
     {
       "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's decisions of 20 Nov.\n\n1. Resolve every Must Fix finding in .orchestrate/evidence/GATE-TIME/design-review.md, DEAD-TOOLS/design-review.md and DEAD-CODE/design-review.md. Their Suggestions are yours to take or leave; say which you took and why.\n\n2. Owner decisions, which replace the matching Assumption: lines:\n- Decision 1 (gale soak), in the owner's words: \"we can't have tests that run for this long in the regular test suite. We need to think carefully about what risks we're willing to take and when we run everything vs when our tests can be more targeted. I think it has to stay off every merge check.\" So no long soak runs in any merge's check, not even a 60-second slice, unless you show that a short run catches a fault class that nothing else catches. Give GATE-TIME a written test-tier policy, owned in ORCHESTRATE.md or the design library. It should say what runs on every merge (fast, targeted at the files and behaviours a change touches), what runs on main after merges, and what runs at milestone or release points. It should also say which risk each tier accepts and how quickly a fault found later gets back to its cause. Apply that policy to the gale, the stepped hour, the foam and any other test over about a minute.\n- Decision 6 (benches): delete all nine. The owner sees no need to keep any.\n- Decision 9 (provenance): provenance records are tracked in git. Choose their location under the test-data versus evidence rule (evidence is never committed; files a check or a person must read are not evidence), and make sure the merge guard accepts it. Land it before CLOUDS M6 copies its first library.\nThe other assumptions (2, 3, 4, 5, 7, 8, 10, 11) stand as written.\n\n3. Keep each milestone's files table current, so the lead can confirm files before a builder starts.\n\nEnd with PLANNED.",
       "at": "2026-11-20T10:47:17Z"
+    },
+    {
+      "task": "WATERS M13 is blocked with needs_context. The builder's question: M13.6 can't be met as written until the plan says where foam is born when the depth limit removes wave power and no crest exceeds breaking index 1. The builder's handoff is .claude/worktrees/waters/.orchestrate/evidence/WATERS/M13-handoff.md, and its unmerged work is at 0fa2c501e on build/waters.\n\nSettle that in the design and M13.6 so the builder can meet it, with a rule that gives a plausible shipped-game shoreline (owner's bar: shipped-game look and speed, not physical accuracy). Record any choice the owner hasn't made as an assumption.\n\nSeparately, the test water-scene::foam_scene_gpu craft_trail_outlives_removed_source_and_spreads takes 10.0 s even when it runs alone. That hits the 10 s per-test limit and failed the hourly workspace check on main. If M13's items touch it, add or adjust an item so the test fits comfortably under the limit (a smaller world or fewer steps), or moves to the long-tests tier with the reason recorded.\n\nDone: the design and done-when file answer the question, `./dev check-docs` passes, and the files are left for the plan command to commit.",
+      "at": "2026-11-23T11:07:43Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-20T10:47:17Z"
+    "host": "codex",
+    "at": "2026-11-23T11:07:43Z"
   },
   "design_history": [
     {

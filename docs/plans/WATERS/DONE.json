@@ -1046,7 +1046,7 @@
     {
       "id": "M13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1204,17 +1204,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "M13.6 can\u2019t be met as written until the planner specifies where foam is born when the depth limit removes wave power and no crest exceeds breaking index 1.",
-        "work": {
-          "commit": "0fa2c501ec2c78e105b32f0c4ae63099bd9630b7",
-          "branch": "build/waters",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/WATERS/M13-handoff.md"
-      }
+      ]
     },
     {
       "id": "M8",
