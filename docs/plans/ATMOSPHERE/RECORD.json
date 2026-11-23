@@ -170,6 +170,41 @@
         "by": "plan",
         "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 3 Must Fix f",
         "at": "2026-11-18T01:21:27Z"
+      },
+      "ready_for_review": {
+        "commit": "6a026cf2b08e5ce6118401b0a05406fd75dc278c",
+        "checked": "17528febdb9054fed14fa57db0862be96ed0554b",
+        "at": "2026-11-23T22:46:11Z",
+        "reused": [
+          "Test command",
+          "M7.1",
+          "M7.2",
+          "M7.4",
+          "M7.13",
+          "M7.5",
+          "M7.10"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 2074481,
+          "cached": 237557632,
+          "output": 393587,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 2074481,
+          "cached": 237557632,
+          "output": 393587,
+          "turns": 3
+        }
       }
     },
     "M8": {
