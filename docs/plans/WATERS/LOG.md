@@ -582,3 +582,8 @@
 | 7.425 | `water-scene::it scene_gpu::scene_ticks_and_declares_one_water_contribution` |
 | 7.146 | `water-scene::foam_scene_gpu lake_beach_births_follow_its_share_of_lost_power` |
 | 6.717 | `thrum-water::it foam_gpu::a_regular_wave_carries_foam_up_a_plane_beach` |
+
+- 2026-11-23 M17 design review, Must Fix 1. Removed the proposed fast portable GPU case from the design and
+  M17.3 because the two full sweeps already catch its faults. M17.3 checks that both sweeps keep their full coverage
+  and move to the long tier. M17.4 still requires both cases to pass on main with the repair included. Took the
+  provenance-path suggestion so the builder handoff points directly to the tracked record.

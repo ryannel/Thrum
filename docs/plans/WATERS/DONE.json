@@ -1070,11 +1070,9 @@
         },
         {
           "id": "M17.3",
-          "statement": "The light- and high-wind portable forward-cache cases run in the long tier with their early and day-in sweeps intact. They still catch a production-size texel or mip addressing error and lost high/low carry anywhere in the hierarchy. Fast portable coverage still checks a small sample of the GPU field and mip against the model to catch forward-cache wiring regressions before merges. Guard: the portable small case in the fast tier and both complete sweeps in the long tier.",
-          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-sea --test it -E 'test(=forward_cache_gpu::portable_forward_fields_and_small_filtered_mip)' --no-tests=fail",
-          "ask": "Do the test definitions, default selection and long-tier registration agree with the plan? Does the record show a passing, fast portable smoke case and both long cases registered once with the production-size reason recorded?",
+          "statement": "The two portable forward-cache cases, light and high wind, move from the default selection to the long tier with their early and day-in production-size sweeps intact. Guard: both sweeps compare every base texel and every filtered mip, including high/low carry against direct base-block averages through the mip hierarchy.",
+          "ask": "Do both portable cases retain their original dimensions, two time checkpoints, base-texel comparisons and direct base-block averages through the final mip with the original high/low carry tolerances? Does the default runner skip both and does the long-tier list register their binary once, for release with overflow checks, with the production-size fault recorded?",
           "target": "mac-metal",
-          "lock": "gpu",
           "builder_result": "open",
           "evidence": ""
         },
