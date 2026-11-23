@@ -10,6 +10,8 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: "thinking about water as a whole ... built cohesively" (14 November) is met by one design for all water, built by four modules: `SEA` (the wind's waves), this module (the shared system on the sea, the shore and lakes), then `RIVERS` and `PUDDLES`.
 - Assumption: a river's flow is worked out once and stored. Floods, dam breaks and levels that travel downstream are not planned, which sets aside the water decision's rule that all water simulation runs on the GPU.
 - Assumption: "breaking waves" (14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel, and no current from surf.
+- Assumption: wet long-wave loss keeps M7.5's distributed foam wherever a breaking face is unavailable, including the swash. An eligible crest concentrates part of that birth on its face and under a resolved lip. Distant beaches use the same wet lost-power source for their steady cover.
+- Assumption: a smaller fixture or fewer submissions can keep the Metal craft-trail guard in the fast tier while preserving M7.6's coverage.
 - Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
 - Assumption: surf on a lake is proved against the model, not judged by eye: the example's lake raises no long waves.
 - Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
@@ -34,45 +36,41 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M2 An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh
 
-This creates `thrum-water` as one effect on `EFFECT-GRAPH`'s seam, `examples/water` (package `water-scene`) as a game on `thrum-app`'s shell with its own ticking world, and `scripts/water_cost.py`. `examples/v1-game` is the working model. [Rulings 1 and 3](../ARCHITECTURE.md#seam-rulings-for-waters) are built here without changing the owning modules' items or tests; `CREATOR` M2 and M3 edit `thrum-app` too, so integrate on top of what has landed.
-
-The work so far is on `build/waters`, and [its handoff](../../../.orchestrate/evidence/WATERS/M2-handoff.md) says what M2.2 tried. Build M2.10 before the next look at M2.2: [how the surface reads the wave field](DESIGN.md#the-surface-and-the-frame-contract) replaces the inverted cache and the three-mip reads, and changes one `SEA` test, as [the asks](DESIGN.md#what-waters-asks-of-other-modules) say. `REVIEW-ENGINE` M5 repacks `thrum-sea`'s transforms; whichever lands second integrates on the other.
+[Review](../../../.orchestrate/evidence/WATERS/M2-review.md)
 
 ## M3 The same sea draws in Chrome from one command
 
-`scripts/check_v1_browser.mjs` shows how a page is launched and checked; this creates `scripts/check_water_browser.mjs`.
+[Review](../../../.orchestrate/evidence/WATERS/M3-review.md)
 
 ## M4 A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand
 
-Make the island's ground here as the example's content, and build the bed from its triangles: a lake about 300 m from the sea and well above it, under a ridge, with a second hollow beside it for M4.6 and a rim over its highest stage; a beach of about 1 in 10 facing the trade wind's swell; a lee shore and a headland, which M13 and M14 use. The profile has no surf until M13.
+[Review](../../../.orchestrate/evidence/WATERS/M4-review.md)
 
 ## M5 A float and a small craft ride the waves they sit on, at sea and on the lake, from rest to 15 m/s, and a float in a current is carried by it
 
+[Review](../../../.orchestrate/evidence/WATERS/M5-review.md)
+
 ## M6 The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore
 
-The seam's state protocol and the two endpoints start here.
+[Review](../../../.orchestrate/evidence/WATERS/M6-review.md)
 
 ## M7 Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach
 
-The foam pattern is the example's cooked product, lent by a `CONTENT-LOOP` lease as in `examples/v1-game/src/lent`; Broadsides' ranked pattern may be its source, with its MIT notice. The film is drawn by the water's own pass.
+[Review](../../../.orchestrate/evidence/WATERS/M7-review.md)
 
 ## M13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
-Both sea crates are this module's to extend now: the field cache gains the transform and the section, and `SEA`'s tests keep passing. Turn surf on in the example's profile.
+Resume `build/waters` from the handoff at `.claude/worktrees/waters/.orchestrate/evidence/WATERS/M13-handoff.md` in the main checkout.
 
 ## M8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 
-The gather reads scene colour and depth under [ruling 2](../ARCHITECTURE.md#seam-rulings-for-waters). The cloud shade is a labelled stand-in provider, as in `examples/v1-game/src/environment.rs`. Put a tree on the lake's bank.
-
 ## M9 Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea
 
-The channel's chart is written by hand in the example: a level that falls from the lake's to below the lowest tide, a current that quickens in a narrows, a source end, and a mouth shallow enough at low tide for the depth limit to hold the swell. Cut the lake's outlet through ground above its highest stage, or preparation refuses the chart. If one mean current a window is visibly wrong for interaction waves there, log it for `RIVERS`' planner and change nothing.
+If the window's mean current makes interaction waves visibly wrong in the example channel, log the case for the `RIVERS` planner.
 
 ## M15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window
 
 ## M16 Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down
-
-[Rulings 5 to 7](../ARCHITECTURE.md#seam-rulings-for-waters) are built here, in `ATMOSPHERE`'s and `APPLE-PRESENTATION`'s files.
 
 ## M10 A visitor takes the water from glassy calm to gale, raises and lowers the lake, and goes from dawn to night with the controls, and it holds up in motion, on the Mac and in Chrome
 

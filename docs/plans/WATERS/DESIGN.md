@@ -1147,9 +1147,25 @@ set out with, its ageing neither frozen nor applied twice. M7 tests a hitch that
 - *the shallows and the swash*: where the depth holds a wave layer's height ([gains](#waves-on-a-body-gains)),
   at a rate in proportion to the power the limit takes, and only where the point is wet now. So foam forms
   through the band where waves die, up to the top of the swash. There is no threshold: a lake's small waves
-  lose little power and make little foam, in that proportion, and a calm makes none. With surf, the long
-  layer's share of that birth is laid where a crest spends the power: along the front face of a crest past
-  index 1, by the section's phase, with a part of it as submerged air under the lip. The total is unchanged.
+  lose little power and make little foam, in that proportion, and a calm makes none.
+
+**Shore births with surf.** Book each layer's loss across the depth limit on wet support as in M7.5, using
+the transformed long-wave power as the long layer's input to the limit. The short layers keep their
+distributed births. Long-wave loss also feeds distributed births at its wet source cells wherever that wave
+has no resolved wet breaking face nearby. This includes swash where the section has faded and waves that
+stay at or below breaking index 1. Even the builder's 40 m wave of amplitude 0.12 m loses power in 0.02 m
+of water, where its crest wets the bed and its breaking index is about 0.62. It can leave a light wash of
+foam that rides up the sand and strands as lace on the retreat.
+
+Where the same wave has a resolved wet front face above index 1, use the section's phase and shape to move
+a share of the long-wave birth to that face as fresh film, with a share as submerged air in the wet column
+under an actual thrown lip. A bore with a wet front and no lip takes only the face share. Blend the moved
+share in from zero at index 1 and back to zero as the section fades. Use a bounded local footprint on the
+existing foam grid and weights that sum to one including the share retained at the source. If the face or lip
+is unresolved or dry, keep its share at the wet source. Reuse the surf samples and the existing foam step.
+Each wave keeps the area-integrated birth budget M7.5 assigns to its wet lost power before stock saturation
+and ageing. Calm, omitted waves and dry columns contribute zero shore birth. The face width and air split
+are visual tuning for M13.7.
 
 `RIVERS` books two more through the same rule: the height a chart's flow loses, and a fall's plunge.
 
@@ -1164,8 +1180,9 @@ bound stays stable. The step keeps what it moves: what leaves one place arrives 
 the edge of the water is not lost there. Foam on ground the water has left stays where it is and ages out; on
 sand the waves wash, [the film](#the-surface-and-the-frame-contract) shows it as lace until the sheet returns.
 Beyond the far level the surface uses the erf coverage estimator from the cascades' Jacobian moments, so
-whitecaps continue to the vista without state. A shore's foam continues the same way: beyond the far level it
-is the cover the limit's power would hold in a steady state, so a distant beach keeps its surf line.
+whitecaps continue to the vista without state. A distant beach takes the cover that the same wet lost-power
+birth would hold in steady state, including long-wave loss below breaking index 1. The estimator uses the
+distributed source and hands over across the window blend, so a distant beach keeps its surf line.
 
 **The swash carries foam.** Between the line the waterline draws back to and the line it runs up to, the water
 is a sheet whose thickness, the surface less the ground, rises and falls at each place with each wave. While
@@ -1193,7 +1210,8 @@ because foam is born along it, and what it leaves behind stays until the swash t
 
 **Appearance.** Coverage thresholds a ranked pattern, so thin foam is lace and thick foam closes. The pattern is
 sampled by stochastic patches, the change that removed the stamped repeat. The pattern is a cooked 2D product
-the game supplies through a `CONTENT-LOOP` lease.
+the game supplies through a `CONTENT-LOOP` lease, following `examples/v1-game/src/lent`. The water draws the
+shore film in its own pass.
 
 **How much of the spike's open look work is inside S4.** Judged against the bar: caps with a bright core and a
 feathered edge are inside, because flat white cutouts do not read as whitecaps. Pale water over submerged air
@@ -1736,11 +1754,18 @@ pixels under water; the surface, body by body. Reconstruction, tone and present 
 water commits its tick and each endpoint's tick. A scene without a capability runs none of its steps.
 
 **The example scene** is a `Game` on `thrum-app`'s shell with a ticking world of its own, as `examples/v1-game`
-is. It uses `thrum-controls`, a parameter file and `./dev scene examples/water [--web]`. Its world is an island
-the example makes: open sea, a beach open to the swell, a headland and a lee shore, a lake in the hills under
-a ridge with a tree on its bank, a pond, and a channel from the lake to the sea whose chart is made by hand and
-labelled a stand-in. Its ground, craft, floats and foam pattern are the example's
-content: made here, or copied from Broadsides where [that serves](#what-broadsides-offers).
+is. It uses `thrum-controls`, a parameter file and `./dev scene examples/water [--web]`. Its island has a beach
+of about 1 in 10 facing the trade swell, a headland and a lee shore. The bed comes from the opaque terrain's
+triangles. The lake sits about 300 m inland, above the sea and under a ridge, with a second hollow beside it
+and a rim above its highest stage. The example has a pond and adds a tree on the lake's bank for the optics
+views. It enables surf in M13 and uses a labelled cloud-shade stand-in in M8, following
+`examples/v1-game/src/environment.rs`.
+
+M9's hand-authored channel is the example's stand-in for the `RIVERS` chart. It leaves the lake through an
+outlet cut in ground above the lake's highest stage, quickens in a narrows, and falls below the lowest tide
+at the mouth. At low tide the mouth is shallow enough for the depth limit to hold the swell. The island's
+ground, craft, floats and foam pattern belong to the example, which makes them or copies suitable material
+from [Broadsides](#what-broadsides-offers).
 
 **Creator journey.** A scene adds the water contribution with a profile that names its capabilities, and declares
 its bodies, each with its stage's range: a level for a sea, a seed and a level for a lake, a chart with its ends. A scene with ground gives the bed, or the triangles

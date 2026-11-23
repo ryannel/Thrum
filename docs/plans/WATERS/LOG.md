@@ -336,6 +336,9 @@
   changes its oracle to the forward evaluation, under the same bounds. M2's other items are unchanged, word for word.
   Risk 30 covers devices that admit less anisotropy. Not chosen: moving the long waves into FFT cascades, because
   the analytic layer is not what failed.
+- 2026-11-16 The M2 continuation put M2.10 before the next M2.2 inspection. Its integration notes identified
+  the concurrent `thrum-app` edits in `CREATOR` M2 and M3 and the `thrum-sea` transform repack in
+  `REVIEW-ENGINE` M5.
 - 2026-11-16 Built M2's open-sea contribution, ticking water example, depth-writing late pass and capture/cost tools.
   Mac Metal probes verify submitted depth, CPU-model motion on tick/repeat frames, history resets and live stage changes.
   Corrected coherent Fourier phases, shared Fresnel/exposure composition and world-space cascade normals.
@@ -416,6 +419,7 @@
   Hardware Chrome passes the first-frame and seven-checkpoint CPU-oracle trace, including real tab visibility
   and destruction/replacement of its device, with no validation faults. [Numerical proof](../../../.orchestrate/evidence/WATERS/M3.md)
   keeps these target results separate from the fixed/motion inspections recorded after integration.
+  The browser check is `scripts/check_water_browser.mjs`, following `scripts/check_v1_browser.mjs`.
 - 2026-11-17 M3 merged at `07cecc854` after the full project gate passed for its integration batch.
   Captured four Chrome and six portable Metal fixed views, plus 62 contiguous Chrome pan frames with no omissions.
   Builder and fresh visual inspection pass the named cues; the clip's phase-sampling limit and page clock remain explicit.
@@ -556,3 +560,8 @@
   the sky. The foam suites pass, and the trail and beach captures are unchanged in kind. Design proposal: the design's
   stateless far estimator now carries one measured mean per endpoint (earlier entry, open).
   Target evidence: `.claude/worktrees/waters/tmp/waters-m7-r5/README.md`.
+
+- 2026-11-23 M13 paused at `0fa2c501e` on `build/waters`. The builder's handoff in
+  `.claude/worktrees/waters/.orchestrate/evidence/WATERS/M13-handoff.md` records a 40 m wave with wet depth-limit
+  loss below breaking index 1. M13.6 now covers that case and the breaking case. M13.14 records the fast-tier
+  trail test requirement after the hourly workspace timeout. The isolated builder-branch run took 7.19 s.
