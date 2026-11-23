@@ -587,3 +587,10 @@
   M17.3 because the two full sweeps already catch its faults. M17.3 checks that both sweeps keep their full coverage
   and move to the long tier. M17.4 still requires both cases to pass on main with the repair included. Took the
   provenance-path suggestion so the builder handoff points directly to the tracked record.
+
+- 2026-11-23 M17 retained the basin and three production surf oracles in compact fixtures. CPU force tests keep
+  the drift, bank and settling cases, with live Metal queries and submitted film and contribution checks. The
+  focused batch passed all ten cases on its first run, with a 3.219 s maximum. Both unchanged portable sweeps
+  passed in the release long tier on the branch.
+  [Fast-tier evidence](../../../.orchestrate/evidence/WATERS/M17/M17.1-2-fast-tier.md).
+  [Portable sweep evidence](../../../.orchestrate/evidence/WATERS/M17/M17.3-long-tier.md).
