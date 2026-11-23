@@ -50,3 +50,7 @@
   produced capture-on grid replacement and
   capture-off valley records. The registered images are covered by the shared main-branch verifier.
   [Evidence](../../../.orchestrate/evidence/HOST/M4/README.md)
+- 2026-11-23 Fixed the merged iOS build by compiling the route render-scale helper only for its Mac and WebAssembly
+  callers. The full exact-image verifier passed on `f582a2af1214`, which contains the initial HOST M4 merge. The
+  verifier bisected the later `apple-tile-native` failure on main to APPLE-PRESENTATION M5 (`32dfd3c14a0f`).
+  [Exact-image records](../../../.orchestrate/evidence/HOST/M4/README.md#m47-registered-exact-images)
