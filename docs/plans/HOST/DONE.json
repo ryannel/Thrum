@@ -213,7 +213,7 @@
     {
       "id": "M4",
       "name": "A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -295,7 +295,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_access",
+        "what": "Unlock the Mac console and keep the display awake so the coordinator can rerun M4.6.",
+        "work": {
+          "commit": "7c0238bf01849b613c05df927d290f82d72ecbf4",
+          "branch": "build/host",
+          "pushed": true
+        },
+        "handoff": ".orchestrate/evidence/HOST/M4-handoff.md"
+      }
     },
     {
       "id": "M5",
