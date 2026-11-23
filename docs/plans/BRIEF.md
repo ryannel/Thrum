@@ -111,6 +111,8 @@ through the module named, and [the status page](STATUS.md) says where that modul
 - **G3s, physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple scattering, sky-view and aerial
   LUTs and Sun disk; physical illuminance drives lights and shadows; time controls span dawn through night. Follow
   the Broadsides reading map and the PD and CC0 rules. Module: `ATMOSPHERE`.
+  The TAAU route proof on Metal and Chrome records sunrise shadows, the lookout depth edge and the aerial glow at
+  sunset. The west-lookout crossing and exact disk match remain open. [M6 builder evidence](../../.orchestrate/evidence/ATMOSPHERE/M6/README.md)
 - **G3t, tile dataflow and Metal boundary.** One registry, graph-derived attachment storage, one split scene and
   output graph, G4's pre-tone colour and exposure input, and a prepared generation-owned native segment with its
   twin, under [the boundary record](../design/decisions/G3T-METAL-BOUNDARY.md). No raw or wgpu encoder splice and

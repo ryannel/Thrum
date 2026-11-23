@@ -310,7 +310,7 @@
           "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this milestone started from. In H1-H4, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. In H5, are the changes only the ones the design names: the stored-cube probe and the stored-table rule added, and the closed-form and quadrature comparisons kept as recorded differences with no assertion on them, while the night term, the agreement across edges and corners, the furnace and the source scaling stand as they were? Is every changed expected value one of the design's five guards, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/prior/chrome-final.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/prior/environment.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -345,20 +345,20 @@
           "check": "python3 scripts/atmosphere_cost.py check --scene route",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "tests/fixtures/atmosphere/route-cost.json; .orchestrate/evidence/ATMOSPHERE/M6/route-cost-check.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.6",
           "statement": "The maturity ledger's G3s rows state implementation, correctness, visuals and device separately, and name what is not qualified: the west-lookout crossing, the exact disk match, solar sky and solar aerial accuracy against an all-orders reference, Moon, weather, calibrated night colour and physical display cadence.",
           "ask": "Do the ledger rows and the build plan's G3s line match the evidence, with the known defects listed and nothing claimed for a physical iPhone?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/design/maturity.json; docs/plans/BRIEF.md#the-gates; .orchestrate/evidence/ATMOSPHERE/M6/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.9",

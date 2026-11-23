@@ -260,12 +260,12 @@
         "ios": "not_run"
       },
       "route_closure": {
-        "implementation": "The existing valley atmosphere runs with TAAU selected. M6 adds T2 fixed stops and elapsed-time pans, and checks the lent reflection cube and split-sum table against their stored products.",
-        "correctness": "Metal and hardware Chrome pass the stored table, face and mip addressing, the blend across mip levels, physical units and explicit exposure scales 1 and 2. The four automated M6 item checks pass on the builder branch.",
-        "visuals": "G3s remains open. Metal and Chrome TAAU checkpoints reproduce the near-ridge bright rim and shipped valley terrain-lip brightness step at 17.4 h. The sphere and rock cast clearly visible shadows at noon and have no clearly visible ground shadows at sunrise. The terrain lip persists through the lit portion of both elapsed Ground E pans.",
-        "device": "Apple M3 Max Metal and hardware Chrome WebGPU are the M6 targets. Capture-off 1080p Metal ABBA with TAAU records whole-frame visit medians of 2.675–3.979 ms across the six stops under shared load. The 1-minute load was 94.0–202.6, with three named excursions and elapsed scrub hitches investigated.",
+        "implementation": "The SHOWCASE M9 valley runs with TAAU. T2 captures the six fixed presets and drives elapsed solar time and yaw through the game setters for the scrub and Ground E pan.",
+        "correctness": "Metal and hardware Chrome verify the lent split-sum pair and reflection radiance against the stored products at exposure scales 1 and 2. The probes include face and mip addressing, neighbouring-mip interpolation, physical units and wrong lookups.",
+        "visuals": "The six fixed stops show both prop shadows at sunrise and an uninterrupted lookout top at 17.4 h, ending at the terrain depth edge. Solar rays and surface normals confirm that direct sunlight does not light the warm 17.9 h ridge face. The builder evidence records the elapsed inspection and the pending clean-context review.",
+        "device": "Apple M3 Max Metal and hardware Chrome WebGPU are the M6 targets. Capture-off 1080p Metal ABBA with TAAU records final whole-frame visit medians of 2.74–4.00 ms under shared 1-minute load of 30.35–31.60. The timing record investigates startup pass excursions and scrub holds.",
         "unqualified": "The moving west-lookout shadow crossing, exact finite-disk match, all-orders solar sky and solar aerial accuracy, Moon, weather, calibrated night colour, physical display cadence and physical iPhone are outside the qualification.",
-        "evidence": ["../evidence/ATMOSPHERE/M6/README.md"]
+        "evidence": ["../../.orchestrate/evidence/ATMOSPHERE/M6/README.md"]
       },
       "aloft_casters": {
         "implementation": "The exit balloon row is marked aloft. Its buckets draw in both Sun cascades. Only grounded buckets draw in the terrain horizon; contribution casters and Sun fits retain their existing inputs.",
