@@ -309,10 +309,10 @@
           "statement": "Pixel sheets use the scale-dependent spatial filter in mechanism 6 of the design on both Metal recipes and in Chrome WebGPU. It stays inside the sampled frame's own gutter and uses the existing one-draw path at the output extent.",
           "ask": "Do the projected scale and continuous texel coordinate drive a centred, normalized, positive filter on premultiplied scene-linear RGBA? Do its support, quad margin and atlas accesses agree for standalone frames and tiles? At each aligned whole scale does it reduce to the original one-sample box path, and does the widened path use at most four bilinear samples with the existing sheet bindings?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-coverage.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -321,10 +321,10 @@
           "ask": "Does each sweep hold the row fixed and advance the ordinary sprite view through distinct submissions? Does the proof read the marker positions from those images and reject the same pixels replayed at different expected poses?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
@@ -332,10 +332,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
@@ -345,8 +345,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -355,10 +355,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.6",
@@ -367,10 +367,10 @@
           "ask": "Does the run report the window's points, backing scale and surface extent from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-window-final.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.7",
@@ -380,8 +380,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -390,8 +390,8 @@
           "inspect": "Capture the existing 1920\u00d71080 card, ground and rotating field with T2 engine capture in realtime mode, at 0.05 and 3 output pixels per simulation tick in X with the 0.53 diagonal Y component at each scale. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's 1.5\u00d7 take to locate the offending patches.",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -399,10 +399,10 @@
           "statement": "On Metal, pixel sprites retain distinct fine marks and clean outlines at their still scales. Smooth sprites look clean over light and dark backgrounds, including at 0.25\u00d7.",
           "inspect": "Capture fixed stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234. Inspect the existing pixel sprites at 1\u00d7, 1.5\u00d7, 2.37\u00d7, 4\u00d7 and 6\u00d7, the original stripe and checker patches at 1.5\u00d7, and smooth sprites at 0.25\u00d7, 0.5\u00d7, 1\u00d7 and 2\u00d7 over light and dark backgrounds. Judge full frames and native-size crops. Check that (1) pixel art keeps distinct one-texel marks, square structure and clean outlines, and (2) smooth art has no fringe, halo, bleed or visible aliasing at quarter size.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-stills.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.10",
@@ -410,8 +410,8 @@
           "inspect": "Capture the M3.8 sprite route in T2 realtime mode at 1.5\u00d7 and 2.37\u00d7, both speeds and both DPRs, holding the backing extent at 1920\u00d71080. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's Chrome takes to locate the offending patches.",
           "target": "chrome-webgpu",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -419,41 +419,18 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "main-branch check exact-images",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "failed_reviews": 1,
+      "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
-      "diagnoses": 0,
-      "status": "in_progress",
+      "diagnoses": 1,
+      "status": "not_started",
       "quality_bar": "Pixel stability as in Celeste. At normal viewing size and recorded speed, fine lines and checks stay distinct and their contrast holds during the pan. Edges as clean as in Hades and Hollow Knight, with no fringe, halo, neighbouring sheet colour or gap between ground tiles. Judge the running output by eye.",
-      "findings": [
-        {
-          "name": "Fine patterns pulse during Metal scroll",
-          "item": "M3.8",
-          "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
-          "repeat": false
-        },
-        {
-          "name": "Fine patterns pulse during Chrome scroll",
-          "item": "M3.10",
-          "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
-          "repeat": false
-        },
-        {
-          "name": "Bleed witness has no left neighbour in the sampled atlas",
-          "item": "M3.4",
-          "repeat": false
-        },
-        {
-          "name": "Chrome weight check never moves the camera",
-          "item": "M3.7",
-          "repeat": false
-        }
-      ]
+      "diagnosed_for_planner_finding": true
     },
     {
       "id": "M4",
