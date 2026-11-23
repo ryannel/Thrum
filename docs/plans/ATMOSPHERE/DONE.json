@@ -502,10 +502,10 @@
           "statement": "In Chrome the haze sweep and the shafts pass M7.6's, M7.7's and M7.8's lists.",
           "inspect": "Capture the same stills, the pan, the walk, the scrub and the cut in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/chrome-inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.10",
