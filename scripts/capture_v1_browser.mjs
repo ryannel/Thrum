@@ -20,7 +20,7 @@ args['retain-raw'] = 'off';
 args.atmosphere = 'off';
 args.params = '';
 args['sprite-scale'] = '1.5';
-args['sprite-speed'] = '0.3';
+args['sprite-speed'] = '0.05';
 args.dpr = '1';
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
@@ -34,7 +34,7 @@ const spriteScroll = args.scene === 'sprites-scroll';
 const spriteField = args.scene === 'sprites-field' || spriteScroll;
 const spriteDpr = Number(args.dpr);
 if (spriteScroll && (!['1.5', '2', '2.37'].includes(args['sprite-scale']) ||
-    !['0.3', '3'].includes(args['sprite-speed']) || ![1, 2].includes(spriteDpr))) {
+    !['0.05', '0.3', '3'].includes(args['sprite-speed']) || ![1, 2].includes(spriteDpr))) {
   throw new Error('Invalid sprite scroll scale, speed or DPR');
 }
 if (spriteField && (args.mode !== 'realtime' || args.control !== 'ordinary' || args.source !== 'sdr' ||
