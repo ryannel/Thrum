@@ -21,7 +21,7 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Claude model:** claude-opus-5-5  *(loop)*
 - **Default host:** codex  *(loop: builders)*
 - **Review host:** codex  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium"; design reviews stay on Codex since Claude plans)*
-- **Planner host:** claude  *(loop)*
+- **Planner host:** codex
 - **Claude planner:** claude-fable-5-2 high  *(loop: owner, 10 Nov 2026)*
 - **Codex design reviewer:** gpt-6.2-astra high  *(loop: owner, 10 Nov 2026; owner, 17 Nov 2026: moved from gpt-6-astra to 6.2)*
 - **Codex reviewer:** gpt-6.2-astra medium  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium"; owner, 17 Nov 2026: moved from gpt-6-astra to 6.2)*
