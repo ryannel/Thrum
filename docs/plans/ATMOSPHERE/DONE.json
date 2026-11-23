@@ -345,7 +345,7 @@
           "check": "python3 scripts/atmosphere_cost.py check --scene route",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "tests/fixtures/atmosphere/route-cost.json; .orchestrate/evidence/ATMOSPHERE/M6/route-cost-check.json",
+          "evidence": "examples/v1-game/tests/fixtures/atmosphere-route-cost.json; .orchestrate/evidence/ATMOSPHERE/M6/route-cost-check.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

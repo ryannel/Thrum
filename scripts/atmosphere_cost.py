@@ -13,7 +13,7 @@ from pathlib import Path
 from run_v1_showcase import store_root
 
 ROOT = Path(__file__).resolve().parent.parent
-RECORD = ROOT / 'tests/fixtures/atmosphere/route-cost.json'
+RECORD = ROOT / 'examples/v1-game/tests/fixtures/atmosphere-route-cost.json'
 STOPS = ('sunrise', 'noon', 'sunset-clear-sun', 'sunset-sun', 'twilight', 'night-upslope')
 PASSES = (
     'atmosphere transmittance', 'atmosphere multiple scattering', 'atmosphere ground irradiance',
