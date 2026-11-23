@@ -20,7 +20,7 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "d1196bb729f84b156579757c4ff72f23c25b3ae74178bc3f82c820e22867ca30",
+      "definitions": "8d20d75ecac705310d781d378ffbf54e0cc7eea984807b6b8427b8044a456652",
       "reviews": [
         {
           "verdict": "pass",
@@ -63,7 +63,25 @@
         "review": ".orchestrate/evidence/COOKED-DRAW/M1-review.md",
         "checked": "96ad557c4783bfef5c565e7557c0b40ad62ddbac",
         "at": "2026-11-09T20:01:03Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix fi",
+          "at": "2026-11-23T23:18:45Z"
+        }
+      ],
+      "ends_stretch": true
     }
+  },
+  "briefs": [
+    {
+      "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix findings. The first needs CULLING's, COOKED-DRAW's and PLATFORM-RUNTIME-IOS's files and T2-CAPTURE's guide to align their iOS commands on one simulator lock through verified shutdown (a simulator left booted after Thrum runs storms into ~290 respawning daemons and load 100-422). A previous whole-project planner finished this work but its merge check was interrupted (exit 130, by the lead): its files are in the git stash 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO' (stash@{0}); start from the main branch's tip and reuse what holds up.\n\nYour last turn on this finished, but its files couldn't merge: couldn't merge the plan: it changes the same lines as work that landed meanwhile, in docs/plans/SESSION/PLAN.md. rebase onto origin/main failed: \nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message w. They are kept in the latest stash, 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO'; start from the main branch's tip and reuse what holds up.",
+      "at": "2026-11-23T23:18:45Z"
+    }
+  ],
+  "planner": {
+    "host": "codex",
+    "at": "2026-11-23T23:18:45Z"
   }
 }

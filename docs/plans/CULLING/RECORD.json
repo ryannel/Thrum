@@ -136,7 +136,7 @@
       }
     },
     "M2": {
-      "definitions": "960d274c06855d1b346692f2e89325cc93cfe1716b3b119414c4e0a61c86a7ea",
+      "definitions": "f928b44663d8a337a336529205ae9316fdae0b15fa9efab27006d905b7d99d4c",
       "reviews": [
         {
           "verdict": "fail",
@@ -239,7 +239,14 @@
         "review": ".orchestrate/evidence/CULLING/M2-review.md",
         "checked": "6d7e5a3aaa7eef8aa25a99b149013b72a875939f",
         "at": "2026-11-13T15:58:07Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix fi",
+          "at": "2026-11-23T23:18:45Z"
+        }
+      ]
     },
     "M3": {
       "definitions": "ece94e53f2ef6bd682fdca98e59afa5fc9943ae78f1a8202633e515c7bc27259",
@@ -410,7 +417,8 @@
         "review": ".orchestrate/evidence/CULLING/M3-review.md",
         "checked": "a4b8ec591918ba2fd26d0468abd7983c680267e2",
         "at": "2026-11-17T05:39:24Z"
-      }
+      },
+      "ends_stretch": true
     }
   },
   "briefs": [
@@ -449,11 +457,15 @@
     {
       "task": "CULLING M3 review (docs/evidence/CULLING/M3-review.md) failed M3.7 and M3.8 as 'full-refresh smoothness unjudged', citing frame-submission cadence under load (p95 20.6 ms) and DESIGN.md:442-443's 'smooth at the display's full refresh'. The builder now asks for a paused-builder quiet sitting. But M3.7 and M3.8 judge popping, flicker and missing geometry at frame edges and silhouettes; the plan says CULLING takes no quiet-machine sitting (costs are tripwires recorded with load); and the build rules say presentation cadence is a separate measurement in the owner's window that gates only items about pacing. Settle which module owns frame cadence for the culled valley (APPLE-PRESENTATION or SHOWCASE as the plan already implies, or CULLING if you find a real reason), and make DESIGN.md and M3.7/M3.8 say plainly what they judge, so a reviewer can't read cadence into them unless it's meant.",
       "at": "2026-11-17T02:56:04Z"
+    },
+    {
+      "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix findings. The first needs CULLING's, COOKED-DRAW's and PLATFORM-RUNTIME-IOS's files and T2-CAPTURE's guide to align their iOS commands on one simulator lock through verified shutdown (a simulator left booted after Thrum runs storms into ~290 respawning daemons and load 100-422). A previous whole-project planner finished this work but its merge check was interrupted (exit 130, by the lead): its files are in the git stash 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO' (stash@{0}); start from the main branch's tip and reuse what holds up.\n\nYour last turn on this finished, but its files couldn't merge: couldn't merge the plan: it changes the same lines as work that landed meanwhile, in docs/plans/SESSION/PLAN.md. rebase onto origin/main failed: \nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message w. They are kept in the latest stash, 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO'; start from the main branch's tip and reuse what holds up.",
+      "at": "2026-11-23T23:18:45Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-17T02:56:04Z"
+    "host": "codex",
+    "at": "2026-11-23T23:18:45Z"
   },
   "design_history": [
     {

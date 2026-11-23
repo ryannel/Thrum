@@ -25,7 +25,7 @@
   },
   "milestones": {
     "M7": {
-      "definitions": "e93155eca1db1f52c48f5e3f04eadcb623f33d5f8493ad473d6399bef82bc3a6",
+      "definitions": "eef4d76da7f74221c61ace7b3bdaff4aaa7e73e35ca0609800302780062490af",
       "reviews": [
         {
           "verdict": "pass",
@@ -68,7 +68,15 @@
         "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
         "checked": "6eb96528daa668840afb5bfd936db30cfe273e13",
         "at": "2026-11-09T16:06:43Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix fi",
+          "at": "2026-11-23T23:18:45Z"
+        }
+      ],
+      "ends_stretch": true
     }
   },
   "design_history": [
@@ -89,5 +97,15 @@
       "path": "visible",
       "at": "2026-11-09T15:03:58Z"
     }
-  ]
+  ],
+  "briefs": [
+    {
+      "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix findings. The first needs CULLING's, COOKED-DRAW's and PLATFORM-RUNTIME-IOS's files and T2-CAPTURE's guide to align their iOS commands on one simulator lock through verified shutdown (a simulator left booted after Thrum runs storms into ~290 respawning daemons and load 100-422). A previous whole-project planner finished this work but its merge check was interrupted (exit 130, by the lead): its files are in the git stash 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO' (stash@{0}); start from the main branch's tip and reuse what holds up.\n\nYour last turn on this finished, but its files couldn't merge: couldn't merge the plan: it changes the same lines as work that landed meanwhile, in docs/plans/SESSION/PLAN.md. rebase onto origin/main failed: \nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message w. They are kept in the latest stash, 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO'; start from the main branch's tip and reuse what holds up.",
+      "at": "2026-11-23T23:18:45Z"
+    }
+  ],
+  "planner": {
+    "host": "codex",
+    "at": "2026-11-23T23:18:45Z"
+  }
 }

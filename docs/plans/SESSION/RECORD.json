@@ -638,12 +638,12 @@
       }
     },
     "M5": {
-      "definitions": "41f5a65478cb97525056b68415ba2448b12f72019726941f10c0b013e011f018",
+      "definitions": "9bd900fc7d54a69a8269824934ab05765e4bbee15ee1cd69f7c6b3b67511966d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The iOS simulator left booted after Thrum runs degrades into a storm of ~290 respawning simruntime daemons plus ReportCr",
-        "at": "2026-11-23T21:20:18Z"
+        "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix fi",
+        "at": "2026-11-23T23:18:45Z"
       }
     },
     "M6": {
@@ -718,11 +718,15 @@
     {
       "task": "The iOS simulator left booted after Thrum runs degrades into a storm of ~290 respawning simruntime daemons plus ReportCrash, driving the 1-min load to 100-422 on 14 cores (three times on 23 Nov; at 22:04 the iPhone 18 Pro sim had been booted 12 h while no one held the simulator lock; shutting it down dropped load from 101 to 50 in 30 s). HOST and APPLE-PRESENTATION runs take the simulator lock. Find which harness boots it and why it's left booted, and plan the fix in the owning module's plan or next milestone: simulator runs reuse one booted device and shut it down (or leave it healthy) when the lock is released, with a check that proves no device stays booted after a run.",
       "at": "2026-11-23T21:20:18Z"
+    },
+    {
+      "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix findings. The first needs CULLING's, COOKED-DRAW's and PLATFORM-RUNTIME-IOS's files and T2-CAPTURE's guide to align their iOS commands on one simulator lock through verified shutdown (a simulator left booted after Thrum runs storms into ~290 respawning daemons and load 100-422). A previous whole-project planner finished this work but its merge check was interrupted (exit 130, by the lead): its files are in the git stash 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO' (stash@{0}); start from the main branch's tip and reuse what holds up.\n\nYour last turn on this finished, but its files couldn't merge: couldn't merge the plan: it changes the same lines as work that landed meanwhile, in docs/plans/SESSION/PLAN.md. rebase onto origin/main failed: \nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message w. They are kept in the latest stash, 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO'; start from the main branch's tip and reuse what holds up.",
+      "at": "2026-11-23T23:18:45Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T21:20:18Z"
+    "at": "2026-11-23T23:18:45Z"
   },
   "design_history": [
     {
