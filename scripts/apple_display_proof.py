@@ -221,18 +221,31 @@ HIGHLIGHT_REGIONS = {
 }
 
 
+# Expected RGB order in the brightest emitter sample. The four sources have
+# different channel ratios and must keep them through the display transform.
+LAMP_CHANNELS = {"warm lamp": (0, 1, 2), "cool lamp": (2, 1, 0),
+                 "green lamp": (1, 2, 0), "rose lamp": (0, 2, 1)}
+
+
 def highlight_regions(name, extent, words):
     width, height = extent
     results = {}
     for region, (x0, y0, x1, y1) in HIGHLIGHT_REGIONS.get(name, {}).items():
         if not (0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height):
             raise ValueError(f"{region} is outside the submitted image")
-        peaks = [max(words[(y * width + x) * 4:(y * width + x) * 4 + 3])
-                 for y in range(y0, y1) for x in range(x0, x1)]
-        above = sum(peak > 0x3c00 for peak in peaks)
+        colours = [words[(y * width + x) * 4:(y * width + x) * 4 + 3]
+                   for y in range(y0, y1) for x in range(x0, x1)]
+        brightest = max(colours, key=max)
+        above = sum(max(colour) > 0x3c00 for colour in colours)
         if not above:
             raise ValueError(f"{name} {region} has no pixels above reference white")
-        results[region] = dict(box=[x0, y0, x1, y1], above_white_pixels=above, peak=HALF[max(peaks)])
+        rgb = [HALF[v] for v in brightest]
+        if region in LAMP_CHANNELS:
+            high, middle, low = (rgb[c] for c in LAMP_CHANNELS[region])
+            if not (high > middle > low and high - low >= 0.15):
+                raise ValueError(f"{name} {region} lost its expected colour: {rgb}")
+        results[region] = dict(box=[x0, y0, x1, y1], above_white_pixels=above, peak=max(rgb),
+                               brightest_rgb=rgb)
     return results
 
 

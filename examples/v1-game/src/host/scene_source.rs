@@ -273,7 +273,9 @@ fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay)
             scale_basis(instance, 0.025);
             instance.current[3][..3].copy_from_slice(&position);
             instance.previous[3][..3].copy_from_slice(&position);
-            let [r, g, b] = colour.map(|channel| channel * 9_000.0);
+            // The night exposure amplifies these dim physical sources. Keep
+            // their visible radiance within the coloured portion of the shoulder.
+            let [r, g, b] = colour.map(|channel| channel * 0.09);
             scene.materials.push(MaterialRecord {
                 base_rgba: [0.0, 0.0, 0.0, 1.0],
                 emissive_cutoff: [r, g, b, 0.0],
