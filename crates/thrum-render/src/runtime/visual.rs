@@ -8,6 +8,7 @@ use super::{
 use crate::{
     capabilities::DeviceCapabilities,
     contribution::ContributionPasses,
+    present::{SurfacePresenter, SurfaceProfile},
     synthetic::{FrameLighting, RetainedRayMeshes, SyntheticScene},
 };
 use std::sync::Arc;
@@ -36,7 +37,7 @@ pub struct PreparedVisual {
     pub(super) revision: Option<[u8; 32]>,
     pub(super) scene: Option<PreparedScene>,
     pub(super) owner: Arc<()>,
-    pub(super) extent: Option<([u32; 2], crate::present::SurfacePresenter)>,
+    pub(super) extent: Option<([u32; 2], SurfacePresenter)>,
 }
 
 impl VisualPrepareInputs {
@@ -49,7 +50,7 @@ impl VisualPrepareInputs {
         exposure: f32,
         revision: Option<[u8; 32]>,
     ) -> Result<PreparedVisual, FrameError> {
-        self.prepare_bound(lighting, exposure, revision, None).await
+        Box::pin(self.prepare_bound(lighting, exposure, revision, None)).await
     }
 
     async fn prepare_bound(
@@ -57,7 +58,7 @@ impl VisualPrepareInputs {
         lighting: FrameLighting,
         exposure: f32,
         revision: Option<[u8; 32]>,
-        presenter: Option<&crate::present::SurfacePresenter>,
+        surface_profile: Option<SurfaceProfile>,
     ) -> Result<PreparedVisual, FrameError> {
         if self.kind == super::SceneKind::TwoD {
             return Err(FrameError::InvalidState(
@@ -71,7 +72,7 @@ impl VisualPrepareInputs {
             self.scene.ray_admission(&self.capabilities),
             self.supports_candidates,
         );
-        let scene = preparation::prepare_3d_transition(admission, async |selection| {
+        let (scene, presenter) = preparation::prepare_3d_transition(admission, async |selection| {
             preparation::validate_attempt(&self.capabilities, selection, async || {
                 let (passes, graph) = if preparation::is_candidate_transition(selection) {
                     (
@@ -88,17 +89,26 @@ impl VisualPrepareInputs {
                     lighting,
                     exposure,
                     self.render_extent,
-                    self.surface,
+                    self.surface || surface_profile.is_some(),
                     passes,
                     graph,
                     self.retained_ray_meshes.clone(),
                     selection,
                 )
                 .await?;
-                if presenter.is_some() {
-                    scene.bind_presenter(presenter)?;
-                }
-                Ok(scene)
+                let presenter = if let Some(profile) = surface_profile {
+                    let presenter =
+                        SurfacePresenter::prepare(&self.capabilities, self.render_extent, profile)
+                            .await
+                            .map_err(|error| {
+                                FrameError::gpu("extent presenter", error)
+                            })?;
+                    scene.bind_presenter(Some(&presenter))?;
+                    Some(presenter)
+                } else {
+                    None
+                };
+                Ok((scene, presenter))
             })
             .await
         })
@@ -109,18 +119,18 @@ impl VisualPrepareInputs {
             revision,
             scene: Some(scene),
             owner: self.owner,
-            extent: None,
+            extent: presenter.map(|presenter| (self.render_extent, presenter)),
         })
     }
 
     /// Prepare a bounded scene/provider extent replacement on a worker, including
-    /// its presenter and portable twin. The active host remains usable throughout.
+    /// its presenter. The active host remains usable throughout.
     /// # Errors
     /// Refuses invalid extents or GPU preparation without changing the live view.
     pub async fn prepare_extent(
         mut self,
         extent: [u32; 2],
-        mut profile: crate::present::SurfaceProfile,
+        mut profile: SurfaceProfile,
         lighting: FrameLighting,
         exposure: f32,
     ) -> Result<PreparedVisual, FrameError> {
@@ -129,18 +139,6 @@ impl VisualPrepareInputs {
         }
         self.render_extent = extent;
         profile.extent = extent;
-        let capabilities = self.capabilities.clone();
-        let region = self
-            .creations
-            .region(CreationPhase::Transition, "prepare-extent");
-        let presenter = crate::present::SurfacePresenter::prepare(&capabilities, extent, profile)
-            .await
-            .map_err(|error| FrameError::gpu("extent presenter", error))?;
-        // Extent preparation nests the full scene preparation future.
-        let mut candidate =
-            Box::pin(self.prepare_bound(lighting, exposure, None, Some(&presenter))).await?;
-        candidate.extent = Some((extent, presenter));
-        drop(region);
-        Ok(candidate)
+        Box::pin(self.prepare_bound(lighting, exposure, None, Some(profile))).await
     }
 }
