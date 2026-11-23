@@ -132,7 +132,7 @@ def witness_baseline_archive(base, output):
 
 
 def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=False, motion=None,
-               cost=False, assets_source=None):
+               cost=False, assets_source=None, route_file=None):
     native, cook, web, store = builds
     mode = 'realtime' if motion else 'fixed'
     scenario = 'ground-pan' if motion else 'checkpoint'
@@ -173,6 +173,8 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
             extra += ['--control', 'off']
         if assets_source:
             extra += ['--assets-source', assets_source]
+        if route_file:
+            extra += ['--route-file', route_file]
         run('node', 'scripts/capture_v1_browser.mjs', '--atmosphere', scenario,
             '--cook', cook, '--web-root', web, *common, *extra, log=output.with_suffix('.log'))
         warnings = (output / 'chrome.log').read_text()
@@ -281,6 +283,16 @@ def inspection(output, targets, builds, group):
         ridge_store = output / 'ridge-store'
         run(builds[1], 'cook', ridge_assets, ridge_store, log=output / 'ridge-cook.log')
         ridge_builds = (*builds[:3], ridge_store)
+        ridge_route = None
+        if 'chrome-webgpu' in targets:
+            head = (ridge_store / 'HEAD').read_bytes()
+            if len(head) != 64 or head[:8] != b'THRMHEAD':
+                raise ValueError('diagnostic ridge cooked store HEAD is unreadable')
+            route = read(ROOT / 'examples/v1-game/routes/moving-v1.json')
+            route['cooked_generation'] = int.from_bytes(head[16:24], 'little')
+            route['cooked_root'] = head[24:56].hex()
+            ridge_route = output / 'ridge-route.json'
+            save(ridge_route, route)
     for target in targets:
         target_root = output / target
         target_root.mkdir()
@@ -306,7 +318,8 @@ def inspection(output, targets, builds, group):
                 for cloud in [False, True]:
                     pose = {'eye': eye, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
                     checkpoint(target_root / f'ridge-{name}-{cloud}', target, ridge_builds, pose,
-                               haze='20,0', cloud=cloud, assets_source=ridge_assets)
+                               haze='20,0', cloud=cloud, assets_source=ridge_assets,
+                               route_file=ridge_route)
         if group in ('all', 'motion'):
             for motion in ['pan', 'walk', 'scrub', 'cut']:
                 pose = {'eye': SHAFT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': -65, 'motion': motion}
