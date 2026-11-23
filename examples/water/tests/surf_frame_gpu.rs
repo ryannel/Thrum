@@ -151,7 +151,8 @@ fn submitted_breaker_depth_motion_and_stage_history() {
             .expect("live beach")
             .set_stage(0, stage)
             .expect("tide edit");
-        let frame = fixture.frame((f64::from(tick) + fraction) * STEP.as_secs_f64());
+        let frame =
+            fixture.frame_without_timings((f64::from(tick) + fraction) * STEP.as_secs_f64());
         assert_eq!(frame.tick, u64::from(tick));
         let alpha = f64::from(frame.presentation_alpha);
         let time = (f64::from(tick) - 1.0 + alpha) * STEP.as_secs_f64();

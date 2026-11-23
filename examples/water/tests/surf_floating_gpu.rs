@@ -15,6 +15,7 @@ use water_scene::floating::{Body, Hull, sample_answer};
 const TOLERANCE: f64 = 0.015;
 const LIP: [f64; 2] = [-28.705, 3.2795];
 
+#[expect(clippy::print_stderr, reason = "record both failing controls in the target receipt")]
 fn check_lip(
     map: &thrum_water_model::Map,
     plain: &thrum_water_model::Map,
@@ -91,7 +92,7 @@ fn float_queries_match_the_breaker_and_swash() {
         float.position.z = position[1] - station.z;
         let request = float.request(u64::from(tick), STEP);
         mailbox.post(u64::from(tick), vec![request]);
-        let frame = fixture.frame((STEP * tick + STEP / 4).as_secs_f64());
+        let frame = fixture.frame_without_timings((STEP * tick + STEP / 4).as_secs_f64());
         assert_eq!(frame.tick, u64::from(tick));
         let use_tick = tick + 2;
         let replies = mailbox.drain(u64::from(use_tick), STEP);
