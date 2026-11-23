@@ -1,4 +1,7 @@
-use crate::{Error, SunPath, SunProfile, WeatherMap, WeatherProfile};
+use crate::{
+    Error, ShapesConfig, ShapesReport, SunPath, SunProfile, WeatherMap, WeatherProfile,
+    shapes::Shapes,
+};
 use std::sync::{Arc, Mutex};
 use thrum_cloud_model::{Field, Profile, State, Type};
 use thrum_render::{
@@ -51,7 +54,10 @@ struct Mailbox {
     state: Option<Arc<State>>,
     ground: Option<(wgpu::Texture, wgpu::Buffer)>,
     resources: Vec<(String, u64)>,
+    shape_resources: Vec<(String, u64)>,
     sky: Option<crate::SkyProducts>,
+    shapes: Option<ShapesReport>,
+    placed_map: Option<(wgpu::Texture, [f64; 2], Arc<State>)>,
     #[cfg(target_arch = "wasm32")]
     observation: observation::Observation,
 }
@@ -61,6 +67,16 @@ impl WeatherInput {
     pub fn sky_products(&self) -> Option<crate::SkyProducts> {
         self.0.lock().ok()?.sky.clone()
     }
+    /// Placement and lease outcomes observed by the latest submitted frame.
+    pub fn shapes_report(&self) -> Option<ShapesReport> {
+        self.0.lock().ok()?.shapes
+    }
+    /// The submitted placed-column map and its fine air-frame origin. Each texel is
+    /// slot-plus-one, volume weight, un-eroded optical depth and life envelope.
+    pub fn placed_map(&self) -> Option<(wgpu::Texture, [f64; 2], Arc<State>)> {
+        self.0.lock().ok()?.placed_map.clone()
+    }
+
     /// Publish the weather lease from the same page the scene extracts.
     /// # Errors
     /// Refuses an unavailable mailbox.
@@ -78,9 +94,17 @@ impl WeatherInput {
 
     /// Prepared texture payloads and uniform-buffer bytes, excluding driver allocation overhead.
     pub fn resource_bytes(&self) -> Vec<(String, u64)> {
-        self.0
-            .lock()
-            .map_or_else(|_| Vec::new(), |mailbox| mailbox.resources.clone())
+        self.0.lock().map_or_else(
+            |_| Vec::new(),
+            |mailbox| {
+                mailbox
+                    .resources
+                    .iter()
+                    .chain(&mailbox.shape_resources)
+                    .cloned()
+                    .collect()
+            },
+        )
     }
 }
 
@@ -89,6 +113,7 @@ impl WeatherInput {
 pub struct Shade {
     quality: Option<QualitySettings>,
     sky: Option<crate::SkyProfile>,
+    shapes: Option<ShapesConfig>,
     config: ShadeConfig,
     input: WeatherInput,
     gpu: Option<Box<Prepared>>,
@@ -98,6 +123,9 @@ pub struct Shade {
 }
 
 struct Prepared {
+    placed_map: Option<crate::shapes::map::ShapeMap>,
+    recorded_placed_state: Option<Arc<State>>,
+    shapes: Option<Box<Shapes>>,
     sky: Option<crate::layer::Layer>,
     weather: WeatherMap,
     sun: SunPath,
@@ -117,6 +145,7 @@ impl Shade {
         Ok(Self {
             quality: None,
             sky: None,
+            shapes: None,
             config,
             input: WeatherInput::default(),
             gpu: None,
@@ -158,6 +187,15 @@ impl Shade {
         self.sky = Some(profile);
         Ok(self)
     }
+    /// Attach Shapes for the ground path, and for the visible layer when it is declared.
+    /// # Errors
+    /// Rejects an invalid placement range or volume capacity.
+    pub fn with_shapes(mut self, config: ShapesConfig) -> Result<Self, Error> {
+        config.validate()?;
+        self.shapes = Some(config);
+        Ok(self)
+    }
+
     /// Share the extractor mailbox when composing this effect with another contribution.
     #[must_use]
     pub fn with_input(mut self, input: WeatherInput) -> Self {
@@ -255,18 +293,30 @@ impl SceneContribution for Shade {
             .map_err(|error| frame_prepare_error(&error))?
         };
         weather.rebuild(surface.generation, 1);
-        let mut sun = SunPath::new(
+        let shapes = self
+            .shapes
+            .clone()
+            .map(|config| Shapes::new(surface.device, config, &weather).map(Box::new))
+            .transpose()
+            .map_err(|error| frame_prepare_error(&error))?;
+        let placed_map = shapes.as_ref().map(|shapes| {
+            crate::shapes::map::ShapeMap::new(surface.device, weather.profile(), shapes)
+        });
+        let mut sun = SunPath::new_with_shapes(
             surface.device,
             &weather,
             self.config.sun.clone(),
             Some(target),
+            shapes.as_deref(),
         )
         .map_err(|error| frame_prepare_error(&error))?;
         sun.rebuild(surface.generation, 1);
         sun.prepare_noise(surface.queue);
         let sky = self
             .sky
-            .map(|profile| crate::layer::Layer::new(surface, &weather, &sun, profile))
+            .map(|profile| {
+                crate::layer::Layer::new(surface, &weather, &sun, profile, shapes.as_deref())
+            })
             .transpose()
             .map_err(|error| frame_prepare_error(&error))?;
         let mut resources: Vec<_> = weather
@@ -286,6 +336,15 @@ impl SceneContribution for Shade {
             })
             .collect();
         resources.push(("cloud shape noise".into(), sun.shape_noise.bytes()));
+        if let Some(map) = &placed_map {
+            resources.extend([
+                (
+                    "cloud placed weather map".into(),
+                    u64::from(map.texture.width()) * u64::from(map.texture.height()) * 64,
+                ),
+                ("cloud placed weather windows".into(), map.params.size()),
+            ]);
+        }
         resources.extend(
             weather
                 .uniforms()
@@ -311,6 +370,9 @@ impl SceneContribution for Shade {
             .ground = Some((sun.ground().clone(), sun.mapping().clone()));
         self.generation = surface.generation;
         self.gpu = Some(Box::new(Prepared {
+            shapes,
+            placed_map,
+            recorded_placed_state: None,
             sky,
             weather,
             sun,
@@ -331,6 +393,18 @@ impl SceneContribution for Shade {
                     self.generation,
                     gpu.sun.shape_noise.read(shape_noise),
                 );
+            }
+            if let Some(shapes) = &gpu.shapes {
+                let reads = shapes.append_reads(&mut graph);
+                for pass in &mut graph.passes[1..4] {
+                    pass.accesses.extend(reads.iter().cloned());
+                }
+                if let Some(trace) = graph.after_opaque.get_mut(1) {
+                    trace.accesses.extend(reads.iter().cloned());
+                }
+                if let Some(map) = &gpu.placed_map {
+                    graph::append_placed_map(&mut graph, map, reads, self.generation);
+                }
             }
             graph
         })
@@ -364,7 +438,22 @@ impl SceneContribution for Shade {
         let camera = [f64::from(frame.camera[0]), f64::from(frame.camera[2])];
         let weather = gpu.weather.upload(&gpu.queue, frame.time, &state, camera);
         let result = weather.and_then(|()| {
-            gpu.sun.upload(
+            if let Some(shapes) = &mut gpu.shapes {
+                let (_, kind) = gpu.weather.density_data(&state);
+                shapes.upload(
+                    &gpu.queue,
+                    frame.generation,
+                    &state,
+                    kind,
+                    &gpu.weather,
+                    camera,
+                )?;
+            }
+            if let Some(map) = &gpu.placed_map {
+                map.upload(&gpu.queue, &gpu.weather);
+                gpu.recorded_placed_state = Some(Arc::clone(&state));
+            }
+            gpu.sun.upload_with_shapes(
                 &gpu.queue,
                 &gpu.weather,
                 frame.time,
@@ -372,6 +461,7 @@ impl SceneContribution for Shade {
                 camera,
                 environment.true_sun.toward_sun,
                 frame.history_reset,
+                gpu.shapes.as_deref(),
             )
         });
         if result.is_err() {
@@ -380,7 +470,9 @@ impl SceneContribution for Shade {
         } else {
             self.valid_recording = true;
             if let Some(sky) = &mut gpu.sky
-                && sky.upload(&gpu.weather, &state, frame).is_err()
+                && sky
+                    .upload(&gpu.weather, &state, frame, gpu.shapes.as_deref())
+                    .is_err()
             {
                 self.valid_recording = false;
                 self.dropped += 1;
@@ -389,12 +481,10 @@ impl SceneContribution for Shade {
     }
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
         self.valid_recording
-            && self.gpu.as_ref().is_some_and(|gpu| {
-                if index == 0 {
-                    gpu.weather.runs()
-                } else {
-                    gpu.sun.runs(index - 1)
-                }
+            && self.gpu.as_ref().is_some_and(|gpu| match index {
+                0 => gpu.weather.runs(),
+                6 => gpu.placed_map.is_some(),
+                _ => gpu.sun.runs(index - 1),
             })
     }
     fn encode_effect(
@@ -406,10 +496,16 @@ impl SceneContribution for Shade {
         if self.valid_recording
             && let Some(gpu) = &self.gpu
         {
-            if index == 0 {
-                gpu.weather.encode(pass);
-            } else {
-                gpu.sun.encode(index - 1, pass);
+            match index {
+                0 => gpu.weather.encode(pass),
+                6 => {
+                    if let (Some(map), Some(shapes)) = (&gpu.placed_map, &gpu.shapes) {
+                        map.encode(shapes, pass);
+                    }
+                }
+                _ => gpu
+                    .sun
+                    .encode_with_shapes(index - 1, pass, gpu.shapes.as_deref()),
             }
         }
     }
@@ -423,9 +519,10 @@ impl SceneContribution for Shade {
         frame: &ContributionFrame,
     ) {
         if self.valid_recording
-            && let Some(sky) = self.gpu.as_mut().and_then(|gpu| gpu.sky.as_mut())
+            && let Some(gpu) = self.gpu.as_mut()
+            && let Some(sky) = &mut gpu.sky
         {
-            sky.encode(index, pass, frame);
+            sky.encode(index, pass, frame, gpu.shapes.as_deref());
         }
     }
     fn draw_after_opaque(
@@ -440,7 +537,7 @@ impl SceneContribution for Shade {
             sky.draw(pass, frame);
         }
     }
-    fn submitted(&mut self, _history_advanced: bool) {
+    fn submitted(&mut self, history_advanced: bool) {
         if self.valid_recording
             && let Some(gpu) = &mut self.gpu
         {
@@ -449,11 +546,20 @@ impl SceneContribution for Shade {
             if let Some(sky) = &mut gpu.sky {
                 sky.submitted();
             }
-            if (cfg!(target_arch = "wasm32") || gpu.sky.is_some())
+            if (cfg!(target_arch = "wasm32") || gpu.sky.is_some() || gpu.shapes.is_some())
                 && let Ok(mut input) = self.input.0.lock()
             {
                 if let Some(sky) = &gpu.sky {
                     input.sky = Some(sky.products());
+                }
+                if let Some(shapes) = &mut gpu.shapes {
+                    input.shapes = Some(shapes.submitted(history_advanced));
+                    input.shape_resources = shapes.resource_bytes();
+                }
+                if let (Some(map), Some(state)) =
+                    (&gpu.placed_map, gpu.recorded_placed_state.take())
+                {
+                    input.placed_map = Some((map.texture.clone(), gpu.weather.origins()[0], state));
                 }
                 #[cfg(target_arch = "wasm32")]
                 input.observe(gpu, self.generation);

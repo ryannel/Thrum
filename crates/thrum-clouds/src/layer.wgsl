@@ -54,7 +54,8 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
     return result;
 }
 fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
-    return cloud_detail(cloud_column(point).x,point,footprint);
+    let placed = cloud_placed(point, footprint);
+    return cloud_detail(cloud_column(point).x,point,footprint) + cloud_detail(placed.x, point, footprint);
 }
 fn cloud_billow(point:vec3<f32>,footprint:f32)->f32 {
     let uv=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
@@ -104,17 +105,22 @@ fn cloud_march_sun_depth(point:vec3<f32>,direction:vec3<f32>,reach:f32,
     }
     return depth;
 }
-fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,sun_alignment:f32)->vec2<f32> {
+fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,sun_alignment:f32,placed:bool)->vec2<f32> {
     let samples = cloud.light_samples;
     if samples == 0u { return cloud_sun_depths(world,world.y).xy; }
     let path = mapping.path_border.xyz;
     // At very low Sun, cached height intervals can cover hundreds of
     // metres along the ray. A close silver lining reveals those intervals.
-    let rim_detail=(1.0-smoothstep(0.10,0.17,path.y))*smoothstep(0.75,0.94,sun_alignment)
+    // The coarse path cannot resolve the authored volume's internal lobes.
+    // Use the same density at both ends of the grazing ray before handing it
+    // back to the cached path as the Sun rises.
+    let rim_begin = select(0.10, 0.18, placed);
+    let rim_end = select(0.17, 0.28, placed);
+    let rim_detail=(1.0-smoothstep(rim_begin,rim_end,path.y))*smoothstep(0.75,0.94,sun_alignment)
         *(1.0-smoothstep(10000.0,13500.0,distance));
     var direct=vec2(0.0);
     if rim_detail>0.0 {
-        let near_step=120.0/f32(samples);
+        let near_step=select(120.0, 45.0, placed)/f32(samples);
         let outside=cloud_march_sun_depth(point,path,(cloud.heights.y-point.y)/path.y,footprint,near_step);
         let inside=cloud_march_sun_depth(point,-path,(point.y-cloud.heights.x)/path.y,footprint,near_step);
         direct=vec2(outside,outside+inside);
@@ -202,15 +208,18 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         samples+=1u;
         let step=min(end-distance,max(cloud.heights.z,distance*0.002));
         let at=distance+step*0.5;let point=air_camera+ray*at;
-        let column=cloud_column(point);
-        if column.x>0.0 {
-            let footprint=at/f32(size.y);
-            let sigma=cloud_detail(column.x,point,footprint);
+        let footprint=at/f32(size.y);
+        let placed = cloud_placed(point, footprint);
+        var column=cloud_column(point);
+        if column.x+placed.x>0.0 {
+            let sigma=cloud_detail(column.x,point,footprint)+cloud_detail(placed.x,point,footprint);
+            column.y += placed.y;
+            column.z += placed.z;
             if sigma>0.0 {
                 let world=camera+ray*at;
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                 var sun_depths = vec2(0.0);
-                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint,sun_alignment); }
+                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0); }
                 let source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;

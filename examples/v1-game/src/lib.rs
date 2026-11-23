@@ -6,7 +6,7 @@
 mod browser;
 mod camera;
 pub mod clouds;
-pub use clouds::CloudSelection;
+pub use clouds::{CloudSelection, PlacedSky};
 #[cfg(not(target_arch = "wasm32"))]
 mod content;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -32,9 +32,9 @@ use thrum_fixtures::mixed_field::{self as field, day_cycle as environment};
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{
-    BrowserGame, CookedValley, create_browser_game, create_field_game, create_route_game,
-    create_sprite_game, fetch_cooked_valley, qualify_effect_after_opaque, qualify_effect_state,
-    qualify_lent_products,
+    BrowserGame, CookedValley, create_browser_game, create_field_game, create_placed_browser_game,
+    create_route_game, create_sprite_game, fetch_cooked_valley, qualify_effect_after_opaque,
+    qualify_effect_state, qualify_lent_products,
 };
 #[cfg(all(target_arch = "wasm32", feature = "draw-probe"))]
 pub use browser::{BrowserLightProbe, create_light_list_probe};

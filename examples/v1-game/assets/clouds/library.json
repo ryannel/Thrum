@@ -1,0 +1,552 @@
+{
+  "schema": "broadsides.cloud_shape_factory_library",
+  "version": 1,
+  "id": "clouds/heaped-fair",
+  "status": "user-accepted B2; B3 content handoff; scene integration owned by runtime",
+  "accepted_commit": "e486ec426d580a3ea5507b3a08b306c8cd3add10",
+  "distinct_shape_count": 12,
+  "density_encoding": "linear R8; PNG atlas, red/scalar channel; engineXYZ,+Y up; centred metre cube",
+  "mips": "Runtime integer2x2x2 box; round(sum/8) via(sum+4)//8, through1cubed",
+  "genus_defaults": {
+    "fair-cumulus": {
+      "extinction_scale_m_inv": 0.3
+    },
+    "mediocris": {
+      "extinction_scale_m_inv": 0.3
+    },
+    "congestus": {
+      "extinction_scale_m_inv": 0.3
+    }
+  },
+  "extinction_policy": "Per-genus look default only; runtime may override without changing shape bytes",
+  "shapes": [
+    {
+      "genus": "fair-cumulus",
+      "extent_m": 1500,
+      "base_height_m": -570.0,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          6,
+          8,
+          25
+        ],
+        [
+          119,
+          78,
+          103
+        ]
+      ],
+      "voxel_sha256": "3dde369135067d21306041f01a6d6010991ff478c9ed9815cd2add69eb6261a0",
+      "payload_sha256": "f520c351bb98bc83bf04d830bdcd2e63248c8fcd7644d9802b6e172f27bc38ba",
+      "recipe_sha256": "fbaaf6b225a205914eb37902aa01ae81ef28cf68511c01b1f4fa3fd31051bcb8",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 7251,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "fair-1500-wide",
+      "review_id": "F1",
+      "payload": "shapes/fair-1500-wide/density.png",
+      "metadata": "shapes/fair-1500-wide/metadata-default.json",
+      "metadata_sha256": "bd874ab0df07b7ee40956c90ea44f2e331b6edd0cff40160c0cb845f65a77ddd",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 43.930176000110805,
+      "known_weaknesses": "Small dark pendant; rounded cells and smooth underside centre.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5,
+        "minimum_fitted_noise_cell_voxels": 2.56,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 1.0
+      }
+    },
+    {
+      "genus": "fair-cumulus",
+      "extent_m": 1500,
+      "base_height_m": -490.0359712230216,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          5,
+          16,
+          32
+        ],
+        [
+          121,
+          72,
+          91
+        ]
+      ],
+      "voxel_sha256": "6f09350bcd5d932aa0cd8ea029b6285a3f647ec123f2812b0b2089e7c84c3342",
+      "payload_sha256": "5c58a866f36888537ee77b53e16fd94b1448fb27fea13af044028643da514c78",
+      "recipe_sha256": "0c290cd8d5c232afe8c353bfb89f29862ad7eebdbffed11b5f0b762a142d08bc",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 378817,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "fair-low-bank",
+      "review_id": "F2",
+      "payload": "shapes/fair-low-bank/density.png",
+      "metadata": "shapes/fair-low-bank/metadata-default.json",
+      "metadata_sha256": "363ac2702f03bf86d2c42a5d05f1ef8832e45756693ccb49c33ad0affb4c94f5",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 85.7057556672953,
+      "known_weaknesses": "Hanging edge hooks and smooth inflated end lobe.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5000025,
+        "minimum_fitted_noise_cell_voxels": 2.200863309352518,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 0.8597122302158273
+      }
+    },
+    {
+      "genus": "fair-cumulus",
+      "extent_m": 1500,
+      "base_height_m": -570.0,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          7,
+          10,
+          22
+        ],
+        [
+          121,
+          73,
+          106
+        ]
+      ],
+      "voxel_sha256": "eb9c7165917d05b100667a877a848bdeca171ef31d784fd950299d61c01207bf",
+      "payload_sha256": "6d0f7d76f8cfb0d3e6eb26ab171ec6b78efaf79cc933d6e6188e5bfbd766de27",
+      "recipe_sha256": "85758ca08359a7d83cbd3457d90a6d21c698b824b6fa20774320f3b49fe69afc",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 17251,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "fair-triad",
+      "review_id": "F3",
+      "payload": "shapes/fair-triad/density.png",
+      "metadata": "shapes/fair-triad/metadata-default.json",
+      "metadata_sha256": "cf7776906d493488b38600891acc2bd60122e2c39814f115c0ae296886dcbc9d",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 43.66121816681698,
+      "known_weaknesses": "Small underside nubs, isolated round bright lobe and smooth patches.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5,
+        "minimum_fitted_noise_cell_voxels": 2.56,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 1.0
+      }
+    },
+    {
+      "genus": "fair-cumulus",
+      "extent_m": 1500,
+      "base_height_m": -570.0,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          5,
+          10,
+          22
+        ],
+        [
+          123,
+          71,
+          106
+        ]
+      ],
+      "voxel_sha256": "6175d16e25cf6d4a0d7cdcfa442e59002a70471cf3c512c7c596b3c6d49c9aae",
+      "payload_sha256": "8455d6d06894eb87318bc3d5ae3eb64e9dbd10dd54fe8619f4ffe1078a180c1d",
+      "recipe_sha256": "3ab40af45d9b400eeeeb6c7ddb092a48b40a9e49281dd49eb1832b1bc63c2b69",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 27251,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "fair-head-tail",
+      "review_id": "F4",
+      "payload": "shapes/fair-head-tail/density.png",
+      "metadata": "shapes/fair-head-tail/metadata-default.json",
+      "metadata_sha256": "1940bf4b45a3517992508f7387a47f7fb9063bd0817d742f5bc8d831030898e8",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 43.558769832830876,
+      "known_weaknesses": "Central hanging lobe and smooth underside areas.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5,
+        "minimum_fitted_noise_cell_voxels": 2.56,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 1.0
+      }
+    },
+    {
+      "genus": "fair-cumulus",
+      "extent_m": 1500,
+      "base_height_m": -562.9338842975206,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          4,
+          8,
+          24
+        ],
+        [
+          124,
+          76,
+          104
+        ]
+      ],
+      "voxel_sha256": "713d7525f5bfcd609f55f1a56b04ee1cb0afc4f8f73a521d20641a8891bf5d01",
+      "payload_sha256": "db5b8116802ff1a5f236d08ad66afc186488eafdb15c6f869a937050756ee56b",
+      "recipe_sha256": "6dfe128960398fa07c01baccfedc334fc6c78525dd953b60b7643b63f6bfff3d",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 97251,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "fair-three-crowns",
+      "review_id": "F11",
+      "payload": "shapes/fair-three-crowns/density.png",
+      "metadata": "shapes/fair-three-crowns/metadata-default.json",
+      "metadata_sha256": "8ff01e06d9e464c7da33d471d85e8870d19c898b6d7bb93635d74701c75c3b52",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 86.67454058304429,
+      "known_weaknesses": "Pendant remnants under the bridge and shoulders.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5000025,
+        "minimum_fitted_noise_cell_voxels": 2.5282644628099176,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 0.987603305785124
+      }
+    },
+    {
+      "genus": "fair-cumulus",
+      "extent_m": 1500,
+      "base_height_m": -560.6172839506172,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          4,
+          11,
+          13
+        ],
+        [
+          124,
+          69,
+          115
+        ]
+      ],
+      "voxel_sha256": "ad39425b61eefddb401a93ac97309b6c01a2d252299d903dface585975d6533a",
+      "payload_sha256": "28005225b7427877e75195a29b947e9e7782b0469c2cf2eaa813f8cd9662ad20",
+      "recipe_sha256": "a26affec8564610bc9aa387ec35e602f6868513e5db2ef60b5473cbe7215fb08",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 127251,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "fair-open-crescent",
+      "review_id": "F13",
+      "payload": "shapes/fair-open-crescent/density.png",
+      "metadata": "shapes/fair-open-crescent/metadata-default.json",
+      "metadata_sha256": "73350c1337d3202edf6e221e92b74b38a1fd050859ba8ff06f8ca01a5def1670",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 86.16083779232576,
+      "known_weaknesses": "Bright finger-like pendant and small inner curl; opening closes at the supplied game-distance heading.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5000024999999995,
+        "minimum_fitted_noise_cell_voxels": 2.5178600823045265,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 0.9835390946502057
+      }
+    },
+    {
+      "genus": "mediocris",
+      "extent_m": 1600,
+      "base_height_m": -615.0,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          13,
+          7,
+          18
+        ],
+        [
+          122,
+          112,
+          110
+        ]
+      ],
+      "voxel_sha256": "161640fe3e25464075241295f3c4c72d8d52f342aa93cc99a2e0399e45fc9506",
+      "payload_sha256": "00a81f3035deedad2f074be9c8f121695e19ee40d2e6a55e391619a6294ee5d2",
+      "recipe_sha256": "101fb4cd9dfe73c07f98d91fbe2b99cfb80028af2798b8a36f33d59c61d77d69",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 105019,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "mediocris-ridge",
+      "review_id": "M1",
+      "payload": "shapes/mediocris-ridge/density.png",
+      "metadata": "shapes/mediocris-ridge/metadata-default.json",
+      "metadata_sha256": "01b7c7d6b4111be2a9268e7e9355029242f38b985d8fff5403de6edf2b32d22d",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 44.664686208125204,
+      "known_weaknesses": "Dark central keel and dense cauliflower texture.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5,
+        "minimum_fitted_noise_cell_voxels": 2.56,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 1.0
+      }
+    },
+    {
+      "genus": "mediocris",
+      "extent_m": 1600,
+      "base_height_m": -578.6811023622047,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          7,
+          11,
+          23
+        ],
+        [
+          124,
+          113,
+          105
+        ]
+      ],
+      "voxel_sha256": "902cab30882fa55d35a354f1996ae602fecfd4bb80f053a420e22a90e785c64d",
+      "payload_sha256": "812340599ff17224ad9fd4bd3bee7a7436fe8707bfb56c5add924471483f8756",
+      "recipe_sha256": "571c3190e42a05fbc7c87b4612f55de5ba3fad0c035beb16f787e2183b93605c",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 127291,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "mediocris-lean",
+      "review_id": "M2",
+      "payload": "shapes/mediocris-lean/density.png",
+      "metadata": "shapes/mediocris-lean/metadata-default.json",
+      "metadata_sha256": "7cba88582d7be40416223b0b8b1fcc8ee9a5a78d10c3f5f4923560ce33a478c5",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 87.74309241678566,
+      "known_weaknesses": "Downward projection and smooth rear crown in one heading.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5000024999999995,
+        "minimum_fitted_noise_cell_voxels": 2.4088188976377953,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 0.9409448818897638
+      }
+    },
+    {
+      "genus": "mediocris",
+      "extent_m": 1800,
+      "base_height_m": -684.0,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          10,
+          20,
+          23
+        ],
+        [
+          119,
+          121,
+          105
+        ]
+      ],
+      "voxel_sha256": "5f3143cf94bbbd30b174b62ada057f7fe501fe91c6abbb1b4f99b57b7719ce8f",
+      "payload_sha256": "3f683982a5a438b2df9a4d6af785ce895172b74a8837689cb84c1d47a32d9d6d",
+      "recipe_sha256": "faff53bba4858da36ad5c966febc0c9730b3eb121282dc1d88e85ece1b64a657",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 107251,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "mediocris-twin-turrets",
+      "review_id": "M3",
+      "payload": "shapes/mediocris-twin-turrets/density.png",
+      "metadata": "shapes/mediocris-twin-turrets/metadata-default.json",
+      "metadata_sha256": "58d34362307466f2447396a5705f4ed68e4660c3c8b4082bc738244bf3d518f1",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 43.04690016619861,
+      "known_weaknesses": "Some straight bright underside stretches and small pendant remnants.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5,
+        "minimum_fitted_noise_cell_voxels": 2.56,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 1.0
+      }
+    },
+    {
+      "genus": "congestus",
+      "extent_m": 2000,
+      "base_height_m": -550.378548895899,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          31,
+          24,
+          36
+        ],
+        [
+          97,
+          124,
+          92
+        ]
+      ],
+      "voxel_sha256": "a398e18b359932744b74832247e2aa7945bfb413bd482770c039b6aa06a013f8",
+      "payload_sha256": "f6ee7f4c8bdce81f151b792830b3b07fd7b8f22bc5c155f8c2f4ddecf23e2353",
+      "recipe_sha256": "61e3e40f525659cdf498632a224d9f0b1831267df7b50d0cc8753b708a9206e7",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 234797,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "congestus-core",
+      "review_id": "C2",
+      "payload": "shapes/congestus-core/density.png",
+      "metadata": "shapes/congestus-core/metadata-default.json",
+      "metadata_sha256": "76328f516838365a4f231e1703202dafe84524b58c29ce6eca412b7865bb07a2",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 87.67128399992362,
+      "known_weaknesses": "Small repeated pearls on one side; columnar envelope and smooth underside.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5000024999999995,
+        "minimum_fitted_noise_cell_voxels": 2.4126182965299687,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 0.7539432176656151
+      }
+    },
+    {
+      "genus": "congestus",
+      "extent_m": 2000,
+      "base_height_m": -568.3061889250814,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          28,
+          24,
+          30
+        ],
+        [
+          99,
+          124,
+          98
+        ]
+      ],
+      "voxel_sha256": "420fba10c4380a6688939ce9ba115458c2a62e842245d5085551f741fe424dfc",
+      "payload_sha256": "10c9254da056cfb4af75e4c11edaa34b663b9aea427bb18ce9a41f3507822eae",
+      "recipe_sha256": "34b27dbb1bd59c296afec922decf24bc73504955b73a3bd25441d4960cbb4732",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 334797,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "congestus-forked",
+      "review_id": "C3",
+      "payload": "shapes/congestus-forked/density.png",
+      "metadata": "shapes/congestus-forked/metadata-default.json",
+      "metadata_sha256": "5df7a4ff6304c0c484099d2a631aca0f562c897ced8b7834970bd24f05895b51",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 85.23460804205388,
+      "known_weaknesses": "Broad smooth underside and strong integrated dark lower mass.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5000024999999995,
+        "minimum_fitted_noise_cell_voxels": 2.4912052117263843,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 0.7785016286644951
+      }
+    },
+    {
+      "genus": "congestus",
+      "extent_m": 2000,
+      "base_height_m": -587.4410774410775,
+      "downwind_axis": [
+        0.9897594780811197,
+        0.07918075824648958,
+        -0.11877113736973437
+      ],
+      "occupied_bounds_voxels": [
+        [
+          25,
+          23,
+          33
+        ],
+        [
+          106,
+          124,
+          95
+        ]
+      ],
+      "voxel_sha256": "7805b1243d11231e8abb504c46c692d6e49400525913d25202d2ca1e48fc3e6f",
+      "payload_sha256": "32c1d663201ac4710be7ba4bc42266666c02b6acc5ed857d0506cd47e0eae376",
+      "recipe_sha256": "f8d54776c06ea5c3ea26e65c4afc1ed7fe20bfbb788c8ebbdfba0920118ae5b3",
+      "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+      "seed": 434797,
+      "license": "LicenseRef-Broadsides-Original",
+      "id": "congestus-windlean",
+      "review_id": "C4",
+      "payload": "shapes/congestus-windlean/density.png",
+      "metadata": "shapes/congestus-windlean/metadata-default.json",
+      "metadata_sha256": "631102bea91dd22ee5fc4f2356acbb849469d04c03595ca469518903e6321aa1",
+      "default_extinction_scale_m_inv": 0.3,
+      "generation_s": 86.11275491723791,
+      "known_weaknesses": "Broad smooth underside face and straight bright stretches remain.",
+      "qualification": {
+        "status": "passed at 128 and 256",
+        "source_boundary_clear": true,
+        "minimum_fitted_lobe_semiaxis_voxels": 2.5000025,
+        "minimum_fitted_noise_cell_voxels": 2.06006734006734,
+        "margin_voxels_at_128": 3,
+        "cube_fit_scale": 0.8047138047138047
+      }
+    }
+  ]
+}

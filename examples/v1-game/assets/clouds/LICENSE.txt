@@ -1,0 +1,9 @@
+LicenseRef-Broadsides-Original
+
+Original project-owned Broadsides generator, authored recipe and resulting cloud volume.
+The pinned original project lobe generator and fair recipe supply the four seeded coarse roots,
+primitive voxelization and atlas encoding. All new geometry, support, feather detail and code is original.
+No third-party cloud density, geometry or code is incorporated. NumPy, SciPy and Pillow are tooling only.
+Project-owner commercial shipping is unrestricted by external cloud-data terms; no attribution or
+share-alike condition is inherited from method references in the parent package.
+This record does not grant rights to third parties.

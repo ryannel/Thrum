@@ -26,6 +26,7 @@ impl Layer {
         weather: &WeatherMap,
         sun: &crate::SunPath,
         profile: SkyProfile,
+        shapes: Option<&crate::shapes::Shapes>,
     ) -> Result<Self, Error> {
         validate_profile(profile, surface.limits.max_texture_dimension_2d)?;
         let device = surface.device;
@@ -169,14 +170,23 @@ impl Layer {
             entries: &entries,
         });
         let input = declaration(TRACE, AfterOpaqueKind::Compute, Vec::new()).input_layout(device);
+        let mut layouts = vec![Some(&environment.layout), Some(&input), Some(&trace_layout)];
+        if let Some(shapes) = shapes {
+            layouts.push(Some(&shapes.layout));
+        }
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(TRACE),
-            bind_group_layouts: &[Some(&environment.layout), Some(&input), Some(&trace_layout)],
+            bind_group_layouts: &layouts,
             immediate_size: 0,
         });
+        let source = if shapes.is_some() {
+            shaped_trace_shader(&environment)
+        } else {
+            trace_shader(&environment)
+        };
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(TRACE),
-            source: wgpu::ShaderSource::Wgsl(trace_shader(&environment).into()),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
         });
         let trace = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some(TRACE),
@@ -219,8 +229,18 @@ impl Layer {
 }
 
 pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
+    trace_with_placed_source(
+        environment,
+        "fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }",
+    )
+}
+
+fn trace_with_placed_source(
+    environment: &thrum_render::atmosphere::EnvironmentProducts,
+    placed: &str,
+) -> String {
     format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{placed}",
         environment.shader_source,
         include_str!("params.wgsl"),
         include_str!("../layer.wgsl"),
@@ -229,6 +249,17 @@ pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentPr
         include_str!("transport.wgsl"),
         include_str!("sun.wgsl"),
         include_str!("../erosion.wgsl"),
+    )
+}
+
+fn shaped_trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
+    trace_with_placed_source(
+        environment,
+        &format!(
+            "{}\n{}",
+            crate::shapes::shader(3),
+            include_str!("placed.wgsl"),
+        ),
     )
 }
 

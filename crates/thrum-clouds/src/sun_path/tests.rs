@@ -2,7 +2,13 @@ use super::Uniform;
 
 #[test]
 fn sun_shader_and_uniform_layout_validate() {
-    for source in [super::SHADER, super::GROUND_REFERENCE_SHADER] {
+    let plain = format!("{}\n{}", super::SHADER, include_str!("without_placed.wgsl"));
+    let shaped = super::shaped_shader();
+    for source in [
+        plain.as_str(),
+        shaped.as_str(),
+        super::GROUND_REFERENCE_SHADER,
+    ] {
         validate_uniform_layout(source);
     }
 }

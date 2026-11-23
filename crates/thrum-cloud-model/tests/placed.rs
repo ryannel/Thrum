@@ -49,3 +49,58 @@ fn footprint_is_the_pointwise_voxel_integral() {
         }
     }
 }
+
+#[test]
+fn hashed_cells_use_the_same_camera_independent_footprints() {
+    use std::sync::Arc;
+    use thrum_cloud_model::{HashedShapes, PlacedLibrary, PlacedSlab, Shape};
+    let shape = Shape::new([4; 3], 60.0, vec![0.75; 64]).expect("cube");
+    let footprint = Arc::new(shape.footprint().clone());
+    let library = Arc::new(
+        PlacedLibrary::new(
+            vec![PlacedSlab {
+                extent: 240.0,
+                floor: 0.0,
+                heading: 0.0,
+                footprint,
+            }],
+            Vec::new(),
+        )
+        .expect("library"),
+    );
+    let mut authored = support::state(1.0, 0.0);
+    authored
+        .set_hashed_library(
+            library,
+            HashedShapes {
+                block_sites: 3,
+                shares: vec![1.0; 2],
+            },
+        )
+        .expect("hashed weather");
+    let mut procedural = support::state(1.0, 0.0);
+    authored.step(1, 600.0).expect("formed sky cells");
+    procedural.step(1, 600.0).expect("matched weather");
+    let model = field(7, 0.0);
+    let block_width = model.placed_block_width(&authored).expect("blocks");
+    let mut count = 0;
+    for z in -3..=3 {
+        for x in -3..=3 {
+            let Some((shape, _)) = model.hashed_shape([x, z], &authored) else {
+                continue;
+            };
+            let radius = shape.footprint.radius() * shape.scale;
+            for (axis, block) in [x, z].into_iter().enumerate() {
+                let first = f64::from(i32::try_from(block).expect("test block")) * block_width;
+                assert!(shape.centre[axis] - radius > first);
+                assert!(shape.centre[axis] + radius < first + block_width);
+            }
+            let point = [shape.centre[0], 0.0, shape.centre[1]];
+            let added = model.query(point, &authored).optical_depth
+                - model.query(point, &procedural).optical_depth;
+            close(added, 180.0 * shape.envelope * shape.scale * 0.05, 1e-10);
+            count += 1;
+        }
+    }
+    assert!(count >= 5);
+}

@@ -247,9 +247,45 @@ pub async fn create_sprite_game(
     .await
 }
 
+/// Open the example's directed sky with its two volume products served by the cooker.
+///
+/// # Errors
+/// Reports a failed fetch, invalid content, or any browser preparation failure.
+#[wasm_bindgen]
+pub async fn create_placed_browser_game(
+    canvas: HtmlCanvasElement,
+    origin: String,
+) -> Result<BrowserGame, JsValue> {
+    let mut client = DevClient::new(BrowserFetch, &origin).map_err(js_error)?;
+    client.prefer(
+        thrum_asset::ProductKind::Volume,
+        &[thrum_asset::Profile::Portable],
+    );
+    let generation = client
+        .poll()
+        .await
+        .map_err(js_error)?
+        .ok_or_else(|| js_error("no cloud publication"))?;
+    let feed = RemoteFeed::new(generation);
+    let placed = crate::PlacedSky::new(CookedSource::Remote(feed), true).map_err(js_error)?;
+    let setup = crate::GameSetup {
+        clouds: crate::CloudSelection::Sky,
+        ..crate::GameSetup::default()
+    };
+    create_game_with_shapes(canvas, setup, Some(placed)).await
+}
+
 async fn create_game(
     canvas: HtmlCanvasElement,
     setup: crate::GameSetup,
+) -> Result<BrowserGame, JsValue> {
+    create_game_with_shapes(canvas, setup, None).await
+}
+
+async fn create_game_with_shapes(
+    canvas: HtmlCanvasElement,
+    setup: crate::GameSetup,
+    shapes: Option<crate::PlacedSky>,
 ) -> Result<BrowserGame, JsValue> {
     std::panic::set_hook(Box::new(|info| {
         web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
@@ -258,6 +294,7 @@ async fn create_game(
     let mut hosted = HostedGame(game::PageGame {
         demo: GameControls::new().map_err(js_error)?,
         setup,
+        shapes,
         initial_downlevel: String::new(),
     });
     let shell = thrum_app::web::create_game(canvas, game::DEVICE_GENERATION, &mut hosted)
@@ -538,6 +575,20 @@ impl BrowserGame {
         game::route_report(&self.shell, from).to_string()
     }
 
+    /// Latest submitted Shapes report as JSON for the browser proof.
+    pub fn placed_cloud_report(&self) -> Option<String> {
+        let report = game::cloud_input(&self.shell)?.shapes_report()?;
+        Some(
+            serde_json::json!({
+                "volume_instances": report.volume_instances,
+                "volume_refusals": report.volume_refusals,
+                "directed_refusals": report.directed_refusals,
+                "resources": game::cloud_input(&self.shell)?.resource_bytes(),
+            })
+            .to_string(),
+        )
+    }
+
     /// Draw the authored valley from fetched cooked products, with its authored camera.
     /// The products survive device replacement: a new device stages the newest fetched
     /// generation again. Publications fetched later by [`CookedValley::next_publication`] swap
@@ -607,9 +658,13 @@ impl BrowserGame {
         } else {
             Box::new(assets)
         };
-        let contribution =
-            crate::clouds::with_shade(contribution, game::cloud_input(&self.shell), self.cloud_sky)
-                .map_err(js_error)?;
+        let contribution = crate::clouds::with_shade(
+            contribution,
+            game::cloud_input(&self.shell),
+            self.cloud_sky,
+            game::cloud_shapes(&self.shell),
+        )
+        .map_err(js_error)?;
         self.shell
             .set_scene_contribution(contribution)
             .map_err(js_error)?;

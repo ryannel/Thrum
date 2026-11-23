@@ -25,7 +25,7 @@ fn weather_is_committed_published_restored_and_protected_with_the_world() {
         })
         .expect("game entity");
     }
-    sim.seed_weather(Some(crate::clouds::initial_state().parameters()))
+    sim.seed_weather(Some(crate::clouds::initial_state()))
         .expect("weather authority");
     let original = sim.published_page().expect("tick zero page");
     let zero = original.weather().expect("weather in page");

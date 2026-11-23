@@ -136,14 +136,14 @@ pub(crate) fn selected_simulation(
     weather_simulation(
         content,
         route_overlay,
-        clouds.then(|| crate::clouds::initial_state().parameters()),
+        clouds.then(crate::clouds::initial_state),
     )
 }
 
 pub(crate) fn weather_simulation(
     content: GameContent,
     route_overlay: RouteOverlay,
-    clouds: Option<thrum_cloud_model::Parameters>,
+    clouds: Option<thrum_cloud_model::State>,
 ) -> Result<Simulation, String> {
     let overlay = route_overlay != RouteOverlay::Off;
     match (content, overlay) {
@@ -174,7 +174,7 @@ fn new_simulation(entity_count: usize, clouds: bool) -> Result<Simulation, Strin
 }
 
 fn exit_simulation(
-    clouds: Option<thrum_cloud_model::Parameters>,
+    clouds: Option<thrum_cloud_model::State>,
 ) -> Result<Simulation, crate::simulation::SimError> {
     let fixture = crate::exit_scene::layout();
     let mut sim = Simulation::new_exit(
@@ -245,7 +245,7 @@ pub(crate) fn register_peers(sim: &mut Simulation, entity_count: usize) -> Resul
     Ok(())
 }
 
-fn field_simulation(clouds: Option<thrum_cloud_model::Parameters>) -> Result<Simulation, String> {
+fn field_simulation(clouds: Option<thrum_cloud_model::State>) -> Result<Simulation, String> {
     let entity_count = crate::field::ENTITY_COUNT;
     let mut sim = new_simulation(entity_count, clouds.is_some())?;
     for index in 0..entity_count {
@@ -278,7 +278,7 @@ pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> 
 fn grid_simulation(
     entity_count: usize,
     route_overlay: RouteOverlay,
-    clouds: Option<thrum_cloud_model::Parameters>,
+    clouds: Option<thrum_cloud_model::State>,
 ) -> Result<Simulation, String> {
     if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
         return Err("fixture entity count is outside the physical slot range".into());

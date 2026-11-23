@@ -1,4 +1,4 @@
-use crate::{Error, Footprint, unit};
+use crate::{Error, Footprint, HashedShapes, PlacedLibrary, ShapeSource, unit};
 use std::sync::Arc;
 
 /// Game-supplied weather controls. Wind is horizontal X/Z metres per weather second.
@@ -58,6 +58,9 @@ pub struct State {
     previous: [f64; 2],
     time: f64,
     shapes: Vec<Directed>,
+    placed: Vec<(u64, ShapeSource)>,
+    library: Option<Arc<PlacedLibrary>>,
+    hashed: Option<HashedShapes>,
     limit: usize,
     refusals: u64,
     ground: crate::GroundState,
@@ -80,6 +83,9 @@ impl State {
             previous: [0.0; 2],
             time: 0.0,
             shapes: Vec::with_capacity(limit),
+            placed: Vec::new(),
+            library: None,
+            hashed: None,
             limit,
             refusals: 0,
             ground: crate::GroundState::default(),
@@ -127,6 +133,8 @@ impl State {
             shape.growth = approach(shape.growth, shape.growth_target, rate);
         }
         self.shapes.retain(|s| s.envelope != 0.0 || s.target != 0.0);
+        self.placed
+            .retain(|(id, _)| self.shapes.iter().any(|shape| shape.id == *id));
         Ok(())
     }
 
@@ -248,12 +256,81 @@ impl State {
         self.refusals
     }
 
+    /// Supply immutable library footprints before admitting shapes through the library.
+    /// # Errors
+    /// Rejects changing the library with directed library instances still active.
+    pub fn set_library(&mut self, library: Arc<PlacedLibrary>) -> Result<(), Error> {
+        if !self.placed.is_empty() {
+            return Err(Error::Invalid);
+        }
+        self.library = Some(library);
+        self.hashed = None;
+        Ok(())
+    }
+
+    /// Select hashed placement independently of the camera, instead of admitting directed instances.
+    /// # Errors
+    /// Rejects invalid block sizes, empty libraries, shares outside 0..=1 or existing directed shapes.
+    pub fn set_hashed_library(
+        &mut self,
+        library: Arc<PlacedLibrary>,
+        placement: HashedShapes,
+    ) -> Result<(), Error> {
+        if !self.shapes.is_empty()
+            || !(3..=64).contains(&placement.block_sites)
+            || placement.shares.len() < 2
+            || !placement.shares.iter().copied().all(unit)
+        {
+            return Err(Error::Invalid);
+        }
+        self.set_library(library)?;
+        self.hashed = Some(placement);
+        Ok(())
+    }
+
+    /// Library selection in a profile that places shapes through the field.
+    pub fn hashed_shapes(&self) -> Option<&HashedShapes> {
+        self.hashed.as_ref()
+    }
+
+    /// Library owned by the game's weather state.
+    pub fn library(&self) -> Option<&PlacedLibrary> {
+        self.library.as_deref()
+    }
+
+    /// Source a resident stack can render for this directed instance, if bound.
+    pub fn shape_source(&self, id: u64) -> Option<ShapeSource> {
+        self.placed
+            .iter()
+            .find_map(|&(key, source)| (key == id).then_some(source))
+    }
+
+    /// Admit a library instance at envelope zero, using its registered footprint.
+    /// # Errors
+    /// Rejects absent sources and the same invalid placements as [Self::add].
+    pub fn add_from_library(
+        &mut self,
+        mut shape: Directed,
+        source: ShapeSource,
+    ) -> Result<(), Error> {
+        let Some(slab) = self.library().and_then(|library| library.geometry(source)) else {
+            self.refusals += 1;
+            return Err(Error::Missing);
+        };
+        shape.footprint = Arc::clone(&slab.footprint);
+        let id = shape.id;
+        self.add(shape)?;
+        self.placed.push((id, source));
+        Ok(())
+    }
+
     /// Admit a shape at envelope zero. Conservative rotated bounding circles
     /// reject all possible overlapping footprints, including hollow regions.
     /// # Errors
     /// Rejects invalid transforms, duplicate ids, overlaps and exhausted capacity.
     pub fn add(&mut self, shape: Directed) -> Result<(), Error> {
-        let error = if !shape.centre.iter().all(|x| x.is_finite())
+        let error = if self.hashed.is_some()
+            || !shape.centre.iter().all(|x| x.is_finite())
             || !shape.yaw.is_finite()
             || !shape.scale.is_finite()
             || shape.scale <= 0.0

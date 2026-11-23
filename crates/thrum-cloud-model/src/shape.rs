@@ -92,9 +92,50 @@ impl Shape {
 }
 
 impl Footprint {
+    /// Rehydrate cooked columns in row-major Z/X order. Heights are relative to the
+    /// shape's authored condensation plane and can extend below it.
+    ///
+    /// # Errors
+    /// Rejects empty or inconsistent layouts and invalid column integrals or bounds.
+    pub fn from_columns(
+        size: [usize; 2],
+        spacing: f64,
+        columns: Vec<[f64; 3]>,
+    ) -> Result<Self, Error> {
+        if size.contains(&0)
+            || size[0].checked_mul(size[1]) != Some(columns.len())
+            || !spacing.is_finite()
+            || spacing <= 0.0
+            || columns.iter().any(|&[integral, bottom, top]| {
+                !integral.is_finite()
+                    || !bottom.is_finite()
+                    || !top.is_finite()
+                    || integral < 0.0
+                    || (integral > 0.0 && bottom >= top)
+            })
+        {
+            return Err(Error::Invalid);
+        }
+        Ok(Self {
+            size,
+            spacing,
+            columns,
+        })
+    }
+
+    /// X/Z dimensions and the metre spacing of these cooked columns.
+    pub fn layout(&self) -> ([usize; 2], f64) {
+        (self.size, self.spacing)
+    }
+
+    /// Column integrals and occupied bounds in row-major Z/X order.
+    pub fn columns(&self) -> &[[f64; 3]] {
+        &self.columns
+    }
+
     /// Local column integral in metres, and occupied bottom/top in metres.
     pub fn column(&self, point: [f64; 2]) -> [f64; 3] {
-        let mut column = [0.0, f64::INFINITY, 0.0];
+        let mut column = [0.0, f64::INFINITY, f64::NEG_INFINITY];
         for (index, weight) in self.weights(point) {
             let c = self.columns[index];
             column[0] += weight * c[0];
@@ -105,11 +146,13 @@ impl Footprint {
         }
         if column[0] == 0.0 {
             column[1] = 0.0;
+            column[2] = 0.0;
         }
         column
     }
 
-    pub(crate) fn radius(&self) -> f64 {
+    /// Conservative horizontal radius including the zero-border interpolation.
+    pub fn radius(&self) -> f64 {
         (self.size[0] as f64 + 1.0).hypot(self.size[1] as f64 + 1.0) * self.spacing * 0.5
     }
 

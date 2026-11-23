@@ -95,6 +95,9 @@ impl WeatherMap {
                 .fold(f64::NEG_INFINITY, f64::max),
         ]
     }
+    pub(crate) fn model_profile(&self) -> Profile {
+        self.model
+    }
     pub(crate) fn seed(&self) -> u32 {
         self.seed
     }

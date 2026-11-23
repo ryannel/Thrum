@@ -267,13 +267,14 @@ impl Layer {
 
     #[expect(
         clippy::cast_possible_truncation,
-        reason = "presentation coordinates and physical coefficients narrow to shader floats"
+        reason = "physical data narrows relative to the cloud anchor"
     )]
     pub(crate) fn upload(
         &mut self,
         weather: &WeatherMap,
         state: &State,
         frame: &ContributionFrame,
+        shapes: Option<&crate::shapes::Shapes>,
     ) -> Result<(), Error> {
         let environment = frame.environment.ok_or(Error::Unsupported(
             "cloud light requires an environment frame",
@@ -289,6 +290,7 @@ impl Layer {
         let step = self.temporal.clock.begin(frame.time, u64::MAX, [0; 2]);
         let reset = frame.history_reset
             || step == EffectStep::Reset
+            || shapes.is_some_and(crate::shapes::Shapes::history_invalid)
             || self
                 .committed
                 .is_none_or(|old| old.environment != environment.epoch);
@@ -306,7 +308,10 @@ impl Layer {
             raster: frame.view_proj,
         });
         let stride = self.profile.refresh_stride;
-        let heights = weather.height_range();
+        let mut heights = weather.height_range();
+        if let Some(shapes) = shapes {
+            heights = shapes.heights(state, kind, heights);
+        }
         let (phase, scattering) = self
             .lighting
             .type_parameters(state.parameters().kind, (1.0 - kind.deck) * 0.33);
@@ -373,6 +378,7 @@ impl Layer {
         index: usize,
         pass: &mut wgpu::ComputePass<'_>,
         frame: &ContributionFrame,
+        shapes: Option<&crate::shapes::Shapes>,
     ) {
         if index == 0 {
             self.lighting
@@ -387,6 +393,9 @@ impl Layer {
         pass.set_pipeline(&self.trace);
         pass.set_bind_group(0, self.environment.group(frame.exposure_side), &[]);
         pass.set_bind_group(2, &self.trace_group, &[]);
+        if let Some(shapes) = shapes {
+            pass.set_bind_group(3, &shapes.group, &[]);
+        }
         pass.dispatch_workgroups(
             self.textures[0].width().div_ceil(8),
             self.textures[0].height().div_ceil(8),

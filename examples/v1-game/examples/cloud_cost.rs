@@ -4,24 +4,43 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_fixtures::mixed_field::day_cycle::DayCycle;
-use thrum_render::capabilities::{DeviceRecipe, OpenedDevice};
+use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, OpenedDevice};
 use thrum_render::runtime::FrameConfig;
 use v1_game::GameHost as _;
 
 fn main() -> Result<(), String> {
-    let low_sun = match std::env::args().nth(1).as_deref() {
-        None => false,
-        Some("--low-sun") => true,
-        Some(_) => return Err("expected no arguments or --low-sun".to_owned()),
-    };
-    pollster::block_on(measure(low_sun))
+    let mut low_sun = false;
+    let mut profile = DeviceProfile::Native;
+    let mut store = None;
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--low-sun" => low_sun = true,
+            "--device-profile" => {
+                profile = match args.next().as_deref() {
+                    Some("portable") => DeviceProfile::Portable,
+                    Some("native") => DeviceProfile::Native,
+                    _ => return Err("--device-profile expects portable or native".into()),
+                };
+            }
+            "--placed-store" => {
+                store = Some(args.next().ok_or("--placed-store needs a path")?.into());
+            }
+            _ => return Err(format!("unrecognised cloud cost option {arg}")),
+        }
+    }
+    pollster::block_on(measure(low_sun, profile, store))
 }
 
 #[expect(
     clippy::print_stdout,
     reason = "measurement executable emits its one machine-readable record"
 )]
-async fn measure(low_sun: bool) -> Result<(), String> {
+async fn measure(
+    low_sun: bool,
+    profile: DeviceProfile,
+    store: Option<std::path::PathBuf>,
+) -> Result<(), String> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
@@ -32,21 +51,30 @@ async fn measure(low_sun: bool) -> Result<(), String> {
         queue,
         capabilities: caps,
         ..
-    } = DeviceRecipe::default()
-        .open(&instance, None)
-        .await
-        .map_err(|error| error.to_string())?;
-    let mut host = v1_game::selected_setup()?
-        .prepare(
-            &device,
-            &queue,
-            &caps,
-            FrameConfig {
-                render_extent: [2560, 1440],
-                surface: None,
-            },
-        )
-        .await?;
+    } = DeviceRecipe {
+        profile,
+        ..DeviceRecipe::default()
+    }
+    .open(&instance, None)
+    .await
+    .map_err(|error| error.to_string())?;
+    let setup = v1_game::selected_setup()?;
+    let config = FrameConfig {
+        render_extent: [2560, 1440],
+        surface: None,
+    };
+    let placed = store
+        .map(|path| v1_game::PlacedSky::new(path.into(), false).map_err(|error| error.to_string()))
+        .transpose()?;
+    let has_shapes = placed.is_some();
+    let mut host = if let Some(placed) = placed {
+        setup
+            .prepare_placed(&device, &queue, &caps, config, placed)
+            .await
+            .map_err(|error| error.to_string())?
+    } else {
+        setup.prepare(&device, &queue, &caps, config).await?
+    };
     let content = v1_game::attach_cooked_scene(&mut host)?;
     let view_angles = if low_sun {
         let elevation = 10.0_f32.to_radians();
@@ -71,7 +99,7 @@ async fn measure(low_sun: bool) -> Result<(), String> {
     let mut last_tick = 0;
     let mut refill = 0.0_f64;
     let mut first = None;
-    for tick in 0..240_u32 {
+    for tick in 0..360_u32 {
         last_tick = tick;
         host.drive(Duration::from_secs_f64(f64::from(tick) / 60.0), None)?;
         device
@@ -79,7 +107,12 @@ async fn measure(low_sun: bool) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
             let timings = sample.gpu_pass_ns.ok_or("GPU counters required")?;
-            if first.is_none() {
+            let resident = !has_shapes
+                || host
+                    .cloud_placed_input()
+                    .and_then(thrum_clouds::WeatherInput::shapes_report)
+                    .is_some_and(|report| report.volume_instances > 0);
+            if first.is_none() && resident {
                 first = Some(
                     serde_json::json!({"whole_frame_gpu_ns":timings.passes().iter().map(|p|p.nanoseconds).sum::<f64>(),"pass_gpu_ns":timings.passes().iter().map(|p|(p.name.to_string(),p.nanoseconds)).collect::<BTreeMap<_,_>>()}),
                 );
@@ -96,7 +129,7 @@ async fn measure(low_sun: bool) -> Result<(), String> {
         if content
             .as_ref()
             .is_none_or(|s| s.lock().is_ok_and(|s| s.drawn.is_some()))
-            && tick > 30
+            && if has_shapes { tick > 300 } else { tick > 30 }
         {
             break;
         }

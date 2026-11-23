@@ -63,6 +63,7 @@ fn path(@builtin(global_invocation_id) id:vec3<u32>) {
                 let height=p.physical.y-(f32(slice-1u)*dh+(f32(j)+0.5)*sub);
                 let offset=p.direction.xz*(height-p.physical.x)/p.direction.y;
                 tau+=density(vec3<f32>(xy.x+offset.x,height,xy.y+offset.y))*sub/p.direction.y;
+                tau += placed_sun_depth(vec3(xy.x + offset.x, height, xy.y + offset.y), sub);
             }
         }
         packed[slice%4u]=min(65504.0,tau);

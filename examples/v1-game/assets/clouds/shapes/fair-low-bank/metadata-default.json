@@ -1,0 +1,81 @@
+{
+  "schema": "broadsides.authored_cloud_shape",
+  "version": 1,
+  "side": 128,
+  "atlas_size": [
+    2048,
+    1024
+  ],
+  "tiles_per_row": 16,
+  "extent_m": 1500,
+  "payload_sha256": "5c58a866f36888537ee77b53e16fd94b1448fb27fea13af044028643da514c78",
+  "source_payload_sha256": "2317cd6baf213f7244e3daf9b778bcde3ad2b895c4f71dfe6466026b5376e08e",
+  "recipe_sha256": "0c290cd8d5c232afe8c353bfb89f29862ad7eebdbffed11b5f0b762a142d08bc",
+  "generator_sha256": "387f20e9472190ffc41b7545bfbb82e210406d36e7e5ac73c04356b64d7d2df0",
+  "seed": 378817,
+  "license": "LicenseRef-Broadsides-Original",
+  "copyright": "Broadsides contributors",
+  "voxel_sha256": "6f09350bcd5d932aa0cd8ea029b6285a3f647ec123f2812b0b2089e7c84c3342",
+  "base_height_m": -490.0359712230216,
+  "downwind_axis": [
+    0.9897594780811197,
+    0.07918075824648958,
+    -0.11877113736973437
+  ],
+  "genus": "fair-cumulus",
+  "occupied_bounds_voxels": [
+    [
+      5,
+      16,
+      32
+    ],
+    [
+      121,
+      72,
+      91
+    ]
+  ],
+  "provenance": {
+    "creator": "Broadsides original heaped-fair procedural generator",
+    "data_inputs": "None: original project recipe/seed and original generator sources only; no external cloud geometry or density",
+    "parent_generator_sources_sha256": {
+      "factory/clouds/lobe-hierarchy/generate.py": "f409518fdcc531b136862a1f795e05415ab384a7efba50b35baacb3759e461ed",
+      "factory/clouds/lobe-hierarchy/recipes/fair-cumulus.json": "ad9c8b3e64bab2e00a68e6f0195c6ddaecff239fbb93b89b854c528b50b8dcef"
+    },
+    "source_extent_m": 1500,
+    "uniform_export_similarity": 1.0,
+    "source_axes": "x/y horizontal, z up; source z slices are [y,x]",
+    "source_payload_identity": "256 PNG is canonical prepared source identity; 128 is mean of prequantized 256 float field with connectivity cleanup and optional lower thin-feature opening, not mean of R8 bytes",
+    "export_reason": "Authored at physical extent; 3-voxel fit keeps the shape inside the cube"
+  },
+  "role": "One static authored optical look candidate; no meteorological claim",
+  "preparation": "256 float source; 128 2x2x2 box mean then connectivity cleanup and optional lower thin-feature opening followed by connectivity cleanup; nearest R8; dominant six-connected isodensities",
+  "scattering": [
+    0.866617162492502,
+    0.8,
+    0.2,
+    0.5
+  ],
+  "flow_amplitude": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "flow_period_s": [
+    93.0,
+    117.0,
+    151.0
+  ],
+  "lifecycle_s": [
+    180.0,
+    600.0,
+    900.0,
+    360.0
+  ],
+  "wind_m_s": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "extinction_scale_m_inv": 0.3
+}

@@ -331,17 +331,20 @@ impl RuntimeSetup for WindowGame {
             .as_ref()
             .is_some_and(|capture| capture.scale_props);
         let exit = setup.content == crate::GameContent::Exit;
-        let mut host = setup
-            .prepare(
-                gpu.device,
-                gpu.queue,
-                gpu.capabilities,
-                FrameConfig {
-                    render_extent,
-                    surface: Some(gpu.surface),
-                },
-            )
-            .await?;
+        let config = FrameConfig {
+            render_extent,
+            surface: Some(gpu.surface),
+        };
+        let mut host = if let Some(shapes) = crate::content::placed_sky()? {
+            setup
+                .prepare_placed(gpu.device, gpu.queue, gpu.capabilities, config, shapes)
+                .await
+                .map_err(|error| error.to_string())?
+        } else {
+            setup
+                .prepare(gpu.device, gpu.queue, gpu.capabilities, config)
+                .await?
+        };
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         let preview = self
             .capture_cooked

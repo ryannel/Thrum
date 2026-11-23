@@ -153,3 +153,51 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> (EffectGraph, usize) {
         shape_noise,
     )
 }
+
+pub(super) fn append_placed_map(
+    graph: &mut EffectGraph,
+    map: &crate::shapes::map::ShapeMap,
+    mut reads: Vec<EffectAccess>,
+    epoch: u64,
+) {
+    let texture = graph.resources.len();
+    graph.resources.push((
+        D::of_texture(&map.texture),
+        S::Persistent {
+            owner: 105,
+            epoch,
+            initialized: false,
+        },
+    ));
+    let uniforms = graph.resources.len();
+    graph.resources.push((
+        D::Buffer {
+            bytes: map.params.size(),
+            usage: map.params.usage(),
+        },
+        S::Imported { initialized: true },
+    ));
+    reads.truncate(2);
+    reads.extend([
+        EffectAccess {
+            resource: texture,
+            range: 0..4,
+            kind: A::StorageWrite,
+            view: None,
+            history: None,
+        },
+        EffectAccess {
+            resource: uniforms,
+            range: 0..map.params.size(),
+            kind: A::UniformRead,
+            view: None,
+            history: None,
+        },
+    ]);
+    graph.passes.push(EffectPass {
+        name: crate::shapes::map::PASS.into(),
+        cadence: EffectCadence::EveryFrame,
+        async_eligible: true,
+        accesses: reads,
+    });
+}

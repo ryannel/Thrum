@@ -193,8 +193,44 @@ impl GameSetup {
         config: FrameConfig,
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
     ) -> Result<Runtime, runtime::FrameError> {
+        Box::pin(self.prepare_scene(device, queue, capabilities, config, rows, None)).await
+    }
+
+    /// Prepare the same scene with the game's opt-in placed sky.
+    ///
+    /// # Errors
+    /// Refuses incompatible scenes, invalid content or an unavailable device.
+    pub async fn prepare_placed(
+        self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        sky: crate::PlacedSky,
+    ) -> Result<Runtime, runtime::FrameError> {
+        Box::pin(self.prepare_scene(device, queue, capabilities, config, None, Some(sky))).await
+    }
+
+    async fn prepare_scene(
+        self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        rows: Option<thrum_asset_gpu::rows::CookedRows>,
+        shapes: Option<crate::PlacedSky>,
+    ) -> Result<Runtime, runtime::FrameError> {
         use runtime::FrameError;
         let setup = self;
+        if shapes.is_some()
+            && (setup.clouds == crate::CloudSelection::Off
+                || setup.content == GameContent::Exit
+                || setup.sprite_scale.is_some())
+        {
+            return Err(FrameError::InvalidState(
+                "placed skies require an opt-in 3D cloud selection",
+            ));
+        }
 
         if !capabilities.matches(device) {
             return Err(FrameError::InvalidState(
@@ -320,35 +356,24 @@ impl GameSetup {
             scene.meshes = Some(rows.selection(slots));
         }
         let cloud_sky = setup.clouds.sky_profile(config.render_extent);
+        let weather = clouded_weather(setup, shapes.as_ref())?;
         let world = GameWorld(WorldPort::Inline(Box::new(
-            if setup.clouds == crate::CloudSelection::Off {
-                WorldDriver::new(setup.content, setup.route_overlay)
-            } else {
-                WorldDriver::selected(
-                    setup.content,
-                    setup.route_overlay,
-                    Some(setup.cloud_weather),
-                )
-            }
-            .map_err(FrameError::World)?,
+            WorldDriver::selected(setup.content, setup.route_overlay, weather)
+                .map_err(FrameError::World)?,
         )));
-        let shade = if setup.clouds == crate::CloudSelection::Off {
-            None
-        } else {
-            let shade = thrum_clouds::Shade::new(crate::clouds::shade_config())
-                .map_err(|error| FrameError::Scene(error.to_string()))?;
-            Some(if let Some(profile) = cloud_sky {
+        let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky)?;
+        if let Some(shade) = &shade {
+            scene.sun_optical_depth = Some(
                 shade
-                    .with_sky(profile)
-                    .map_err(|error| FrameError::Scene(error.to_string()))?
-            } else {
-                shade
-            })
-        };
+                    .provider()
+                    .map_err(|error| FrameError::Scene(format!("cloud provider: {error:?}")))?,
+            );
+        }
         let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
         let mut source = GameScene::new(setup);
         source.cloud_input = cloud_input;
         source.cloud_sky = cloud_sky;
+        source.cloud_shapes.clone_from(&shapes);
         source.cooked_rows = rows;
         let mut inner = Runtime::new(
             capabilities,
@@ -361,10 +386,56 @@ impl GameSetup {
         )
         .await?;
         if let Some(shade) = shade {
-            inner.attach_scene_contribution(Box::new(shade))?;
+            let contribution: Box<dyn thrum_render::contribution::SceneContribution> =
+                if let Some(shapes) = shapes {
+                    let (assets, shade) = shapes.shade(shade).map_err(FrameError::Scene)?;
+                    Box::new(thrum_render::contribution::SceneContributions::new(vec![
+                        Box::new(assets),
+                        Box::new(shade),
+                    ]))
+                } else {
+                    Box::new(shade)
+                };
+            inner.attach_scene_contribution(contribution)?;
         }
         Ok(inner)
     }
+}
+
+fn clouded_weather(
+    setup: GameSetup,
+    shapes: Option<&crate::PlacedSky>,
+) -> Result<Option<thrum_cloud_model::State>, runtime::FrameError> {
+    if setup.clouds == crate::CloudSelection::Off {
+        return Ok(None);
+    }
+    let state = shapes.map_or_else(
+        || thrum_cloud_model::State::new(setup.cloud_weather, 5.0, 0),
+        |placed| placed.state(setup.cloud_weather),
+    );
+    state
+        .map(Some)
+        .map_err(|error| runtime::FrameError::World(error.to_string()))
+}
+
+fn cloud_shade(
+    selection: crate::CloudSelection,
+    shapes: Option<&crate::PlacedSky>,
+    sky: Option<thrum_clouds::SkyProfile>,
+) -> Result<Option<thrum_clouds::Shade>, runtime::FrameError> {
+    if selection == crate::CloudSelection::Off {
+        return Ok(None);
+    }
+    let config = shapes.map_or_else(crate::clouds::shade_config, crate::PlacedSky::profile);
+    let shade = thrum_clouds::Shade::new(config)
+        .map_err(|error| runtime::FrameError::Scene(error.to_string()))?;
+    let Some(sky) = sky else {
+        return Ok(Some(shade));
+    };
+    shade
+        .with_sky(sky)
+        .map(Some)
+        .map_err(|error| runtime::FrameError::Scene(error.to_string()))
 }
 
 /// The game's own operations on the engine's frame host: its solar day, camera, moving route,
@@ -438,6 +509,8 @@ pub trait GameHost {
     fn cloud_sky_products(&self) -> Option<thrum_clouds::SkyProducts>;
     /// Current Weather and Shade product, for optional GPU inspection.
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)>;
+    /// Submitted cloud products and their placement reports for a placed sky.
+    fn cloud_placed_input(&self) -> Option<&thrum_clouds::WeatherInput>;
     /// Prepared cloud resource payload bytes, excluding driver overhead.
     fn cloud_resource_bytes(&self) -> Vec<(String, u64)>;
     /// Move the inline clock and rules onto the engine's world lane. The frame host then
@@ -504,8 +577,12 @@ impl GameHost for Runtime {
         contribution: Box<dyn thrum_render::contribution::SceneContribution>,
     ) -> Result<(), String> {
         let source = self.source();
-        let contribution =
-            crate::clouds::with_shade(contribution, source.cloud_input.as_ref(), source.cloud_sky)?;
+        let contribution = crate::clouds::with_shade(
+            contribution,
+            source.cloud_input.as_ref(),
+            source.cloud_sky,
+            source.cloud_shapes.as_ref(),
+        )?;
         self.set_scene_contribution(contribution)
             .map_err(String::from)
     }
@@ -533,6 +610,12 @@ impl GameHost for Runtime {
     }
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
         self.source().cloud_input.as_ref()?.ground_product()
+    }
+    fn cloud_placed_input(&self) -> Option<&thrum_clouds::WeatherInput> {
+        self.source()
+            .cloud_input
+            .as_ref()
+            .filter(|_| self.source().cloud_shapes.is_some())
     }
     fn cloud_resource_bytes(&self) -> Vec<(String, u64)> {
         self.source()

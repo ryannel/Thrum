@@ -47,9 +47,28 @@ impl Permits {
         let mut value = world
             .with(&self.read, handle, Clone::clone)
             .map_err(|_| SimError::InvalidHandle)?;
-        Arc::make_mut(&mut value.0)
-            .step(tick, dt)
-            .map_err(|_| SimError::NonFinite)?;
+        let state = Arc::make_mut(&mut value.0);
+        let time = state.time();
+        let smooth = |unit: f64| {
+            let t = unit.clamp(0.0, 1.0);
+            t * t * (3.0 - 2.0 * t)
+        };
+        if state.shape_source(1) == Some(thrum_cloud_model::ShapeSource::Growth) {
+            let growth = ((time - 12.0) / 120.0).clamp(0.0, 1.0);
+            let forming = smooth(time / 18.0).max(1e-6);
+            let thinning = 1.0 - smooth((time - 174.0) / 60.0);
+            state
+                .direct(1, forming * thinning, growth)
+                .map_err(|_| SimError::InvalidConfig)?;
+        }
+        if state.shape_source(2).is_some() {
+            let forming = smooth(time / 8.0).max(1e-6);
+            let thinning = 1.0 - smooth((time - 22.0) / 65.0);
+            state
+                .direct(2, forming * thinning, 0.0)
+                .map_err(|_| SimError::InvalidConfig)?;
+        }
+        state.step(tick, dt).map_err(|_| SimError::NonFinite)?;
         world
             .put(&self.write, handle, value)
             .map_err(|_| SimError::InvalidHandle)?;
@@ -60,12 +79,10 @@ impl Permits {
 impl Simulation {
     pub(crate) fn seed_weather(
         &mut self,
-        parameters: Option<thrum_cloud_model::Parameters>,
+        state: Option<thrum_cloud_model::State>,
     ) -> Result<(), SimError> {
         if let Some(permits) = &mut self.rules.weather {
-            let initial =
-                thrum_cloud_model::State::new(parameters.ok_or(SimError::InvalidConfig)?, 5.0, 0)
-                    .map_err(|_| SimError::InvalidConfig)?;
+            let initial = state.ok_or(SimError::InvalidConfig)?;
             let handle = self
                 .runtime
                 .seed(StableId(u128::MAX), |writer| {

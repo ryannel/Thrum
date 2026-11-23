@@ -25,6 +25,39 @@ pub(crate) fn selected_rows(
     )
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn placed_sky() -> Result<Option<crate::PlacedSky>, String> {
+    let store = match launch_value("THRUM_CLOUD_STORE") {
+        Ok(store) => std::path::PathBuf::from(store),
+        Err(std::env::VarError::NotPresent) => return Ok(None),
+        Err(error) => return Err(error.to_string()),
+    };
+    if !store.join("HEAD").is_file() {
+        return Err(format!(
+            "Placed cloud store has no HEAD at {}",
+            store.display()
+        ));
+    }
+    let placement = launch_value("THRUM_CLOUD_PLACEMENT");
+    let (directed, weather_share) = match placement.as_deref() {
+        Ok("directed") => (true, None),
+        Ok("weather") => (false, Some(0.36)),
+        Ok("procedural") => (false, Some(0.0)),
+        Ok("mixed") | Err(std::env::VarError::NotPresent) => (false, None),
+        _ => {
+            return Err(
+                "THRUM_CLOUD_PLACEMENT must be directed, mixed, weather or procedural".to_owned(),
+            );
+        }
+    };
+    let sky = crate::PlacedSky::new(store.into(), directed).map_err(|error| error.to_string())?;
+    Ok(Some(if let Some(share) = weather_share {
+        sky.with_weather_placement(share)
+    } else {
+        sky
+    }))
+}
+
 fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
     let number = |name: &str, fallback| match launch_value(name) {
         Ok(value) => value

@@ -66,6 +66,7 @@ pub(super) fn run(
             | "atmosphere-scrub"
             | "atmosphere-ground-pan"
             | "clouds-drift"
+            | "clouds-placed"
             | "clouds-dusk"
             | "clouds-still"
             | "checkpoint"
@@ -438,7 +439,12 @@ fn start_writer(
         encoding,
         if matches!(
             scenario,
-            "clouds-drift" | "clouds-route" | "exit-route" | "exit-drift" | "sprites-field"
+            "clouds-drift"
+                | "clouds-placed"
+                | "clouds-route"
+                | "exit-route"
+                | "exit-drift"
+                | "sprites-field"
         ) || recovery != super::NativeRecovery::Disabled
         {
             4096
@@ -532,6 +538,7 @@ fn world_moves(scenario: &str) -> bool {
                 | "reconstruction-pan"
                 | "content-edits"
                 | "clouds-drift"
+                | "clouds-placed"
                 | "exit-drift"
                 | "sprites-field"
                 | "sprites-field-cost"
@@ -545,6 +552,7 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
             "reconstruction-stars"
                 | "reconstruction-scrub"
                 | "clouds-dusk"
+                | "clouds-placed"
                 | "exit-stop"
                 | "sprites-field"
                 | "sprites-field-cost"
@@ -562,16 +570,17 @@ fn requested_yaw(scenario: &str, time: f64, recovery: super::NativeRecovery) -> 
 }
 
 fn capture_hz(scenario: &str, motion_capture: bool) -> u32 {
-    if motion_capture || scenario == "clouds-dusk" {
+    if motion_capture || matches!(scenario, "clouds-dusk" | "clouds-placed") {
         60
     } else {
         120
     }
 }
 
-fn prepare_parameters<G: Game>(
-    driver: &mut Offscreen<G>,
+fn prepare_parameters(
+    driver: &mut Offscreen<HostedGame<WindowGame>>,
     scenario: &str,
+    mode: &str,
 ) -> Result<(Instant, Instant), String> {
     let preset_requested = Instant::now();
     let parameters = std::env::var_os("THRUM_CAPTURE_RUNTIME_PARAMS")
@@ -589,7 +598,54 @@ fn prepare_parameters<G: Game>(
     }
     let preset_accepted = Instant::now();
     warmup(driver)?;
+    settle_placed_capture(driver, mode, parameters.as_deref())?;
     Ok((preset_requested, preset_accepted))
+}
+
+fn settle_placed_capture(
+    driver: &mut Offscreen<HostedGame<WindowGame>>,
+    mode: &str,
+    parameters: Option<&str>,
+) -> Result<(), String> {
+    if driver.host().cloud_placed_input().is_none() {
+        return Ok(());
+    }
+    driver.parameters(r#"{"world.paused":true}"#)?;
+    let deadline = Instant::now() + Duration::from_secs(20);
+    while !driver
+        .host()
+        .cloud_resource_bytes()
+        .iter()
+        .any(|(name, _)| name.starts_with("cloud-growth "))
+    {
+        driver.step()?;
+        while driver.completed()?.is_some() {}
+        if Instant::now() >= deadline {
+            return Err("placed stack did not become resident before capture".to_owned());
+        }
+    }
+    if mode != "realtime" {
+        driver.parameters(r#"{"world.paused":false}"#)?;
+        let start = driver.host().world().tick();
+        while driver.host().world().tick() < start + 300 {
+            driver.step()?;
+            while driver.completed()?.is_some() {}
+            if Instant::now() >= deadline {
+                return Err("placed clouds did not form before the fixed checkpoint".to_owned());
+            }
+        }
+        if let Some(parameters) = parameters {
+            driver.parameters(parameters)?;
+        }
+        driver.parameters(r#"{"world.paused":true}"#)?;
+    }
+    while driver.pending_frames() != 0 {
+        while driver.completed()?.is_some() {}
+        if Instant::now() >= deadline {
+            return Err("placed capture did not drain its setup frames".to_owned());
+        }
+    }
+    Ok(())
 }
 
 fn capture_source() -> Result<CaptureSource, String> {
@@ -631,7 +687,7 @@ async fn record(
     if elapsed_observation {
         driver.set_timing_requested(false);
     }
-    let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario)?;
+    let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario, &mode)?;
     reset_native_capture(&mut driver);
     let sprite_cost = scenario == "sprites-field-cost";
     let observer_only = sprite_cost || capture_output == RuntimeCaptureOutput::ObserverOnly;
@@ -1064,6 +1120,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
     match scenario {
         "sprites-field-cost" => (11.5, 10.0, 10.0),
         "clouds-drift" => (22.5, 22.0, 21.0),
+        "clouds-placed" => (31.1, 31.0, 31.0),
         "clouds-dusk" => (14.5, 14.0, f64::INFINITY),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "exit-route" => (32.0, 0.0, f64::INFINITY),
@@ -1111,6 +1168,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 | "content-edits"
                 | "route"
                 | "clouds-route"
+                | "clouds-placed"
                 | "clouds-drift"
                 | "clouds-dusk"
                 | "exit-route"

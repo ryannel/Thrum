@@ -1,10 +1,13 @@
 // The ordinary game page supplies one report for every observed submission.
-export const cloudCases = ['clouds-first-frame', 'clouds-state'];
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+export const cloudCases = ['clouds-first-frame', 'clouds-state', 'clouds-placed'];
 
 export function cloudObserver(mode) {
   const ground = mode === 'clouds-state';
   return `
-    globalThis.thrumCloudCheck = {enabled: true, ground: ${ground}, frames: [], visibility: [], gpuErrors: []};
+    globalThis.thrumCloudCheck = {enabled: ${mode !== 'clouds-placed'}, ground: ${ground}, frames: [], visibility: [], gpuErrors: []};
     const requestDevice = GPUAdapter.prototype.requestDevice;
     GPUAdapter.prototype.requestDevice = async function(...args) {
       const device = await Reflect.apply(requestDevice, this, args);
@@ -17,6 +20,20 @@ export function cloudObserver(mode) {
       thrumCloudCheck.visibility.push({hidden: document.hidden, time: performance.now()});
     });
   `;
+}
+
+export async function preparePlacedClouds(files, output, repo) {
+  const source = path.join(output, 'placed-source');
+  const store = path.join(output, 'placed-store');
+  execFileSync('cargo', ['run', '--locked', '--offline', '--release', '-p', 'v1-game',
+    '--example', 'cook_cloud_library', '--', source, store], { cwd: repo, stdio: 'inherit' });
+  const file = bytes => ({ bytes, type: 'application/octet-stream' });
+  files.set('/head', file(await fs.readFile(path.join(store, 'HEAD'))));
+  for (const shard of await fs.readdir(path.join(store, 'cas'))) {
+    for (const hash of await fs.readdir(path.join(store, 'cas', shard))) {
+      files.set(`/cas/${hash}`, file(await fs.readFile(path.join(store, 'cas', shard, hash))));
+    }
+  }
 }
 
 export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game, timeout, waitFor, destroy }) {
@@ -40,6 +57,24 @@ export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game
     const state = await read();
     return condition(state) ? state : undefined;
   }, Math.max(0, deadline - Date.now()), description);
+  if (mode === 'clouds-placed') {
+    await game.invoke("game.edit_control('camera.yaw', -65, performance.now()); game.edit_control('camera.pitch', 14, performance.now());");
+    const resident = await waitFor(async () => {
+      await read();
+      const report = await game.invoke("return JSON.parse(game.placed_cloud_report() ?? 'null');");
+      return report?.volume_instances > 0 ? report : undefined;
+    }, timeout, 'submitted placed-cloud lease');
+    for (const name of ['cloud-library', 'cloud-growth']) {
+      if (!resident.resources.some(([resource, bytes]) => resource === `${name} R8Unorm` && bytes > 0)) {
+        throw new Error(`Portable WebGPU did not resolve ${name} as R8Unorm`);
+      }
+    }
+    await game.invoke('thrumCloudCheck.enabled = true;');
+    const visible = await until(value => value.frames.find(row => row.visible_trace_texels > 0), 'visible placed cloud');
+    await game.invoke('thrumCloudCheck.enabled = false;');
+    const final = await read();
+    return { target: 'chrome-webgpu', resident, visible: visible.frames.at(-1), gpuErrors: final.gpuErrors };
+  }
   const cleanFrame = row =>
     row.weather_texels[0] > 0 && row.weather_texels[1] > 0 && row.weather_rows.length === 4;
   const initial = await until(value => value.frames.length > 0, 'first submitted cloud frame');

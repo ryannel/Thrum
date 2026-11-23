@@ -109,6 +109,16 @@ impl SunPath {
         profile: SunProfile,
         target: Option<(wgpu::Texture, wgpu::Buffer)>,
     ) -> Result<Self, Error> {
+        Self::new_with_shapes(device, weather, profile, target, None)
+    }
+
+    pub(crate) fn new_with_shapes(
+        device: &DeviceSite,
+        weather: &WeatherMap,
+        profile: SunProfile,
+        target: Option<(wgpu::Texture, wgpu::Buffer)>,
+        shapes: Option<&crate::shapes::Shapes>,
+    ) -> Result<Self, Error> {
         validate_profile(device, weather, &profile)?;
         let texture = |name, width, layers| {
             device.create_texture(&wgpu::TextureDescriptor {
@@ -157,16 +167,26 @@ impl SunPath {
                 }),
             )
         };
+        let shader = shapes.map_or_else(
+            || {
+                std::borrow::Cow::Owned(format!(
+                    "{SHADER}\n{}",
+                    include_str!("sun_path/without_placed.wgsl")
+                ))
+            },
+            |_| std::borrow::Cow::Owned(shaped_shader()),
+        );
+        let layout = shapes.map(|shapes| shaped_path_layout(device, &shapes.layout));
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cloud Sun path"),
-            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
+            source: wgpu::ShaderSource::Wgsl(shader),
         });
         let shape_noise = Noise::new(device, SHAPE_SIZE, "cloud shape noise");
         let noise_preparation = Some(shape_noise.prepare(device, weather.seed(), "shape"));
         let pipelines = std::array::from_fn(|i| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some(["cloud Sun path", GROUND_PASS, FAR_PASS][i]),
-                layout: None,
+                layout: if i == 0 { layout.as_ref() } else { None },
                 module: &module,
                 entry_point: Some(["path", "ground", "far"][i]),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
@@ -321,10 +341,6 @@ impl SunPath {
     /// Upload a frame's mapping and select a tick's product update.
     /// # Errors
     /// Rejects a nonfinite camera, Sun, or unsupported density range.
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "finite positions and wrapped noise phases narrow relative to air anchors"
-    )]
     pub fn upload(
         &mut self,
         queue: &wgpu::Queue,
@@ -335,10 +351,32 @@ impl SunPath {
         sun: [f32; 3],
         cut: bool,
     ) -> Result<(), Error> {
+        self.upload_with_shapes(queue, weather, time, state, camera, sun, cut, None)
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "finite near-anchor metre and direction uniforms"
+    )]
+    pub(crate) fn upload_with_shapes(
+        &mut self,
+        queue: &wgpu::Queue,
+        weather: &WeatherMap,
+        time: EffectTime,
+        state: &State,
+        camera: [f64; 2],
+        sun: [f32; 3],
+        cut: bool,
+        shapes: Option<&crate::shapes::Shapes>,
+    ) -> Result<(), Error> {
         let step = self.clock.begin(time, u64::MAX, [0; 2]);
-        self.runs = step != EffectStep::Keep;
-        let heights = weather.height_range();
+        let changed = shapes.is_some_and(crate::shapes::Shapes::history_invalid);
+        self.runs = step != EffectStep::Keep || changed;
         let (model, kind) = weather.density_data(state);
+        let mut heights = weather.height_range();
+        if let Some(shapes) = shapes {
+            heights = shapes.heights(state, kind, heights);
+        }
         if !camera.iter().all(|x| x.is_finite())
             || !sun.iter().all(|x| x.is_finite())
             || sun.iter().map(|x| x * x).sum::<f32>() < 0.5
@@ -389,6 +427,7 @@ impl SunPath {
                 rows.clone_from(&self.stamps[i]);
                 rows.resize(self.profile.size as usize, stamp);
                 let reset = step == EffectStep::Reset
+                    || changed
                     || jumped
                     || !super::weather::same_origin(origin, self.origins[i]);
                 let (start, count) = super::weather::update_rows(
@@ -536,12 +575,26 @@ impl SunPath {
     }
     /// Record one level, the ground composition or the far-value reduction.
     pub fn encode(&self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
+        self.encode_with_shapes(index, pass, None);
+    }
+
+    pub(crate) fn encode_with_shapes(
+        &self,
+        index: usize,
+        pass: &mut wgpu::ComputePass<'_>,
+        shapes: Option<&crate::shapes::Shapes>,
+    ) {
         if !self.runs(index) {
             return;
         }
         let pipeline = if index < 3 { 0 } else { index - 2 };
         pass.set_pipeline(&self.pipelines[pipeline]);
         pass.set_bind_group(0, &self.groups[index], &[]);
+        if index < 3
+            && let Some(shapes) = shapes
+        {
+            pass.set_bind_group(1, &shapes.group, &[]);
+        }
         match index {
             0..=2 => pass.dispatch_workgroups(
                 self.profile.size.div_ceil(8),
@@ -595,6 +648,58 @@ impl SunPath {
 
 #[cfg(test)]
 mod tests;
+
+fn shaped_shader() -> String {
+    format!(
+        "{}\n{SHADER}\n{}",
+        crate::shapes::shader(1),
+        include_str!("sun_path/placed.wgsl")
+    )
+}
+
+fn shaped_path_layout(device: &DeviceSite, shapes: &wgpu::BindGroupLayout) -> wgpu::PipelineLayout {
+    use thrum_render::binding;
+    use wgpu::{
+        SamplerBindingType, ShaderStages, StorageTextureAccess, TextureSampleType,
+        TextureViewDimension,
+    };
+    let stage = ShaderStages::COMPUTE;
+    let field = |index| {
+        binding::texture(
+            index,
+            stage,
+            TextureSampleType::Float { filterable: false },
+            TextureViewDimension::D2Array,
+        )
+    };
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("cloud Sun path level"),
+        entries: &[
+            binding::uniform(0, stage, size_of::<Uniform>() as u64),
+            field(1),
+            field(2),
+            binding::storage_texture(
+                3,
+                stage,
+                StorageTextureAccess::WriteOnly,
+                wgpu::TextureFormat::Rgba16Float,
+                TextureViewDimension::D2Array,
+            ),
+            binding::texture(
+                9,
+                stage,
+                TextureSampleType::Float { filterable: true },
+                TextureViewDimension::D3,
+            ),
+            binding::sampler(10, stage, SamplerBindingType::Filtering),
+        ],
+    });
+    device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("cloud Sun path with shapes"),
+        bind_group_layouts: &[Some(&layout), Some(shapes)],
+        immediate_size: 0,
+    })
+}
 
 fn validate_profile(
     device: &DeviceSite,

@@ -295,7 +295,7 @@ def run(args):
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
         "observer_only": observer_only,
-        "record_limit": 4096 if args.case in ('clouds-drift','clouds-route','exit-route','exit-drift','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
+        "record_limit": 4096 if args.case in ('clouds-drift','clouds-placed','clouds-route','exit-route','exit-drift','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
@@ -465,7 +465,7 @@ if __name__ == "__main__":
     parser.add_argument('--reconstruction', choices=['off','taau'])
     parser.add_argument('--overlay', choices=['off','proof','motion','reconstruction'])
     parser.add_argument('--recipe', choices=['portable','apple-tile'])
-    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub", "atmosphere-scrub", "atmosphere-ground-pan", "clouds-drift", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route", "exit-route", "exit-drift", "exit-stop", "sprites-field", "sprites-field-cost"], default="pan")
+    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub", "atmosphere-scrub", "atmosphere-ground-pan", "clouds-drift", "clouds-placed", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route", "exit-route", "exit-drift", "exit-stop", "sprites-field", "sprites-field-cost"], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")

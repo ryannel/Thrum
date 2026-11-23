@@ -23,6 +23,10 @@ pub(crate) fn cloud_input(shell: &Shell) -> Option<&thrum_clouds::WeatherInput> 
     shell.host().source().cloud_input.as_ref()
 }
 
+pub(crate) fn cloud_shapes(shell: &Shell) -> Option<&crate::PlacedSky> {
+    shell.host().source().cloud_shapes.as_ref()
+}
+
 pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), String> {
     let camera = shell
         .host()
@@ -44,6 +48,7 @@ impl thrum_app::InlineWorld for GameWorld {
 pub(crate) struct PageGame {
     pub(crate) demo: GameControls,
     pub(crate) setup: GameSetup,
+    pub(crate) shapes: Option<crate::PlacedSky>,
     pub(crate) initial_downlevel: String,
 }
 
@@ -62,18 +67,20 @@ impl RuntimeSetup for PageGame {
         _: Box<dyn Fn() + Send>,
     ) -> Result<thrum_app::Prepared<GameWorld, GameScene>, String> {
         self.initial_downlevel = format!("{:?}", gpu.capabilities.downlevel());
-        let host = self
-            .setup
-            .prepare(
-                gpu.device,
-                gpu.queue,
-                gpu.capabilities,
-                thrum_render::runtime::FrameConfig {
-                    render_extent: gpu.surface.extent,
-                    surface: Some(gpu.surface),
-                },
-            )
-            .await?;
+        let config = thrum_render::runtime::FrameConfig {
+            render_extent: gpu.surface.extent,
+            surface: Some(gpu.surface),
+        };
+        let host = if let Some(shapes) = self.shapes.take() {
+            self.setup
+                .prepare_placed(gpu.device, gpu.queue, gpu.capabilities, config, shapes)
+                .await
+                .map_err(|error| error.to_string())?
+        } else {
+            self.setup
+                .prepare(gpu.device, gpu.queue, gpu.capabilities, config)
+                .await?
+        };
         self.demo.observe_camera(host.camera_orientation());
         self.demo.observe_time(Self::readback(&host));
         Ok(thrum_app::Prepared::inline(host))

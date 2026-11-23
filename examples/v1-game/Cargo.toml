@@ -70,6 +70,8 @@ wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
 [dev-dependencies]
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
+sha2 = "=0.10.9"
 thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 thrum-cook = { path = "../../crates/thrum-cook", features = ["fault-probe"] }
@@ -99,6 +101,14 @@ test = false
 [[test]]
 name = "it"
 path = "tests/it.rs"
+
+[[test]]
+name = "clouds_library"
+path = "examples/cloud_library/proof.rs"
+
+[[example]]
+name = "cook_cloud_library"
+path = "examples/cloud_library/main.rs"
 
 # A target of its own: its check is named by open item CLOUDS M11.1.
 [[test]]
@@ -155,3 +165,11 @@ test = false
 name = "apple_tile_residency"
 path = "src/bin/apple_tile_residency.rs"
 test = false
+
+[[test]]
+name = "clouds_directed_gpu"
+path = "tests/placed/clouds_directed_gpu.rs"
+
+[[test]]
+name = "clouds_placed_lease_gpu"
+path = "tests/placed/clouds_placed_lease_gpu.rs"

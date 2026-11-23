@@ -5,6 +5,9 @@ use thrum_clouds::{ShadeConfig, SunLevel, SunProfile, WeatherProfile};
 /// Checks for the weather map produced at the game's authored scale.
 pub mod qualification;
 
+mod library;
+pub use library::PlacedSky;
+
 pub(crate) const GROUND_SIZE: u32 = 1024;
 
 /// Cloud capabilities selected by the V1 game.
@@ -34,19 +37,27 @@ pub(crate) fn with_shade(
     contribution: Box<dyn thrum_render::contribution::SceneContribution>,
     input: Option<&thrum_clouds::WeatherInput>,
     sky: Option<thrum_clouds::SkyProfile>,
+    shapes: Option<&PlacedSky>,
 ) -> Result<Box<dyn thrum_render::contribution::SceneContribution>, String> {
     let Some(input) = input else {
         return Ok(contribution);
     };
-    let shade = thrum_clouds::Shade::new(shade_config())
+    let profile = shapes.map_or_else(shade_config, PlacedSky::profile);
+    let shade = thrum_clouds::Shade::new(profile)
         .map_err(|error| error.to_string())?
         .with_input(input.clone());
     let shade = match sky {
         Some(profile) => shade.with_sky(profile).map_err(|error| error.to_string())?,
         None => shade,
     };
+    let members = if let Some(shapes) = shapes {
+        let (assets, shade) = shapes.shade(shade)?;
+        vec![contribution, Box::new(assets), Box::new(shade)]
+    } else {
+        vec![contribution, Box::new(shade)]
+    };
     Ok(Box::new(
-        thrum_render::contribution::SceneContributions::new(vec![contribution, Box::new(shade)]),
+        thrum_render::contribution::SceneContributions::new(members),
     ))
 }
 

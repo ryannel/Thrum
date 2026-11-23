@@ -2,6 +2,7 @@
 mod layer;
 mod noise;
 mod shade;
+mod shapes;
 mod sun_path;
 mod weather;
 
@@ -9,6 +10,7 @@ pub use layer::{SkyProducts, SkyProfile};
 #[cfg(target_arch = "wasm32")]
 pub use shade::CloudSubmission;
 pub use shade::{Shade, ShadeConfig, WeatherInput};
+pub use shapes::{ShapesConfig, ShapesReport};
 pub use sun_path::{SunLevel, SunPath, SunProfile};
 pub use weather::{RowStamp, WeatherMap, WeatherProfile};
 

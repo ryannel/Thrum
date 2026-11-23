@@ -4,6 +4,7 @@
 //! depth is dimensionless. The game supplies all type and placement data.
 mod field;
 mod ground;
+mod library;
 mod medium;
 mod noise;
 mod optics;
@@ -13,6 +14,7 @@ mod visibility;
 
 pub use field::{Cell, Column, Conformance, Density, Field, Profile, Sample, Type};
 pub use ground::{Affinity, Fog, Ground, GroundProfile, GroundState, Surface, SurfacePoint};
+pub use library::{HashedShapes, PlacedLibrary, PlacedSlab, ShapeSource};
 pub use medium::{Coefficients, Handover, Light};
 pub use noise::{DETAIL_PERIOD, DETAIL_SIZE, SHAPE_PERIOD, SHAPE_SIZE};
 pub use optics::{Orders, Phase, PhaseTable, Segment};

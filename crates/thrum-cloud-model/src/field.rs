@@ -1,5 +1,6 @@
-use crate::{Directed, Error, Parameters, Shape, State, smooth, unit};
+use crate::{Directed, Error, Parameters, Shape, ShapeSource, State, smooth, unit};
 use std::f64::consts::PI;
+use std::sync::Arc;
 
 /// Game-supplied row of the type axis. No engine presets exist.
 #[derive(Clone, Copy, Debug)]
@@ -162,8 +163,14 @@ impl Field {
     pub fn query(&self, point: [f64; 3], state: &State) -> Column {
         let air = state.to_air([point[0], point[2]]);
         let mut column = self.column(air, state.time(), state.parameters());
-        for shape in state.shapes() {
-            let c = self.placed_column(air, shape, state.parameters());
+        let hashed = self.hashed_at(air, state);
+        for (shape, selection) in state
+            .shapes()
+            .iter()
+            .map(|shape| (shape, state.shape_source(shape.id)))
+            .chain(hashed.iter().map(|(shape, source)| (shape, Some(*source))))
+        {
+            let c = self.placed_column(air, shape, selection, state);
             if c.optical_depth > 0.0 {
                 if column.optical_depth == 0.0 {
                     column = c;
@@ -294,6 +301,77 @@ impl Field {
         cap
     }
 
+    /// Width of one placement block in the air frame, where the hash places the library.
+    pub fn placed_block_width(&self, state: &State) -> Option<f64> {
+        Some(f64::from(state.hashed_shapes()?.block_sites) * self.profile.pitch)
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "shape blocks use integer floor coordinates"
+    )]
+    fn hashed_at(&self, air: [f64; 2], state: &State) -> Option<(Directed, ShapeSource)> {
+        let width = self.placed_block_width(state)?;
+        self.hashed_shape(air.map(|axis| (axis / width).floor() as i64), state)
+    }
+
+    /// Resolve a hash-selected placed cell by its air-frame block, independent of presentation.
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "bounded hash choices and floor coordinates"
+    )]
+    pub fn hashed_shape(&self, block: [i64; 2], state: &State) -> Option<(Directed, ShapeSource)> {
+        let placement = state.hashed_shapes()?;
+        let library = state.library()?;
+        let p = state.parameters();
+        let period = self.profile.period;
+        let generation = (state.time() / period).floor() as i64;
+        let [i, j] = block;
+        let random = |stream| self.random(i, j, generation, stream);
+        let where_in_types = p.kind * (placement.shares.len() - 1) as f64;
+        let lower = (where_in_types as usize).min(placement.shares.len() - 2);
+        let t = where_in_types - lower as f64;
+        let share = placement.shares[lower] * (1.0 - t) + placement.shares[lower + 1] * t;
+        let selected = smooth((share - random(80)) / 0.1);
+        let covered = smooth((0.95 * smooth(p.coverage / 0.6) - random(81)) / 0.15);
+        let birth = (generation as f64 + 0.18 * random(82)) * period;
+        let life = (0.55 + 0.25 * random(83)) * period;
+        let age = (state.time() - birth) / life;
+        if selected == 0.0 || covered == 0.0 || !(0.0..1.0).contains(&age) {
+            return None;
+        }
+        let envelope = (PI * age).sin().powi(2) * selected * covered;
+        let count = library.shapes().len();
+        let shape_count = count + usize::from(!library.growth().is_empty());
+        let index = (random(84) * shape_count as f64) as usize;
+        let source = if index == count {
+            ShapeSource::Growth
+        } else {
+            ShapeSource::Library(u32::try_from(index).ok()?)
+        };
+        let slab = library.geometry(source)?;
+        let width = self.placed_block_width(state)?;
+        let centre = [
+            (i as f64 + 0.3 + 0.4 * random(85)) * width,
+            (j as f64 + 0.3 + 0.4 * random(86)) * width,
+        ];
+        let scale = (width * 0.29 / slab.footprint.radius()).min(1.0);
+        let wind_heading = p.wind[1].atan2(p.wind[0]);
+        let shape = Directed {
+            id: random(87).to_bits(),
+            centre,
+            yaw: wind_heading - slab.heading,
+            scale,
+            footprint: Arc::clone(&slab.footprint),
+            envelope,
+            target: envelope,
+            growth: age,
+            growth_target: age,
+        };
+        Some((shape, source))
+    }
+
     /// One density function shared by all consumers. `volume` resolves the voxel
     /// slab for a directed shape; absent slabs use the bounded column form.
     /// `weight` blends volume and column forms of the same condensate once.
@@ -344,8 +422,14 @@ impl Field {
         };
         let column = self.column(air, state.time(), p);
         let mut sigma = erode(column_density(column, point[1]));
-        for shape in state.shapes() {
-            let column = self.placed_column(air, shape, p);
+        let hashed = self.hashed_at(air, state);
+        for (shape, selection) in state
+            .shapes()
+            .iter()
+            .map(|shape| (shape, state.shape_source(shape.id)))
+            .chain(hashed.iter().map(|(shape, source)| (shape, Some(*source))))
+        {
+            let column = self.placed_column(air, shape, selection, state);
             let column_sigma = column_density(column, point[1]);
             let local = local(air, shape);
             let voxels = volume(shape.id);
@@ -401,8 +485,19 @@ impl Field {
             .sum()
     }
 
-    fn placed_column(&self, air: [f64; 2], shape: &Directed, p: Parameters) -> Column {
-        let c = shape.footprint.column(local(air, shape));
+    fn placed_column(
+        &self,
+        air: [f64; 2],
+        shape: &Directed,
+        source: Option<ShapeSource>,
+        state: &State,
+    ) -> Column {
+        let p = state.parameters();
+        let point = local(air, shape);
+        let c = match (state.library(), source) {
+            (Some(library), Some(source)) => library.column(source, shape.growth, point),
+            _ => shape.footprint.column(point),
+        };
         if c[0] == 0.0 || shape.envelope == 0.0 {
             return Column::default();
         }

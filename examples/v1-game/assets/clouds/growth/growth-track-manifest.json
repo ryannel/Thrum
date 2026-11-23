@@ -1,0 +1,140 @@
+{
+  "schema": "broadsides.m1_track_candidate.v1",
+  "source_kind": "authored",
+  "track_id": "m2-authored-c2-shoulder-v2-growth",
+  "recipe_sha256": "9d3fad4e2b9e88027299a4291a17ed5ce0c720dd575bd7ee6cd35316daa95a51",
+  "physical_extent_m": 2300,
+  "anchor_wind_xz_m_s": [
+    0.0,
+    0.0
+  ],
+  "cube_center_from_anchor_xyz_m": [
+    0.0,
+    700.378548895899,
+    0.0
+  ],
+  "weather_wind_owns_travel": true,
+  "keys": [
+    {
+      "age_s": 0,
+      "payload": "key-000.png",
+      "metadata": "key-000.json",
+      "payload_sha256": "3d9927913658135c914990aae18a647047f2e946e52cf1f165d22174b86f9423",
+      "voxel_sha256": "0314a01eedc15fca2fa6fa17d9664e5da3b1dfc5c6cd84e0c95537a6790d2e52",
+      "master_sha256": "e1ad91a3fda31e705623b1a36ab167a3df13bb5353c58836ce16ff4286876131",
+      "source_snapshot_sha256": [
+        "e1ad91a3fda31e705623b1a36ab167a3df13bb5353c58836ce16ff4286876131"
+      ]
+    },
+    {
+      "age_s": 12,
+      "payload": "key-012.png",
+      "metadata": "key-012.json",
+      "payload_sha256": "4f5a82c2fc7d2d96846775816c368437864de4e404b143f34422862e34b56f83",
+      "voxel_sha256": "03d4b305c9f484ca7e71b94222dc08fd356428fff9bf08002d05ab3abc286531",
+      "master_sha256": "5fc23072f6c972a980cc5c26ce1332976ea2620fd913ca99313813e9e958940b",
+      "source_snapshot_sha256": [
+        "5fc23072f6c972a980cc5c26ce1332976ea2620fd913ca99313813e9e958940b"
+      ]
+    },
+    {
+      "age_s": 24,
+      "payload": "key-024.png",
+      "metadata": "key-024.json",
+      "payload_sha256": "2015f2ade7187566fa1ee64780b5518ea93d3f7d6158459b28b641c7c9b23f91",
+      "voxel_sha256": "664d5273269f0f1f8f36295c813e19ba9940b131e3f8e546d473e9f155ad47f5",
+      "master_sha256": "3a3f8b26d32e94252a582d1ad4de3bbc2b8ff456ca8543499b3bcab56bae1f08",
+      "source_snapshot_sha256": [
+        "3a3f8b26d32e94252a582d1ad4de3bbc2b8ff456ca8543499b3bcab56bae1f08"
+      ]
+    },
+    {
+      "age_s": 36,
+      "payload": "key-036.png",
+      "metadata": "key-036.json",
+      "payload_sha256": "5539a8ff4873bb16db79686a6fbbf3b82db26aa7cd80300f2495c53e911869c1",
+      "voxel_sha256": "806d06819a822f4bc6368a31b7685b3ae5113b119226b02f1abeed4701d82ec0",
+      "master_sha256": "b9d5a2873802d49f194b24a9a5519a82ec9403d9ee38ebcd463beefa1cb1b720",
+      "source_snapshot_sha256": [
+        "b9d5a2873802d49f194b24a9a5519a82ec9403d9ee38ebcd463beefa1cb1b720"
+      ]
+    },
+    {
+      "age_s": 48,
+      "payload": "key-048.png",
+      "metadata": "key-048.json",
+      "payload_sha256": "a8fd5d3dcf547ca05d669d4414a97989db3487c8ca2f8e55c590182e088f8547",
+      "voxel_sha256": "fc27eb6ebc6a449d03feb9af1cb4261cce85b2f5a649a40b30e91d1b7ff0e67d",
+      "master_sha256": "8e68cfd380bfb4f47bfecd86b72acc2650ba131f15e704685b6002a12cf1648c",
+      "source_snapshot_sha256": [
+        "8e68cfd380bfb4f47bfecd86b72acc2650ba131f15e704685b6002a12cf1648c"
+      ]
+    },
+    {
+      "age_s": 60,
+      "payload": "key-060.png",
+      "metadata": "key-060.json",
+      "payload_sha256": "db4778e7212cf29bb39f34b8f48e87247ea1e7bd06bcf6cd063a90ca60319c6a",
+      "voxel_sha256": "3d4bff7c1684011e675c52dc34b6d471fdbdebada49f5bd75906a911e1dd0360",
+      "master_sha256": "6894178c6d5ef6a781761ba11edd7db6795651d60a7f7ba02a30ff6ae39860b4",
+      "source_snapshot_sha256": [
+        "6894178c6d5ef6a781761ba11edd7db6795651d60a7f7ba02a30ff6ae39860b4"
+      ]
+    },
+    {
+      "age_s": 72,
+      "payload": "key-072.png",
+      "metadata": "key-072.json",
+      "payload_sha256": "b29c225354f2e1635620182089fd1c25161a9d158acb2785327fd1f4391bebe7",
+      "voxel_sha256": "745f31f50c15e12f24221e1ecf39b6d8d332a79dcfb751d324f50d8d5fd72361",
+      "master_sha256": "e340a81b6093bfff936f96af90788afd81eb449eea91be0b0d924f2d392f1b4b",
+      "source_snapshot_sha256": [
+        "e340a81b6093bfff936f96af90788afd81eb449eea91be0b0d924f2d392f1b4b"
+      ]
+    },
+    {
+      "age_s": 84,
+      "payload": "key-084.png",
+      "metadata": "key-084.json",
+      "payload_sha256": "cbc62436acd3cf3ddaa55a86b8f9a9e89cddb6209d5c6f6c7ad75af12be04229",
+      "voxel_sha256": "f8794011ae54e8273722b9dd7f80400b884fec3db103c240deef5aa08003b7e5",
+      "master_sha256": "0ef02ed6cb706a491e78c2fc83f39895156658ea20d7d56d71afa77e71fba751",
+      "source_snapshot_sha256": [
+        "0ef02ed6cb706a491e78c2fc83f39895156658ea20d7d56d71afa77e71fba751"
+      ]
+    },
+    {
+      "age_s": 96,
+      "payload": "key-096.png",
+      "metadata": "key-096.json",
+      "payload_sha256": "a0faea9221071dd761215b7b752f6c8a7957c088bb4e4168837feb6be39990ab",
+      "voxel_sha256": "63f47e128e62440efed87c44a7862b5904c49f14613f1d360b31eb4649af4a52",
+      "master_sha256": "55414e40b706a128677742968afaf7e2d171baee57a4c76df5cc741c327cd618",
+      "source_snapshot_sha256": [
+        "55414e40b706a128677742968afaf7e2d171baee57a4c76df5cc741c327cd618"
+      ]
+    },
+    {
+      "age_s": 108,
+      "payload": "key-108.png",
+      "metadata": "key-108.json",
+      "payload_sha256": "3a8fbef34a9d33e34ed6cc139de5ebf0b7b40c9f57850cab534dde733e4e5fc7",
+      "voxel_sha256": "a6142d5624bcdf7896d3b9bb76799dfa100bec473fef1a252c07b9c1105f0a65",
+      "master_sha256": "7b7135958eaa5a5d7097942c6c06d75ac87081ed847786899068bb75b72ca36f",
+      "source_snapshot_sha256": [
+        "7b7135958eaa5a5d7097942c6c06d75ac87081ed847786899068bb75b72ca36f"
+      ]
+    },
+    {
+      "age_s": 120,
+      "payload": "key-120.png",
+      "metadata": "key-120.json",
+      "payload_sha256": "0bcc911b53b4b57d91ae4c9e0aff561b18eb48d239a864ce27ffbed0ddae5129",
+      "voxel_sha256": "2dbceedc7f1530819dbb674d7019d674db39aa7db6462d5f8e4e65bdb34fd1c5",
+      "master_sha256": "c886ea071864eb42046b672ec7dfefd010a562e46d697621f0e15407651a3b0d",
+      "source_snapshot_sha256": [
+        "c886ea071864eb42046b672ec7dfefd010a562e46d697621f0e15407651a3b0d"
+      ]
+    }
+  ]
+}

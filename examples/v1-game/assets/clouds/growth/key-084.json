@@ -1,0 +1,48 @@
+{
+  "schema": "broadsides.authored_cloud_shape",
+  "version": 1,
+  "side": 128,
+  "atlas_size": [
+    2048,
+    1024
+  ],
+  "tiles_per_row": 16,
+  "extent_m": 2300,
+  "base_height_m": -700.378548895899,
+  "genus": "congestus",
+  "downwind_axis": [
+    0.9897594780811197,
+    0.07918075824648958,
+    -0.11877113736973437
+  ],
+  "occupied_bounds_voxels": [
+    [
+      35,
+      20,
+      39
+    ],
+    [
+      93,
+      120,
+      89
+    ]
+  ],
+  "extinction_scale_m_inv": 0.3,
+  "recipe_sha256": "9d3fad4e2b9e88027299a4291a17ed5ce0c720dd575bd7ee6cd35316daa95a51",
+  "generator_sha256": "fab4c6b1f07f0c862a744c5fa45c70974aa23fd0ed7fd4010d5a4c384d462d88",
+  "track_id": "m2-authored-c2-shoulder-v2-growth",
+  "payload_sha256": "cbc62436acd3cf3ddaa55a86b8f9a9e89cddb6209d5c6f6c7ad75af12be04229",
+  "voxel_sha256": "f8794011ae54e8273722b9dd7f80400b884fec3db103c240deef5aa08003b7e5",
+  "source_payload_sha256": "0ef02ed6cb706a491e78c2fc83f39895156658ea20d7d56d71afa77e71fba751",
+  "source_snapshot_sha256": [
+    "0ef02ed6cb706a491e78c2fc83f39895156658ea20d7d56d71afa77e71fba751"
+  ],
+  "role": "M2 original authored growth fixture",
+  "license": "LicenseRef-Broadsides-Original",
+  "copyright": "Broadsides contributors",
+  "preparation": "Seeded implicit upper caps over accepted C2, conservative metre-frame resampling and v1 R8 encoding",
+  "provenance": {
+    "source_kind": "authored",
+    "parent_voxel_sha256": "a398e18b359932744b74832247e2aa7945bfb413bd482770c039b6aa06a013f8"
+  }
+}

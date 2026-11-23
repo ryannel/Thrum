@@ -47,7 +47,7 @@
       <output id="status">Starting WebGPU…</output>
     </main>
     <script type="module">
-      import init, { create_browser_game, create_field_game, create_sprite_game, fetch_cooked_valley } from "./v1_game.js";
+      import init, { create_browser_game, create_placed_browser_game, create_field_game, create_sprite_game, fetch_cooked_valley } from "./v1_game.js";
       import { bindControls } from "./thrum-controls.js";
 
       const canvas = document.querySelector("#scene");
@@ -61,6 +61,7 @@
         const exit = probe.get("scene") === "exit";
         const sprites = probe.get("scene") === "sprites";
         const clouds = probe.get("clouds") ?? undefined;
+        const placed = probe.get("placed-clouds");
         if ((sprites || exit || probe.has("field")) && clouds !== undefined && clouds !== "off") {
           throw new Error("Cloud selection requires the grid or cooked valley scene");
         }
@@ -116,7 +117,9 @@
         if (sprites && spriteRows !== undefined && (!Number.isInteger(spriteRows) || spriteRows < 4 || spriteRows > 10000)) {
           throw new Error("Sprite row count must be a whole number in 4..10000");
         }
-        const game = sprites
+        const game = placed
+          ? await create_placed_browser_game(canvas, placed)
+          : sprites
           ? await create_sprite_game(canvas, scale, spriteRows, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
           : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
@@ -155,7 +158,7 @@
         let simulatedHidden = false;
         let rafId = 0;
         let stopped = false;
-        const cloudCheck = clouds && probe.has("cloud-check") ? globalThis.thrumCloudCheck : undefined;
+        const cloudCheck = (clouds || placed) && probe.has("cloud-check") ? globalThis.thrumCloudCheck : undefined;
         let checkingCloudFrame = false;
         const pressed = new Set();
         // Sliders, the pause toggle and the Sun readout come from the game's typed controls.

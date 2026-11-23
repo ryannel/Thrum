@@ -761,7 +761,7 @@
     {
       "id": "M6",
       "name": "A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -778,8 +778,8 @@
           "ask": "Does the test cook its own products with `thrum-cook`, and hold no shape that belongs to a game?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/slab-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -790,8 +790,8 @@
           "ask": "Is the shape asymmetric, so that a dome of the same mean column would fail? At a weight of 1, would a Sun path filled from the footprint alone fail? Is the drawn column summed from the density the trace marches, and compared with the public query's column?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/shade-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -801,8 +801,8 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_placed_lease_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/game-second.log",
           "verdict": "",
           "review": ""
         },
@@ -832,8 +832,8 @@
           "check": "cargo test --locked --offline -p v1-game --test clouds_library",
           "ask": "Does the provenance record match the files added, and is anything in the repository from Broadsides that it does not list? Do the hashes in the test come from the Broadsides records the design names, and not from the cooked products?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/library-mac.log",
           "verdict": "",
           "review": ""
         },
@@ -843,8 +843,8 @@
           "check": "node scripts/check_v1_browser.mjs --case clouds-placed",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/clouds-placed.json",
           "verdict": "",
           "review": ""
         },
@@ -866,8 +866,8 @@
           "ask": "Does the test place its shape through the game's weather state and the public interface, at a point it chose, and compare with the model's query there?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/game-second.log",
           "verdict": "",
           "review": ""
         },
@@ -886,8 +886,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         },
@@ -898,8 +898,8 @@
           "ask": "Is a placed cloud in its volume form over the compared ground, with a shape whose column form shades differently there, so that equal bytes could not come from the footprint in one profile and the volume in the other?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/shade-tests.log",
           "verdict": "",
           "review": ""
         }

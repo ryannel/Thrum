@@ -62,7 +62,7 @@ allowed_workspace_dependencies = ["thrum-sea-model", "thrum-render", "thrum-test
 
 [packages.thrum-clouds]
 manifest = "crates/thrum-clouds/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-cloud-model", "thrum-render", "thrum-test-support", "thrum-core"]
+allowed_workspace_dependencies = ["thrum-cloud-model", "thrum-render", "thrum-test-support", "thrum-core", "thrum-asset", "thrum-asset-gpu", "thrum-cook"]
 
 [packages.thrum-water-model]
 manifest = "crates/thrum-water-model/Cargo.toml"
@@ -408,8 +408,8 @@ target_cost = "Cooker only; JSON and buffer import plus its image dependency"
 [external_dependencies.image]
 requirement = "=0.25.10"
 license = "MIT OR Apache-2.0"
-purpose = "Authoring-only PNG/JPEG decode for the texture cooker and demo sources"
-target_cost = "Cooker only, PNG and JPEG codecs enabled"
+purpose = "Authoring-only PNG/JPEG decode for the texture cooker, demo sources and cloud library import"
+target_cost = "Cooker and V1 cloud library authoring tool and proof only"
 
 [external_dependencies.notify]
 requirement = "=8.2.1"
@@ -426,8 +426,8 @@ target_cost = "macOS/iOS thrum-app opt-in capture writer only; native zstd code,
 [external_dependencies.sha2]
 requirement = "=0.10.9"
 license = "MIT OR Apache-2.0"
-purpose = "Hash original RGBA records for independent decoder equality checks and derive the reference crowd rule-set identity at build time"
-target_cost = "Capture hashes run on the macOS/iOS writer thread. Session proof hashing is a host build dependency only"
+purpose = "Hash original RGBA records for independent decoder equality checks, check authored cloud sources, and derive the reference crowd rule-set identity at build time"
+target_cost = "Capture hashes run on the macOS/iOS writer thread. Session proof and cloud library hashing run in host tools and tests"
 
 [external_dependencies.cpu-time]
 requirement = "=1.0.0"
