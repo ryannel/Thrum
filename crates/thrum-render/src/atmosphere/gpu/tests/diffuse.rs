@@ -327,7 +327,11 @@ fn analytic(kind: u8, n: [f64; 3]) -> f64 {
 }
 
 fn image(gpu: &Gpu, kind: u8) -> (wgpu::Texture, Vec<[f64; 3]>) {
-    let [width, height] = EXTENTS[2];
+    let [width, height] = match kind {
+        // A single texel represents either constant field exactly.
+        0 | 4 => [1, 1],
+        _ => EXTENTS[2],
+    };
     let sky = gpu.device.create_texture(&wgpu::TextureDescriptor {
         label: Some("analytic nonnegative incident field"),
         size: wgpu::Extent3d {
@@ -368,16 +372,10 @@ fn image(gpu: &Gpu, kind: u8) -> (wgpu::Texture, Vec<[f64; 3]>) {
     (sky, pixels)
 }
 
-fn sample(pixels: &[[f64; 3]], n: [f64; 3], sun_phi: f64) -> [f64; 3] {
-    let h = horizon();
-    let e = n[1].clamp(-1.0, 1.0).asin();
-    let relative = n[2].atan2(n[0]) - sun_phi;
-    let x = ((relative.sin().atan2(relative.cos()) / PI + 1.0) * 96.0 - 0.5).clamp(0.0, 191.0);
-    let y = if e >= h {
-        54.0 + 53.0 * ((e - h) / (PI / 2.0 - h)).clamp(0.0, 1.0).sqrt()
-    } else {
-        53.0 - 53.0 * ((h - e) / (PI / 2.0 + h)).clamp(0.0, 1.0).sqrt()
-    };
+fn sample(pixels: &[[f64; 3]], x: f64, y: f64) -> [f64; 3] {
+    if let [constant] = pixels {
+        return *constant;
+    }
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
@@ -409,7 +407,18 @@ pub(in crate::atmosphere) fn integrate(
         direct: [[0.0; 3]; 14],
         mass: [0.0; 3],
     };
-    let hm = horizon().sin();
+    let h = horizon();
+    let hm = h.sin();
+    let normals: [[f64; 3]; 14] = std::array::from_fn(normal);
+    let longitudes: Vec<_> = (0..resolution * 2)
+        .map(|x| {
+            let phi = 2.0 * PI * (f64::from(x) + 0.5) / f64::from(resolution * 2);
+            let (sin, cos) = phi.sin_cos();
+            let (s, c) = (phi - sun_phi).sin_cos();
+            let column = ((s.atan2(c) / PI + 1.0) * 96.0 - 0.5).clamp(0.0, 191.0);
+            (sin, cos, column)
+        })
+        .collect();
     // Resolve both one-sided horizon limits. These are midpoint nodes, not
     // the producer's GL16 nodes; all accumulation and mapping remain f64.
     for (sign, span) in [(-1.0, 1.0 + hm), (1.0, 1.0 - hm)] {
@@ -418,20 +427,30 @@ pub(in crate::atmosphere) fn integrate(
             let t = (f64::from(y) + 0.5) / f64::from(resolution);
             let mu = hm + sign * span * t * t;
             let weight = angular_weight * 2.0 * span * t;
-            for x in 0..resolution * 2 {
-                let phi = 2.0 * PI * (f64::from(x) + 0.5) / f64::from(resolution * 2);
-                let r = (1.0 - mu * mu).sqrt();
-                let n = [r * phi.cos(), mu, r * phi.sin()];
-                let l = sample(pixels, n, sun_phi);
+            let elevation = mu.clamp(-1.0, 1.0).asin();
+            let row = if elevation >= h {
+                54.0 + 53.0 * ((elevation - h) / (PI / 2.0 - h)).clamp(0.0, 1.0).sqrt()
+            } else {
+                53.0 - 53.0 * ((h - elevation) / (PI / 2.0 + h)).clamp(0.0, 1.0).sqrt()
+            };
+            let r = (1.0 - mu * mu).sqrt();
+            for &(sin, cos, column) in &longitudes {
+                let n = [r * cos, mu, r * sin];
+                let l = sample(pixels, column, row);
                 let b = basis(n);
-                for c in 0..3 {
-                    let energy = l[c] * weight * solar[c];
-                    result.mass[c] += energy;
-                    for (i, value) in b.iter().enumerate() {
-                        result.coefficients[i][c] += energy * value;
+                let energy: [f64; 3] = std::array::from_fn(|c| l[c] * weight * solar[c]);
+                for (mass, e) in result.mass.iter_mut().zip(energy) {
+                    *mass += e;
+                }
+                for (coefficient, b) in result.coefficients.iter_mut().zip(b) {
+                    for (value, e) in coefficient.iter_mut().zip(energy) {
+                        *value += e * b;
                     }
-                    for (i, direct) in result.direct.iter_mut().enumerate().take(14) {
-                        direct[c] += energy * dot(n, normal(i)).max(0.0);
+                }
+                for (direct, normal) in result.direct.iter_mut().zip(normals) {
+                    let cosine = dot(n, normal).max(0.0);
+                    for (value, e) in direct.iter_mut().zip(energy) {
+                        *value += e * cosine;
                     }
                 }
             }
@@ -571,8 +590,8 @@ fn analytic_fields_preserve_direction_colour_and_physical_units() {
                 0.0,
                 solar,
                 &format!("analytic{kind} solar{solar:?}"),
-                // The narrow polar lobe needs finer midpoint reference nodes.
-                if kind == 5 { 512 } else { 128 },
+                // Keep the polar lobe resolved at both midpoint scales.
+                if kind == 5 { 256 } else { 128 },
             );
             if kind == 5 {
                 let marker = observed[14][3];

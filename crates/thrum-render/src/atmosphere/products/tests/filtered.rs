@@ -373,82 +373,128 @@ fn depth(query: [f32; 4]) -> (usize, usize, f64) {
     )
 }
 
+// Every filtered, clamped and fixed query lands in this cell of the live volume.
+const AERIAL_CELL: [u16; 2] = [9, 11];
+
 fn aerial_expected(field: &Field, query: [f32; 4]) -> ([f64; 3], [f64; 3]) {
     let (low, high, weight) = depth(query);
-    field.sample(
-        [f64::from(query[0]), f64::from(query[1])],
-        low,
-        high,
-        weight,
+    let uv =
+        std::array::from_fn(|i| (f64::from(query[i]) * 32.0 - f64::from(AERIAL_CELL[i])) / 2.0);
+    field.sample(uv, low, high, weight)
+}
+
+fn aerial_probe(device: &wgpu::Device, products: &EnvironmentProducts) -> observer::Probe<2> {
+    observer::Probe::new(
+        device,
+        products,
+        "let sample = environment_aerial(vec3(0.0, 2.0, -q.z), q.xy);",
+        [
+            "vec4(sample.transmission, 1.0)",
+            "vec4(sample.scatter, 1.0)",
+        ],
     )
 }
 
-fn aerial_samples(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    products: &EnvironmentProducts,
-    queries: &[[f32; 4]],
-) -> Vec<([f32; 4], [f32; 4])> {
-    let transmission = observer::sample(
-        device,
-        queue,
-        products,
-        "vec4(environment_aerial(vec3(0.0,2.0,-q.z),q.xy).transmission,1.0)",
-        queries,
-        0,
-    );
-    let scatter = observer::sample(
-        device,
-        queue,
-        products,
-        "vec4(environment_aerial(vec3(0.0,2.0,-q.z),q.xy).scatter,1.0)",
-        queries,
-        0,
-    );
-    transmission.into_iter().zip(scatter).collect()
+const AERIAL_LAYERS: u32 = 33;
+
+fn aerial_cell_texture(device: &wgpu::Device) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("stored aerial cell readback"),
+        size: wgpu::Extent3d {
+            width: 2,
+            height: 2,
+            depth_or_array_layers: AERIAL_LAYERS * 2,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba16Float,
+        usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    })
 }
 
-fn aerial_fields(
+fn stored_aerial_cell(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-    prepared: &PreparedSynthetic,
-) -> (Field, Field) {
-    let surface = prepared.scene_surface(queue);
-    let atmosphere = surface.environment.expect("atmosphere products");
-    let scatter = observer::texels(device, queue, &atmosphere.aerial_textures[0]);
-    let transmittance = observer::texels(device, queue, &atmosphere.aerial_textures[1]);
-    (
-        Field {
-            width: 32,
-            height: 32,
-            steps: transmittance
-                .iter()
-                .map(|t| std::array::from_fn(|i| stored_step(t[i], 1.0)))
-                .collect(),
-            values: transmittance
-                .iter()
-                .map(|value| [value[0], value[1], value[2]])
-                .collect(),
-        },
-        Field {
-            width: 32,
-            height: 32,
-            steps: scatter
-                .iter()
-                .zip(&transmittance)
-                .map(|(s, t)| {
-                    std::array::from_fn(|i| {
-                        stored_step(s[i], 1.0) / 1024.0 + stored_step(t[3], 1.0) / 65_536.0
-                    })
-                })
-                .collect(),
-            values: scatter
-                .iter()
-                .zip(&transmittance)
-                .map(|(s, t)| std::array::from_fn(|i| s[i] / 1024.0 + t[3] / 65_536.0))
-                .collect(),
-        },
-    )
+    producer: &[wgpu::Texture; 2],
+    cell: &wgpu::Texture,
+) -> Vec<u8> {
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    // Copy from the producer's textures directly so a wrong lent binding
+    // cannot change both the shader result and the CPU reference.
+    for (source, base_layer) in producer.iter().zip([0, AERIAL_LAYERS]) {
+        assert_eq!(
+            [
+                source.width(),
+                source.height(),
+                source.depth_or_array_layers()
+            ],
+            [32, 32, AERIAL_LAYERS]
+        );
+        encoder.copy_texture_to_texture(
+            wgpu::TexelCopyTextureInfo {
+                origin: wgpu::Origin3d {
+                    x: u32::from(AERIAL_CELL[0]),
+                    y: u32::from(AERIAL_CELL[1]),
+                    z: 0,
+                },
+                ..source.as_image_copy()
+            },
+            wgpu::TexelCopyTextureInfo {
+                origin: wgpu::Origin3d {
+                    x: 0,
+                    y: 0,
+                    z: base_layer,
+                },
+                ..cell.as_image_copy()
+            },
+            wgpu::Extent3d {
+                depth_or_array_layers: AERIAL_LAYERS,
+                ..cell.size()
+            },
+        );
+    }
+    let readback = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        cell,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
+    );
+    let submission = queue.submit([encoder.finish()]);
+    readback.wait(device, submission)
+}
+
+fn aerial_fields(stored: &[u8]) -> (Field, Field) {
+    let (scatter_texels, transmittance_texels) = stored.split_at(stored.len() / 2);
+    let mut transmission = Field {
+        width: 2,
+        height: 2,
+        steps: Vec::new(),
+        values: Vec::new(),
+    };
+    let mut scatter = Field {
+        width: 2,
+        height: 2,
+        steps: Vec::new(),
+        values: Vec::new(),
+    };
+    for (t, s) in
+        observer::decode_texels(transmittance_texels).zip(observer::decode_texels(scatter_texels))
+    {
+        transmission.values.push([t[0], t[1], t[2]]);
+        transmission
+            .steps
+            .push(std::array::from_fn(|i| stored_step(t[i], 1.0)));
+        scatter
+            .values
+            .push(std::array::from_fn(|i| s[i] / 1024.0 + t[3] / 65_536.0));
+        scatter.steps.push(std::array::from_fn(|i| {
+            stored_step(s[i], 1.0) / 1024.0 + stored_step(t[3], 1.0) / 65_536.0
+        }));
+    }
+    (transmission, scatter)
 }
 
 #[test]
@@ -500,6 +546,8 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
             .scene_surface(&queue)
             .environment_products()
             .unwrap();
+        let probe = aerial_probe(&device, &products);
+        let cell = aerial_cell_texture(&device);
         let mut queries = Vec::new();
         for low in [0_u16, 15, 31] {
             for wz in [0.25_f32, 0.5, 0.75] {
@@ -520,6 +568,15 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
         let clamped = [10.0 / 32.0, 12.0 / 32.0, 40_000.0, 0.0];
         let mut with_clamp = queries.clone();
         with_clamp.push(clamped);
+        let fixed_queries = [0_u16, 15, 31].map(|low| {
+            [
+                10.5 / 32.0,
+                12.5 / 32.0,
+                32_000.0 * (f32::from(low) / 32.0).powi(2),
+                0.0,
+            ]
+        });
+        let live_queries: Vec<_> = with_clamp.iter().chain(&fixed_queries).copied().collect();
         for degrees in [2.0_f32, 0.0, -2.0, -4.0, -6.0, -9.0] {
             let (y, x) = degrees.to_radians().sin_cos();
             let frame = AtmosphereFrame::new([x, y, 0.0], 1.0, [1.0; 3], 2.0, 1).unwrap();
@@ -533,12 +590,13 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
                 )
                 .unwrap();
             submit(&device, &queue, &mut prepared, &target);
-            let (transmission, scatter) = aerial_fields(&device, &queue, &prepared);
-            for (query, (t, s)) in
-                with_clamp
-                    .iter()
-                    .zip(aerial_samples(&device, &queue, &products, &with_clamp))
-            {
+            let actual = probe.sample(&device, &queue, &products, &live_queries, 0);
+            let (filtered, fixed) = actual.split_at(with_clamp.len());
+            let surface = prepared.scene_surface(&queue);
+            let atmosphere = surface.environment.unwrap();
+            let stored = stored_aerial_cell(&device, &queue, &atmosphere.aerial_textures, &cell);
+            let (transmission, scatter) = aerial_fields(&stored);
+            for (query, &[t, s]) in with_clamp.iter().zip(filtered) {
                 assert!(
                     within(t, aerial_expected(&transmission, *query)),
                     "H4 live transmission Sun {degrees} query {query:?} actual {t:?}, expected {:?}",
@@ -550,23 +608,7 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
                     aerial_expected(&scatter, *query)
                 );
             }
-            let fixed_queries: Vec<_> = [0_u16, 15, 31]
-                .into_iter()
-                .map(|low| {
-                    [
-                        10.5 / 32.0,
-                        12.5 / 32.0,
-                        32_000.0 * (f32::from(low) / 32.0).powi(2),
-                        0.0,
-                    ]
-                })
-                .collect();
-            let (transmission, scatter) = aerial_fields(&device, &queue, &prepared);
-            for (q, (t, s)) in
-                fixed_queries
-                    .iter()
-                    .zip(aerial_samples(&device, &queue, &products, &fixed_queries))
-            {
+            for (q, &[t, s]) in fixed_queries.iter().zip(fixed) {
                 for (actual, field) in [(t, &transmission), (s, &scatter)] {
                     let expected = aerial_expected(field, *q).0;
                     for c in 0..3 {
@@ -599,15 +641,20 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
                 0.0,
             ]
         });
-        let (transmission, scatter) = aerial_fields(&device, &queue, &prepared);
+        let filtered = probe.sample(&device, &queue, &products, &with_clamp, 0);
+        let stored = stored_aerial_cell(&device, &queue, &atmosphere.aerial_textures, &cell);
+        let (transmission, scatter) = aerial_fields(&stored);
         transmission.assert_known_contrast();
         scatter.assert_known_contrast();
-        for products in [&products, &exposure_two(&prepared, &queue)] {
-            for (query, (t, s)) in
-                with_clamp
-                    .iter()
-                    .zip(aerial_samples(&device, &queue, products, &with_clamp))
-            {
+        let exposed = probe.sample(
+            &device,
+            &queue,
+            &exposure_two(&prepared, &queue),
+            &with_clamp,
+            0,
+        );
+        for results in [&filtered, &exposed] {
+            for (query, &[t, s]) in with_clamp.iter().zip(results) {
                 assert!(
                     within(t, aerial_expected(&transmission, *query)),
                     "H4 known transmission {query:?} {t:?}"
@@ -634,10 +681,9 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
             },
         ];
         for (kind, substitute) in wrong.iter().enumerate() {
-            for (query, (t, s)) in queries
-                .iter()
-                .zip(aerial_samples(&device, &queue, substitute, &queries))
-            {
+            let probe = aerial_probe(&device, substitute);
+            let actual = probe.sample(&device, &queue, substitute, &queries, 0);
+            for (query, [t, s]) in queries.iter().zip(actual) {
                 assert!(
                     !within(t, aerial_expected(&transmission, *query)),
                     "H4 wrong transmission lookup {kind} incorrectly passed at {query:?}"
