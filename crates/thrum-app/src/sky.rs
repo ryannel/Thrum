@@ -64,6 +64,7 @@ use thrum_render::{
 use thrum_render::{
     atmosphere::AtmosphereFrame,
     contribution::SceneContribution,
+    error::RenderError,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameError, FrameWorld, SceneFrame, SceneSource},
     synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView},
@@ -237,10 +238,20 @@ impl Sky {
         if !self.sun_azimuth_degrees.is_finite() {
             return Err("sun_azimuth_degrees must be finite".to_owned());
         }
-        self.camera.view([16, 9]).map(drop).map_err(String::from)
+        self.camera
+            .view([16, 9])
+            .map(drop)
+            .map_err(|error| match error {
+                FrameError::Render(RenderError::InvalidView) => {
+                    "camera position and target must be finite, distinct and not vertically aligned"
+                        .to_owned()
+                }
+                FrameError::Scene(message) => message,
+                other => other.to_string(),
+            })
     }
 
-    fn lighting(&self) -> Result<FrameLighting, thrum_render::error::RenderError> {
+    fn lighting(&self) -> Result<FrameLighting, RenderError> {
         AtmosphereFrame::new(
             self.toward_sun(),
             SOLAR_LUX,
@@ -1113,7 +1124,7 @@ fn ground_scene(
     ground: Option<[f32; 3]>,
     lights: &[thrum_render::synthetic::SyntheticPointLight],
 ) -> Result<SyntheticScene, String> {
-    let mut scene = SyntheticScene::grid(1).map_err(|error| format!("sky scene: {error:?}"))?;
+    let mut scene = SyntheticScene::grid(1).map_err(|error| format!("sky scene: {error}"))?;
     scene.sun_shadows = true;
     scene.local_lights.extend_from_slice(lights);
     let Some(colour) = ground else {
