@@ -219,7 +219,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
