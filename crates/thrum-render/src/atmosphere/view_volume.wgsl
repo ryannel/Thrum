@@ -81,7 +81,8 @@ fn view_volume_main(@builtin(global_invocation_id) id: vec3<u32>) {
             let jitter = volume_shadow_jitter(id.xy, layer, volume_history.current_view_forward_phase.w);
             let sample_distance = mix(start, end, jitter);
             let world = eye + direction * sample_distance;
-            let visibility = volume_terrain_visibility(world, sample_distance * forward_cos) * cloud_factor(world);
+            let visibility = volume_terrain_visibility(world, sample_distance * forward_cos)
+                * volume_cloud_visibility(eye, direction, sun, start, end);
             let sigma_lo = extinction(densities, 0u);
             let sigma_hi = extinction(densities, 1u);
             let rayleigh_lo = RAYLEIGH_BETA[0] * densities.x;

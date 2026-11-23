@@ -43,7 +43,7 @@ pub(super) fn haze_banks() -> Result<SunOpticalDepth, String> {
             // At a 10° Sun the first opening illuminates the plain east of
             // the lookout. The other opening falls farther up the valley.
             let near = ((x + 14_860.0) / 230.0).powi(2) + ((z + 2_480.0) / 140.0).powi(2);
-            let far = ((x + 17_010.0) / 520.0).powi(2) + ((z + 2_930.0) / 240.0).powi(2);
+            let far = ((x + 15_520.0) / 340.0).powi(2) + ((z + 2_485.0) / 120.0).powi(2);
             tau.push(4.6 * bank(deck) * (1.0 - bank(near).max(bank(far))));
         }
     }

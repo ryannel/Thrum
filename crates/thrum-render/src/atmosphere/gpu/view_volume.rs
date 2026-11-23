@@ -98,10 +98,12 @@ pub(crate) fn source(cascades: bool, cloud: CloudVariant) -> String {
         };
         format!(
             "@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n\
-             @group(1) @binding(4) var aerial_sampler: sampler;\n{source}"
+             @group(1) @binding(4) var aerial_sampler: sampler;\n{source}\n{}",
+            wgsl!("atmosphere/volume_cloud_segment.wgsl")
         )
     } else {
-        "fn cloud_factor(point: vec3<f32>) -> f32 { return 1.0; }".to_owned()
+        "fn volume_cloud_visibility(eye: vec3<f32>, direction: vec3<f32>,\n\
+             sun: vec3<f32>, start: f32, end: f32) -> f32 { return 1.0; }".to_owned()
     };
     format!(
         "{}\n{}\n{cascade}\n{cloud}",
