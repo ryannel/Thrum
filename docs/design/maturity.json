@@ -975,6 +975,18 @@
         },
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M4/README.md",
         "scope": "Native backing-size and transition lifecycle. Dynamic render scale and HDR belong to later milestones."
+      },
+      "M5": {
+        "implementation": "Five prepared Portable TAAU scales use a drawn subrectangle within native-size attachments, with per-view mip bias, retained output-grid colour and previous render-grid depth.",
+        "functional_validation": "Metal independently reset the moving route at each step and verified held stills against the M3 reference. Attachment marker and reallocation controls passed. Chrome WebGPU verified history and creation counts at each route step.",
+        "experienced_quality": "Builder judged the eight scale changes on the realtime Metal capture in submission order, at original timestamps, with native crops of the skyline, grid and thin posts. Independent review is pending.",
+        "platform_performance": {
+          "mac": "Repeated 1920×1080 route timings report forward plus sky, TAAU and atmosphere under shared host load. TAAU exceeds the design estimate. Per-scale departures are tripwires.",
+          "browser": "Hardware WebGPU route function and creation counts.",
+          "ios": "Unmeasured."
+        },
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M5/README.md",
+        "scope": "Scripted scale inside a prepared 3D generation with Portable TAAU."
       }
     }
   },
