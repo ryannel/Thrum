@@ -88,17 +88,7 @@ impl ExtentPrepareInputs {
             self.targets.bind_presenter(&mut slots, &presenter)?;
             let capture = self
                 .capture
-                .map(|spec| {
-                    Tap::prepare_extent(
-                        spec,
-                        self.format,
-                        self.generation,
-                        self.extent,
-                        &slots[0].target,
-                        self.targets.capabilities(),
-                        &self.queue,
-                    )
-                })
+                .map(|spec| Tap::prepare_extent(spec, self.format, self.generation, self.extent))
                 .transpose()?;
             Ok(Some(PreparedExtent {
                 capture,

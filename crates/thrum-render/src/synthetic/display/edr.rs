@@ -3,6 +3,7 @@ use super::{PreparedPreToneInput, ToneOutput};
 use crate::{
     binding,
     graph::{CompiledPass, GraphColorAttachment},
+    present::SurfacePresenter,
     runtime::DeviceSite,
     synthetic::RenderError,
     timing::GpuTimings,
@@ -51,7 +52,7 @@ impl EdrTone {
             layout: Some(&layout),
             vertex: wgpu::VertexState {
                 module: shader,
-                entry_point: Some("vertex"),
+                entry_point: Some("edr_vertex"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 buffers: &[],
             },
@@ -95,14 +96,9 @@ impl EdrTone {
         input: &PreparedPreToneInput,
         output: ToneOutput<'_>,
         timings: Option<&mut GpuTimings>,
+        presenter: &SurfacePresenter,
     ) -> Result<(), RenderError> {
-        if input.input.extent
-            != [
-                output.view.texture().width(),
-                output.view.texture().height(),
-            ]
-            || output.view.texture().format() != wgpu::TextureFormat::Rgba16Float
-        {
+        if output.view.texture().format() != wgpu::TextureFormat::Rgba16Float {
             return Err(RenderError::TargetExtent);
         }
         input.check_pass(compiled)?;
@@ -123,6 +119,7 @@ impl EdrTone {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &input.groups[output.exposure_side], &[]);
         pass.set_bind_group(1, &self.group, &[]);
+        presenter.set_viewport(&mut pass);
         pass.draw(0..3, 0..1);
         Ok(())
     }

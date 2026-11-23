@@ -3,9 +3,12 @@
 @group(0) @binding(2) var motion: texture_2d<f32>;
 @group(0) @binding(0) var scene: texture_2d<f32>;
 @group(0) @binding(1) var<uniform> exposure: ExposureSample;
-@vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4<f32> {
+fn fullscreen_position(index: u32) -> vec4<f32> {
     let positions = array<vec2<f32>, 3>(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));
     return vec4(positions[index],0.0,1.0);
+}
+@vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4<f32> {
+    return fullscreen_position(index);
 }
 // Integer hash (PCG 2D, Jarzynski and Olano 2020) giving two uniform values per pixel.
 fn pcg2d(seed: vec2<u32>) -> vec2<f32> {
@@ -40,11 +43,22 @@ fn reinhard(stored: vec3<f32>) -> vec3<f32> {
 
 @group(1) @binding(0) var<uniform> edr_headroom: vec2<f32>;
 
-@fragment fn edr_fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
-    let stored = textureLoad(scene, vec2<i32>(position.xy), 0).rgb;
+struct EdrVertex {
+    @builtin(position) position: vec4<f32>,
+    @location(0) uv: vec2<f32>,
+}
+@vertex fn edr_vertex(@builtin(vertex_index) index: u32) -> EdrVertex {
+    let position = fullscreen_position(index);
+    return EdrVertex(position, vec2(position.x * 0.5 + 0.5, 0.5 - position.y * 0.5));
+}
+
+@fragment fn edr_fragment(in: EdrVertex) -> @location(0) vec4<f32> {
+    let size = textureDimensions(scene);
+    let pixel = clamp(vec2<i32>(in.uv * vec2<f32>(size)), vec2<i32>(0), vec2<i32>(size) - 1);
+    let stored = textureLoad(scene, pixel, 0).rgb;
     let overlay = exposure.metadata.w >> DISPLAY_OVERLAY_SHIFT;
     if overlay == OVERLAY_MOTION || overlay == OVERLAY_EXPOSURE_ZONES || overlay == OVERLAY_TEMPORAL_INPUTS {
-        let encoded = clamp(sdr_pixel(position).rgb, vec3(0.0), vec3(1.0));
+        let encoded = clamp(sdr_pixel(vec4(vec2<f32>(pixel), 0.0, 1.0)).rgb, vec3(0.0), vec3(1.0));
         let low = encoded / SRGB_SLOPE;
         let high = pow((encoded + vec3(SRGB_OFFSET)) / SRGB_SCALE, vec3(SRGB_GAMMA));
         return vec4(select(high, low, encoded <= vec3(SRGB_ENCODED_KNEE)), 1.0);

@@ -8,7 +8,7 @@ use crate::synthetic::{CaptureSource, PixelReadback};
 /// Operational capture working-set policy, validated before allocation.
 #[derive(Clone, Copy, Debug)]
 pub struct CaptureLimits {
-    /// Concurrent generation-bound GPU readbacks.
+    /// Concurrent generation-bound GPU readbacks across the session.
     pub staging_slots: usize,
     /// Reusable tightly packed CPU image leases, including the writer queue.
     pub cpu_buffers: usize,
@@ -29,7 +29,6 @@ impl Default for CaptureLimits {
 
 /// Pixels from one ordinary submission, with its immutable render-time identity.
 pub struct SubmittedImage {
-    owner: std::sync::Arc<()>,
     /// The sample recorded at submission, before any subsequent world advance.
     pub sample: FrameSample,
     /// Actual source grid of this submitted image.
@@ -62,6 +61,8 @@ pub struct SubmittedImage {
     pub presenter_generation: u64,
     /// Lead actually consumed by world interpolation for this submission.
     pub presentation_lead: std::time::Duration,
+    // Drop the lease after its pixels, including when a writer simply drops the image.
+    lease: std::sync::Arc<()>,
 }
 
 impl SubmittedImage {
@@ -133,10 +134,13 @@ impl TapSpec {
 }
 
 pub(super) struct Tap {
+    limits: CaptureLimits,
     #[cfg(not(target_arch = "wasm32"))]
     spec: TapSpec,
     pub(super) source: CaptureSource,
+    #[cfg(not(target_arch = "wasm32"))]
     owner: std::sync::Arc<()>,
+    leases: std::sync::Arc<()>,
     session: u64,
     generation: u64,
     extent: [u32; 2],
@@ -213,9 +217,6 @@ impl Tap {
         format: wgpu::TextureFormat,
         generation: u64,
         extent: [u32; 2],
-        target: &super::preparation::FrameTarget,
-        capabilities: &crate::capabilities::DeviceCapabilities,
-        queue: &wgpu::Queue,
     ) -> Result<Self, FrameError> {
         let source = spec.source_for_format(Some(format));
         let mut limits = spec.limits;
@@ -223,83 +224,115 @@ impl Tap {
             if spec.source.is_some() {
                 return Err(error);
             }
-            // A default tap follows the display even if the new frame grid or
-            // pixel format no longer fits its budget. Leave copies unadmitted
-            // and counted as omissions until a fitting generation arrives.
+            // The automatic tap follows the display even when its configured pool
+            // doesn't fit the new grid. It counts omissions until the grid fits again.
             limits.staging_slots = 0;
             limits.cpu_buffers = 0;
         }
-        Self::prepare(
-            spec,
-            source,
-            limits,
-            generation,
-            extent,
-            target,
-            capabilities,
-            queue,
-        )
+        // A detached candidate has no share of the session's budget. Only the
+        // render owner can grant it capacity after retiring the previous tap.
+        Ok(Self::empty(spec, source, limits, generation, extent))
     }
 
-    fn prepare(
+    fn empty(
         spec: TapSpec,
         source: CaptureSource,
         limits: CaptureLimits,
         generation: u64,
         extent: [u32; 2],
-        target: &super::preparation::FrameTarget,
-        capabilities: &crate::capabilities::DeviceCapabilities,
-        queue: &wgpu::Queue,
-    ) -> Result<Self, FrameError> {
-        let slots = (0..limits.staging_slots)
-            .map(|_| {
-                let mut readback = if source == CaptureSource::Edr {
-                    let row = (extent[0] * source.bytes_per_pixel())
-                        .next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
-                    PixelReadback::new(
-                        capabilities.device(),
-                        generation,
-                        extent,
-                        source,
-                        row,
-                        "EDR drawable readback",
-                    )
-                } else {
-                    target.readback(capabilities.device())
-                };
-                readback
-                    .enable_copy_timing(capabilities, queue)
-                    .map_err(|error| FrameError::gpu("copy timing prepare", error))?;
-                Ok(Slot {
-                    readback,
-                    reserved: false,
-                    sample: None,
-                    retired: false,
-                    timing_collected: false,
-                    copy_ns: None,
-                })
-            })
-            .collect::<Result<Vec<_>, FrameError>>()?;
-        Ok(Self {
+    ) -> Self {
+        Self {
             source,
+            limits,
+            #[cfg(not(target_arch = "wasm32"))]
             owner: std::sync::Arc::new(()),
+            leases: std::sync::Arc::new(()),
             session: spec.session,
             generation,
             extent,
             started_at: spec.started_at,
             accepting: true,
-            slots,
+            slots: Vec::new(),
             omitted: 0,
-            cpu_capacity: limits.cpu_buffers,
-            free_cpu: (0..limits.cpu_buffers)
-                .map(|_| {
-                    Vec::with_capacity(
-                        extent[0] as usize * extent[1] as usize * source.bytes_per_pixel() as usize,
-                    )
-                })
-                .collect(),
+            cpu_capacity: 0,
+            free_cpu: Vec::new(),
             #[cfg(not(target_arch = "wasm32"))]
             spec,
+        }
+    }
+
+    fn grow(
+        &mut self,
+        staging_slots: usize,
+        cpu_buffers: usize,
+        target: &super::preparation::FrameTarget,
+        capabilities: &crate::capabilities::DeviceCapabilities,
+        queue: &wgpu::Queue,
+    ) -> Result<(), FrameError> {
+        for _ in self.slots.len()..staging_slots {
+            let mut readback = if self.source == CaptureSource::Edr {
+                let row = (self.extent[0] * self.source.bytes_per_pixel())
+                    .next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+                PixelReadback::new(
+                    capabilities.device(),
+                    self.generation,
+                    self.extent,
+                    self.source,
+                    row,
+                    "EDR drawable readback",
+                )
+            } else {
+                target.readback(capabilities.device())
+            };
+            readback
+                .enable_copy_timing(capabilities, queue)
+                .map_err(|error| FrameError::gpu("copy timing prepare", error))?;
+            self.slots.push(Slot {
+                readback,
+                reserved: false,
+                sample: None,
+                retired: false,
+                timing_collected: false,
+                copy_ns: None,
+            });
+        }
+        self.free_cpu.extend(
+            (self.cpu_capacity..cpu_buffers).map(|_| Self::cpu_buffer(self.extent, self.source)),
+        );
+        self.cpu_capacity = cpu_buffers;
+        Ok(())
+    }
+
+    fn outstanding(&self) -> usize {
+        std::sync::Arc::strong_count(&self.leases) - 1
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn trim_retired(&mut self) {
+        self.slots.retain(|slot| slot.reserved);
+        let outstanding = self.outstanding();
+        // Preserve enough capacity to drain pending slots, even if those
+        // buffers are currently held by the writer and need to be returned first.
+        self.cpu_capacity = outstanding.max(self.cpu_capacity.min(self.slots.len()));
+        self.free_cpu.truncate(self.cpu_capacity - outstanding);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn allocation_bytes(&self) -> u64 {
+        let (staging, cpu) = capture_buffer_bytes(self.extent, self.source);
+        staging * self.slots.len() as u64 + cpu * self.cpu_capacity as u64
+    }
+
+    fn cpu_buffer(extent: [u32; 2], source: CaptureSource) -> Vec<u8> {
+        Vec::with_capacity(
+            extent[0] as usize * extent[1] as usize * source.bytes_per_pixel() as usize,
+        )
+    }
+
+    fn take_cpu(&mut self) -> Option<Vec<u8>> {
+        self.free_cpu.pop().or_else(|| {
+            (self.outstanding() < self.cpu_capacity)
+                .then(|| Self::cpu_buffer(self.extent, self.source))
         })
     }
 
@@ -460,12 +493,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 Some(slots)
             };
         let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
-        let tap = Tap::prepare(
-            spec,
-            source,
-            spec.limits,
-            self.generation,
-            self.render_extent,
+        let mut tap = Tap::empty(spec, source, limits, self.generation, self.render_extent);
+        tap.grow(
+            limits.staging_slots,
+            limits.cpu_buffers,
             target,
             self.prepared.capabilities(),
             &self.queue,
@@ -487,14 +518,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // The tap may be drained before normal frame reports. Its timestamp
         // resolution is queue work too, and must respect native failure admission.
         self.check_native_completion()?;
-        while let Some(tap) = self.retired_capture.front_mut() {
-            if let Some(image) = tap.try_image(&self.device, &self.queue, self.generation)? {
-                return Ok(Some(image));
+        if let Some(tap) = self.retired_capture.iter_mut().find(|tap| tap.pending()) {
+            let before = tap.omitted;
+            let result = tap.try_image(&self.device, &self.queue, self.generation);
+            if let Some(active) = &mut self.submitted_capture {
+                active.omitted += tap.omitted - before;
             }
-            if tap.pending() {
-                return Ok(None);
-            }
-            self.retired_capture.pop_front();
+            #[cfg(not(target_arch = "wasm32"))]
+            tap.trim_retired();
+            return result;
         }
         let Some(tap) = self.submitted_capture.as_mut() else {
             return Err(FrameError::InvalidState("no capture session"));
@@ -511,9 +543,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .submitted_capture
             .iter_mut()
             .chain(&mut self.retired_capture)
-            .find(|tap| std::sync::Arc::ptr_eq(&tap.owner, &image.owner))
+            .find(|tap| std::sync::Arc::ptr_eq(&tap.leases, &image.lease))
             && tap.generation == self.generation
-            && tap.free_cpu.len() < tap.cpu_capacity
+            && image.rgba.capacity()
+                == tap.extent[0] as usize
+                    * tap.extent[1] as usize
+                    * tap.source.bytes_per_pixel() as usize
         {
             tap.free_cpu.push(image.rgba);
         }
@@ -526,14 +561,84 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let Some(mut next) = capture else {
             return;
         };
-        if let Some(previous) = self.submitted_capture.take() {
+        if let Some(mut previous) = self.submitted_capture.take() {
             next.accepting = previous.accepting;
             next.omitted = previous.omitted;
-            if previous.pending() {
+            previous.trim_retired();
+            if previous.pending() || previous.outstanding() != 0 {
                 self.retired_capture.push_back(previous);
             }
         }
         self.submitted_capture = Some(next);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn refresh_capture_capacity(&mut self) -> Result<(), FrameError> {
+        let Some(tap) = self.submitted_capture.as_mut() else {
+            return Ok(());
+        };
+        let mut available = tap.limits;
+        self.retired_capture.retain_mut(|retired| {
+            retired.trim_retired();
+            if tap.limits.staging_slots != 0 {
+                available.staging_slots -= retired.slots.len();
+                available.cpu_buffers -= retired.cpu_capacity;
+                available.byte_allowance -= retired.allocation_bytes();
+            }
+            retired.pending() || retired.outstanding() != 0
+        });
+        if !tap.accepting
+            || tap.generation != self.generation
+            || tap.extent != self.render_extent
+            || tap.limits.staging_slots == 0
+            || (tap.slots.len() == tap.limits.staging_slots
+                && tap.cpu_capacity == tap.limits.cpu_buffers)
+        {
+            return Ok(());
+        }
+        let target = &self.slots[0].target;
+        if tap.source != CaptureSource::Edr && target.capture_source() != tap.source {
+            return Ok(());
+        }
+        let (staging_bytes, cpu_bytes) = capture_buffer_bytes(tap.extent, tap.source);
+        // Keep every active allocation and find room for one CPU buffer before
+        // adding staging slots. A queue of copies with no CPU capacity can't drain.
+        let min_cpu = tap.cpu_capacity.max(1);
+        if available.cpu_buffers < min_cpu
+            || available.staging_slots == 0
+            || available.byte_allowance < staging_bytes + cpu_bytes * min_cpu as u64
+        {
+            return Ok(());
+        }
+        let staging_slots = available.staging_slots.min(
+            ((available.byte_allowance - cpu_bytes * min_cpu as u64) / staging_bytes)
+                .try_into()
+                .unwrap_or(usize::MAX),
+        );
+        let cpu_buffers = available.cpu_buffers.min(
+            ((available.byte_allowance - staging_bytes * staging_slots as u64) / cpu_bytes)
+                .try_into()
+                .unwrap_or(usize::MAX),
+        );
+        tap.grow(
+            staging_slots,
+            cpu_buffers,
+            target,
+            self.prepared.capabilities(),
+            &self.queue,
+        )
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn invalidate_capture_device(&mut self) {
+        for tap in self
+            .submitted_capture
+            .iter_mut()
+            .chain(&mut self.retired_capture)
+        {
+            tap.slots.clear();
+            tap.trim_retired();
+        }
     }
 
     /// Stop admitting copies while pending mappings drain. Does not submit or wait.
@@ -549,13 +654,18 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.submitted_capture.as_ref().map_or(0, |tap| tap.omitted)
     }
 
-    /// Current bounded staging slots and outstanding CPU leases, or no
-    /// resources when capture is disabled.
+    /// Reserved staging slots and outstanding CPU leases across the session,
+    /// or no resources when capture is disabled.
     pub fn submitted_capture_usage(&self) -> Option<(usize, usize)> {
-        self.submitted_capture.as_ref().map(|tap| {
-            (
-                tap.slots.iter().filter(|slot| slot.reserved).count(),
-                tap.cpu_capacity - tap.free_cpu.len(),
+        self.submitted_capture.as_ref().map(|active| {
+            std::iter::once(active).chain(&self.retired_capture).fold(
+                (0, 0),
+                |(staging, cpu), tap| {
+                    (
+                        staging + tap.slots.iter().filter(|slot| slot.reserved).count(),
+                        cpu + tap.outstanding(),
+                    )
+                },
             )
         })
     }
@@ -574,18 +684,10 @@ fn validate_capture_budget(
     source: CaptureSource,
     limits: CaptureLimits,
 ) -> Result<(), FrameError> {
-    let pixel_bytes = u64::from(source.bytes_per_pixel());
-    let row_bytes = (u64::from(extent[0]) * pixel_bytes).div_ceil(256) * 256;
-    let staging_bytes = row_bytes
-        .checked_mul(u64::from(extent[1]))
-        .and_then(|bytes| bytes.checked_add(32))
-        .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.staging_slots).ok()?));
-    let cpu_bytes = u64::from(extent[0])
-        .checked_mul(u64::from(extent[1]))
-        .and_then(|bytes| bytes.checked_mul(pixel_bytes))
-        .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.cpu_buffers).ok()?));
+    let (staging_bytes, cpu_bytes) = capture_buffer_bytes(extent, source);
     let bytes = staging_bytes
-        .zip(cpu_bytes)
+        .checked_mul(limits.staging_slots as u64)
+        .zip(cpu_bytes.checked_mul(limits.cpu_buffers as u64))
         .and_then(|(a, b)| a.checked_add(b));
     if limits.staging_slots == 0
         || limits.cpu_buffers == 0
@@ -596,6 +698,16 @@ fn validate_capture_budget(
         ));
     }
     Ok(())
+}
+
+fn capture_buffer_bytes(extent: [u32; 2], source: CaptureSource) -> (u64, u64) {
+    let row = u64::from(extent[0]) * u64::from(source.bytes_per_pixel());
+    let height = u64::from(extent[1]);
+    let padded_row = row.next_multiple_of(u64::from(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT));
+    (
+        padded_row.saturating_mul(height).saturating_add(32),
+        row.saturating_mul(height),
+    )
 }
 
 impl Tap {
@@ -642,9 +754,6 @@ impl Tap {
             }
             queue.submit([encoder.finish()]);
         }
-        let Some(mut rgba) = tap.free_cpu.pop() else {
-            return Ok(None);
-        };
         let oldest = tap
             .slots
             .iter()
@@ -652,6 +761,9 @@ impl Tap {
             .filter_map(|(i, slot)| slot.sample.as_ref().map(|stamp| (i, stamp.clone())))
             .min_by_key(|(_, stamp)| stamp.sample.submission_order);
         if let Some((index, stamp)) = oldest {
+            let Some(mut rgba) = tap.take_cpu() else {
+                return Ok(None);
+            };
             let slot = &mut tap.slots[index];
             let collect = (|| {
                 if !slot.timing_collected {
@@ -683,7 +795,7 @@ impl Tap {
             slot.sample = None;
             slot.reserved = false;
             return Ok(Some(SubmittedImage {
-                owner: std::sync::Arc::clone(&tap.owner),
+                lease: std::sync::Arc::clone(&tap.leases),
                 extent: tap.extent,
                 sample: stamp.sample,
                 rgba,
@@ -700,7 +812,6 @@ impl Tap {
                 copy_gpu_ns: slot.copy_ns,
             }));
         }
-        tap.free_cpu.push(rgba);
         Ok(None)
     }
 }

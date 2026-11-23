@@ -120,11 +120,6 @@ pub(super) struct TargetPreparation {
 
 impl TargetPreparation {
     #[cfg(not(target_arch = "wasm32"))]
-    pub(super) fn capabilities(&self) -> &DeviceCapabilities {
-        &self.capabilities
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn resize_secondary(
         &mut self,
         extents: &[[u32; 2]],

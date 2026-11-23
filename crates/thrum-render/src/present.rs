@@ -120,7 +120,6 @@ struct PresentContext<'a> {
     presenter: &'a SurfacePresenter,
     binding: &'a PresentationBinding,
     surface_view: &'a wgpu::TextureView,
-    surface_extent: [u32; 2],
     encoder: &'a mut wgpu::CommandEncoder,
     timings: Option<&'a mut GpuTimings>,
 }
@@ -132,17 +131,12 @@ fn record_present(
     record_present_resource(frame, compiled, &frame.presenter.surface_resource)
 }
 
-#[expect(
-    clippy::cast_precision_loss,
-    reason = "validated GPU texture dimensions fit exactly in f32 viewport coordinates on supported devices"
-)]
 fn record_present_resource(
     frame: &mut PresentContext<'_>,
     compiled: &CompiledPass,
     surface_resource: &ResourceId,
 ) -> Result<(), PresentError> {
     let presenter = frame.presenter;
-    let viewport = letterbox(presenter.source_extent, frame.surface_extent);
     let mut pass = compiled
         .begin_render(
             frame.encoder,
@@ -160,15 +154,7 @@ fn record_present_resource(
         .ok_or(PresentError::GraphPassMismatch)?;
     pass.set_pipeline(&presenter.pipeline);
     pass.set_bind_group(0, &frame.binding.group, &[]);
-    pass.set_viewport(
-        viewport[0] as f32,
-        viewport[1] as f32,
-        viewport[2] as f32,
-        viewport[3] as f32,
-        0.0,
-        1.0,
-    );
-    pass.set_scissor_rect(viewport[0], viewport[1], viewport[2], viewport[3]);
+    presenter.set_viewport(&mut pass);
     pass.draw(0..3, 0..1);
     Ok(())
 }
@@ -176,6 +162,32 @@ fn record_present_resource(
 impl SurfacePresenter {
     pub(crate) fn profile(&self) -> SurfaceProfile {
         self.profile
+    }
+
+    pub(crate) fn validate_output(
+        &self,
+        binding: &PresentationBinding,
+        view: &wgpu::TextureView,
+        extent: [u32; 2],
+    ) -> Result<(), PresentError> {
+        if !Arc::ptr_eq(&self.owner, &binding.owner) {
+            return Err(PresentError::StaleTarget);
+        }
+        let texture = view.texture();
+        if extent != self.profile.extent || extent != [texture.width(), texture.height()] {
+            return Err(PresentError::Extent);
+        }
+        Ok(())
+    }
+
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "validated GPU texture dimensions fit exactly in f32 viewport coordinates on supported devices"
+    )]
+    pub(crate) fn set_viewport(&self, pass: &mut wgpu::RenderPass<'_>) {
+        let (_, [x, y, width, height]) = self.source_viewport();
+        pass.set_viewport(x as f32, y as f32, width as f32, height as f32, 0.0, 1.0);
+        pass.set_scissor_rect(x, y, width, height);
     }
 
     pub(crate) fn encode_compiled(
@@ -188,17 +200,11 @@ impl SurfacePresenter {
         compiled: &CompiledPass,
         surface_resource: &ResourceId,
     ) -> Result<(), PresentError> {
-        if !Arc::ptr_eq(&self.owner, &binding.owner) {
-            return Err(PresentError::StaleTarget);
-        }
-        if surface_extent != self.profile.extent {
-            return Err(PresentError::Extent);
-        }
+        self.validate_output(binding, surface_view, surface_extent)?;
         let mut frame = PresentContext {
             presenter: self,
             binding,
             surface_view,
-            surface_extent,
             encoder,
             timings,
         };
@@ -443,19 +449,14 @@ impl SurfacePresenter {
         surface_extent: [u32; 2],
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), PresentError> {
-        if self.plan.plan().device_generation != self.generation
-            || !Arc::ptr_eq(&self.owner, &binding.owner)
-        {
+        if self.plan.plan().device_generation != self.generation {
             return Err(PresentError::StaleTarget);
         }
-        if surface_extent != self.profile.extent {
-            return Err(PresentError::Extent);
-        }
+        self.validate_output(binding, surface_view, surface_extent)?;
         self.plan.execute(&mut PresentContext {
             presenter: self,
             binding,
             surface_view,
-            surface_extent,
             encoder,
             timings,
         })

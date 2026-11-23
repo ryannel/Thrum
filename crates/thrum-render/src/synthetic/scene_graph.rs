@@ -1223,6 +1223,9 @@ impl super::SyntheticTargetInputs {
                 let (presenter, binding, view, extent) =
                     frame.surface.ok_or(RenderError::GraphPassMismatch)?;
                 if presenter.profile().format == wgpu::TextureFormat::Rgba16Float {
+                    presenter
+                        .validate_output(binding, view, extent)
+                        .map_err(RenderError::Present)?;
                     return frame
                         .prepared
                         .display
@@ -1239,6 +1242,7 @@ impl super::SyntheticTargetInputs {
                                 exposure_side: frame.exposure_side,
                             },
                             frame.timings.as_deref_mut(),
+                            presenter,
                         );
                 }
                 presenter

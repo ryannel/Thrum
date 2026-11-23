@@ -2231,6 +2231,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         slot_index: usize,
         mut prepared: PreparedSample,
     ) -> Result<RecordedScene, FrameError> {
+        #[cfg(not(target_arch = "wasm32"))]
+        self.refresh_capture_capacity()?;
         let start = Instant::now();
         let mut encoder = self
             .device

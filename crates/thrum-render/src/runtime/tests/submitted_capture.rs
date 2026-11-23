@@ -81,7 +81,14 @@ fn output_texture(
     host: &FrameHost<StaticWorld, StaticScene>,
     format: wgpu::TextureFormat,
 ) -> wgpu::Texture {
-    let [width, height] = host.render_extent;
+    output_at_extent(host, format, host.render_extent)
+}
+
+fn output_at_extent(
+    host: &FrameHost<StaticWorld, StaticScene>,
+    format: wgpu::TextureFormat,
+    [width, height]: [u32; 2],
+) -> wgpu::Texture {
     host.device.create_texture(&wgpu::TextureDescriptor {
         label: Some("submitted-image reference output"),
         size: wgpu::Extent3d {
@@ -105,7 +112,7 @@ fn submit(host: &mut FrameHost<StaticWorld, StaticScene>, output: &wgpu::Texture
             Duration::ZERO,
             Some(&SurfaceOutput {
                 view: &view,
-                extent: [65, 37],
+                extent: [output.width(), output.height()],
             }),
         )
         .unwrap();
@@ -248,6 +255,194 @@ fn default_tap_follows_promotion_and_drains_old_pixels_in_submission_order() {
                 assert_eq!(host.submitted_capture_omissions(), 1);
             }
         }
+    });
+}
+
+#[test]
+fn surface_resize_admits_only_the_configured_drawable_in_sdr_and_edr() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "surface_resize_admits_only_the_configured_drawable_in_sdr_and_edr",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        for format in [
+            wgpu::TextureFormat::Bgra8Unorm,
+            wgpu::TextureFormat::Rgba16Float,
+        ] {
+            let (mut host, old) = Box::pin(host_and_output(&test_gpu, format)).await;
+            let original = host.render_extent;
+            let resized = [103, 43];
+            let new = output_at_extent(&host, format, resized);
+            assert!(submit(&mut host, &old).surface_presented);
+            host.resize_surface(resized).unwrap();
+            for (texture, extent, presented) in [
+                (&old, original, false),
+                (&old, resized, false),
+                (&new, original, false),
+                (&new, resized, true),
+            ] {
+                let view = texture.create_view(&Default::default());
+                let output = SurfaceOutput {
+                    view: &view,
+                    extent,
+                };
+                let report = host.drive(Duration::ZERO, Some(&output)).unwrap();
+                assert_eq!(report.surface_presented, presented, "{format:?} {extent:?}");
+                assert_eq!(
+                    report.surface_fault,
+                    (!presented).then_some(crate::runtime::SurfaceFault::ExtentMismatch),
+                );
+                thrum_test_support::wait::until(
+                    "resized submission retires",
+                    thrum_test_support::readback::WAIT,
+                    || {
+                        drop(host.poll_completed().unwrap());
+                        (host.pending_frames() == 0).then_some(())
+                    },
+                );
+            }
+            let pixels = thrum_test_support::readback::texture(
+                &host.device,
+                &host.queue,
+                &new,
+                thrum_test_support::readback::Mip::level(0),
+                ..,
+            );
+            let stride = if format == wgpu::TextureFormat::Rgba16Float {
+                8
+            } else {
+                4
+            };
+            let left = &pixels[..stride];
+            let centre = (resized[0] as usize / 2) * stride;
+            let alpha = if stride == 8 {
+                &[0, 60][..]
+            } else {
+                &[255][..]
+            };
+            assert_eq!(
+                left.split_at(stride - alpha.len()),
+                (&[0; 6][..stride - alpha.len()], alpha)
+            );
+            assert_ne!(
+                &pixels[centre..centre + stride - alpha.len()],
+                &[0; 6][..stride - alpha.len()]
+            );
+        }
+    });
+}
+
+#[test]
+fn promotion_preserves_session_limits_until_writer_releases_its_image() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "promotion_preserves_session_limits_until_writer_releases_its_image",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        for recycle in [false, true] {
+            let (mut host, sdr) =
+                Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Bgra8Unorm)).await;
+            let limits = crate::runtime::CaptureLimits {
+                staging_slots: 1,
+                cpu_buffers: 1,
+                // One float staging slot, its exposure sample, and one float CPU image.
+                byte_allowance: 768 * 37 + 32 + 65 * 37 * 8,
+            };
+            host.enable_submitted_capture_with_limits(42, limits)
+                .unwrap();
+            let first = submit(&mut host, &sdr);
+            let float = wgpu::TextureFormat::Rgba16Float;
+            let edr = output_texture(&host, float);
+            let candidate = host
+                .extent_prepare_inputs_for_format(host.render_extent, float)
+                .unwrap()
+                .build(&std::sync::atomic::AtomicBool::new(false))
+                .unwrap()
+                .unwrap();
+            assert!(host.publish_extent(candidate));
+            assert_eq!(host.submitted_capture_usage(), Some((1, 0)));
+            assert!(submit(&mut host, &edr).surface_presented);
+            assert_eq!(host.submitted_capture_usage(), Some((1, 0)));
+            let old = image(&mut host);
+            assert_eq!(old.sample.submission_order, first.submission_order);
+            assert_eq!(old.pixel_source, CaptureSource::Sdr);
+
+            assert!(submit(&mut host, &edr).surface_presented);
+            assert_eq!(host.submitted_capture_usage(), Some((0, 1)));
+            assert_eq!(host.submitted_capture_omissions(), 2);
+            assert!(host.try_submitted_image().unwrap().is_none());
+            if recycle {
+                host.recycle_submitted_image(old);
+            } else {
+                drop(old);
+            }
+            assert_eq!(host.submitted_capture_usage(), Some((0, 0)));
+            let resumed = submit(&mut host, &edr);
+            assert!(resumed.surface_presented);
+            let image = image(&mut host);
+            assert_eq!(image.session, 42);
+            assert_eq!(image.sample.submission_order, resumed.submission_order);
+            assert_eq!(image.pixel_source, CaptureSource::Edr);
+            assert_eq!(host.submitted_capture_usage(), Some((0, 1)));
+        }
+    });
+}
+
+#[test]
+fn retired_pixel_bytes_limit_capture_even_when_a_slot_and_cpu_lease_are_available() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "retired_pixel_bytes_limit_capture_even_when_a_slot_and_cpu_lease_are_available",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        let byte = wgpu::TextureFormat::Bgra8Unorm;
+        let float = wgpu::TextureFormat::Rgba16Float;
+        let (mut host, _) = Box::pin(host_and_output(&test_gpu, byte)).await;
+        let old_extent = [64, 37];
+        let new_extent = [33, 25];
+        assert!(host.resize_scene_surface(old_extent).unwrap());
+        let sdr = output_at_extent(&host, byte, old_extent);
+        let edr = output_at_extent(&host, float, new_extent);
+        host.enable_submitted_capture_with_limits(
+            42,
+            crate::runtime::CaptureLimits {
+                staging_slots: 1,
+                cpu_buffers: 2,
+                // The SDR pool fits exactly. The float staging row has 248
+                // padding bytes, so one float slot and CPU image plus the
+                // writer's old bytes would need 28,904 bytes.
+                byte_allowance: 3 * 256 * 37 + 32,
+            },
+        )
+        .unwrap();
+        assert!(submit(&mut host, &sdr).surface_presented);
+        let old = image(&mut host);
+        let next = host
+            .extent_prepare_inputs_for_format(new_extent, float)
+            .unwrap()
+            .build(&std::sync::atomic::AtomicBool::new(false))
+            .unwrap()
+            .unwrap();
+        assert!(host.publish_extent(next));
+
+        assert!(submit(&mut host, &edr).surface_presented);
+        assert_eq!(host.submitted_capture_usage(), Some((0, 1)));
+        assert_eq!(host.submitted_capture_omissions(), 1);
+        assert!(host.try_submitted_image().unwrap().is_none());
+        host.recycle_submitted_image(old);
+
+        let resumed = submit(&mut host, &edr);
+        assert!(resumed.surface_presented);
+        let current = image(&mut host);
+        assert_eq!(current.session, 42);
+        assert_eq!(current.sample.submission_order, resumed.submission_order);
+        assert_eq!(current.rgba.len(), 33 * 25 * 8);
     });
 }
 
