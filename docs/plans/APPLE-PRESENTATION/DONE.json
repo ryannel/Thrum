@@ -390,8 +390,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Do the matched captures show the bias change accounts for the replaced references, starting with `portable-sdr-approach`? Do the candidate verification record, both logs and the landing diff agree on the files and hashes, the `apple-tile-native` pin and refresh, and the unchanged comparison and capture settings?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M14/README.md#full-candidate-verification",
           "verdict": "",
           "review": ""
         }
