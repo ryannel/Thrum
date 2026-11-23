@@ -45,6 +45,8 @@ use std::{
     time::Duration,
 };
 
+#[cfg(target_os = "macos")]
+use std::time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_asset_gpu::MaterialOutcome;
 use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook};
@@ -66,8 +68,6 @@ use thrum_render::{
     runtime::{FrameWorld, SceneFrame, SceneSource},
     synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView},
 };
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Config;
@@ -1036,10 +1036,13 @@ impl Game for SkyGame {
                 },
             )
             .await?;
-        Ok(Prepared {
-            host,
-            origin: Instant::now(),
-        })
+        let prepared = Prepared::inline(host);
+        #[cfg(target_os = "macos")]
+        let prepared = Prepared {
+            origin: Some(Instant::now()),
+            ..prepared
+        };
+        Ok(prepared)
     }
 
     fn controls(&self) -> &Controls {

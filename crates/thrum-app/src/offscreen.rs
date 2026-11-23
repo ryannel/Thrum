@@ -205,7 +205,7 @@ impl<G: Game> Offscreen<G> {
             view,
             extent,
             format,
-            origin: prepared.origin,
+            origin: prepared.origin.unwrap_or_else(Instant::now),
             lifecycle: WorldLifecyclePolicy::default(),
         })
     }

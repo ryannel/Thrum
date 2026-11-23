@@ -8,7 +8,6 @@ description = "Application shells shared by Thrum games: the native macOS window
 autotests = false
 
 [dependencies]
-web-time = "=1.1.0"
 thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 thrum-controls = { path = "../thrum-controls" }
 thrum-core = { path = "../thrum-core" }

@@ -551,7 +551,7 @@ impl<G: WindowGame + 'static> App<G> {
         if gpu.watch.is_lost() {
             return Err("initial device lost during preparation".to_owned());
         }
-        self.origin = prepared.origin;
+        self.origin = prepared.origin.unwrap_or_else(Instant::now);
         let host = prepared.host;
         self.counters = FrameCounters::read(&host);
         if let Some(observer) = &self.qualification {

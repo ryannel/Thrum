@@ -317,7 +317,7 @@ impl RuntimeSetup for WindowGame {
             // The capture steps this inline world on its own clock.
             return Ok(Prepared {
                 host,
-                origin: Instant::now(),
+                origin: Some(Instant::now()),
             });
         }
         let render_extent = gpu.surface.extent;
@@ -388,7 +388,10 @@ impl RuntimeSetup for WindowGame {
             .ok_or("capture route origin underflow")?;
         let (host, controls) = host.into_threaded(origin, world_advanced)?;
         self.world = Some(controls);
-        Ok(Prepared { host, origin })
+        Ok(Prepared {
+            host,
+            origin: Some(origin),
+        })
     }
 
     fn world(&self) -> Option<&dyn WorldLink> {

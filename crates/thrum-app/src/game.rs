@@ -1,7 +1,9 @@
 //! The boundary between the platform adapters and one game.
 
-use std::{future::Future, time::Duration};
-use web_time::Instant;
+use std::{
+    future::Future,
+    time::{Duration, Instant},
+};
 
 use thrum_controls::Controls;
 #[cfg(not(target_arch = "wasm32"))]
@@ -28,17 +30,14 @@ pub struct Gpu<'a> {
 pub struct Prepared<W: FrameWorld, V: SceneSource<W::Page>> {
     /// The runtime host; the world can run inline or on a resident lane.
     pub host: FrameHost<W, V>,
-    /// Monotonic origin of the world clock; render times are measured from it.
-    pub origin: Instant,
+    /// Monotonic origin if the world already has a clock. The adapter supplies time for an inline world.
+    pub origin: Option<Instant>,
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> Prepared<W, V> {
     /// A runtime with an inline world, whose time is supplied by its adapter.
     pub fn inline(host: FrameHost<W, V>) -> Self {
-        Self {
-            host,
-            origin: Instant::now(),
-        }
+        Self { host, origin: None }
     }
 }
 
