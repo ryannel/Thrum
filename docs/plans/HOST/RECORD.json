@@ -456,7 +456,64 @@
     },
     "M4": {
       "definitions": "64f4e2f72cc6a932d11566e5c29339e1487815f73f818b48fabc4e28e09592ae",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "d63512e26838742cb5a81667bb94052d6ad05862",
+          "review": ".orchestrate/evidence/HOST/M4-review.md",
+          "items": {
+            "M4.1": "fail",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "fail",
+            "M4.5": "pass",
+            "M4.6": "pass",
+            "M4.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Offscreen frames skip the hosted game\u2019s frame edits and readback",
+              "item": "M4.1",
+              "repeat": false
+            },
+            {
+              "name": "Window input requires winit\u2019s macOS-only key re-export",
+              "item": "M4.1",
+              "repeat": false
+            },
+            {
+              "name": "Games must export the browser control binding themselves",
+              "item": "M4.2",
+              "repeat": false
+            },
+            {
+              "name": "A second game must rebuild the browser frame and visibility bridge",
+              "item": "M4.4",
+              "repeat": false
+            },
+            {
+              "name": "A standalone iOS lifecycle check bypasses the simulator lock",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 159019,
+            "cached": 9344128,
+            "output": 17434,
+            "turns": 1
+          },
+          "at": "2026-11-23T15:43:14Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",

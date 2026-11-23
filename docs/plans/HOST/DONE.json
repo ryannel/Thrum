@@ -213,8 +213,8 @@
     {
       "id": "M4",
       "name": "A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -226,20 +226,20 @@
           "check": "cargo test --locked --offline -p thrum-app --test game_contract",
           "ask": "Does any type from winit, AppKit or web-sys appear in what a game implements? Does the sky kit still have a second construction path for the browser? Can the same game value run offscreen and in the window?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/README.md#m41-game-contract",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.2",
           "statement": "The browser binding of typed controls is the engine's, as the Mac panel is: a game declares its controls once and writes no page glue for them.",
           "ask": "What control code does the V1 game's browser module still hold that the starter also holds, or would have to copy?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/README.md#m42-typed-browser-controls",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -249,18 +249,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/README.md#m43-window-qualification",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.4",
           "statement": "A second game would copy nothing from the first: what is left in `examples/v1-game` is its scenes, rules, controls declaration, camera policy, content and entry points.",
           "ask": "Read the game's library. What would a 2D game with other rules have to copy from it unchanged to run in the window, on the page and in the offscreen driver? Name each item, or say there is none.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/README.md#m44-second-game",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -271,8 +271,8 @@
           "target": "ios-sim",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/README.md#m45-render-job-and-reply",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.6",
@@ -282,8 +282,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/README.md#m46-starter-and-v1-runtime",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.7",
@@ -292,8 +292,34 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Offscreen frames skip the hosted game\u2019s frame edits and readback",
+          "item": "M4.1",
+          "repeat": false
+        },
+        {
+          "name": "Window input requires winit\u2019s macOS-only key re-export",
+          "item": "M4.1",
+          "repeat": false
+        },
+        {
+          "name": "Games must export the browser control binding themselves",
+          "item": "M4.2",
+          "repeat": false
+        },
+        {
+          "name": "A second game must rebuild the browser frame and visibility bridge",
+          "item": "M4.4",
+          "repeat": false
+        },
+        {
+          "name": "A standalone iOS lifecycle check bypasses the simulator lock",
+          "repeat": false
         }
       ]
     },
