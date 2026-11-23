@@ -785,7 +785,32 @@
     },
     "M14": {
       "definitions": "a827d3f49fa8fe0714197b6216f51542bdde8347825cdddad50e9b44de4ed9ef",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "13999c9bf1952baf5ab347e081d3f2a3974969d6",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M14-review.md",
+          "items": {
+            "M14.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 87516,
+            "cached": 3330688,
+            "output": 6865,
+            "turns": 1
+          },
+          "at": "2026-11-23T15:13:10Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The main-branch check exact-images fails on 8eb94b243300 and passed on 25d601c146. The failing baseline is apple-tile-na",
@@ -819,6 +844,13 @@
           "output": 54274,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "13999c9bf1952baf5ab347e081d3f2a3974969d6",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M14-review.md",
+        "checked": "a07d0c1bffe2b90c8d8924f332cb7312d635ef26",
+        "at": "2026-11-23T15:13:10Z"
       }
     }
   },

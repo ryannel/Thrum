@@ -382,7 +382,7 @@
     {
       "id": "M14",
       "name": "The retained native valley images reflect the corrected material mip bias",
-      "status": "ready_for_review",
+      "status": "done",
       "items": [
         {
           "id": "M14.1",
@@ -392,8 +392,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M14/README.md#full-candidate-verification",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M14-review.md"
         }
       ],
       "failed_reviews": 0,
