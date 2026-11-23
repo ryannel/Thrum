@@ -94,6 +94,7 @@ impl PreparedSynthetic {
     }
 
     /// Transfer the borrowed arena and live row state after all checks pass.
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn commit_mesh_rows(&mut self, previous: &mut Self) {
         std::mem::swap(&mut self.mesh_arena, &mut previous.mesh_arena);
         std::mem::swap(&mut self.row_updates, &mut previous.row_updates);
