@@ -1,27 +1,14 @@
 {
   "module": "RAY-TRACING",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/RAY-TRACING/design-review.md",
-    "commit": "3ce33cc0cce41013e7f064e46d223f9f4fdc9cc2",
-    "hash": "74719548231559dfa17baf5e2257e49b1cf1d1feb2d5caa3ca35deeb9ed2cb2e",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13",
-    "path": "headless",
-    "usage": {
-      "input": 90545,
-      "cached": 1039232,
-      "output": 5327,
-      "turns": 1
-    },
-    "at": "2026-11-23T09:19:59Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "3d9918857a313efb6408ab7116400b07edbaaf033d8f29c7a997a59c60cddcb4",
+    "after": [
+      ".orchestrate/evidence/RAY-TRACING/design-review-7.md",
+      ".orchestrate/evidence/RAY-TRACING/design-review.md"
+    ],
+    "at": "2026-11-23T09:26:20Z"
   },
   "milestones": {
     "M1": {
@@ -516,12 +503,12 @@
       }
     },
     "M5": {
-      "definitions": "1aa678e2de2b2ef882630ce6c5902a5b98ace392c9a9e029e68d997148784400",
+      "definitions": "2354275c3b49767412353ece4941f3d1612ae6cf95a14741e1ac2fc6934f6e89",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
-        "at": "2026-11-18T06:24:55Z"
+        "task": "Answer the Must Fix findings in RAY-TRACING's latest design review (.orchestrate/evidence/RAY-TRACING/design-review.md, ",
+        "at": "2026-11-23T09:26:20Z"
       }
     },
     "M6": {
@@ -571,11 +558,15 @@
     {
       "task": "Answer the Must Fix findings in RAY-TRACING's latest design review (.orchestrate/evidence/RAY-TRACING/design-review.md), which judged the M3 re-plan you made at 6a485a5d3 (one commit for the scene and its whole ordered contribution list). Take its Suggestions where they are cheap. Keep the merge-tier proofs fast and targeted, and don't change other modules' milestones. Done when the design, M3's items and done-when file agree with the review's findings and are committed, with a short note.",
       "at": "2026-11-23T09:16:09Z"
+    },
+    {
+      "task": "Answer the Must Fix findings in RAY-TRACING's latest design review (.orchestrate/evidence/RAY-TRACING/design-review.md, the review of your M3 revision at 3ce33cc0c). This is the last round: the script approves your revision without another review, so make each finding's fix complete and check the design, M3's items and done-when file against one another yourself. Take Suggestions where cheap. Keep merge-tier proofs fast and targeted; don't change other modules' milestones. If a finding needs a decision only the owner can make, record it as an Assumption line with your default and say so in your report. Done when the fixes are committed with a short note.",
+      "at": "2026-11-23T09:26:20Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T09:16:09Z"
+    "at": "2026-11-23T09:26:20Z"
   },
   "design_history": [
     {
@@ -748,6 +739,29 @@
         "turns": 1
       },
       "at": "2026-11-23T09:06:42Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/RAY-TRACING/design-review.md",
+      "commit": "3ce33cc0cce41013e7f064e46d223f9f4fdc9cc2",
+      "hash": "74719548231559dfa17baf5e2257e49b1cf1d1feb2d5caa3ca35deeb9ed2cb2e",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 90545,
+        "cached": 1039232,
+        "output": 5327,
+        "turns": 1
+      },
+      "at": "2026-11-23T09:19:59Z"
     }
   ]
 }
