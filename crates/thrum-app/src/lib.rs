@@ -47,7 +47,7 @@ pub use app::{
     DisplayOverride, ExtentWindow, REPORT_VARIABLE, TransitionArm, WindowDisplayOptions,
     WindowExtentCapture, WindowGame, WindowQualification, WindowTransitionProof, run,
     run_until_closed, run_with_display, run_with_extent_capture, run_with_qualification,
-    run_with_transition_proof,
+    run_with_qualification_and_display, run_with_transition_proof,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use game::WorldLink;

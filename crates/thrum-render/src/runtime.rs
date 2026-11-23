@@ -866,7 +866,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 }
             }
             let (scene, view) = staged.commit(&mut self.prepared, Some(contribution.as_mut()));
-            self.prepared = scene.prepared;
+            self.install_prepared_for_display(scene.prepared);
             self.slots = scene.slots;
             self.scene.view = view;
             self.visual_owner = Arc::new(());
@@ -1438,7 +1438,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     false,
                 )
             };
-        self.prepared = scene.prepared;
+        self.install_prepared_for_display(scene.prepared);
         self.slots = scene.slots;
         self.scene.view = view;
         self.visual_lighting = Some(candidate.lighting);

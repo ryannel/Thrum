@@ -3,7 +3,9 @@ from array import array
 import json
 import math
 import os
+import re
 import struct
+import subprocess
 import sys
 
 from apple_presentation import RECIPE, ROOT, mac_binary, read_rows, run
@@ -47,7 +49,34 @@ def mac_edr(output):
         raise ValueError("AppKit did not configure the retained layer for H=2")
     if any(row["headroom"] != 2 for row in arm["presented"]):
         raise ValueError("render owner did not resolve H=2")
-    return arm
+    return dict(arm, window_observer=observe_display_selection(output, binary, env))
+
+
+def observe_display_selection(output, binary, env):
+    formats = {}
+    for name, override in (("ordinary", None), ("observed", None),
+                           ("observed-sdr", "sdr"), ("observed-edr", "2")):
+        directory = output / name
+        directory.mkdir()
+        launch = dict(env, THRUM_V1_FRAMES="2", THRUM_RECIPE="portable")
+        if name != "ordinary":
+            launch.update(THRUM_MAC_QUALIFY=str(directory), THRUM_MAC_TAP="off")
+        if override is not None:
+            launch["THRUM_MAC_EDR"] = override
+        with (directory / "launch.log").open("w") as log:
+            subprocess.run(["/usr/bin/caffeinate", "-d", "-i", "-u", str(binary)], cwd=ROOT,
+                           env=launch, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=150)
+        report = (directory / "launch.log").read_text()
+        match = re.search(r"surface=(\w+) \d+x\d+; presented=2;", report)
+        if match is None:
+            raise ValueError(f"{name}: missing two presented frames")
+        formats[name] = match[1]
+        if name != "ordinary" and f"format={match[1]}\n" not in (directory / "window.txt").read_text():
+            raise ValueError(f"{name}: observer and presentation formats disagree")
+    if (formats["observed"] != formats["ordinary"] or formats["observed-sdr"] == "Rgba16Float"
+            or formats["observed-edr"] != "Rgba16Float"):
+        raise ValueError(f"the control observer changed display selection: {formats}")
+    return formats
 
 
 def mac_edr_modes(output):
@@ -101,14 +130,14 @@ def mac_edr_headroom(output):
 
 
 def stills(output, binary, env, recipe, source, headroom=None, *, lamps=False):
-    from run_v1_showcase import PARAMS, ROUTE
+    from run_v1_showcase import PARAMS, route
 
     directory = output / f"{recipe}-{source}{'-lamps' if lamps else ''}"
-    presets = ["night-lights"] if lamps else ROUTE
+    presets = ([ROOT / "tests/fixtures/apple-presentation/showcase-night-lights.params.json"]
+               if lamps else [PARAMS / f"showcase-{stop}.params.json" for stop in route()])
     options = dict(env, THRUM_RECIPE=recipe, THRUM_CAPTURE_SCENE=str(directory),
                    THRUM_CAPTURE_ROUTE_ONLY="1",
-                   THRUM_CAPTURE_PARAMS=os.pathsep.join(str(PARAMS / f"showcase-{name}.params.json")
-                                                       for name in presets))
+                   THRUM_CAPTURE_PARAMS=os.pathsep.join(map(str, presets)))
     if lamps:
         # The night stop shares the local-light proof's camera, lighting and props.
         options.update(THRUM_ROUTE_OVERLAY="night-lights", THRUM_CAPTURE_FIXED_EYE="[0.0, 242.4, 2.5]")
@@ -259,7 +288,31 @@ def mac_edr_route(output):
         arms["linear"] = stills(output, binary, env, "portable", "submitted-linear", lamps=lamps)
         arms["sdr"] = stills(output, binary, env, "portable", "submitted-sdr", lamps=lamps)
         rows.extend(compare_headroom_stills(arms, previews_path))
-    return dict(cooked_root=cooked, checkpoints=rows, previews=str(previews_path))
+    return dict(cooked_root=cooked, checkpoints=rows, previews=str(previews_path),
+                capture_promotion=capture_promotion(output, binary, env))
+
+
+def capture_promotion(output, binary, env):
+    from run_v1_showcase import PARAMS
+
+    env = dict(env, THRUM_PARAMS=str(PARAMS / "showcase-sunset-clear-sun.params.json"))
+    arm = window_arm(output, binary, env, "capture-promotion", "promote:12", frames=40, tap=True)
+    images = [row for row in arm["rows"] if row.get("presented") and "capture_submission" in row]
+    present = {row["submission"]: row for row in arm["presented"]}
+    if list(present) != [row["capture_submission"] for row in images]:
+        raise ValueError("the tap did not retain submission identity across display promotion")
+    if {row["capture_source"] for row in images} != {"Sdr", "Edr"}:
+        raise ValueError("the active tap did not follow the display mode")
+    for image in images:
+        order = image["capture_submission"]
+        frame = present[order]
+        edr = frame["format"] == "Rgba16Float"
+        expected = "Edr" if edr else "Sdr"
+        if (image["capture_source"] != expected or image["capture_session"] != 1
+                or image["pixel_bytes"] != 640 * 360 * (8 if edr else 4)
+                or (edr and not (0 < image["max_rgb"] <= frame["headroom"]))):
+            raise ValueError(f"capture did not match its original submission: {frame}, {image}")
+    return arm
 
 
 def compare_headroom_stills(arms, previews_path):

@@ -1,7 +1,7 @@
 //! Real-Metal submitted-image identity, ordinary presenter and bounded leases.
 
 use super::*;
-use crate::{present::SurfaceProfile, runtime::SurfaceOutput};
+use crate::{present::SurfaceProfile, runtime::SurfaceOutput, synthetic::CaptureSource};
 
 #[global_allocator]
 static ALLOCATOR: thrum_test_support::CountingAllocator = thrum_test_support::CountingAllocator;
@@ -22,7 +22,7 @@ fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass(
                     &mut disabled,
                     1,
                     [65, 37],
-                    crate::synthetic::CaptureSource::Sdr
+                    CaptureSource::Sdr
                 )
                 .is_none()
             );
@@ -73,11 +73,20 @@ async fn host_and_output(
     )
     .await
     .unwrap();
-    let output = host.device.create_texture(&wgpu::TextureDescriptor {
+    let output = output_texture(&host, format);
+    (host, output)
+}
+
+fn output_texture(
+    host: &FrameHost<StaticWorld, StaticScene>,
+    format: wgpu::TextureFormat,
+) -> wgpu::Texture {
+    let [width, height] = host.render_extent;
+    host.device.create_texture(&wgpu::TextureDescriptor {
         label: Some("submitted-image reference output"),
         size: wgpu::Extent3d {
-            width: extent[0],
-            height: extent[1],
+            width,
+            height,
             depth_or_array_layers: 1,
         },
         mip_level_count: 1,
@@ -86,8 +95,7 @@ async fn host_and_output(
         format,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
         view_formats: &[],
-    });
-    (host, output)
+    })
 }
 
 fn submit(host: &mut FrameHost<StaticWorld, StaticScene>, output: &wgpu::Texture) -> FrameSample {
@@ -129,6 +137,118 @@ fn image(host: &mut FrameHost<StaticWorld, StaticScene>) -> super::super::Submit
         drop(host.poll_completed().unwrap());
         None
     })
+}
+
+#[test]
+fn replacement_visual_applies_latest_headroom_to_first_drawable() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "replacement_visual_applies_latest_headroom_to_first_drawable",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba16Float)).await;
+        let lighting = FrameLighting::Photometric(crate::synthetic::PhotometricEnvironment {
+            toward_sun: [0.0, 1.0, 0.0],
+            sun_lux: 0.0,
+            sun_colour: [1.0; 3],
+            ambient_lux: [0.0; 3],
+            background_radiance: [500_000.0; 3],
+        });
+        let mut visual = Box::pin(host.visual_prepare_inputs().prepare(lighting, 1.0, None))
+            .await
+            .unwrap();
+        assert!(host.publish_visual(&mut visual).unwrap());
+        host.enable_submitted_capture(1).unwrap();
+        host.set_display_headroom(8.0);
+        submit(&mut host, &output);
+        let high = image(&mut host);
+        let high_peak = high.edr_max_rgb().unwrap();
+        assert!((4.0..=8.0).contains(&high_peak), "H=8 peak was {high_peak}");
+        host.recycle_submitted_image(high);
+
+        let mut visual = Box::pin(host.visual_prepare_inputs().prepare(lighting, 1.0, None))
+            .await
+            .unwrap();
+        host.set_display_headroom(4.0);
+        assert!(host.publish_visual(&mut visual).unwrap());
+        host.set_display_headroom(4.0);
+        submit(&mut host, &output);
+        let first = image(&mut host);
+        assert_eq!(host.display_headroom(), 4.0);
+        let peak = first.edr_max_rgb().unwrap();
+        assert!((3.0..=4.0).contains(&peak), "first H=4 peak was {peak}");
+    });
+}
+
+#[test]
+fn default_tap_follows_promotion_and_drains_old_pixels_in_submission_order() {
+    use crate::runtime::CaptureLimits;
+
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "default_tap_follows_promotion_and_drains_old_pixels_in_submission_order",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        let float_format = wgpu::TextureFormat::Rgba16Float;
+        let limits = CaptureLimits::default();
+        let sdr_only_budget = CaptureLimits {
+            staging_slots: 1,
+            cpu_buffers: 1,
+            byte_allowance: 32 * 1024,
+        };
+        for (requested, limits, expected) in [
+            (None, limits, Some(CaptureSource::Edr)),
+            (Some(CaptureSource::Sdr), limits, Some(CaptureSource::Sdr)),
+            (None, sdr_only_budget, None),
+        ] {
+            let (mut host, sdr_output) =
+                Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Bgra8Unorm)).await;
+            let float_output = output_texture(&host, float_format);
+            if let Some(source) = requested {
+                host.enable_submitted_capture_from(42, limits, source)
+                    .unwrap();
+            } else {
+                host.enable_submitted_capture_with_limits(42, limits)
+                    .unwrap();
+            }
+            let first = submit(&mut host, &sdr_output);
+            let extent = host
+                .extent_prepare_inputs_for_format(host.render_extent, float_format)
+                .unwrap()
+                .build(&std::sync::atomic::AtomicBool::new(false))
+                .unwrap()
+                .unwrap();
+            assert!(host.publish_extent(extent));
+            let second = submit(&mut host, &float_output);
+            let old = image(&mut host);
+            assert_eq!(old.session, 42);
+            assert_eq!(old.presenter_generation, 1);
+            assert_eq!(old.sample.submission_order, first.submission_order);
+            assert_eq!(old.pixel_source, CaptureSource::Sdr);
+            assert_eq!(old.rgba.len(), 65 * 37 * 4);
+            host.recycle_submitted_image(old);
+            if let Some(source) = expected {
+                let current = image(&mut host);
+                assert_eq!(current.session, 42);
+                assert_eq!(current.presenter_generation, 2);
+                assert_eq!(current.sample.submission_order, second.submission_order);
+                assert_eq!(current.pixel_source, source);
+                assert_eq!(
+                    current.rgba.len(),
+                    (65 * 37 * source.bytes_per_pixel()) as usize
+                );
+                assert_eq!(host.submitted_capture_omissions(), 0);
+            } else {
+                assert!(host.try_submitted_image().unwrap().is_none());
+                assert_eq!(host.submitted_capture_omissions(), 1);
+            }
+        }
+    });
 }
 
 #[test]
@@ -455,7 +575,6 @@ fn stopping_admission_drains_in_submission_order_while_rendering_continues() {
 
 #[test]
 fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
-    use crate::synthetic::CaptureSource;
     let Some(test_gpu) = thrum_test_support::gpu(
         "scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr",
         None,
@@ -511,7 +630,6 @@ fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
 
 #[test]
 fn linear_capture_allowance_is_validated_before_target_replacement() {
-    use crate::synthetic::CaptureSource;
     let Some(test_gpu) = thrum_test_support::gpu(
         "linear_capture_allowance_is_validated_before_target_replacement",
         None,

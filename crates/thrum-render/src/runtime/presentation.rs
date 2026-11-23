@@ -38,6 +38,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.display_headroom = headroom;
         }
     }
+
+    pub(super) fn install_prepared_for_display(&mut self, prepared: PreparedRenderer) {
+        // The platform record can change while a replacement is preparing.
+        // Initialize its new uniform from the render owner's latest value.
+        if let Some(scene) = prepared.three_d() {
+            scene.write_display_headroom(&self.queue, self.display_headroom);
+        }
+        self.prepared = prepared;
+    }
 }
 // Validate binding and timing before opening the drawable pass. The portable
 // scene can still be submitted independently when one of those checks fails.

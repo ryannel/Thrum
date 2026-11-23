@@ -1,9 +1,6 @@
 //! Mac drawable and configuration receipts for the forced display arms.
 use std::{fs::File, io::Write as _};
-use thrum_render::{
-    runtime::{CaptureLimits, DriveReport, FrameHost, FrameWorld, SceneSource},
-    synthetic::CaptureSource,
-};
+use thrum_render::runtime::{DriveReport, FrameHost, FrameWorld, SceneSource};
 
 pub(in crate::app) struct DisplayProof {
     log: File,
@@ -25,7 +22,7 @@ impl DisplayProof {
         };
         let tap = options.capture;
         if tap {
-            host.enable_submitted_capture_from(1, CaptureLimits::default(), CaptureSource::Edr)?;
+            host.enable_submitted_capture(1)?;
         }
         Ok(Some(Self {
             log: File::create(path.join("frames.jsonl")).map_err(|error| error.to_string())?,
@@ -59,18 +56,24 @@ impl DisplayProof {
         while self.tap
             && let Some(image) = host.try_submitted_image()?
         {
-            let max = image.edr_max_rgb().ok_or("invalid EDR drawable pixels")?;
+            let max = if image.pixel_source == thrum_render::synthetic::CaptureSource::Edr {
+                Some(image.edr_max_rgb().ok_or("invalid EDR drawable pixels")?)
+            } else {
+                None
+            };
             writeln!(
                 self.log,
                 "{}",
                 serde_json::json!({
                     "capture_submission": image.sample.submission_order, "max_rgb": max,
+                    "capture_source": format!("{:?}", image.pixel_source),
+                    "capture_session": image.session, "pixel_bytes": image.rgba.len(),
                     "presented": image.sample.surface_presented,
                     "presenter_generation": image.presenter_generation,
                 })
             )
             .map_err(|error| error.to_string())?;
-            self.collected += 1;
+            self.collected += u64::from(image.sample.surface_presented);
             host.recycle_submitted_image(image);
         }
         Ok(())

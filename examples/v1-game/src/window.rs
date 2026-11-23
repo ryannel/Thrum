@@ -199,7 +199,7 @@ pub fn run_window(
         }
         thrum_app::run_with_transition_proof(config, proof, game);
     } else if let Some(qualification) = qualification {
-        thrum_app::run_with_qualification(config, qualification, game);
+        thrum_app::run_with_qualification_and_display(config, qualification, display, game);
     } else if let Some(display) = display {
         thrum_app::run_with_display(config, display, game);
     } else {

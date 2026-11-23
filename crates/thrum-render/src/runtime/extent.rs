@@ -89,8 +89,9 @@ impl ExtentPrepareInputs {
             let capture = self
                 .capture
                 .map(|spec| {
-                    Tap::prepare(
+                    Tap::prepare_extent(
                         spec,
+                        self.format,
                         self.generation,
                         self.extent,
                         &slots[0].target,
@@ -348,7 +349,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             else {
                 return Ok(false);
             };
-            self.prepared = scene.prepared;
+            self.install_prepared_for_display(scene.prepared);
             self.slots = scene.slots;
             self.presenter = Some(presenter);
             self.render_extent = extent;

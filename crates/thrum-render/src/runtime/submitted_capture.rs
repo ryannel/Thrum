@@ -21,7 +21,8 @@ impl Default for CaptureLimits {
         Self {
             staging_slots: 3,
             cpu_buffers: 8,
-            byte_allowance: 128 * 1024 * 1024,
+            // The default ring also fits a 1080p RGBA16Float drawable.
+            byte_allowance: 256 * 1024 * 1024,
         }
     }
 }
@@ -34,7 +35,7 @@ pub struct SubmittedImage {
     /// Actual source grid of this submitted image.
     pub extent: [u32; 2],
     /// Tightly packed stored channel bytes, with the host's render extent.
-    /// SDR is RGBA8; scene-linear is little-endian RGBA16Float.
+    /// SDR is RGBA8. Scene-linear and EDR use little-endian RGBA16Float.
     pub rgba: Vec<u8>,
     /// Engine stage and stored pixel format of `rgba`.
     pub pixel_source: CaptureSource,
@@ -113,10 +114,22 @@ struct Slot {
 
 #[derive(Clone, Copy)]
 pub(super) struct TapSpec {
-    pub(super) source: CaptureSource,
+    source: Option<CaptureSource>,
     session: u64,
     started_at: Instant,
     limits: CaptureLimits,
+}
+
+impl TapSpec {
+    fn source_for_format(self, format: Option<wgpu::TextureFormat>) -> CaptureSource {
+        self.source.unwrap_or_else(|| {
+            if format == Some(wgpu::TextureFormat::Rgba16Float) {
+                CaptureSource::Edr
+            } else {
+                CaptureSource::Sdr
+            }
+        })
+    }
 }
 
 pub(super) struct Tap {
@@ -188,17 +201,50 @@ impl Tap {
         self.slots.iter().any(|slot| slot.reserved)
     }
 
-    pub(super) fn prepare(
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn prepare_extent(
         spec: TapSpec,
+        format: wgpu::TextureFormat,
         generation: u64,
         extent: [u32; 2],
         target: &super::preparation::FrameTarget,
         capabilities: &crate::capabilities::DeviceCapabilities,
         queue: &wgpu::Queue,
     ) -> Result<Self, FrameError> {
-        let limits = spec.limits;
-        let source = spec.source;
-        validate_capture_budget(extent, source, limits)?;
+        let source = spec.source_for_format(Some(format));
+        let mut limits = spec.limits;
+        if let Err(error) = validate_capture_budget(extent, source, limits) {
+            if spec.source.is_some() {
+                return Err(error);
+            }
+            // A default tap follows the display even if the new frame grid or
+            // pixel format no longer fits its budget. Leave copies unadmitted
+            // and counted as omissions until a fitting generation arrives.
+            limits.staging_slots = 0;
+            limits.cpu_buffers = 0;
+        }
+        Self::prepare(
+            spec,
+            source,
+            limits,
+            generation,
+            extent,
+            target,
+            capabilities,
+            queue,
+        )
+    }
+
+    fn prepare(
+        spec: TapSpec,
+        source: CaptureSource,
+        limits: CaptureLimits,
+        generation: u64,
+        extent: [u32; 2],
+        target: &super::preparation::FrameTarget,
+        capabilities: &crate::capabilities::DeviceCapabilities,
+        queue: &wgpu::Queue,
+    ) -> Result<Self, FrameError> {
         let slots = (0..limits.staging_slots)
             .map(|_| {
                 let mut readback = if source == CaptureSource::Edr {
@@ -304,7 +350,8 @@ impl Tap {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
-    /// Enable a three-slot submitted-image tap. This never renders or submits.
+    /// Enable a three-slot submitted-image tap that follows the output mode.
+    /// This never renders or submits.
     /// The caller must drain images into its own bounded writer or mark them
     /// missing. Replacing a session abandons its outstanding images.
     /// # Errors
@@ -314,6 +361,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     /// Enable with a declared finite pixel-byte allowance, before allocating.
+    /// After an extent or format transition, frames that exceed the allowance are omitted
+    /// until the session reaches a grid and format that fit again.
     /// # Errors
     /// Refuses zero capacities, overflow, allowance exhaustion or an active session.
     pub fn enable_submitted_capture_with_limits(
@@ -321,12 +370,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         session: u64,
         limits: CaptureLimits,
     ) -> Result<(), FrameError> {
-        let source = if self.is_edr() {
-            CaptureSource::Edr
-        } else {
-            CaptureSource::Sdr
-        };
-        self.enable_submitted_capture_from(session, limits, source)
+        self.enable_submitted_capture_at(session, limits, None)
     }
 
     /// Enable the existing tap at a prepared engine stage. Stage changes prepare
@@ -342,10 +386,26 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         limits: CaptureLimits,
         source: CaptureSource,
     ) -> Result<(), FrameError> {
+        self.enable_submitted_capture_at(session, limits, Some(source))
+    }
+
+    fn enable_submitted_capture_at(
+        &mut self,
+        session: u64,
+        limits: CaptureLimits,
+        source: Option<CaptureSource>,
+    ) -> Result<(), FrameError> {
         if self.submitted_capture.is_some() {
             return Err(FrameError::InvalidState("capture session already enabled"));
         }
-        validate_capture_budget(self.render_extent, source, limits)?;
+        let spec = TapSpec {
+            source,
+            session,
+            started_at: Instant::now(),
+            limits,
+        };
+        let source = spec.source_for_format(self.presenter.as_ref().map(|p| p.profile().format));
+        validate_capture_budget(self.render_extent, source, spec.limits)?;
         let _region = self
             .creations
             .region(super::CreationPhase::Transition, "capture-stage");
@@ -395,12 +455,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             };
         let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
         let tap = Tap::prepare(
-            TapSpec {
-                source,
-                session,
-                started_at: Instant::now(),
-                limits,
-            },
+            spec,
+            source,
+            spec.limits,
             self.generation,
             self.render_extent,
             target,

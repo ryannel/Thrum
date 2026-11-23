@@ -197,7 +197,7 @@ impl SceneSource<SourceTick> for StaticScene {
         _source: SourceTick,
         _alpha: f32,
         _extent: [u32; 2],
-        _lighting: Option<FrameLighting>,
+        lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, crate::runtime::FrameError> {
         self.frames.set(self.frames.get() + 1);
         if self.fail_next.replace(false) {
@@ -206,12 +206,15 @@ impl SceneSource<SourceTick> for StaticScene {
             ));
         }
         let mut light = SyntheticLight::default();
-        if self.invalid_lighting.get() {
+        let lighting = if self.invalid_lighting.get() {
             light.irradiance = [f32::NAN; 3];
-        }
+            FrameLighting::Diagnostic(light)
+        } else {
+            lighting.unwrap_or(FrameLighting::Diagnostic(light))
+        };
         Ok(SceneFrame {
             view: SyntheticView::default(),
-            lighting: FrameLighting::Diagnostic(light),
+            lighting,
         })
     }
 }

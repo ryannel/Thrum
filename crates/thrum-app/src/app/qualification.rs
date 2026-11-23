@@ -19,6 +19,7 @@ use thrum_controls::{Controls, Value, macos::MacPanel};
 use thrum_render::runtime::{
     CaptureLimits, FrameError, FrameExtent, FrameHost, FrameWorld, SceneSource, SubmittedImage,
 };
+use thrum_render::synthetic::CaptureSource;
 
 const RECORDS: usize = 2048;
 
@@ -340,13 +341,16 @@ impl Observer {
         };
         let capture = transition.is_some() || qualification.is_some_and(|options| options.capture);
         let writer = if capture {
-            host.enable_submitted_capture_with_limits(
+            // The qualification spool and its readers exchange RGBA8.
+            // Request that engine stage without changing the window's display mode.
+            host.enable_submitted_capture_from(
                 1,
                 CaptureLimits {
                     staging_slots: 6,
                     cpu_buffers: 96,
                     byte_allowance: 1024 * 1024 * 1024,
                 },
+                CaptureSource::Sdr,
             )
             .map_err(|e| e.to_string())?;
             let (name, encoding) = if transition.is_some() {
@@ -454,13 +458,14 @@ impl Observer {
     ) -> Result<(), FrameError> {
         host.disable_submitted_capture();
         self.session += 1;
-        host.enable_submitted_capture_with_limits(
+        host.enable_submitted_capture_from(
             self.session,
             CaptureLimits {
                 staging_slots: 6,
                 cpu_buffers: 96,
                 byte_allowance: 1024 * 1024 * 1024,
             },
+            CaptureSource::Sdr,
         )?;
         self.replacement_pending = false;
         Ok(())

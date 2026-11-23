@@ -166,7 +166,7 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
     arm = output / name
     arm.mkdir()
     env = {key: value for key, value in os.environ.items() if not key.startswith('THRUM_')}
-    env.update(THRUM_MAC_QUALIFY=str(arm), THRUM_MAC_TAP=tap, THRUM_V1_FRAMES='10000',
+    env.update(THRUM_MAC_QUALIFY=str(arm), THRUM_MAC_TAP=tap, THRUM_MAC_EDR='sdr', THRUM_V1_FRAMES='10000',
                THRUM_PARAMS=str(ROOT / 'examples/v1-game/params/showcase-noon.params.json'))
     if not grid:
         env.update(THRUM_SCENE='valley', THRUM_ASSET_STORE=str(args.store.resolve()))

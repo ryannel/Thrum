@@ -531,7 +531,6 @@ impl<G: WindowGame + 'static> App<G> {
         if self.game.supports_edr()
             && self.extent_capture.is_none()
             && self.transition_proof.is_none()
-            && self.qualification.is_none()
         {
             let mut display = display::MacDisplay::attach(&window, self.display_options.as_ref())?;
             display.sample(0, window.scale_factor());
@@ -1574,7 +1573,19 @@ pub fn run_with_qualification<G: WindowGame + 'static>(
     observer: WindowQualification,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, false, None, None, Some(observer), None, game);
+    run_with_qualification_and_display(config, observer, None, game);
+}
+
+/// Run the control qualification observer with an optional display override.
+/// # Panics
+/// If the platform refuses to create the event loop.
+pub fn run_with_qualification_and_display<G: WindowGame + 'static>(
+    config: Config,
+    observer: WindowQualification,
+    display: Option<WindowDisplayOptions>,
+    game: impl FnOnce() -> Result<G, String>,
+) {
+    run_with(config, false, None, None, Some(observer), display, game);
 }
 
 /// Run the ordinary window and retain one submitted image with its extent witnesses.
