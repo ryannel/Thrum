@@ -685,16 +685,19 @@ impl Shell {
         // A stall request stays until a frame reaches the section and holds it.
         let stall = self.stall_next.map(|point| (point, STALL));
         let request = FrameRequest {
-            epoch: self.lease.epoch(),
-            generation: if std::mem::take(&mut self.stale_request) {
+            sequence: self.witness.requests,
+            surface_generation: self.lease.epoch(),
+            device_generation: if std::mem::take(&mut self.stale_request) {
                 self.device_generation.saturating_sub(1)
             } else {
                 self.device_generation
             },
             target_media_seconds: target,
             extent: self.observed_extent,
-            present: !self.hidden && self.window.is_some(),
-            stall,
+            platform: render::FrameAdmission {
+                present: !self.hidden && self.window.is_some(),
+                stall,
+            },
         };
         let render = self.render.as_ref().ok_or("iOS render owner missing")?;
         match render.try_send(Job::Frame(request)) {
@@ -754,16 +757,16 @@ impl Shell {
                     self.witness.frame_thread = thread;
                 }
                 self.stall_in_flight = false;
-                let stall_ended = frame.stalled;
+                let stall_ended = frame.platform.stalled;
                 if stall_ended {
                     self.stall_next = None;
                     self.stalling = false;
                     self.witness.stalls += 1;
-                    self.witness.stall_status = format!("{:?}", frame.status);
+                    self.witness.stall_status = format!("{:?}", frame.platform.status);
                 }
                 self.witness.frame(&frame);
-                if frame.status == render::SurfaceStatus::DeviceLost
-                    && frame.acquired
+                if frame.platform.status == render::SurfaceStatus::DeviceLost
+                    && frame.platform.acquired
                     && self.state == State::Active
                 {
                     // wgpu cannot discard a drawable of a destroyed device, so

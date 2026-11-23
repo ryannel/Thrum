@@ -19,11 +19,11 @@ use std::{
 };
 
 use thrum_app::web::SAMPLES;
+use thrum_app::{Game, web::ControlBinding};
 use thrum_asset::{BrowserFetch, DevClient};
 use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
 #[cfg(feature = "dev-material")]
 use thrum_asset_gpu::{MaterialHook, MaterialOutcome, MaterialReload};
-use thrum_controls::Value;
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -31,8 +31,9 @@ use web_sys::HtmlCanvasElement;
 use thrum_render::runtime::FrameSample;
 
 use crate::{
-    controls::{ControlEdits, GameControls},
+    controls::GameControls,
     host::web::{self as game, Shell},
+    hosted::HostedGame,
 };
 
 /// The cooked valley's dev-server client and the feed of generations it has fetched.
@@ -97,18 +98,14 @@ pub struct BrowserGame {
     cloud_observation: Option<Rc<RefCell<cloud_observation::PreviousSun>>>,
     cooked: Option<Arc<Mutex<CookedStats>>>,
     content_preview: Option<crate::content_preview::PreviewRecord>,
-    /// Facts from the first adapter-backed record, for fixed-view qualification.
-    initial_downlevel: String,
     /// Explicit material reloads of the attached cooked valley (development builds only).
     #[cfg(feature = "dev-material")]
     material: Option<MaterialReload>,
     /// The material revision last reported, so an idle page builds no report.
     #[cfg(feature = "dev-material")]
     material_reported: u64,
-    /// Typed demo controls shared with the page and the macOS panel.
-    demo: GameControls,
-    /// Model revision the page last synced to.
-    page_seen: u64,
+    game: HostedGame<game::PageGame>,
+    control_binding: ControlBinding,
     /// The page's outstanding capture, finished from a later animation frame.
     capture: Option<thrum_render::runtime::PendingCapture>,
 }
@@ -257,17 +254,15 @@ async fn create_game(
     std::panic::set_hook(Box::new(|info| {
         web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
     }));
-    let mut initial_downlevel = String::new();
     let cloud_sky = setup.clouds.sky_profile([canvas.width(), canvas.height()]);
-    let shell = thrum_app::web::create(canvas, game::DEVICE_GENERATION, |gpu| {
-        initial_downlevel = format!("{:?}", gpu.capabilities.downlevel());
-        game::prepare(gpu, setup)
-    })
-    .await
-    .map_err(js_error)?;
-    let mut demo = GameControls::new().map_err(js_error)?;
-    demo.observe_camera(game::camera_orientation(&shell));
-    demo.observe_time(game::time_of_day(&shell));
+    let mut hosted = HostedGame(game::PageGame {
+        demo: GameControls::new().map_err(js_error)?,
+        setup,
+        initial_downlevel: String::new(),
+    });
+    let shell = thrum_app::web::create_game(canvas, game::DEVICE_GENERATION, &mut hosted)
+        .await
+        .map_err(js_error)?;
     Ok(BrowserGame {
         content: setup.content,
         temporal_inputs: setup.display_overlay
@@ -277,13 +272,12 @@ async fn create_game(
         cloud_observation: None,
         cooked: None,
         content_preview: None,
-        initial_downlevel,
         #[cfg(feature = "dev-material")]
         material: None,
         #[cfg(feature = "dev-material")]
         material_reported: 0,
-        demo,
-        page_seen: 0,
+        game: hosted,
+        control_binding: ControlBinding::default(),
         capture: None,
     })
 }
@@ -610,7 +604,9 @@ impl BrowserGame {
             .set_scene_contribution(contribution)
             .map_err(js_error)?;
         game::set_scene_camera(&mut self.shell, camera).map_err(js_error)?;
-        self.demo
+        self.game
+            .0
+            .demo
             .observe_camera(game::camera_orientation(&self.shell));
         self.cooked = Some(stats);
         self.content_preview = observation;
@@ -640,7 +636,7 @@ impl BrowserGame {
                 "rowGeneration": self.shell.host().mesh_rows().and_then(|rows| rows.report().generation),
                 "rowWrittenBytes": self.shell.host().mesh_rows().map(|rows| rows.report().submitted_bytes),
                 "drawPath": format!("{:?}", stats.draw_path),
-                "initialDownlevel": self.initial_downlevel,
+                "initialDownlevel": self.game.0.initial_downlevel,
                 "visibleMeshlets": stats.visible_meshlets,
                 "swaps": stats.swaps.len(),
                 "uploadedBytes": stats.swaps.last().map_or(0, |swap| swap.uploaded_bytes),
@@ -657,7 +653,10 @@ impl BrowserGame {
     /// Refuses a nonfinite time or one outside the normalized day.
     pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), JsValue> {
         game::set_time_of_day(&mut self.shell, fraction).map_err(js_error)?;
-        self.demo.observe_time(game::time_of_day(&self.shell));
+        self.game
+            .0
+            .demo
+            .observe_time(game::time_of_day(&self.shell));
         Ok(())
     }
 
@@ -671,7 +670,9 @@ impl BrowserGame {
     /// Refuses a nonfinite pitch or one outside plus/minus 0.6 radians.
     pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), JsValue> {
         game::set_camera_pitch(&mut self.shell, radians).map_err(js_error)?;
-        self.demo
+        self.game
+            .0
+            .demo
             .observe_camera(game::camera_orientation(&self.shell));
         Ok(())
     }
@@ -681,7 +682,9 @@ impl BrowserGame {
     /// Refuses a nonfinite yaw or one outside that range.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), JsValue> {
         game::set_camera_yaw(&mut self.shell, radians).map_err(js_error)?;
-        self.demo
+        self.game
+            .0
+            .demo
             .observe_camera(game::camera_orientation(&self.shell));
         Ok(())
     }
@@ -700,21 +703,12 @@ impl BrowserGame {
     /// Every demo control as JSON for `thrum-controls.js` to build the page's widgets:
     /// keys, labels, kinds, ranges and values in display units. The page is then in sync.
     pub fn controls_json(&mut self) -> String {
-        self.page_seen = self.demo.model().revision();
-        self.demo.model().describe_json()
+        self.control_binding.describe(self.game.controls())
     }
 
     /// Controls changed since the page last synced, as JSON, or `undefined` when none did.
-    /// The page calls this after edits and each frame; the running clock changes solar time
-    /// once per slider stop.
     pub fn control_changes(&mut self) -> Option<String> {
-        let model = self.demo.model();
-        if model.revision() == self.page_seen {
-            return None;
-        }
-        let changes = model.changes_json(self.page_seen);
-        self.page_seen = model.revision();
-        Some(changes)
+        self.control_binding.changes(self.game.controls())
     }
 
     /// Apply a person's edit from the page and route it through the game's checked setters
@@ -730,21 +724,10 @@ impl BrowserGame {
         value: &JsValue,
         timestamp_ms: f64,
     ) -> Result<bool, JsValue> {
-        let id = self.demo.model().lookup(key).map_err(js_error)?;
-        let model = self.demo.model_mut();
-        let changed = if let Some(on) = value.as_bool() {
-            model.edit_value(id, Value::Flag(on)).map_err(js_error)?
-        } else if let Some(number) = value.as_f64() {
-            model.edit_display(id, number).map_err(js_error)?
-        } else if let Some(text) = value.as_string() {
-            model.edit_value(id, Value::Text(text)).map_err(js_error)?
-        } else {
-            return Err(js_error(format!(
-                "control \"{key}\" needs a number, boolean or string"
-            )));
-        };
-        let edits = self.demo.take_edits();
-        self.apply_control_edits(edits, timestamp_ms)?;
+        let changed = ControlBinding::edit(self.game.controls_mut(), key, value)?;
+        self.shell
+            .apply_game_edits(&mut self.game, timestamp_ms)
+            .map_err(js_error)?;
         Ok(changed)
     }
 
@@ -753,9 +736,10 @@ impl BrowserGame {
     /// # Errors
     /// Refuses text that is not a JSON object, or a setter or lifecycle refusal.
     pub fn apply_parameters(&mut self, json: &str, timestamp_ms: f64) -> Result<String, JsValue> {
-        let report = self.demo.model_mut().apply_file(json).map_err(js_error)?;
-        let edits = self.demo.take_edits();
-        self.apply_control_edits(edits, timestamp_ms)?;
+        let report = ControlBinding::parameters(self.game.controls_mut(), json)?;
+        self.shell
+            .apply_game_edits(&mut self.game, timestamp_ms)
+            .map_err(js_error)?;
         let problems: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
         Ok(format!(
             "{{\"changed\":{},\"unchanged\":{},\"problems\":{}}}",
@@ -770,8 +754,10 @@ impl BrowserGame {
     /// # Errors
     /// Returns a JavaScript error for an authoritative tick or GPU host fault.
     pub fn frame(&mut self, timestamp_ms: f64) -> Result<(), JsValue> {
-        self.demo.observe_time(game::time_of_day(&self.shell));
-        let result = self.shell.frame(timestamp_ms).map_err(js_error);
+        let result = self
+            .shell
+            .frame_game(&mut self.game, timestamp_ms)
+            .map_err(js_error);
         if let Some(error) = self.shell.take_attach_error()
             && let Some(Ok(mut stats)) = self.cooked.as_ref().map(|stats| stats.lock())
         {
@@ -819,7 +805,7 @@ impl BrowserGame {
         self.shell
             .set_paused(paused, timestamp_ms)
             .map_err(js_error)?;
-        self.demo.observe_paused(self.shell.paused());
+        self.game.0.demo.observe_paused(self.shell.paused());
         Ok(())
     }
 
@@ -1103,31 +1089,6 @@ impl BrowserGame {
             game::camera_culling(&self.shell).requested,
             game::camera_culling(&self.shell).reason
         )
-    }
-}
-
-impl BrowserGame {
-    fn apply_control_edits(
-        &mut self,
-        edits: ControlEdits,
-        timestamp_ms: f64,
-    ) -> Result<(), JsValue> {
-        if let Some(time) = edits.time_of_day {
-            game::set_time_of_day(&mut self.shell, time).map_err(js_error)?;
-        }
-        if let Some(pitch) = edits.camera_pitch {
-            game::set_camera_pitch(&mut self.shell, pitch).map_err(js_error)?;
-        }
-        if let Some(yaw) = edits.camera_yaw {
-            game::set_camera_yaw(&mut self.shell, yaw).map_err(js_error)?;
-        }
-        if let Some(overlay) = edits.display_overlay() {
-            game::set_display_overlay(&mut self.shell, overlay);
-        }
-        if let Some(paused) = edits.paused {
-            self.set_paused(paused, timestamp_ms)?;
-        }
-        Ok(())
     }
 }
 

@@ -1,5 +1,5 @@
 import init, { create_scene } from './scene.js';
-import { mountControls } from './thrum-controls.js';
+import { bindControls } from './thrum-controls.js';
 const canvas = document.querySelector('canvas');
 const status = document.querySelector('#status');
 const problems = document.querySelector('#problems');
@@ -18,10 +18,7 @@ try {
     catch (error) { report(error); }
   });
   document.title = game.title();
-  const view = mountControls(document.querySelector('#controls'), game.controls_json(), {
-    edit: (key, value) => game.edit_control(key, value),
-    changes: () => game.control_changes(), onError: report,
-  });
+  const view = bindControls(document.querySelector('#controls'), game, { onError: report });
   if (query.has('params')) {
     const url = query.get('params');
     try {

@@ -319,6 +319,7 @@ fn render(gpu: &thrum_test_support::Gpu, mut game: SkyGame) -> Vec<u8> {
                     surface: None,
                 },
             )
+            .await
             .unwrap();
         let mut pixels = Vec::new();
         for _ in 0..3 {

@@ -61,7 +61,32 @@ fn main() {
         window_extent_capture().unwrap_or_else(|error| report_capture_failure(&error));
     let transition =
         window_transition_proof().unwrap_or_else(|error| report_capture_failure(&error));
-    v1_game::run_window(hardware, window_capture, transition);
+    let qualification =
+        window_qualification().unwrap_or_else(|error| report_capture_failure(&error));
+    v1_game::run_window(hardware, window_capture, transition, qualification);
+}
+
+#[cfg(target_os = "macos")]
+fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, String> {
+    let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") else {
+        return Ok(None);
+    };
+    let capture = match std::env::var("THRUM_MAC_TAP").as_deref() {
+        Ok("on") => true,
+        Ok("off") => false,
+        _ => return Err("qualification requires THRUM_MAC_TAP=on or off".to_owned()),
+    };
+    Ok(Some(thrum_app::WindowQualification {
+        output: output.into(),
+        control: "camera.yaw",
+        control_column: "yaw_degrees",
+        // Three seconds to warm up, then the holds on either side of a two-second sweep.
+        boundaries: [3.0, 4.0, 6.0, 7.1],
+        sample: |elapsed| ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0,
+        accepted: |radians| f64::from(radians.to_degrees()),
+        capture,
+        replace_surface: std::env::var("THRUM_MAC_REPLACE").as_deref() == Ok("1"),
+    }))
 }
 
 #[cfg(target_os = "macos")]

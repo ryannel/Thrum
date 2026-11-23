@@ -37,6 +37,17 @@ const STYLE = `
 const heading = (group) => group.replaceAll("_", " ").replace(/^./, (first) => first.toUpperCase());
 const defaultId = (key) => key.replace(/[^A-Za-z0-9]+/g, "-");
 
+/** Bind the shared control view to a game exported by a Thrum page adapter. */
+export function bindControls(container, game, { canEdit = () => true, ...view } = {}) {
+  return mountControls(container, game.controls_json(), {
+    ...view,
+    edit: (key, value) => {
+      if (canEdit()) return game.edit_control(key, value, performance.now());
+    },
+    changes: () => game.control_changes(),
+  });
+}
+
 /**
  * Build widgets for every control into `container` and return a view.
  * @param {HTMLElement} container

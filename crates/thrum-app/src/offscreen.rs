@@ -186,7 +186,7 @@ impl<G: Game> Offscreen<G> {
         if extent.contains(&0) {
             return Err("offscreen output extent must be nonzero".to_owned());
         }
-        let prepared = game.prepare(
+        let prepared = pollster::block_on(game.prepare(
             Gpu {
                 device,
                 queue,
@@ -194,7 +194,7 @@ impl<G: Game> Offscreen<G> {
                 surface,
             },
             Box::new(|| {}),
-        )?;
+        ))?;
         let output = presenter_output(capabilities.site(), extent, format);
         let view = output.create_view(&wgpu::TextureViewDescriptor::default());
         Ok(Self {

@@ -176,7 +176,7 @@ impl Recorder {
             host.enable_submitted_capture_with_limits(self.next, LIMITS)?;
             fs::write(path.join("identity.json"), json!({"session":self.next,"adapter":format!("{:?}",adapter.get_info()),
                 "downlevel":format!("{:?}",adapter.get_downlevel_capabilities()),"backend":"Metal",
-                "surface_extent":request.extent,"surface_epoch":request.epoch,"device_generation":generation,
+                "surface_extent":request.extent,"surface_epoch":request.surface_generation,"device_generation":generation,
                 "mode":"realtime-windowed-tap","clock":"Instant monotonic elapsed / ordinary world lane / UIKit CADisplayLink",
                 "scope":"simulator function only; final SDR engine output before surface presentation; UIKit and native UI excluded",
                 "limits":{"gpu_slots":LIMITS.staging_slots,"cpu_buffers":LIMITS.cpu_buffers,"pixel_byte_allowance":LIMITS.byte_allowance,
@@ -185,7 +185,7 @@ impl Recorder {
             signals.capture_callbacks.begin();
             self.active = Some(Session {
                 id: self.next,
-                epoch: request.epoch,
+                epoch: request.surface_generation,
                 generation,
                 mode: command,
                 started,
@@ -206,7 +206,7 @@ impl Recorder {
         }
         if let Some(s) = &mut self.active {
             s.opportunities.push(json!({"request_ns":s.started.elapsed().as_nanos(),"phase":if s.ending {"draining"} else {"capturing"},
-                "target_media_seconds":request.target_media_seconds,"surface_epoch":request.epoch,"device_generation":generation}));
+                "target_media_seconds":request.target_media_seconds,"surface_epoch":request.surface_generation,"device_generation":generation}));
         }
         Ok(())
     }
@@ -225,13 +225,13 @@ impl Recorder {
             return self.cancel(host, signals, "surface/background revoked during frame");
         }
         if let Some(row) = s.opportunities.last_mut() {
-            row["status"] = json!(format!("{:?}", reply.status));
-            row["report"] = json!(reply.report.map(|r| json!({"tick":r.tick,"submitted":r.submitted,
+            row["status"] = json!(format!("{:?}", reply.platform.status));
+            row["report"] = json!(reply.outcome.map(|r| json!({"tick":r.tick,"submitted":r.submitted,
                 "surface_presented":r.surface_presented,"dropped_view":r.dropped_view,"overload":r.overload})));
             row["returned_ns"] = json!(s.started.elapsed().as_nanos());
-            row["cooked"] = json!(reply.cooked);
+            row["cooked"] = json!(reply.platform.cooked);
         }
-        if !s.ending && reply.report.is_some_and(|r| r.submitted) {
+        if !s.ending && reply.outcome.is_some_and(|r| r.submitted) {
             s.expected += 1;
         }
         if let Some((gpu, cpu)) = host.submitted_capture_usage() {
@@ -267,7 +267,7 @@ impl Recorder {
         }
         let pending = host.submitted_capture_usage().unwrap_or_default();
         let status = json!({"pending":pending,"images":s.images.len(),"omissions":host.submitted_capture_omissions(),
-            "expected":s.expected,"opportunities":s.opportunities.len(),"tick":reply.report.map(|r|r.tick)});
+            "expected":s.expected,"opportunities":s.opportunities.len(),"tick":reply.outcome.map(|r|r.tick)});
         // A small route witness is independently read by the driver before lifecycle actions.
         fs::write(s.path.join("pending.partial"), status.to_string())
             .and_then(|()| fs::rename(s.path.join("pending.partial"), s.path.join("pending.json")))

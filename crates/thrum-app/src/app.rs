@@ -10,7 +10,9 @@ mod qualification_signpost;
 mod recovery;
 mod render_actor;
 
-pub use qualification::{ExtentWindow, TransitionArm, WindowExtentCapture, WindowTransitionProof};
+pub use qualification::{
+    ExtentWindow, TransitionArm, WindowExtentCapture, WindowQualification, WindowTransitionProof,
+};
 
 use std::{
     sync::{
@@ -25,8 +27,8 @@ use display_link::ViewDisplayLink;
 use edit_flow::EditFlow;
 use recovery::Recovery;
 use render_actor::{
-    FrameCounters, FrameRequest, RecoveryFailure, RenderJob, RenderOutcome, RenderReply,
-    RenderWorker, SurfaceStatus,
+    FrameCounters, FrameEdits, FrameRequest, RecoveryFailure, RenderJob, RenderOutcome,
+    RenderReply, RenderWorker, SurfaceStatus,
 };
 use thrum_controls::macos::MacPanel;
 use thrum_core::sim::{WorldLaneFault, WorldLifecyclePolicy, WorldLifecycleStatus};
@@ -45,10 +47,15 @@ use winit::{
 };
 
 use crate::{
-    Config, Game, Gpu, KeyResponse,
+    Config, Game, GameInput, Gpu, KeyResponse,
     file_watch::{self, FileWatch, Kinds, Reload},
     game::apply_params_file,
 };
+
+/// A game whose runtime can move to the window's render thread and accepts physical keys.
+pub trait WindowGame: Game<World: Send, Scene: Send> + GameInput<KeyCode> {}
+
+impl<G> WindowGame for G where G: Game<World: Send, Scene: Send> + GameInput<KeyCode> {}
 
 const DEFAULT_FRAMES: usize = 600;
 const MAX_FRAMES: usize = 100_000;
@@ -153,7 +160,7 @@ struct App<G: Game> {
     qualification_report: Option<Result<String, String>>,
 }
 
-impl<G: Game + 'static> App<G> {
+impl<G: WindowGame + 'static> App<G> {
     fn timing_requested(&self) -> bool {
         let reports =
             matches!(self.timing_policy, TimingPolicy::Report) || self.qualification.is_some();
@@ -234,7 +241,7 @@ impl<G: Game + 'static> App<G> {
             adapter_name: String::new(),
             error: None,
             closed_by_user: false,
-            qualification: qualification::Pan::from_environment(),
+            qualification: None,
             transition_ticks: None,
             qualification_report: None,
         }
@@ -527,7 +534,7 @@ impl<G: Game + 'static> App<G> {
             return Err("initial device lost during surface configuration".to_owned());
         }
         let world_wake = wake.clone();
-        let prepared = self.game.prepare(
+        let prepared = pollster::block_on(self.game.prepare(
             Gpu {
                 device: &gpu.device,
                 queue: &gpu.queue,
@@ -540,17 +547,17 @@ impl<G: Game + 'static> App<G> {
             Box::new(move || {
                 let _ = world_wake.send_event(UserEvent::WorldAdvanced);
             }),
-        )?;
+        ))?;
         if gpu.watch.is_lost() {
             return Err("initial device lost during preparation".to_owned());
         }
         self.origin = prepared.origin;
         let host = prepared.host;
         self.counters = FrameCounters::read(&host);
-        if let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") {
+        if let Some(observer) = &self.qualification {
             let number = display_link::window_number(&window)?;
             let monitor = window.current_monitor();
-            std::fs::write(std::path::Path::new(&output).join("window.txt"), format!(
+            std::fs::write(observer.options.output.join("window.txt"), format!(
                 "pid={}\nwindow_number={number}\nadapter={}\nformat={:?}\nextent={}x{}\nmonitor={:?}\nposition={:?}\nscale={}\n",
                 std::process::id(), gpu.adapter_name, gpu.config.format, gpu.config.width, gpu.config.height,
                 monitor.as_ref().map(|m| (m.name(), m.size(), m.refresh_rate_millihertz())), window.outer_position(), window.scale_factor()
@@ -589,6 +596,9 @@ impl<G: Game + 'static> App<G> {
             self.extent_capture.take().map(|capture| capture.output),
             backing_scale,
             self.transition_proof.as_ref(),
+            self.qualification
+                .as_ref()
+                .map(|observer| &observer.options),
         )?);
         // Baseline the watched files before the first load, so no later save is missed.
         self.watch = self.start_watch(wake);
@@ -632,7 +642,7 @@ impl<G: Game + 'static> App<G> {
                 return Ok(());
             }
             self.render_in_flight = None;
-            self.counters = reply.counters;
+            self.counters = reply.platform.counters;
             self.samples.extend(reply.samples.into_iter().flatten());
             match result {
                 Ok(info) => {
@@ -659,11 +669,14 @@ impl<G: Game + 'static> App<G> {
             return Ok(());
         }
         let request = self.render_in_flight.take();
-        self.counters = reply.counters;
+        self.counters = reply.platform.counters;
         let enabled = crate::profile::enabled(self.game.controls()).unwrap_or(false);
-        self.profile
-            .configure(enabled, reply.device_generation, reply.profile_minimum);
-        if reply.profile_revision == crate::profile::revision(self.game.controls()) {
+        self.profile.configure(
+            enabled,
+            reply.device_generation,
+            reply.platform.profile_minimum,
+        );
+        if reply.platform.profile_revision == crate::profile::revision(self.game.controls()) {
             for sample in reply.samples.iter().flatten() {
                 self.profile.push(sample, self.origin.elapsed());
             }
@@ -678,14 +691,14 @@ impl<G: Game + 'static> App<G> {
         self.samples.extend(reply.samples.into_iter().flatten());
         self.surface_extent = reply.surface_extent;
         if request.is_some_and(|request| self.edits.admits(request)) {
-            self.game.observe(reply.readback);
+            self.game.observe(reply.platform.readback);
         }
         self.sync_panel();
-        self.worker_walls.push(reply.worker_wall);
+        self.worker_walls.push(reply.platform.worker_wall);
         if let Some(acquire_wall) = reply.acquire_wall {
             self.acquire_walls.push(acquire_wall);
         }
-        match reply.surface_status {
+        match reply.platform.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
                 if self.surface_configuration_error.take().is_some() {
@@ -719,7 +732,7 @@ impl<G: Game + 'static> App<G> {
                 self.refresh_title();
             }
         }
-        if let Some(error) = reply.transition_error {
+        if let Some(error) = reply.platform.transition_error {
             self.surface_configuration_error = Some(error);
             self.refresh_title();
         }
@@ -844,15 +857,17 @@ impl<G: Game + 'static> App<G> {
             )?;
         }
         let job = RenderJob::Frame(FrameRequest {
-            profile_revision: crate::profile::revision(self.game.controls()),
-            timing_requested: self.timing_requested(),
             sequence: self.target_sequence,
             device_generation: self.recovery.active,
             target_media_seconds: self.display_target.ok_or("display target missing")?,
             extent,
-            backing_scale,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
-            edits: self.edits.pending(),
+            platform: FrameEdits {
+                profile_revision: crate::profile::revision(self.game.controls()),
+                timing_requested: self.timing_requested(),
+                backing_scale,
+                edits: self.edits.pending(),
+            },
         });
         match self
             .render
@@ -900,7 +915,7 @@ impl<G: Game + 'static> App<G> {
             .ok_or("render worker missing")?
             .recv_timeout(Duration::from_secs(15))
             .ok_or("render worker did not finish GPU drain")?;
-        self.counters = final_reply.counters;
+        self.counters = final_reply.platform.counters;
         let final_device_loss = match final_reply.outcome {
             RenderOutcome::Finish(result) => {
                 let finished = result?;
@@ -1057,7 +1072,7 @@ impl<G: Game + 'static> App<G> {
     }
 }
 
-impl<G: Game + 'static> App<G> {
+impl<G: WindowGame + 'static> App<G> {
     /// Watch the parameter file and the game's files. A watch that cannot start is reported and
     /// leaves `L`.
     #[expect(
@@ -1094,7 +1109,7 @@ impl<G: Game + 'static> App<G> {
     }
 }
 
-impl<G: Game + 'static> Reload for App<G> {
+impl<G: WindowGame + 'static> Reload for App<G> {
     fn stopped(&self) -> bool {
         self.render.is_none() || self.render_stopped.load(Ordering::Acquire)
     }
@@ -1203,7 +1218,7 @@ fn closed_without_frames(
     }
 }
 
-impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
+impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() {
             return;
@@ -1500,30 +1515,41 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
 ///
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
-pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
-    run_with(config, false, None, None, game);
+pub fn run<G: WindowGame + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
+    run_with(config, false, None, None, None, game);
+}
+
+/// Run the ordinary window with a caller-supplied control qualification observer.
+/// # Panics
+/// If the platform refuses to create the event loop.
+pub fn run_with_qualification<G: WindowGame + 'static>(
+    config: Config,
+    observer: WindowQualification,
+    game: impl FnOnce() -> Result<G, String>,
+) {
+    run_with(config, false, None, None, Some(observer), game);
 }
 
 /// Run the ordinary window and retain one submitted image with its extent witnesses.
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
-pub fn run_with_extent_capture<G: Game + 'static>(
+pub fn run_with_extent_capture<G: WindowGame + 'static>(
     config: Config,
     capture: WindowExtentCapture,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, false, Some(capture), None, game);
+    run_with(config, false, Some(capture), None, None, game);
 }
 
 /// Run the ordinary window with a scripted resize and retain the frame records.
 /// # Panics
 /// If the platform refuses to create the event loop.
-pub fn run_with_transition_proof<G: Game + 'static>(
+pub fn run_with_transition_proof<G: WindowGame + 'static>(
     config: Config,
     proof: WindowTransitionProof,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, false, None, Some(proof), game);
+    run_with(config, false, None, Some(proof), None, game);
 }
 
 /// Run `game` in one window until the person closes it. Closing the window is success. Setting
@@ -1534,11 +1560,11 @@ pub fn run_with_transition_proof<G: Game + 'static>(
 ///
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
-pub fn run_until_closed<G: Game + 'static>(
+pub fn run_until_closed<G: WindowGame + 'static>(
     config: Config,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, true, None, None, game);
+    run_with(config, true, None, None, None, game);
 }
 
 /// Environment variable that asks [`run_until_closed`] for the frames report: set it to `1`.
@@ -1553,11 +1579,12 @@ pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
     clippy::print_stderr,
     reason = "the diagnostic reports setup or GPU faults"
 )]
-fn run_with<G: Game + 'static>(
+fn run_with<G: WindowGame + 'static>(
     config: Config,
     until_closed: bool,
     extent_capture: Option<WindowExtentCapture>,
     transition_proof: Option<WindowTransitionProof>,
+    qualification: Option<WindowQualification>,
     game: impl FnOnce() -> Result<G, String>,
 ) {
     let target_frames = match frame_limit(
@@ -1583,6 +1610,7 @@ fn run_with<G: Game + 'static>(
     };
     app.extent_capture = extent_capture;
     app.transition_proof = transition_proof;
+    app.qualification = qualification.map(qualification::Pan::new);
     app.timing_policy =
         if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
             TimingPolicy::Report
@@ -1611,8 +1639,8 @@ fn run_with<G: Game + 'static>(
         },
         Err,
     );
-    if let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") {
-        let path = std::path::Path::new(&output).join("gpu-samples.txt");
+    if let Some(observer) = &app.qualification {
+        let path = observer.options.output.join("gpu-samples.txt");
         if let Err(error) = std::fs::write(path, format!("{:#?}\n", app.samples)) {
             eprintln!("{}: sample record: {error}", config.name);
         }

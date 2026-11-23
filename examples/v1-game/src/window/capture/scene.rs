@@ -18,6 +18,7 @@ use crate::{
     GameHost,
     controls::GameControls,
     host::Runtime,
+    hosted::HostedGame,
     window::{SceneCapture, WindowGame},
 };
 
@@ -65,7 +66,7 @@ pub struct SceneCaptureRequest {
 }
 
 /// The offscreen driver holding the game prepared for a scene capture.
-type Driver = Offscreen<WindowGame>;
+type Driver = Offscreen<HostedGame<WindowGame>>;
 
 const EXTENT: [u32; 2] = [1280, 720];
 
@@ -126,7 +127,7 @@ pub(in crate::window) async fn run(
     let instance = super::metal_instance();
     let (_, device, queue, capabilities) =
         super::metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
-    let game = WindowGame {
+    let game = HostedGame(WindowGame {
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
@@ -142,10 +143,11 @@ pub(in crate::window) async fn run(
             content: None,
         }),
         hardware: Vec::new(),
-    };
+    });
     let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)?;
     let content = driver
         .game()
+        .0
         .scene
         .as_ref()
         .and_then(|scene| scene.content.clone());

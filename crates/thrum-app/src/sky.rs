@@ -45,8 +45,6 @@ use std::{
     time::Duration,
 };
 
-#[cfg(target_os = "macos")]
-use std::time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_asset_gpu::MaterialOutcome;
 use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook};
@@ -68,16 +66,16 @@ use thrum_render::{
     runtime::{FrameWorld, SceneFrame, SceneSource},
     synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView},
 };
-#[cfg(target_os = "macos")]
-use winit::keyboard::KeyCode;
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Config;
-#[cfg(target_os = "macos")]
-use crate::{Edits, Game, Gpu, KeyResponse, Prepared};
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+use crate::{Edits, Game, GameInput, Gpu, Prepared};
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-#[cfg(any(test, target_os = "macos"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 use thrum_render::{
     capabilities::DeviceCapabilities,
     runtime::{FrameConfig, FrameHost},
@@ -508,7 +506,7 @@ impl SceneSource<SourceTick> for SkyScene {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SkyEdits(Option<Sky>);
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 impl Edits for SkyEdits {
     fn merge(self, newer: Self) -> Self {
         self.merge_edits(newer)
@@ -518,7 +516,7 @@ impl Edits for SkyEdits {
     }
 }
 
-#[cfg(any(test, target_os = "macos"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 impl SkyEdits {
     fn merge_edits(self, newer: Self) -> Self {
         Self(newer.0.or(self.0))
@@ -982,8 +980,8 @@ impl SkyGame {
     }
 
     /// Prepare the still scene on `capabilities`' device, with the contribution attached.
-    #[cfg(any(test, target_os = "macos"))]
-    fn build_host(
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+    async fn build_host(
         &mut self,
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
@@ -992,7 +990,7 @@ impl SkyGame {
         let _ = self.update();
         self.sky.check()?;
         let world = self.take_world();
-        let mut host = pollster::block_on(FrameHost::new(
+        let mut host = FrameHost::new(
             capabilities,
             queue,
             config,
@@ -1006,7 +1004,8 @@ impl SkyGame {
             },
             ground_scene(self.ground, &self.local_lights)?,
             FALLBACK_EXPOSURE,
-        ))
+        )
+        .await
         .map_err(|error| error.to_string())?;
         if let Some(contribution) = self.contribution.take() {
             host.set_scene_contribution(contribution)?;
@@ -1015,26 +1014,28 @@ impl SkyGame {
     }
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 impl Game for SkyGame {
     type World = StillWorld;
     type Scene = SkyScene;
     type Edits = SkyEdits;
     type Readback = ();
 
-    fn prepare(
-        &mut self,
-        gpu: Gpu<'_>,
+    async fn prepare<'a>(
+        &'a mut self,
+        gpu: Gpu<'a>,
         _world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<StillWorld, SkyScene>, String> {
-        let host = self.build_host(
-            gpu.capabilities,
-            gpu.queue,
-            FrameConfig {
-                render_extent: gpu.surface.extent,
-                surface: Some(gpu.surface),
-            },
-        )?;
+        let host = self
+            .build_host(
+                gpu.capabilities,
+                gpu.queue,
+                FrameConfig {
+                    render_extent: gpu.surface.extent,
+                    surface: Some(gpu.surface),
+                },
+            )
+            .await?;
         Ok(Prepared {
             host,
             origin: Instant::now(),
@@ -1075,6 +1076,7 @@ impl Game for SkyGame {
         }
     }
 
+    #[cfg(target_os = "macos")]
     fn reload_files(&self) -> Vec<PathBuf> {
         self.reload_files.clone()
     }
@@ -1100,11 +1102,10 @@ impl Game for SkyGame {
     fn readback(_host: &FrameHost<StillWorld, SkyScene>) {}
 
     fn observe(&mut self, (): ()) {}
-
-    fn key(&mut self, _code: KeyCode, _pressed: bool) -> Result<KeyResponse, String> {
-        Ok(KeyResponse::Ignored)
-    }
 }
+
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+impl<K> GameInput<K> for SkyGame {}
 
 /// The scene's one instance row: the ground slab, or an inactive row (generation zero) that
 /// draws nothing, since the renderer needs at least one.

@@ -8,6 +8,7 @@ description = "Application shells shared by Thrum games: the native macOS window
 autotests = false
 
 [dependencies]
+web-time = "=1.1.0"
 thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 thrum-controls = { path = "../thrum-controls" }
 thrum-core = { path = "../thrum-core" }
@@ -56,3 +57,8 @@ workspace = true
 [[test]]
 name = "it"
 path = "tests/it.rs"
+
+# HOST M4 calls this target by name.
+[[test]]
+name = "game_contract"
+path = "tests/game_contract.rs"

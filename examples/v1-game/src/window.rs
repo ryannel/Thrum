@@ -5,16 +5,16 @@ use std::time::Instant;
 use thrum_render::capabilities::HardwareRequest;
 use thrum_render::synthetic::CullMode;
 
-use thrum_app::{Config, Edits, Game, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
-use thrum_controls::Controls;
+use thrum_app::{Config, Game, GameInput, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
 use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
 
 use thrum_render::runtime::FrameConfig;
 
 use crate::{
     GameHost, WorldControls,
-    controls::{ControlEdits, GameControls},
+    controls::GameControls,
     host::{self, GameScene, GameWorld, Runtime},
+    hosted::{HostedGame, RuntimeSetup},
 };
 
 mod capture;
@@ -111,6 +111,7 @@ pub fn run_window(
     hardware: Vec<HardwareRequest>,
     capture: Option<thrum_app::WindowExtentCapture>,
     transition: Option<thrum_app::WindowTransitionProof>,
+    qualification: Option<thrum_app::WindowQualification>,
 ) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
@@ -154,7 +155,7 @@ pub fn run_window(
         window_size: [1920, 1080],
     };
     let game = || {
-        Ok(WindowGame {
+        Ok(HostedGame(WindowGame {
             demo: GameControls::new().map_err(|error| error.to_string())?,
             world: None,
             held_keys: 0,
@@ -164,12 +165,14 @@ pub fn run_window(
             cloud_capture: false,
             scene: None,
             hardware,
-        })
+        }))
     };
     if let Some(capture) = capture {
         thrum_app::run_with_extent_capture(config, capture, game);
     } else if let Some(proof) = transition {
         thrum_app::run_with_transition_proof(config, proof, game);
+    } else if let Some(qualification) = qualification {
+        thrum_app::run_with_qualification(config, qualification, game);
     } else {
         thrum_app::run(config, game);
     }
@@ -220,15 +223,15 @@ impl CaptureCooked {
 /// Construct the ordinary game for the engine's headless presenter adapter.
 /// # Errors
 /// Returns a demo-control declaration failure.
-pub fn capture_game() -> Result<impl Game, String> {
+pub fn capture_game() -> Result<impl Game + GameInput<KeyCode>, String> {
     capture_game_with_route_limit(false, None)
 }
 
 fn capture_game_with_route_limit(
     cloud_capture: bool,
     capture_cooked: Option<CaptureCooked>,
-) -> Result<impl Game, String> {
-    Ok(WindowGame {
+) -> Result<impl Game + GameInput<KeyCode>, String> {
+    Ok(HostedGame(WindowGame {
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
@@ -245,7 +248,7 @@ fn capture_game_with_route_limit(
             .map(std::fs::read_to_string)
             .transpose()
             .map_err(|error| error.to_string())?,
-    })
+    }))
 }
 
 impl WindowGame {
@@ -269,32 +272,37 @@ impl WindowGame {
     }
 }
 
-impl Game for WindowGame {
-    type World = GameWorld;
-    type Scene = GameScene;
-    type Edits = ControlEdits;
-    /// Committed solar time after a render job.
-    type Readback = f32;
+impl RuntimeSetup for WindowGame {
+    fn demo(&self) -> &GameControls {
+        &self.demo
+    }
+
+    fn demo_mut(&mut self) -> &mut GameControls {
+        &mut self.demo
+    }
 
     fn hardware_requests(&self) -> &[HardwareRequest] {
         &self.hardware
     }
 
-    fn prepare(
+    async fn prepare_runtime(
         &mut self,
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<GameWorld, GameScene>, String> {
         if let Some(scene) = &mut self.scene {
-            let mut host = pollster::block_on(scene.setup.prepare(
-                gpu.device,
-                gpu.queue,
-                gpu.capabilities,
-                FrameConfig {
-                    render_extent: scene.render_extent,
-                    surface: Some(gpu.surface),
-                },
-            ))?;
+            let mut host = scene
+                .setup
+                .prepare(
+                    gpu.device,
+                    gpu.queue,
+                    gpu.capabilities,
+                    FrameConfig {
+                        render_extent: scene.render_extent,
+                        surface: Some(gpu.surface),
+                    },
+                )
+                .await?;
             #[cfg(feature = "draw-probe")]
             {
                 scene.content = crate::content::attach_cooked_scene_with_probe(
@@ -315,15 +323,17 @@ impl Game for WindowGame {
         let render_extent = gpu.surface.extent;
         let setup = crate::selected_setup()?;
         let exit = setup.content == crate::GameContent::Exit;
-        let mut host = pollster::block_on(setup.prepare(
-            gpu.device,
-            gpu.queue,
-            gpu.capabilities,
-            FrameConfig {
-                render_extent,
-                surface: Some(gpu.surface),
-            },
-        ))?;
+        let mut host = setup
+            .prepare(
+                gpu.device,
+                gpu.queue,
+                gpu.capabilities,
+                FrameConfig {
+                    render_extent,
+                    surface: Some(gpu.surface),
+                },
+            )
+            .await?;
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         let preview = self
             .capture_cooked
@@ -385,57 +395,12 @@ impl Game for WindowGame {
         self.world.as_ref().map(|world| -> &dyn WorldLink { world })
     }
 
-    fn controls(&self) -> &Controls {
-        self.demo.model()
-    }
-
-    fn controls_mut(&mut self) -> &mut Controls {
-        self.demo.model_mut()
-    }
-
-    fn take_edits(&mut self) -> (ControlEdits, Option<bool>) {
-        let edits = self.demo.take_edits();
-        (
-            ControlEdits {
-                paused: None,
-                ..edits
-            },
-            edits.paused,
-        )
-    }
-
-    fn replay(&self) -> ControlEdits {
-        self.demo.replay()
-    }
-
-    fn apply(host: &mut Runtime, edits: ControlEdits) -> Result<(), String> {
-        if let Some(value) = edits.time_of_day {
-            host::set_time_of_day(host, value)?;
-        }
-        if let Some(value) = edits.camera_pitch {
-            host::set_camera_pitch(host, value)?;
-        }
-        if let Some(value) = edits.camera_yaw {
-            host::set_camera_yaw(host, value)?;
-        }
-        if let Some(overlay) = edits.display_overlay() {
-            host::set_display_overlay(host, overlay);
-        }
-        Ok(())
-    }
-
     fn readback(host: &Runtime) -> f32 {
         host::time_of_day(host)
     }
+}
 
-    fn observe(&mut self, time_of_day: f32) {
-        self.demo.observe_time(time_of_day);
-    }
-
-    fn observe_paused(&mut self, paused: bool) {
-        self.demo.observe_paused(paused);
-    }
-
+impl GameInput<KeyCode> for WindowGame {
     fn key(&mut self, code: KeyCode, pressed: bool) -> Result<KeyResponse, String> {
         const FIVE_DEGREES: f32 = 0.087_266_46;
         if pressed {
@@ -486,23 +451,6 @@ impl Game for WindowGame {
     fn focus_lost(&mut self) -> Result<(), String> {
         self.held_keys = 0;
         self.send_axes()
-    }
-}
-
-impl Edits for ControlEdits {
-    fn merge(self, newer: Self) -> Self {
-        Self {
-            time_of_day: newer.time_of_day.or(self.time_of_day),
-            camera_pitch: newer.camera_pitch.or(self.camera_pitch),
-            camera_yaw: newer.camera_yaw.or(self.camera_yaw),
-            paused: newer.paused.or(self.paused),
-            exposure_zones: newer.exposure_zones.or(self.exposure_zones),
-            motion_view: newer.motion_view.or(self.motion_view),
-        }
-    }
-
-    fn is_empty(&self) -> bool {
-        ControlEdits::is_empty(self)
     }
 }
 

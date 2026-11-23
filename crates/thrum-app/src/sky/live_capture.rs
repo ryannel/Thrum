@@ -70,14 +70,14 @@ fn live(
     };
     // The window applies the file and reloads the game once it is up; so does this.
     live.reload_params(false)?;
-    let mut host = live.game.build_host(
+    let mut host = pollster::block_on(live.game.build_host(
         &capabilities,
         &queue,
         FrameConfig {
             render_extent: extent,
             surface: None,
         },
-    )?;
+    ))?;
     capture::wait_drawn(&mut live.game, &mut host)?;
     live.host = Some(host);
     live.reload_game();

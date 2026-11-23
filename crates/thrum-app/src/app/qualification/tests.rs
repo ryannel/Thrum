@@ -1,7 +1,9 @@
 //! Real Metal completion → qualification observer → platform reply regression.
 use super::*;
 use crate::{
-    app::render_actor::{FrameCounters, RenderOutcome, RenderReply, SurfaceStatus},
+    app::render_actor::{
+        FrameCounters, FrameReadback, RenderOutcome, RenderReply, SurfaceStatus, collect_observer,
+    },
     sky::StillWorld,
 };
 use std::time::Duration;
@@ -61,8 +63,6 @@ fn observer(host: &mut FrameHost<StillWorld, NativeScene>) -> Observer {
 
 fn reply(report: DriveReport, lost: bool) -> RenderReply<()> {
     RenderReply {
-        profile_revision: 0,
-        profile_minimum: 0,
         sequence: 1,
         device_generation: 7,
         outcome: if lost {
@@ -71,14 +71,18 @@ fn reply(report: DriveReport, lost: bool) -> RenderReply<()> {
             RenderOutcome::Frame(Ok(report))
         },
         samples: [None, None],
-        counters: FrameCounters::default(),
-        worker_wall: Duration::ZERO,
         target_status: None,
         acquire_wall: None,
-        surface_status: SurfaceStatus::Presented,
-        transition_error: None,
         surface_extent: [64, 64],
-        readback: (),
+        platform: FrameReadback {
+            profile_revision: 0,
+            profile_minimum: 0,
+            counters: FrameCounters::default(),
+            worker_wall: Duration::ZERO,
+            surface_status: SurfaceStatus::Presented,
+            transition_error: None,
+            readback: (),
+        },
     }
 }
 
@@ -158,7 +162,7 @@ async fn recover_observer(
                     timeout: Some(Duration::from_secs(10)),
                 })
                 .unwrap();
-            reply.collect_observer(&watch, host, Some(observer));
+            collect_observer(&mut reply, &watch, host, Some(observer));
             assert!(matches!(reply.outcome, RenderOutcome::Frame(Ok(_))));
             None
         },
@@ -254,7 +258,7 @@ fn metal_observer_preserves_and_discovers_native_loss_in_platform_reply() {
             assert!(!watch.is_lost());
             // This is the production Actor::work epilogue, including the real
             // active observer and renderer tap, not just frame_failure mapping.
-            reply.collect_observer(&watch, &mut host, Some(&mut observer));
+            collect_observer(&mut reply, &watch, &mut host, Some(&mut observer));
             assert_eq!(reply.device_generation, 7);
             assert!(!watch.is_lost());
             if case == "rejection" {

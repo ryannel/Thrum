@@ -48,7 +48,7 @@
     </main>
     <script type="module">
       import init, { create_browser_game, create_field_game, create_sprite_game, fetch_cooked_valley } from "./v1_game.js";
-      import { mountControls } from "./thrum-controls.js";
+      import { bindControls } from "./thrum-controls.js";
 
       const canvas = document.querySelector("#scene");
       const status = document.querySelector("#status");
@@ -161,9 +161,8 @@
         // Sliders, the pause toggle and the Sun readout come from the game's typed controls.
         // Edits go through the game's checked setters at once; pause takes the same path as
         // set_paused. These ids predate the model and the browser check drives them.
-        const controls = mountControls(document.querySelector("#demo-controls"), game.controls_json(), {
-          edit: (key, value) => { if (!stopped) game.edit_control(key, value, performance.now()); },
-          changes: () => game.control_changes(),
+        const controls = bindControls(document.querySelector("#demo-controls"), game, {
+          canEdit: () => !stopped,
           ids: { "sky.solar_time": "solar-time", "camera.yaw": "camera-yaw", "camera.pitch": "camera-pitch", "world.paused": "pause-world" },
           onError: (error) => { status.textContent = `Control fault: ${error}`; },
         });

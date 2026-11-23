@@ -1,37 +1,62 @@
-//! The boundary between the generic window shell and one game.
+//! The boundary between the platform adapters and one game.
 
-use std::time::Instant;
+use std::{future::Future, time::Duration};
+use web_time::Instant;
 
 use thrum_controls::Controls;
+#[cfg(not(target_arch = "wasm32"))]
 use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
     runtime::{FrameHost, FrameWorld, SceneSource},
 };
-use winit::keyboard::KeyCode;
 
 /// The platform's first device, queue and configured surface, lent to [`Game::prepare`].
 pub struct Gpu<'a> {
-    /// Device created by the shell's Metal recipe.
+    /// Device created by the shell's device recipe.
     pub device: &'a wgpu::Device,
     /// Queue paired with `device`.
     pub queue: &'a wgpu::Queue,
     /// Immutable capability record of `device`.
     pub capabilities: &'a DeviceCapabilities,
-    /// Format and extent of the configured window surface.
+    /// Format and extent of the configured presentation target.
     pub surface: SurfaceProfile,
 }
 
 /// A game's prepared frame runtime, handed to the render owner thread.
 pub struct Prepared<W: FrameWorld, V: SceneSource<W::Page>> {
-    /// The runtime host; its world should already run on its own lane.
+    /// The runtime host; the world can run inline or on a resident lane.
     pub host: FrameHost<W, V>,
     /// Monotonic origin of the world clock; render times are measured from it.
     pub origin: Instant,
 }
 
+impl<W: FrameWorld, V: SceneSource<W::Page>> Prepared<W, V> {
+    /// A runtime with an inline world, whose time is supplied by its adapter.
+    pub fn inline(host: FrameHost<W, V>) -> Self {
+        Self {
+            host,
+            origin: Instant::now(),
+        }
+    }
+}
+
+/// The world's lifecycle as the shell drives it. The world owns its clock and the drain of
+/// accepted ticks; the shell decides only when to pause and when to resume.
+pub trait InlineWorld: FrameWorld {
+    /// Stop admitting wall time, keeping accepted ticks.
+    /// # Errors
+    /// Returns a world lifecycle refusal.
+    fn pause(&mut self) -> Result<(), String>;
+    /// Resume from `now` after the accepted ticks have drained.
+    /// # Errors
+    /// Returns a clock state or timestamp refusal.
+    fn resume(&mut self, now: Duration) -> Result<(), String>;
+}
+
 /// Lifecycle control of a world that runs on its own lane, used for pause and overload.
+#[cfg(not(target_arch = "wasm32"))]
 pub trait WorldLink {
     /// Request a transition without waiting for it.
     /// # Errors
@@ -67,16 +92,13 @@ pub enum KeyResponse {
     Input,
 }
 
-/// One game hosted by the shell. The shell owns the window, device, render thread, pause,
-/// recovery and panel; the game owns its runtime, controls model and game keys.
-///
-/// The shell handles `R` while the GPU is unavailable, `P` when [`Game::world`] is present,
-/// and `L` (reload `THRUM_PARAMS`, then [`Game::reload`]); every other key reaches [`Game::key`].
+/// The runtime half of a game, shared by window, browser and offscreen adapters.
+/// The adapter owns presentation, GPU recovery and the control view.
 pub trait Game {
     /// The runtime's world adapter.
-    type World: FrameWorld + Send + 'static;
+    type World: FrameWorld + 'static;
     /// The runtime's game-owned scene source.
-    type Scene: SceneSource<<Self::World as FrameWorld>::Page> + Send + 'static;
+    type Scene: SceneSource<<Self::World as FrameWorld>::Page> + 'static;
     /// Edits applied by the render owner before a frame.
     type Edits: Edits;
     /// A small value read on the render owner after each job and observed on the main thread.
@@ -91,12 +113,13 @@ pub trait Game {
     /// a resident world lane commits.
     /// # Errors
     /// A game, content or engine preparation failure, which ends the run.
-    fn prepare(
-        &mut self,
-        gpu: Gpu<'_>,
+    fn prepare<'a>(
+        &'a mut self,
+        gpu: Gpu<'a>,
         world_advanced: Box<dyn Fn() + Send>,
-    ) -> Result<Prepared<Self::World, Self::Scene>, String>;
+    ) -> impl Future<Output = Result<Prepared<Self::World, Self::Scene>, String>> + 'a;
     /// Lifecycle control of a resident world, once prepared; `None` disables pause.
+    #[cfg(not(target_arch = "wasm32"))]
     fn world(&self) -> Option<&dyn WorldLink> {
         None
     }
@@ -138,10 +161,16 @@ pub trait Game {
     fn observe_paused(&mut self, paused: bool) {
         let _ = paused;
     }
+}
+
+/// An input adapter for the key type supplied by a shell.
+pub trait GameInput<K> {
     /// Handle a game key.
     /// # Errors
     /// A refused input, which ends the run.
-    fn key(&mut self, code: KeyCode, pressed: bool) -> Result<KeyResponse, String>;
+    fn key(&mut self, _code: K, _pressed: bool) -> Result<KeyResponse, String> {
+        Ok(KeyResponse::Ignored)
+    }
     /// Release held input when the window loses focus; the shell then requests a frame.
     /// # Errors
     /// A refused input, which ends the run.
@@ -154,6 +183,7 @@ pub trait Game {
 /// keeps its value while the others apply. The window and a live capture share it.
 /// # Errors
 /// The file cannot be read or is not a parameter file; every control keeps its value.
+#[cfg(target_os = "macos")]
 pub(crate) fn apply_params_file(
     path: &std::path::Path,
     controls: &mut Controls,

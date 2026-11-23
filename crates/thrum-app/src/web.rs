@@ -19,35 +19,23 @@ use thrum_render::{
     capabilities::{DeviceCapabilities, DeviceWatch, configure_surface},
     contribution::SceneContribution,
     present::SurfaceProfile,
-    runtime::{
-        FrameConfig, FrameHost, FrameSample, FrameWorld, PendingCapture, SceneSource, SurfaceOutput,
-    },
+    runtime::{FrameConfig, FrameHost, FrameSample, PendingCapture, SceneSource, SurfaceOutput},
 };
 use web_sys::HtmlCanvasElement;
 
 use crate::{
+    Game, Gpu, InlineWorld,
     surface::{SurfaceAction, surface_action},
     web_clock::PageClock,
 };
 
 mod capture;
+mod controls;
+pub use controls::ControlBinding;
 mod recovery;
 
 /// Frame samples kept per device generation, the size of one report.
 pub const SAMPLES: usize = 600;
-
-/// The world's lifecycle as the shell drives it. The world owns its clock and the drain of
-/// accepted ticks; the shell decides only when to pause and when to resume.
-pub trait WebWorld: FrameWorld {
-    /// Stop admitting wall time, keeping accepted ticks.
-    /// # Errors
-    /// Returns a world lifecycle refusal.
-    fn pause(&mut self) -> Result<(), String>;
-    /// Resume from `now` after the accepted ticks have drained.
-    /// # Errors
-    /// Returns a clock state or timestamp refusal.
-    fn resume(&mut self, now: Duration) -> Result<(), String>;
-}
 
 /// The first device, handed to the game to prepare its runtime. The `FrameHost` it returns
 /// keeps generation-bound handles, which the shell replaces through recovery; the game must not
@@ -98,7 +86,7 @@ pub struct WebStatus {
 }
 
 /// One canvas, its WebGPU device and a game's frame runtime.
-pub struct WebShell<W: WebWorld, V: SceneSource<W::Page>> {
+pub struct WebShell<W: InlineWorld, V: SceneSource<W::Page>> {
     canvas: HtmlCanvasElement,
     adapter_name: String,
     surface: Rc<wgpu::Surface<'static>>,
@@ -134,7 +122,7 @@ pub async fn create<W, V, F, Fut>(
     prepare: F,
 ) -> Result<WebShell<W, V>, String>
 where
-    W: WebWorld,
+    W: InlineWorld,
     V: SceneSource<W::Page>,
     F: FnOnce(WebGpu) -> Fut,
     Fut: Future<Output = Result<FrameHost<W, V>, String>>,
@@ -197,7 +185,63 @@ where
     })
 }
 
-impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
+/// Prepare a game for the page. The page drives the inline world and its own clock.
+/// # Errors
+/// Returns a device, surface or game preparation failure.
+pub async fn create_game<G: Game>(
+    canvas: HtmlCanvasElement,
+    generation: u64,
+    game: &mut G,
+) -> Result<WebShell<G::World, G::Scene>, String>
+where
+    G::World: InlineWorld,
+{
+    create(canvas, generation, |gpu| async move {
+        let prepared = game
+            .prepare(
+                Gpu {
+                    device: &gpu.device,
+                    queue: &gpu.queue,
+                    capabilities: &gpu.capabilities,
+                    surface: gpu.frame_config.surface.ok_or("canvas profile missing")?,
+                },
+                Box::new(|| {}),
+            )
+            .await?;
+        Ok(prepared.host)
+    })
+    .await
+}
+
+impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
+    /// Apply the game's pending control edits, including an explicit pause request.
+    /// # Errors
+    /// Returns a refused game edit or world lifecycle transition.
+    pub fn apply_game_edits<G>(&mut self, game: &mut G, timestamp_ms: f64) -> Result<(), String>
+    where
+        G: Game<World = W, Scene = V>,
+    {
+        let (edits, paused) = game.take_edits();
+        G::apply(&mut self.host, edits)?;
+        if let Some(paused) = paused {
+            self.set_paused(paused, timestamp_ms)?;
+            game.observe_paused(self.paused());
+        }
+        Ok(())
+    }
+
+    /// Run the game's frame hooks and drive a browser animation callback.
+    /// # Errors
+    /// Returns a refused game edit or frame error.
+    pub fn frame_game<G>(&mut self, game: &mut G, timestamp_ms: f64) -> Result<(), String>
+    where
+        G: Game<World = W, Scene = V>,
+    {
+        game.observe(G::readback(&self.host));
+        G::apply(&mut self.host, game.frame_edits())?;
+        self.frame(timestamp_ms)
+    }
+
     /// Bind a declared profiler to this page. Report pages retain timing demand.
     pub fn update_profiler(
         &mut self,

@@ -1,8 +1,9 @@
 //! Browser access to the renderer-owned submitted-output tap.
-use super::{WebShell, WebWorld};
+use super::WebShell;
+use crate::InlineWorld;
 use thrum_render::runtime::{FrameError, SceneSource, SubmittedImage};
 
-impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
+impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Begin a bounded submitted-output session on the healthy canvas device.
     /// # Errors
     /// Refuses a lost device, an active session or a resource allocation failure.

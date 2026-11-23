@@ -26,15 +26,15 @@ use v1_game::{GameHost, GameScene, GameWorld, WorldControls};
 const RECOVER_HOLD_MAX: Duration = Duration::from_secs(300);
 /// Sleep slice inside qualification holds, so a loss can land inside them.
 const HOLD_SLICE: Duration = Duration::from_millis(20);
-use thrum_app::surface::{SurfaceAction, surface_action};
+use thrum_app::{
+    frame::SAMPLE_SLOTS,
+    surface::{SurfaceAction, surface_action},
+};
 use wgpu::TextureViewDescriptor;
 
 use crate::lease::{Leased, SurfaceLease};
 
 pub(super) const THREAD: &str = "thrum-v1-ios-render";
-/// Completed samples polled per job; the host retains at most this many frames.
-const SAMPLE_SLOTS: usize = 2;
-
 pub(super) type Lease = SurfaceLease<wgpu::Surface<'static>>;
 pub(super) type RenderWorker = FrameWorker<Job, Reported>;
 
@@ -72,12 +72,9 @@ const _: fn() = || {
     assert_send::<Job>();
 };
 
-pub(super) struct FrameRequest {
-    pub(super) epoch: u64,
-    /// The device generation the shell believes current.
-    pub(super) generation: u64,
-    pub(super) target_media_seconds: f64,
-    pub(super) extent: [u32; 2],
+pub(super) type FrameRequest = thrum_app::frame::FrameRequest<FrameAdmission>;
+
+pub(super) struct FrameAdmission {
     /// The shell permits drawable acquisition (its view is shown).
     pub(super) present: bool,
     /// Qualification only: hold an acquired drawable inside the lease section.
@@ -112,33 +109,26 @@ pub(super) enum SurfaceStatus {
     StaleGeneration,
 }
 
+pub(super) type FrameReply = thrum_app::frame::FrameReply<Option<DriveReport>, FrameObservation>;
+
 #[expect(
     clippy::struct_excessive_bools,
     reason = "independent per-frame witnesses, not a state machine"
 )]
-pub(super) struct FrameReply {
+pub(super) struct FrameObservation {
+    /// Lease epoch admitted by the request.
     pub(super) epoch: u64,
-    /// The owner's device generation when it replied.
-    pub(super) generation: u64,
-    /// The request's surface extent, which a presented drawable has.
-    pub(super) extent: [u32; 2],
     pub(super) frame_extent: Option<thrum_render::runtime::FrameExtent>,
     pub(super) drawable: [u32; 2],
     pub(super) status: SurfaceStatus,
-    pub(super) report: Option<DriveReport>,
     pub(super) cooked: String,
-    pub(super) completed: u32,
-    pub(super) surface_samples: u32,
     pub(super) pending_frames: usize,
-    pub(super) target: TargetLeadStatus,
     pub(super) acquired: bool,
     /// The acquire call ran without the requested epoch and extent configured.
     pub(super) unconfigured_acquire: bool,
     pub(super) presentable_encode: bool,
     pub(super) configured: bool,
     pub(super) stalled: bool,
-    /// Wall time inside `get_current_texture`, which Metal may block.
-    pub(super) acquire: Duration,
     /// Presented, then found revoked: the present was ordered before the
     /// shell's revocation.
     pub(super) raced_present: bool,
@@ -298,7 +288,7 @@ pub(super) fn start(
     .map_err(|error| format!("iOS render owner: {error}"))
 }
 
-impl FrameReply {
+impl FrameObservation {
     fn native_witness(&mut self, host: &super::Host) {
         if let Some(native) = host.native_witness_report() {
             let _ = write!(
@@ -313,33 +303,34 @@ impl FrameReply {
             );
         }
     }
-
-    fn new(request: &FrameRequest, generation: u64, target: TargetLeadStatus) -> Self {
-        Self {
-            epoch: request.epoch,
-            generation,
-            extent: request.extent,
+}
+fn frame_reply(request: &FrameRequest, generation: u64, target: TargetLeadStatus) -> FrameReply {
+    FrameReply {
+        sequence: request.sequence,
+        device_generation: generation,
+        outcome: None,
+        samples: [const { None }; SAMPLE_SLOTS],
+        target_status: Some(target),
+        acquire_wall: None,
+        surface_extent: request.extent,
+        platform: FrameObservation {
+            epoch: request.surface_generation,
             frame_extent: None,
             drawable: [0; 2],
             status: SurfaceStatus::NoView,
-            report: None,
             cooked: String::new(),
-            completed: 0,
-            surface_samples: 0,
             pending_frames: 0,
-            target,
             acquired: false,
             unconfigured_acquire: false,
             presentable_encode: false,
             configured: false,
             stalled: false,
-            acquire: Duration::ZERO,
             raced_present: false,
             extent_dropped: false,
             old_extent_present: false,
             empty_submit: false,
             abandoned: false,
-        }
+        },
     }
 }
 
@@ -449,8 +440,8 @@ impl Owner {
     fn frame(&mut self, request: &FrameRequest) -> Result<FrameReply, String> {
         let unrun = |generation, status| {
             let lead = display_target_lead(request.target_media_seconds, media_time_now());
-            let mut reply = FrameReply::new(request, generation, lead.status);
-            reply.status = status;
+            let mut reply = frame_reply(request, generation, lead.status);
+            reply.platform.status = status;
             reply
         };
         {
@@ -466,7 +457,7 @@ impl Owner {
                     self.capture.failed(&mut gpu.host, &self.signals, &error);
                 }
                 let mut reply = unrun(gpu.watch.generation, SurfaceStatus::NoLease);
-                reply.native_witness(&gpu.host);
+                reply.platform.native_witness(&gpu.host);
                 return Ok(reply);
             }
             if self.signals.stale_wake.swap(false, Ordering::AcqRel)
@@ -492,7 +483,7 @@ impl Owner {
                 }
                 return Ok(unrun(gpu.watch.generation, SurfaceStatus::DeviceLost));
             }
-            if request.generation != gpu.watch.generation {
+            if request.device_generation != gpu.watch.generation {
                 return Ok(unrun(gpu.watch.generation, SurfaceStatus::StaleGeneration));
             }
         }
@@ -518,7 +509,7 @@ impl Owner {
                 // The error may follow an acquisition: assume a drawable was
                 // held so the shell replaces the surface (walk step 6).
                 let mut reply = unrun(gpu.watch.generation, SurfaceStatus::DeviceLost);
-                reply.acquired = true;
+                reply.platform.acquired = true;
                 Ok(reply)
             }
             Err(error) => Err(error.to_string()),
@@ -683,30 +674,30 @@ impl Owner {
             .map_err(FrameError::Scene)?;
         }
         gpu.host.set_presentation_lead(lead.duration);
-        let mut reply = FrameReply::new(request, gpu.watch.generation, lead.status);
+        let mut reply = frame_reply(request, gpu.watch.generation, lead.status);
         let usable = !request.extent.contains(&0);
-        let ready = if !request.present || !usable {
-            reply.status = SurfaceStatus::Denied;
+        let ready = if !request.platform.present || !usable {
+            reply.platform.status = SurfaceStatus::Denied;
             false
         } else {
-            match lease.section(request.epoch, |leased| {
+            match lease.section(request.surface_generation, |leased| {
                 gpu.configure(leased, request, &lease)
             }) {
                 None => {
-                    reply.status = SurfaceStatus::NoLease;
+                    reply.platform.status = SurfaceStatus::NoLease;
                     false
                 }
                 Some(Err(error)) => return Err(error),
                 Some(Ok(configured)) => {
-                    reply.configured = configured.is_some_and(|fresh| fresh);
+                    reply.platform.configured = configured.is_some_and(|fresh| fresh);
                     if configured.is_none() {
-                        reply.status = SurfaceStatus::Reconfigure;
+                        reply.platform.status = SurfaceStatus::Reconfigure;
                     }
                     configured.is_some()
                 }
             }
         };
-        reply.report = if ready {
+        reply.outcome = if ready {
             gpu.present(
                 now,
                 &lease,
@@ -717,7 +708,7 @@ impl Owner {
                 &self.signals.background,
                 self.diagnostics,
             )?
-        } else if !usable || reply.status == SurfaceStatus::Reconfigure {
+        } else if !usable || reply.platform.status == SurfaceStatus::Reconfigure {
             // Drain old-grid submissions before resizing. Encoding another old
             // view here can keep a busy ring occupied indefinitely.
             drop(gpu.host.advance(now)?);
@@ -725,18 +716,17 @@ impl Owner {
         } else {
             Some(gpu.host.drive(now, None)?)
         };
-        if reply.status == SurfaceStatus::DeviceLost {
+        if reply.platform.status == SurfaceStatus::DeviceLost {
             // Lost inside the section: no completion poll on the lost device.
             return Ok(reply);
         }
-        for _ in 0..SAMPLE_SLOTS {
-            let Some(sample) = gpu.host.poll_completed()? else {
+        for slot in &mut reply.samples {
+            *slot = gpu.host.poll_completed()?;
+            if slot.is_none() {
                 break;
-            };
-            reply.completed += 1;
-            reply.surface_samples += u32::from(sample.surface_presented);
+            }
         }
-        reply.cooked = gpu
+        reply.platform.cooked = gpu
             .cooked
             .as_ref()
             .and_then(|stats| stats.lock().ok())
@@ -747,16 +737,16 @@ impl Owner {
                     stats.swaps.last().and_then(|swap| swap.texture_profile)
                 )
             });
-        reply.pending_frames = gpu.host.pending_frames();
-        reply.native_witness(&gpu.host);
+        reply.platform.pending_frames = gpu.host.pending_frames();
+        reply.platform.native_witness(&gpu.host);
         let culling = gpu.host.culling_selection();
         let _ = write!(
-            reply.cooked,
+            reply.platform.cooked,
             "\nculling_requested={:?}\nculling_resolved={:?}\nculling_reason={:?}\n",
             culling.requested, culling.resolved, culling.reason
         );
         if let Some(view) = &gpu.cooked_view {
-            reply.cooked.push_str(&view.witness());
+            reply.platform.cooked.push_str(&view.witness());
         }
         if self.diagnostics
             && let Err(error) = self
@@ -778,17 +768,16 @@ impl Gpu {
         request: &FrameRequest,
         lease: &Lease,
     ) -> Result<Option<bool>, FrameError> {
-        if leased.configured == Some((request.epoch, request.extent)) {
+        if leased.configured == Some((request.surface_generation, request.extent)) {
             return Ok(Some(false));
         }
         if self.host.pending_frames() != 0 {
             return Ok(None);
         }
         if request.extent != self.host_extent {
-            if !self
-                .host
-                .resize_scene_surface_if(request.extent, || lease.is_current(request.epoch))?
-            {
+            if !self.host.resize_scene_surface_if(request.extent, || {
+                lease.is_current(request.surface_generation)
+            })? {
                 return Ok(None);
             }
             self.host_extent = request.extent;
@@ -811,7 +800,7 @@ impl Gpu {
         config.desired_maximum_frame_latency = 2;
         configure_surface(&leased.surface, &self.device, &config)
             .map_err(|_| FrameError::InvalidState("iOS surface configuration refused"))?;
-        leased.configured = Some((request.epoch, request.extent));
+        leased.configured = Some((request.surface_generation, request.extent));
         Ok(Some(true))
     }
 
@@ -839,9 +828,9 @@ impl Gpu {
             return Ok(Some(encoded.skip()));
         }
         if diagnostics {
-            reply.frame_extent = encoded.frame_extent();
+            reply.platform.frame_extent = encoded.frame_extent();
         }
-        reply.presentable_encode = true;
+        reply.platform.presentable_encode = true;
         let queue = &self.queue;
         let device = &self.device;
         let watch = &self.watch;
@@ -851,21 +840,22 @@ impl Gpu {
             return Ok(abandon(encoded, reply));
         }
         let mut pending = Some(encoded);
-        let result = lease.section(request.epoch, |leased| {
+        let result = lease.section(request.surface_generation, |leased| {
             let encoded = pending
                 .take()
                 .expect("encoded frame enters the section once");
             if background.load(Ordering::Acquire) {
-                reply.status = SurfaceStatus::NoLease;
+                reply.platform.status = SurfaceStatus::NoLease;
                 return Ok(Some(encoded.cancel_background()));
             }
             let acquiring = Instant::now();
-            reply.unconfigured_acquire = leased.configured != Some((request.epoch, request.extent));
+            reply.platform.unconfigured_acquire =
+                leased.configured != Some((request.surface_generation, request.extent));
             let action = surface_action(leased.surface.get_current_texture());
-            reply.acquire = acquiring.elapsed();
+            reply.acquire_wall = Some(acquiring.elapsed());
             if is_lost() {
                 // wgpu's callback fired during the acquire.
-                reply.acquired = matches!(action, SurfaceAction::Draw { .. });
+                reply.platform.acquired = matches!(action, SurfaceAction::Draw { .. });
                 drop(action);
                 return Ok(abandon(encoded, reply));
             }
@@ -877,21 +867,21 @@ impl Gpu {
                     frame
                 }
                 SurfaceAction::Skip { .. } => {
-                    reply.status = SurfaceStatus::Missing;
+                    reply.platform.status = SurfaceStatus::Missing;
                     return Ok(Some(cancel_revoked(encoded, reply, background)));
                 }
                 SurfaceAction::Reconfigure { .. } => {
                     leased.configured = None;
-                    reply.status = SurfaceStatus::Reconfigure;
+                    reply.platform.status = SurfaceStatus::Reconfigure;
                     return Ok(Some(cancel_revoked(encoded, reply, background)));
                 }
             };
-            reply.acquired = true;
+            reply.platform.acquired = true;
             let hold = |point: StallPoint, reply: &mut FrameReply| {
-                if let Some((at, stall)) = request.stall
+                if let Some((at, stall)) = request.platform.stall
                     && at == point
                 {
-                    reply.stalled = true;
+                    reply.platform.stalled = true;
                     stalling();
                     // A route `lose-device` that lands inside the hold destroys
                     // the device while this drawable is held.
@@ -902,7 +892,7 @@ impl Gpu {
                         // finish this qualification hold and refuse the frame.
                         if native_hold
                             && background.load(Ordering::Acquire)
-                            && !lease.is_current(request.epoch)
+                            && !lease.is_current(request.surface_generation)
                         {
                             break;
                         }
@@ -920,8 +910,8 @@ impl Gpu {
                 drop(frame);
                 return Ok(abandon(encoded, reply));
             }
-            if !lease.is_current(request.epoch) {
-                reply.status = SurfaceStatus::StaleDropped;
+            if !lease.is_current(request.surface_generation) {
+                reply.platform.status = SurfaceStatus::StaleDropped;
                 drop(frame);
                 return Ok(Some(cancel_revoked(encoded, reply, background)));
             }
@@ -930,23 +920,23 @@ impl Gpu {
                 view: &view,
                 extent: request.extent,
             }))?;
-            if !lease.is_current(request.epoch) {
-                reply.status = SurfaceStatus::StaleDropped;
+            if !lease.is_current(request.surface_generation) {
+                reply.platform.status = SurfaceStatus::StaleDropped;
                 drop(frame);
             } else if report.surface_presented {
                 let drawn = [frame.texture.width(), frame.texture.height()];
-                reply.drawable = drawn;
+                reply.platform.drawable = drawn;
                 if drawn != lease.observed_extent() {
-                    reply.status = SurfaceStatus::StaleDropped;
-                    reply.extent_dropped = true;
+                    reply.platform.status = SurfaceStatus::StaleDropped;
+                    reply.platform.extent_dropped = true;
                     drop(frame);
                     return Ok(Some(report));
                 }
                 hold(StallPoint::BeforePresent, reply);
                 queue.present(frame);
-                reply.status = SurfaceStatus::Presented;
-                reply.raced_present = !lease.is_current(request.epoch);
-                reply.old_extent_present = drawn != lease.observed_extent();
+                reply.platform.status = SurfaceStatus::Presented;
+                reply.platform.raced_present = !lease.is_current(request.surface_generation);
+                reply.platform.old_extent_present = drawn != lease.observed_extent();
             }
             Ok(Some(report))
         });
@@ -962,7 +952,7 @@ impl Gpu {
         if self.destroyed || self.watch.is_lost() {
             return Ok(abandon(encoded, reply));
         }
-        reply.status = SurfaceStatus::NoLease;
+        reply.platform.status = SurfaceStatus::NoLease;
         Ok(Some(cancel_revoked(encoded, reply, background)))
     }
 }
@@ -973,8 +963,8 @@ fn abandon(
     encoded: EncodedFrame<'_, GameWorld, GameScene>,
     reply: &mut FrameReply,
 ) -> Option<DriveReport> {
-    reply.status = SurfaceStatus::DeviceLost;
-    reply.abandoned = true;
+    reply.platform.status = SurfaceStatus::DeviceLost;
+    reply.platform.abandoned = true;
     encoded.abandon_lost_device();
     None
 }
@@ -996,7 +986,7 @@ fn cancel_revoked(
 /// Skip a recorded frame on a healthy device. The engine flushes its staged
 /// writes with an empty queue submit, which the witness counts.
 fn skip(encoded: EncodedFrame<'_, GameWorld, GameScene>, reply: &mut FrameReply) -> DriveReport {
-    reply.empty_submit = true;
+    reply.platform.empty_submit = true;
     encoded.skip()
 }
 

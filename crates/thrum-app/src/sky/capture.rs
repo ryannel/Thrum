@@ -60,14 +60,14 @@ fn capture(
     let (device, queue, capabilities) =
         pollster::block_on(headless_device()).map_err(|error| error.to_string())?;
     let extent = config.window_size;
-    let mut host = game.build_host(
+    let mut host = pollster::block_on(game.build_host(
         &capabilities,
         &queue,
         FrameConfig {
             render_extent: extent,
             surface: None,
         },
-    )?;
+    ))?;
     wait_drawn(&mut game, &mut host)?;
     reload(config.name, &mut game, &mut host)?;
     let pixels = host.capture_pixels().map_err(|error| error.to_string())?;

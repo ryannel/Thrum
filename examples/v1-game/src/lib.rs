@@ -17,6 +17,8 @@ pub mod effect;
 mod exit_scene;
 mod field_meshes;
 mod host;
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+mod hosted;
 pub mod lent;
 mod scene;
 mod showcase;

@@ -29,7 +29,7 @@ pub mod capture_writer;
     expect(dead_code, reason = "only the macOS shell starts the watcher")
 )]
 mod file_watch;
-#[cfg(target_os = "macos")]
+pub mod frame;
 mod game;
 #[cfg(target_os = "macos")]
 pub mod offscreen;
@@ -43,12 +43,14 @@ mod web_clock;
 
 #[cfg(target_os = "macos")]
 pub use app::{
-    ExtentWindow, REPORT_VARIABLE, TransitionArm, WindowExtentCapture, WindowTransitionProof, run,
-    run_until_closed, run_with_extent_capture, run_with_transition_proof,
+    ExtentWindow, REPORT_VARIABLE, TransitionArm, WindowExtentCapture, WindowGame,
+    WindowQualification, WindowTransitionProof, run, run_until_closed, run_with_extent_capture,
+    run_with_qualification, run_with_transition_proof,
 };
-#[cfg(target_os = "macos")]
-pub use game::{Edits, Game, Gpu, KeyResponse, Prepared, WorldLink};
-/// Physical key codes delivered to [`Game::key`].
+#[cfg(not(target_arch = "wasm32"))]
+pub use game::WorldLink;
+pub use game::{Edits, Game, GameInput, Gpu, InlineWorld, KeyResponse, Prepared};
+/// Physical key codes delivered to [`GameInput::key`].
 #[cfg(target_os = "macos")]
 pub use winit::keyboard::KeyCode;
 

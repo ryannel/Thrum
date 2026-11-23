@@ -6,12 +6,12 @@ use thrum_asset_gpu::RemoteFeed;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
-use super::{FALLBACK_EXPOSURE, SkyGame, SkyScene, StillWorld, ground_scene};
+use super::{SkyGame, SkyScene, StillWorld};
 use crate::{
-    Config,
-    web::{self, WebShell, WebWorld},
+    Config, InlineWorld,
+    web::{self, ControlBinding, WebShell},
 };
-use thrum_render::{capabilities::FIRST_DEVICE_GENERATION, runtime::FrameHost};
+use thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 
 type Builder = Box<dyn FnOnce() -> Result<SkyGame, Box<dyn Error>>>;
 thread_local! {
@@ -32,7 +32,7 @@ pub(super) fn feed() -> Result<RemoteFeed, String> {
     })
 }
 
-impl WebWorld for StillWorld {
+impl InlineWorld for StillWorld {
     fn pause(&mut self) -> Result<(), String> {
         StillWorld::pause(self);
         Ok(())
@@ -48,7 +48,7 @@ impl WebWorld for StillWorld {
 pub struct BrowserScene {
     shell: WebShell<StillWorld, SkyScene>,
     game: SkyGame,
-    seen: u64,
+    binding: ControlBinding,
     kept: Option<(u64, String)>,
     config: Config,
     transport_error: Rc<RefCell<Option<String>>>,
@@ -74,36 +74,9 @@ pub async fn create_scene(
         .with(|slot| slot.borrow_mut().take())
         .ok_or_else(|| js("scene builder was not registered; rebuild with ./dev starter --web"))?;
     let mut game = build().map_err(js)?;
-    let _ = game.update();
-    let scene = SkyScene {
-        temporal_sampling: game.temporal_sampling,
-        presentation_camera: game.presentation_camera.take(),
-        overlay: game.overlay,
-        sky: game.sky,
-        ground: game.ground.is_some(),
-    };
-    let ground = ground_scene(game.ground, &game.local_lights).map_err(js)?;
-    let contribution = game.contribution.take();
-    let world = game.take_world();
-    let shell = web::create(canvas, FIRST_DEVICE_GENERATION, |gpu| async move {
-        let mut host = FrameHost::new(
-            &gpu.capabilities,
-            &gpu.queue,
-            gpu.frame_config,
-            world,
-            scene,
-            ground,
-            FALLBACK_EXPOSURE,
-        )
+    let shell = web::create_game(canvas, FIRST_DEVICE_GENERATION, &mut game)
         .await
-        .map_err(|error| error.to_string())?;
-        if let Some(contribution) = contribution {
-            host.set_scene_contribution(contribution)?;
-        }
-        Ok(host)
-    })
-    .await
-    .map_err(js)?;
+        .map_err(js)?;
     let transport_error = Rc::new(RefCell::new(None));
     let polling_error = Rc::clone(&transport_error);
     // The client lives in this detached loop, with exactly one outstanding long poll.
@@ -125,7 +98,7 @@ pub async fn create_scene(
     Ok(BrowserScene {
         shell,
         game,
-        seen: 0,
+        binding: ControlBinding::default(),
         kept: None,
         config,
         transport_error,
@@ -176,15 +149,7 @@ impl BrowserScene {
     /// Reports asset, input, clock or graphics failures with their cause.
     pub fn frame(&mut self, now: f64) -> Result<(), JsValue> {
         self.shell.update_profiler(&mut self.game.controls, false);
-        if let Some(sky) = self.game.update().0 {
-            if sky.temporal_inputs {
-                self.shell.continuous_source_mut().sky = sky;
-            } else {
-                self.shell.source_mut().sky = sky;
-            }
-        }
-        self.game.poll_reload();
-        self.shell.frame(now).map_err(js)
+        self.shell.frame_game(&mut self.game, now).map_err(js)
     }
     /// Preserve the shell's page clock policy.
     /// # Errors
@@ -195,40 +160,18 @@ impl BrowserScene {
         Ok(())
     }
     /// Model description used by the DOM view.
-    pub fn controls_json(&self) -> String {
-        self.game.controls.describe_json()
+    pub fn controls_json(&mut self) -> String {
+        self.binding.describe(&self.game.controls)
     }
     /// Only changes since the DOM's last refresh.
     pub fn control_changes(&mut self) -> Option<String> {
-        let revision = self.game.controls.revision();
-        if revision == self.seen {
-            return None;
-        }
-        let json = self.game.controls.changes_json(self.seen);
-        self.seen = revision;
-        Some(json)
+        self.binding.changes(&self.game.controls)
     }
     /// Apply a widget edit through the model setters used by the Mac panel.
     /// # Errors
     /// Reports an unknown key, incompatible value or unsupported browser argument.
     pub fn edit_control(&mut self, key: &str, value: &JsValue) -> Result<bool, JsValue> {
-        let model = &mut self.game.controls;
-        let id = model.lookup(key).map_err(js)?;
-        let changed = if let Some(number) = value.as_f64() {
-            model.edit_display(id, number).map_err(js)
-        } else if let Some(on) = value.as_bool() {
-            model
-                .edit_value(id, thrum_controls::Value::Flag(on))
-                .map_err(js)
-        } else if let Some(text) = value.as_string() {
-            model
-                .edit_value(id, thrum_controls::Value::Text(text))
-                .map_err(js)
-        } else {
-            Err(js(
-                "browser control input needs a number, boolean or string",
-            ))
-        }?;
+        let changed = ControlBinding::edit(&mut self.game.controls, key, value)?;
         self.shell.update_profiler(&mut self.game.controls, false);
         Ok(changed)
     }
@@ -237,7 +180,7 @@ impl BrowserScene {
     /// # Errors
     /// Reports asset, input, clock or graphics failures with their cause.
     pub fn apply_params(&mut self, text: &str) -> Result<String, JsValue> {
-        let report = self.game.controls.apply_file(text).map_err(js)?;
+        let report = ControlBinding::parameters(&mut self.game.controls, text)?;
         Ok(report
             .problems
             .iter()

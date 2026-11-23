@@ -6,12 +6,12 @@
 
 use std::time::Duration;
 
-use thrum_render::synthetic::{CullingSelection, DisplayOverlay};
+use thrum_render::synthetic::CullingSelection;
 
 use super::{
     GameScene, GameSetup, GameWorld, Runtime, camera_pitch_edit, camera_yaw_edit, day_phase_edit,
 };
-use crate::SceneCamera;
+use crate::{GameHost, SceneCamera, controls::GameControls, hosted::RuntimeSetup};
 
 /// The engine's browser shell over the V1 world and scene.
 pub(crate) type Shell = thrum_app::web::WebShell<GameWorld, GameScene>;
@@ -32,7 +32,7 @@ pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), St
     set_scene_camera(shell, camera.at(eye)?)
 }
 
-impl thrum_app::web::WebWorld for GameWorld {
+impl thrum_app::InlineWorld for GameWorld {
     fn pause(&mut self) -> Result<(), String> {
         GameWorld::pause(self)
     }
@@ -41,16 +41,47 @@ impl thrum_app::web::WebWorld for GameWorld {
     }
 }
 
-/// Prepare the V1 runtime on the shell's first device.
-/// # Errors
-/// Refuses a mismatched device or game/engine preparation failure.
-pub(crate) async fn prepare(
-    gpu: thrum_app::web::WebGpu,
-    setup: GameSetup,
-) -> Result<Runtime, String> {
-    setup
-        .prepare(&gpu.device, &gpu.queue, &gpu.capabilities, gpu.frame_config)
-        .await
+pub(crate) struct PageGame {
+    pub(crate) demo: GameControls,
+    pub(crate) setup: GameSetup,
+    pub(crate) initial_downlevel: String,
+}
+
+impl RuntimeSetup for PageGame {
+    fn demo(&self) -> &GameControls {
+        &self.demo
+    }
+
+    fn demo_mut(&mut self) -> &mut GameControls {
+        &mut self.demo
+    }
+
+    async fn prepare_runtime(
+        &mut self,
+        gpu: thrum_app::Gpu<'_>,
+        _: Box<dyn Fn() + Send>,
+    ) -> Result<thrum_app::Prepared<GameWorld, GameScene>, String> {
+        self.initial_downlevel = format!("{:?}", gpu.capabilities.downlevel());
+        let host = self
+            .setup
+            .prepare(
+                gpu.device,
+                gpu.queue,
+                gpu.capabilities,
+                thrum_render::runtime::FrameConfig {
+                    render_extent: gpu.surface.extent,
+                    surface: Some(gpu.surface),
+                },
+            )
+            .await?;
+        self.demo.observe_camera(host.camera_orientation());
+        self.demo.observe_time(Self::readback(&host));
+        Ok(thrum_app::Prepared::inline(host))
+    }
+
+    fn readback(host: &Runtime) -> f32 {
+        super::time_of_day(host)
+    }
 }
 
 /// Committed solar time: midnight is zero, noon is one half.
@@ -98,11 +129,6 @@ pub(crate) fn set_camera_yaw(shell: &mut Shell, radians: f32) -> Result<(), Stri
 /// Select a checked authored camera.
 pub(crate) fn set_scene_camera(shell: &mut Shell, camera: SceneCamera) -> Result<(), String> {
     shell.source_mut().select_camera(camera)
-}
-
-/// Draw a display diagnostic in place of the tone-mapped scene.
-pub(crate) fn set_display_overlay(shell: &mut Shell, overlay: DisplayOverlay) {
-    shell.source_mut().display_overlay = overlay;
 }
 
 /// Validate and replace continuous local input.

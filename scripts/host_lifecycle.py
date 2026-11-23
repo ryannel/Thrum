@@ -158,7 +158,11 @@ def main():
                 keep_awake.wait()
         if 'chrome-webgpu' in args.target:
             check_locked('chrome', 'chrome-webgpu', output / 'chrome')
-        if 'ios-sim' in args.target:
+        if args.target == ['ios-sim']:
+            # HOST M4.5 holds the simulator around this entire single-target check.
+            # For a manual single-target run, take that same lock at the command line.
+            check_ios(output / 'ios')
+        elif 'ios-sim' in args.target:
             check_locked('simulator', 'ios-sim', output / 'ios')
 
 

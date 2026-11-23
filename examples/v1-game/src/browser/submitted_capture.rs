@@ -1,4 +1,6 @@
 //! Typed-array export of the ordinary renderer submission, with bounded leases.
+use thrum_app::Game;
+
 use super::BrowserGame;
 use wasm_bindgen::prelude::*;
 
@@ -6,7 +8,7 @@ use wasm_bindgen::prelude::*;
 impl BrowserGame {
     /// Select a motion capture without the optional GPU pass timing observer.
     pub fn capture_without_pass_timings(&mut self) {
-        self.shell.update_profiler(self.demo.model_mut(), false);
+        self.shell.update_profiler(self.game.controls_mut(), false);
     }
 
     /// Start submitted-output capture with three GPU slots and eight CPU buffers.

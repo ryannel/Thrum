@@ -150,23 +150,44 @@ impl ExtentCapture {
 #[cfg(test)]
 mod tests;
 
+/// An opt-in control sweep observed on the ordinary window and render owner.
+pub struct WindowQualification {
+    /// Directory for the control, window and submitted-frame records.
+    pub output: PathBuf,
+    /// The game-declared numeric control to drive through the panel.
+    pub control: &'static str,
+    /// Name of the display-unit column in the qualification records.
+    pub control_column: &'static str,
+    /// Signpost boundaries in elapsed seconds; the last ends the run.
+    pub boundaries: [f64; 4],
+    /// Control value in display units at the given elapsed seconds.
+    pub sample: fn(f64) -> f64,
+    /// Translate an accepted model value to the sweep's display units.
+    pub accepted: fn(f32) -> f64,
+    /// Record submitted images as well as submission and timing records.
+    pub capture: bool,
+    /// Exercise replacement with a readback pending.
+    pub replace_surface: bool,
+}
+
 pub(super) struct Pan {
-    output: PathBuf,
+    pub(super) options: WindowQualification,
     start: Option<Instant>,
     rows: Vec<(u128, f64, f64, f64)>,
     requests: Vec<(u64, f64, f64, f64)>,
     signposts: Vec<(u32, f64, f64)>,
 }
 impl Pan {
-    pub(super) fn from_environment() -> Option<Self> {
-        std::env::var_os("THRUM_MAC_QUALIFY").map(|output| Self {
-            output: output.into(),
+    pub(super) fn new(options: WindowQualification) -> Self {
+        Self {
+            options,
             start: None,
             rows: Vec::with_capacity(RECORDS),
             requests: Vec::with_capacity(RECORDS),
             signposts: Vec::with_capacity(4),
-        })
+        }
     }
+
     pub(super) fn step(
         &mut self,
         panel: &mut MacPanel,
@@ -175,7 +196,7 @@ impl Pan {
         let now = Instant::now();
         let start = *self.start.get_or_insert(now);
         let elapsed = now.duration_since(start).as_secs_f64();
-        let boundaries = [3.0, 4.0, 6.0, 7.1];
+        let boundaries = self.options.boundaries;
         while self.signposts.len() < boundaries.len() && elapsed >= boundaries[self.signposts.len()]
         {
             let stage = u32::try_from(self.signposts.len()).expect("four signpost stages");
@@ -183,18 +204,19 @@ impl Pan {
             super::qualification_signpost::mark(stage);
             self.signposts.push((stage, before, CACurrentMediaTime()));
         }
-        // Warm up for three seconds, then one-second holds around the two-second pan.
-        let yaw = ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0;
-        let id = controls.lookup("camera.yaw").map_err(|e| e.to_string())?;
-        if !panel.simulate(id, yaw) {
-            return Err("yaw slider action unavailable".to_owned());
+        let requested = (self.options.sample)(elapsed);
+        let id = controls
+            .lookup(self.options.control)
+            .map_err(|e| e.to_string())?;
+        if !panel.simulate(id, requested) {
+            return Err("qualification slider action unavailable".to_owned());
         }
         panel.apply_edits(controls);
         if !panel.take_refused().is_empty() {
-            return Err("AppKit yaw action refused".to_owned());
+            return Err("AppKit qualification action refused".to_owned());
         }
         let Value::Number(accepted) = controls.value(id) else {
-            return Err("yaw is not numeric".to_owned());
+            return Err("qualification control is not numeric".to_owned());
         };
         if self.rows.len() == RECORDS {
             return Err("pan marker capacity exhausted".to_owned());
@@ -202,10 +224,10 @@ impl Pan {
         self.rows.push((
             unix_ns()?,
             CACurrentMediaTime(),
-            yaw,
-            f64::from(accepted.to_degrees()),
+            requested,
+            (self.options.accepted)(*accepted),
         ));
-        Ok(elapsed >= 7.1)
+        Ok(elapsed >= boundaries[3])
     }
     pub(super) fn request(
         &mut self,
@@ -213,9 +235,11 @@ impl Pan {
         target: f64,
         controls: &Controls,
     ) -> Result<(), String> {
-        let id = controls.lookup("camera.yaw").map_err(|e| e.to_string())?;
-        let Value::Number(yaw) = controls.value(id) else {
-            return Err("yaw is not numeric".to_owned());
+        let id = controls
+            .lookup(self.options.control)
+            .map_err(|e| e.to_string())?;
+        let Value::Number(accepted) = controls.value(id) else {
+            return Err("qualification control is not numeric".to_owned());
         };
         if self.requests.len() == RECORDS {
             return Err("request marker capacity exhausted".to_owned());
@@ -224,13 +248,13 @@ impl Pan {
             sequence,
             CACurrentMediaTime(),
             target,
-            f64::from(yaw.to_degrees()),
+            (self.options.accepted)(*accepted),
         ));
         Ok(())
     }
     pub(super) fn finish(&self) -> Result<(), String> {
         let mut markers = BufWriter::new(
-            File::create(self.output.join("signposts.tsv")).map_err(|e| e.to_string())?,
+            File::create(self.options.output.join("signposts.tsv")).map_err(|e| e.to_string())?,
         );
         writeln!(markers, "stage\tmedia_before\tmedia_after").map_err(|e| e.to_string())?;
         for (stage, before, after) in &self.signposts {
@@ -238,11 +262,12 @@ impl Pan {
         }
         markers.flush().map_err(|e| e.to_string())?;
         let mut file = BufWriter::new(
-            File::create(self.output.join("controls.tsv")).map_err(|e| e.to_string())?,
+            File::create(self.options.output.join("controls.tsv")).map_err(|e| e.to_string())?,
         );
         writeln!(
             file,
-            "unix_ns\tmedia_seconds\trequested_yaw_degrees\taccepted_yaw_degrees"
+            "unix_ns\tmedia_seconds\trequested_{0}\taccepted_{0}",
+            self.options.control_column,
         )
         .map_err(|e| e.to_string())?;
         for (unix, media, requested, accepted) in &self.rows {
@@ -251,11 +276,12 @@ impl Pan {
         }
         file.flush().map_err(|e| e.to_string())?;
         let mut file = BufWriter::new(
-            File::create(self.output.join("requests.tsv")).map_err(|e| e.to_string())?,
+            File::create(self.options.output.join("requests.tsv")).map_err(|e| e.to_string())?,
         );
         writeln!(
             file,
-            "sequence\tmedia_seconds\ttarget_media_seconds\taccepted_yaw_degrees"
+            "sequence\tmedia_seconds\ttarget_media_seconds\taccepted_{}",
+            self.options.control_column,
         )
         .map_err(|e| e.to_string())?;
         for (seq, media, target, yaw) in &self.requests {
@@ -289,11 +315,12 @@ impl Observer {
         host: &mut FrameHost<W, V>,
         origin: Instant,
         transition: Option<&WindowTransitionProof>,
+        qualification: Option<&WindowQualification>,
     ) -> Result<Option<Self>, String> {
         let transition = transition.filter(|options| options.tap);
         let Some(output) = transition
             .map(|options| options.output.clone())
-            .or_else(|| std::env::var_os("THRUM_MAC_QUALIFY").map(PathBuf::from))
+            .or_else(|| qualification.map(|options| options.output.clone()))
         else {
             return Ok(None);
         };
@@ -311,37 +338,31 @@ impl Observer {
         } else {
             None
         };
-        let tap = if transition.is_some() {
-            Ok("on".to_owned())
+        let capture = transition.is_some() || qualification.is_some_and(|options| options.capture);
+        let writer = if capture {
+            host.enable_submitted_capture_with_limits(
+                1,
+                CaptureLimits {
+                    staging_slots: 6,
+                    cpu_buffers: 96,
+                    byte_allowance: 1024 * 1024 * 1024,
+                },
+            )
+            .map_err(|e| e.to_string())?;
+            let (name, encoding) = if transition.is_some() {
+                ("frames.rgba", SpoolEncoding::Raw)
+            } else {
+                ("frames.zst", SpoolEncoding::ZstdDelta)
+            };
+            let file = File::create(output.join(name)).map_err(|e| e.to_string())?;
+            Some(ImageWriter::start(
+                BufWriter::with_capacity(4 * 1024 * 1024, file),
+                96,
+                8 * 1024 * 1024 * 1024,
+                encoding,
+            )?)
         } else {
-            std::env::var("THRUM_MAC_TAP")
-        };
-        let writer = match tap.as_deref() {
-            Ok("on") => {
-                host.enable_submitted_capture_with_limits(
-                    1,
-                    CaptureLimits {
-                        staging_slots: 6,
-                        cpu_buffers: 96,
-                        byte_allowance: 1024 * 1024 * 1024,
-                    },
-                )
-                .map_err(|e| e.to_string())?;
-                let (name, encoding) = if transition.is_some() {
-                    ("frames.rgba", SpoolEncoding::Raw)
-                } else {
-                    ("frames.zst", SpoolEncoding::ZstdDelta)
-                };
-                let file = File::create(output.join(name)).map_err(|e| e.to_string())?;
-                Some(ImageWriter::start(
-                    BufWriter::with_capacity(4 * 1024 * 1024, file),
-                    96,
-                    8 * 1024 * 1024 * 1024,
-                    encoding,
-                )?)
-            }
-            Ok("off") => None,
-            _ => return Err("qualification requires THRUM_MAC_TAP=on or off".to_owned()),
+            None
         };
         Ok(Some(Self {
             output,
@@ -351,7 +372,7 @@ impl Observer {
             frames: Vec::with_capacity(RECORDS),
             refused: 0,
             origin,
-            replace_surface: std::env::var("THRUM_MAC_REPLACE").as_deref() == Ok("1"),
+            replace_surface: qualification.is_some_and(|options| options.replace_surface),
             replacement_pending: false,
             session: 1,
             retired: 0,

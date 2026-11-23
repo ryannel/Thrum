@@ -186,51 +186,59 @@ impl Witness {
     }
 
     pub(super) fn frame(&mut self, frame: &FrameReply) {
-        self.cooked.clone_from(&frame.cooked);
+        self.cooked.clone_from(&frame.platform.cooked);
         self.replies += 1;
         if self.resize_open {
             self.resize_replies += 1;
             self.max_resize_gap_replies = self.max_resize_gap_replies.max(self.resize_replies);
         }
-        self.extent_drops += u64::from(frame.extent_dropped);
-        self.old_extent_presents += u64::from(frame.old_extent_present);
-        if frame.raced_present && frame.epoch < self.resize_epoch {
+        self.extent_drops += u64::from(frame.platform.extent_dropped);
+        self.old_extent_presents += u64::from(frame.platform.old_extent_present);
+        if frame.platform.raced_present && frame.platform.epoch < self.resize_epoch {
             self.resize_raced_presents += 1;
         }
-        self.completed_gpu += u64::from(frame.completed);
-        self.surface_samples += u64::from(frame.surface_samples);
-        self.presentable_encodes += u64::from(frame.presentable_encode);
-        self.acquired += u64::from(frame.acquired);
-        self.unconfigured_acquires += u64::from(frame.unconfigured_acquire);
-        self.configured += u64::from(frame.configured);
-        self.max_pending_frames = self.max_pending_frames.max(frame.pending_frames);
-        self.max_acquire_us = self.max_acquire_us.max(frame.acquire.as_micros());
-        self.raced_presents += u64::from(frame.raced_present);
-        match frame.target {
-            TargetLeadStatus::Future => {}
-            TargetLeadStatus::Late => self.late_targets += 1,
-            TargetLeadStatus::Invalid => self.invalid_targets += 1,
-            TargetLeadStatus::Clamped => self.clamped_targets += 1,
+        for sample in frame.samples.iter().flatten() {
+            self.completed_gpu += 1;
+            self.surface_samples += u64::from(sample.surface_presented);
         }
-        self.empty_submits += u64::from(frame.empty_submit);
-        self.lost_abandons += u64::from(frame.abandoned);
-        if frame.status == SurfaceStatus::DeviceLost {
-            self.lost_empty_submits += u64::from(frame.empty_submit);
+        self.presentable_encodes += u64::from(frame.platform.presentable_encode);
+        self.acquired += u64::from(frame.platform.acquired);
+        self.unconfigured_acquires += u64::from(frame.platform.unconfigured_acquire);
+        self.configured += u64::from(frame.platform.configured);
+        self.max_pending_frames = self.max_pending_frames.max(frame.platform.pending_frames);
+        self.max_acquire_us = self
+            .max_acquire_us
+            .max(frame.acquire_wall.unwrap_or_default().as_micros());
+        self.raced_presents += u64::from(frame.platform.raced_present);
+        match frame.target_status {
+            Some(TargetLeadStatus::Future) => {}
+            Some(TargetLeadStatus::Late) => self.late_targets += 1,
+            Some(TargetLeadStatus::Invalid) => self.invalid_targets += 1,
+            Some(TargetLeadStatus::Clamped) => self.clamped_targets += 1,
+            None => {}
         }
-        if let Some(report) = frame.report {
+        self.empty_submits += u64::from(frame.platform.empty_submit);
+        self.lost_abandons += u64::from(frame.platform.abandoned);
+        if frame.platform.status == SurfaceStatus::DeviceLost {
+            self.lost_empty_submits += u64::from(frame.platform.empty_submit);
+        }
+        if let Some(report) = frame.outcome {
             self.world_tick = self.world_tick.max(report.tick);
         }
-        match frame.status {
+        match frame.platform.status {
             SurfaceStatus::Presented => {
-                self.frame_extent = frame.frame_extent;
-                self.drawable = frame.drawable;
+                self.frame_extent = frame.platform.frame_extent;
+                self.drawable = frame.platform.drawable;
                 self.presented += 1;
-                self.presented_epoch = frame.epoch;
-                self.presented_extent = frame.extent;
-                self.presented_generation = frame.generation;
-                if self.resize_open && frame.epoch >= self.resize_epoch {
-                    self.resize_first_present =
-                        Some((frame.epoch, frame.drawable, self.resize_replies));
+                self.presented_epoch = frame.platform.epoch;
+                self.presented_extent = frame.surface_extent;
+                self.presented_generation = frame.device_generation;
+                if self.resize_open && frame.platform.epoch >= self.resize_epoch {
+                    self.resize_first_present = Some((
+                        frame.platform.epoch,
+                        frame.platform.drawable,
+                        self.resize_replies,
+                    ));
                     self.resize_open = false;
                 }
             }
@@ -242,7 +250,7 @@ impl Witness {
             SurfaceStatus::StaleDropped => self.stale_dropped += 1,
             SurfaceStatus::DeviceLost => {
                 self.lost_frames += 1;
-                self.lost_held_drops += u64::from(frame.acquired);
+                self.lost_held_drops += u64::from(frame.platform.acquired);
             }
             SurfaceStatus::StaleGeneration => self.stale_generation_refusals += 1,
         }
