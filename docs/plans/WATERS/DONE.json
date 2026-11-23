@@ -1157,8 +1157,8 @@
           "check": "node scripts/check_water_browser.mjs --case surf",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M13/chrome-r3.json",
           "verdict": "",
           "review": ""
         },

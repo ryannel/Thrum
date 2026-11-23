@@ -567,3 +567,6 @@
   M13.2 passed on Metal with and without the capability. The checkpoint is local pending the remaining items.
   The island's portable Metal route submitted six camera views and a tide sweep. The normals now read neighbouring
   displaced nodes. The remaining seams, absent far foam line and measured cache cost remain in the handoff.
+  The CPU and GPU now share one sector index at the shipped spectrum's direction boundaries.
+  Hardware Chrome passed M13.10 at 10,794 cache nodes with 0.925 mm maximum displacement error and no
+  validation faults. The compute pass used five sampled textures and three storage bindings.
