@@ -773,29 +773,59 @@ adapt holds all of them. The floor catches a collapse and is no target.
 
 ### Simulator lifecycle in the proof harnesses (M5)
 
-An automated iOS run uses one Thrum-owned iPhone 18 Pro on the configured simulator runtime. The harness
-holds the existing exclusive `simulator` lock from device selection through boot, use, shutdown and
-verification. A direct invocation takes the same lock. A caller already under the lock uses that admission,
-and its nested checks share the same device. A peer restart, another test case, or the HOST overload leg
-reuses the booted device. The device is kept shut down between runs and can be reused on the next run.
-Build outside the lock where the device is unnecessary. Manual proof commands use the same harness entry
-point so a successful `simctl bootstatus -b` cannot be the last operation inside the lock.
+Use one repository-owned lifecycle for the SESSION socket and image proofs, SIM-2D conformance, the V1
+shell route used by HOST, APPLE-PRESENTATION and PLATFORM-RUNTIME-IOS, HOST overload, and the TRANSPORT,
+CULLING, COOKED-DRAW and T2-CAPTURE simulator proofs. Preserve each proof's cases, assertions and evidence
+scope. Each turn uses the exclusive `simulator` lock from device selection through verified shutdown of one
+Thrum-owned iPhone 18 Pro on the configured runtime.
+Direct commands take that lock around device work. Reuse HOST's check that the active lock holder is an
+ancestor of the calling process to recognise an outer `simulator` admission. A caller holding `gpu` gets an
+error before simulator work. Nested operations share their lifecycle owner's selected device and admission.
+For Cooked Draw and T2 capture, the waiting supervisor owns admission and cleanup across the LaunchServices
+handoff and passes its selected UDID to the attributed launcher and driver. Keep the existing permission
+preflights and their launcher-to-driver attribution.
 
-Use one repository-owned lifecycle for the SESSION socket and memory proofs, SIM-2D conformance, the V1
-shell route used by HOST and APPLE-PRESENTATION, HOST overload, and the TRANSPORT, CULLING, COOKED-DRAW
-and T2-CAPTURE simulator proofs. Preserve their inputs, device function checks and evidence scope. Pass
-the chosen UDID explicitly to `simctl` and XCTest, with fresh per-run app and proof state where those
-checks require it. Keep XCTest on that device. When a caller supplies a UDID, first establish that it is
-Thrum-owned. Preserve other simulators and their data.
+The outer check declarations for [CULLING M2.2](../CULLING/DONE.json),
+[COOKED-DRAW M1.7–M1.9](../COOKED-DRAW/DONE.json), [PLATFORM-RUNTIME-IOS M7.2](../PLATFORM-RUNTIME-IOS/DONE.json)
+and [the T2 capture guide's command](../../CAPTURE.md#ios-simulator-submitted-output-workflow) already take
+`simulator`. M5 adapts those entry points to reuse that admission through verified shutdown. Update the Culling,
+Cooked Draw, V1 route and T2 script usage text to match, and update the capture guide when reuse lands.
+Acquire one resource per turn and build outside it where the entry point controls admission. When an item or
+the published command holds outer admission during preparation, count that preparation toward its hold limit.
 
-The process responsible for cleanup outlives the proof worker on failure, timeout or cancellation. It
-stops the run's child work, requests shutdown, and confirms the device reached `Shutdown` from fresh
-CoreSimulator state before the lock is released. Reserve teardown time within the outer lock limit, and
-make SESSION peer cancellation wait for simulator cleanup. Allow bounded recovery when shutdown is slow,
-report a cleanup failure with the UDID and observed state, and reclaim a stranded Thrum device under the
-next lock before starting work if the lock holder itself was forcibly killed. A successful run requires
-verified shutdown. Keep simulator work out of `./dev check`. The fast guard exercises ownership and failure
-handling with simulated state. The locked proof uses real CoreSimulator state.
+A live SESSION peer restart replaces the peer process within the same simulator boot. The HOST route and
+overload leg also share one boot, as do each V1 route's lifecycle and rotation steps. Invoke the multi-target
+HOST command without an outer lock so its target legs can take and release their own admission in sequence.
+
+Each independent case in `python3 scripts/session_match.py image --target ios-sim` and SIM-2D conformance
+takes a separate simulator turn. Call these commands without an outer lock so the harness can release
+admission between cases. For each of Crowd and Mixed, the image command takes one turn for the simulator
+writer and one for each fresh-process restore at ticks 0, 18,000 and 30,000. Build the binaries and prepare
+the Mac source images outside those eight turns. Keep the images and digest records on the host filesystem
+across boots to check all six images byte for byte and all 1,000 continuation checkpoints against the
+accepted references. SIM-2D likewise runs its vector case and each independent trace or wire case through
+shutdown, then compares their results with its existing references. Budget each turn from admission,
+including boot, with a worker deadline early enough to stop child work and verify shutdown before the
+earlier of the outer check timeout and the project's 30-minute hold limit.
+
+Pass the selected UDID explicitly to `simctl` and XCTest and confirm ownership before accepting a caller's
+UDID. Keep the dedicated device shut down between turns and reuse it on the next turn. For the V1 route,
+Culling, Cooked Draw and T2 capture proofs, a fresh start means a fresh app installation and data container,
+a fresh proof output directory and a ready device with any prior app and XCTest runner state cleared.
+Re-establish that state at the start of each proof, including after cancellation. Checks that span rotation,
+backgrounding or recovery preserve the app state those steps depend on within the turn. Preserve unrelated
+simulators and their data.
+
+The supervisor outlives the proof worker on failure, timeout or cancellation. It stops the run's child work,
+including any launcher and driver started through LaunchServices, requests shutdown, and confirms `Shutdown`
+from fresh CoreSimulator state before returning to its lock holder. Cancelling the simulator turn waits for that
+cleanup. Keep the foreground process alive through teardown so the outer lock holder waits
+for verification. On an outer stop, begin teardown on the first termination signal while the lock holder is
+still waiting. Allow bounded recovery when shutdown is slow and report a cleanup failure with the UDID and
+observed state. If shutdown cannot be verified or a forced stop interrupts cleanup, the next turn reclaims the
+stranded Thrum device before starting work. A successful run requires verified shutdown. Keep simulator work out
+of `./dev check`. The fast guard exercises ownership and failure handling with simulated state. The locked
+proof uses real CoreSimulator state.
 
 ## Open questions
 

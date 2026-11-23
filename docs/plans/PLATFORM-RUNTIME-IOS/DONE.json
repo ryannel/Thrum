@@ -21,7 +21,7 @@
           "id": "M7.2",
           "statement": "The full named iOS route builds and runs on a fresh owned iPhone 18 Pro / iOS 27.2 simulator and cleans it up. Startup and real XCUITest portrait -> landscape -> portrait rotations present with actual scene targets, projection aspect, presenter source/destination, viewport and drawable matching each current nonzero oriented surface extent. Rotation keeps PID, window, lease and device generation, advances surface epoch and resumes presented counters within the existing M5 reply/race bounds. Missing tools, skipped gestures, missing witnesses, validation errors or stalled presentation fail.",
           "check": "bash examples/v1-game-ios/ios/check-simulator.sh",
-          "lock": "gpu",
+          "lock": "simulator",
           "target": "ios-sim",
           "ask": "Does the route assert render_extent == current surface/drawable extent and viewport == [0,0,width,height] for identified presented frames in all three settled states, using resource-derived dimensions and the projection matrix actually encoded? Does it record source/binary identity, model/runtime, epochs, counters and real commands, without hard-coded 1206x2622/2622x1206 expectations or treating request echoes as actual target proof? Are skipped/partial routes nonzero?",
           "evidence": "ios-sim: full named check-simulator.sh passed on fresh owned iPhone 18 Pro / iOS 27.2, then deleted it. Actual targets, drawable, matrix and viewport match all three states. Epochs 16->17->18, two-reply gaps, unchanged identities, zero old-extent presents. .orchestrate/evidence/render/ios-extent/README.md and records/route.log.",

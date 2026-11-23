@@ -158,7 +158,7 @@
 - 2026-11-23 M5: the SESSION build ran `lock simulator -- xcrun simctl bootstatus <UDID> -b` at 09:54 CET.
   The [boot log](../../../.orchestrate/evidence/SESSION/M5/simulator-boot.log) identifies the stock iPhone 18 Pro
   and the lock log records release at 09:54:05. The socket peer helper boots or reuses that phone and has no
-  shutdown path. SIM-2D's helper, also used by SESSION's memory checks, has the same gap. HOST and
+  shutdown path. SIM-2D's helper, also used by SESSION's iOS image check, has the same gap. HOST and
   APPLE-PRESENTATION normally use temporary devices and attempt to remove them. M5 adds one shared lifecycle
   and a post-run device-state proof.
 
@@ -169,3 +169,16 @@
 | Seconds | Test |
 |---:|---|
 | 9.102 | `thrum-network::it reliable_delivery::a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play` |
+
+## M5 simulator lifecycle design review
+
+- 2026-11-23 Must Fix 1. CULLING M2.2, COOKED-DRAW M1.7–M1.9, PLATFORM-RUNTIME-IOS M7.2 and the published
+  T2 capture command now declare `simulator`. M5.11 requires that lock through verified shutdown,
+  including across the LaunchServices handoff. The five Done items keep their original proof records.
+- 2026-11-23 Must Fix 2. The affected SESSION command is `image --target ios-sim` (M1.3). Its eight accepted
+  device operations alone took 1,872.5 seconds. The design makes each writer, restore and
+  conformance case its own bounded turn and keeps the live peer restart on one boot. M5.11 guards the turn
+  boundary and teardown reserve, M5.12 checks real cleanup, and M5.13 records all six restores and 1,000
+  checkpoints on the migrated path. [Review](../../../.orchestrate/evidence/SESSION/design-review.md)
+- 2026-11-23 Took the suggestion to define a fresh start on the reused device. The design and M5.12 cover
+  app, proof and XCTest state after cancellation. The T2 guide describes verified shutdown and reuse after M5.

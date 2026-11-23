@@ -48,17 +48,17 @@ focused batch under normal builder load. The batch passes the existing ten-secon
 
 ## M5 Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss
 
-Criteria: M5.1–M5.12 in the done-when file.
+Criteria: M5.1–M5.13 in the done-when file.
 
 `TRANSPORT` left the three socket adapters, the relay and its proof programs in `examples/link-proof` with
 `scripts/transport_link.py`, which show how each target is started and how a page reaches the host. Use the relay.
 
-Fix [simulator ownership](DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5) before rerunning the socket
-proofs. SESSION's preliminary boot released the lock as soon as the stock phone finished booting. The socket
-peer then kept admission across its intentional restart but had no shutdown, and the memory proofs inherit
-the same gap from SIM-2D's helper. Move those callers and the other simulator proofs named in the design
-onto the shared lifecycle. The changes to other proof commands are limited to simulator admission and
-cleanup. Use the short device proof for cleanup and the existing socket fault run for the match assertions.
+Adopt the [shared simulator lifecycle](DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5) before
+rerunning the socket proofs. Limit changes to other proof commands, including `scripts/transport_link.py`, to
+simulator admission, clean starting state and cleanup. Use the short device proof to verify cleanup and the
+existing socket fault run to verify the live peer restart on one boot. Set `ORCHESTRATE_SCRIPT` to the installed
+`agent_loop.py` and run `python3 scripts/session_match.py image --target ios-sim` once as M5 evidence. The
+command manages its own admission and records the full comparison across eight simulator turns.
 
 ## M6 A game maker can put a game in a match from the guide, and a game without multiplayer contains none of it
 

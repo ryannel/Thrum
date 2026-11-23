@@ -93,7 +93,7 @@
           "id": "M2.2",
           "statement": "On the iPhone simulator the game runs with a culled mode requested, reports Direct with the capability reason, and draws the complete scene. Function only.",
           "check": "python3 scripts/culling_sim.py",
-          "lock": "gpu",
+          "lock": "simulator",
           "target": "ios-sim",
           "evidence": ".orchestrate/evidence/CULLING/M2.md",
           "verdict": "pass",
