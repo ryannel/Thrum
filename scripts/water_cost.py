@@ -7,6 +7,7 @@ from pathlib import Path
 import platform
 import statistics
 import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 # The first-frame and island records are test data later checks compare with; record writes a new take to the
@@ -333,18 +334,19 @@ def measure_foam():
 
 
 def measure_surf():
-    output = ROOT / 'tmp/waters-M13/cost'
-    output.mkdir(parents=True, exist_ok=True)
-    (output / 'surf-cost.json').unlink(missing_ok=True)
+    scratch = ROOT / 'tmp/waters-M13'
+    scratch.mkdir(parents=True, exist_ok=True)
     revision = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
-    store = output / 'store'
-    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
-         'cook', 'examples/water/assets', str(store)])
-    env = dict(os.environ, THRUM_WATER_PROOF='surf-cost', THRUM_ASSET_STORE=str(store),
-               THRUM_WATER_OUTPUT=str(output), THRUM_REQUIRE_GPU='1')
-    run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
-         '--test', 'proof_gpu', '--', '--nocapture'], env=env)
-    record = json.loads((output / 'surf-cost.json').read_text())
+    with tempfile.TemporaryDirectory(dir=scratch, prefix='cost-') as directory:
+        output = Path(directory)
+        store = output / 'store'
+        run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+             'cook', 'examples/water/assets', str(store)])
+        env = dict(os.environ, THRUM_WATER_PROOF='surf-cost', THRUM_ASSET_STORE=str(store),
+                   THRUM_WATER_OUTPUT=str(output), THRUM_REQUIRE_GPU='1')
+        run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+             '--test', 'proof_gpu', '--', '--nocapture'], env=env)
+        record = json.loads((output / 'surf-cost.json').read_text())
     prior = json.loads(SURF_HISTORY.read_text())
     assert record['target'] == 'mac-metal' and record['extent'] == prior['extent'] == [2560, 1440]
     assert record['capture'] is False and record['camera'] == prior['camera']
@@ -418,7 +420,10 @@ def measure_surf():
     record['investigations'] = investigations
     path = RECORDS['surf']
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(record, indent=2) + '\n')
+    with tempfile.TemporaryDirectory(dir=path.parent, prefix='surf-cost-') as directory:
+        staged = Path(directory) / path.name
+        staged.write_text(json.dumps(record, indent=2) + '\n')
+        staged.replace(path)
     print(f'PASS paired 1440p Metal surf record: {path.relative_to(ROOT)}')
 
 
