@@ -1055,8 +1055,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-water-model --test it -E 'test(=shore_basin::enclosed_water_has_finite_lags_turning_and_exposure) | test(=surf_cut::production_sheets_and_their_own_reach_match_forward_reference)' --no-tests=fail --test-threads 1",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M17/M17.1-2-fast-tier.md",
           "verdict": "",
           "review": ""
         },
@@ -1067,8 +1067,8 @@
           "ask": "Do the scoped passing nextest runs and timing record cover all six tests named for thrum-water and water-scene, and does the fixture or CPU/GPU split preserve every condition and assertion? Does a real device exercise the mailbox, contribution and film outputs?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M17/M17.1-2-fast-tier.md",
           "verdict": "",
           "review": ""
         },
