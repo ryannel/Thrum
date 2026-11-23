@@ -161,8 +161,6 @@
         "crates/thrum-app/src/sky.rs": 1,
         "crates/thrum-app/src/web.rs": 8,
         "crates/thrum-app/src/web/capture.rs": 3,
-        "crates/thrum-render/src/contribution/graph.rs": 1,
-        "crates/thrum-render/src/runtime.rs": 1,
         "examples/v1-game/src/camera.rs": 2,
         "examples/v1-game/src/camera/route.rs": 3,
         "examples/v1-game/src/content.rs": 3,
