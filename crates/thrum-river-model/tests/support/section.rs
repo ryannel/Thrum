@@ -59,3 +59,10 @@ pub(crate) fn profile() -> Profile {
         ..Profile::default()
     }
 }
+
+/// A short frictional reach with the usual test discharge and a held pool at its mouth.
+pub(crate) fn short_reach() -> (Grid, Declaration) {
+    let dx = 0.5;
+    let bed: Vec<_> = (0..16).map(|i| -0.01 * (f64::from(i) + 0.5) * dx).collect();
+    section(&bed, dx, super::valley::DISCHARGE / dx, -1.0, 0.35, 0.04)
+}

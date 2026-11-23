@@ -8,7 +8,7 @@ use thrum_water_model::{Bed, RiverFile};
 
 #[test]
 fn a_river_file_decodes_to_the_same_bytes_and_the_same_chart() {
-    let (grid, declaration) = valley::valley(0.25);
+    let (grid, declaration) = support::section::short_reach();
     let profile = Profile::default();
     let s = solve(&grid, &declaration, &profile).unwrap();
     let k = key(&grid, &declaration, &profile);
@@ -25,7 +25,7 @@ fn a_river_file_decodes_to_the_same_bytes_and_the_same_chart() {
         grid.heights().to_vec(),
     )
     .unwrap();
-    let body = |name: &str| (name == "lake").then_some(0);
+    let body = |name: &str| (name == declaration.receivers[0].name).then_some(0);
     let from_file = read.reaches[0].chart(&bed, body).unwrap();
     let from_solve = s.chart(&bed, body).unwrap();
     assert_eq!(from_file.levels, from_solve.levels);

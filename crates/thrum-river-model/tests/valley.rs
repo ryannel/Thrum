@@ -40,7 +40,7 @@ fn section(s: &Solution, x: f64) -> (f64, f64, f64) {
 
 #[test]
 fn the_valley_keeps_its_discharge_fills_its_pool_to_the_weir_and_quickens_in_the_narrows() {
-    let (grid, declaration) = valley(0.25);
+    let (grid, declaration) = valley(0.5);
     let s = solve(&grid, &declaration, &Profile::default()).unwrap();
     let r = &s.report;
     println!(

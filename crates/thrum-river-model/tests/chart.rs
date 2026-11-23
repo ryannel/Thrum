@@ -30,7 +30,7 @@ fn distance(segment: [[f64; 2]; 2], p: [f64; 2]) -> f64 {
 }
 
 fn prepared() -> (Solution, Bed, Chart, Map) {
-    let (grid, declaration) = valley::valley(0.25);
+    let (grid, declaration) = valley::valley(0.5);
     let s = solve(&grid, &declaration, &Profile::default()).unwrap();
     let bed = Bed::new(
         grid.origin(),

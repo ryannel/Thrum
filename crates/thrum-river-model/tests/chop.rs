@@ -31,7 +31,7 @@ fn expected(depth: f64, speed: f64) -> [f64; 2] {
 
 #[test]
 fn the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the_pool() {
-    let (grid, declaration) = valley(0.25);
+    let (grid, declaration) = valley(0.5);
     let profile = Profile::default();
     let s = solve(&grid, &declaration, &profile).unwrap();
     let rms = profile.band_rms;

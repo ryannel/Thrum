@@ -97,7 +97,7 @@ fn in_part_twos_section_the_loss_lies_at_the_ledge_and_the_account_closes() {
 fn in_the_valley_the_head_lost_beyond_friction_lies_round_the_rock_and_below_the_narrows_and_ledge()
 {
     use valley::{CENTRE, DISCHARGE, LEDGE, MANNING, NARROWS, ROCK};
-    let (grid, declaration) = valley::valley(0.25);
+    let (grid, declaration) = valley::valley(0.5);
     let s = solve(&grid, &declaration, &Profile::default()).unwrap();
     let [nx, nz] = grid.size();
     let spring: Vec<usize> = (0..nx * nz)

@@ -220,6 +220,24 @@ pub(crate) fn water(
     gauge: f64,
     river: bool,
 ) -> (Map, Option<usize>) {
+    water_at(
+        grid,
+        file,
+        range,
+        gauge,
+        river,
+        [[3.5, CENTRE], [30.0, CENTRE]],
+    )
+}
+
+pub(crate) fn water_at(
+    grid: &Grid,
+    file: &RiverFile,
+    range: [f64; 2],
+    gauge: f64,
+    river: bool,
+    [lake_seed, tarn_seed]: [[f64; 2]; 2],
+) -> (Map, Option<usize>) {
     let bed = bed_of(grid);
     let lookup = |name: &str| match name {
         "lake" => Some(0),
@@ -229,7 +247,7 @@ pub(crate) fn water(
     let mut bodies = vec![
         basin(
             "lake",
-            [3.5, CENTRE],
+            lake_seed,
             0.0,
             Stage {
                 min: range[0],
@@ -239,7 +257,7 @@ pub(crate) fn water(
         ),
         basin(
             "tarn",
-            [30.0, CENTRE],
+            tarn_seed,
             TARN,
             Stage {
                 min: 0.0,
@@ -273,10 +291,19 @@ pub(crate) const RANGE: [f64; 2] = [3.1, 3.7];
 pub(crate) fn sampled(banks: Banks) -> (Grid, thrum_river_model::Samples, RiverFile) {
     let (grid, declaration) = lake(0.25, banks, RANGE);
     let profile = thrum_river_model::Profile::default();
-    let s = thrum_river_model::solve_samples(&grid, &declaration, &profile, &[]).expect("solve");
-    let key = thrum_river_model::key_for_samples(&grid, &declaration, &profile, &[]);
+    let (samples, file) = solve_at_gauges(&grid, &declaration, &profile);
+    (grid, samples, file)
+}
+
+pub(crate) fn solve_at_gauges(
+    grid: &Grid,
+    declaration: &Declaration,
+    profile: &thrum_river_model::Profile,
+) -> (thrum_river_model::Samples, RiverFile) {
+    let s = thrum_river_model::solve_samples(grid, declaration, profile, &[]).expect("solve");
+    let key = thrum_river_model::key_for_samples(grid, declaration, profile, &[]);
     let file = s.file(key).expect("river file");
-    (grid, s, file)
+    (s, file)
 }
 
 /// Reach `r`'s stored row in sample `k`: level and current at cell `i`.

@@ -169,8 +169,8 @@ fn made_bed(
 }
 
 /// Largest depth error over the measured stretch, as a share of the base depth.
-fn friction_error(fast: bool, dx: f64) -> f64 {
-    let (q, n, period) = (0.3, 0.03, 100.0);
+fn friction_error(fast: bool, dx: f64, period: f64) -> f64 {
+    let (q, n) = (0.3, 0.03);
     let (base, amp) = if fast { (0.12, 0.02) } else { (0.5, 0.1) };
     // A fast flow is reached the way a river reaches one: from slow water through a crest.
     let lead = if fast { 20.0 } else { 0.0 };
@@ -224,13 +224,13 @@ fn friction_error(fast: bool, dx: f64) -> f64 {
 
 #[test]
 fn a_slow_flow_with_friction_holds_its_made_depth() {
-    assert!(friction_error(false, 0.25) < 0.01);
+    assert!(friction_error(false, 0.25, 25.0) < 0.01);
 }
 
 #[test]
 fn a_fast_flow_with_friction_holds_its_made_depth_and_converges() {
-    let coarse = friction_error(true, 0.25);
-    let fine = friction_error(true, 0.125);
+    let coarse = friction_error(true, 0.25, 100.0);
+    let fine = friction_error(true, 0.125, 100.0);
     assert!(coarse < 0.08, "fast flow at 0.25 m cells off by {coarse}");
     assert!(
         fine < coarse * 2.0 / 3.0,

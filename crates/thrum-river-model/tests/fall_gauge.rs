@@ -15,7 +15,8 @@
     reason = "test arithmetic; the test reports what it checked"
 )]
 use crate::support;
-use support::lake::{BANKS, FOOT, RANGE, lower_sample, sampled, unjoined, water};
+use support::fall_samples::{FOOT, prepared, water};
+use support::lake::{RANGE, lower_sample, unjoined};
 use thrum_river_model::Grid;
 use thrum_water_model::{Below, Fall, FallSegment, Map, PlungeProfile, RiverFile, SheetProfile};
 
@@ -69,9 +70,9 @@ fn lip_cell(grid: &Grid, s: &FallSegment) -> usize {
 
 #[test]
 fn a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge() {
-    let (grid, samples, file) = sampled(BANKS);
-    let gauges = samples.gauges.clone();
-    let (mut map, _) = water(&grid, &file, RANGE, RANGE[0], true);
+    let (grid, file) = prepared();
+    let gauges = file.gauges();
+    let (mut map, _) = water(&grid, &file, true);
     let (sheet, plunge) = (SheetProfile::default(), PlungeProfile::default());
     // The parts every sample runs.
     let ids: Vec<u64> = file.falls[0]
@@ -158,10 +159,10 @@ fn a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge() {
 
 #[test]
 fn a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting() {
-    let (grid, samples, file) = sampled(BANKS);
-    let gauges = samples.gauges.clone();
+    let (grid, file) = prepared();
+    let gauges = file.gauges();
     let z = grid.heights();
-    let (mut map, _) = water(&grid, &file, RANGE, RANGE[0], true);
+    let (mut map, _) = water(&grid, &file, true);
     let (sheet, plunge) = (SheetProfile::default(), PlungeProfile::default());
     // The parts only the highest sample runs, with their lips' wetting gauges.
     let upper: Vec<(&FallSegment, f64)> = file.upper[1]
@@ -256,11 +257,11 @@ fn a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting() {
 
 #[test]
 fn no_running_part_lands_on_a_dry_reach_and_the_terrace_waits_for_its_lip() {
-    let (grid, samples, file) = sampled(BANKS);
-    let gauges = samples.gauges.clone();
+    let (grid, file) = prepared();
+    let gauges = file.gauges();
     let z = grid.heights();
     let n = z.len();
-    let (mut map, _) = water(&grid, &file, RANGE, RANGE[0], true);
+    let (mut map, _) = water(&grid, &file, true);
     let sheet = SheetProfile::default();
     // The terrace's reach: the one the lowest sample leaves dry above the tarn.
     let terrace = file
@@ -333,6 +334,9 @@ fn no_running_part_lands_on_a_dry_reach_and_the_terrace_waits_for_its_lip() {
         if !lip_wet {
             assert_eq!(terrace_wet, 0, "at {g}");
         }
+        if g == RANGE[1] {
+            assert!(terrace_wet > 0);
+        }
         if g == lip_wetting || g == lip_wetting + 1e-3 || g == RANGE[1] {
             println!(
                 "gauge {g:.4} m (samples {k} and {}): lip wet {lip_wet}, {terrace_wet} terrace cells wet",
@@ -340,6 +344,7 @@ fn no_running_part_lands_on_a_dry_reach_and_the_terrace_waits_for_its_lip() {
             );
         }
     }
+    assert!(landed > 0 && plunged > 0);
     println!(
         "{} gauges tried; {landed} landings on a reach, each in a wet cell; {plunged} of them \
          meet the water before the ground",

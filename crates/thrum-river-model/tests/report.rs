@@ -7,14 +7,16 @@ use thrum_river_model::{Profile, RiverError, key, solve, write};
 
 #[test]
 fn a_solve_stops_on_its_tolerances_and_reports_its_work() {
-    let (grid, declaration) = valley::valley(0.25);
+    let (grid, declaration) = support::section::short_reach();
     let profile = Profile::default();
     let s = solve(&grid, &declaration, &profile).unwrap();
     let r = &s.report;
     println!("{r:?}");
     assert!(r.level_rate < profile.level_rate && r.imbalance < profile.imbalance);
     assert!(
-        r.steps > 0 && r.steps.is_multiple_of(profile.check_every) && r.steps < profile.step_budget
+        r.steps > profile.check_every
+            && r.steps.is_multiple_of(profile.check_every)
+            && r.steps < profile.step_budget
     );
     assert!(r.cell_updates >= r.steps && r.seconds > 0.0 && r.wet_cells > 0);
     assert!((r.discharge - valley::DISCHARGE).abs() < 1e-12);
@@ -77,21 +79,28 @@ fn no_step_is_taken_beyond_the_budget() {
 
 #[test]
 fn doubling_the_rectangle_round_the_valley_barely_changes_its_work() {
-    let (grid, declaration) = valley::valley_in(0.25, 0.0, 14.0);
-    let small = solve(&grid, &declaration, &Profile::default())
-        .unwrap()
-        .report;
-    let (grid, declaration) = valley::valley_in(0.25, -7.0, 21.0);
-    let large = solve(&grid, &declaration, &Profile::default())
-        .unwrap()
-        .report;
+    let dx = 0.5;
+    let (grid, declaration) = valley::valley(dx);
+    let size = grid.heights().len();
+    let small = solve(&grid, &declaration, &Profile::default()).unwrap();
+    let (padded, _) = valley::valley_in(dx, -7.0, 21.0);
+    assert_eq!(padded.heights().len(), 2 * size);
+    // The only change is extra dry rows of ground on either side of the reach.
+    let offset = padded.cell(grid.origin()).unwrap();
+    assert_eq!(padded.point(offset), grid.origin());
+    assert_eq!(&padded.heights()[offset..offset + size], grid.heights());
+    let large = solve(&padded, &declaration, &Profile::default()).unwrap();
+    assert!(large.wet[..offset].iter().all(|&wet| !wet));
+    assert!(large.wet[offset + size..].iter().all(|&wet| !wet));
+    assert_eq!(&large.wet[offset..offset + size], small.wet);
+    let (small, large) = (small.report, large.report);
     let change = large.cell_updates as f64 / small.cell_updates as f64 - 1.0;
     println!(
         "{} cells: {} updates in {} steps; {} cells: {} updates in {} steps ({:+.2}%)",
-        valley::valley_in(0.25, 0.0, 14.0).0.heights().len(),
+        size,
         small.cell_updates,
         small.steps,
-        grid.heights().len(),
+        padded.heights().len(),
         large.cell_updates,
         large.steps,
         100.0 * change

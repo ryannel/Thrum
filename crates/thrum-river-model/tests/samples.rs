@@ -5,7 +5,7 @@
 //! grows as the head over the sill to a power between 1.3 and 2.
 use crate::support;
 use support::lake::{HIGH, SILL, lake};
-use support::valley::{DISCHARGE, valley};
+use support::valley::DISCHARGE;
 use thrum_river_model::{Profile, key_for_samples, sample_levels, solve_samples, write};
 use thrum_water_model::RiverFile;
 
@@ -67,7 +67,7 @@ fn a_lake_s_outlet_is_solved_across_its_range_and_its_discharge_follows_the_head
 
 #[test]
 fn a_spring_fed_stream_is_solved_at_its_declared_discharges_and_gauged_at_its_spring() {
-    let (grid, declaration) = valley(0.25);
+    let (grid, declaration) = support::section::short_reach();
     let flows = vec![vec![0.5 * DISCHARGE], vec![DISCHARGE]];
     let s = solve_samples(&grid, &declaration, &Profile::default(), &flows).unwrap();
     let spring = grid.cell(declaration.springs[0].point).unwrap();
@@ -82,6 +82,6 @@ fn a_spring_fed_stream_is_solved_at_its_declared_discharges_and_gauged_at_its_sp
     assert!(s.gauges[1] > s.gauges[0]);
     assert_eq!(s.gauge_range(), [s.gauges[0], s.gauges[1]]);
     // A spring-fed river takes no levels, and a lake-fed one no spring samples.
-    let (lake_grid, lake_declaration) = lake(0.25, HIGH, [3.1, 3.7]);
+    let (lake_grid, lake_declaration) = lake(0.5, HIGH, [3.1, 3.7]);
     assert!(solve_samples(&lake_grid, &lake_declaration, &Profile::default(), &flows).is_err());
 }

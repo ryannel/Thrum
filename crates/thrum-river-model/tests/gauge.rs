@@ -14,23 +14,15 @@
     reason = "test arithmetic; the test reports what it checked"
 )]
 use crate::support;
-use support::lake::{BANKS, CENTRE, HIGH, WATER, bed_of, chart_body, lake, water};
-use support::valley::{DISCHARGE, LAKE, valley};
+use support::fall_samples;
+use support::lake::{
+    CENTRE, HIGH, WATER, bed_of, chart_body, lake, sampled, solve_at_gauges, water,
+};
 use thrum_river_model::{Profile, Samples, key, key_for_samples, solve, solve_samples};
-use thrum_water_model::{Body, BodyKind, Gauge, Map, RiverFile, Stage};
+use thrum_water_model::{Body, Gauge, Map, RiverFile, Stage};
 
 const DX: f64 = 0.25;
 const RANGE: [f64; 2] = [3.1, 3.7];
-
-fn sampled(banks: support::lake::Banks) -> (thrum_river_model::Grid, Samples, RiverFile) {
-    let (grid, declaration) = lake(DX, banks, RANGE);
-    let profile = Profile::default();
-    let s = solve_samples(&grid, &declaration, &profile, &[]).unwrap();
-    let file = s
-        .file(key_for_samples(&grid, &declaration, &profile, &[]))
-        .unwrap();
-    (grid, s, file)
-}
 
 /// A cell's level in sample `k` of the file's first reach.
 fn level(file: &RiverFile, k: usize, i: usize) -> f64 {
@@ -63,13 +55,14 @@ fn unjoined(
 
 #[test]
 fn the_mixed_row_is_near_a_solve_at_the_level_between_and_one_sample_raised_is_not() {
-    let (grid, samples, file) = sampled(HIGH);
+    let (grid, mut declaration) = lake(0.5, HIGH, RANGE);
+    let profile = Profile::default();
+    let (samples, file) = solve_at_gauges(&grid, &declaration, &profile);
     let z = grid.heights();
     let (mut map, river) = water(&grid, &file, RANGE, RANGE[0], true);
     let river = river.unwrap();
     let chart = 2;
     for (k, g) in [(0, 3.25), (1, 3.55)] {
-        let (mut declaration, profile) = (lake(DX, HIGH, RANGE).1, Profile::default());
         declaration.sources[0].level = g;
         let fresh = solve(&grid, &declaration, &profile).unwrap();
         // The water map does not check a file's key; the store's tests do.
@@ -110,7 +103,8 @@ fn the_mixed_row_is_near_a_solve_at_the_level_between_and_one_sample_raised_is_n
             1000.0 * raised_depth,
             100.0 * raised_speed
         );
-        assert!(cells > 300, "{cells}");
+        // Keep the minimum checked area as the grid gets coarser.
+        assert!(f64::from(cells) * grid.spacing().powi(2) > 300.0 * DX.powi(2));
         assert!(depth <= 0.01, "{depth}");
         assert!(speed <= 0.25, "{speed}");
         assert!(raised_depth > 0.01 || raised_speed > 0.25);
@@ -233,23 +227,21 @@ fn a_chart_with_one_sample_answers_to_the_bit_and_its_stage_adds() {
 
 #[test]
 fn every_chart_of_a_river_takes_the_one_gauge() {
-    // The lake's outlet with its second way out has two reaches at its highest sample.
-    let (grid, samples, file) = sampled(BANKS);
+    // The outlet and its terrace both take the lake's gauge.
+    let (grid, file) = fall_samples::prepared();
+    let gauges = file.gauges();
     assert!(file.reaches.len() >= 2, "{}", file.reaches.len());
-    let (mut map, river) = water(&grid, &file, RANGE, RANGE[0], true);
+    let (mut map, river) = fall_samples::water(&grid, &file, true);
     let river = river.unwrap();
     let z = grid.heights();
     let g = 3.6;
-    let w = (g - samples.gauges[1]) / (samples.gauges[2] - samples.gauges[1]);
+    let w = (g - gauges[1]) / (gauges[2] - gauges[1]);
     let mut checked = vec![0; file.reaches.len()];
     for (r, reach) in file.reaches.iter().enumerate() {
         assert_eq!(map.river_of(2 + r), Some((river, r)));
         // Cells no join blends at either sample.
         let mut own = vec![true; z.len()];
-        for (gauge, row) in [
-            (samples.gauges[1], &reach.upper[0]),
-            (samples.gauges[2], &reach.upper[1]),
-        ] {
+        for (gauge, row) in [(gauges[1], &reach.upper[0]), (gauges[2], &reach.upper[1])] {
             map.set_stage(0, gauge).unwrap();
             for (i, o) in own.iter_mut().enumerate() {
                 *o &= map.row(2 + r, grid.point(i)).level == row.levels[i];
@@ -273,40 +265,20 @@ fn every_chart_of_a_river_takes_the_one_gauge() {
 
 #[test]
 fn a_spring_fed_river_s_gauge_is_its_own_stage() {
-    let (grid, declaration) = valley(DX);
-    let flows = vec![vec![0.5 * DISCHARGE], vec![DISCHARGE]];
-    let profile = Profile::default();
-    let s = solve_samples(&grid, &declaration, &profile, &flows).unwrap();
-    let file = s
-        .file(key_for_samples(&grid, &declaration, &profile, &flows))
-        .unwrap();
-    let bed = bed_of(&grid);
-    let lake = Body {
-        name: "lake".into(),
-        kind: BodyKind::Basin {
-            seed: declaration.receivers[0].seed,
-        },
-        level: LAKE,
-        stage: Stage {
-            min: 0.0,
-            max: 0.0,
-            value: 0.0,
-        },
-        fetch: 1e6,
-        gains: [0.0; 4],
-    };
-    let chart = file.reaches[0]
-        .chart(&bed, |n| (n == "lake").then_some(0))
-        .unwrap();
-    let mut map =
-        Map::prepare(bed.clone(), vec![lake, chart_body("valley", chart)], WATER).unwrap();
+    // Take the prepared main reach with two flow samples and give it its own stage.
+    let (grid, mut file) = fall_samples::prepared();
+    file.reaches.truncate(1);
+    file.reaches[0].upper.truncate(1);
+    file.upper.truncate(1);
     let [lo, hi] = file.gauge_range();
+    let (mut map, _) = fall_samples::water(&grid, &file, false);
+    let chart = 2;
     let river = map
         .add_river(
             file.river(
-                &bed,
-                "valley",
-                &[1],
+                map.bed(),
+                "stream",
+                &[chart],
                 Gauge::Stage(Stage {
                     min: lo,
                     max: hi,
@@ -323,11 +295,13 @@ fn a_spring_fed_river_s_gauge_is_its_own_stage() {
     ] {
         map.set_gauge(river, gauge).unwrap();
         for (i, o) in own.iter_mut().enumerate() {
-            *o &= map.row(1, grid.point(i)).level == levels[i];
+            *o &= map.row(chart, grid.point(i)).level == levels[i];
         }
     }
     let g = f64::midpoint(lo, hi);
     map.set_gauge(river, g).unwrap();
+    assert_eq!(map.gauge(river), g);
+    map.set_stage(0, RANGE[1]).unwrap();
     assert_eq!(map.gauge(river), g);
     let z = grid.heights();
     let mut checked = 0;
@@ -338,12 +312,12 @@ fn a_spring_fed_river_s_gauge_is_its_own_stage() {
         );
         let p = grid.point(i);
         if a > z[i] && b > z[i] && own[i] {
-            assert!((map.row(1, p).level - f64::midpoint(a, b)).abs() < 1e-9);
+            assert!((map.row(chart, p).level - f64::midpoint(a, b)).abs() < 1e-9);
             checked += 1;
         }
     }
     println!("{checked} cells of the spring-fed stream mixed halfway at its stage {g:.4} m");
-    assert!(checked > 500);
+    assert_eq!(checked, 11, "all cells wet in both samples");
     // A stage outside the samples is held at the range's end and counted.
     map.set_gauge(river, hi + 1.0).unwrap();
     assert_eq!(map.gauge(river), hi);
