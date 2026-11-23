@@ -626,15 +626,7 @@ async fn record(
     let (game, preview) = capture_game(output, scenario, capture_output)?;
     let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
-    let motion_capture = mode == "realtime"
-        && matches!(
-            scenario,
-            "exit-route"
-                | "exit-drift"
-                | "content-edits"
-                | "atmosphere-scrub"
-                | "atmosphere-ground-pan"
-        );
+    let motion_capture = mode == "realtime" && is_motion_capture(scenario);
     let elapsed_observation = motion_capture || scenario == "sprites-field";
     if elapsed_observation {
         driver.set_timing_requested(false);
@@ -844,6 +836,17 @@ async fn record(
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
     write_runtime_report(output, result, &driver, &capabilities, &admission)
+}
+
+fn is_motion_capture(scenario: &str) -> bool {
+    matches!(
+        scenario,
+        "exit-route"
+            | "exit-drift"
+            | "content-edits"
+            | "atmosphere-scrub"
+            | "atmosphere-ground-pan"
+    )
 }
 
 fn capture_game(
