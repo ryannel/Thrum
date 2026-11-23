@@ -5,13 +5,13 @@ use crate::support;
 
 use support::{Match, local};
 use thrum_network::session::{ClientState, Close, Controls, EndReason, Settings, World};
-use thrum_transport::CloseReason;
+use thrum_transport::{CloseReason, DATAGRAM_LIMIT, Profile, RELIABLE_LIMIT};
 
 #[test]
 fn a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play() {
     let (mut game, full_at) = saturated();
     let link = &game.links[0][1];
-    let reliable_sends = link.counters(game.now / 1_000).lanes[0].sent;
+    let before = link.counters(game.now / 1_000);
     // Let the client drain and acknowledge the outstanding sets before the
     // next authority poll. The carrier keeps the same link and epoch.
     for _ in 0..16 {
@@ -29,8 +29,9 @@ fn a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play()
     let tick = game.host.world().tick();
     let link = &game.links[0][1];
     let counters = link.counters(game.now / 1_000);
-    assert_eq!(counters.lanes[0].sent, reliable_sends);
+    assert_eq!(counters.lanes[0].sent, before.lanes[0].sent);
     assert_eq!(counters.lanes[0].queued_bytes, 0);
+    assert!(counters.lanes[1].sent > before.lanes[1].sent);
     assert!(game.clients[0].held() >= tick - 8);
     assert_eq!(game.clients[0].state(), &ClientState::Playing);
     assert_eq!(game.host.stream(link.id()).expect("live peer").repairs, 0);
@@ -79,7 +80,15 @@ fn saturated() -> (Match, u64) {
         catch_up_deadline: 4_000,
         ..Settings::default()
     };
-    let mut game = Match::with_settings(local(), 1, None, true, settings);
+    // The stall fills the set queue on a single link without a padded world image.
+    let profile = Profile {
+        links: 1,
+        reliable_bytes: RELIABLE_LIMIT,
+        datagram_bytes: DATAGRAM_LIMIT,
+        stack_bytes: DATAGRAM_LIMIT,
+        ..Profile::default()
+    };
+    let mut game = Match::with_profile(local(), 1, None, false, settings, profile);
     game.ready();
     while game.host.world().tick() < 100 {
         game.neutral(u64::MAX);

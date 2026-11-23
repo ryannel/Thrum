@@ -409,6 +409,21 @@ impl Match {
             stack_bytes: 16_384,
             ..Profile::default()
         };
+        Self::with_profile(condition, clients, fail_at, padded, settings, profile)
+    }
+
+    /// Form a lobby with explicit match and carrier settings.
+    ///
+    /// # Panics
+    /// The fixture limits, settings or carrier configuration are invalid.
+    pub fn with_profile(
+        condition: Conditioner,
+        clients: usize,
+        fail_at: Option<u64>,
+        padded: bool,
+        settings: Settings,
+        profile: Profile,
+    ) -> Self {
         let mut fixture = Self {
             memory: Memory::new(profile, condition).expect("valid carrier"),
             host: Host::new(
