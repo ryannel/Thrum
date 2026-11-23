@@ -473,7 +473,7 @@
     {
       "id": "M5",
       "name": "Small cooked publications prove supersession and safe reuse",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -484,7 +484,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M5/README.md"
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M5/README.md",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M5-review.md"
         }
       ],
       "failed_reviews": 0,
