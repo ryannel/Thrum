@@ -14,9 +14,7 @@ use thrum_water::{
     Profile, Water,
     query::{BodyQuery, QueryLimits, QueryPoint},
 };
-use thrum_water_model::{
-    Bed, Body, BodyKind, BreakerSection, Field, Map, SectionPoint, Sheet, Stage, SurfProfile,
-};
+use thrum_water_model::{Bed, Body, BodyKind, Field, Map, Sheet, Stage, SurfProfile};
 
 const HEIGHT_TOLERANCE: f64 = 0.015;
 
@@ -82,16 +80,6 @@ fn spectrum() -> Spectrum {
     }
 }
 
-fn plain_section() -> BreakerSection {
-    let phases: Vec<_> = (0_u16..256)
-        .map(|i| SectionPoint {
-            height: (TAU * f64::from(i) / 256.0).cos(),
-            throw: 0.0,
-        })
-        .collect();
-    BreakerSection::new(vec![0.0, 1.4, 8.0], vec![phases; 3], 1.4).expect("plain section")
-}
-
 #[test]
 fn surf_tick_and_repeat_queries_match_the_model() {
     let Some(thrum_test_support::Opened {
@@ -118,13 +106,6 @@ fn surf_tick_and_repeat_queries_match_the_model() {
     map.enable_surf(SurfProfile::default())
         .expect("shore transform");
     let map = Arc::new(Mutex::new(map));
-    let mut unshaped = plain.clone();
-    unshaped
-        .enable_surf(SurfProfile {
-            section: plain_section(),
-            ..SurfProfile::default()
-        })
-        .expect("control retains the transform");
     let spectrum = spectrum();
     let field = Field {
         layers: std::array::from_fn(|i| {
@@ -155,7 +136,6 @@ fn surf_tick_and_repeat_queries_match_the_model() {
     let step = Duration::from_secs_f64(1.0 / 60.0);
     let mut largest_error = 0.0_f64;
     let mut largest_plain = 0.0_f64;
-    let mut largest_unshaped = 0.0_f64;
     let mut counted = [0; 2];
     let mut cache_points = 0;
     for (tick, elapsed) in [(1, step + step / 4), (2, step * 2 + step / 2)] {
@@ -232,9 +212,6 @@ fn surf_tick_and_repeat_queries_match_the_model() {
                 .surface(&field, point, time)
                 .expect("model");
             let reference = plain.surface(&field, point, time).expect("without surf");
-            let no_section = unshaped
-                .surface(&field, point, time)
-                .expect("without section");
             assert_eq!(got.surface.body, expected.body, "{point:?}");
             let error = (got.surface.sample.height - expected.sample.height).abs();
             assert!(
@@ -248,8 +225,6 @@ fn surf_tick_and_repeat_queries_match_the_model() {
                 largest_error = largest_error.max(error);
                 largest_plain =
                     largest_plain.max((expected.sample.height - reference.sample.height).abs());
-                largest_unshaped =
-                    largest_unshaped.max((expected.sample.height - no_section.sample.height).abs());
             }
         }
     }
@@ -258,10 +233,6 @@ fn surf_tick_and_repeat_queries_match_the_model() {
     assert!(
         largest_plain > HEIGHT_TOLERANCE * 2.0,
         "untransformed control differs by only {largest_plain}"
-    );
-    assert!(
-        largest_unshaped > HEIGHT_TOLERANCE * 2.0,
-        "unshaped control differs by only {largest_unshaped}"
     );
     eprintln!(
         "4096 query points on Metal; maximum height error {largest_error:.6} m. Untransformed control {largest_plain:.6} m; ownership {counted:?}."
@@ -284,7 +255,7 @@ fn measure_cache(
     let sheets = [0, 1].map(|body| map.surf_sheet(field, body, time).expect("model"));
     let [ox, oz] = witness.anchor.map(f32::floor);
     let mut counts = [0; 2];
-    let mut lag_difference = 0.0_f64;
+    let mut control_differences = [0.0_f64; 2];
     for (&[x, z, spacing, slot], actual) in nodes.iter().zip(samples) {
         let body = usize::from(slot != 0.0);
         if counts[body] == 1024 || actual[3] == 0.0 {
@@ -313,30 +284,40 @@ fn measure_cache(
             );
         }
         if body == 0
-            && lag_difference <= HEIGHT_TOLERANCE * 2.0
-            && let Some(omitted) = without_lag_height(map, field, point, time, row)
+            && control_differences
+                .iter()
+                .any(|difference| *difference <= HEIGHT_TOLERANCE * 2.0)
+            && let Some(controls) = control_heights(map, field, point, time, row)
         {
-            lag_difference = lag_difference.max((f64::from(actual[1]) - omitted).abs());
+            for (difference, omitted) in control_differences.iter_mut().zip(controls) {
+                *difference = difference.max((f64::from(actual[1]) - omitted).abs());
+            }
         }
         counts[body] += 1;
     }
     assert_eq!(counts, [1024; 2]);
-    assert!(
-        lag_difference > HEIGHT_TOLERANCE * 2.0,
-        "the lag-only control is indistinguishable from the model"
-    );
+    for (name, difference) in ["without lag", "without section"]
+        .into_iter()
+        .zip(control_differences)
+    {
+        assert!(
+            difference > HEIGHT_TOLERANCE * 2.0,
+            "{name} differs by only {difference} m"
+        );
+    }
     counts.iter().sum()
 }
 
-// Remove phase lag alone, retaining the model's shoaling, exposure, depth
-// cap and section. These wet sea probes are below the swash fade.
-fn without_lag_height(
+// Both controls keep shoaling, exposure and the depth cap. The first removes
+// phase lag alone. The second keeps the transformed cosine and omits the
+// section. Compare on wet rest nodes below the swash fade.
+fn control_heights(
     map: &Map,
     field: &Field,
     point: [f64; 2],
     time: f64,
     row: thrum_water_model::MapSample,
-) -> Option<f64> {
+) -> Option<[f64; 2]> {
     let surf = map.surf_profile().expect("surf");
     let transform = map.shore_transform(0).expect("sea transform");
     let stage = map.body(0).expect("sea").stage.value;
@@ -345,22 +326,21 @@ fn without_lag_height(
     if row.depth <= 0.5 * limit.swash_depth {
         return None;
     }
-    let [mut re, mut im, mut variance] = [0.0_f64; 3];
+    let [mut re, mut im, mut transformed, mut variance] = [0.0_f64; 4];
     for wave in field.layers[0].components() {
         let [kx, kz] = wave.wave_vector;
         let k = kx.hypot(kz);
         let sector = thrum_water_model::shore_sector(wave.wave_vector) as usize;
-        if !transform
-            .sample(sector, TAU / k, stage, point)
-            .0
-            .is_finite()
-        {
+        let (lag, _) = transform.sample(sector, TAU / k, stage, point);
+        if !lag.is_finite() {
             return None;
         }
         let gain =
             thrum_water_model::shoaling(k, depth) * transform.exposure(sector, stage, point).sqrt();
         let a = wave.amplitude * row.row.gains[0] * gain;
-        let (sin, cos) = wave.anchored_phase(point, time).sin_cos();
+        let phase = wave.anchored_phase(point, time);
+        let (sin, cos) = phase.sin_cos();
+        transformed += a * (phase + k * lag).cos();
         re += a * cos;
         im += a * sin;
         variance += 0.5 * a * a;
@@ -369,5 +349,5 @@ fn without_lag_height(
     let index = 2.0 * envelope / (surf.breaker_ratio * depth);
     let section = surf.section.sample(im.atan2(re), index);
     let scale = (0.6 * (row.depth + limit.swash_depth) / (4.0 * variance.sqrt())).min(1.0);
-    Some(section.height * envelope * scale)
+    Some([section.height * envelope * scale, transformed * scale])
 }
