@@ -19,7 +19,7 @@ use thrum_render::{
     present::SurfaceProfile,
     runtime::{
         DriveReport, EncodedFrame, ExtentRequest, ExtentTransition, FrameError, FrameHost,
-        FrameSample, FrameWorld, SceneSource, SurfaceOutput, SurfaceSwitchOutcome,
+        FrameSample, FrameWorld, SceneKind, SceneSource, SurfaceOutput, SurfaceSwitchOutcome,
     },
 };
 use wgpu::TextureViewDescriptor;
@@ -365,7 +365,12 @@ impl<G: Game> Actor<G> {
         } else {
             self.needs_reconfigure = true;
         }
+        // A sprite scene has one output pixel per backing pixel. A pending
+        // generation can leave the old surface usable while the window grows.
+        let matches_grid = self.host.scene_kind() != SceneKind::TwoD
+            || request.extent == self.current_extent.extent;
         let ready = current
+            && matches_grid
             && !request.extent.contains(&0)
             && self.transition.surface.usable()
             && self.refused_surface_generation != Some(request.surface_generation)

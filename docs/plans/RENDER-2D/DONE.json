@@ -311,10 +311,10 @@
           "ask": "Is the box-filter reference computed on the CPU from texel areas? Is the weight figure measured, from a lit texel's sum over the screen, and not inferred from the pixel figure? Is each retained figure the measured one, of a size a sampler's weight precision explains (a small fraction of the contrast between two neighbouring texels), and not a number loosened to pass?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-coverage.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.2",
@@ -323,10 +323,10 @@
           "ask": "Is the nearest-sampling control run through the same measurement and required to fail? Does the test read the bound from the retained record, with no path that rewrites it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.3",
@@ -334,10 +334,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.4",
@@ -346,10 +346,10 @@
           "ask": "Are the frames in the bleed test packed against frames of a contrasting colour on every side? Does the tile test sweep fractional scales and offsets over a background colour that neither tile contains?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",
@@ -357,10 +357,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-sprite-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.6",
@@ -429,7 +429,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Pixel stability as in Celeste: a texel never changes size, swims or sparkles as the view moves, at any window size. Edges as clean as the painted sprites of Hades or Hollow Knight: no fringe, no halo, no bleed from a neighbouring frame, no seam between ground tiles."
     },
     {

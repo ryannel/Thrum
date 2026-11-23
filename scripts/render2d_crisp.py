@@ -5,10 +5,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 
 from apple_presentation import mac_arm, mac_binary
+from capture_v1_runtime import console_observation
 
 ROOT = Path(__file__).resolve().parents[1]
 RETAINED = ROOT / "crates/thrum-render/tests/support/coverage-mac-metal.json"
@@ -115,13 +115,20 @@ def card_capture(binary, env, output, points):
 
 
 def transition_capture(binary, env, folder):
-    frames, _, _ = mac_arm(folder, binary, env, "portable", "sweep", frames=52, capture=True)
+    frames, calls, _ = mac_arm(folder, binary, env, "portable", "sweep", frames=90, capture=True)
     arm = folder / "portable-sweep"
     presented = [row for row in frames if row["presented"]]
-    changed = next(
+    stale = next((row for row in presented if row["surface"] != row["window"]), None)
+    if stale:
+        raise ValueError(f"Presented a sprite scene on an obsolete backing grid: {stale}")
+    changed = next((
         row for previous, row in zip(presented, presented[1:])
         if row["surface"] != previous["surface"]
-    )
+    ), None)
+    if changed is None:
+        observations = {(tuple(row["window"]), tuple(row["surface"]), row["status"], row["transition_error"])
+                        for row in frames}
+        raise ValueError(f"No resized frame. Window and surface observations: {observations}; configure: {calls}")
     if (changed["window"] != changed["surface"] or changed["drawable"] != [changed["surface"]] * 2
             or not changed["switch"] or changed["switch"]["extent"] != changed["surface"]):
         raise ValueError(f"First resized submission used an old extent: {changed}")
@@ -145,11 +152,11 @@ def window(output, binary=None):
         binary = binary.resolve()
         env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     env.update(THRUM_SCENE="sprites", THRUM_SPRITE_SCALE="2", THRUM_RECIPE="portable")
-    console = subprocess.check_output(["/usr/sbin/ioreg", "-n", "Root", "-d1"], text=True)
-    console_state = re.findall(r'"(IOConsoleLocked|CGSSessionScreenIsLocked)"\s*=\s*(Yes|No)', console)
-    return dict(
-        target="mac-metal", commit=revision(), console=dict(console_state),
-        binary_sha256=hashlib.file_digest(binary.open("rb"), "sha256").hexdigest(),
-        windows=[card_capture(binary, env, output, points) for points in ([640, 360], [1280, 720], [1707, 933])],
-        resize=transition_capture(binary, env, output),
-    )
+    console_before, _ = console_observation()
+    windows = [card_capture(binary, env, output, points) for points in ([640, 360], [1280, 720], [1707, 933])]
+    resize = transition_capture(binary, env, output)
+    console_after, _ = console_observation()
+    with binary.open("rb") as file:
+        identity = hashlib.file_digest(file, "sha256").hexdigest()
+    return dict(target="mac-metal", commit=revision(), console_before=console_before,
+                console_after=console_after, binary_sha256=identity, windows=windows, resize=resize)

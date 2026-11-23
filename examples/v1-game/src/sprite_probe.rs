@@ -152,6 +152,7 @@ fn pixel_sheet() -> EmbeddedSheet {
                 }
                 2 => pixel_art(u - 16, y - 16),
                 3 => [255; 4],
+                4 => pixel_art((u - 16) * 2, (y - 16) * 2),
                 _ => [0; 4],
             };
             bytes.extend(texel);
@@ -161,7 +162,7 @@ fn pixel_sheet() -> EmbeddedSheet {
         origin: [0; 2],
         size: crate::sprite_card::SIZE,
     }];
-    frames.extend((0..4).map(|i| SpriteRect {
+    frames.extend((0..5).map(|i| SpriteRect {
         origin: [i * 32, 128],
         size: [32; 2],
     }));
@@ -257,15 +258,15 @@ fn still_rows() -> Vec<SpriteRow> {
                 layer: 1,
                 scale: [scale; 2],
                 ..SpriteRow::new(
-                    3,
+                    5,
                     [
                         x - f64::from(scale) * 16.0,
-                        y - 45.0 + f64::from(scale) * 16.0,
+                        y - 39.0 + f64::from(scale) * 16.0,
                     ],
                 )
             });
         }
-        for (x, scale) in [-150.0, -90.0, -10.0, 146.0]
+        for (x, scale) in [-150.0, -90.0, -10.0, 175.0]
             .into_iter()
             .zip([0.25, 0.5, 1.0, 2.0])
         {
@@ -277,7 +278,7 @@ fn still_rows() -> Vec<SpriteRow> {
                     0,
                     [
                         x - f64::from(scale) * 32.0,
-                        y - 108.0 + f64::from(scale) * 32.0,
+                        y - 104.0 + f64::from(scale) * 32.0,
                     ],
                 )
             });

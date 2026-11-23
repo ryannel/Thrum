@@ -8,6 +8,9 @@ mod world;
 pub(crate) use graph::{PreparedSprites, SpriteTarget};
 pub use world::{SpritePose, SpriteSink};
 
+pub(crate) const SHEET_MAX_MIP: u32 = 2;
+pub(crate) const SHEET_GUTTER: u32 = 1 << SHEET_MAX_MIP;
+
 /// One frame's 2D camera. The host supplies the drawable's physical extent.
 #[derive(Clone, Copy, Debug)]
 pub struct SpriteView {
@@ -89,6 +92,7 @@ impl SpriteScene {
 
 /// Filtering for an embedded sprite sheet.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpriteSampling {
     /// Coverage sampling preserves the authored grid at magnification.
     #[default]

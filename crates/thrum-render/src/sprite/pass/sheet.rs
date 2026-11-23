@@ -5,12 +5,11 @@ use crate::{
     shader_constants::{
         SRGB_ENCODED_KNEE, SRGB_GAMMA_F32, SRGB_OFFSET, SRGB_SCALE, SRGB_SLOPE_F32,
     },
-    sprite::{EmbeddedSheet, NamedSheet, SpriteSampling},
+    sprite::{EmbeddedSheet, NamedSheet, SHEET_GUTTER as GUTTER, SHEET_MAX_MIP},
     error::RenderError,
 };
 
-const MIP_LEVELS: u32 = 3;
-const GUTTER: u32 = 1 << (MIP_LEVELS - 1);
+const MIP_LEVELS: u32 = SHEET_MAX_MIP + 1;
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 
 #[derive(Clone, Copy)]
@@ -41,12 +40,7 @@ fn pack(sheet: &NamedSheet, limits: &wgpu::Limits) -> Option<(Vec<Placement>, [u
     for &index in &sheet.tiles {
         *tiles.get_mut(index as usize)? = true;
     }
-    let kind = match sheet.sampling {
-        SpriteSampling::Pixel => 0,
-        SpriteSampling::Smooth => 1,
-        SpriteSampling::NearestControl => 2,
-        SpriteSampling::BilinearControl => 3,
-    };
+    let kind = sheet.sampling as u32;
     let (mut x, mut y, mut shelf, mut page) = (0, 0, 0, 0);
     let mut used_width = 0;
     let mut used_height = 0;

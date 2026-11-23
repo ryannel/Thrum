@@ -66,7 +66,7 @@ fn relative(position: vec4<f32>) -> vec2<f32> {
     let footprint = 1.0 / max(vec2(0.000001), abs(scale * view.pixels_per_unit));
     // A standalone sprite can reach across its outline. Tiles must retain
     // their original vertices so the rasterizer assigns their shared edge once.
-    let margin = select(clamp(max(footprint.x, footprint.y), 1.0, 4.0), 0.0, frame.tile != 0u);
+    let margin = select(clamp(max(footprint.x, footprint.y), 1.0, SPRITE_GUTTER), 0.0, frame.tile != 0u);
     let texel = corner * (size + 2.0 * margin) - margin;
     let local = texel * scale * vec2(1.0, -1.0);
     let sin_angle = sin(angle);
@@ -112,7 +112,7 @@ fn source(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec
     let page = i32(frame.page);
     let origin = vec2<f32>(frame.origin);
     let size = vec2<f32>(frame.size);
-    if frame.kind == 2u {
+    if frame.kind == SPRITE_NEAREST {
         let cell = vec2<i32>(floor(texel));
         if frame.tile == 0u && (any(cell < vec2(0)) || any(cell >= vec2<i32>(frame.size))) {
             return vec4(0.0);
@@ -123,15 +123,16 @@ fn source(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec
     let minification = max(footprint.x, footprint.y);
     var lod = 0.0;
     var point = texel;
-    if frame.kind != 3u {
-        lod = clamp(log2(minification), 0.0, 2.0);
-        if frame.kind == 0u && minification <= 1.00001 {
+    if frame.kind != SPRITE_BILINEAR {
+        lod = clamp(log2(minification), 0.0, SPRITE_MAX_MIP);
+        if frame.kind == SPRITE_PIXEL && minification <= 1.00001 {
             point = coverage_coordinate(texel, footprint);
         }
     }
     // At the coarsest level this is the centre of the outer gutter texel.
     // Clamping also handles sprites smaller than one quarter of native size.
-    point = clamp(point, vec2(-2.0), ceil(size * 0.25) * 4.0 + 2.0);
+    let half_gutter = 0.5 * SPRITE_GUTTER;
+    point = clamp(point, vec2(-half_gutter), ceil(size / SPRITE_GUTTER) * SPRITE_GUTTER + half_gutter);
     return filtered(sheet, origin + point, page, lod);
 }
 

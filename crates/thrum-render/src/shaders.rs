@@ -266,7 +266,15 @@ macro_rules! shader_catalog {
 
 shader_catalog! {
     Present => wgsl!("present.wgsl");
-    Sprite => wgsl!("sprite/pass.wgsl");
+    Sprite => format!(
+        "const SPRITE_MAX_MIP: f32 = {}.0;\nconst SPRITE_GUTTER: f32 = {}.0;\nconst SPRITE_PIXEL: u32 = {}u;\nconst SPRITE_NEAREST: u32 = {}u;\nconst SPRITE_BILINEAR: u32 = {}u;\n{}",
+        crate::sprite::SHEET_MAX_MIP,
+        crate::sprite::SHEET_GUTTER,
+        crate::sprite::SpriteSampling::Pixel as u32,
+        crate::sprite::SpriteSampling::NearestControl as u32,
+        crate::sprite::SpriteSampling::BilinearControl as u32,
+        wgsl!("sprite/pass.wgsl")
+    );
     Exposure => crate::synthetic::exposure::SHADER;
     Temporal => wgsl!("synthetic/temporal.wgsl");
     History => wgsl!("synthetic/history_gpu.wgsl");

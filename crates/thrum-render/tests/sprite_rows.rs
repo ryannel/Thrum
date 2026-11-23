@@ -63,25 +63,72 @@ fn pixel_check(
         let y = f64::from(EXTENT[1]) * 0.5 - (index / width) as f64 - 0.5 - pivot[1];
         let u = (x * cos + y * sin) / scale[0];
         let v = (x * sin - y * cos) / scale[1];
-        // Compare the solid interior and the clear exterior independently of
-        // footprint coverage. Sprite edges have their own submitted-image test.
-        let footprint = scale[0].min(scale[1]).recip();
-        let transition = footprint.max(1.0);
-        if [u, v, u - 12.0, v - 10.0]
-            .iter()
-            .any(|edge| edge.abs() <= transition)
-        {
-            continue;
+        let weight = pose_pixel_weight([u, v], scale);
+        let inside = weight > 0.999_999;
+        if inside || weight < 0.000_001 {
+            assert_eq!(
+                *pixel,
+                if inside { colour } else { CLEAR },
+                "pixel {index}: ({x},{y}) -> ({u},{v}) at {degrees} degrees"
+            );
+        } else {
+            for channel in 0..3 {
+                let measured = decode(pixel[channel]);
+                let expected = decode(colour[channel]) * weight;
+                assert!(
+                    (measured - expected).abs() < 0.008,
+                    "pixel {index}: ({u},{v}) at {degrees}°, channel {channel} measured {measured}, expected {expected}"
+                );
+            }
         }
-        let inside = (0.0..12.0).contains(&u) && (0.0..10.0).contains(&v);
-        assert_eq!(
-            *pixel,
-            if inside { colour } else { CLEAR },
-            "pixel {index}: ({x},{y}) -> ({u},{v}) at {degrees} degrees"
-        );
         checked += usize::from(inside);
     }
     assert!(checked > 30);
+}
+
+fn decode(code: u8) -> f64 {
+    let signal = f64::from(code) / 255.0;
+    if signal <= 0.04045 {
+        signal / 12.92
+    } else {
+        ((signal + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+fn pose_pixel_weight(local: [f64; 2], scale: [f64; 2]) -> f64 {
+    let footprint = scale[0].min(scale[1]).recip();
+    if footprint <= 1.0 {
+        return local
+            .into_iter()
+            .zip([12.0, 10.0])
+            .zip(scale)
+            .map(|((centre, size), scale)| {
+                let half_pixel = 0.5 / scale;
+                ((centre + half_pixel).min(size) - (centre - half_pixel).max(0.0))
+                    .clamp(0.0, 2.0 * half_pixel)
+                    * scale
+            })
+            .product();
+    }
+    // These pose fixtures minify between the first two mips. Both source
+    // sides are even, so each reduced texel is entirely solid or clear.
+    let at_level = |texel_span: f64| -> f64 {
+        local
+            .into_iter()
+            .zip([12.0, 10.0])
+            .map(|(centre, size)| {
+                let centre_index = centre / texel_span - 0.5;
+                let base = centre_index.floor();
+                let level_size = size / texel_span;
+                let left = f64::from(u8::from((0.0..level_size).contains(&base)));
+                let right = f64::from(u8::from((0.0..level_size).contains(&(base + 1.0))));
+                let fraction = centre_index - base;
+                left * (1.0 - fraction) + right * fraction
+            })
+            .product()
+    };
+    let lod = footprint.log2();
+    at_level(1.0) * (1.0 - lod) + at_level(2.0) * lod
 }
 
 fn submit(

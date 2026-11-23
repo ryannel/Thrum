@@ -1,7 +1,7 @@
 //! Camera-relative admission and projected coverage accounting.
 
 use super::{GpuRow, SpriteRect, SpriteScene};
-use crate::sprite::SpriteView;
+use crate::sprite::{SHEET_GUTTER, SpriteView};
 
 pub(super) fn coverage_at(
     scene: &SpriteScene,
@@ -32,7 +32,8 @@ pub(super) fn coverage_at(
     let [w, h] = dimensions(rect, row, view.pixels_per_unit, alpha);
     // The quad can extend four source texels on each side.
     let [sx, sy] = [w / f64::from(rect.size[0]), h / f64::from(rect.size[1])];
-    if (w.abs() + h.abs()) + 8.0 * (sx.abs() + sy.abs()) > limit {
+    let gutter = f64::from(SHEET_GUTTER);
+    if (w.abs() + h.abs()) + 2.0 * gutter * (sx.abs() + sy.abs()) > limit {
         return None;
     }
     if !measure {
@@ -46,7 +47,7 @@ pub(super) fn coverage_at(
     let margin = if sheet.tiles.contains(&frame) {
         0.0
     } else {
-        sx.abs().min(sy.abs()).recip().clamp(1.0, 4.0)
+        sx.abs().min(sy.abs()).recip().clamp(1.0, gutter)
     };
     let (sin, cos) = f64::from(angle).sin_cos();
     pivot[0] -= margin * (sx * cos + sy * sin);
