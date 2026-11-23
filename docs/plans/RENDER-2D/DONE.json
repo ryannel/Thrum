@@ -310,8 +310,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --test scene_2d generation_prepares_only_the_sprite_and_output_resources -- --exact",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/M3.12-generation-inventory.log",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },

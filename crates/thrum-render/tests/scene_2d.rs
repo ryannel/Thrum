@@ -120,7 +120,7 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
         assert_eq!(
             storage,
             format!(
-                "embedded sprite sheet Rgba16Float 1x1\nsprite frames bytes=16\nslot=0\n{slot}\nslot=1\n{slot}"
+                "embedded sprite sheet Rgba16Float 12x12\nsprite frames bytes=32\nslot=0\n{slot}\nslot=1\n{slot}"
             )
         );
         let pipelines = host.creation_report().pipelines;

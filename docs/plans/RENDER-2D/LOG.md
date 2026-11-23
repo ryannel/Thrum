@@ -163,3 +163,7 @@
   dry run reproduced the stale inventory expectations and reused the existing Metal passes. It stopped
   in the Chrome queue. A separate M3.13 probe reached the shared check, which reported an in-flight
   run and no covering pass. The completed M3 landing and its realtime captures supply the remaining proof.
+- 2026-11-23 M3.12 updates the existing creation-counters inventory for the padded 12×12
+  one-frame atlas and the 32-byte frame record. The focused test passed on portable Metal and
+  Apple tile, including its live allocations, graph, pipeline and submitted-frame checks against
+  the 3D control. [Focused Metal run](../../../.orchestrate/evidence/RENDER-2D/M3/M3.12-generation-inventory.log)
