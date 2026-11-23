@@ -81,6 +81,7 @@ fn reply(report: DriveReport, lost: bool) -> RenderReply<()> {
             worker_wall: Duration::ZERO,
             surface_status: SurfaceStatus::Presented,
             transition_error: None,
+            surface_format: wgpu::TextureFormat::Bgra8Unorm,
             readback: (),
         },
     }

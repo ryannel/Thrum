@@ -23,6 +23,8 @@ pub(crate) trait RuntimeSetup {
     fn hardware_requests(&self) -> &[thrum_render::capabilities::HardwareRequest];
     #[cfg(target_os = "macos")]
     fn world(&self) -> Option<&dyn thrum_app::WorldLink>;
+    #[cfg(target_os = "macos")]
+    fn supports_edr(&self) -> bool;
 
     fn readback(host: &Runtime) -> f32;
 
@@ -44,6 +46,11 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     #[cfg(target_os = "macos")]
     fn hardware_requests(&self) -> &[thrum_render::capabilities::HardwareRequest] {
         self.0.hardware_requests()
+    }
+
+    #[cfg(target_os = "macos")]
+    fn supports_edr(&self) -> bool {
+        self.0.supports_edr()
     }
 
     async fn prepare<'a>(

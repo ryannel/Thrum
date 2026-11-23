@@ -5,8 +5,10 @@ if [[ "${1:-}" == "--extent" && "$#" -eq 1 ]]; then
     export THRUM_V1_ROWS=extent
 elif [[ "${1:-}" == "--transition" && "$#" -eq 1 ]]; then
     export THRUM_V1_ROWS=transition
+elif [[ "${1:-}" == "--edr" && "$#" -eq 1 ]]; then
+    export THRUM_V1_ROWS=edr
 elif [[ "$#" -ne 0 ]]; then
-    echo "usage: $0 [--extent|--transition]" >&2
+    echo "usage: $0 [--extent|--transition|--edr]" >&2
     exit 2
 fi
 

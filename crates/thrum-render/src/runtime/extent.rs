@@ -23,6 +23,7 @@ use {
 #[cfg(not(target_arch = "wasm32"))]
 pub struct ExtentPrepareInputs {
     extent: [u32; 2],
+    format: wgpu::TextureFormat,
     device: wgpu::Device,
     queue: wgpu::Queue,
     creations: Ledger,
@@ -71,7 +72,7 @@ impl ExtentPrepareInputs {
                 .transpose()?;
             let presenter = self
                 .presenter
-                .prepare(self.extent, self.extent)
+                .prepare_format(self.extent, self.extent, self.format)
                 .map_err(|error| FrameError::gpu("scene presenter extent", error))?;
             let mut slots = self.targets.prepare_slots(
                 &self.queue,
@@ -159,6 +160,29 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .presenter
             .as_ref()
             .ok_or(FrameError::InvalidState("host has no surface presenter"))?;
+        self.extent_prepare_inputs_for_format(extent, presenter.profile().format)
+    }
+
+    /// Retain detached preparation inputs for an extent and an optional EDR upgrade.
+    /// # Errors
+    /// Refuses a host without a compatible presenter.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn extent_prepare_inputs_for_format(
+        &self,
+        extent: [u32; 2],
+        format: wgpu::TextureFormat,
+    ) -> Result<ExtentPrepareInputs, FrameError> {
+        let presenter = self
+            .presenter
+            .as_ref()
+            .ok_or(FrameError::InvalidState("host has no surface presenter"))?;
+        if format != presenter.profile().format
+            && (format != wgpu::TextureFormat::Rgba16Float || self.prepared.three_d().is_none())
+        {
+            return Err(FrameError::InvalidState(
+                "incompatible display mode transition",
+            ));
+        }
         let mut secondary = None;
         if let (Some(scene), Some(contribution)) = (self.prepared.three_d(), &self.contribution) {
             let slots = contribution.secondary_view_slots();
@@ -176,6 +200,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         Ok(ExtentPrepareInputs {
             extent,
+            format,
             device: self.device.clone(),
             queue: self.queue.clone(),
             creations: self.creations.clone(),

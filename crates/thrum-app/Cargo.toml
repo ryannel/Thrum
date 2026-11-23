@@ -7,6 +7,9 @@ publish.workspace = true
 description = "Application shells shared by Thrum games: the native macOS window, display link and render owner, and the browser WebGPU canvas shell"
 autotests = false
 
+[features]
+creation-counters = ["thrum-render/creation-counters"]
+
 [dependencies]
 thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 thrum-controls = { path = "../thrum-controls" }
@@ -25,8 +28,9 @@ cpu-time = "=1.0.0"
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal"] }
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
 objc2 = "=0.6.5"
-objc2-foundation = { version = "=0.3.2", default-features = false, features = ["NSObject", "NSRunLoop"] }
-objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["CABase", "CADisplayLink", "CAFrameRateRange"] }
+objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["NSApplication", "NSScreen", "NSView", "NSWindow", "objc2-quartz-core"] }
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["NSArray", "NSNotification", "NSObject", "NSRunLoop", "NSString"] }
+objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["CABase", "CADisplayLink", "CAFrameRateRange", "CALayer", "CAMetalLayer", "objc2-core-foundation"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 thrum-asset = { path = "../thrum-asset" }

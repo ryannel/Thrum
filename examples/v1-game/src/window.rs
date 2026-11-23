@@ -164,7 +164,11 @@ pub fn run_window(
         title,
         render_thread: "thrum-v1-render",
         panel_title: "Thrum demo",
-        window_size: [1920, 1080],
+        window_size: if std::env::var_os("THRUM_MAC_EDR_FRAMES").is_some() {
+            [640, 360]
+        } else {
+            [1920, 1080]
+        },
     };
     let game = || {
         Ok(HostedGame(WindowGame {
@@ -306,6 +310,10 @@ impl RuntimeSetup for WindowGame {
 
     fn demo_mut(&mut self) -> &mut GameControls {
         &mut self.demo
+    }
+
+    fn supports_edr(&self) -> bool {
+        crate::selected_setup().is_ok_and(|setup| setup.sprite_scale.is_none())
     }
 
     fn hardware_requests(&self) -> &[HardwareRequest] {

@@ -13,6 +13,9 @@ const NAME: &str = "thrum-v1-ios-state.txt";
 
 #[derive(Default)]
 pub(super) struct Witness {
+    pub(super) screen_headroom: f32,
+    render_headroom: f32,
+    surface_format: Option<wgpu::TextureFormat>,
     pub(super) state: String,
     cooked: String,
     pub(super) adapter: String,
@@ -186,6 +189,8 @@ impl Witness {
     }
 
     pub(super) fn frame(&mut self, frame: &FrameReply) {
+        self.render_headroom = frame.platform.headroom;
+        self.surface_format = frame.platform.format;
         self.cooked.clone_from(&frame.platform.cooked);
         self.replies += 1;
         if self.resize_open {
@@ -393,6 +398,9 @@ impl Witness {
             .actor_position
             .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
         let tail = [
+            ("screen_headroom", self.screen_headroom.to_string()),
+            ("render_headroom", self.render_headroom.to_string()),
+            ("surface_format", format!("{:?}", self.surface_format)),
             ("actor_samples", self.actor_samples.to_string()),
             ("actor_position", actor),
             ("stall_active", self.stall_active.to_string()),

@@ -51,7 +51,7 @@ const RECOVER_ATTEMPTS: u32 = 3;
 
 #[derive(Clone, Copy, Debug)]
 enum ShellEvent {
-    Target(f64),
+    Target(f64, f32),
     RenderDone,
     WorldAdvanced,
     /// Qualification only: the render owner is holding a stalled section.
@@ -84,6 +84,7 @@ enum Command {
     CaptureSlow,
     CaptureMove,
     CaptureRest,
+    ForceHeadroom,
 }
 
 #[expect(
@@ -91,9 +92,16 @@ enum Command {
     reason = "Swift owns the UIKit display link and calls this C ABI forward"
 )]
 #[unsafe(no_mangle)]
-extern "C" fn thrum_v1_display_target(target_media_seconds: f64) {
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the display record uses bounded f32 headroom"
+)]
+extern "C" fn thrum_v1_display_target(target_media_seconds: f64, headroom: f64) {
     if let Some(shell) = SHELL.get() {
-        let _ = shell.send_event(ShellEvent::Target(target_media_seconds));
+        let _ = shell.send_event(ShellEvent::Target(
+            target_media_seconds,
+            headroom.clamp(1.0, 65_504.0) as f32,
+        ));
     }
 }
 
@@ -121,6 +129,7 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         15 => Command::CaptureSlow,
         16 => Command::CaptureMove,
         17 => Command::CaptureRest,
+        18 => Command::ForceHeadroom,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
@@ -240,6 +249,7 @@ struct Shell {
     instance: wgpu::Instance,
     lease: Arc<Lease>,
     signals: Arc<Signals>,
+    force_headroom: bool,
     origin: Instant,
     state: State,
     /// The device generation frames are requested under.
@@ -287,6 +297,7 @@ impl Shell {
             instance: wgpu::Instance::new(descriptor),
             lease: Arc::new(Lease::new()),
             signals: Arc::new(Signals::default()),
+            force_headroom: false,
             origin: Instant::now(),
             state: State::Starting,
             device_generation: FIRST_DEVICE_GENERATION,
@@ -605,6 +616,7 @@ impl Shell {
             Command::CaptureEnd => self.signals.capture.store(4, Ordering::Release),
             Command::CaptureMove => self.send_axes([1.0, 0.0, 0.0])?,
             Command::CaptureRest => self.send_axes([0.0; 3])?,
+            Command::ForceHeadroom => self.force_headroom = true,
         }
         self.witness.last_command = format!("{command:?}");
         self.write();
@@ -948,7 +960,7 @@ impl ApplicationHandler<ShellEvent> for Shell {
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: ShellEvent) {
         let kind = match event {
-            ShellEvent::Target(_) => "target",
+            ShellEvent::Target(..) => "target",
             ShellEvent::RenderDone => "render",
             ShellEvent::WorldAdvanced => "world",
             ShellEvent::Stalling => "stalling",
@@ -957,7 +969,17 @@ impl ApplicationHandler<ShellEvent> for Shell {
             ShellEvent::Command(_) => "command",
         };
         self.timed(event_loop, kind, |shell, event_loop| match event {
-            ShellEvent::Target(target) => {
+            ShellEvent::Target(target, headroom) => {
+                shell.witness.screen_headroom = headroom;
+                let effective = if shell.force_headroom {
+                    2.0_f32
+                } else {
+                    headroom
+                };
+                shell
+                    .signals
+                    .headroom
+                    .store(u64::from(effective.to_bits()), Ordering::Release);
                 shell.target(target);
                 shell.dispatch()
             }

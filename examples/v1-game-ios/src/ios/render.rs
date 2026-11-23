@@ -123,6 +123,8 @@ pub(super) struct FrameObservation {
     pub(super) status: SurfaceStatus,
     pub(super) cooked: String,
     pub(super) pending_frames: usize,
+    pub(super) headroom: f32,
+    pub(super) format: Option<wgpu::TextureFormat>,
     pub(super) acquired: bool,
     /// The acquire call ran without the requested epoch and extent configured.
     pub(super) unconfigured_acquire: bool,
@@ -187,6 +189,7 @@ pub(super) struct Reported {
 /// Flags the shell sets and the owner reads; none orders frame admission.
 #[derive(Default)]
 pub(super) struct Signals {
+    pub(super) headroom: AtomicU64,
     pub(super) capture: AtomicU64,
     pub(super) capture_callbacks: super::capture::Callbacks,
     /// Explicit held-view qualification only: begin the cooked camera pan.
@@ -320,6 +323,8 @@ fn frame_reply(request: &FrameRequest, generation: u64, target: TargetLeadStatus
             status: SurfaceStatus::NoView,
             cooked: String::new(),
             pending_frames: 0,
+            headroom: 1.0,
+            format: None,
             acquired: false,
             unconfigured_acquire: false,
             presentable_encode: false,
@@ -675,6 +680,9 @@ impl Owner {
         }
         gpu.host.set_presentation_lead(lead.duration);
         let mut reply = frame_reply(request, gpu.watch.generation, lead.status);
+        let bits = u32::try_from(self.signals.headroom.load(Ordering::Acquire)).unwrap_or_default();
+        reply.platform.headroom = f32::from_bits(bits).max(1.0);
+        reply.platform.format = Some(gpu.format);
         let usable = !request.extent.contains(&0);
         let ready = if !request.platform.present || !usable {
             reply.platform.status = SurfaceStatus::Denied;

@@ -1,0 +1,231 @@
+//! AppKit owns the per-window display record and the retained presentation layer.
+use objc2::{Message as _, rc::Retained, sel};
+use objc2_app_kit::NSView;
+use objc2_foundation::{MainThreadMarker, NSObjectProtocol as _};
+use objc2_quartz_core::{CADynamicRangeHigh, CAMetalLayer};
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, Ordering},
+};
+pub(super) mod proof;
+
+use winit::{
+    raw_window_handle::{HasWindowHandle, RawWindowHandle},
+    window::Window,
+};
+
+/// Current and potential headroom published atomically as one display sample.
+#[derive(Default)]
+pub(super) struct Headroom(AtomicU64);
+
+impl Headroom {
+    fn publish(&self, current: f32, potential: f32) {
+        let bits = u64::from(current.to_bits()) | (u64::from(potential.to_bits()) << 32);
+        self.0.store(bits, Ordering::Release);
+    }
+
+    pub(super) fn load(&self) -> (f32, f32) {
+        let bytes = self.0.load(Ordering::Acquire).to_le_bytes();
+        let [a, b, c, d, e, f, g, h] = bytes;
+        (
+            f32::from_le_bytes([a, b, c, d]).max(1.0),
+            f32::from_le_bytes([e, f, g, h]).max(1.0),
+        )
+    }
+}
+
+pub(super) struct MacDisplay {
+    view: Retained<NSView>,
+    layer: Retained<CAMetalLayer>,
+    pub(super) headroom: Arc<Headroom>,
+    applied: Option<f32>,
+    forced: Option<Forced>,
+    proof: Option<std::fs::File>,
+}
+
+#[derive(Clone, Copy)]
+enum Forced {
+    Sdr,
+    Constant(f32),
+    Step {
+        before: f32,
+        after: f32,
+        tick: u64,
+        potential: f32,
+    },
+    Promote {
+        tick: u64,
+    },
+}
+
+impl Forced {
+    fn parse() -> Result<Option<Self>, String> {
+        let Ok(value) = std::env::var("THRUM_MAC_EDR") else {
+            return Ok(None);
+        };
+        let number = |text: &str| {
+            text.parse::<f32>()
+                .ok()
+                .filter(|n| (1.0..=16.0).contains(n))
+        };
+        let forced = match value.split(':').collect::<Vec<_>>().as_slice() {
+            ["sdr"] => Some(Self::Sdr),
+            ["promote", tick] => tick.parse().ok().map(|tick| Self::Promote { tick }),
+            ["step", before, after, tick, potential] => number(before)
+                .zip(number(after))
+                .zip(tick.parse().ok())
+                .zip(number(potential))
+                .map(|(((before, after), tick), potential)| Self::Step {
+                    before,
+                    after,
+                    tick,
+                    potential,
+                }),
+            [headroom] => number(headroom).map(Self::Constant),
+            _ => None,
+        };
+        forced
+            .map(Some)
+            .ok_or_else(|| format!("invalid THRUM_MAC_EDR value {value:?}"))
+    }
+
+    fn sample(self, tick: u64) -> (f32, f32) {
+        match self {
+            Self::Constant(current) => (current, 16.0),
+            Self::Step {
+                after,
+                tick: change,
+                potential,
+                ..
+            } if tick >= change => (after, potential),
+            Self::Step { before, .. } => (before, 16.0),
+            Self::Promote { tick: change } if tick >= change => (2.0, 16.0),
+            Self::Sdr | Self::Promote { .. } => (1.0, 1.0),
+        }
+    }
+}
+
+impl MacDisplay {
+    #[expect(
+        unsafe_code,
+        reason = "the winit AppKit handle is a main-thread NSView pointer"
+    )]
+    pub(super) fn attach(window: &Window) -> Result<Self, String> {
+        let _main = MainThreadMarker::new().ok_or("display must be read on AppKit main thread")?;
+        let handle = window.window_handle().map_err(|error| error.to_string())?;
+        let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
+            return Err("macOS window did not provide an NSView".into());
+        };
+        // SAFETY: The handle is valid while the winit window is borrowed and names an NSView.
+        let view = unsafe { handle.ns_view.cast::<NSView>().as_ref() }.retain();
+        let backing = view.layer().ok_or("Metal view has no backing layer")?;
+        let layer = match backing.downcast::<CAMetalLayer>() {
+            Ok(layer) => layer,
+            Err(backing) => {
+                // SAFETY: This is the live AppKit backing layer on the main thread.
+                unsafe { backing.sublayers() }
+                    .and_then(|layers| {
+                        layers.iter().find_map(|layer| {
+                            layer
+                                .downcast_ref::<CAMetalLayer>()
+                                .map(CAMetalLayer::retain)
+                        })
+                    })
+                    .ok_or("Metal view has no CAMetalLayer")?
+            }
+        };
+        let proof = std::env::var_os("THRUM_MAC_EDR_RECORD")
+            .map(std::fs::File::create)
+            .transpose()
+            .map_err(|error| error.to_string())?;
+        Ok(Self {
+            view,
+            layer,
+            headroom: Arc::new(Headroom::default()),
+            applied: None,
+            forced: Forced::parse()?,
+            proof,
+        })
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "EDR uniform consumes f32, and headroom is bounded to float drawable range"
+    )]
+    pub(super) fn sample(&mut self, tick: u64, backing_scale: f64) {
+        let (current, potential, refresh) = self
+            .view
+            .window()
+            .and_then(|window| window.screen())
+            .map_or((1.0, 1.0, 0), |screen| {
+                let current = screen.maximumExtendedDynamicRangeColorComponentValue();
+                let potential = screen.maximumPotentialExtendedDynamicRangeColorComponentValue();
+                (
+                    current.clamp(1.0, 65504.0) as f32,
+                    potential.clamp(1.0, 65504.0) as f32,
+                    screen.maximumFramesPerSecond(),
+                )
+            });
+        let (effective, available) = self
+            .forced
+            .map_or((current, potential), |forced| forced.sample(tick));
+        self.headroom.publish(effective.min(available), available);
+        if let Some(record) = &mut self.proof {
+            use std::io::Write as _;
+            let receipt = serde_json::json!({
+                "tick": tick, "real_current": current, "real_potential": potential,
+                "refresh_hz": refresh, "backing_scale": backing_scale,
+                "current": effective.min(available), "potential": available, "forced": self.forced.is_some(),
+            });
+            drop(writeln!(record, "{receipt}"));
+        }
+    }
+
+    #[expect(
+        unsafe_code,
+        reason = "the availability-checked AppKit EDR range constant is an Objective-C static"
+    )]
+    pub(super) fn configured(&mut self, edr: bool) {
+        if !edr {
+            self.applied = None;
+            return;
+        }
+        let (headroom, _) = self.headroom.load();
+        if !self
+            .layer
+            .respondsToSelector(sel!(setPreferredDynamicRange:))
+            || !self.layer.respondsToSelector(sel!(setContentsHeadroom:))
+        {
+            return;
+        }
+        if self.applied.is_none() {
+            // SAFETY: The matching selector establishes these OS 26 APIs are present.
+            self.layer
+                .setPreferredDynamicRange(unsafe { CADynamicRangeHigh });
+        }
+        if self
+            .applied
+            .is_none_or(|previous| previous.to_bits() != headroom.to_bits())
+        {
+            self.layer.setContentsHeadroom(f64::from(headroom));
+            self.applied = Some(headroom);
+        }
+        if let Some(record) = &mut self.proof {
+            use std::io::Write as _;
+            let range = self.layer.preferredDynamicRange();
+            // SAFETY: Both OS 26 selectors were checked above.
+            let preferred_high = &*range == unsafe { CADynamicRangeHigh };
+            let receipt = serde_json::json!({
+                "main_thread": MainThreadMarker::new().is_some(),
+                "layer_headroom": self.layer.contentsHeadroom(),
+                "preferred_high": preferred_high,
+                "legacy_wants_edr": Self::legacy_wants_edr(&self.layer),
+            });
+            drop(writeln!(record, "{receipt}"));
+        }
+    }
+
+    fn legacy_wants_edr(layer: &CAMetalLayer) -> bool {
+        layer.wantsExtendedDynamicRangeContent()
+    }
+}

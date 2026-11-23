@@ -208,6 +208,16 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         route: path("THRUM_CAPTURE_ROUTE"),
         display_overlay: text("THRUM_CAPTURE_DISPLAY_OVERLAY")?,
         source: text("THRUM_CAPTURE_SOURCE")?,
+        edr_headroom: text("THRUM_CAPTURE_EDR_HEADROOM")?
+            .map(|value| value.parse::<f32>().map_err(|error| error.to_string()))
+            .transpose()?
+            .map(|value| {
+                (1.0..=16.0)
+                    .contains(&value)
+                    .then_some(value)
+                    .ok_or("capture headroom must be in [1, 16]")
+            })
+            .transpose()?,
         phase: text("THRUM_CAPTURE_PHASE")?,
         surface_format: text("THRUM_CAPTURE_SURFACE_FORMAT")?,
         surface_extent: text("THRUM_CAPTURE_SURFACE_EXTENT")?,

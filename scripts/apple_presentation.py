@@ -36,10 +36,12 @@ def check_pixels(raw, extent):
     return hashlib.sha256(raw).hexdigest()
 
 
-def mac_binary(*, cook=False):
+def mac_binary(*, cook=False, counters=False):
     env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     env.update(CARGO_TARGET_DIR=str(ROOT / "target"), RUSTC_WRAPPER="")
     targets = ["-p", "v1-game", "--bin", "v1-game"]
+    if counters:
+        targets += ["--features", "v1-game/creation-counters"]
     if cook:
         targets += ["-p", "thrum-cook", "--bin", "thrum-cook"]
     run("rustup", "run", "stable", "cargo", "build", "--locked", "--offline", "--release",
@@ -554,9 +556,17 @@ def mac_scale_costs(output):
         runs.append(dict(index=index, header=header, load=observed, costs=costs))
     return dict(target="mac-metal", build_sha256=build_sha256, runs=runs, timing_decides_pass=False)
 
+def ios_edr(output):
+    route = output / "route"
+    build = ROOT / "examples/v1-game-ios/ios/check-simulator.sh"
+    run(str(build), "--edr", env=dict(os.environ, THRUM_V1_ROUTE_OUT=str(route)), timeout=1500)
+    return dict(target="ios-sim", scope="simulator function only",
+                before=str(route / "edr-before.txt"), after=str(route / "edr-after.txt"))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs"])
+    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route"])
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -567,7 +577,15 @@ def main():
     else:
         output = args.output.resolve()
         output.mkdir(parents=True)
-    checks = {("scale", "mac-metal"): mac_scale, ("scale-costs", "mac-metal"): mac_scale_costs,
+    from apple_display_proof import mac_edr, mac_edr_modes, mac_edr_headroom, mac_edr_identity, mac_edr_route
+
+    checks = {("edr", "ios-sim"): ios_edr,
+              ("edr", "mac-metal"): mac_edr,
+              ("edr-modes", "mac-metal"): mac_edr_modes,
+              ("edr-headroom", "mac-metal"): mac_edr_headroom,
+              ("edr-identity", "mac-metal"): mac_edr_identity,
+              ("edr-route", "mac-metal"): mac_edr_route,
+              ("scale", "mac-metal"): mac_scale, ("scale-costs", "mac-metal"): mac_scale_costs,
               ("extent", "mac-metal"): mac_extent, ("extent", "ios-sim"): ios_extent,
               ("transition", "ios-sim"): ios_transition,
               ("transition", "mac-metal"): mac_transition,

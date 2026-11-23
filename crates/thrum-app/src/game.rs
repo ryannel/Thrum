@@ -108,6 +108,11 @@ pub trait Game {
         &[]
     }
 
+    /// Whether this game prepares a 3D scene with the EDR display transform.
+    fn supports_edr(&self) -> bool {
+        false
+    }
+
     /// Prepare the runtime on the shell's first device. `world_advanced` wakes the shell when
     /// a resident world lane commits.
     /// # Errors

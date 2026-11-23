@@ -1503,6 +1503,16 @@ impl PreparedSynthetic {
         )
     }
 
+    pub(crate) fn pending_exposure_sample(&self) -> &wgpu::Buffer {
+        &self.exposure.samples[self.history.write_side()]
+    }
+
+    pub(crate) fn write_display_headroom(&self, queue: &wgpu::Queue, headroom: f32) {
+        if let Some(stage) = &self.display.edr {
+            stage.write_headroom(queue, headroom);
+        }
+    }
+
     pub(crate) fn encode_surface(
         &self,
         target: &OffscreenTarget,

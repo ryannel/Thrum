@@ -22,6 +22,7 @@ use crate::{
     window::{SceneCapture, WindowGame},
 };
 
+mod display;
 mod motion;
 mod route;
 
@@ -50,6 +51,8 @@ pub struct SceneCaptureRequest {
     pub route: Option<PathBuf>,
     /// `THRUM_CAPTURE_DISPLAY_OVERLAY`: the route's display diagnostic.
     pub display_overlay: Option<String>,
+    /// `THRUM_CAPTURE_EDR_HEADROOM`: a forced headroom for submitted still captures.
+    pub edr_headroom: Option<f32>,
     /// `THRUM_CAPTURE_SOURCE`: the route's submitted-image stage.
     pub source: Option<String>,
     /// `THRUM_CAPTURE_PHASE`: a diagnostic in-tick phase in place of the route's.
@@ -129,7 +132,11 @@ pub(in crate::window) async fn run(
             None => (
                 EXTENT,
                 SurfaceProfile {
-                    format: OUTPUT_FORMAT,
+                    format: if request.edr_headroom.is_some() {
+                        wgpu::TextureFormat::Rgba16Float
+                    } else {
+                        OUTPUT_FORMAT
+                    },
                     extent: EXTENT,
                 },
             ),
@@ -189,6 +196,28 @@ pub(in crate::window) async fn run(
     }
     if let Some(frames) = motion_frames {
         return motion::record(&mut driver, request, &output, frames, cooked_generation);
+    }
+    if request.edr_headroom.is_some()
+        || matches!(
+            request.source.as_deref(),
+            Some("submitted-sdr" | "submitted-linear")
+        )
+    {
+        if !route_only {
+            return Err("submitted stills need the still route's parameter files".into());
+        }
+        let records = display::record(
+            &mut driver,
+            &output,
+            params.ok_or("submitted stills need parameter files")?,
+            request.edr_headroom,
+            request.source.as_deref() == Some("submitted-linear"),
+        )?;
+        return std::fs::write(output.join("stills.json"), serde_json::to_vec_pretty(&serde_json::json!({
+            "adapter": capabilities.adapter().name, "backend": format!("{:?}", capabilities.adapter().backend),
+            "recipe": format!("{:?}", capabilities.recipe()), "extent": EXTENT,
+            "mode": "still", "headroom": request.edr_headroom, "stills": records
+        })).map_err(|error| error.to_string())?).map_err(|error| error.to_string());
     }
     let host = driver.host_mut();
     let mut manifest = serde_json::json!({
@@ -334,33 +363,8 @@ fn route(
     std::fs::create_dir(&route).map_err(|error| error.to_string())?;
     let mut records = Vec::new();
     for path in files {
+        let (overlay, report) = apply_still(host, path)?;
         let refused = |reason: String| format!("capture parameters {}: {reason}", path.display());
-        let text = std::fs::read_to_string(path).map_err(|error| refused(error.to_string()))?;
-        let mut controls = GameControls::new().map_err(|error| refused(error.to_string()))?;
-        let report = controls
-            .model_mut()
-            .apply_file(&text)
-            .map_err(|error| refused(error.to_string()))?;
-        if !report.problems.is_empty() {
-            let problems: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
-            return Err(refused(format!("{report}: {}", problems.join("; "))));
-        }
-        if controls.take_edits().paused != Some(true) {
-            return Err(refused(
-                "set world.paused to true; capture never runs the world".to_owned(),
-            ));
-        }
-        let state = controls.replay();
-        let (Some(time), Some(pitch), Some(yaw)) =
-            (state.time_of_day, state.camera_pitch, state.camera_yaw)
-        else {
-            return Err(refused("controls replay omitted a value".to_owned()));
-        };
-        host.set_time_of_day(time)?;
-        host.set_camera_pitch(pitch)?;
-        host.set_camera_yaw(yaw)?;
-        let overlay = state.display_overlay().unwrap_or(DisplayOverlay::Off);
-        host.set_display_overlay(overlay);
         let name = path
             .file_name()
             .and_then(|name| name.to_str())
@@ -385,6 +389,40 @@ fn route(
     }
     host.set_display_overlay(DisplayOverlay::Off);
     Ok(records)
+}
+
+fn apply_still(
+    host: &mut Runtime,
+    path: &Path,
+) -> Result<(DisplayOverlay, thrum_controls::FileReport), String> {
+    let refused = |reason: String| format!("capture parameters {}: {reason}", path.display());
+    let text = std::fs::read_to_string(path).map_err(|error| refused(error.to_string()))?;
+    let mut controls = GameControls::new().map_err(|error| refused(error.to_string()))?;
+    let report = controls
+        .model_mut()
+        .apply_file(&text)
+        .map_err(|error| refused(error.to_string()))?;
+    if !report.problems.is_empty() {
+        let problems: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
+        return Err(refused(format!("{report}: {}", problems.join("; "))));
+    }
+    if controls.take_edits().paused != Some(true) {
+        return Err(refused(
+            "set world.paused to true; capture never runs the world".to_owned(),
+        ));
+    }
+    let state = controls.replay();
+    let (Some(time), Some(pitch), Some(yaw)) =
+        (state.time_of_day, state.camera_pitch, state.camera_yaw)
+    else {
+        return Err(refused("controls replay omitted a value".to_owned()));
+    };
+    host.set_time_of_day(time)?;
+    host.set_camera_pitch(pitch)?;
+    host.set_camera_yaw(yaw)?;
+    let overlay = state.display_overlay().unwrap_or(DisplayOverlay::Off);
+    host.set_display_overlay(overlay);
+    Ok((overlay, report))
 }
 
 fn save(host: &mut Runtime, path: &Path) -> Result<(), String> {

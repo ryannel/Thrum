@@ -2,6 +2,7 @@
 //! ticks, GPU scene packets and the prepared presentation pass.
 
 mod device;
+mod display;
 mod display_link;
 mod edit_flow;
 mod profile_recording;
@@ -76,6 +77,7 @@ enum UserEvent {
         callback: f64,
         number: u64,
     },
+    DisplayParametersChanged,
     RenderDone,
     DeviceLost(u64),
     ControlsEdited,
@@ -94,6 +96,7 @@ struct App<G: Game> {
     transition_proof: Option<WindowTransitionProof>,
     config: Config,
     wake: EventLoopProxy<UserEvent>,
+    display: Option<display::MacDisplay>,
     display_link: Option<ViewDisplayLink>,
     window: Option<Arc<Window>>,
     display_target: Option<f64>,
@@ -161,6 +164,13 @@ struct App<G: Game> {
 }
 
 impl<G: WindowGame + 'static> App<G> {
+    fn refresh_display_record(&mut self) {
+        if let (Some(display), Some(window)) = (&mut self.display, &self.window) {
+            display.sample(self.target_sequence, window.scale_factor());
+            display.configured(self.surface_format == Some(wgpu::TextureFormat::Rgba16Float));
+        }
+    }
+
     fn timing_requested(&self) -> bool {
         let reports =
             matches!(self.timing_policy, TimingPolicy::Report) || self.qualification.is_some();
@@ -189,6 +199,7 @@ impl<G: WindowGame + 'static> App<G> {
             transition_proof: None,
             config,
             wake,
+            display: None,
             display_link: None,
             window: None,
             display_target: None,
@@ -514,16 +525,30 @@ impl<G: WindowGame + 'static> App<G> {
                 .create_surface(Arc::clone(&window))
                 .map_err(|error| format!("surface: {error}"))?,
         );
+        if self.game.supports_edr()
+            && self.extent_capture.is_none()
+            && self.transition_proof.is_none()
+            && self.qualification.is_none()
+        {
+            let mut display = display::MacDisplay::attach(&window)?;
+            display.sample(0, window.scale_factor());
+            self.display = Some(display);
+        }
         let size = window.inner_size();
         let recipe = WindowDevice {
             instance,
             surface,
             hardware: self.game.hardware_requests().to_vec(),
+            headroom: self
+                .display
+                .as_ref()
+                .map(|display| Arc::clone(&display.headroom)),
         };
         let gpu = pollster::block_on(recipe.create(
             FIRST_DEVICE_GENERATION,
             [size.width, size.height],
             wake,
+            false,
         ))?;
         if gpu.watch.is_lost() {
             return Err("initial device lost before preparation".to_owned());
@@ -532,6 +557,9 @@ impl<G: WindowGame + 'static> App<G> {
             .map_err(|error| error.to_string())?;
         if gpu.watch.is_lost() {
             return Err("initial device lost during surface configuration".to_owned());
+        }
+        if let Some(display) = &mut self.display {
+            display.configured(gpu.config.format == wgpu::TextureFormat::Rgba16Float);
         }
         let world_wake = wake.clone();
         let prepared = pollster::block_on(self.game.prepare(
@@ -579,6 +607,7 @@ impl<G: WindowGame + 'static> App<G> {
         self.display_link = Some(ViewDisplayLink::start(
             self.window.as_ref().ok_or("window missing")?,
             wake.clone(),
+            self.display.is_some(),
         )?);
         self.adapter_name.clone_from(&gpu.adapter_name);
         self.surface_format = Some(gpu.config.format);
@@ -648,6 +677,9 @@ impl<G: WindowGame + 'static> App<G> {
                 Ok(info) => {
                     self.adapter_name = info.adapter_name;
                     self.surface_format = Some(info.format);
+                    if let Some(display) = &mut self.display {
+                        display.configured(info.format == wgpu::TextureFormat::Rgba16Float);
+                    }
                     self.surface_extent = reply.surface_extent;
                     self.recovery_error = if self.recovery.ready() {
                         None
@@ -690,6 +722,13 @@ impl<G: WindowGame + 'static> App<G> {
         );
         self.samples.extend(reply.samples.into_iter().flatten());
         self.surface_extent = reply.surface_extent;
+        if self.surface_format != Some(reply.platform.surface_format) {
+            self.surface_format = Some(reply.platform.surface_format);
+            if let Some(display) = &mut self.display {
+                display
+                    .configured(reply.platform.surface_format == wgpu::TextureFormat::Rgba16Float);
+            }
+        }
         if request.is_some_and(|request| self.edits.admits(request)) {
             self.game.observe(reply.platform.readback);
         }
@@ -1294,6 +1333,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 }
                 self.display_target = Some(target);
                 self.target_sequence = self.target_sequence.saturating_add(1);
+                self.refresh_display_record();
                 if let Some(ticks) = &mut self.transition_ticks
                     && let Err(error) = ticks.record(
                         self.target_sequence,
@@ -1311,6 +1351,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 self.pending_display_target = true;
                 self.edits.request();
             }
+            UserEvent::DisplayParametersChanged => self.refresh_display_record(),
             UserEvent::WorldAdvanced => {
                 if let Err(error) = self.reconcile_pause() {
                     self.error = Some(error);

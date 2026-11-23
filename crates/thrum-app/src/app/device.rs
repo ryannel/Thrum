@@ -2,6 +2,8 @@
 
 use std::sync::Arc;
 
+use super::display::Headroom;
+
 use thrum_render::capabilities::{
     DeviceCapabilities, DeviceRecipe, DeviceWatch, HardwareRequest, OpenedDevice,
     sdr_surface_config,
@@ -14,6 +16,7 @@ pub(super) struct WindowDevice {
     pub(super) instance: wgpu::Instance,
     pub(super) surface: Arc<wgpu::Surface<'static>>,
     pub(super) hardware: Vec<HardwareRequest>,
+    pub(super) headroom: Option<Arc<Headroom>>,
 }
 
 pub(super) struct PlatformGpu {
@@ -22,7 +25,24 @@ pub(super) struct PlatformGpu {
     pub(super) capabilities: DeviceCapabilities,
     pub(super) watch: DeviceWatch,
     pub(super) config: wgpu::SurfaceConfiguration,
+    pub(super) edr: Option<wgpu::SurfaceConfiguration>,
     pub(super) adapter_name: String,
+}
+
+impl PlatformGpu {
+    pub(super) fn config_for(
+        &self,
+        extent: [u32; 2],
+        format: wgpu::TextureFormat,
+    ) -> wgpu::SurfaceConfiguration {
+        let mut config = if format == wgpu::TextureFormat::Rgba16Float {
+            self.edr.as_ref().unwrap_or(&self.config).clone()
+        } else {
+            self.config.clone()
+        };
+        [config.width, config.height] = extent;
+        config
+    }
 }
 
 impl WindowDevice {
@@ -31,6 +51,7 @@ impl WindowDevice {
         generation: u64,
         extent: [u32; 2],
         wake: &EventLoopProxy<UserEvent>,
+        keep_edr: bool,
     ) -> Result<PlatformGpu, String> {
         let signal = wake.clone();
         let OpenedDevice {
@@ -51,12 +72,35 @@ impl WindowDevice {
         .map_err(|error| error.to_string())?;
         let config = sdr_surface_config(&self.surface, &adapter, extent)
             .ok_or("no compatible SDR surface configuration")?;
+        let edr = self.headroom.as_ref().and_then(|_| {
+            let usages = wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC;
+            let surface = self.surface.get_capabilities(&adapter);
+            (surface.formats.contains(&wgpu::TextureFormat::Rgba16Float)
+                && surface.usages.contains(usages))
+            .then(|| wgpu::SurfaceConfiguration {
+                format: wgpu::TextureFormat::Rgba16Float,
+                color_space: wgpu::SurfaceColorSpace::ExtendedSrgbLinear,
+                usage: usages,
+                ..config.clone()
+            })
+        });
+        let wants_edr = keep_edr
+            || self
+                .headroom
+                .as_ref()
+                .is_some_and(|state| state.load().1 > 1.0);
+        let config = if wants_edr {
+            edr.clone().unwrap_or(config)
+        } else {
+            config
+        };
         Ok(PlatformGpu {
             device,
             queue,
             capabilities,
             watch,
             config,
+            edr,
             adapter_name: adapter.get_info().name,
         })
     }

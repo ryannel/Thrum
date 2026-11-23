@@ -11,6 +11,8 @@ pub enum CaptureSource {
     /// Final tone-mapped, sRGB-encoded RGBA8 engine output.
     #[default]
     Sdr,
+    /// Display-linear RGBA16Float copied from the written EDR drawable.
+    Edr,
     /// Pre-tone scene-linear RGBA16Float, including the prepared star composite.
     SceneLinear,
     /// Labelled copy/select diagnostic output, never an ordinary scene baseline.
@@ -25,7 +27,7 @@ impl CaptureSource {
     pub const fn bytes_per_pixel(self) -> u32 {
         match self {
             Self::Sdr => 4,
-            Self::SceneLinear | Self::NativeOutput | Self::NativeHistory => 8,
+            Self::Edr | Self::SceneLinear | Self::NativeOutput | Self::NativeHistory => 8,
         }
     }
 }
@@ -82,6 +84,7 @@ impl PixelReadback {
                 .textures
                 .texture(&target.ids.output)
                 .ok_or(RenderError::GraphPassMismatch)?,
+            CaptureSource::Edr => return Err(RenderError::GraphPassMismatch),
             CaptureSource::SceneLinear => target
                 .textures
                 .texture(&target.ids.scene)

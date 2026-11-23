@@ -593,10 +593,10 @@
           "check": "python3 scripts/apple_presentation.py edr --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/D6.7-target/edr.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D6.8",
@@ -613,7 +613,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that."
     },
     {

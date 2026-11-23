@@ -1,4 +1,4 @@
-//! Prepared SDR texture-to-surface pass. The platform owns the surface and
+//! Prepared texture-to-surface pass. The platform owns the surface and
 //! presentation; this module only declares and encodes one view-sized GPU pass.
 
 use crate::binding;
@@ -21,7 +21,7 @@ const REVISION: u64 = 1;
 /// Name of the optional fifth timestamped V1 pass.
 pub const PASS_NAME: &str = PassKey::Surface.constant_name();
 
-/// One selected 8-bit SDR surface and its current nonzero pixel extent.
+/// One selected surface and its current nonzero pixel extent.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SurfaceProfile {
     /// Pipeline target format, selected from the surface capabilities.
@@ -33,7 +33,7 @@ pub struct SurfaceProfile {
 /// A presentation preparation or encode boundary could not be used.
 #[derive(Debug)]
 pub enum PresentError {
-    /// The surface format is outside the first SDR profile.
+    /// The surface format is outside the supported profiles.
     UnsupportedFormat,
     /// A zero, oversized or stale surface extent was supplied.
     Extent,
@@ -53,7 +53,7 @@ impl std::fmt::Display for PresentError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnsupportedFormat => {
-                f.write_str("Surface format is outside the supported SDR profile")
+                f.write_str("Surface format is outside the supported profiles")
             }
             Self::Extent => f.write_str("Surface extent is zero, oversized or stale"),
             Self::StaleTarget => {
@@ -217,7 +217,8 @@ impl SurfacePresenter {
         let generation = capabilities.generation();
         if !matches!(
             profile.format,
-            wgpu::TextureFormat::Rgba8Unorm
+            wgpu::TextureFormat::Rgba16Float
+                | wgpu::TextureFormat::Rgba8Unorm
                 | wgpu::TextureFormat::Rgba8UnormSrgb
                 | wgpu::TextureFormat::Bgra8Unorm
                 | wgpu::TextureFormat::Bgra8UnormSrgb
@@ -258,11 +259,15 @@ impl SurfacePresenter {
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: Some(if profile.format.is_srgb() {
-                    "srgb_surface"
-                } else {
-                    "unorm_surface"
-                }),
+                entry_point: Some(
+                    if profile.format.is_srgb()
+                        || profile.format == wgpu::TextureFormat::Rgba16Float
+                    {
+                        "srgb_surface"
+                    } else {
+                        "unorm_surface"
+                    },
+                ),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: profile.format,
@@ -383,12 +388,19 @@ impl PresenterInputs {
         source_extent: [u32; 2],
         extent: [u32; 2],
     ) -> Result<SurfacePresenter, PresentError> {
+        let format = self.format;
+        self.prepare_format(source_extent, extent, format)
+    }
+
+    pub(crate) fn prepare_format(
+        self,
+        source_extent: [u32; 2],
+        extent: [u32; 2],
+        format: wgpu::TextureFormat,
+    ) -> Result<SurfacePresenter, PresentError> {
         check_extent(self.extent_limit, source_extent)?;
         check_extent(self.extent_limit, extent)?;
-        let profile = SurfaceProfile {
-            format: self.format,
-            extent,
-        };
+        let profile = SurfaceProfile { format, extent };
         let (plan, surface_resource) = compile_plan(self.generation, source_extent, profile)?;
         Ok(SurfacePresenter {
             device: self.device,

@@ -772,6 +772,20 @@ def main() -> None:
         "or XCUITest HID gesture")
     s = startup()
     rows = os.environ.get("THRUM_V1_ROWS")
+    if rows == "edr":
+        snapshot("edr-before", s, screenshot=False)
+        post("force-headroom")
+        after = wait(lambda state: state.get("render_headroom") == "2"
+                     and num(state, "presented") > num(s, "presented"), 60, "forced headroom at the render owner")
+        snapshot("edr-after", after, screenshot=False)
+        check(s.get("render_headroom") == s.get("screen_headroom"), "live headroom did not poll through", s)
+        for key in ("epoch", "presented_epoch", "configured", "installs", "device_generation", "surface_format"):
+            check(after.get(key) == s.get(key) and key in s, f"headroom change altered {key}", after)
+        check(after["surface_format"] in ("Some(Bgra8Unorm)", "Some(Bgra8UnormSrgb)",
+                                          "Some(Rgba8Unorm)", "Some(Rgba8UnormSrgb)"),
+              "simulator did not use an SDR format", after)
+        log("UIKit headroom polled through to the render owner on the same SDR lease")
+        return
     if rows == "extent":
         snapshot("extent-portrait", s)
         s = rotate("extent-landscape", "testLandscape", s, landscape=True, retain_motion=False)

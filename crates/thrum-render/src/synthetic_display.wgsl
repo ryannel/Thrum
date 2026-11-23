@@ -37,6 +37,15 @@ fn reinhard(stored: vec3<f32>) -> vec3<f32> {
     // A black scene has zero denominator only when a subnormal reciprocal flushes.
     return scaled/max(denominator,1e-30);
 }
+
+@group(1) @binding(0) var<uniform> edr_headroom: vec2<f32>;
+
+@fragment fn edr_fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+    let stored = textureLoad(scene, vec2<i32>(position.xy), 0).rgb;
+    let mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y, edr_headroom.x);
+    // A drawable rounded to binary16 must still respect the current f32 limit.
+    return vec4(min(mapped, vec3(edr_headroom.y)), 1.0);
+}
 // Exposed luminance of an 18% Lambertian card lit at the metered illuminance with zero
 // compensation: 0.18 / (pi * 1.2 * 0.4), from the incident meter's C=250 and e=1/(1.2*2^EV100).
 const ZONE_REFERENCE: f32 = 0.119366207;
@@ -59,6 +68,8 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
     }
     return palette[zone] / 255.0;
 }
+override DITHER_OUTPUT: bool = true;
+
 @fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
     if (exposure.metadata.w >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_MOTION {
         let velocity = textureLoad(motion, vec2<i32>(position.xy), 0).xy;
@@ -75,9 +86,11 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
     }
     var mapped: vec3<f32>;
     if (selectors & TONE_MAP_MASK) == TONE_MAP_NEUTRAL_HIGHLIGHTS {
-        mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y);
+        mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y, 1.0);
     } else {
         mapped = reinhard(stored);
     }
-    return vec4(dither_unorm8(srgb_encode(mapped), vec2<u32>(position.xy)),1.0);
+    let encoded = srgb_encode(mapped);
+    if !DITHER_OUTPUT { return vec4(encoded, 1.0); }
+    return vec4(dither_unorm8(encoded, vec2<u32>(position.xy)),1.0);
 }

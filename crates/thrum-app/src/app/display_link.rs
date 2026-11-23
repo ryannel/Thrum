@@ -4,8 +4,10 @@
 use objc2::{
     DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained, runtime::AnyObject, sel,
 };
+use objc2_app_kit::NSApplicationDidChangeScreenParametersNotification;
 use objc2_foundation::{
-    MainThreadMarker, NSObject, NSObjectProtocol, NSRunLoop, NSRunLoopCommonModes,
+    MainThreadMarker, NSNotification, NSNotificationCenter, NSObject, NSObjectProtocol, NSRunLoop,
+    NSRunLoopCommonModes,
 };
 use objc2_quartz_core::{CADisplayLink, CAFrameRateRange};
 use std::cell::Cell;
@@ -34,6 +36,12 @@ define_class!(
     unsafe impl NSObjectProtocol for LinkTarget {}
 
     impl LinkTarget {
+        // SAFETY: NSNotificationCenter sends this selector a notification object.
+        #[unsafe(method(screenParametersChanged:))]
+        fn screen_parameters_changed(&self, _notification: &NSNotification) {
+            let _ = self.ivars().wake.send_event(UserEvent::DisplayParametersChanged);
+        }
+
         // SAFETY: CADisplayLink invokes this selector with one CADisplayLink
         // object. AppKit owns the callback lifetime until invalidate.
         #[unsafe(method(displayFrame:))]
@@ -65,7 +73,8 @@ impl LinkTarget {
 /// target and link together ensures the callback cannot outlive its event sink.
 pub(super) struct ViewDisplayLink {
     link: Retained<CADisplayLink>,
-    _target: Retained<LinkTarget>,
+    target: Retained<LinkTarget>,
+    observes_display: bool,
 }
 
 impl ViewDisplayLink {
@@ -73,7 +82,11 @@ impl ViewDisplayLink {
         unsafe_code,
         reason = "the winit NSView handle and AppKit run-loop method require a narrow checked Objective-C bridge"
     )]
-    pub(super) fn start(window: &Window, wake: EventLoopProxy<UserEvent>) -> Result<Self, String> {
+    pub(super) fn start(
+        window: &Window,
+        wake: EventLoopProxy<UserEvent>,
+        observes_display: bool,
+    ) -> Result<Self, String> {
         let mtm = MainThreadMarker::new().ok_or("display link must start on AppKit main thread")?;
         let handle = window
             .window_handle()
@@ -98,16 +111,37 @@ impl ViewDisplayLink {
         });
         // SAFETY: creation and removal both occur on AppKit's main thread.
         unsafe { link.addToRunLoop_forMode(&NSRunLoop::mainRunLoop(), NSRunLoopCommonModes) };
+        if observes_display {
+            // SAFETY: AppKit posts this notification on the main thread. The
+            // retained target implements the selector and unregisters in Drop.
+            unsafe {
+                NSNotificationCenter::defaultCenter().addObserver_selector_name_object(
+                    &target,
+                    sel!(screenParametersChanged:),
+                    Some(NSApplicationDidChangeScreenParametersNotification),
+                    None,
+                );
+            }
+        }
         Ok(Self {
             link,
-            _target: target,
+            target,
+            observes_display,
         })
     }
 }
 
 impl Drop for ViewDisplayLink {
+    #[expect(
+        unsafe_code,
+        reason = "the main-thread display link unregisters its notification target"
+    )]
     fn drop(&mut self) {
         self.link.invalidate();
+        if self.observes_display {
+            // SAFETY: This is the retained observer registered during start.
+            unsafe { NSNotificationCenter::defaultCenter().removeObserver(&self.target) };
+        }
     }
 }
 

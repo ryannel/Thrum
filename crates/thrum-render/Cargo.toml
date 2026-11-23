@@ -305,3 +305,8 @@ path = "tests/sprite_crisp.rs"
 [[test]]
 name = "sprite_edges"
 path = "tests/sprite_edges.rs"
+
+# APPLE-PRESENTATION D6.2 invokes this target by name.
+[[test]]
+name = "edr_transform"
+path = "tests/edr_transform.rs"

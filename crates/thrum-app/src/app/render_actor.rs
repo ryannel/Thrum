@@ -125,6 +125,7 @@ pub(super) struct FrameReadback<R> {
     pub(super) worker_wall: Duration,
     pub(super) surface_status: SurfaceStatus,
     pub(super) transition_error: Option<String>,
+    pub(super) surface_format: wgpu::TextureFormat,
     pub(super) readback: R,
 }
 
@@ -158,6 +159,7 @@ struct Actor<G: Game> {
     current_extent: ExtentRequest,
     transition: ExtentTransition,
     transition_proof: Option<TransitionProof>,
+    display_proof: Option<super::display::proof::DisplayProof>,
     refused_surface_generation: Option<u64>,
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
@@ -201,9 +203,11 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         device: gpu.watch.generation,
     };
     let transition_proof = proof.map(TransitionProof::start).transpose()?;
+    let display_proof = super::display::proof::DisplayProof::start(&mut host)?;
     let mut actor = Actor::<G> {
         transition: ExtentTransition::new(current_extent),
         transition_proof,
+        display_proof,
         current_extent,
         observer,
         extent_capture,
@@ -247,6 +251,7 @@ impl<G: Game> Actor<G> {
                 worker_wall: Duration::ZERO,
                 surface_status: SurfaceStatus::NotAttempted,
                 transition_error: None,
+                surface_format: self.gpu.config.format,
                 readback: G::readback(&self.host),
             },
         };
@@ -307,6 +312,12 @@ impl<G: Game> Actor<G> {
             &mut self.host,
             self.observer.as_mut(),
         );
+        if let RenderOutcome::Frame(Ok(frame)) = &reply.outcome
+            && let Some(proof) = &mut self.display_proof
+            && let Err(error) = proof.frame(&mut self.host, reply.sequence, frame, &self.gpu.config)
+        {
+            reply.outcome = RenderOutcome::Frame(Err(error));
+        }
         if matches!(reply.outcome, RenderOutcome::DeviceLost) {
             self.transition.cancel();
         }
@@ -324,6 +335,7 @@ impl<G: Game> Actor<G> {
         reply.platform.profile_minimum = self.profile_minimum;
         reply.platform.profile_revision = self.profile_revision;
         reply.surface_extent = [self.gpu.config.width, self.gpu.config.height];
+        reply.platform.surface_format = self.gpu.config.format;
         reply.platform.counters = FrameCounters::read(&self.host);
         reply.platform.readback = G::readback(&self.host);
         reply.platform.worker_wall = start.elapsed();
@@ -355,16 +367,22 @@ impl<G: Game> Actor<G> {
         G::apply(&mut self.host, request.platform.edits).map_err(FrameError::Scene)?;
         ensure_device(&self.gpu.watch)?;
         ensure_running(&self.stopped)?;
+        let headroom = self
+            .recipe
+            .headroom
+            .as_ref()
+            .map_or((1.0, 1.0), |record| record.load());
         let current = self.surface_generation.load(Ordering::Acquire) == request.surface_generation;
         if current {
             if request.surface_generation != self.surface_epoch {
                 self.surface_epoch = request.surface_generation;
                 self.needs_reconfigure = true;
             }
-            self.advance_extent(request, reply)?;
+            self.advance_extent(request, reply, headroom.1)?;
         } else {
             self.needs_reconfigure = true;
         }
+        self.host.set_display_headroom(headroom.0);
         // A sprite scene has one output pixel per backing pixel. A pending
         // generation can leave the old surface usable while the window grows.
         let matches_grid = self.host.scene_kind() != SceneKind::TwoD
@@ -531,11 +549,17 @@ impl<G: Game> Actor<G> {
         &mut self,
         frame: &FrameRequest<G::Edits>,
         reply: &mut RenderReply<G::Readback>,
+        potential: f32,
     ) -> Result<(), FrameError> {
+        let promote = self.gpu.edr.is_some() && potential > 1.0;
         let request = ExtentRequest {
             extent: frame.extent,
             backing_scale: frame.platform.backing_scale,
-            format: self.gpu.config.format,
+            format: if promote {
+                wgpu::TextureFormat::Rgba16Float
+            } else {
+                self.gpu.config.format
+            },
             device: self.gpu.watch.generation,
         };
         if request.extent.contains(&0) {
@@ -554,7 +578,9 @@ impl<G: Game> Actor<G> {
         if let Err(error) =
             self.transition
                 .advance(request, self.current_extent, self.origin.elapsed(), || {
-                    let inputs = self.host.extent_prepare_inputs(request.extent)?;
+                    let inputs = self
+                        .host
+                        .extent_prepare_inputs_for_format(request.extent, request.format)?;
                     Ok(move |cancel: &AtomicBool| inputs.build(cancel))
                 })
         {
@@ -567,8 +593,7 @@ impl<G: Game> Actor<G> {
                 self.transition.refresh();
                 return Ok(());
             }
-            let mut config = self.gpu.config.clone();
-            [config.width, config.height] = request.extent;
+            let config = self.gpu.config_for(request.extent, request.format);
             let mut calls = 0;
             let configure_started = CACurrentMediaTime();
             let outcome = self.transition.surface.take(
@@ -598,6 +623,9 @@ impl<G: Game> Actor<G> {
             );
             if let Some(proof) = &mut self.transition_proof {
                 proof.switch(request, self.transition.surface.record(), configure_started);
+            }
+            if let Some(proof) = &mut self.display_proof {
+                proof.configures += u64::from(calls);
             }
             ensure_device(&self.gpu.watch)?;
             match outcome {
@@ -722,8 +750,13 @@ impl<G: Game> Actor<G> {
             .host
             .device_prepare_inputs()
             .map_err(RecoveryFailure::frame)?;
-        let replacement = pollster::block_on(self.recipe.create(generation, extent, &self.wake))
-            .map_err(RecoveryFailure::Unavailable)?;
+        let replacement = pollster::block_on(self.recipe.create(
+            generation,
+            extent,
+            &self.wake,
+            self.host.is_edr(),
+        ))
+        .map_err(RecoveryFailure::Unavailable)?;
         ensure_device(&replacement.watch).map_err(RecoveryFailure::frame)?;
         let profile = SurfaceProfile {
             format: replacement.config.format,
@@ -826,6 +859,9 @@ impl<G: Game> Actor<G> {
                 Err(error) => return Err(error.to_string()),
             }
             if self.host.pending_frames() == 0 {
+                if let Some(proof) = &mut self.display_proof {
+                    proof.finish(&mut self.host)?;
+                }
                 if let Some(mut observer) = self.observer.take() {
                     observer.finish::<G>(&mut self.host)?;
                 }

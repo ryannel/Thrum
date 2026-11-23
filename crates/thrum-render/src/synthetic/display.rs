@@ -16,6 +16,8 @@ use crate::shader_constants::{
 use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
+mod edr;
+
 /// Per-view SDR tone/gamut policy, independent of fixed or incident exposure.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(u32)]
@@ -98,6 +100,7 @@ impl DisplayReferredStage {
             &shader,
             &pipeline_layout,
             DISPLAY_REFERRED_PASS,
+            &[],
         ))
     }
 
@@ -140,6 +143,7 @@ pub(crate) struct SdrToneStage {
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
+    pub(super) edr: Option<edr::EdrTone>,
 }
 
 /// Graph-bound colour, motion and matching exposure for the retained SDR stage.
@@ -252,16 +256,28 @@ impl SdrToneStage {
             crate::shaders::Shader::Display
         }
         .compile(device, "synthetic authored SDR display");
+        let undithered = cfg!(target_os = "macos")
+            && !pattern
+            && std::env::var("THRUM_SDR_UNDITHERED").as_deref() == Ok("1");
+        let constants: &[(&str, f64)] = if undithered {
+            &[("DITHER_OUTPUT", 0.0)]
+        } else {
+            &[]
+        };
         let pipeline = display_pipeline(
             device,
             &shader,
             &pipeline_layout,
             "prepared synthetic tone encode role",
+            constants,
         );
+        let edr = (cfg!(target_os = "macos") && !pattern)
+            .then(|| edr::EdrTone::prepare(device, &shader, &layout));
         Self {
             key,
             pipeline,
             layout,
+            edr,
         }
     }
 
@@ -429,6 +445,7 @@ fn display_pipeline(
     shader: &wgpu::ShaderModule,
     layout: &wgpu::PipelineLayout,
     label: &str,
+    constants: &[(&str, f64)],
 ) -> wgpu::RenderPipeline {
     device.render(&wgpu::RenderPipelineDescriptor {
         label: Some(label),
@@ -445,7 +462,10 @@ fn display_pipeline(
         fragment: Some(wgpu::FragmentState {
             module: shader,
             entry_point: Some("fragment"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            compilation_options: wgpu::PipelineCompilationOptions {
+                constants,
+                ..Default::default()
+            },
             targets: &[Some(wgpu::ColorTargetState {
                 format: OUTPUT_FORMAT,
                 blend: None,

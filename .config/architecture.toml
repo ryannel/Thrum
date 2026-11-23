@@ -342,8 +342,8 @@ target_cost = "Apple-only framework binding; renderer use is pipeline preparatio
 [external_dependencies.objc2-app-kit]
 requirement = "=0.3.2"
 license = "Zlib OR Apache-2.0 OR MIT"
-purpose = "Native AppKit demo-control panel (NSPanel, NSStackView, NSSlider, NSButton, NSTextField) in thrum-controls"
-target_cost = "macOS-only framework binding with default features off; built only on demand for the panel, no frame work, no iPhone or browser edge"
+purpose = "Native AppKit demo-control panel (NSPanel, NSStackView, NSSlider, NSButton, NSTextField) in thrum-controls and per-window screen queries in thrum-app"
+target_cost = "macOS-only framework binding with default features off; the EDR window reads its screen each display tick"
 
 [external_dependencies.objc2-quartz-core]
 requirement = "=0.3.2"

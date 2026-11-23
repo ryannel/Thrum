@@ -26,16 +26,18 @@ private final class WeakWindow {
     init(_ window: UIWindow) { self.window = window }
 }
 
-// The link only forwards its media-clock target; the render owner converts it
-// to a presentation lead when it consumes the request.
+// Poll the UIKit screen on its display tick. The render owner consumes the
+// record independently of the surface lease.
 private final class DisplayTarget: NSObject {
     @objc func displayFrame(_ link: CADisplayLink) {
-        thrumV1DisplayTarget(link.targetTimestamp)
+        let screen = SceneBridge.connectedScene?.screen
+        let headroom = screen?.currentEDRHeadroom ?? 1.0
+        thrumV1DisplayTarget(link.targetTimestamp, Double(headroom))
     }
 }
 
 @_silgen_name("thrum_v1_display_target")
-private func thrumV1DisplayTarget(_ targetMediaSeconds: Double)
+private func thrumV1DisplayTarget(_ targetMediaSeconds: Double, _ headroom: Double)
 
 @_silgen_name("thrum_v1_shell_command")
 private func thrumV1ShellCommand(_ code: Int32)
@@ -63,6 +65,7 @@ private let shellCommands: [String: Int32] = [
     "capture-slow": 15,
     "capture-move": 16,
     "capture-rest": 17,
+    "force-headroom": 18,
 ]
 
 // Route commands also arrive as files dropped into the app's temporary

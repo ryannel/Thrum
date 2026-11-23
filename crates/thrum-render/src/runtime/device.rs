@@ -371,6 +371,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             next.inherit_world(current);
         }
         self.prepared = scene.prepared;
+        self.display_headroom = 1.0;
         self.slots = scene.slots;
         self.retired_slots.clear();
         self.retired_capture.clear();

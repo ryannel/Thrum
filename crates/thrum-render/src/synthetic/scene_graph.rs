@@ -500,8 +500,14 @@ impl super::SyntheticTargetInputs {
         let readback =
             Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
         let generation = self.key.device_generation;
-        let surface =
-            Self::surface_pass(&mut graph, &output, generation, &mut prepared_keys, profile)?;
+        let surface = Self::surface_pass(
+            &mut graph,
+            &output,
+            &pre_tone,
+            generation,
+            &mut prepared_keys,
+            profile,
+        )?;
         graph.validate_capabilities(&self.capabilities)?;
         let day = SceneGraphs::compile(
             &mut graph,
@@ -567,6 +573,7 @@ impl super::SyntheticTargetInputs {
     ) -> Result<&'a ResourceId, RenderError> {
         Ok(match source {
             CaptureSource::Sdr => output,
+            CaptureSource::Edr => return Err(RenderError::GraphPassMismatch),
             CaptureSource::SceneLinear => scene,
             CaptureSource::NativeOutput => &native.ok_or(RenderError::GraphPassMismatch)?.output,
             CaptureSource::NativeHistory => &native.ok_or(RenderError::GraphPassMismatch)?.next,
@@ -653,6 +660,7 @@ impl super::SyntheticTargetInputs {
     fn surface_pass(
         graph: &mut FrameGraph,
         output: &ResourceId,
+        pre_tone: &PreToneInput,
         generation: u64,
         prepared_keys: &mut BTreeSet<PipelineKey>,
         profile: Option<crate::present::SurfaceProfile>,
@@ -660,7 +668,21 @@ impl super::SyntheticTargetInputs {
         profile
             .map(|profile| {
                 prepared_keys.insert(crate::present::pipeline_key(generation));
-                crate::present::surface_pass(graph, output, profile, generation)
+                let edr = profile.format == wgpu::TextureFormat::Rgba16Float;
+                let source = if edr { &pre_tone.colour } else { output };
+                let (surface, mut pass) =
+                    crate::present::surface_pass(graph, source, profile, generation)?;
+                if edr {
+                    pass.accesses.extend([
+                        Access::new(pre_tone.motion.clone(), 0..1, AccessKind::SampledRead),
+                        Access::new(
+                            pre_tone.exposure.clone(),
+                            0..exposure::SAMPLE_BYTES,
+                            AccessKind::UniformRead,
+                        ),
+                    ]);
+                }
+                Ok((surface, pass))
             })
             .transpose()
     }
@@ -1184,6 +1206,25 @@ impl super::SyntheticTargetInputs {
             move |frame, pass| {
                 let (presenter, binding, view, extent) =
                     frame.surface.ok_or(RenderError::GraphPassMismatch)?;
+                if presenter.profile().format == wgpu::TextureFormat::Rgba16Float {
+                    return frame
+                        .prepared
+                        .display
+                        .edr
+                        .as_ref()
+                        .ok_or(RenderError::GraphPassMismatch)?
+                        .encode(
+                            frame.encoder,
+                            pass,
+                            &frame.target.display,
+                            super::display::ToneOutput {
+                                resource: &surface,
+                                view,
+                                exposure_side: frame.exposure_side,
+                            },
+                            frame.timings.as_deref_mut(),
+                        );
+                }
                 presenter
                     .encode_compiled(
                         frame.encoder,
