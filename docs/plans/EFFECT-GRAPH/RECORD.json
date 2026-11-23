@@ -415,7 +415,39 @@
     },
     "M5": {
       "definitions": "4f5bce095a41dedbc930794f71cd50ba0252e747fa85c6bc1dc6a338b5ca1781",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "97116ed695da05e8f2e157cb418320f706c371c8",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M5-review.md",
+          "items": {
+            "M5.1": "fail"
+          },
+          "findings": [
+            {
+              "name": "resume_fixture_hides_early_worker_commit",
+              "item": "M5.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-sol",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-sol",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 122402,
+            "cached": 2344960,
+            "output": 8760,
+            "turns": 1
+          },
+          "at": "2026-11-23T23:43:28Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps faili",
