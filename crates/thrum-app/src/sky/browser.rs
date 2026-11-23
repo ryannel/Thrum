@@ -160,8 +160,8 @@ impl BrowserScene {
         Ok(())
     }
     /// Model description used by the DOM view.
-    pub fn controls_json(&mut self) -> String {
-        self.binding.describe(&self.game.controls)
+    pub fn controls_json(&self) -> String {
+        self.game.controls.describe_json()
     }
     /// Only changes since the DOM's last refresh.
     pub fn control_changes(&mut self) -> Option<String> {
