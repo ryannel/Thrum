@@ -309,7 +309,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - Small hot-reload checks prove which material the device draws (CREATOR M4): Not Started · [plan](CREATOR/PLAN.md)
 - Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6): In Progress · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
-- Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): Ready for Review · [plan](ATMOSPHERE/PLAN.md)
+- Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
 - The world lane’s resume origin is proved without real-time pacing (EFFECT-GRAPH M5): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
 - Small water checks leave the full sea grids to the long tier (WATERS M17): In Progress · [plan](WATERS/PLAN.md)
 - A small scene catches wrong secondary-view air and shade (SCENE-VIEWS M4): Not Started · [plan](SCENE-VIEWS/PLAN.md)
@@ -427,7 +427,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M4 of 4 · Not Started |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M6 of 16 · In Progress |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · Ready for Review |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · In Progress |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M5 of 5 · Not Started |
