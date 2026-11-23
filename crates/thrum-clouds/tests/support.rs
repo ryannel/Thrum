@@ -1,8 +1,19 @@
-use std::time::Duration;
+use std::{io::Write as _, time::Duration};
 use thrum_cloud_model::{Field, Parameters, Profile, State, Type};
 use thrum_clouds::{WeatherMap, WeatherProfile};
 use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
 mod sun;
+
+// A broken-sky window with fractional camera coordinates in both axes.
+const CAMERA: [f64; 2] = [-602.75, -729.75];
+
+fn weather_profile() -> WeatherProfile {
+    WeatherProfile {
+        size: 96,
+        texels: vec![20.0, 80.0, 320.0, 1600.0],
+        maximum_age: 0.5,
+    }
+}
 
 fn data() -> (Profile, Vec<Type>) {
     // Dimensioned analytical fixture, rather than any game's weather type.
@@ -43,7 +54,7 @@ fn data() -> (Profile, Vec<Type>) {
 )]
 #[expect(
     clippy::too_many_lines,
-    reason = "one conformance fixture checks weather and sun products through replacement"
+    reason = "one conformance fixture checks weather and Sun-path products through replacement"
 )]
 pub(super) fn conformance(test: &str, portable: bool) {
     let Some(thrum_test_support::Opened {
@@ -61,18 +72,7 @@ pub(super) fn conformance(test: &str, portable: bool) {
         let site = DeviceSite::untracked(device.clone());
         let (profile, types) = data();
         let field = Field::new(7, profile, types.clone()).expect("fixture");
-        let mut map = WeatherMap::new(
-            &site,
-            7,
-            profile,
-            types,
-            WeatherProfile {
-                size: 256,
-                texels: vec![20.0, 80.0, 320.0, 1600.0],
-                maximum_age: 0.5,
-            },
-        )
-        .expect("map");
+        let mut map = WeatherMap::new(&site, 7, profile, types, weather_profile()).expect("map");
         assert!(map.profile().texels[3] > profile.turret_pitch * 2.0);
         map.rebuild(1, 1);
         let mut state = State::new(
@@ -90,6 +90,7 @@ pub(super) fn conformance(test: &str, portable: bool) {
         let mut largest = [0.0_f64; 6];
         let mut first_counts = [0; 2];
         let saved = state.clone();
+        let size = map.profile().size as usize;
         for index in 0..12u64 {
             if index == 5 {
                 state
@@ -127,8 +128,7 @@ pub(super) fn conformance(test: &str, portable: bool) {
             };
             let mut encoder =
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-            map.upload(&queue, time, &state, [37.25, -89.75])
-                .expect("upload");
+            map.upload(&queue, time, &state, CAMERA).expect("upload");
             let origins = map.origins().to_vec();
             {
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
@@ -137,23 +137,23 @@ pub(super) fn conformance(test: &str, portable: bool) {
             queue.submit([encoder.finish()]);
             map.submitted();
             let outputs = read(&device, &queue, map.textures());
-            let counts = coarsest_centres(&outputs[0], &outputs[1]);
+            let counts = coarsest_centres(&outputs[0], &outputs[1], size);
             if index == 0 {
                 first_counts = counts;
             }
             for (level, origin) in origins.iter().enumerate() {
-                for y in 0..256 {
+                for y in 0..size {
                     let stamp = map.row_stamps()[level][y];
                     assert!(
                         state.time() - stamp.time <= 0.5 + 1e-8,
                         "weather-time row age"
                     );
-                    for x in 0..256 {
+                    for x in 0..size {
                         let air = std::array::from_fn(|a| {
                             origin[a] + ([x, y][a] as f64 + 0.5) * map.profile().texels[level]
                         });
                         let column = field.column(air, stamp.time, stamp.parameters);
-                        let at = ((level * 256 + y) * 256 + x) * 4;
+                        let at = ((level * size + y) * size + x) * 4;
                         let words = |output: usize, j: usize| outputs[output][at + j];
                         let values = [
                             column.base,
@@ -220,8 +220,7 @@ pub(super) fn conformance(test: &str, portable: bool) {
             }
             let mut repeated =
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-            map.upload(&queue, time, &state, [37.25, -89.75])
-                .expect("repeat");
+            map.upload(&queue, time, &state, CAMERA).expect("repeat");
             assert!(!map.runs(), "same tick must leave all texels alone");
             {
                 let mut pass = repeated.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
@@ -239,13 +238,12 @@ pub(super) fn conformance(test: &str, portable: bool) {
             &state,
             portable,
         );
-        let record = format!(
+        writeln!(
+            std::io::stderr().lock(),
             "adapter={:?}; portable={portable}; coarsest clear/cloudy centres={first_counts:?}; weather maximum errors [base,top,coverage,type,age,tau]={largest:?}",
             gpu.adapter.get_info()
-        );
-        std::fs::create_dir_all("../../tmp/clouds-weather").expect("measurement directory");
-        std::fs::write("../../tmp/clouds-weather/measurement.txt", record)
-            .expect("measurement record");
+        )
+        .expect("weather conformance record");
         assert!(
             largest[0] <= 0.000_01
                 && largest[1] <= 0.0016
@@ -261,8 +259,8 @@ pub(super) fn conformance(test: &str, portable: bool) {
     });
 }
 
-fn coarsest_centres(columns: &[u32], optical: &[u32]) -> [usize; 2] {
-    let last = columns.len() - 256 * 256 * 4;
+fn coarsest_centres(columns: &[u32], optical: &[u32], size: usize) -> [usize; 2] {
+    let last = columns.len() - size * size * 4;
     let mut counts = [0; 2];
     let mut occupied_turrets = 0;
     for (column, path) in columns[last..]
@@ -300,7 +298,7 @@ fn filled(
             capture: false,
         },
         state,
-        [37.25, -89.75],
+        CAMERA,
     )
     .expect("replacement upload");
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());

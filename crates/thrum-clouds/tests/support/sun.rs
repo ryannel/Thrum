@@ -1,4 +1,4 @@
-use std::{fmt::Write as _, time::Duration};
+use std::{io::Write as _, time::Duration};
 use thrum_cloud_model::{Density, Field, Sample, State};
 use thrum_clouds::{SunLevel, SunPath, SunProfile, WeatherMap};
 use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
@@ -29,18 +29,19 @@ pub(super) fn run(
             maximum_age: 0.5,
         },
         SunLevel {
-            texel: 1600.0,
+            texel: 960.0,
             slices: 16,
             maximum_age: 0.5,
         },
     ];
+    let size = 16_u32;
     let mut sun = SunPath::new(
         site,
         weather,
         SunProfile {
-            size: 256,
+            size,
             levels,
-            ground_size: 1024,
+            ground_size: size * 2,
             lowest_elevation: 2.0_f64.to_radians(),
             border_fraction: 0.1,
         },
@@ -48,9 +49,10 @@ pub(super) fn run(
     )
     .expect("Sun product");
     sun.rebuild(1, 1);
-    let mut record = String::new();
+    let side = size as usize;
+    let area = side * side;
     let mut outside = Vec::new();
-    let camera = [37.25, -89.75];
+    let camera = super::CAMERA;
     for (angle_index, elevation) in [60.0_f64, 20.0, 2.0].into_iter().enumerate() {
         let tick = state.tick() + 1;
         state.step(tick, 1.0 / 60.0).expect("weather tick");
@@ -64,7 +66,12 @@ pub(super) fn run(
             capture: false,
         };
         let angle = elevation.to_radians();
-        let direction = [angle.cos(), angle.sin(), 0.0];
+        // Cover ray offsets along both horizontal axes.
+        let direction = if angle_index == 0 {
+            [0.0, angle.sin(), angle.cos()]
+        } else {
+            [angle.cos(), angle.sin(), 0.0]
+        };
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         weather
             .upload(queue, time, state, camera)
@@ -97,32 +104,36 @@ pub(super) fn run(
             .iter()
             .map(|b| f32::from_le_bytes(*b))
             .collect();
-        assert!((f64::from(mapping[9]) - direction[1]).abs() < 1e-6);
+        for (actual, expected) in mapping[8..11].iter().zip(direction) {
+            assert!((f64::from(*actual) - expected).abs() < 1e-6);
+        }
         let mut extrema = Vec::new();
+        let mut far_mean = 0.0;
         for (level, product) in sun.products().iter().enumerate() {
             let pixels = texture(device, queue, product);
             let mut maximum = 0.0_f64;
             let mut squared = 0.0;
             let mut count = 0;
             let mut occupied = 0;
-            let width = levels[level].texel * 256.0;
+            let width = levels[level].texel * f64::from(size);
             let origin: [f64; 2] = std::array::from_fn(|a| {
                 ((camera[a] - state.travel()[a]) / (width / 4.0)).floor() * (width / 4.0)
                     - width / 2.0
             });
             for slice in [levels[level].slices / 2, levels[level].slices - 1] {
                 let height = 380.0 - f64::from(slice) * 280.0 / f64::from(levels[level].slices - 1);
-                let mut locations: Vec<_> = [32_u32, 64, 128, 192, 224]
+                let axis = [size / 8, size / 4, size / 2, 3 * size / 4, 7 * size / 8];
+                let mut locations: Vec<_> = axis
                     .into_iter()
-                    .flat_map(|y| [32_u32, 64, 128, 192, 224].into_iter().map(move |x| (x, y)))
+                    .flat_map(|y| axis.into_iter().map(move |x| (x, y)))
                     .collect();
-                let sample_offset = slice as usize / 4 * 256 * 256 * 4 + slice as usize % 4;
-                let mut ranked: Vec<_> = (0..256_u32 * 256).collect();
+                let sample_offset = slice as usize / 4 * area * 4 + slice as usize % 4;
+                let mut ranked: Vec<_> = (0..size * size).collect();
                 ranked.sort_by(|&a, &b| {
                     pixels[sample_offset + b as usize * 4]
                         .total_cmp(&pixels[sample_offset + a as usize * 4])
                 });
-                locations.extend(ranked.iter().take(8).map(|&i| (i % 256, i / 256)));
+                locations.extend(ranked.iter().take(8).map(|&i| (i % size, i / size)));
                 for (x, y) in locations {
                     let base = [
                         origin[0] + (f64::from(x) + 0.5) * levels[level].texel,
@@ -133,7 +144,9 @@ pub(super) fn run(
                             + state.travel()[0]
                             + direction[0] * (height - 100.0) / direction[1],
                         height,
-                        base[1] + state.travel()[1],
+                        base[1]
+                            + state.travel()[1]
+                            + direction[2] * (height - 100.0) / direction[1],
                     ];
                     let reference = field.optical_depth(
                         &Sample {
@@ -148,8 +161,7 @@ pub(super) fn run(
                         |_| None,
                         0.0,
                     );
-                    let at = (((slice as usize / 4 * 256 + y as usize) * 256 + x as usize) * 4)
-                        + slice as usize % 4;
+                    let at = sample_offset + (y as usize * side + x as usize) * 4;
                     let actual = f64::from(pixels[at]);
                     let error = ((-actual).exp() - (-reference).exp()).abs();
                     maximum = maximum.max(error);
@@ -176,45 +188,37 @@ pub(super) fn run(
                 outside.push((elevation, level, maximum, rms));
             }
             extrema.push((maximum, rms, occupied));
+            if level == 2 {
+                let last_layer = pixels.len() - area * 4;
+                far_mean = (0..area)
+                    .map(|i| (-f64::from(pixels[last_layer + i * 4 + 3])).exp())
+                    .sum::<f64>()
+                    / f64::from(size * size);
+            }
         }
-        let outer = texture(device, queue, &sun.products()[2]);
-        let last_layer = outer.len() - 256 * 256 * 4;
-        let mean = (0..256 * 256)
-            .map(|i| (-f64::from(outer[last_layer + i * 4 + 3])).exp())
-            .sum::<f64>()
-            / 65536.0;
         assert!(
-            ((-f64::from(mapping[12])).exp() - mean).abs() < 2e-6,
+            ((-f64::from(mapping[12])).exp() - far_mean).abs() < 2e-6,
             "mean of transmittance, not mean depth"
         );
-        writeln!(record,"elevation={elevation}; per-level (maximum T error, RMS T error, occupied samples)={extrema:?}; far_mean={mean}; portable={portable}").expect("record");
+        writeln!(
+            std::io::stderr().lock(),
+            "elevation={elevation}; per-level (maximum T error, RMS T error, occupied samples)={extrema:?}; far_mean={far_mean}; portable={portable}"
+        )
+        .expect("Sun-path conformance record");
     }
-    std::fs::create_dir_all("../../tmp/clouds-sun").expect("measurement directory");
-    std::fs::write("../../tmp/clouds-sun/measurement.txt", record).expect("measurement record");
     assert!(
         outside.is_empty(),
         "outside recorded Sun bounds: {outside:?}"
     );
-    clear_sky(device, queue, site, &mut sun);
+    clear_sky(device, queue, site, sun.profile());
     continuity::run(device, queue, site, weather, state);
 }
 
-fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, sun: &mut SunPath) {
+fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, profile: &SunProfile) {
     let (model, types) = super::data();
-    let mut weather = WeatherMap::new(
-        site,
-        7,
-        model,
-        types,
-        thrum_clouds::WeatherProfile {
-            size: 256,
-            texels: vec![20.0, 80.0, 320.0, 1600.0],
-            maximum_age: 0.5,
-        },
-    )
-    .expect("clear map");
-    let mut sun =
-        SunPath::new(site, &weather, sun.profile().clone(), None).expect("clear Sun product");
+    let mut weather =
+        WeatherMap::new(site, 7, model, types, super::weather_profile()).expect("clear map");
+    let mut sun = SunPath::new(site, &weather, profile.clone(), None).expect("clear Sun product");
     let mut state = State::new(
         thrum_cloud_model::Parameters {
             coverage: 0.0,
@@ -239,14 +243,14 @@ fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, sun:
     weather.rebuild(50, 1);
     sun.rebuild(50, 1);
     weather
-        .upload(queue, time, &state, [37.25, -89.75])
+        .upload(queue, time, &state, super::CAMERA)
         .expect("clear upload");
     sun.upload(
         queue,
         &weather,
         time,
         &state,
-        [37.25, -89.75],
+        super::CAMERA,
         [0.8, 0.6, 0.0],
         false,
     )
@@ -281,18 +285,22 @@ fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, sun:
 }
 
 fn texture(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Texture) -> Vec<f32> {
-    thrum_test_support::readback::texture(
+    half_pixels(&thrum_test_support::readback::texture(
         device,
         queue,
         source,
         thrum_test_support::readback::Mip::level(0),
         ..,
-    )
-    .as_chunks::<2>()
-    .0
-    .iter()
-    .map(|b| half(u16::from_le_bytes(*b)))
-    .collect()
+    ))
+}
+
+fn half_pixels(bytes: &[u8]) -> Vec<f32> {
+    bytes
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|b| half(u16::from_le_bytes(*b)))
+        .collect()
 }
 
 fn half(bits: u16) -> f32 {

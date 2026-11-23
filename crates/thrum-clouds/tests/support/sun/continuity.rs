@@ -1,8 +1,12 @@
-use super::texture;
-use std::time::Duration;
+use super::half_pixels;
+use std::{io::Write as _, time::Duration};
 use thrum_cloud_model::State;
 use thrum_clouds::{SunLevel, SunPath, SunProfile, WeatherMap};
 use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
+use thrum_test_support::readback::{Mip, Readback};
+
+const STEPS: u32 = 2048;
+const BATCH: u32 = 16;
 
 pub(super) fn run(
     device: &wgpu::Device,
@@ -40,7 +44,8 @@ pub(super) fn run(
         None,
     )
     .expect("continuity product");
-    let (floor_map, floor_pixels) = snapshot(device, queue, &mut sun, weather, state, 2.0, 1);
+    let (floor_map, floor_pixels) =
+        snapshot(device, queue, &mut sun, weather, state, 2.0, 1).read(device);
     // Receivers under the floor's near and middle windows, held fixed while the Sun sinks.
     let projection = f64::from(floor_map[8]) * f64::from(floor_map[4]) / f64::from(floor_map[9]);
     let points: Vec<_> = (0..17)
@@ -67,24 +72,30 @@ pub(super) fn run(
         brightest - darkest > 0.02,
         "broken-sky receivers, including a gap and cloud: {darkest}..{brightest}"
     );
+    // Keep the full angular sweep while allowing Metal to work ahead of the CPU.
     let mut values = Vec::new();
-    for i in 0..=2048_u32 {
-        let angle = 20.0 - 22.0 * f64::from(i) / 2048.0;
-        let (mapping, pixels) = snapshot(
-            device,
-            queue,
-            &mut sun,
-            weather,
-            state,
-            angle,
-            u64::from(i) + 2,
-        );
-        values.push(
+    for start in (0..=STEPS).step_by(BATCH as usize) {
+        let pending: Vec<_> = (start..(start + BATCH).min(STEPS + 1))
+            .map(|i| {
+                let angle = 20.0 - 22.0 * f64::from(i) / f64::from(STEPS);
+                snapshot(
+                    device,
+                    queue,
+                    &mut sun,
+                    weather,
+                    state,
+                    angle,
+                    u64::from(i) + 2,
+                )
+            })
+            .collect();
+        values.extend(pending.into_iter().map(|sample| {
+            let (mapping, pixels) = sample.read(device);
             points
                 .iter()
                 .map(|&p| factor(&mapping, &pixels, p))
-                .collect::<Vec<_>>(),
-        );
+                .collect::<Vec<_>>()
+        }));
     }
     let fine = largest(&values, 1);
     let coarse = largest(&values, 2);
@@ -92,7 +103,8 @@ pub(super) fn run(
         fine > 1e-5 && fine <= coarse * 0.7 + 0.002,
         "Sun continuity halves: fine={fine}, coarse={coarse}"
     );
-    let (below_map, below_pixels) = snapshot(device, queue, &mut sun, weather, state, -2.0, 300);
+    let (below_map, below_pixels) =
+        snapshot(device, queue, &mut sun, weather, state, -2.0, 300).read(device);
     for (point, expected) in points.iter().zip(&floor) {
         assert!(
             (factor(&below_map, &below_pixels, *point) - expected).abs() < 1e-6,
@@ -170,7 +182,28 @@ pub(super) fn run(
     // A constant floor replacement cannot match both receivers. An abrupt edge
     // replacement would keep its jump at both step sizes instead of halving it.
     assert!((brightest - darkest) / 2.0 > 0.01);
-    std::fs::write("../../tmp/clouds-sun/continuity.txt", format!("Sun largest changes: coarse={coarse}, fine={fine}; floor range={darkest}..{brightest}; border changes={border_records:?}; far={far}\n")).expect("continuity receipt");
+    writeln!(
+        std::io::stderr().lock(),
+        "Sun largest changes: coarse={coarse}, fine={fine}; floor range={darkest}..{brightest}; border changes={border_records:?}; far={far}"
+    )
+    .expect("Sun-path continuity record");
+}
+
+struct Snapshot {
+    submission: wgpu::SubmissionIndex,
+    mapping: Readback,
+    ground: Readback,
+}
+
+impl Snapshot {
+    fn read(self, device: &wgpu::Device) -> ([f32; 24], Vec<f32>) {
+        let bytes = self.mapping.wait(device, self.submission.clone());
+        let mapping = std::array::from_fn(|i| {
+            f32::from_le_bytes(bytes[i * 4..i * 4 + 4].try_into().expect("word"))
+        });
+        let pixels = half_pixels(&self.ground.wait(device, self.submission));
+        (mapping, pixels)
+    }
 }
 
 #[expect(
@@ -185,7 +218,7 @@ fn snapshot(
     state: &State,
     degrees: f64,
     generation: u64,
-) -> ([f32; 24], Vec<f32>) {
+) -> Snapshot {
     sun.rebuild(generation, 1);
     let angle = degrees.to_radians();
     sun.upload(
@@ -201,7 +234,7 @@ fn snapshot(
             capture: false,
         },
         state,
-        [37.25, -89.75],
+        super::super::CAMERA,
         [angle.cos() as f32, angle.sin() as f32, 0.0],
         false,
     )
@@ -211,13 +244,15 @@ fn snapshot(
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
         sun.encode(i, &mut pass);
     }
-    queue.submit([encoder.finish()]);
+    let mapping = Readback::buffer(device, &mut encoder, sun.mapping(), ..);
+    let ground = Readback::texture(device, &mut encoder, sun.ground(), Mip::level(0), ..);
+    let submission = queue.submit([encoder.finish()]);
     sun.submitted();
-    let bytes = thrum_test_support::readback::buffer(device, queue, sun.mapping(), ..);
-    let mapping = std::array::from_fn(|i| {
-        f32::from_le_bytes(bytes[i * 4..i * 4 + 4].try_into().expect("word"))
-    });
-    (mapping, texture(device, queue, sun.ground()))
+    Snapshot {
+        submission,
+        mapping,
+        ground,
+    }
 }
 
 fn largest(rows: &[Vec<f64>], stride: usize) -> f64 {
