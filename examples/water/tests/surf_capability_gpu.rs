@@ -40,7 +40,7 @@ fn surf_products_and_pass_exist_only_when_enabled() {
         let report = water.report();
         fixture.host.set_scene_contribution(Box::new(water)).expect("contribution");
         let frame = fixture.frame(elapsed);
-        assert!(frame.submission_order > 0);
+        assert_eq!(fixture.host.last_submission(), Some(frame.submission_order));
         let report = report.lock().expect("resources");
         for label in expected {
             let product = report.resources.iter().find(|(name, bytes)| name == label && *bytes > 0);
