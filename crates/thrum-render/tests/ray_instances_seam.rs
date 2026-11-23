@@ -93,7 +93,7 @@ mod metal {
         ) -> Result<ContributionCandidate, FrameError> {
             let mut staged = Self::new(Vec::new());
             staged.prebuild = self.prebuild;
-            staged.rebuild(surface).map_err(FrameError::Scene)?;
+            staged.rebuild(surface)?;
             Ok(ContributionCandidate::new(
                 self.passes(),
                 self.effect_graph(),
@@ -104,10 +104,7 @@ mod metal {
             ))
         }
 
-        fn rebuild(
-            &mut self,
-            surface: &SceneSurface<'_>,
-        ) -> Result<(), thrum_render::runtime::FrameError> {
+        fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
             assert!(surface.ray_demand);
             self.mesh = Some(surface.device.create_blas(
                 &wgpu::CreateBlasDescriptor {
