@@ -392,7 +392,32 @@
     },
     "M4": {
       "definitions": "42d0230227029fff3635b9ccb0a31732c84f2f865d8cc5a142bae2d488facdcc",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "b4a702dbbcf7e27b9810f94ed90e4020d9003ed3",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M4-review.md",
+          "items": {
+            "M4.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-sol",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-sol",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 125783,
+            "cached": 1566592,
+            "output": 8267,
+            "turns": 1
+          },
+          "at": "2026-11-23T23:17:34Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SCENE-VIEWS at .orchestrate/evidence/SCENE-VIEWS/design-review.md asked for changes, with its 1 Mus",
@@ -427,6 +452,13 @@
           "output": 43732,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "b4a702dbbcf7e27b9810f94ed90e4020d9003ed3",
+        "review": ".orchestrate/evidence/SCENE-VIEWS/M4-review.md",
+        "checked": "08fdbcbbaf6060006c69becf7d87c3eb8a6158a1",
+        "at": "2026-11-23T23:17:34Z"
       }
     }
   },
