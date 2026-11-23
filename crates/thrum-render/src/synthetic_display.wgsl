@@ -42,6 +42,13 @@ fn reinhard(stored: vec3<f32>) -> vec3<f32> {
 
 @fragment fn edr_fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
     let stored = textureLoad(scene, vec2<i32>(position.xy), 0).rgb;
+    let overlay = exposure.metadata.w >> DISPLAY_OVERLAY_SHIFT;
+    if overlay == OVERLAY_MOTION || overlay == OVERLAY_EXPOSURE_ZONES || overlay == OVERLAY_TEMPORAL_INPUTS {
+        let encoded = clamp(sdr_pixel(position).rgb, vec3(0.0), vec3(1.0));
+        let low = encoded / SRGB_SLOPE;
+        let high = pow((encoded + vec3(SRGB_OFFSET)) / SRGB_SCALE, vec3(SRGB_GAMMA));
+        return vec4(select(high, low, encoded <= vec3(SRGB_ENCODED_KNEE)), 1.0);
+    }
     let mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y, edr_headroom.x);
     // A drawable rounded to binary16 must still respect the current f32 limit.
     return vec4(min(mapped, vec3(edr_headroom.y)), 1.0);
@@ -68,9 +75,7 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
     }
     return palette[zone] / 255.0;
 }
-override DITHER_OUTPUT: bool = true;
-
-@fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+fn sdr_pixel(position: vec4<f32>) -> vec4<f32> {
     if (exposure.metadata.w >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_MOTION {
         let velocity = textureLoad(motion, vec2<i32>(position.xy), 0).xy;
         if any(abs(velocity) >= vec2(MAX_FINITE_HALF)) { return vec4(1.0, 0.0, 1.0, 1.0); }
@@ -91,6 +96,10 @@ override DITHER_OUTPUT: bool = true;
         mapped = reinhard(stored);
     }
     let encoded = srgb_encode(mapped);
-    if !DITHER_OUTPUT { return vec4(encoded, 1.0); }
+    if (selectors >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_UNDITHERED { return vec4(encoded, 1.0); }
     return vec4(dither_unorm8(encoded, vec2<u32>(position.xy)),1.0);
+}
+
+@fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+    return sdr_pixel(position);
 }

@@ -15,6 +15,7 @@ pub(crate) const DISPLAY_OVERLAY_SHIFT: u32 = 8;
 pub(crate) const TONE_MAP_NEUTRAL_HIGHLIGHTS: u32 = 1;
 pub(crate) const OVERLAY_EXPOSURE_ZONES: u32 = 1;
 pub(crate) const OVERLAY_MOTION: u32 = 2;
+pub(crate) const OVERLAY_UNDITHERED: u32 = 5;
 pub(crate) const OVERLAY_TEMPORAL_INPUTS: u32 = 3;
 pub(crate) const EXPOSURE_INCIDENT: u32 = 1;
 pub(crate) const EXPOSURE_LOW_LIGHT: u32 = 2;

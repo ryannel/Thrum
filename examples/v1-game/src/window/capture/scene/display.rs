@@ -28,6 +28,11 @@ pub(super) fn record(
     let mut records = Vec::new();
     for path in files {
         super::apply_still(driver.host_mut(), path)?;
+        if source == CaptureSource::Sdr {
+            driver
+                .host_mut()
+                .set_display_overlay(thrum_render::synthetic::DisplayOverlay::Undithered);
+        }
         let name = path
             .file_name()
             .and_then(|name| name.to_str())

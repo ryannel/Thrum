@@ -292,8 +292,8 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
             (_, DisplayOverlay::TracedGeometry) => "recovery-traced",
             (_, DisplayOverlay::ExposureZones) => "recovery-zones",
             (_, DisplayOverlay::Motion) => "recovery-motion",
-            (true, DisplayOverlay::Off) => "recovery-midnight",
-            (false, DisplayOverlay::Off) => "recovery",
+            (true, DisplayOverlay::Off | DisplayOverlay::Undithered) => "recovery-midnight",
+            (false, DisplayOverlay::Off | DisplayOverlay::Undithered) => "recovery",
         };
         retain(&format!("{label}-before"), &expected);
         retain(&format!("{label}-after"), &restored);

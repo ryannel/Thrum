@@ -75,7 +75,20 @@ fn main() {
         window_transition_proof().unwrap_or_else(|error| report_capture_failure(&error));
     let qualification =
         window_qualification().unwrap_or_else(|error| report_capture_failure(&error));
-    v1_game::run_window(hardware, window_capture, transition, qualification);
+    let display = window_display_options().unwrap_or_else(|error| report_capture_failure(&error));
+    v1_game::run_window(hardware, window_capture, transition, qualification, display);
+}
+
+#[cfg(target_os = "macos")]
+fn window_display_options() -> Result<Option<thrum_app::WindowDisplayOptions>, String> {
+    let Ok(forced) = std::env::var("THRUM_MAC_EDR") else {
+        return Ok(None);
+    };
+    Ok(Some(thrum_app::WindowDisplayOptions {
+        forced: forced.parse()?,
+        output: std::env::var_os("THRUM_MAC_EDR_PROOF").map(Into::into),
+        capture: std::env::var_os("THRUM_MAC_EDR_TAP").is_some(),
+    }))
 }
 
 #[cfg(target_os = "macos")]
@@ -208,6 +221,9 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         route: path("THRUM_CAPTURE_ROUTE"),
         display_overlay: text("THRUM_CAPTURE_DISPLAY_OVERLAY")?,
         source: text("THRUM_CAPTURE_SOURCE")?,
+        fixed_eye: text("THRUM_CAPTURE_FIXED_EYE")?
+            .map(|value| serde_json::from_str(&value).map_err(|error| error.to_string()))
+            .transpose()?,
         edr_headroom: text("THRUM_CAPTURE_EDR_HEADROOM")?
             .map(|value| value.parse::<f32>().map_err(|error| error.to_string()))
             .transpose()?

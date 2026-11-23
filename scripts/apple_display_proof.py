@@ -13,8 +13,7 @@ def window_arm(root, binary, env, name, force, *, frames=40, tap=False):
     arm = root / name
     arm.mkdir()
     launch = dict(env, THRUM_MAC_EDR=force, THRUM_V1_FRAMES=str(frames),
-                  THRUM_MAC_EDR_RECORD=str(arm / "display.jsonl"),
-                  THRUM_MAC_EDR_FRAMES=str(arm / "frames.jsonl"), THRUM_RECIPE="portable")
+                  THRUM_MAC_EDR_PROOF=str(arm), THRUM_RECIPE="portable")
     if tap:
         launch["THRUM_MAC_EDR_TAP"] = "1"
     run("/usr/bin/caffeinate", "-d", "-i", "-u", str(binary), env=launch, timeout=150)
@@ -101,20 +100,22 @@ def mac_edr_headroom(output):
     return arm
 
 
-def stills(output, binary, env, recipe, source, headroom=None):
+def stills(output, binary, env, recipe, source, headroom=None, *, lamps=False):
     from run_v1_showcase import PARAMS, ROUTE
 
-    directory = output / f"{recipe}-{source}"
+    directory = output / f"{recipe}-{source}{'-lamps' if lamps else ''}"
+    presets = ["night-lights"] if lamps else ROUTE
     options = dict(env, THRUM_RECIPE=recipe, THRUM_CAPTURE_SCENE=str(directory),
                    THRUM_CAPTURE_ROUTE_ONLY="1",
                    THRUM_CAPTURE_PARAMS=os.pathsep.join(str(PARAMS / f"showcase-{name}.params.json")
-                                                       for name in ROUTE))
+                                                       for name in presets))
+    if lamps:
+        # Use the game's existing LampStop scene and the camera from its local-light proof.
+        options.update(THRUM_ROUTE_OVERLAY="lamp-stop", THRUM_CAPTURE_FIXED_EYE="[0.0, 242.4, 2.5]")
     if headroom is not None:
         options["THRUM_CAPTURE_EDR_HEADROOM"] = str(headroom)
     else:
         options["THRUM_CAPTURE_SOURCE"] = source
-    if source == "submitted-sdr":
-        options["THRUM_SDR_UNDITHERED"] = "1"
     run(str(binary), env=options, timeout=240)
     manifest = json.loads((directory / "stills.json").read_text())
     if manifest["recipe"] != RECIPE[recipe] or manifest["backend"] != "Metal":
@@ -131,9 +132,12 @@ def route_environment(output):
 
 
 def same_state(left, right):
-    for key in ("name", "source_tick", "submission", "time_of_day", "pitch", "yaw", "exposure"):
+    for key in ("name", "source_tick", "submission", "time_of_day", "pitch", "yaw"):
         if left[key] != right[key]:
             raise ValueError(f"stills disagree on {key}: {left} vs {right}")
+    if not (left["exposure"] and right["exposure"] and
+            left["exposure"][:7] == right["exposure"][:7]):
+        raise ValueError(f"stills disagree on the resolved exposure: {left} vs {right}")
     if not left["surface_presented"] or not right["surface_presented"]:
         raise ValueError("capture was not associated with a surface submission")
 
@@ -203,12 +207,19 @@ def previews(path, name, extent, words, headroom):
 
 def mac_edr_route(output):
     binary, env, cooked = route_environment(output)
-    arms = {h: stills(output, binary, env, "portable", f"edr{h}", h) for h in (1, 2, 8)}
-    arms["linear"] = stills(output, binary, env, "portable", "submitted-linear")
-    arms["sdr"] = stills(output, binary, env, "portable", "submitted-sdr")
-    extent = arms[1][1]["extent"]
     previews_path = output / "previews"
     previews_path.mkdir()
+    rows = []
+    for lamps in (False, True):
+        arms = {h: stills(output, binary, env, "portable", f"edr{h}", h, lamps=lamps) for h in (1, 2, 8)}
+        arms["linear"] = stills(output, binary, env, "portable", "submitted-linear", lamps=lamps)
+        arms["sdr"] = stills(output, binary, env, "portable", "submitted-sdr", lamps=lamps)
+        rows.extend(compare_headroom_stills(arms, previews_path))
+    return dict(cooked_root=cooked, checkpoints=rows, previews=str(previews_path))
+
+
+def compare_headroom_stills(arms, previews_path):
+    extent = arms[1][1]["extent"]
     rows = []
     for index, base in enumerate(arms[1][1]["stills"]):
         pixels = {arm: half_components(path / record["stills"][index]["file"], extent)
@@ -221,20 +232,21 @@ def mac_edr_route(output):
         below = [i for i in range(0, len(linear), 4) if HALF[max(linear[i:i + 3])] < exposed_knee]
         if not below:
             raise ValueError(f"no below-knee samples at {base['name']}")
+        highlight_stop = base["name"] in ("showcase-sunset-clear-sun", "showcase-sunset-sun", "showcase-night-lights")
         for headroom in (2, 8):
             words = pixels[headroom]
             above = sum(max(words[i:i + 3]) > 0x3c00 for i in range(0, len(words), 4))
             if HALF[max(words)] > headroom or any(words[i:i + 4] != pixels[1][i:i + 4] for i in below):
                 raise ValueError(f"invalid headroom or below-knee identity at {base['name']}")
-            if base["name"] in ("showcase-sunset-clear-sun", "showcase-night-upslope"):
+            if highlight_stop:
+                previews(previews_path, base["name"], extent, words, headroom)
                 if not above:
                     raise ValueError(f"{base['name']} has no values above white at H={headroom}")
-                previews(previews_path, base["name"], extent, words, headroom)
             rows.append(dict(name=base["name"], headroom=headroom, above_white_pixels=above,
                              below_knee_identical=len(below), peak=HALF[max(words)]))
-        if base["name"] in ("showcase-sunset-clear-sun", "showcase-night-upslope"):
+        if highlight_stop:
             path, sdr = arms["sdr"]
             raw = (path / sdr["stills"][index]["file"]).read_bytes()
             write_ppm(previews_path / f"{base['name']}-sdr.ppm", extent,
                       bytes(v for i, v in enumerate(raw) if i % 4 != 3))
-    return dict(cooked_root=cooked, checkpoints=rows, previews=str(previews_path))
+    return rows

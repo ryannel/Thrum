@@ -205,13 +205,6 @@ fn read_float_target(
         view_formats: &[],
     });
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    let row_bytes = (width * 16).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
-    let result = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: u64::from(row_bytes) * u64::from(height),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -230,39 +223,14 @@ fn read_float_target(
         pass.set_bind_group(0, &group, &[]);
         pass.draw(0..3, 0..1);
     }
-    encoder.copy_texture_to_buffer(
-        texture.as_image_copy(),
-        wgpu::TexelCopyBufferInfo {
-            buffer: &result,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(row_bytes),
-                rows_per_image: Some(height),
-            },
-        },
-        extent,
+    let readback = thrum_test_support::readback::Readback::texture(
+        device,
+        &mut encoder,
+        &texture,
+        thrum_test_support::readback::Mip::level(0),
+        ..,
     );
     let submission = queue.submit([encoder.finish()]);
-    let slice = result.slice(..);
-    let (send, receive) = std::sync::mpsc::channel();
-    slice.map_async(wgpu::MapMode::Read, move |result| {
-        send.send(result).expect("EDR readback receiver");
-    });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(std::time::Duration::from_secs(10)),
-        })
-        .expect("EDR shader submission completes");
-    receive
-        .recv()
-        .expect("EDR map callback")
-        .expect("EDR buffer maps");
-    slice
-        .get_mapped_range()
-        .expect("mapped EDR sample bytes")
-        .chunks_exact(row_bytes as usize)
-        .flat_map(|row| bytemuck::cast_slice::<_, [f32; 4]>(&row[..width as usize * 16]))
-        .copied()
-        .collect()
+    let bytes = readback.wait(device, submission);
+    bytemuck::cast_slice::<_, [f32; 4]>(&bytes).to_vec()
 }

@@ -39,6 +39,7 @@ mod extent;
 #[cfg(not(target_arch = "wasm32"))]
 mod extent_transition;
 mod preparation;
+mod presentation;
 mod sprites;
 mod submitted_capture;
 mod surface_switch;
@@ -387,48 +388,6 @@ impl SurfaceFault {
 
     fn is_transient(self) -> bool {
         matches!(self, Self::StaleBinding | Self::ExtentMismatch)
-    }
-}
-
-// Validate binding and timing before opening the drawable pass. The portable
-// scene can still be submitted independently when one of those checks fails.
-fn encode_surface_pass(
-    prepared: &PreparedRenderer,
-    presenter: Option<&SurfacePresenter>,
-    slot: &mut FrameSlot,
-    surface: Option<&SurfaceOutput<'_>>,
-    encoder: &mut wgpu::CommandEncoder,
-    timing_requested: bool,
-    readback: bool,
-    report: &mut DriveReport,
-) -> (bool, Option<RenderError>) {
-    match (presenter, slot.presentation.as_ref(), surface) {
-        (Some(presenter), Some(binding), Some(surface)) => {
-            let surface = (presenter, binding, surface.view, surface.extent);
-            let timings = timing_requested.then_some(&mut slot.timings);
-            let encoded = match (prepared, &slot.target) {
-                (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => {
-                    scene.encode_surface(target, encoder, surface, timings, readback)
-                }
-                (PreparedRenderer::TwoD(scene), FrameTarget::TwoD(target)) => {
-                    scene.present(encoder, target, timings, readback, surface)
-                }
-                _ => Err(RenderError::StaleTarget),
-            };
-            match encoded {
-                Ok(()) => (true, None),
-                Err(error) => {
-                    let fault = SurfaceFault::from_encode(&error);
-                    report.surface_fault = Some(fault);
-                    (false, (!fault.is_transient()).then_some(error))
-                }
-            }
-        }
-        (Some(_), None, Some(_)) => {
-            report.surface_fault = Some(SurfaceFault::MissingBinding);
-            (false, None)
-        }
-        _ => (false, None),
     }
 }
 
@@ -989,39 +948,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn world_mut(&mut self) -> &mut W {
         &mut self.world
     }
-    /// Headroom consumed by the current display mode, with 1.0 as SDR white.
-    #[must_use]
-    pub fn display_headroom(&self) -> f32 {
-        if self.is_edr() {
-            self.display_headroom
-        } else {
-            1.0
-        }
-    }
-
-    /// Whether the admitted generation writes an extended-linear float drawable.
-    #[must_use]
-    pub fn is_edr(&self) -> bool {
-        self.presenter
-            .as_ref()
-            .is_some_and(|p| p.profile().format == wgpu::TextureFormat::Rgba16Float)
-    }
-
-    /// Publish the platform's current headroom before recording its next frame.
-    pub fn set_display_headroom(&mut self, headroom: f32) {
-        let headroom = if headroom.is_finite() {
-            headroom.clamp(1.0, 65_504.0)
-        } else {
-            1.0
-        };
-        if self.display_headroom.to_bits() != headroom.to_bits() {
-            if let Some(scene) = self.prepared.three_d() {
-                scene.write_display_headroom(&self.queue, headroom);
-            }
-            self.display_headroom = headroom;
-        }
-    }
-
     /// Inspect the game-owned presentation policy.
     pub fn source(&self) -> &V {
         &self.source
@@ -2436,7 +2362,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .submitted_capture
             .as_ref()
             .is_some_and(|tap| tap.source == crate::synthetic::CaptureSource::Edr);
-        let (surface_presented, surface_error) = encode_surface_pass(
+        let (surface_presented, surface_error) = presentation::encode_surface_pass(
             &self.prepared,
             self.presenter.as_ref(),
             slot,
@@ -2566,7 +2492,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             );
         }
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
-        slot.timing_readback = capture_slot.is_some();
+        slot.timing_readback = capture_slot.is_some() && !edr_capture;
         slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;

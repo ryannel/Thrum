@@ -114,6 +114,7 @@ pub fn run_window(
     capture: Option<thrum_app::WindowExtentCapture>,
     transition: Option<thrum_app::WindowTransitionProof>,
     qualification: Option<thrum_app::WindowQualification>,
+    display: Option<thrum_app::WindowDisplayOptions>,
 ) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
@@ -164,7 +165,10 @@ pub fn run_window(
         title,
         render_thread: "thrum-v1-render",
         panel_title: "Thrum demo",
-        window_size: if std::env::var_os("THRUM_MAC_EDR_FRAMES").is_some() {
+        window_size: if display
+            .as_ref()
+            .is_some_and(|options| options.output.is_some())
+        {
             [640, 360]
         } else {
             [1920, 1080]
@@ -195,6 +199,8 @@ pub fn run_window(
         thrum_app::run_with_transition_proof(config, proof, game);
     } else if let Some(qualification) = qualification {
         thrum_app::run_with_qualification(config, qualification, game);
+    } else if let Some(display) = display {
+        thrum_app::run_with_display(config, display, game);
     } else {
         thrum_app::run(config, game);
     }
@@ -313,7 +319,10 @@ impl RuntimeSetup for WindowGame {
     }
 
     fn supports_edr(&self) -> bool {
-        crate::selected_setup().is_ok_and(|setup| setup.sprite_scale.is_none())
+        crate::selected_setup().is_ok_and(|setup| {
+            setup.sprite_scale.is_none()
+                && setup.display_overlay != thrum_render::synthetic::DisplayOverlay::TracedGeometry
+        })
     }
 
     fn hardware_requests(&self) -> &[HardwareRequest] {

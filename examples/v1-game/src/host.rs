@@ -247,7 +247,7 @@ impl GameSetup {
                 ));
             }
             let temporal_sampling = match setup.display_overlay {
-                DisplayOverlay::Off => false,
+                DisplayOverlay::Off | DisplayOverlay::Undithered => false,
                 DisplayOverlay::TemporalInputs => true,
                 DisplayOverlay::TracedGeometry => {
                     return Err(FrameError::InvalidState(

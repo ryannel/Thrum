@@ -187,6 +187,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
     backing_scale: u64,
     proof: Option<&super::WindowTransitionProof>,
     qualification: Option<&super::WindowQualification>,
+    display: Option<&super::WindowDisplayOptions>,
 ) -> Result<RenderWorker<G>, String> {
     const {
         assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
@@ -203,7 +204,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         device: gpu.watch.generation,
     };
     let transition_proof = proof.map(TransitionProof::start).transpose()?;
-    let display_proof = super::display::proof::DisplayProof::start(&mut host)?;
+    let display_proof = super::display::proof::DisplayProof::start(&mut host, display)?;
     let mut actor = Actor::<G> {
         transition: ExtentTransition::new(current_extent),
         transition_proof,

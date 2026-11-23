@@ -11,6 +11,7 @@ mod qualification_signpost;
 mod recovery;
 mod render_actor;
 
+pub use display::{DisplayOverride, WindowDisplayOptions};
 pub use qualification::{
     ExtentWindow, TransitionArm, WindowExtentCapture, WindowQualification, WindowTransitionProof,
 };
@@ -97,6 +98,7 @@ struct App<G: Game> {
     config: Config,
     wake: EventLoopProxy<UserEvent>,
     display: Option<display::MacDisplay>,
+    display_options: Option<WindowDisplayOptions>,
     display_link: Option<ViewDisplayLink>,
     window: Option<Arc<Window>>,
     display_target: Option<f64>,
@@ -200,6 +202,7 @@ impl<G: WindowGame + 'static> App<G> {
             config,
             wake,
             display: None,
+            display_options: None,
             display_link: None,
             window: None,
             display_target: None,
@@ -530,7 +533,7 @@ impl<G: WindowGame + 'static> App<G> {
             && self.transition_proof.is_none()
             && self.qualification.is_none()
         {
-            let mut display = display::MacDisplay::attach(&window)?;
+            let mut display = display::MacDisplay::attach(&window, self.display_options.as_ref())?;
             display.sample(0, window.scale_factor());
             self.display = Some(display);
         }
@@ -628,6 +631,7 @@ impl<G: WindowGame + 'static> App<G> {
             self.qualification
                 .as_ref()
                 .map(|observer| &observer.options),
+            self.display_options.as_ref(),
         )?);
         // Baseline the watched files before the first load, so no later save is missed.
         self.watch = self.start_watch(wake);
@@ -1559,7 +1563,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
 pub fn run<G: WindowGame + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
-    run_with(config, false, None, None, None, game);
+    run_with(config, false, None, None, None, None, game);
 }
 
 /// Run the ordinary window with a caller-supplied control qualification observer.
@@ -1570,7 +1574,7 @@ pub fn run_with_qualification<G: WindowGame + 'static>(
     observer: WindowQualification,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, false, None, None, Some(observer), game);
+    run_with(config, false, None, None, Some(observer), None, game);
 }
 
 /// Run the ordinary window and retain one submitted image with its extent witnesses.
@@ -1581,7 +1585,7 @@ pub fn run_with_extent_capture<G: WindowGame + 'static>(
     capture: WindowExtentCapture,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, false, Some(capture), None, None, game);
+    run_with(config, false, Some(capture), None, None, None, game);
 }
 
 /// Run the ordinary window with a scripted resize and retain the frame records.
@@ -1592,7 +1596,7 @@ pub fn run_with_transition_proof<G: WindowGame + 'static>(
     proof: WindowTransitionProof,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, false, None, Some(proof), None, game);
+    run_with(config, false, None, Some(proof), None, None, game);
 }
 
 /// Run `game` in one window until the person closes it. Closing the window is success. Setting
@@ -1607,7 +1611,19 @@ pub fn run_until_closed<G: WindowGame + 'static>(
     config: Config,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, true, None, None, None, game);
+    run_with(config, true, None, None, None, None, game);
+}
+
+/// Run the window with a typed display override and optional qualification.
+///
+/// # Panics
+/// If the platform refuses to create the event loop.
+pub fn run_with_display<G: WindowGame + 'static>(
+    config: Config,
+    options: WindowDisplayOptions,
+    game: impl FnOnce() -> Result<G, String>,
+) {
+    run_with(config, false, None, None, None, Some(options), game);
 }
 
 /// Environment variable that asks [`run_until_closed`] for the frames report: set it to `1`.
@@ -1628,6 +1644,7 @@ fn run_with<G: WindowGame + 'static>(
     extent_capture: Option<WindowExtentCapture>,
     transition_proof: Option<WindowTransitionProof>,
     qualification: Option<WindowQualification>,
+    display_options: Option<WindowDisplayOptions>,
     game: impl FnOnce() -> Result<G, String>,
 ) {
     let target_frames = match frame_limit(
@@ -1654,6 +1671,7 @@ fn run_with<G: WindowGame + 'static>(
     app.extent_capture = extent_capture;
     app.transition_proof = transition_proof;
     app.qualification = qualification.map(qualification::Pan::new);
+    app.display_options = display_options;
     app.timing_policy =
         if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
             TimingPolicy::Report

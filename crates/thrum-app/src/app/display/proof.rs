@@ -16,16 +16,19 @@ pub(in crate::app) struct DisplayProof {
 impl DisplayProof {
     pub(in crate::app) fn start<W: FrameWorld, V: SceneSource<W::Page>>(
         host: &mut FrameHost<W, V>,
+        options: Option<&super::WindowDisplayOptions>,
     ) -> Result<Option<Self>, String> {
-        let Some(path) = std::env::var_os("THRUM_MAC_EDR_FRAMES") else {
+        let Some((options, path)) =
+            options.and_then(|options| options.output.as_ref().map(|path| (options, path)))
+        else {
             return Ok(None);
         };
-        let tap = std::env::var_os("THRUM_MAC_EDR_TAP").is_some();
+        let tap = options.capture;
         if tap {
             host.enable_submitted_capture_from(1, CaptureLimits::default(), CaptureSource::Edr)?;
         }
         Ok(Some(Self {
-            log: File::create(path).map_err(|error| error.to_string())?,
+            log: File::create(path.join("frames.jsonl")).map_err(|error| error.to_string())?,
             tap,
             configures: 1,
             submitted: 0,
@@ -94,10 +97,21 @@ impl DisplayProof {
             }
         }
         #[cfg(feature = "creation-counters")]
-        let report = Some(host.creation_report());
+        {
+            self.write_creation_receipt(host)
+        }
         #[cfg(not(feature = "creation-counters"))]
-        let report: Option<thrum_render::runtime::CreationReport> = None;
-        let report = report.ok_or("EDR qualification requires creation counters")?;
+        {
+            Err("EDR qualification requires creation counters".to_owned())
+        }
+    }
+
+    #[cfg(feature = "creation-counters")]
+    fn write_creation_receipt<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        host: &FrameHost<W, V>,
+    ) -> Result<(), String> {
+        let report = host.creation_report();
         let pipelines: u64 = report
             .pipelines
             .iter()

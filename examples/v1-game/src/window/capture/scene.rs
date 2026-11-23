@@ -51,6 +51,8 @@ pub struct SceneCaptureRequest {
     pub route: Option<PathBuf>,
     /// `THRUM_CAPTURE_DISPLAY_OVERLAY`: the route's display diagnostic.
     pub display_overlay: Option<String>,
+    /// `THRUM_CAPTURE_FIXED_EYE`: optional authored still position.
+    pub fixed_eye: Option<[f32; 3]>,
     /// `THRUM_CAPTURE_EDR_HEADROOM`: a forced headroom for submitted still captures.
     pub edr_headroom: Option<f32>,
     /// `THRUM_CAPTURE_SOURCE`: the route's submitted-image stage.
@@ -163,6 +165,16 @@ pub(in crate::window) async fn run(
         hardware: Vec::new(),
     });
     let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)?;
+    if let Some(eye) = request.fixed_eye {
+        if moving_route.is_some() || motion_frames.is_some() {
+            return Err("a fixed eye requires a still capture".to_owned());
+        }
+        let host = driver.host_mut();
+        let camera = host
+            .scene_camera()
+            .ok_or("a fixed capture eye needs a cooked scene")?;
+        host.set_scene_camera(camera.at(eye)?)?;
+    }
     let content = driver
         .game()
         .0

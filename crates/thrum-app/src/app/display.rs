@@ -39,30 +39,39 @@ pub(super) struct MacDisplay {
     layer: Retained<CAMetalLayer>,
     pub(super) headroom: Arc<Headroom>,
     applied: Option<f32>,
-    forced: Option<Forced>,
+    forced: Option<DisplayOverride>,
     proof: Option<std::fs::File>,
 }
 
-#[derive(Clone, Copy)]
-enum Forced {
+/// Typed screen record override. Production uses the window's real screen when absent.
+#[derive(Clone, Copy, Debug)]
+pub enum DisplayOverride {
+    /// A display with a current and potential headroom of 1.
     Sdr,
+    /// A display with constant current headroom and potential headroom of 16.
     Constant(f32),
+    /// A change to the current and potential headroom on a particular display tick.
     Step {
+        /// Current headroom before the change.
         before: f32,
+        /// Current headroom after the change.
         after: f32,
+        /// Display tick that first observes the change.
         tick: u64,
+        /// Potential headroom after the change.
         potential: f32,
     },
+    /// A move from an SDR screen to one with EDR.
     Promote {
+        /// Display tick of the move.
         tick: u64,
     },
 }
 
-impl Forced {
-    fn parse() -> Result<Option<Self>, String> {
-        let Ok(value) = std::env::var("THRUM_MAC_EDR") else {
-            return Ok(None);
-        };
+impl std::str::FromStr for DisplayOverride {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
         let number = |text: &str| {
             text.parse::<f32>()
                 .ok()
@@ -84,11 +93,22 @@ impl Forced {
             [headroom] => number(headroom).map(Self::Constant),
             _ => None,
         };
-        forced
-            .map(Some)
-            .ok_or_else(|| format!("invalid THRUM_MAC_EDR value {value:?}"))
+        forced.ok_or_else(|| format!("invalid display override {value:?}"))
     }
+}
 
+/// Launch options for qualifying the macOS display path.
+#[derive(Clone, Debug)]
+pub struct WindowDisplayOptions {
+    /// Overrides the live screen limits while retaining them as a witness.
+    pub forced: DisplayOverride,
+    /// Existing output directory for display and render-owner records.
+    pub output: Option<std::path::PathBuf>,
+    /// Include submitted drawable extrema from the engine tap.
+    pub capture: bool,
+}
+
+impl DisplayOverride {
     fn sample(self, tick: u64) -> (f32, f32) {
         match self {
             Self::Constant(current) => (current, 16.0),
@@ -110,7 +130,10 @@ impl MacDisplay {
         unsafe_code,
         reason = "the winit AppKit handle is a main-thread NSView pointer"
     )]
-    pub(super) fn attach(window: &Window) -> Result<Self, String> {
+    pub(super) fn attach(
+        window: &Window,
+        options: Option<&WindowDisplayOptions>,
+    ) -> Result<Self, String> {
         let _main = MainThreadMarker::new().ok_or("display must be read on AppKit main thread")?;
         let handle = window.window_handle().map_err(|error| error.to_string())?;
         let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
@@ -134,8 +157,9 @@ impl MacDisplay {
                     .ok_or("Metal view has no CAMetalLayer")?
             }
         };
-        let proof = std::env::var_os("THRUM_MAC_EDR_RECORD")
-            .map(std::fs::File::create)
+        let proof = options
+            .and_then(|options| options.output.as_ref())
+            .map(|output| std::fs::File::create(output.join("display.jsonl")))
             .transpose()
             .map_err(|error| error.to_string())?;
         Ok(Self {
@@ -143,7 +167,7 @@ impl MacDisplay {
             layer,
             headroom: Arc::new(Headroom::default()),
             applied: None,
-            forced: Forced::parse()?,
+            forced: options.map(|options| options.forced),
             proof,
         })
     }
