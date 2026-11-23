@@ -516,7 +516,7 @@
     {
       "id": "M15",
       "name": "Chrome's SDR valley matches the retained frames again",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Match the registered APPLE-TILE records byte for byte. Meet M6's float headroom and undithered H = 1 identity bounds on Metal.",
       "items": [
         {
@@ -525,8 +525,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Do the matched Chrome control and corrected captures isolate the SDR shader change and recover all 481 records? Does the landing keep the reference files, registry, capture settings and comparator intact? Do the Metal D6.2 and D6.3 receipts on the corrected shader still meet the float headroom and H = 1 identity bounds?",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images; .orchestrate/evidence/APPLE-PRESENTATION/M15/README.md"
         }
       ],
       "failed_reviews": 0,

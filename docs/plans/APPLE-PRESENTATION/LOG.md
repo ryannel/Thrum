@@ -336,3 +336,10 @@
   per-frame history identity through the game page. The reconstruction bound was CIEDE2000 of 3 on submitted
   8-bit SDR. M4 used a 100 ms resize debounce and waited for the GPU at the Mac surface switch. The iPhone
   held the fitted last picture with background at its sides until the first frame at the new size.
+
+- 2026-11-23 M15 restored the pre-M6 SDR shoulder arithmetic at `ba44aac63`. The hardware Chrome fixed day
+  captures shared the route, cooked root and all 481 retained record identities. The control differed in 147
+  decoded RGBA8 digests, and the corrected build matched all 481, including ordinal 61. Metal D6.2 passed
+  with the GPU required. D6.3 stayed within one 8-bit code at all six checkpoints on both native recipes.
+  The full matrix runs through the shared `exact-images` check on main.
+  [Target receipts](../../../.orchestrate/evidence/APPLE-PRESENTATION/M15/README.md).
