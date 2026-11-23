@@ -326,7 +326,7 @@
     {
       "id": "M6",
       "name": "Corrected replay stays fast and the 100,000-entity run stays covered",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -335,8 +335,8 @@
           "check": "export PATH=\"$(dirname \"$(rustup which --toolchain stable rustc)\"):$PATH\"; RUSTC_WRAPPER=\"${RUSTC_WRAPPER-}\" CARGO_INCREMENTAL=0 cargo nextest run --locked --offline --workspace --profile default -E 'package(=v1-game) & binary(=simulation) & test(=parallel_movers_match_the_straight_corrected_run_in_a_small_world)' --retries 0 --no-tests=fail",
           "ask": "Does the record show the original case excluded from normal workspace runs and per-test times for the compact case in the default workspace build, under 6 s alone and passing the first attempt within 10 s under recorded ordinary builder load? Does the compact case cover slot churn and use dispatch counters to prove serial execution, requested Rayon fallback and forced multi-chunk dispatch? Does it compare complete authority immediately before and after each refusal (kernel, Resolve after tentative kernel writes, and inside corrected replay), then show that the correction changes the endpoint and that final complete authority and the published page match the straight corrected run?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M6/README.md; .orchestrate/evidence/REVIEW-ENGINE/M6/compact-isolated.log; .orchestrate/evidence/REVIEW-ENGINE/M6/compact-loaded.log; .orchestrate/evidence/REVIEW-ENGINE/M6/fast-selection.log",
           "verdict": "",
           "review": ""
         },
