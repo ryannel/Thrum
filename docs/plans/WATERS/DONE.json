@@ -1061,7 +1061,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M13/surf-gpu-r6.log",
+          "evidence": ".orchestrate/evidence/WATERS/M13/resume-conformance-r4.log",
           "verdict": "",
           "review": ""
         },
@@ -1178,8 +1178,8 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M13/surf-cost-investigation.md",
           "verdict": "",
           "review": ""
         },

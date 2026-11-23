@@ -574,3 +574,9 @@
   On Metal, M13.3 read the lip above the trough in a three-surface column and matched all float stations
   within 2 µm through two swash cycles. M13.9 selected the nearest sheet and matched submitted motion within
   0.008 px during stage interpolation. [Target results](../../../.orchestrate/evidence/WATERS/M13/resume-metal-receipt.md).
+- 2026-11-23 The paired 1440p gale run passed M13.12 on portable Metal. Row-parallel cuts
+  returned all 48 stations at tick 67, where the serial dispatch missed the completion deadline.
+  The measured pass took 13.92 s for 63.87 million node evaluations. The controlled run and
+  [tripwire investigation](../../../.orchestrate/evidence/WATERS/M13/surf-cost-investigation.md) retain that cost.
+  The [trade-wind stills](../../../.orchestrate/evidence/WATERS/M13/resume-trade-visual-review.md) still show
+  shore discontinuities and lack a coherent breaking front.
