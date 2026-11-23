@@ -390,10 +390,10 @@
           "statement": "In real time on the Mac, pixel art scrolling slowly on a diagonal and fast, at scales of 1.5, 2 and 2.37, stays still: no texel changes width, no line thickens and thins, nothing sparkles or crawls, and no seam opens between ground tiles. Rotating sprites keep clean edges.",
           "inspect": "Capture the sprite scene at 1920\u00d71080 with T2 engine capture in `realtime` mode: a diagonal scroll of less than a pixel a frame and a fast one, at each of the three scales, over the test card, a tiled ground and a field of pixel-art sprites, some of them rotating. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, checker areas, tile seams and sprite outlines.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-motion.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.9",
