@@ -305,9 +305,18 @@
       "name": "Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls",
       "items": [
         {
+          "id": "M3.12",
+          "statement": "The creation-counters scene_2d generation inventory passes on both Metal recipes for its one-frame sheet, whose padded atlas is 12 by 12 and whose SpriteFrameRecord occupies 32 bytes. The test still witnesses the live 2D storage, allocations, pipelines and submitted passes against its 3D control. Guard: existing main-tier generation inventory.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --test scene_2d generation_prepares_only_the_sprite_and_output_resources -- --exact",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
           "id": "M3.1",
-          "statement": "Pixel sheets use the scale-dependent spatial filter in mechanism 6 of the design on both Metal recipes and in Chrome WebGPU. It stays inside the sampled frame's own gutter and uses the existing one-draw path at the output extent.",
-          "ask": "Do the projected scale and continuous texel coordinate drive a centred, normalized, positive filter on premultiplied scene-linear RGBA? Do its support, quad margin and atlas accesses agree for standalone frames and tiles? At each aligned whole scale does it reduce to the original one-sample box path, and does the widened path use at most four bilinear samples with the existing sheet bindings?",
+          "statement": "On both Metal recipes and Chrome WebGPU, pixel sheets use the centred filter in mechanism 6 on the existing one-draw path at the output extent. It widens near 1.5×, changes edge weights at off-grid 2× and selects the authored texels at aligned 2×. Record: before-and-after sprite-pass timings for the 1920×1080 1.5× scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
+          "ask": "At 1.5× does the shader apply normalized, nonnegative weights to premultiplied scene-linear RGBA within the claimed support? At 2× does the compact kernel reduce to the authored texel on the aligned grid and change the edge mix from the box at a quarter-output-pixel offset using continuous coordinates? Check the support, quad margin and frame-local atlas reads for a standalone frame and a tile. Do the aligned path and wider path use at most one and four bilinear samples respectively with the existing bindings?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -328,7 +337,7 @@
         },
         {
           "id": "M3.3",
-          "statement": "At whole-number scales, a view that scrolls by whole output pixels moves the image by exactly that many pixels and changes no other byte, and the image is the source texels.",
+          "statement": "At aligned whole-number scales from 1× through 6×, the image is the authored texels repeated as pixel blocks. Scrolling an aligned view by whole output pixels translates the image by exactly that amount and preserves the translated texel bytes.",
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",

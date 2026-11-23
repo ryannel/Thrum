@@ -116,7 +116,7 @@ judged in words, in the running scenes.
   linear, so a filtered edge has no dark fringe, and one blend state covers alpha and additive: "It is a superset
   of both conventional and additive blending"
   ([Hargreaves](https://www.shawnhargreaves.com/blog/premultiplied-alpha.html)).
-- **Fractional pixel-art magnification needs extra filtering near native size.** The original sharp bilinear
+- **The pixel-art filter depends on scale and subpixel position.** The original sharp bilinear
   sample ([d7samurai](https://gist.github.com/d7samurai/9f17966ba6130a75d1bfb0f1894ed377)) implements a
   one-output-pixel box and preserves an aligned integer image. At 1.5× it also preserves high-frequency
   content that aliases on the output grid. One bright texel in a repeating three-output-pixel stripe period
@@ -127,6 +127,10 @@ judged in words, in the running scenes.
   without ringing. A tent gives this roll-off with compact support. [Turkowski, Filters for Common Resampling Tasks](https://people.csail.mit.edu/ericchan/bib/pdf/ResamplingFilters.pdf)
   Pixel snapping or an integer-scaled intermediate would step motion or change the requested framing.
   Frame accumulation would add history and lag to a view drawn directly at its output extent.
+  At 2× the retained Metal pan exposes a different problem. The box spreads the transition across much
+  of each subpixel cycle, and the dark stripes appear to thin. A compact tent keeps more of the authored
+  contrast through those intermediate phases and fits inside the nearest texel edge when the grid aligns.
+  [2× phase crops and review](../../../.orchestrate/evidence/RENDER-2D/design-review.md)
 - **Shipped games order by height with a fixed tie-break, and nothing published goes further.** The usual advice
   for two sprites that flicker is to sort on the feet and break ties with a unique identity, so equal keys never
   fall in an arbitrary order (for example
@@ -302,26 +306,30 @@ never change when a sheet arrives, changes or leaves.
 
 A sheet is **pixel** or **smooth**.
 
-- **Pixel** sheets use a separable filter in the sprite's projected local axes. In each axis the base kernel
-  is a centred box one output pixel wide. For magnification between 1× and 2×, convolve that box with a
-  centred, unit-area tent. The tent radius varies smoothly with projected scale, peaks near 1.5× and falls
-  to zero at 1× and 2×. Use a smooth fade to zero as the smaller axis reaches minification. Start with a
-  radius of `20 (s - 1)² (2 - s)²` output pixels for axis scale `s` in that interval and a fade from
-  zero to full strength as the smaller axis moves from 1× to 1.25×. Tune the radius by the M3 still and
-  motion inspections, keeping the support within 1.25 source texels on either side of the sample in each
-  magnified axis. The filter follows scale and position continuously during a scroll. At zero radius use
-  ordinary box coverage. This keeps aligned integer images exact at 1× through 6×, independently of the backing extent.
-  Pixel sheets are never block-compressed.
+- **Pixel** sheets use a centred, separable filter in the sprite's projected local axes. The base kernel
+  in each axis is a one-output-pixel box. Near 1.5×, convolve it with a unit-area tent. Start with a tent
+  radius of `20 (s - 1)² (2 - s)²` output pixels for axis scale `1 < s < 2`. Near 2×, blend the
+  resulting kernel weights into those of a centred, unit-area tent with half-width of half an output
+  pixel. Start the blend at 1.75×, reach the compact tent at 2× and fade back to the box by 2.37×. Smooth
+  the scale transitions and fade both corrections as the smaller axis approaches minification, from
+  full strength at 1.25× to zero at 1×.
+
+  At 2× an output pixel centre on the aligned grid is at least half an output pixel from the
+  nearest texel edge. The compact tent therefore gives that texel full weight, as the box does.
+  Off grid it gives more weight to the texel containing the output pixel centre, using the continuous
+  projected texel coordinate. A quarter-output-pixel shift changes an edge's 75:25 box mix to 87.5:12.5.
+  At the exact midpoint an edge still receives equal weights. Tune the compact kernel shape and the
+  scale transitions against the M3 still and realtime inspections, keeping the transition continuous
+  and the 2× half-width at most half an output pixel. Keep support within 1.25 source texels on either
+  side in each magnified axis. Aligned whole scales retain the original texels at 1× through 6× at
+  every backing extent. Pixel sheets are never block-compressed.
 - **Smooth** sheets are sampled trilinearly from mip levels, and may take the profile's compressed format as
   other textures do.
 
 Integrate each kernel over the source texel intervals for its weights and combine premultiplied linear RGBA
-with those weights. The weights are nonnegative and sum to one. The translates of the unit output box sum
-to one on the output grid. Convolution with a unit-area tent preserves that partition of unity and thus
-the total scene-linear weight of an isolated, unclipped, axis-aligned texel in the ideal calculation.
-That identity is independent of how much contrast survives in any given set of SDR pixels. At 1× the finest
-alternating pattern lies at the output grid's Nyquist limit. The byte guarantee is for grid alignment, and
-the visual claim for scrolling is judged at the scales and viewing conditions in M3.
+with those weights. The weights are nonnegative and sum to one. At 1× the finest alternating pattern lies
+at the output grid's Nyquist limit. The byte guarantee is for grid alignment, and the visual claim for
+scrolling is judged at the scales and viewing conditions in M3.
 
 Below one output pixel a texel, both kinds read mip levels, which are box-filtered in linear light from the
 premultiplied texels. Frames are separated by a gutter wide enough that no mip level the sheet holds reaches a
@@ -486,7 +494,7 @@ No budget is set (brief, decision 3). Estimates, to be replaced by measurements:
 | Order a tick | 121 µs at 10,000 natively for the kept order in the probe's crowd, where an exact sort is 76 µs; Chrome not measured. The worst case is a tick that gives every row with history a new value: about 25 million exchanges and 10 ms at 10,000. Rows without history are sorted, not exchanged in, so a rewind or a wave of spawns does not pay it |
 | Draw | One call; four vertices a row |
 | Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. A crowd three deep shades about three times its own area |
-| Pixel filter | The widened footprint meets at most four source texels per axis. Pair adjacent positive weights in each axis for up to four hardware bilinear samples per affected fragment. An axis using the box needs one pair and the existing box path uses one bilinear sample when neither axis widens. The extra cost scales with shaded pixels and overdraw in the affected sprites. Reuse level zero, the sampler and the sheet bindings. Derive scale-dependent terms once per quad and reuse the current one-draw path |
+| Pixel filter | The widened footprint meets at most four source texels per axis. Pair adjacent positive weights in each axis for up to four hardware bilinear samples per affected fragment. The box and the compact tent each meet at most two texels per axis and give a one-sample path when neither axis uses a wider footprint. The extra cost scales with shaded pixels and overdraw in the affected sprites. Reuse level zero, the sampler and the sheet bindings. Derive scale-dependent terms once per quad and reuse the current one-draw path |
 | A sheet | 16 MiB a 2048² page uncompressed, a third more with mips |
 | 3D work | None |
 
@@ -534,6 +542,9 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
   package, on `thrum-app`'s window and page.
 - **Art.** Test cards are generated in code. The few sprites the scenes need are drawn by the builder, original
   and simple. Nothing is lifted from another game or from Broadsides.
+- **Generation inventory.** M3.12 lands first. Its one-frame sheet has a 12×12 atlas with gutters and one
+  32-byte frame record. Keep the existing 64×48 Metal witness and 3D control. The device run observes live
+  allocations, actual pipeline creation and submitted pass timings at the point this test guards.
 - **Exact sprite checks.** The aligned image, resize, tile and mip witnesses use expectations taken from
   the source texels and this design's rules. No sprite image is registered as an exact baseline. These tests
   are this module's under [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines).
@@ -543,9 +554,9 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 - **Camera proof and diagnostics.** M3.2 and M3.7 step the camera over retained rows and test that the
   submitted pixels follow it. Scene-linear texel sums and phase contrast can help diagnose a capture.
   The old Metal and Chrome coverage-error limits belong to the box-filter run and are retired as checks.
-- **Filter cost.** For M3, use the existing profile record to compare the sprite pass before and after the
-  change at 1920×1080 on Metal and Chrome for the 1.5× scroll. Include recipe, device, shaded pixels,
-  overdraw and load. The timings are tripwires. M5 measures the packed crowd.
+- **Filter cost.** Use the existing profile record for the M3.1 comparison of sprite-pass timings before
+  and after the change at 1920×1080 on Metal and Chrome for the 1.5× scroll. Include recipe, device, shaded
+  pixels, overdraw and load. The timings are tripwires. M5 measures the packed crowd.
 - **Cost records.** Record the revision and machine load. Keep the specified crowd size and backing extent
   when investigating a tripwire. Record the observed cost and finding, then continue the build.
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,

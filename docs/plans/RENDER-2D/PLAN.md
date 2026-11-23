@@ -31,10 +31,15 @@ Before building, read the [module interfaces](DESIGN.md#interfaces),
 
 ## M3 Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls
 
-Tune the [spatial filter](DESIGN.md#6-sampling-two-kinds-of-sheet) on the existing 1.5× scroll. Keep the authored
-patterns, camera paths and backing extents for comparison. Reuse the camera-sweep proof on Metal and Chrome,
-and verify bleed neighbours in the uploaded atlas. Retire the exact-box checks and their tracked tolerance
-fixtures when the replacement proofs are ready. [M3.1–M3.11](DONE.json)
+Start with M3.12. Update the `creation-counters` inventory in `crates/thrum-render/tests/scene_2d.rs` for the
+already-landed M3 packing and frame record. Run its focused Metal check and land the test-only fix as a separate
+checkpoint on main before starting any other M3 item. The next green `long-tests` run lets WATERS M17 and
+RAY-TRACING M3 proceed.
+
+Then tune the [spatial filter](DESIGN.md#6-sampling-two-kinds-of-sheet) for the existing 1.5× scroll and the
+off-grid 2× Metal pan. Keep the authored patterns, camera paths and backing extents for comparison. Reuse the
+camera-sweep proof on Metal and Chrome, and verify bleed neighbours in the uploaded atlas. Retire the exact-box
+checks and their tracked tolerance fixtures when the replacement proofs are ready. [M3 items](DONE.json)
 
 ## M4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
 

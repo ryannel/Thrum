@@ -134,3 +134,18 @@
   existing shell and capture routes and introduced `scripts/render2d.py`. The M2 handoff used extraction
   and changed-row upload in the 3D instance field as precedents. The completed milestones now link to their
   reviews. The design carries cooker parity, ownership and proof guidance.
+- 2026-11-23 M3.12 goes first and lands as a test-only checkpoint. The focused `creation-counters` check
+  reproduced the stale 1×1 and 16-byte expectations. The inventory reports a 12×12 atlas with gutters and
+  a 32-byte frame table after `67abaa0ab` and `909111165`. Keep the live generation checks and 3D control.
+  This is the failing `long-tests` case blocking WATERS M17 and RAY-TRACING M3.
+- 2026-11-23 [Design review](../../../.orchestrate/evidence/RENDER-2D/design-review.md) Must Fix 1.
+  Mechanism 6 and M3.1 now specify a compact kernel near 2×. It changes off-grid edge weights and its
+  support fits within the aligned texel at 2×. A CPU sweep of the card's reds at 64 phases per axis
+  reproduced exact aligned bytes and showed stronger typical stripe and checker contrast than the box.
+  The midpoint mix stays equal. M3.8 still judges whether the result holds up during the retained pan,
+  and M3.3 states grid alignment explicitly for the same exact-image check.
+- 2026-11-23 Took the timing suggestion. M3.1 points to the existing 1.5× Metal and Chrome before-and-after
+  sprite-pass record so the reviewer can find the measured cost of the filter.
+- 2026-11-23 Revision validation. The documentation check and the existing native sprite and window
+  checks passed. The item dry run reproduced M3.12's inventory failure and stopped at the queue for
+  the unchanged Chrome check. Visual acceptance of the compact kernel belongs to the M3 build.
