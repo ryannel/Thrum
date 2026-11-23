@@ -21,7 +21,10 @@
       "output": 2369,
       "turns": 1
     },
-    "at": "2026-11-18T23:45:50Z"
+    "at": "2026-11-18T23:45:50Z",
+    "items_owed": [
+      "M18"
+    ]
   },
   "milestones": {
     "M1": {
@@ -654,7 +657,8 @@
         "by": "plan",
         "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
         "at": "2026-11-20T10:47:17Z"
-      }
+      },
+      "ends_stretch": true
     },
     "M13": {
       "definitions": "a3fc5c654fbd40807cdf1e4a31c1b959f165c8b39bc6fc1c202ba6fb8783e151",
@@ -862,6 +866,15 @@
         "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its Must Fix findings in",
         "at": "2026-11-18T23:43:14Z"
       }
+    },
+    "M18": {
+      "definitions": "abf3d7e6cdc2c24ceb718b4b040f84ec5d06d98865584a279662015003db76c9",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps faili",
+        "at": "2026-11-23T12:27:04Z"
+      }
     }
   },
   "briefs": [
@@ -960,11 +973,15 @@
     {
       "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's decisions of 20 Nov.\n\n1. Resolve every Must Fix finding in .orchestrate/evidence/GATE-TIME/design-review.md, DEAD-TOOLS/design-review.md and DEAD-CODE/design-review.md. Their Suggestions are yours to take or leave; say which you took and why.\n\n2. Owner decisions, which replace the matching Assumption: lines:\n- Decision 1 (gale soak), in the owner's words: \"we can't have tests that run for this long in the regular test suite. We need to think carefully about what risks we're willing to take and when we run everything vs when our tests can be more targeted. I think it has to stay off every merge check.\" So no long soak runs in any merge's check, not even a 60-second slice, unless you show that a short run catches a fault class that nothing else catches. Give GATE-TIME a written test-tier policy, owned in ORCHESTRATE.md or the design library. It should say what runs on every merge (fast, targeted at the files and behaviours a change touches), what runs on main after merges, and what runs at milestone or release points. It should also say which risk each tier accepts and how quickly a fault found later gets back to its cause. Apply that policy to the gale, the stepped hour, the foam and any other test over about a minute.\n- Decision 6 (benches): delete all nine. The owner sees no need to keep any.\n- Decision 9 (provenance): provenance records are tracked in git. Choose their location under the test-data versus evidence rule (evidence is never committed; files a check or a person must read are not evidence), and make sure the merge guard accepts it. Land it before CLOUDS M6 copies its first library.\nThe other assumptions (2, 3, 4, 5, 7, 8, 10, 11) stand as written.\n\n3. Keep each milestone's files table current, so the lead can confirm files before a builder starts.\n\nEnd with PLANNED.",
       "at": "2026-11-20T10:47:17Z"
+    },
+    {
+      "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps failing on timeouts. Merges are refused while main fails, so every builder stalls. Most of the failures are CPU tests that sit just under the limit even on a quiet machine. In a passing run at 747909d1c, 42 tests took over 6 s. 19 of them are in thrum-river-model::it, at 9.3 to 9.9 s, and thrum-river-model also times out most often when the Mac is busy. The other slow tests are in v1-game, water-scene, thrum-render, thrum-water, thrum-water-model, thrum-sea, thrum-network, thrum-core and thrum-clouds. The full list, with seconds, is below.\n\nPlan the fix in the module that owns each test's code, as an item on its current milestone or as its next milestone, whichever lets it land soonest. The owner's standing rule is the fastest suite possible: small worlds and CPU-first tests, with soaks and long runs in the long-tests tier on main (`./dev long-tests`), not in the per-merge or workspace runs. Each slow test should either check the same behaviour on a smaller case so it runs well under the limit (a target of 2 s on a quiet machine is my assumption, and the owner can overturn it), or move to the long-tests tier with the reason recorded. thrum-river-model comes first.\n\nDone: each owning module's plan and done-when file carry the item, `./dev check-docs` passes, and the files are left for the plan command to commit.\n\nTests over 6 s (seconds, test):\n9.973  v1-game::it cooked_material_gpu::requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws\n9.643  thrum-sea::it forward_cache_gpu::forward_fields_and_full_lean_pyramids_match_the_model_portable_high_wind\n9.272  thrum-river-model::it flow_bands::with_no_wind_the_riffle_has_the_chop_s_height\n9.200  thrum-render::atmosphere_stage_table every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key\n9.176  water-scene::it inland_floating_gpu::lake_remains_sheltered_in_the_gale_and_settles_in_calm\n9.163  thrum-sea::it forward_cache_gpu::forward_fields_and_full_lean_pyramids_match_the_model_portable_light_wind\n9.102  thrum-network::it reliable_delivery::a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play\n8.991  v1-game::it cooked_rows_gpu::supersession_discarded_protected_switch_and_retired_space_reuse\n8.859  thrum-water::it query_gpu::chart_queries_keep_both_tick_pages_and_sample_their_own_stage\n8.708  thrum-river-model::it closed_forms::a_slow_flow_with_friction_holds_its_made_depth\n8.611  thrum-river-model::it fall_gauge::a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting\n8.596  thrum-river-model::it fall_gauge::no_running_part_lands_on_a_dry_reach_and_the_terrace_waits_for_its_lip\n8.547  thrum-water-model::it shore_basin::enclosed_water_has_finite_lags_turning_and_exposure\n8.477  thrum-river-model::it gauge::a_spring_fed_river_s_gauge_is_its_own_stage\n8.456  water-scene::it inland_floating_gpu::query_current_carries_a_float_and_the_dry_bank_stops_it\n8.235  thrum-river-model::it fall_gauge::a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge\n8.116  thrum-render atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query\n8.104  v1-game::cooked_assets_gpu a_newer_publication_supersedes_an_upload_still_being_filled\n8.048  thrum-water-model::it surf_cut::production_sheets_and_their_own_reach_match_forward_reference\n8.042  thrum-river-model::it gauge::every_chart_of_a_river_takes_the_one_gauge\n7.966  thrum-river-model::it report::doubling_the_rectangle_round_the_valley_barely_changes_its_work\n7.965  v1-game::simulation parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal\n7.892  thrum-river-model::it flow_bands::a_sea_a_basin_and_a_chart_that_is_no_river_s_lie_at_their_level\n7.647  thrum-river-model::it flow_bands::without_the_bands_every_answer_is_what_it_was\n7.579  thrum-river-model::it report::a_solve_stops_on_its_tolerances_and_reports_its_work\n7.514  thrum-river-model::it energy::in_the_valley_the_head_lost_beyond_friction_lies_round_the_rock_and_below_the_narrows_and_ledge\n7.435  thrum-river-model::it store::a_river_file_decodes_to_the_same_bytes_and_the_same_chart\n7.428  thrum-river-model::it valley::the_valley_keeps_its_discharge_fills_its_pool_to_the_weir_and_quickens_in_the_narrows\n7.425  water-scene::it scene_gpu::scene_ticks_and_declares_one_water_contribution\n7.302  thrum-river-model::it chart::the_stored_chart_is_the_solve_and_its_wet_cells_are_the_solvers\n7.251  thrum-river-model::it gauge::the_mixed_row_is_near_a_solve_at_the_level_between_and_one_sample_raised_is_not\n7.226  thrum-render::scene_view_air_shaded_gpu plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches\n7.216  thrum-river-model::it chart::the_map_takes_the_chart_and_joins_it_to_the_lake_at_both_ends_of_its_stage\n7.146  water-scene::foam_scene_gpu lake_beach_births_follow_its_share_of_lost_power\n7.070  thrum-river-model::it samples::a_spring_fed_stream_is_solved_at_its_declared_discharges_and_gauged_at_its_spring\n6.717  thrum-water::it foam_gpu::a_regular_wave_carries_foam_up_a_plane_beach\n6.716  thrum-river-model::it chop::the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the_pool\n6.709  thrum-render atmosphere::gpu::tests::diffuse::analytic_fields_preserve_direction_colour_and_physical_units\n6.403  v1-game::it cooked_material_gpu::a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload\n6.228  v1-game::it cooked_material_gpu::a_hook_that_writes_non_finite_factors_draws_the_placement_material\n6.213  thrum-core::it clock_spans::lane::a_resumed_lane_keeps_one_origin_inside_the_resume_bracket\n6.131  thrum-render synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky",
+      "at": "2026-11-23T12:27:04Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-20T10:47:17Z"
+    "host": "codex",
+    "at": "2026-11-23T12:27:04Z"
   },
   "design_history": [
     {

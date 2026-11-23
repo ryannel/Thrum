@@ -417,7 +417,7 @@
     },
     {
       "id": "M5",
-      "name": "The world lane’s resume origin is proved without real-time pacing",
+      "name": "The world lane\u2019s resume origin is proved without real-time pacing",
       "status": "not_started",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
@@ -430,7 +430,9 @@
           "builder_result": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
