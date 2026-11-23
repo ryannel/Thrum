@@ -3,6 +3,9 @@
 mod realtime;
 #[cfg(target_os = "macos")]
 mod support;
+#[cfg(target_os = "macos")]
+#[path = "support/surf_cost.rs"]
+mod surf_cost;
 use serde_json::json;
 use std::{path::PathBuf, time::Duration};
 use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource, SubmittedImage};
@@ -133,6 +136,15 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         let result = realtime::capture(gpu, &directory);
         std::fs::write(
             directory.join("realtime.json"),
+            serde_json::to_vec_pretty(&result).expect("json"),
+        )
+        .expect("record");
+        return;
+    }
+    if mode == "surf-cost" {
+        let result = surf_cost::run(gpu);
+        std::fs::write(
+            directory.join("surf-cost.json"),
             serde_json::to_vec_pretty(&result).expect("json"),
         )
         .expect("record");

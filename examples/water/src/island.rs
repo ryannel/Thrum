@@ -241,31 +241,41 @@ pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
 /// # Panics
 /// Panics if a scene lock is poisoned or a bounded control fails.
 pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, foam, false)
+    build_island(wind, draw_water, foam, None)
 }
 
 /// Use the island's surf profile and tide and beach inspection controls.
 /// # Errors
 /// Returns invalid controls, content or water declarations.
 pub fn build_surf(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, true, true)
+    build_surf_paired(wind, draw_water, true)
+}
+
+/// Build a same-view, same-forcing arm with or without the surf capability.
+/// # Errors
+/// Returns invalid controls, content or water declarations.
+pub fn build_surf_paired(
+    wind: Wind,
+    draw_water: bool,
+    surf: bool,
+) -> Result<FoamScene, Box<dyn Error>> {
+    build_island(wind, draw_water, true, Some(surf))
 }
 
 fn build_island(
     wind: Wind,
     draw_water: bool,
     foam: bool,
-    surf: bool,
+    surf: Option<bool>,
 ) -> Result<FoamScene, Box<dyn Error>> {
-    let (map, spectrum) = if surf {
-        surf_inputs(wind)?
+    let surf_route = surf.is_some();
+    let forcing = if surf_route {
+        wind.surf_forcing()
     } else {
-        let forcing = wind.forcing();
-        (
-            island_map(&forcing, false)?,
-            Spectrum::build(&forcing).map_err(|e| format!("{e:?}"))?,
-        )
+        wind.forcing()
     };
+    let map = island_map(&forcing, surf.unwrap_or(false))?;
+    let spectrum = Spectrum::build(&forcing).map_err(|e| format!("{e:?}"))?;
     let map = Arc::new(Mutex::new(map));
     let mut profile = crate::profile(&spectrum);
     if foam {
@@ -290,17 +300,17 @@ fn build_island(
     let camera = controls
         .slider(
             "camera.island",
-            if surf {
+            if surf_route {
                 "Sand / Beach / Sea / Lee / Headland / Island"
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
                 "Beach / Lake / Pond / Hill / Map / Sill"
             },
-            0.0..=if foam && !surf { 6.0 } else { 5.0 },
+            0.0..=if foam && !surf_route { 6.0 } else { 5.0 },
         )
         .step(1.0)
-        .default(if surf { 1.0 } else { 3.0 })
+        .default(if surf_route { 1.0 } else { 3.0 })
         .add()?;
     let stage = controls
         .slider("lake.stage", "Lake stage", 0.0..=1.0)
@@ -311,7 +321,7 @@ fn build_island(
         .slider("sun.elevation", "Sun elevation", 5.0..=80.0)
         .default(60.0)
         .add()?;
-    let tide = surf
+    let tide = surf_route
         .then(|| {
             controls
                 .slider("sea.stage", "Tide (m)", -0.5..=0.5)
@@ -327,7 +337,7 @@ fn build_island(
             reason = "bounded discrete camera control"
         )]
         let index = c.get(camera).round() as usize;
-        sky.camera = if surf {
+        sky.camera = if surf_route {
             SURF_VIEWS[index]
         } else {
             CAMERAS.get(index).copied().unwrap_or(BEACH_OVERHEAD)
