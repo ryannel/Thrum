@@ -560,3 +560,24 @@ route with nothing attached.
 | Does `CLOUDS` want separate volumes or one atlas? | Its cost account; an atlas is a cook-time ask here |
 | At what product size does Chrome first lose a frame on an edit? | M3 records it |
 | How large may the route's per-frame row write be? | M2 measures render-thread time and records the bound |
+
+## Builder rules
+
+- A scene with no lease and no cooked rows must compile to the same passes and draw the same bytes. If it does not, stop and fix that first.
+- If your change fails an exact test, a baseline or a witness another module owns (`APPLE-TILE`'s baselines, `CULLING`'s equalities, `APPLE-PRESENTATION`'s temporal witness), do not edit it. Write the proposal in the log and end `BLOCKED`.
+- In M2, if a live-edited scene differs from a fresh one in any pixel, stop and diagnose. Never widen the comparison or change the oracle.
+- In M2, never test a row switch by changing the arena or the route around the host's encoded-frame token. If a proof seems to need a frame encoded before a switch and submitted after it, write the proposal in the log.
+- A consumer never gets its own loader, store access or upload path. If a lease cannot serve a consumer, write the proposal in the log.
+- No reader switches alone. If one switch for every reader cannot be kept, write the proposal in the log and end `BLOCKED`; C05 changes only through the module list.
+- Follow the [shared exact-baseline proof on main](../ARCHITECTURE.md#proofs-run-once-on-main).
+- A tripwire that fails is investigated. Never re-record history to make it pass, and record only runs of accepted code.
+- Lift nothing from Broadsides. Fixtures are generated here.
+- If Chrome refuses to launch, record the refusal and leave the Chrome item open.
+
+## Cooked publication regressions (M5)
+
+Keep the cooked-row and upload regressions in the fast tier. Shrink the publications and staging limits
+together so the superseded upload still spans polls. The row test must still cross discard, protected
+switch and retired-space reuse. Exercise state and ordering on the CPU where possible. Keep the minimal
+GPU submission or upload needed to expose ownership of a resident row or a real in-flight staging
+operation.

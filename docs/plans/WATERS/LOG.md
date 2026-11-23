@@ -565,3 +565,20 @@
   `.claude/worktrees/waters/.orchestrate/evidence/WATERS/M13-handoff.md` records a 40 m wave with wet depth-limit
   loss below breaking index 1. M13.6 now covers that case and the breaking case. M13.14 records the fast-tier
   trail test requirement after the hourly workspace timeout. The isolated builder-branch run took 7.19 s.
+
+## M17 workspace timing baseline
+
+- 2026-11-23 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+| Seconds | Test |
+|---:|---|
+| 9.643 | `thrum-sea::it forward_cache_gpu::forward_fields_and_full_lean_pyramids_match_the_model_portable_high_wind` |
+| 9.176 | `water-scene::it inland_floating_gpu::lake_remains_sheltered_in_the_gale_and_settles_in_calm` |
+| 9.163 | `thrum-sea::it forward_cache_gpu::forward_fields_and_full_lean_pyramids_match_the_model_portable_light_wind` |
+| 8.859 | `thrum-water::it query_gpu::chart_queries_keep_both_tick_pages_and_sample_their_own_stage` |
+| 8.547 | `thrum-water-model::it shore_basin::enclosed_water_has_finite_lags_turning_and_exposure` |
+| 8.456 | `water-scene::it inland_floating_gpu::query_current_carries_a_float_and_the_dry_bank_stops_it` |
+| 8.048 | `thrum-water-model::it surf_cut::production_sheets_and_their_own_reach_match_forward_reference` |
+| 7.425 | `water-scene::it scene_gpu::scene_ticks_and_declares_one_water_contribution` |
+| 7.146 | `water-scene::foam_scene_gpu lake_beach_births_follow_its_share_of_lost_power` |
+| 6.717 | `thrum-water::it foam_gpu::a_regular_wave_carries_foam_up_a_plane_beach` |

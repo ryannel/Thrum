@@ -4,15 +4,15 @@ Closes gate G5 and serves sea, clouds and 2D: edited meshes, textures and volume
 without a stall. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
-Milestones run in the order M1, M4, M2, M3.
+Milestones run in the order below.
 
-The loop itself was built before this plan; [the design](DESIGN.md#purpose-and-scope) lists what exists with its
-evidence. Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselines),
+Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselines),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone. Follow the [builder rules](DESIGN.md#builder-rules).
 
 ## Open for the owner
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: leases (M1) are built now, ahead of the owner's decision on when the sea and cloud port starts; the port decision says to keep the foundation converging on readiness, and no sea or cloud pass is built here.
 - Assumption: "edited meshes" includes meshes the instance field's entities draw, so an edit replaces them live (M2) instead of asking for a restart. The narrower reading drops M2's live replacement and keeps only cooked meshes as rows at launch.
 - Assumption: entities drawn from cooked mesh rows keep the scene's material table. Cooked textures reach placements and leases, not entity materials, so the exit scene's 10,000 entities are coloured by material as today.
@@ -29,39 +29,21 @@ evidence. Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exa
 
 ## M4 A saved source is always cooked and published, even when macOS reports the save late or never, so the full check stops failing on a busy Mac
 
-Criteria: M4.1–M4.6 in the done-when file. Built before M2: it waits on nothing.
-
-Read [the sweep](DESIGN.md#the-sweep-m4) and [the diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md) first. The loop is `crates/thrum-cook/src/watch.rs`. The scan it needs is the stat cache's `scan_all`, and today the cook cycle saves the stat cache on every call, which an idle sweep must not do. `crates/thrum-cook/tests/serve_and_watch.rs` is not edited: M4.3 runs `the_watcher_publishes_an_edited_source` as it stands, so `watch` keeps the signature that test calls. The checks pick the new tests by words in their names: `missed_notices` (M4.1), `notice_alone` (M4.2), `quiet_tree` (M4.4) and `settling_save` (M4.5). [The diagnostic](../../../.orchestrate/evidence/CONTENT-LOOP/M4/watch-diagnostic.rs) shows the loss on this Mac while `fseventsd` is busy, if you want to see it; no item depends on the host being in that state. The ledger's G5 row waits for M3 unless a sentence in it becomes false.
+[Review](../../../.orchestrate/evidence/CONTENT-LOOP/M4-review.md)
 
 ## M2 An edited mesh changes on every entity that uses it while the game runs, with no pixel different from a fresh start, on Mac and in Chrome
 
-Criteria: M2.1–M2.9 in the done-when file.
-
-- [ ] Convert cooked mesh products to row geometry off the render thread, with the arena's admission, and let a scene's mesh selection be built from a store's current generation.
-- [ ] Under [the seam ruling](../ARCHITECTURE.md#interfaces), add row replacement to the route: a bounded write into arena space no drawn row uses, one switch of every reader of the row that commits when its frame is submitted, a history-reset frame, reuse of retired space only after that, and the retained scene following. Everything goes through the frame host.
-- [ ] Make rows the publication's third reader, under the same rules: a row switches in the publication's frame, with the placements and leases.
-- [ ] Give the valley's entities cooked mesh rows behind the existing opt-in selection, on the Mac and in Chrome.
-- [ ] Prove equality with a fresh scene in Direct, Frustum and Occlusion through an upload, a discarded switch frame, a newer edit behind it, a newer edit that supersedes a replacement still being written, a refusal, a resize and device replacement, and for a mesh that is also placed.
-- [ ] Measure render-thread time for the row write and record the bound; capture the two edits for the reviewer.
+[Review](../../../.orchestrate/evidence/CONTENT-LOOP/M2-review.md)
 
 ## M3 Edits to meshes, textures and volumes appear in the running valley without a hitch, on Mac and in Chrome, and the content gate closes
 
-Criteria: M3.1–M3.10 in the done-when file.
+[Review](../../../.orchestrate/evidence/CONTENT-LOOP/M3-review.md)
 
-- [ ] Run the design's three edits in the running valley with TAAU, on the Mac and in Chrome, two of them to a product read through two paths. Add the generation each reader showed to the game's frame record. Record frame records with capture off, then capture each switch for the reviewer.
-- [ ] Add the Chrome case with its interval record. A stall this module causes at the valley's or the twelve-volume fixture's sizes is fixed here, by the worker fallback the design names if need be. Then find the larger product size at which Chrome first loses a frame, as a record.
-- [ ] Rerun the G5 tripwires and the shipping-link scan on the commit to be claimed.
-- [ ] List the test behind each bad save, and add any that is missing. Add the test that an incomplete save which still validates ends at what a fresh cook of the finished sources publishes.
-- [ ] Bring the maturity ledger's G5 row, the G5 decision's capability table and open items, and the public documentation up to date, with the preview limit in [what a publication promises](DESIGN.md#what-a-publication-promises-m3) stated as a limit.
+## M5 Small cooked publications prove supersession and safe reuse
 
-Stop rules, for every milestone:
-- A scene with no lease and no cooked rows must compile to the same passes and draw the same bytes. If it does not, stop and fix that first.
-- If your change fails an exact test, a baseline or a witness another module owns (`APPLE-TILE`'s baselines, `CULLING`'s equalities, `APPLE-PRESENTATION`'s temporal witness), do not edit it. Write the proposal in the log and end `BLOCKED`.
-- In M2, if a live-edited scene differs from a fresh one in any pixel, stop and diagnose. Never widen the comparison or change the oracle.
-- In M2, never test a row switch by changing the arena or the route around the host's encoded-frame token. If a proof seems to need a frame encoded before a switch and submitted after it, write the proposal in the log.
-- A consumer never gets its own loader, store access or upload path. If a lease cannot serve a consumer, write the proposal in the log.
-- No reader switches alone. If one switch for every reader cannot be kept, write the proposal in the log and end `BLOCKED`; C05 changes only through the module list.
-- Run the verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.
-- A tripwire that fails is investigated. Never re-record history to make it pass, and record only runs of accepted code.
-- Lift nothing from Broadsides. Fixtures are generated here.
-- Chrome checks need a browser launch outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute a Mac result.
+Use the [fixture design](DESIGN.md#cooked-publication-regressions-m5) for the cases in the
+[workspace case list and baseline times](LOG.md#m5-workspace-timing-baseline).
+
+Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
+check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
+focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.

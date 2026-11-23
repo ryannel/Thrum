@@ -269,3 +269,15 @@
 - 2026-11-23 M5. Portable TAAU draws the five prepared scales inside one output grid, retaining colour and prior-grid depth. Metal proved history continuity and the independent reset, held-reference, attachment-marker and worker-allocation controls. Hardware Chrome checked the same scale trace and creation invariance. I watched all eight steps in the realtime Metal capture. The two 1080p cost runs describe shared load, with TAAU above the estimate. [Builder evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M5/README.md).
 
 - 2026-11-23 M5 review fixes. The cloud trace stops rays using the rasterized depth rectangle. The native spatial and TAAU view records both publish −1 mip bias at native width. The Metal attachment test passes at all five widths. I watched the high-wind cloud route across all eight steps, and a matched Metal control confirms the previously clipped cloud bank persists through the return to 85%. [Attachment and layout tests](../../../.orchestrate/evidence/APPLE-PRESENTATION/M5/review-fixes/attachments.md) · [Cloud-sky inspection](../../../.orchestrate/evidence/APPLE-PRESENTATION/M5/review-fixes/README.md).
+
+- 2026-11-23 Planning archive. The [M4–M11 drafts](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md) precede the done-when criteria.
+  The M4 extent work and D4.1–D4.3 proof arms were checkpointed at `71577cd6`.
+  [M4 handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-handoff.md).
+
+## M13 workspace timing baseline
+
+- 2026-11-23 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+| Seconds | Test |
+|---:|---|
+| 6.131 | `thrum-render synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky` |

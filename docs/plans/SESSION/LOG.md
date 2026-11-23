@@ -152,3 +152,14 @@
   A committed digest disagreement now refreshes the fallback on the same poll. A refused step keeps the prior endpoint.
   Both 36,000-tick Mac release runs verified the public controller throughout recovery. Four release cost runs
   refreshed the measurements under load. [M4 evidence](../../../.orchestrate/evidence/SESSION/M4/README.md)
+
+- 2026-11-23 Planning archive. The [SESSION planning probe](../../../.orchestrate/evidence/SESSION/planning-probe.md)
+  modelled timing. Its source was discarded. The M1–M4 reviews hold the implementation receipts.
+
+## M8 workspace timing baseline
+
+- 2026-11-23 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+| Seconds | Test |
+|---:|---|
+| 9.102 | `thrum-network::it reliable_delivery::a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play` |

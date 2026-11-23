@@ -968,3 +968,9 @@ scale steps; these are G4 integration obligations, not backward G3t prerequisite
 
 M1–M3 are the early in-game work on portable through public interfaces. They need G3t's proof tooling and graph
 milestones, not the boundary ruling.
+
+## Twilight exposure regression (M13)
+
+Use the smallest scene and minimum accepted samples that carry the incident meter, exposure scale and
+displayed luma through from twilight into night. Put the response arithmetic on the CPU where possible.
+Keep a Metal submission witness for the actual metering and output handoff.

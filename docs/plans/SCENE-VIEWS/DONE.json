@@ -354,6 +354,24 @@
           "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         }
       ]
+    },
+    {
+      "id": "M4",
+      "name": "A small scene catches wrong secondary-view air and shade",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "The panel-crossing test stays fast. The secondary view still matches the main camera’s aerial and shade output at the crossing, and the wrong stretches still fail the comparison. Guard: a compact secondary-view readback test.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test scene_view_air_shaded_gpu -E 'test(=plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches)' --no-tests=fail",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }

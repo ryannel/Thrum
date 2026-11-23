@@ -1720,6 +1720,8 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 
 ## Proof and builder handoff
 
+Add Chrome cases in the shared `scripts/check_v1_browser.mjs` while preserving existing cases.
+
 - **Targets.** `mac-metal` on both recipes and `chrome-webgpu`. `ios-sim` is not a target. Chrome checks need a
   browser launch outside the Codex sandbox, granted per run; if one is refused, leave the item open and say so.
   Never substitute a Mac result.
@@ -1774,3 +1776,19 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 | Does the handover show at 300 to 500 m, and at what ramp? | M15 |
 | Is one bank as bright from the view volume and from both integrators? | M15.13's stills |
 | Can `examples/water` give a surface field from its water map without a change to `WATERS`? | M11; if not, the proposal goes to `WATERS`' log |
+
+## Ground-condensate integration handoff
+
+`ATMOSPHERE` owns the view volume, its history and the lent aerial operation; this milestone writes the medium
+coefficients and the ground band it reads and replaces the labelled test medium in `examples/v1-game`. A defect
+in the volume itself goes to `ATMOSPHERE`'s log. M13 built the model's solar kernel from the four fixed
+orders; M14.13 removes them, and the kernel the view volume takes is the trace's own shader function.
+
+## Weather map and Sun-path regressions (M18)
+
+The native and default-limit portable wrappers share a 256-square weather-map and Sun-path campaign. Use
+the smallest valid map and Sun-path grids that still cover all levels, populated and clear columns,
+fractional or wrapped coordinates, cadence, rollback or rebuild, and replacement-device cases. Keep a real
+GPU witness of the submitted weather and Sun-path outputs against the CPU queries on both profiles. Use
+the CPU for comparisons and state transitions that need no GPU. Retain each row-age, cell identity,
+optical-depth and limiting-profile assertion on the compact cases.

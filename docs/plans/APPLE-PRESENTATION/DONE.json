@@ -380,6 +380,24 @@
       "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function."
     },
     {
+      "id": "M13",
+      "name": "A small exposure check catches a twilight brightness rebound",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M13.1",
+          "statement": "The twilight test stays in the fast tier and still proves that physical sky radiance falls and that displayed sky luminance falls with it through the incident meter and low-light adaptation. Guard: the twilight exposure regression on a compact GPU target.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --lib -E 'test(=synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky)' --no-tests=fail",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M5",
       "name": "Render scale steps during play with no hitch and no history reset",
       "items": [

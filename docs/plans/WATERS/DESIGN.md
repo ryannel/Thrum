@@ -2026,3 +2026,25 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | Does one mean current a window serve interaction waves in running water? | `RIVERS`' planning, on M9's channel |
 | How many sampled textures does the surface need with the map, against sixteen? | M4 counts against the record |
 | Is an Apple-tile kernel variant a measured win? | M11 |
+
+## Water fixtures and full sea sweeps (M17)
+
+For the basin oracle, shrink the bed
+around the turning, lag and exposure witnesses. For the surf oracle, keep a genuine overhang and a
+multihit column in each of the three geometries, with the independent fine forward reference at the
+witnesses. For the water scene and GPU water tests, use a compact beach, basin or chart, a small target
+and only the submissions needed to exercise wet and dry samples, tick-page ownership, visible contribution
+and foam transport. Put force, shelter and settling logic that needs no GPU in CPU tests. Keep a device
+witness for the query answers consumed by the float and the wave, shoreline and film data the device
+produces.
+
+The two portable forward-cache sweeps compare every texel and mip at production dimensions. Move those
+sweeps whole. They expose production-size addressing, edge-block and high/low carry failures across the
+real hierarchy at light and high wind, early and a day in. The fast
+`forward_cache_gpu::portable_forward_fields_and_small_filtered_mip` case in `it` still checks real GPU
+forward fields and a filtered mip at representative addresses, alongside the native coverage. Mark each
+named long test with an ignore reason beginning with `long:`. List its existing binary in
+`.config/long-tests.txt` (release with overflow checks) with the fault that would reach main before the
+long run catches it. Raise the `main-tier` rule version as the settings require. Run these cases in that
+build on the branch, then take the covering `long-tests` record on main. Verify that the normal runner
+skips the moved cases and the long runner executes each once.

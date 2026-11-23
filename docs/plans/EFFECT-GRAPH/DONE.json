@@ -414,6 +414,23 @@
           "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         }
       ]
+    },
+    {
+      "id": "M5",
+      "name": "The world lane’s resume origin is proved without real-time pacing",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "The resume-bracket test stays fast. It still proves the initial origin, the hold without a commit, the first consumed target after resume, and one resumed span origin anchored inside the request and acknowledgment bracket across the three original gap/pause cases. Guard: the CPU world-lane clock regression.",
+          "check": "cargo nextest run --locked --offline -p thrum-core --test it -E 'test(=clock_spans::lane::a_resumed_lane_keeps_one_origin_inside_the_resume_bracket)' --no-tests=fail",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }

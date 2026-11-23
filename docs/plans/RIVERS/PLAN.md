@@ -8,6 +8,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## Open for the human
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: a waterfall has no mist or spray cloud. Shipped waterfalls have one; here it needs a seam with the weather (`CLOUDS`) that cannot be built until late in its plan. The fall already records what a mist would need.
 - Assumption: "built cohesively" reaches a river's link to its lake, so raising a lake swells its outlet river and its falls, by the outlet's own sill. The whole river answers at once: no rise travels downstream, and nothing floods or bursts.
 - Assumption: a river's flow is still worked out ahead and stored, once for each of a few source levels, never while the game runs. A page in Chrome loads stored rivers and never solves one.
@@ -23,15 +24,26 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M1 On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes
 
-This creates `thrum-river-model`, on `thrum-water-model` from `WATERS` M1, which it does not change here. Part 1 of `.orchestrate/evidence/RIVERS/design-proof/river_proof.py` is a first-order sketch of the scheme and the source of M1.2's bounds; parts 2 and 6 give the section and the kind of valley M1.1 and M1.4 name. The river file's reader goes in `thrum-water-model` as a new file. If that crate's chart has no loss grid yet, the river file keeps the loss and M4 hands it over.
+[Review](../../../.orchestrate/evidence/RIVERS/M1-review.md)
 
 ## M2 On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on
 
-Ruling 1 changes the map's preparation in `thrum-water-model`, which `WATERS`' builder is also editing; land on top of what is there and leave its tests as they are. Part 4 gives M2.4's closed forms.
+[Review](../../../.orchestrate/evidence/RIVERS/M2-review.md)
 
 ## M3 On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale
 
-Rulings 2 and 3 change the map's function and the surface model in `thrum-water-model`. The flow bands' spectrum and evaluator live there, not in `thrum-sea-model`, which is `SEA`'s until its last milestone. Part 3 gives M3.2's bounds. Parts 8 and 10 (`revision_proof.py` and `wetting_proof.py` in the same folder) give M3.8's hollow and dry reach and how wetting gauges are found. The solve writes the gauges, because it knows where each reach's water enters, and the map only reads them. M3.8's dry reach needs a lip the lower sample does not reach, such as a second, higher way out of a pool.
+[Review](../../../.orchestrate/evidence/RIVERS/M3-review.md)
+
+## M8 Small river fixtures keep the solver checks fast
+
+Build this repair first. It can land independently of the island work in M4, which waits for WATERS M9.
+
+Use the [fixture design](DESIGN.md#compact-river-solver-fixtures-m8) for the cases in the
+[workspace case list and baseline times](LOG.md#m8-workspace-timing-baseline).
+
+Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
+check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
+focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
 
 ## M4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 

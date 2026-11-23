@@ -280,6 +280,24 @@
       ]
     },
     {
+      "id": "M11",
+      "name": "Small Metal probes keep the atmospheric lookup checks fast",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M11.1",
+          "statement": "The two listed atmosphere regressions stay in the fast tier. The Metal results still reject each H4 wrong lookup on the relevant fields and preserve diffuse direction, colour and units against the analytic fields. Guard: small GPU lookup witnesses with CPU arithmetic checks.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --lib -E 'test(=atmosphere::gpu::tests::diffuse::analytic_fields_preserve_direction_colour_and_physical_units) | test(=atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query)' --no-tests=fail --test-threads 1",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M6",
       "name": "The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes",
       "items": [

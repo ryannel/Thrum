@@ -7,6 +7,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## Open for the human
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: "thinking about water as a whole ... built cohesively" (14 November) is met by one design for all water, built by four modules: `SEA` (the wind's waves), this module (the shared system on the sea, the shore and lakes), then `RIVERS` and `PUDDLES`.
 - Assumption: a river's flow is worked out once and stored. Floods, dam breaks and levels that travel downstream are not planned, which sets aside the water decision's rule that all water simulation runs on the GPU.
 - Assumption: "breaking waves" (14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel, and no current from surf.
@@ -57,6 +58,18 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 ## M7 Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach
 
 [Review](../../../.orchestrate/evidence/WATERS/M7-review.md)
+
+## M17 Small water checks leave the full sea grids to the long tier
+
+Land the fixture reductions first if a long-tier entry would hold them behind failures in other
+packages. WATERS owns the sea field and cache regressions.
+
+Use the [fixture design](DESIGN.md#water-fixtures-and-full-sea-sweeps-m17) for the cases in the
+[workspace case list and baseline times](LOG.md#m17-workspace-timing-baseline).
+
+Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
+check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
+focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
 
 ## M13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 

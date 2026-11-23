@@ -567,3 +567,16 @@
   The native route prepares at the authored angle. The 45° pitch and 270° yaw routes reached their first Metal submission.
   [Target captures and diagnostics](../../../.orchestrate/evidence/CLOUDS/M5/continued/README.md) record the corrections.
   The [loaded 1440p pair](../../../tests/fixtures/clouds/low-sun-cost.json) records first fill, trace and compose tripwires.
+
+- 2026-11-23 M3 planning archive. The handoff at `5f84d354a3bf` can be read with
+  `git show 5f84d354a3bf:.orchestrate/evidence/CLOUDS/M3-handoff.md`. The retained type-plane captures used
+  erosion 0.61 for the at-a-glance inspection. M17 carries the close-up form work.
+
+## M18 workspace timing baseline
+
+- 2026-11-23 Both cases stopped at ten seconds in the workspace run at `747909d1c` and passed its isolated retry. Both also exhausted the retry in the failed attempt at that same commit. Times below are from the passing retry.
+
+| Seconds | Test |
+|---:|---|
+| 5.437 | `thrum-clouds::it portable_limits_gpu::weather_and_sun_path_work_with_default_limits` |
+| 5.215 | `thrum-clouds::it sun_path_gpu::coarse_sun_paths_match_the_cpu_reference` |

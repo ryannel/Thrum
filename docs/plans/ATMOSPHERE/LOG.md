@@ -660,3 +660,15 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   route inspection. Both stored Metal checks and Chrome H1–H5 passed. The Chrome referee uses the existing
   longer GPU teardown allowance and still requires a clean exit. The refreshed paired Metal tripwire
   investigates the startup and resident timing departures under shared load. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M6/README.md#integrated-route)
+
+- 2026-11-23 M6 planning archive. The first tests, capture drivers and captures were on `build/atmosphere` before
+  the SHOWCASE M9 terrain and sunrise revision. [Initial handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md).
+
+## M11 workspace timing baseline
+
+- 2026-11-23 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+| Seconds | Test |
+|---:|---|
+| 8.116 | `thrum-render atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query` |
+| 6.709 | `thrum-render atmosphere::gpu::tests::diffuse::analytic_fields_preserve_direction_colour_and_physical_units` |

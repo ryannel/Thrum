@@ -10,6 +10,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 
 ## Open for the human
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: this foundation is built now, ahead of the owner's decision on when the sea and cloud port starts; the port decision says to keep the foundation converging on readiness, and no sea or cloud pass is built here.
 - Assumption: the atmosphere's existing passes and textures are not moved onto the new seam or the new texture kinds. They keep their exact output, and move later only for a measured reason.
 - Assumption: the diagnostic effect stays in the V1 game example behind a selection that is off by default, as a test fixture; it is never part of the showcase.
@@ -63,3 +64,20 @@ nothing more. The snapshot ring in `crates/thrum-core/src/sim/snapshot_ring.rs` 
 skip publications at 60 or 120 frames a second, write what you found in the log. If your change fails an exact
 test or baseline another module owns, write what you found in the log and end `BLOCKED`; do not edit the
 other module's test.
+
+## M5 The world lane’s resume origin is proved without real-time pacing
+
+Keep the world-lane path and drive it with controlled time and explicit worker synchronization. Use the
+fewest pre-pause, held and resumed observations that still distinguish a moving origin, a too-early
+publication and an anchor outside the request/acknowledgment bracket. Replace the paced frames and pauses
+with the same logical gap and pause cases on simulated time.
+
+Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
+record before and after per-test times on the Mac in the default nextest test build used by the workspace
+check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
+normal builder work. Use the supplied run for the starting times where available. The batch passes the
+existing ten-second limit on its first run.
+
+These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+- 6.213 s — `thrum-core::it clock_spans::lane::a_resumed_lane_keeps_one_origin_inside_the_resume_bracket`

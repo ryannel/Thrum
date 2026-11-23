@@ -718,3 +718,13 @@ dependencies. In addition:
 | What wave share makes rings that read? | M6.5's look, tuned by eye from 0.1 and recorded. The fall's power is a diagnostic ([the plunge](#the-plunge)), and no item asserts it |
 | How many reaches does a winding river need? | M4's bytes; [risk 7](#risks) |
 | Does a fall need mist to meet its bar? | M6's review; the owner ([plan](PLAN.md#open-for-the-human)) |
+
+## Compact river solver fixtures (M8)
+
+Use small CPU fixtures for the listed cases. For closed-form, stopping and serialization checks, use a
+short reach with enough steps to exercise the solver and its report. Keep the terrain features the other
+assertions distinguish: riffle and pool, sill and narrows, ledge and rock, and the lake joins. A cost
+comparison must still double dry padding around the same wet reach. Where a test reads a gauge, flow band,
+or fall record, use only the samples and geometry needed to exercise the interpolation, wetting and
+dry-reach cases. Use already-made charts for checks whose subject is sampling, with the solver-to-chart
+and river-file round trips still exercised by the tests that own those boundaries.

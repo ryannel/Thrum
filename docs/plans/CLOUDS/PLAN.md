@@ -9,6 +9,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## Open for the human
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: the owner's "it should start from first principles" (14 November) governs.
 - Assumption: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera (its M7 and M8, after G3s closes) and this module's trace beyond. It adds M13 to M16 and three items to M11.
 - Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops M13.4 and M16.1.
@@ -40,19 +41,23 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 
-The work is on `build/clouds` at `5f84d354a3bf`, unmerged; read its handoff with
-`git show 5f84d354a3bf:.orchestrate/evidence/CLOUDS/M3-handoff.md`. Each cloud's form has moved to M17, and M3.1 asks
-only for the sky at a glance, which the retained type-plane captures at erosion 0.61 show. Every other item
-keeps the proof that handoff lists: mark each from it, and capture and tune nothing more. No new look belongs
-here. Leave `Orders` and `medium.rs` alone: M14.13 removes them.
+[Review](../../../.orchestrate/evidence/CLOUDS/M3-review.md)
 
 ## M4 The same sky and the same shade draw in Chrome
 
-`scripts/check_v1_browser.mjs` is shared by every module with a Chrome case: add cases and change none.
+[Review](../../../.orchestrate/evidence/CLOUDS/M4-review.md)
 
 ## M5 Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars
 
-For M5.3 and M5.8 the design's fourth and seventh risks give the fallbacks; record what each cost.
+[Review](../../../.orchestrate/evidence/CLOUDS/M5-review.md)
+
+## M18 Small cloud products check Metal and portable limits with headroom
+
+Use the [fixture design](DESIGN.md#weather-map-and-sun-path-regressions-m18) for the cases in the [case list and baseline times](LOG.md#m18-workspace-timing-baseline).
+
+Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
+check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
+focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
 
 ## M6 A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys
 
@@ -82,10 +87,7 @@ are not this milestone's to fix.
 
 ## M14 Mist lies in the valley's hollows and fades the land near the camera, in the land's own light
 
-`ATMOSPHERE` owns the view volume, its history and the lent aerial operation; this milestone writes the medium
-coefficients and the ground band it reads and replaces the labelled test medium in `examples/v1-game`. A defect
-in the volume itself goes to `ATMOSPHERE`'s log. M13 built the model's solar kernel from the four fixed
-orders; M14.13 removes them, and the kernel the view volume takes is the trace's own shader function.
+Follow the [ground-condensate integration handoff](DESIGN.md#ground-condensate-integration-handoff).
 
 ## M15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it
 

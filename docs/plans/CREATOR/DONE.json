@@ -221,6 +221,24 @@
       "diagnoses": 0,
       "status": "done",
       "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step."
+    },
+    {
+      "id": "M4",
+      "name": "Small hot-reload checks prove which material the device draws",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "The three listed hook cases keep their first-frame coalescing, non-finite fallback and device replacement coverage in the fast tier. The retained device cases observe the selected material on a real submission. Guard: compact material-hook regressions in the game suite.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p v1-game --test it -E 'test(=cooked_material_gpu::a_hook_that_writes_non_finite_factors_draws_the_placement_material) | test(=cooked_material_gpu::a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload) | test(=cooked_material_gpu::requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws)' --no-tests=fail --test-threads 1",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }

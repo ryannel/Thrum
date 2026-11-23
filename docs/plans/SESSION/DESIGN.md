@@ -781,3 +781,30 @@ adapt holds all of them. The floor catches a collapse and is no target.
   both are match settings, and the owner judges them in `SWARM`.
 - Whether the confirmed crowd's delay behind the hero feels right. Recorded here; judged by the owner in
   `SWARM`.
+
+## World-image compatibility
+
+Under [seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-session), a SIM-2D test accepted before SESSION M1
+changes only to decode its types and follow the encoding interface, keeping its assertions, inputs and
+expected values. The reference crowd’s `control` field injects faults for conformance and stays out of
+[the rule-set identity](#9-negotiation-and-leaving).
+
+## Builder rules
+
+- If peers cannot be held equal, keep the first differing tick, the component and both digests, and end `BLOCKED`. Do not compare fewer ticks, send state to a client, or drop a target.
+- `SIM-2D`'s retained digests do not move. If an image or the predictor's function cannot be built without changing one, write the proposal in the log and end `BLOCKED needs_dependency`.
+- Leave `thrum-transport`, `thrum-sim2d` and A5's input-batch bytes as they are. A change one of them needs is a proposal in the log and `BLOCKED needs_dependency`.
+- The V1 game stays outside all of this. Leave its rules, tests and exact comparisons as they are.
+- Nothing that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`. Those proofs go through the match command. If a launch fails, leave the item open and say so; do not substitute the in-memory link, Node or another target's result.
+- Match time, byte count and allocation figures are performance tripwires (brief, decision 3). Record the
+  measured result and the investigation, then keep building. The match still has to meet the 95% floor on
+  ticks that admit a player's own frame.
+- Record only runs of the commit being claimed, with the load on the machine.
+- Follow the [shared exact-baseline proof on main](../ARCHITECTURE.md#proofs-run-once-on-main).
+
+## Reliable-lane recovery fixture (M8)
+
+Use the in-memory transport with a small roster, queue and world and step simulated time to the same
+boundaries. Still drive the reliable lane to backpressure, drain and acknowledge on the same link, advance
+beyond the old send deadline, and compare terminal authority and replica digests. Preserve the sibling
+persistent-full deadline test if it shares the fixture.

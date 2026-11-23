@@ -177,3 +177,17 @@
   selection and the opt-in Apple tile mesh stages. The decision now distinguishes the portable Metal and Chrome
   edit proof from earlier simulator function and mesh-stage proof. Fixed the maturity ledger's M3 evidence link.
   [Source audit and target coverage](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md#g5-decision-repair)
+
+- 2026-11-23 M4 planning archive. The watcher diagnosis reproduced lost notices while `fseventsd` was busy.
+  The regression checks use `missed_notices`, `notice_alone`, `quiet_tree` and `settling_save` filters, and
+  M4.3 runs the existing edited-source test. [Diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)
+  and [diagnostic](../../../.orchestrate/evidence/CONTENT-LOOP/M4/watch-diagnostic.rs).
+
+## M5 workspace timing baseline
+
+- 2026-11-23 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+| Seconds | Test |
+|---:|---|
+| 8.991 | `v1-game::it cooked_rows_gpu::supersession_discarded_protected_switch_and_retired_space_reuse` |
+| 8.104 | `v1-game::cooked_assets_gpu a_newer_publication_supersedes_an_upload_still_being_filled` |

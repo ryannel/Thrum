@@ -126,3 +126,35 @@
 - 2026-11-18 Design review of the revision: [changes requested](../../../.orchestrate/evidence/RIVERS/design-review.md), one Must Fix. Design: a
   query's demand runs the flow bands on the frame that answers, whatever the cadence and the camera. Plan: M5.6 is rewritten. The
   Suggestion on part 12's 88.7% is taken. [What changed and why](../../../.orchestrate/evidence/RIVERS/design-replan-2026-11-18.md).
+
+- 2026-11-23 M1–M3 planning archive. In the [solver probe](../../../.orchestrate/evidence/RIVERS/design-proof/river_proof.py),
+  part 1 gives M1.2’s bounds, parts 2 and 6 give the section and valley, part 3 gives M3.2’s bounds and part 4
+  gives M2.4’s closed forms. M3.8’s wetting-gauge cases are in parts 8 and 10.
+  [Revision probe](../../../.orchestrate/evidence/RIVERS/design-proof/revision_proof.py) and
+  [wetting probe](../../../.orchestrate/evidence/RIVERS/design-proof/wetting_proof.py).
+
+## M8 workspace timing baseline
+
+- 2026-11-23 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+| Seconds | Test |
+|---:|---|
+| 9.272 | `thrum-river-model::it flow_bands::with_no_wind_the_riffle_has_the_chop_s_height` |
+| 8.708 | `thrum-river-model::it closed_forms::a_slow_flow_with_friction_holds_its_made_depth` |
+| 8.611 | `thrum-river-model::it fall_gauge::a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting` |
+| 8.596 | `thrum-river-model::it fall_gauge::no_running_part_lands_on_a_dry_reach_and_the_terrace_waits_for_its_lip` |
+| 8.477 | `thrum-river-model::it gauge::a_spring_fed_river_s_gauge_is_its_own_stage` |
+| 8.235 | `thrum-river-model::it fall_gauge::a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge` |
+| 8.042 | `thrum-river-model::it gauge::every_chart_of_a_river_takes_the_one_gauge` |
+| 7.966 | `thrum-river-model::it report::doubling_the_rectangle_round_the_valley_barely_changes_its_work` |
+| 7.892 | `thrum-river-model::it flow_bands::a_sea_a_basin_and_a_chart_that_is_no_river_s_lie_at_their_level` |
+| 7.647 | `thrum-river-model::it flow_bands::without_the_bands_every_answer_is_what_it_was` |
+| 7.579 | `thrum-river-model::it report::a_solve_stops_on_its_tolerances_and_reports_its_work` |
+| 7.514 | `thrum-river-model::it energy::in_the_valley_the_head_lost_beyond_friction_lies_round_the_rock_and_below_the_narrows_and_ledge` |
+| 7.435 | `thrum-river-model::it store::a_river_file_decodes_to_the_same_bytes_and_the_same_chart` |
+| 7.428 | `thrum-river-model::it valley::the_valley_keeps_its_discharge_fills_its_pool_to_the_weir_and_quickens_in_the_narrows` |
+| 7.302 | `thrum-river-model::it chart::the_stored_chart_is_the_solve_and_its_wet_cells_are_the_solvers` |
+| 7.251 | `thrum-river-model::it gauge::the_mixed_row_is_near_a_solve_at_the_level_between_and_one_sample_raised_is_not` |
+| 7.216 | `thrum-river-model::it chart::the_map_takes_the_chart_and_joins_it_to_the_lake_at_both_ends_of_its_stage` |
+| 7.070 | `thrum-river-model::it samples::a_spring_fed_stream_is_solved_at_its_declared_discharges_and_gauged_at_its_spring` |
+| 6.716 | `thrum-river-model::it chop::the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the_pool` |

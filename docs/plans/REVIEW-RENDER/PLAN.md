@@ -12,6 +12,7 @@ Set each milestone's verifier item `pass` with the evidence `main-branch check e
 
 ## Open for the human
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: nothing here starts until the five milestones other builders hold in the renderer are Done, so the renderer's confirmed bugs are fixed after them, not at once. The other choice interrupts those builders.
 - Assumption: two cost findings wait: many local lights built on the CPU each frame (M24), for the performance phase after the V1 exit, and the sky rebuilt on every Sun change (M31), for the quality governor's cadence controls.
 
@@ -40,6 +41,22 @@ The derive to copy is in `crates/thrum-asset/src/layout.rs` and the naga test at
 
 The cleanest existing declaration is the graph's `Pass` and `Access`. `CREATOR`'s profiler, the frames report and
 the Mac qualification read pass names and buckets from the frame timing feed: they must see what they saw.
+
+## M6 The atmosphere stage registry is checked on a small fixture
+
+Audit the graph and table on the CPU wherever the metadata can be constructed without a device. Use the
+minimum variants needed to see all fourteen keys. Any device case still needed to establish the actual
+bind or timing slots uses a tiny target.
+
+Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
+record before and after per-test times on the Mac in the default nextest test build used by the workspace
+check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
+normal builder work. Use the supplied run for the starting times where available. The batch passes the
+existing ten-second limit on its first run.
+
+These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+- 9.200 s — `thrum-render::atmosphere_stage_table every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key`
 
 ## M4 A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer
 

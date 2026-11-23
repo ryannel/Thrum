@@ -1043,6 +1043,21 @@ Thrum's atmosphere reaches the quality of shipped high-end games as a whole: sky
 with the weather and time of day. Settle from first principles which module owns what across CLOUDS, ATMOSPHERE
 and any other affected module, keep one authority for each kind of state".
 
+### View-volume builder handoff
+
+The aerial producer is `crates/thrum-render/src/atmosphere/aerial.wgsl` with `AERIAL_EXTENT` in `gpu.rs`; the aerosol's
+constants are written into shader source by `spectrum.rs`; the forward decoders are the `synthetic_aerial*.wgsl`
+files, one of which splits solar in-scatter by the surface's shadow, which the volume must not repeat. The
+volume's history uses `EFFECT-GRAPH`'s state kinds, as `examples/v1-game/src/effect` does. The control and the scene's declaration go behind a selection in `examples/v1-game` that is off by
+default; that game is `SHOWCASE`'s, so leave its generator, routes and exit configuration alone. `CLOUDS`
+builds rulings 1 to 4 in these same files; integrate on top of what has landed, and if its haze scale is
+present make sure the volume does not take it. Record M7.1's base before changing anything.
+[The look decides](#how-the-view-volume-is-proved): the f64 quadrature is there to find the cause of a
+picture that looks wrong, and no item compares the volume with it. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
+terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind makes its eight band values differ;
+the f64 reference in `atmosphere/gpu/tests/reference/` takes one Mie value per band, and
+[the haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III says which grids band in thick, coloured haze; the builder chooses the grid from the stills.
+
 ### Who owns what
 
 The atmosphere is one medium with two kinds of state, and each has one owner.
@@ -1300,3 +1315,11 @@ Chrome, with tripwires and no budget ([brief](../BRIEF.md), decision 3).
 
 Local lights in the air, a volume for a second camera (so [a mirror view](../ARCHITECTURE.md#scene-views)
 carries clear air until its own plan says otherwise), fog indoors, and any density of this module's own.
+
+## Atmosphere lookup regressions (M11)
+
+Share setup and use compact fields and readbacks for the two cases. Test lookup coordinates, expected
+arithmetic and the analytic reference on the CPU where possible. Keep real Metal sampling of the
+production H4 decode and diffuse irradiance shaders. The H4 witnesses must still reject each wrong lookup
+and cover the live and known fields, depth interpolation and clamp. Keep the analytic direction, colour
+and physical-unit witnesses and their bounds.

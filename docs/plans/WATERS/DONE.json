@@ -1044,6 +1044,52 @@
       ]
     },
     {
+      "id": "M17",
+      "name": "Small water checks leave the full sea grids to the long tier",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M17.1",
+          "statement": "The two listed CPU water-model cases stay in the fast tier. The enclosed basin still shows finite lags, turning and exposure. Each of the three production surf geometries still proves reach, an overhang with multiple cuts, and agreement between the highest cut, the public query and the independent forward reference. Guard: compact basin and surf fixtures in the water model.",
+          "check": "cargo nextest run --locked --offline -p thrum-water-model --test it -E 'test(=shore_basin::enclosed_water_has_finite_lags_turning_and_exposure) | test(=surf_cut::production_sheets_and_their_own_reach_match_forward_reference)' --no-tests=fail --test-threads 1",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M17.2",
+          "statement": "The six listed water and water-scene cases stay in the fast tier. Their compact cases still prove both tick-page stages, a wave carrying foam uphill, the calm and gale difference at a sheltered lake, chart current and dry-bank stopping, a submitted scene with one water contribution, and the lake and beach foam shares against lost power. Guard: CPU checks for logic and small GPU checks for submitted state, wave and foam outputs, and the query path used by the scene.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-water --test it -E 'test(=query_gpu::chart_queries_keep_both_tick_pages_and_sample_their_own_stage) | test(=foam_gpu::a_regular_wave_carries_foam_up_a_plane_beach)' --no-tests=fail && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p water-scene --test it -E 'test(=inland_floating_gpu::lake_remains_sheltered_in_the_gale_and_settles_in_calm) | test(=inland_floating_gpu::query_current_carries_a_float_and_the_dry_bank_stops_it) | test(=scene_gpu::scene_ticks_and_declares_one_water_contribution)' --no-tests=fail && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p water-scene --test foam_scene_gpu -E 'test(=lake_beach_births_follow_its_share_of_lost_power)' --no-tests=fail",
+          "ask": "Do the scoped passing nextest runs and timing record cover all six tests named for thrum-water and water-scene, and does the fixture or CPU/GPU split preserve every condition and assertion? Does a real device exercise the mailbox, contribution and film outputs?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M17.3",
+          "statement": "The light- and high-wind portable forward-cache cases run in the long tier with their early and day-in sweeps intact. They still catch a production-size texel or mip addressing error and lost high/low carry anywhere in the hierarchy. Fast portable coverage still checks a small sample of the GPU field and mip against the model to catch forward-cache wiring regressions before merges. Guard: the portable small case in the fast tier and both complete sweeps in the long tier.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-sea --test it -E 'test(=forward_cache_gpu::portable_forward_fields_and_small_filtered_mip)' --no-tests=fail",
+          "ask": "Do the test definitions, default selection and long-tier registration agree with the plan? Does the record show a passing, fast portable smoke case and both long cases registered once with the production-size reason recorded?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M17.4",
+          "statement": "Both full portable sea sweeps pass in the main-branch check for the merged repair. Record: the covering long-tests run.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "ask": "Does the covering log show the light- and high-wind portable sweeps running and passing in the long tier on a main commit that includes this repair?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
       "status": "not_started",

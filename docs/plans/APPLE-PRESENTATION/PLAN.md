@@ -7,12 +7,12 @@ Reconstruction, display and the quality governor (gate G4), governed by
 
 For M4 and later read [M4 to M12, settled](DESIGN.md#m4-to-m12-settled-14-november-2026) and the rulings for
 seams 5–9 before starting. The milestones run in the order below: M12 comes before M11.
-[The drafts](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md) are history; the done-when file holds
-the criteria. New proof arms go in one script, `scripts/apple_presentation.py`, and new browser cases in
+New proof arms go in `scripts/apple_presentation.py` and new browser cases in
 `scripts/check_v1_browser.mjs`. Nothing that needs a window, Chrome or the simulator runs under `./dev check`.
 
 ## Open for the owner
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: the Chrome witness covers the same rows as the Mac, the volume and phase-edit rows included. The review required only the invalid-history rows and the history identity in Chrome; the fixture is shared, and Chrome is where cloud and sunset demos will run.
 - Assumption: ΔE is CIEDE2000 on the submitted 8-bit SDR output, since reconstruction is judged as displayed. The bound stays at 3 and binds until a plan revision changes it. This replaces the earlier assumption that the bound is "restated after M3's first run".
 - Assumption: the per-frame history identity reaches Chrome through the game page's own report, so T2's capture record is not changed. A builder who needs a T2 record change proposes it here first.
@@ -34,21 +34,15 @@ the criteria. New proof arms go in one script, `scripts/apple_presentation.py`, 
 
 ## M4 The valley fills the window at any size, and keeps presenting while the window is resized
 
-The extent work and the proof arms for D4.1 to D4.3 are on `build/apple-presentation` at `71577cd6`; what was
-tried is in [the handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-handoff.md). The rest is built on
-[the surface across a transition](DESIGN.md#the-surface-across-a-transition-m4). Before anything else, show in the
-real window that a surface left alone is scaled to fill a resized window, since the rest stands on it.
-`render_actor.rs` reconfigures at each resize step today, and resizing is synchronous in `runtime/extent.rs` and
-`runtime/preparation.rs`: `PreparedSynthetic` has to split into a shared prepared part and per-generation state
-before a build can run off the render thread. The switch calls `Surface::configure` itself, once:
-`configure_surface` in `capabilities/device.rs` retries at once, which suits attach and recovery, so leave it
-as it is. If a thread other than the render and preparation threads submits on the game's device, say so in the
-log before building on the deferral rule. Engine capture's tap is replaced once, at the
-switch, and D4.7's realtime capture has to keep its submission identity across that. On iOS nothing moves off the
-owner's thread: `examples/v1-game-ios/src/ios/render.rs` keeps its lease, extent check and synchronous
-transition, and D4.10 reads the replies `examples/v1-game-ios/ios/route.py` already counts. Other modules' tests and every exact baseline name their own
-extents; keep them doing so. `APPLE-TILE` M10 and M11 work in the same runtime files: integrate on what has
-landed, and keep the native segment's providers inside the generation a build makes.
+[Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-review.md)
+
+## M13 A small exposure check catches a twilight brightness rebound
+
+Use the [fixture design](DESIGN.md#twilight-exposure-regression-m13) for the cases in the [case list and baseline times](LOG.md#m13-workspace-timing-baseline).
+
+Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
+check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
+focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
 
 ## M5 Render scale steps during play with no hitch and no history reset
 

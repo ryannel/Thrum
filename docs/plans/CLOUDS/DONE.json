@@ -759,6 +759,24 @@
       ]
     },
     {
+      "id": "M18",
+      "name": "Small cloud products check Metal and portable limits with headroom",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M18.1",
+          "statement": "Both cloud cases that overran under load pass in the fast tier on compact fixtures. Their native and portable-default GPU results still exercise weather columns and coarse Sun-path behavior, including age, repeated-tick identity, rebuild and replacement. Guard: the two small Metal and default-WebGPU-limit cloud checks.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-clouds --test it -E 'test(=portable_limits_gpu::weather_and_sun_path_work_with_default_limits) | test(=sun_path_gpu::coarse_sun_paths_match_the_cpu_reference)' --no-tests=fail --test-threads 1",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Are both device profiles exercised and do the compact grids preserve the address and age cases?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M6",
       "name": "A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys",
       "status": "in_progress",

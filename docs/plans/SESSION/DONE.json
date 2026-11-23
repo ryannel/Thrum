@@ -494,6 +494,23 @@
       "quality_bar": "As immediate as Factorio's latency hiding, which shows the local player's own actions at once over a world that stays in lockstep, and as honest as Overwatch's reconciliation: a prediction is checked against the authority every tick and corrected when it is wrong. Here the check is exact to the bit, the confirmed world is never touched, and every correction has a named cause."
     },
     {
+      "id": "M8",
+      "name": "A small in-memory match catches reliable-lane recovery regressions",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M8.1",
+          "statement": "The recovery case stays in the fast tier and still proves same-link return to datagrams, continued play past the old deadline without a repair or further reliable sends, and matching digests at stop. The persistent-full control still closes at the deadline. Guard: the two in-memory reliable-delivery cases.",
+          "check": "cargo nextest run --locked --offline -p thrum-network --test it -E 'test(=reliable_delivery::a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play) | test(=reliable_delivery::a_peer_whose_reliable_send_stays_full_closes_at_the_deadline)' --no-tests=fail --test-threads 1",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M5",
       "name": "Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss",
       "depends_on": [

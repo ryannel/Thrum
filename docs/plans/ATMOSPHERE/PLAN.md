@@ -1,11 +1,12 @@
 # ATMOSPHERE plan
 
-Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9, M10, M6, M7, M8.
-[Design](DESIGN.md) · [done-when file](DONE.json), which holds M5 to M10 · [log](LOG.md) ·
+Closes gate G3s at M6. M7 and M8 are track 2. Milestones run in the order below.
+[Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
 ## Open for the owner
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: "the modern technique" (the lead's task, 14 November) is the camera-aligned aerial volume current engines ship, corrected so that the air goes on under the model's ground. Marching the air for every pixel, Unreal's costlier option, is not built.
 - Assumption: the corrected air is the aerial product of every scene, with no switch. The showcase valley's far low ground gains a little haze, so M9 refreshes `APPLE-TILE`'s five exact reference sets once, in its own landing. The other choice keeps today's output as the default behind a selection, and leaves the defect in every scene that does not ask.
 - Assumption: M9 is built now, ahead of M6 and TAAU, and is held by numbers and by where the retained images moved. Its look on a real sea is judged in `WATERS` M2, which now waits for it.
@@ -51,6 +52,14 @@ holds its criteria, the finished work and the work left.
 ## M10 A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow
 [review](../../../.orchestrate/evidence/ATMOSPHERE/M10-review.md)
 
+## M11 Small Metal probes keep the atmospheric lookup checks fast
+
+Use the [fixture design](DESIGN.md#atmosphere-lookup-regressions-m11) for the cases in the [case list and baseline times](LOG.md#m11-workspace-timing-baseline).
+
+Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
+check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
+focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
+
 ## M6 The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes
 
 Read [Closing G3s](DESIGN.md#closing-g3s) first. Record the commit M6 starts from before changing anything:
@@ -66,27 +75,14 @@ texel load, and a pass the test owns stores the probe.
 `products/tests/filtered.rs` has the filtered-decode bound. The Metal tests' names contain
 `split_sum_reads_stored` and `reflection_reads_stored_cube`, which the checks filter on.
 
-The branch `build/atmosphere` holds those tests, the capture drivers and the first captures;
-[the handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md) says what they showed. `SHOWCASE` M9 has since changed
-the valley's terrain and sunrise hour, so take the stops, the motion and the cost pair again on main's valley.
+Use main’s valley for the stops, motion and cost pair, with the terrain and sunrise hour from SHOWCASE M9.
 [The ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) covers a look change that moves `APPLE-TILE`'s
 references.
 
 ## M7 Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome
 
-Read [The view volume](DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) first. The aerial
-producer is `crates/thrum-render/src/atmosphere/aerial.wgsl` with `AERIAL_EXTENT` in `gpu.rs`; the aerosol's
-constants are written into shader source by `spectrum.rs`; the forward decoders are the `synthetic_aerial*.wgsl`
-files, one of which splits solar in-scatter by the surface's shadow, which the volume must not repeat. The
-volume's history uses `EFFECT-GRAPH`'s state kinds, as `examples/v1-game/src/effect` does. The control and the scene's declaration go behind a selection in `examples/v1-game` that is off by
-default; that game is `SHOWCASE`'s, so leave its generator, routes and exit configuration alone. `CLOUDS`
-builds rulings 1 to 4 in these same files; integrate on top of what has landed, and if its haze scale is
-present make sure the volume does not take it. Record M7.1's base before changing anything.
-[The look decides](DESIGN.md#how-the-view-volume-is-proved): the f64 quadrature is there to find the cause of a
-picture that looks wrong, and no item compares the volume with it. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
-terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind makes its eight band values differ;
-the f64 reference in `atmosphere/gpu/tests/reference/` takes one Mie value per band, and
-[the haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III says which grids band in thick, coloured haze; the builder chooses the grid from the stills.
+Record M7.1’s starting commit before making changes. Follow the
+[view-volume handoff](DESIGN.md#view-volume-builder-handoff).
 
 ## M8 A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome
 

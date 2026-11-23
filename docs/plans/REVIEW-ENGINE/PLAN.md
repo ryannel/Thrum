@@ -10,6 +10,7 @@ Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-r
 
 ## Open for the human
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: a game can no longer fill its own published page. The engine fills it, as the G2S decision says, and no planned game needs otherwise.
 - Assumption: the fix for Metal drawing every meshlet one by one (M71) is not built here. `MESH-SHADING` builds it for cooked placements beside V1, and its record decides whether entities follow. It is the largest cost finding this plan leaves alone.
 - Assumption: the cooker's mip filter keeps its two small quality defects (odd sizes, colour bleeding at alpha edges), because fixing them changes cooked bytes and would move every exact reference image.
@@ -43,3 +44,29 @@ changed signature; convert at their edge and leave their own errors to `REVIEW-R
 ## M5 Replay stops copying undo it never uses, the cooker decodes each texture once, and the sea transforms its cascades in half the passes its design allows for
 
 Take each paired record at the commit you claim and say what else the machine was doing; other builders share it.
+
+## M6 Corrected replay stays fast and the 100,000-entity run stays covered
+
+This is the V1 game’s G2S replay test, which exercises the simulation and sparse undo paths maintained
+here. The fast `parallel_movers_match_the_straight_corrected_run_in_a_small_world` case in `simulation`
+uses the minimum mover population that actually dispatches multiple kernel chunks, including a partial
+chunk. It keeps slot churn, kernel, Resolve and replay refusal, forced dispatch and requested-mode
+fallback routing, an effective correction, complete authority equality and published-page comparison. Move
+the existing 100,000-entity test whole to the long tier. It forces four production-sized mover chunks and
+widely separated live and reused slots across forward and replay ticks, exposing scale-dependent undo,
+publication and partition failures the minimal world cannot. Mark each named long test with an ignore
+reason beginning with `long:`. List its existing binary in `.config/long-tests.txt` (release with overflow
+checks) with the fault that would reach main before the long run catches it. Raise the `main-tier` rule
+version as the settings require. Run these cases in that build on the branch, then take the covering
+`long-tests` record on main. Verify that the normal runner skips the moved cases and the long runner
+executes each once.
+
+Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
+record before and after per-test times on the Mac in the default nextest test build used by the workspace
+check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
+normal builder work. Use the supplied run for the starting times where available. The batch passes the
+existing ten-second limit on its first run.
+
+These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+- 7.965 s — `v1-game::simulation parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal`

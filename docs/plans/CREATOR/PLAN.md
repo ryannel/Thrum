@@ -5,6 +5,7 @@ Closes gate G6. [Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.
 
 ## Open for the owner
 
+- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
 - Assumption: the starter gets a Chrome form now. The G6 decision left it as an owner question and recommended deferring it to G7's page; website demos, and the sea and cloud demo scenes, need a creator's scene in Chrome.
 - Assumption: "profiler" in the V1 exit is met by readouts in the demo UI on both targets, fed by the frame host's completed samples and the shells' callback records, not by a separate tool.
 - Assumption: the profiler is built after `APPLE-TILE:M3` and not beside it, so it waits on that module's attended items. The other order has the readouts built now on the positional GPU slots, with the switch added later.
@@ -39,3 +40,23 @@ Batch its setup with the Mac qualification session.
 
 **For the lead.** M3's reviewer no longer has to be fresh, so start its review like any other. Commission a new
 fresh run only when the builder or a review asks for one.
+
+## M4 Small hot-reload checks prove which material the device draws
+
+Keep the three material-hook regressions in the fast tier. Use the smallest cooked placement that produces
+a distinctive pixel for each material choice. Check request ordering, validation and reload queue logic on
+the CPU where it can be decided there. Retain device witnesses for the first accepted draw, non-finite
+fallback to the placement material and a replacement device drawing the last accepted hook while the
+outstanding reload is retired.
+
+Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
+record before and after per-test times on the Mac in the default nextest test build used by the workspace
+check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
+normal builder work. Use the supplied run for the starting times where available. The batch passes the
+existing ten-second limit on its first run.
+
+These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
+
+- 9.973 s — `v1-game::it cooked_material_gpu::requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws`
+- 6.403 s — `v1-game::it cooked_material_gpu::a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload`
+- 6.228 s — `v1-game::it cooked_material_gpu::a_hook_that_writes_non_finite_factors_draws_the_placement_material`

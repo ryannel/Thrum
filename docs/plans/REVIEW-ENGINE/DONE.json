@@ -322,6 +322,32 @@
           "review": ".orchestrate/evidence/REVIEW-ENGINE/M5-review.md"
         }
       ]
+    },
+    {
+      "id": "M6",
+      "name": "Corrected replay stays fast and the 100,000-entity run stays covered",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "A small multi-chunk CPU world keeps churn, refusal and corrected replay equality in the fast tier, with dispatch counters proving the parallel and fallback paths. The full 100,000-entity run preserves the existing four-chunk and sparse-slot stress as a long test. Guard: the small corrected-replay regression before merges and the 100,000-entity run on main.",
+          "check": "cargo nextest run --locked --offline -p v1-game --test simulation -E 'test(=parallel_movers_match_the_straight_corrected_run_in_a_small_world)' --no-tests=fail",
+          "ask": "Does the record show a passing nextest run of the compact case and the full case excluded from the fast runner? Does the compact case still exercise each original refusal, a changed input, actual multi-chunk dispatch, fallback, complete authority equality and the published page?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.2",
+          "statement": "The 100,000-entity parallel corrected-replay run pass in the main-branch check for the merged repair. Record: the covering long-tests run.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "ask": "Does the covering log show the original full-size replay test running and passing in the long tier on a main commit that includes this repair?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }

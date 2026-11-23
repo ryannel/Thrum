@@ -469,6 +469,24 @@
       "diagnoses": 0,
       "status": "done",
       "quality_bar": "A content loop a creator trusts, as live reimport is in Unreal Engine or Unity, at the smoothness of a shipped high-end game: saving a file changes the running valley within a moment, no frame is late or half-drawn because of it, nothing ghosts under reconstruction, and a bad save never takes the picture away."
+    },
+    {
+      "id": "M5",
+      "name": "Small cooked publications prove supersession and safe reuse",
+      "status": "not_started",
+      "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "The two listed cases stay fast and a newer publication still wins while the older upload is filling. Discard, a protected row switch and reuse after retirement retain their existing separate witnesses. Guard: compact publication and residency regressions.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p v1-game --test it -E 'test(=cooked_rows_gpu::supersession_discarded_protected_switch_and_retired_space_reuse)' --no-tests=fail && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p v1-game --test cooked_assets_gpu -E 'test(=a_newer_publication_supersedes_an_upload_still_being_filled)' --no-tests=fail",
+          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Do the reduced rows and staging limits still force the original transitions?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }
