@@ -165,7 +165,64 @@
     },
     "M7": {
       "definitions": "8e0d7a8bb83dae0cce8bc847bfbea9e2c04ec7dd7d4cf44e39191fcd5708dd24",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "0b8c112bcef34c0cdfcc7f596c966e6be572c6f5",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "items": {
+            "M7.1": "pass",
+            "M7.2": "pass",
+            "M7.4": "pass",
+            "M7.13": "pass",
+            "M7.5": "fail",
+            "M7.6": "pass",
+            "M7.7": "pass",
+            "M7.8": "pass",
+            "M7.9": "pass",
+            "M7.10": "pass",
+            "M7.11": "fail",
+            "M7.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Nightglow epoch changes retain view-volume history",
+              "item": "M7.5",
+              "repeat": false
+            },
+            {
+              "name": "Metal Sun disc flashes black on the first cut frame with haze enabled",
+              "repeat": false
+            },
+            {
+              "name": "Ledger overstates epoch reseeding coverage",
+              "item": "M7.11",
+              "repeat": false
+            },
+            {
+              "name": "Ledger labels 1080p Metal timings as 720p",
+              "item": "M7.11",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 239778,
+            "cached": 22417152,
+            "output": 34843,
+            "turns": 1
+          },
+          "at": "2026-11-23T23:09:43Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 3 Must Fix f",
