@@ -570,3 +570,7 @@
   The CPU and GPU now share one sector index at the shipped spectrum's direction boundaries.
   Hardware Chrome passed M13.10 at 10,794 cache nodes with 0.925 mm maximum displacement error and no
   validation faults. The compute pass used five sampled textures and three storage bindings.
+- 2026-11-23 Aligned the surf render mesh's cell diagonal with the highest-surface cut.
+  On Metal, M13.3 read the lip above the trough in a three-surface column and matched all float stations
+  within 2 µm through two swash cycles. M13.9 selected the nearest sheet and matched submitted motion within
+  0.008 px during stage interpolation. [Target results](../../../.orchestrate/evidence/WATERS/M13/resume-metal-receipt.md).

@@ -1083,8 +1083,8 @@
           "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, whose highest surface M12.12 holds to the test's own cut, and would a query that left the transform out fail? Does one probe sit in a column that holds three surfaces, under a crest the two trains make together?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M13/resume-metal-receipt.md",
           "verdict": "",
           "review": ""
         },
@@ -1146,8 +1146,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_frame_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M13/resume-metal-receipt.md",
           "verdict": "",
           "review": ""
         },
