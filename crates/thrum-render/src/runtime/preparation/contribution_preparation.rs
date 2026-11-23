@@ -27,7 +27,7 @@ impl Legacy {
     fn rebuild_state(&mut self) -> Result<(), FrameError> {
         self.events
             .lock()
-            .unwrap()
+            .expect("test record")
             .push(Event::Rebuild(self.id, self.value));
         self.value += 1;
         if self.id == 2 {
@@ -273,7 +273,7 @@ fn scene_and_list_commit_only_after_the_complete_attempt() {
         assert!(
             !events
                 .lock()
-                .unwrap()
+                .expect("test record")
                 .iter()
                 .any(|event| matches!(event, Event::Commit(_)))
         );
