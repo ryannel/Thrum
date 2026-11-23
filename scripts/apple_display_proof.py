@@ -205,6 +205,35 @@ def previews(path, name, extent, words, headroom):
     write_ppm(path / f"{name}-above-white-{headroom}.ppm", extent, false_colour)
 
 
+# Rectangles on the 1280x720 authored stills. The sky box clears the solar
+# disc, and the two lamp boxes follow the warm specular spot and cool pool.
+HIGHLIGHT_REGIONS = {
+    "showcase-sunset-clear-sun": {
+        "Sun disk": (731, 260, 738, 268),
+        "sunset sky beside the Sun": (752, 243, 780, 280),
+    },
+    "showcase-night-lights": {
+        "warm lamp": (286, 232, 331, 276),
+        "cool lamp": (791, 410, 920, 521),
+    },
+}
+
+
+def highlight_regions(name, extent, words):
+    width, height = extent
+    results = {}
+    for region, (x0, y0, x1, y1) in HIGHLIGHT_REGIONS.get(name, {}).items():
+        if not (0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height):
+            raise ValueError(f"{region} is outside the submitted image")
+        peaks = [max(words[(y * width + x) * 4:(y * width + x) * 4 + 3])
+                 for y in range(y0, y1) for x in range(x0, x1)]
+        above = sum(peak > 0x3c00 for peak in peaks)
+        if not above:
+            raise ValueError(f"{name} {region} has no pixels above reference white")
+        results[region] = dict(box=[x0, y0, x1, y1], above_white_pixels=above, peak=HALF[max(peaks)])
+    return results
+
+
 def mac_edr_route(output):
     binary, env, cooked = route_environment(output)
     previews_path = output / "previews"
@@ -243,7 +272,8 @@ def compare_headroom_stills(arms, previews_path):
                 if not above:
                     raise ValueError(f"{base['name']} has no values above white at H={headroom}")
             rows.append(dict(name=base["name"], headroom=headroom, above_white_pixels=above,
-                             below_knee_identical=len(below), peak=HALF[max(words)]))
+                             below_knee_identical=len(below), peak=HALF[max(words)],
+                             highlights=highlight_regions(base["name"], extent, words)))
         if highlight_stop:
             path, sdr = arms["sdr"]
             raw = (path / sdr["stills"][index]["file"]).read_bytes()
