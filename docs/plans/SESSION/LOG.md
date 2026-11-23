@@ -155,6 +155,12 @@
 
 - 2026-11-23 Planning archive. The [SESSION planning probe](../../../.orchestrate/evidence/SESSION/planning-probe.md)
   modelled timing. Its source was discarded. The M1–M4 reviews hold the implementation receipts.
+- 2026-11-23 M5: the SESSION build ran `lock simulator -- xcrun simctl bootstatus <UDID> -b` at 09:54 CET.
+  The [boot log](../../../.orchestrate/evidence/SESSION/M5/simulator-boot.log) identifies the stock iPhone 18 Pro
+  and the lock log records release at 09:54:05. The socket peer helper boots or reuses that phone and has no
+  shutdown path. SIM-2D's helper, also used by SESSION's memory checks, has the same gap. HOST and
+  APPLE-PRESENTATION normally use temporary devices and attempt to remove them. M5 adds one shared lifecycle
+  and a post-run device-state proof.
 
 ## M8 workspace timing baseline
 

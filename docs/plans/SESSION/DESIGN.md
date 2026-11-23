@@ -771,6 +771,32 @@ adapt holds all of them. The floor catches a collapse and is no target.
 - **Exact baselines.** This module edits `crates/` and `scripts/`, which are covered paths, and moves no retained
   image and no retained digest. Each milestone carries the verifier.
 
+### Simulator lifecycle in the proof harnesses (M5)
+
+An automated iOS run uses one Thrum-owned iPhone 18 Pro on the configured simulator runtime. The harness
+holds the existing exclusive `simulator` lock from device selection through boot, use, shutdown and
+verification. A direct invocation takes the same lock. A caller already under the lock uses that admission,
+and its nested checks share the same device. A peer restart, another test case, or the HOST overload leg
+reuses the booted device. The device is kept shut down between runs and can be reused on the next run.
+Build outside the lock where the device is unnecessary. Manual proof commands use the same harness entry
+point so a successful `simctl bootstatus -b` cannot be the last operation inside the lock.
+
+Use one repository-owned lifecycle for the SESSION socket and memory proofs, SIM-2D conformance, the V1
+shell route used by HOST and APPLE-PRESENTATION, HOST overload, and the TRANSPORT, CULLING, COOKED-DRAW
+and T2-CAPTURE simulator proofs. Preserve their inputs, device function checks and evidence scope. Pass
+the chosen UDID explicitly to `simctl` and XCTest, with fresh per-run app and proof state where those
+checks require it. Keep XCTest on that device. When a caller supplies a UDID, first establish that it is
+Thrum-owned. Preserve other simulators and their data.
+
+The process responsible for cleanup outlives the proof worker on failure, timeout or cancellation. It
+stops the run's child work, requests shutdown, and confirms the device reached `Shutdown` from fresh
+CoreSimulator state before the lock is released. Reserve teardown time within the outer lock limit, and
+make SESSION peer cancellation wait for simulator cleanup. Allow bounded recovery when shutdown is slow,
+report a cleanup failure with the UDID and observed state, and reclaim a stranded Thrum device under the
+next lock before starting work if the lock holder itself was forcibly killed. A successful run requires
+verified shutdown. Keep simulator work out of `./dev check`. The fast guard exercises ownership and failure
+handling with simulated state. The locked proof uses real CoreSimulator state.
+
 ## Open questions
 
 - Whether a 10,000-body image and its catch-up fit a join a player will wait for. Settled by M1's sizes and M5's

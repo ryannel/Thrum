@@ -19,6 +19,7 @@ Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#p
 - Assumption: a player whose machine or browser tab cannot keep up with the match is dropped from it. The match never slows down for one player.
 - Assumption: a player who loses their connection gets their place back if they return within a grace period the game sets; their character stands idle meanwhile.
 - Assumption: a match is proved with a host and four players for ten minutes at 10,000 bodies, between separate processes on this Mac, through `TRANSPORT`'s relay. No second machine or internet path is run.
+- Assumption: Thrum keeps one dedicated simulator available for reuse and shuts it down at the end of each lock turn.
 
 ## M1 A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step
 
@@ -47,11 +48,17 @@ focused batch under normal builder load. The batch passes the existing ten-secon
 
 ## M5 Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss
 
-Criteria: M5.1–M5.10 in the done-when file.
+Criteria: M5.1–M5.12 in the done-when file.
 
 `TRANSPORT` left the three socket adapters, the relay and its proof programs in `examples/link-proof` with
-`scripts/transport_link.py`, which show how each target is started and how a page reaches the host. Use the
-relay; leave `thrum-transport` and its script as they are.
+`scripts/transport_link.py`, which show how each target is started and how a page reaches the host. Use the relay.
+
+Fix [simulator ownership](DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5) before rerunning the socket
+proofs. SESSION's preliminary boot released the lock as soon as the stock phone finished booting. The socket
+peer then kept admission across its intentional restart but had no shutdown, and the memory proofs inherit
+the same gap from SIM-2D's helper. Move those callers and the other simulator proofs named in the design
+onto the shared lifecycle. The changes to other proof commands are limited to simulator admission and
+cleanup. Use the short device proof for cleanup and the existing socket fault run for the match assertions.
 
 ## M6 A game maker can put a game in a match from the guide, and a game without multiplayer contains none of it
 
