@@ -326,14 +326,9 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
         return grid;
       };
       const capture = async (game, source, grid, body, args) => {
-        await waitFor(async () => {
-          try {
-            return await game.invoke(`game.${source === 'Sdr' ? 'begin_submitted_capture' : 'begin_linear_capture'}(1);return true;`);
-          } catch (error) {
-            if (String(error).includes('capture stage change requires retired frames')) return false;
-            throw error;
-          }
-        }, timeout, 'submitted image tap armed');
+        if (source === 'Sdr') {
+          await game.invoke('game.begin_submitted_capture(1);return true;');
+        }
         try {
           return await waitFor(() => game.invoke(`
             const image = game.next_submitted_image();

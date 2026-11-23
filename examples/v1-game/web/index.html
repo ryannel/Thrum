@@ -130,6 +130,11 @@
           : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
           : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
+        // Arm the scene-linear checkpoint before the first animation frame.
+        // Switching tap sources on a continuously driven game needs retirement.
+        if (sprites && probe.get("sprite-probe")?.startsWith("coverage:")) {
+          game.begin_linear_capture(1);
+        }
         if (probe.has("extent-probe")) {
           window.thrumExtentReport = () => JSON.parse(game.route_report(0));
         }
