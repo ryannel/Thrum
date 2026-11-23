@@ -685,3 +685,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   submitted source history run in the opted-in variant. Initial Metal readbacks passed the spectral
   chart, shadow and terminal-pair comparisons. The first valid T2 stills show the same low Sun haze
   on Metal and Chrome. [Run records](../../../.orchestrate/evidence/ATMOSPHERE/M7/README.md)
+
+- 2026-11-23 M7 matched the no-volume forward shader, resource graph and submitted frame to the
+  recorded start on Metal and Chrome. The Metal readbacks cover aerosol updates, terrain and cloud
+  dimming, the terminal pair and history resets. The paired device timings report the named aerial
+  pass after the Sun cascades. The independent colour read caught a blue shift across the view in
+  5 km haze. Resolving live multiple scattering near the ground recovered the warmer colour in the
+  Metal comparison. The fixed chart remains in use at the default coefficients.
+  [M7 evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/README.md)
