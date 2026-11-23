@@ -100,9 +100,7 @@ impl VisualPrepareInputs {
                     let presenter =
                         SurfacePresenter::prepare(&self.capabilities, self.render_extent, profile)
                             .await
-                            .map_err(|error| {
-                                FrameError::gpu("extent presenter", error)
-                            })?;
+                            .map_err(|error| FrameError::gpu("extent presenter", error))?;
                     scene.bind_presenter(Some(&presenter))?;
                     Some(presenter)
                 } else {

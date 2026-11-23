@@ -313,14 +313,19 @@ impl PreparedScene {
             .map_err(|error| match error {
                 SecondaryViewError::RecordLimit
                 | SecondaryViewError::LightingLimit
-                | SecondaryViewError::ShaderLimit => FrameError::gpu("secondary view preparation", error),
+                | SecondaryViewError::ShaderLimit => {
+                    FrameError::gpu("secondary view preparation", error)
+                }
                 _ => FrameError::SecondaryView(error),
             })?;
         let surface = self
             .prepared
             .scene_surface_with_views(queue, contribution.secondary_views_enabled());
         let candidate = contribution.prepare_candidate(&surface)?;
-        candidate.graph.validate().map_err(FrameError::EffectGraph)?;
+        candidate
+            .graph
+            .validate()
+            .map_err(FrameError::EffectGraph)?;
         self.prepared.set_effect_graph(candidate.graph.clone());
         let mut passes = candidate.passes;
         passes.upload |= self.prepared.secondary_view_count() != 0;
