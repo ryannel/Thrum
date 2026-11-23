@@ -627,7 +627,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         )
     }
 
-    pub(super) fn invalidate_capture_device(&mut self) {
+    pub(super) fn invalidate_submitted_capture(&mut self) {
         for tap in self
             .submitted_capture
             .iter_mut()

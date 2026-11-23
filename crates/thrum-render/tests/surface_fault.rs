@@ -43,7 +43,7 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
         },
     ));
     host.set_timing_requested(false);
-    let drawable = device.create_texture(&wgpu::TextureDescriptor {
+    let stale_drawable = wgpu::TextureDescriptor {
         label: Some("drawable from the earlier extent"),
         size: wgpu::Extent3d {
             width: 32,
@@ -56,7 +56,8 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
         format: profile.format,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
         view_formats: &[],
-    });
+    };
+    let drawable = device.create_texture(&stale_drawable);
     let view = drawable.create_view(&wgpu::TextureViewDescriptor::default());
     let report = host
         .drive(
@@ -97,6 +98,16 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
             presenter.encode(&mut encoder, &binding, &view, [32, 64], None),
             Err(PresentError::Extent)
         ));
+        let drawable = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("drawable matching the configured extent"),
+            size: wgpu::Extent3d {
+                width: profile.extent[0],
+                height: profile.extent[1],
+                ..stale_drawable.size
+            },
+            ..stale_drawable
+        });
+        let view = drawable.create_view(&wgpu::TextureViewDescriptor::default());
         let mut timings = GpuTimings::new(&cap, &queue, 1).unwrap();
         assert!(
             timings

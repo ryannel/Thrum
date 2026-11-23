@@ -369,7 +369,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.install_prepared_for_display(scene.prepared);
         self.slots = scene.slots;
         self.retired_slots.clear();
-        self.invalidate_capture_device();
+        self.invalidate_submitted_capture();
         self.presenter = candidate.presenter.take();
         self.presenter_generation += 1;
         if let Some(view) = view {
