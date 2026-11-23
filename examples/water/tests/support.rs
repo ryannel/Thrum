@@ -104,21 +104,20 @@ impl Fixture {
         report: water_scene::SharedReport,
     ) -> Self {
         let (device, queue, caps) = device(&gpu.fresh_adapter());
-        let host = game
-            .prepare(
-                Gpu {
-                    device: &device,
-                    queue: &queue,
-                    capabilities: &caps,
-                    surface: SurfaceProfile {
-                        format: OUTPUT_FORMAT,
-                        extent,
-                    },
+        let host = pollster::block_on(game.prepare(
+            Gpu {
+                device: &device,
+                queue: &queue,
+                capabilities: &caps,
+                surface: SurfaceProfile {
+                    format: OUTPUT_FORMAT,
+                    extent,
                 },
-                Box::new(|| {}),
-            )
-            .expect("game prepare")
-            .host;
+            },
+            Box::new(|| {}),
+        ))
+        .expect("game prepare")
+        .host;
         let output = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("water proof output"),
             size: wgpu::Extent3d {
