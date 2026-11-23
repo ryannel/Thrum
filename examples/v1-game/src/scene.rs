@@ -32,6 +32,17 @@ pub(crate) const ROUTE_OVERLAY: [(usize, [f32; 3]); 11] = [
     (5069, [0.0, 240.121, -8.5]),
     (5070, [1.0, 240.121, -8.5]),
 ];
+/// The night stop uses these same positions and colours for illumination and visible emitters.
+pub(crate) const NIGHT_LAMPS: [([f32; 3], [f32; 3]); 4] = [
+    ([-1.35, 240.55, -3.0], [0.30, 0.13, 0.06]),
+    ([1.35, 240.50, -3.0], [0.06, 0.19, 0.30]),
+    ([-1.65, 240.55, -7.8], [0.08, 0.27, 0.12]),
+    ([1.65, 240.55, -7.8], [0.29, 0.12, 0.22]),
+];
+/// First reserved entity of the four visible night-lamp emitters.
+pub(crate) const NIGHT_LAMP_FIRST_SLOT: usize = 5071;
+const FIRST_LAMP_MATERIAL: u64 = REFLECTION_SUBJECT_MATERIAL + 1;
+
 /// The overlay slot whose cold basis mirrors local x (a negative determinant).
 pub(crate) const ROUTE_OVERLAY_MIRRORED_SLOT: usize = 5060;
 /// M1's visible moving subject uses an existing automatic mover, not a render-only animation.
@@ -102,6 +113,8 @@ pub enum RouteOverlay {
     LightOff,
     /// Valley night stop with four visible lamps around the contact props.
     LampStop,
+    /// Night stop with visible emissive cores at the four point lights.
+    NightLights,
     /// Diagnostic control: omit only the overlay's mirrored instance.
     #[cfg(feature = "draw-probe")]
     MirrorOmit,
@@ -295,6 +308,10 @@ fn grid_simulation(
             .then(|| route_overlay_position(index))
             .flatten()
             .filter(|_| entity_count == ENTITY_COUNT);
+        let lamp = (route_overlay == RouteOverlay::NightLights && entity_count == ENTITY_COUNT)
+            .then(|| index.checked_sub(NIGHT_LAMP_FIRST_SLOT))
+            .flatten()
+            .filter(|&offset| offset < NIGHT_LAMPS.len());
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
             position: Position(
@@ -304,6 +321,8 @@ fn grid_simulation(
                 ) && index == MOTION_SUBJECT_SLOT
                 {
                     MOTION_SUBJECT_POSITION.map(f64::from)
+                } else if let Some(lamp) = lamp {
+                    NIGHT_LAMPS[lamp].0.map(f64::from)
                 } else if let Some(position) = overlay {
                     position.map(f64::from)
                 } else if reflection_subject {
@@ -329,7 +348,9 @@ fn grid_simulation(
             ]),
             health: 100,
             ownership,
-            visual: Some(if reflection_subject {
+            visual: Some(if let Some(lamp) = lamp {
+                FIRST_LAMP_MATERIAL + lamp as u64
+            } else if reflection_subject {
                 REFLECTION_SUBJECT_MATERIAL
             } else {
                 (index % 2) as u64

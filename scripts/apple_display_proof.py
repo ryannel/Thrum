@@ -110,8 +110,8 @@ def stills(output, binary, env, recipe, source, headroom=None, *, lamps=False):
                    THRUM_CAPTURE_PARAMS=os.pathsep.join(str(PARAMS / f"showcase-{name}.params.json")
                                                        for name in presets))
     if lamps:
-        # Use the game's existing LampStop scene and the camera from its local-light proof.
-        options.update(THRUM_ROUTE_OVERLAY="lamp-stop", THRUM_CAPTURE_FIXED_EYE="[0.0, 242.4, 2.5]")
+        # The night stop shares the local-light proof's camera, lighting and props.
+        options.update(THRUM_ROUTE_OVERLAY="night-lights", THRUM_CAPTURE_FIXED_EYE="[0.0, 242.4, 2.5]")
     if headroom is not None:
         options["THRUM_CAPTURE_EDR_HEADROOM"] = str(headroom)
     else:
@@ -206,15 +206,17 @@ def previews(path, name, extent, words, headroom):
 
 
 # Rectangles on the 1280x720 authored stills. The sky box clears the solar
-# disc, and the two lamp boxes follow the warm specular spot and cool pool.
+# disc, and the lamp boxes surround the projected sources.
 HIGHLIGHT_REGIONS = {
     "showcase-sunset-clear-sun": {
         "Sun disk": (731, 260, 738, 268),
         "sunset sky beside the Sun": (752, 243, 780, 280),
     },
     "showcase-night-lights": {
-        "warm lamp": (286, 232, 331, 276),
-        "cool lamp": (791, 410, 920, 521),
+        "warm lamp": (434, 360, 452, 378),
+        "cool lamp": (829, 366, 847, 384),
+        "green lamp": (497, 237, 515, 255),
+        "rose lamp": (766, 237, 784, 255),
     },
 }
 

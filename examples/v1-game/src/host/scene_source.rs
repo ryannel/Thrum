@@ -255,19 +255,31 @@ fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay)
         }
     }
     scene.local_lights[0] = ROUTE_OVERLAY_LIGHT;
-    if overlay == scene::RouteOverlay::LampStop {
-        scene.local_lights = [
-            ([-1.35, 240.55, -3.0], [0.30, 0.13, 0.06]),
-            ([1.35, 240.50, -3.0], [0.06, 0.19, 0.30]),
-            ([-1.65, 240.55, -7.8], [0.08, 0.27, 0.12]),
-            ([1.65, 240.55, -7.8], [0.29, 0.12, 0.22]),
-        ]
-        .map(|(position, candela)| SyntheticPointLight {
-            position,
-            candela,
-            radius: 2.5,
-        })
-        .to_vec();
+    if matches!(
+        overlay,
+        scene::RouteOverlay::LampStop | scene::RouteOverlay::NightLights
+    ) {
+        scene.local_lights = scene::NIGHT_LAMPS
+            .map(|(position, candela)| SyntheticPointLight {
+                position,
+                candela,
+                radius: 2.5,
+            })
+            .to_vec();
+    }
+    if overlay == scene::RouteOverlay::NightLights {
+        for (offset, (position, colour)) in scene::NIGHT_LAMPS.into_iter().enumerate() {
+            let instance = &mut scene.instances[scene::NIGHT_LAMP_FIRST_SLOT + offset];
+            scale_basis(instance, 0.025);
+            instance.current[3][..3].copy_from_slice(&position);
+            instance.previous[3][..3].copy_from_slice(&position);
+            let [r, g, b] = colour.map(|channel| channel * 9_000.0);
+            scene.materials.push(MaterialRecord {
+                base_rgba: [0.0, 0.0, 0.0, 1.0],
+                emissive_cutoff: [r, g, b, 0.0],
+                ..Default::default()
+            });
+        }
     }
     if overlay == scene::RouteOverlay::LightOff {
         scene.local_lights[0].candela = [0.0; 3];

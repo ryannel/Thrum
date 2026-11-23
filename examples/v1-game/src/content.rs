@@ -272,9 +272,10 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             (Ok("valley"), Ok("unmirrored")) => crate::RouteOverlay::Unmirrored,
             (Ok("valley"), Ok("light-off")) => crate::RouteOverlay::LightOff,
             (Ok("valley"), Ok("lamp-stop")) => crate::RouteOverlay::LampStop,
+            (Ok("valley"), Ok("night-lights")) => crate::RouteOverlay::NightLights,
             _ => {
                 return Err(
-                    "THRUM_ROUTE_OVERLAY must be off, proof, motion, reconstruction, unmirrored, light-off or lamp-stop, with THRUM_SCENE=valley"
+                    "THRUM_ROUTE_OVERLAY must be off, proof, motion, reconstruction, unmirrored, light-off, lamp-stop or night-lights, with THRUM_SCENE=valley"
                         .to_owned(),
                 );
             }

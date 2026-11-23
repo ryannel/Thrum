@@ -342,6 +342,7 @@ fn overlay(name: &str) -> Result<RouteOverlay, String> {
         "unmirrored" => Ok(RouteOverlay::Unmirrored),
         "light-off" => Ok(RouteOverlay::LightOff),
         "lamp-stop" => Ok(RouteOverlay::LampStop),
+        "night-lights" => Ok(RouteOverlay::NightLights),
         #[cfg(feature = "draw-probe")]
         "mirror-omit" => Ok(RouteOverlay::MirrorOmit),
         #[cfg(feature = "draw-probe")]
