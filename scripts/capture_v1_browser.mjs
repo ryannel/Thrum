@@ -271,7 +271,10 @@ finally {
   await Promise.all(pending);
   await rawSpool?.close();
   cook?.kill();
-  try { await cleanup(child, () => ended, cdp, server, profile, spriteField ? 45000 : undefined); } catch (error) { failure ??= error; }
+  // Realtime atmosphere takes can keep large readback pools alive until the
+  // owned Chrome process exits. Allow it to drain those pools under shared load.
+  const drainLargeCapture = spriteField || (spoolRaw && args.atmosphere !== 'off');
+  try { await cleanup(child, () => ended, cdp, server, profile, drainLargeCapture ? 45000 : undefined); } catch (error) { failure ??= error; }
   try {
     manifest.permission_preflight = JSON.parse(await fs.readFile(path.join(output, 'launcher.json'), 'utf8'));
     if (manifest.permission_preflight.screen_recording_after !== false || manifest.permission_preflight.chrome_exit_code !== 0) failure ??= new Error('Launcher final preflight/Chrome exit failed');
