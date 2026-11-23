@@ -13,6 +13,8 @@ import sys
 import tarfile
 import tempfile
 
+from view_volume_ridge import ridge_source
+
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE_FIXTURE = ROOT / 'crates/thrum-render/tests/data/view-volume-base.json'
@@ -274,6 +276,11 @@ def cost(output, targets, builds):
 
 
 def inspection(output, targets, builds, group):
+    if group in ('all', 'shafts', 'ridge'):
+        ridge_assets = ridge_source(ROOT / 'examples/v1-game/assets/showcase', output / 'ridge-assets')
+        ridge_store = output / 'ridge-store'
+        run(builds[1], 'cook', ridge_assets, ridge_store, log=output / 'ridge-cook.log')
+        ridge_builds = (*builds[:3], ridge_store)
     for target in targets:
         target_root = output / target
         target_root.mkdir()
@@ -288,11 +295,18 @@ def inspection(output, targets, builds, group):
         if group in ('all', 'shafts'):
             for name, eye, yaw in [('toward', [830, 110, 390], -70),
                                    ('across', [550, 140, 640], -42),
-                                   ('ridge', [950, 103, 208], -81)]:
+                                   ('lookout', [950, 103, 208], -81)]:
                 for cloud in [False, True]:
                     pose = {'eye': eye, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
                     checkpoint(target_root / f'shaft-{name}-{cloud}', target, builds, pose,
                                haze='20,0', cloud=cloud)
+        if group in ('all', 'shafts', 'ridge'):
+            for name, eye, yaw in [('opening', [515, 108, 385], -76),
+                                   ('saddle', [750, 125, 590], -54)]:
+                for cloud in [False, True]:
+                    pose = {'eye': eye, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
+                    checkpoint(target_root / f'ridge-{name}-{cloud}', target, ridge_builds, pose,
+                               haze='20,0', cloud=cloud, assets_source=ridge_assets)
         if group in ('all', 'motion'):
             for motion in ['pan', 'walk', 'scrub', 'cut']:
                 pose = {'eye': SHAFT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': -65, 'motion': motion}
@@ -304,7 +318,7 @@ def main():
     parser.add_argument('operation', choices=['off-parity', 'cost', 'inspect'])
     parser.add_argument('--scene', choices=['haze'], default='haze')
     parser.add_argument('--target', choices=TARGETS, action='append')
-    parser.add_argument('--group', choices=['all', 'haze', 'shafts', 'motion'], default='all')
+    parser.add_argument('--group', choices=['all', 'haze', 'shafts', 'ridge', 'motion'], default='all')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     parent = ROOT / 'tmp/atmosphere-view-volume'
