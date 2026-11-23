@@ -21,7 +21,10 @@
       "output": 3943,
       "turns": 1
     },
-    "at": "2026-11-23T13:15:27Z"
+    "at": "2026-11-23T13:15:27Z",
+    "items_owed": [
+      "M15"
+    ]
   },
   "milestones": {
     "M1": {
@@ -1084,6 +1087,15 @@
         "checked": "a07d0c1bffe2b90c8d8924f332cb7312d635ef26",
         "at": "2026-11-23T15:13:10Z"
       }
+    },
+    "M15": {
+      "definitions": "0cec792cd1816f6b2d13d6530e22cebcf27c41ba4a1bd6cbe6ae0d0c537ed29c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check exact-images fails deterministically: baseline chrome-day-sdr (owner APPLE-TILE), stage chrome-day",
+        "at": "2026-11-23T21:14:30Z"
+      }
     }
   },
   "briefs": [
@@ -1126,11 +1138,15 @@
     {
       "task": "The main-branch check exact-images fails on 8eb94b243300 and passed on 25d601c146. The failing baseline is apple-tile-native, owned by APPLE-TILE: stage apple_tile_m1 says \"exact retained comparison failed: portable-sdr-approach\". The run record is .git/orchestrate/main-checks/exact-images/checkout/tmp/baseline-guard/verify-20261123T125754.997569Z/record.json in the main checkout, and the log is .git/orchestrate/main-checks/exact-images/logs/20261123-135800-8eb94b243300-5093-718.*. 44 commits landed in that range. The likeliest causes are APPLE-PRESENTATION M5 32dfd3c14 (\"Use drawn depth for clouds and restore native mip bias\") and CLOUDS M6 845b57ba9 and c3a3a09ea (placed library volumes, condensate fade). ATMOSPHERE M6 and RAY-TRACING M3 also merged. Find which commit changed the image and whether the change is intended. If it is an intended improvement, plan a re-bless of that baseline, with the reason, in the module that made the change. If it is a regression, plan the fix in that module as an item on its current milestone or its next milestone. Done: the owning module's plan and done-when file carry the item, `./dev check-docs` passes, and the files are left for the plan command to commit.",
       "at": "2026-11-23T13:12:37Z"
+    },
+    {
+      "task": "The main-branch check exact-images fails deterministically: baseline chrome-day-sdr (owner APPLE-TILE), stage chrome-day-sdr-compare, 'decoded image changed at ordinal 61: a7cde573... != 8d7dab93...', identical on fdbe70e0a (19:23 UTC) and c8c9100d8, so it is a real change, not contention. The script's first culprit guess was fcc62608e (APPLE-PRESENTATION M6: Present extended linear highlights on Metal); a bisect between f7abcc2a3 and c8c9100d8 is running in .git/orchestrate/main-checks/exact-images (current.json, runner.log). Find the commit that changed the image, decide whether the new image is intended (then the baseline refresh goes through its owner's ruling) or a regression, and plan the fix in the module whose code it is, in its plan or as its next milestone.",
+      "at": "2026-11-23T21:14:30Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T13:12:37Z"
+    "at": "2026-11-23T21:14:30Z"
   },
   "design_history": [
     {
