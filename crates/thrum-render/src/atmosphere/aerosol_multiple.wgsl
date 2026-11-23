@@ -9,10 +9,14 @@ fn multiple_at(h: f32, sun: vec3<f32>, bank: u32) -> vec4<f32> {
         let ground = ground_distance(h,mu);
         var distance = top_distance(h,mu);
         if ground>=0.0 { distance=ground; }
-        let dt = distance/20.0;
         var throughput = vec4(1.0);
-        for(var step=0u;step<20u;step++) {
-            let p=vec3(0.0,h,0.0)+direction*(f32(step)+0.5)*dt;
+        // The longest rays cross the dense aerosol layer first. A quadratic
+        // partition resolves that part before stepping out through thin air.
+        for(var step=0u;step<32u;step++) {
+            let a = f32(step) / 32.0;
+            let b = f32(step + 1u) / 32.0;
+            let dt = (b*b - a*a) * distance;
+            let p = vec3(0.0,h,0.0) + direction * (0.5 * (a*a + b*b) * distance);
             let ah=altitude(p);
             let densities=medium_densities(ah);
             let scatter=RAYLEIGH_BETA[bank]*densities.x+aerosol.scattering[bank]*densities.y;
@@ -38,7 +42,7 @@ fn multiple_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = plane_size(textureDimensions(output_lut),SPECTRAL_PLANES);
     if any(id.xy>=size) { return; }
     let uv = (vec2<f32>(id.xy)+0.5)/vec2<f32>(size);
-    let h = uv.y*H;
+    let h = uv.y * uv.y * H;
     let sun_mu = uv.x*2.0-1.0;
     let sun = vec3(sqrt(max(0.0,1.0-sun_mu*sun_mu)),sun_mu,0.0);
     for(var bank=0u;bank<SPECTRAL_PLANES;bank++) {

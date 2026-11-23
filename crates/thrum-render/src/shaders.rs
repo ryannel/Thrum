@@ -62,11 +62,16 @@ macro_rules! wgsl {
     };
     (@transport $extinction:literal, $scattering:literal) => {
         concat!(
+            $crate::shaders::wgsl!(@transport_core $extinction, $scattering),
+            $crate::shaders::wgsl!(@bytes "atmosphere/transport_lit.wgsl"),
+        )
+    };
+    (@transport_core $extinction:literal, $scattering:literal) => {
+        concat!(
             $crate::shaders::wgsl!(@bytes "atmosphere/transport.wgsl"),
             $crate::shaders::wgsl!(@bytes $extinction),
             $crate::shaders::wgsl!(@bytes "atmosphere/transport_segments.wgsl"),
             $crate::shaders::wgsl!(@bytes $scattering),
-            $crate::shaders::wgsl!(@bytes "atmosphere/transport_lit.wgsl"),
         )
     };
     ("atmosphere/lut.wgsl") => {

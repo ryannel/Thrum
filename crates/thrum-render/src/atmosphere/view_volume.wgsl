@@ -77,7 +77,7 @@ fn view_volume_main(@builtin(global_invocation_id) id: vec3<u32>) {
             let densities = medium_densities(altitude);
             let mu = local_sun_mu(point, sun);
             let direct = aerial_sun_pair(altitude, mu);
-            let uv = vec2(mu * 0.5 + 0.5, max(0.0, altitude) / H);
+            let uv = aerosol_multiple_uv(altitude, mu);
             let jitter = volume_shadow_jitter(id.xy, layer, volume_history.current_view_forward_phase.w);
             let sample_distance = mix(start, end, jitter);
             let world = eye + direction * sample_distance;

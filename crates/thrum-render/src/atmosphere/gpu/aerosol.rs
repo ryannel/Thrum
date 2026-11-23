@@ -79,11 +79,12 @@ pub(super) fn aerial_source(entry: &str) -> String {
 
 fn assemble(entry: &str) -> String {
     let body = format!(
-        "{}{}{}{}{}{}\n{entry}",
+        "{}{}{}{}{}{}{}\n{entry}",
         wgsl!("atmosphere/storage.wgsl"),
         wgsl!("atmosphere/geometry.wgsl"),
         wgsl!("atmosphere/common.wgsl"),
-        wgsl!(@transport "atmosphere/aerosol_extinction.wgsl", "atmosphere/aerosol_scattering.wgsl"),
+        wgsl!(@transport_core "atmosphere/aerosol_extinction.wgsl", "atmosphere/aerosol_scattering.wgsl"),
+        wgsl!("atmosphere/aerosol_lit.wgsl"),
         wgsl!("atmosphere/night.wgsl"),
         wgsl!("atmosphere/night_aerosol.wgsl"),
     );
