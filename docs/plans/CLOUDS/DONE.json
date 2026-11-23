@@ -783,8 +783,8 @@
     {
       "id": "M6",
       "name": "A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -823,9 +823,9 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_placed_lease_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-targets-final.log",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },
         {
@@ -835,7 +835,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M6/recheck/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },
         {
@@ -845,7 +845,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M6/recheck/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },
         {
@@ -890,7 +890,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M6/recheck/targeted-game.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },
         {
@@ -928,30 +928,8 @@
       ],
       "findings": [
         {
-          "name": "Voxel queries ignore the authored slab floor",
-          "repeat": false
-        },
-        {
-          "name": "Hash-placed footprint estimates are reported as exact",
-          "repeat": false
-        },
-        {
-          "name": "The demo lifecycle removes caller-authored shapes by ID",
-          "item": "M6.9",
-          "repeat": false
-        },
-        {
-          "name": "The placed crest has a visibly different edge from its neighbor",
-          "item": "M6.4",
-          "repeat": false
-        },
-        {
-          "name": "The mixed bank gains a formed lobe in one submitted frame at 60\u00d7",
-          "item": "M6.5",
-          "repeat": false
-        },
-        {
-          "name": "Repeated frames rebuild and upload the full placement buffer",
+          "name": "Unchanged placed-weather windows are uploaded and redrawn every frame",
+          "item": "M6.3",
           "repeat": false
         }
       ]

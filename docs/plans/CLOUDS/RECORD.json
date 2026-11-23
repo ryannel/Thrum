@@ -599,7 +599,7 @@
         {
           "verdict": "fail",
           "commit": "5203f907b04dd8d38190ac513c1241466374205e",
-          "review": ".orchestrate/evidence/CLOUDS/M6-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/M6-review-1.md",
           "items": {
             "M6.1": "pass",
             "M6.2": "pass",
@@ -659,6 +659,48 @@
             "turns": 1
           },
           "at": "2026-11-23T17:26:03Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "bd9ab578d2374fa22480611611d6db0de3fbb3ee",
+          "review": ".orchestrate/evidence/CLOUDS/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "pass",
+            "M6.3": "fail",
+            "M6.4": "pass",
+            "M6.5": "pass",
+            "M6.6": "pass",
+            "M6.7": "pass",
+            "M6.8": "pass",
+            "M6.9": "pass",
+            "M6.10": "pass",
+            "M6.11": "pass",
+            "M6.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Unchanged placed-weather windows are uploaded and redrawn every frame",
+              "item": "M6.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 199747,
+            "cached": 10762624,
+            "output": 20717,
+            "turns": 1
+          },
+          "at": "2026-11-23T22:58:25Z"
         }
       ],
       "authorised": {
