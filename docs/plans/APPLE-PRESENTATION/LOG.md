@@ -386,3 +386,9 @@
   replacement visual and one capture session across both formats. The iOS preflight separately reproduces the HOST
   M4 dead-code diagnostic from `626798f4f`.
   [Target receipts](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix/README.md).
+
+- 2026-11-23 M6 second review fixes. Drawable capture reserves against the active device generation. A stale
+  tap reports omissions after device replacement and remains invalid through an extent publication until the
+  caller opens a fresh session. The Mac backing-grid diagnostic selects the 8-bit path used by its exact pixel
+  pattern. The Metal recovery test passed on both SDR and EDR, and the default diagnostic launch presented two
+  frames at 1920×1080. [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix-2/README.md).
