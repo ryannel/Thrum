@@ -5,6 +5,7 @@ use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
     runtime::{CaptureLimits, FrameSample, SurfaceOutput},
+    synthetic::RenderScale,
 };
 
 type FrameHost = Runtime;
@@ -256,8 +257,23 @@ async fn checkpoint(
     let directory = output.join(name);
     std::fs::create_dir_all(&directory).unwrap();
     let mut log = std::fs::File::create(directory.join("frames.jsonl")).unwrap();
-    for mode in ["reference", "taau", "off", "broken"] {
+    let mut arms = vec![
+        ("reference", RenderScale::Native),
+        ("taau", RenderScale::Native),
+        ("off", RenderScale::Native),
+        ("broken", RenderScale::Native),
+    ];
+    if std::env::var_os("THRUM_RECONSTRUCTION_SCALE_STEPS").is_some() {
+        arms.extend([
+            ("taau-85", RenderScale::Percent85),
+            ("taau-75", RenderScale::Percent75),
+            ("taau-67", RenderScale::Percent67),
+            ("taau-50", RenderScale::Half),
+        ]);
+    }
+    for (mode, scale) in arms {
         let (mut host, stats) = host(device, queue, caps, mode, &preset).await;
+        host.set_render_scale(scale).unwrap();
         let identity = (
             host.world().tick(),
             host.time_of_day().to_bits(),
@@ -324,6 +340,7 @@ async fn checkpoint(
             );
             let record = serde_json::json!({
                 "mode":mode,"frame":frame,"state":format!("{state:?}"),
+                "render_extent":sample.render_extent, "jitter_phase":sample.jitter_phase,
                 "celestial":celestial_state,"cooked_generation":content.drawn,
                 "exposure":exposure,"history":sample.history_identity,
                 "passes":sample.gpu_pass_ns.as_ref().map(|t|t.passes().iter().map(|p|

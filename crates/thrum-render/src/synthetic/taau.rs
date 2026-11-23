@@ -367,6 +367,7 @@ impl TaauTarget {
         previous: &SyntheticView,
         valid: bool,
         extent: [u32; 2],
+        output: [u32; 2],
     ) {
         let matrix = |v: &SyntheticView| match v.projection {
             super::view::Projection::Perspective { view, .. } => view,
@@ -376,11 +377,13 @@ impl TaauTarget {
         let prior = previous.view_record(previous, 1.0);
         let [_, _, jx, jy] = current.pre_exposure_inv_exposure_jitter;
         let [_, _, px, py] = prior.pre_exposure_inv_exposure_jitter;
+        let [previous_width, previous_height] = previous.render_scale().extent(output);
         let record = crate::records::ReconstructionParams {
             inverse: view.inverse_view_proj_columns(),
             previous_view: matrix(previous).to_cols_array_2d(),
             view: matrix(view).to_cols_array_2d(),
             state: [f32::from(valid), 0.0, extent[0] as f32, extent[1] as f32],
+            previous_extent: [previous_width as f32, previous_height as f32, 0.0, 0.0],
             jitter: [
                 jx,
                 jy,
@@ -438,6 +441,8 @@ impl SceneContext<'_> {
             .taau
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
+        #[cfg(feature = "creation-counters")]
+        self.target.record_border_witness(self.encoder);
         let mut pass = compiled
             .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
             .ok_or(RenderError::GraphPassMismatch)?;

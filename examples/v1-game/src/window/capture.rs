@@ -34,7 +34,7 @@ use thrum_app::{
 };
 use thrum_render::{
     capabilities::{DeviceCapabilities, DeviceRecipe, FIRST_DEVICE_GENERATION, OpenedDevice},
-    runtime::SubmittedImage,
+    runtime::{FrameWorld, SubmittedImage},
     synthetic::CaptureSource,
 };
 
@@ -269,6 +269,8 @@ impl Trace {
         );
         self.images.push(json!({"submission_id":image.sample.submission_order,"tick":image.sample.tick,
             "shadow_selection":shadow_selection(image.sample.shadow_selection),
+            "drawn_extent":image.sample.render_extent,"history":image.sample.history_identity,
+            "jitter_phase":image.sample.jitter_phase,
             "epoch":image.source.epoch,"timeline":image.source.timeline,
             "previous_endpoint_tick":image.source.tick.checked_sub(1),"current_endpoint_tick":image.source.tick,
             "alpha":image.sample.presentation_alpha,"history_epoch":image.history_epoch,
@@ -596,6 +598,10 @@ fn capture_source() -> Result<CaptureSource, String> {
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "one capture interval owns the clock, submission and drain order"
+)]
 async fn record(
     output: &Path,
     scenario: &str,
@@ -639,6 +645,16 @@ async fn record(
         .then(|| start_writer(scenario, encoding, disk_limit, recovery_mode))
         .transpose()?;
     let route = requested_route(scenario)?;
+    let scale_origin = if std::env::var("THRUM_ROUTE_RENDER_SCALE").as_deref() == Ok("trace") {
+        Some(
+            route
+                .as_ref()
+                .and_then(|route| route["origin_tick"].as_u64())
+                .ok_or("scripted render scale needs a route")?,
+        )
+    } else {
+        None
+    };
     let mut trace = Trace::for_route(route.as_ref(), preview)?;
     let origin = trace.prime(output, &mut driver, writer.as_ref())?;
     let timebase = if mode == "fixed" {
@@ -721,6 +737,17 @@ async fn record(
         if scenario == "render-stall" && t >= 1.8 && !stalled {
             trace.delay("render-owner-before-ordinary-step", origin);
             stalled = true;
+        }
+        if let Some(origin_tick) = scale_origin {
+            let host = driver.host_mut();
+            let tick = host
+                .world()
+                .source()
+                .tick
+                .saturating_add(1)
+                .saturating_sub(origin_tick);
+            host.set_render_scale(crate::camera::route_render_scale(tick))
+                .map_err(|error| error.to_string())?;
         }
         let step = WorkClock::start().map_err(|e| e.to_string())?;
         let admission_usage = driver.capture_usage();

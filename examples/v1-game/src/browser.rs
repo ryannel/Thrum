@@ -516,6 +516,16 @@ impl BrowserGame {
         game::route_step_ms(&self.shell, phi)
     }
 
+    /// Apply the moving route's scripted render scale before recording a frame.
+    ///
+    /// # Errors
+    /// Reduced scale requires portable temporal reconstruction.
+    pub fn route_render_scale(&mut self, routed_tick: u32) -> Result<(), JsValue> {
+        self.shell
+            .set_render_scale(crate::camera::route_render_scale(u64::from(routed_tick)))
+            .map_err(|error| js_error(error.to_string()))
+    }
+
     /// Route identity as JSON: counters, solar hours and retained samples from `from_tick`.
     #[must_use]
     pub fn route_report(&self, from_tick: f64) -> String {

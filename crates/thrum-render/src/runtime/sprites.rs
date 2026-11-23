@@ -122,6 +122,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 submission_order: 0,
                 render_extent: self.render_extent,
                 history_identity: [0; 2],
+                jitter_phase: None,
                 completed_ticks: frame.completed_ticks,
                 queued_ticks: frame.queued_ticks,
                 tick_cpu: frame.tick_cpu,

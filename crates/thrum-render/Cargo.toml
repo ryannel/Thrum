@@ -287,3 +287,8 @@ path = "tests/wgsl_records.rs"
 [[test]]
 name = "wgsl_single_declaration"
 path = "tests/wgsl_single_declaration.rs"
+
+[[test]]
+name = "dynamic_scale"
+path = "tests/dynamic_scale.rs"
+required-features = ["creation-counters"]

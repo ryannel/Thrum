@@ -15,8 +15,8 @@ fn ycocg(c: vec3<f32>) -> vec3<f32> {
     return vec3(dot(c,vec3(0.25,0.5,0.25)),(c.r-c.b)*0.5,(-c.r+2.0*c.g-c.b)*0.25);
 }
 fn rgb(c: vec3<f32>) -> vec3<f32> { return vec3(c.x+c.y-c.z,c.x+c.z,c.x-c.y-c.z); }
-fn bounded(p: vec2<i32>) -> vec2<i32> {
-    return clamp(p,vec2(0),vec2<i32>(textureDimensions(colour))-vec2(1));
+fn bounded(p: vec2<i32>, extent: vec2<u32>) -> vec2<i32> {
+    return clamp(p,vec2(0),vec2<i32>(extent)-vec2(1));
 }
 fn reconstruction_filter(distance: f32) -> f32 {
     // Mitchell-Netravali, B = C = 1/3, support two pixels. The source
@@ -37,25 +37,25 @@ fn history_filter(distance: f32) -> f32 {
 fn history_at(p: vec2<f32>) -> vec4<f32> {
     let base = vec2<i32>(floor(p));
     let f = fract(p);
-    let centre = textureLoad(history,bounded(base),0);
+    let centre = textureLoad(history,bounded(base,textureDimensions(history)),0);
     var difference = vec4(0.0);
     for (var y = -1; y <= 2; y++) {
         let wy = history_filter(f32(y)-f.y);
         for (var x = -1; x <= 2; x++) {
             let weight = history_filter(f32(x)-f.x)*wy;
-            difference += (textureLoad(history,bounded(base+vec2(x,y)),0)-centre)*weight;
+            difference += (textureLoad(history,bounded(base+vec2(x,y),textureDimensions(history)),0)-centre)*weight;
         }
     }
     // Exact constant preservation also prevents a storage-scale drift. Existing
     // YCoCg neighbourhood clipping bounds the cubic's negative-lobe overshoot.
     return centre+difference;
 }
-fn depth_at(p: vec2<f32>, expected: f32) -> vec4<f32> {
+fn depth_at(p: vec2<f32>, expected: f32, extent: vec2<u32>) -> vec4<f32> {
     let base = vec2<i32>(floor(p));
-    let a = textureLoad(previous_depth,bounded(base),0).r;
-    let b = textureLoad(previous_depth,bounded(base+vec2(1,0)),0).r;
-    let c = textureLoad(previous_depth,bounded(base+vec2(0,1)),0).r;
-    let d = textureLoad(previous_depth,bounded(base+vec2(1,1)),0).r;
+    let a = textureLoad(previous_depth,bounded(base,extent),0).r;
+    let b = textureLoad(previous_depth,bounded(base+vec2(1,0),extent),0).r;
+    let c = textureLoad(previous_depth,bounded(base+vec2(0,1),extent),0).r;
+    let d = textureLoad(previous_depth,bounded(base+vec2(1,1),extent),0).r;
     let depths = vec4(a,b,c,d);
     let f = fract(p);
     let weights = vec4((1.0-f.x)*(1.0-f.y),f.x*(1.0-f.y),(1.0-f.x)*f.y,f.x*f.y);
@@ -97,11 +97,23 @@ fn history_round(value: f32, seed: u32) -> f32 {
     let random = f32(hash >> 8u)*(1.0/16777216.0);
     return select(lower,upper,random < (bounded_value-lower)/(upper-lower));
 }
+fn world_at(p: vec2<i32>, depth_value: f32) -> vec4<f32> {
+    let uv = (vec2<f32>(p)+vec2(0.5)-params.jitter.xy)/params.state.zw;
+    let world_h = params.inverse*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),depth_value,1.0);
+    return world_h/max(abs(world_h.w),1e-20)*sign(world_h.w);
+}
+
 @compute @workgroup_size(RECONSTRUCTION_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE)
 fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
-    let extent = textureDimensions(colour);
-    if any(id.xy >= extent) { return; }
-    let p = vec2<i32>(id.xy);
+    let output_extent = textureDimensions(output);
+    if any(id.xy >= output_extent) { return; }
+    let extent = vec2<u32>(params.state.zw);
+    let same_grid = all(extent == output_extent);
+    let output_pixel = vec2<f32>(id.xy);
+    let render_per_output = vec2<f32>(extent)/vec2<f32>(output_extent);
+    let input_pixel = select((output_pixel+0.5)*render_per_output-0.5,output_pixel,same_grid);
+    let p = bounded(vec2<i32>(floor(input_pixel+0.5)),extent);
+    let phase_offset = input_pixel-vec2<f32>(p);
     var nearest = p;
     var front = textureLoad(depth,p,0);
     var low = vec3(1e30);
@@ -111,11 +123,11 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     var source_weight = 0.0;
     for (var y = -1; y <= 1; y++) {
         for (var x = -1; x <= 1; x++) {
-            let at = bounded(p+vec2(x,y));
+            let at = bounded(p+vec2(x,y),extent);
             let z = textureLoad(depth,at,0);
             if z > front { front = z; nearest = at; }
             let sample = textureLoad(colour,at,0).rgb;
-            let offset = vec2<f32>(f32(x),f32(y))-params.jitter.xy;
+            let offset = vec2<f32>(f32(x),f32(y))-params.jitter.xy-phase_offset;
             let filter_weight = reconstruction_filter(offset.x)*reconstruction_filter(offset.y);
             source += (sample-centre)*filter_weight;
             source_weight += filter_weight;
@@ -127,25 +139,29 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     // centre, including when disocclusion leaves no usable temporal history.
     let filtered = max(vec3(0.0),centre+source/source_weight);
     let velocity = textureLoad(motion,nearest,0).xy;
-    let previous = vec2<f32>(p)+velocity;
-    let uv = (vec2<f32>(p)+vec2(0.5)-params.jitter.xy)/vec2<f32>(extent);
-    let world_h = params.inverse*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),textureLoad(depth,p,0),1.0);
-    let world = world_h/max(abs(world_h.w),1e-20)*sign(world_h.w);
-    let linear_depth = abs((params.view*world).z);
+    let previous = output_pixel+velocity/render_per_output;
+    let source_depth = textureLoad(depth,p,0);
+    let world = world_at(p,source_depth);
     let expected = abs((params.previous_view*world).z);
-    // Depth history is a jittered raster, unlike the resolved colour history.
-    let old_depth = depth_at(previous+params.jitter.zw-params.jitter.xy,expected);
-    let sky = textureLoad(depth,p,0) == 0.0;
+    // Colour history is resolved on the output grid. Depth history is a jittered raster
+    // on the previous drawn grid. Reproject the source depth sample in its own grid.
+    let previous_render = vec2<f32>(p)+velocity-params.jitter.xy;
+    let depth_ratio = params.previous_extent.xy/vec2<f32>(extent);
+    let depth_pixel = (previous_render+0.5)*depth_ratio-0.5+params.jitter.zw;
+    let native_depth_pixel = previous+params.jitter.zw-params.jitter.xy;
+    let same_depth_grid = same_grid && all(params.previous_extent.xy == vec2<f32>(extent));
+    let old_depth = depth_at(select(depth_pixel,native_depth_pixel,same_depth_grid),expected,vec2<u32>(params.previous_extent.xy));
+    let sky = source_depth == 0.0;
     let support = depth_confidence(old_depth,expected,sky);
     let nominal_history_weight = 0.97;
     var weight = nominal_history_weight*support*(1.0-textureLoad(reactive,p,0).r);
-    if params.state.x == 0.0 || any(previous < vec2(0.0)) || any(previous > vec2<f32>(extent)-vec2(1.0)) {
+    if params.state.x == 0.0 || any(previous < vec2(0.0)) || any(previous > vec2<f32>(output_extent)-vec2(1.0)) {
         weight = 0.0;
     }
     // With usable history, retain the raw jittered sample for the temporal box
     // estimate. Spatial reconstruction supplies pixels without that support;
     // applying it again to converged history broadens the reference footprint.
-    let current = mix(filtered,centre,weight/nominal_history_weight);
+    let current = mix(filtered,centre,select(0.0,weight/nominal_history_weight,same_grid));
     let retained = history_at(previous);
     let rescaled = retained.rgb*(exposure.values.x/max(previous_exposure.values.x,1e-20));
     let retained_ycocg = ycocg(rescaled);
@@ -157,9 +173,16 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let a = (1.0-weight)/(1.0+max(0.0,ycocg(current).x/luminance_scale));
     let b = weight/(1.0+max(0.0,ycocg(clipped).x/luminance_scale));
     let resolved = max(vec3(0.0),current+(clipped-current)*(b/max(a+b,1e-20)));
-    textureStore(output,p,vec4(resolved,1.0));
-    let seed = id.x+id.y*extent.x+bitcast<u32>(params.jitter.x)*1664525u+bitcast<u32>(params.jitter.y)*1013904223u;
+    textureStore(output,vec2<i32>(id.xy),vec4(resolved,1.0));
+    let seed = id.x+id.y*output_extent.x+bitcast<u32>(params.jitter.x)*1664525u+bitcast<u32>(params.jitter.y)*1013904223u;
     let retained_colour = vec3(history_round(resolved.r,seed),history_round(resolved.g,seed+374761393u),history_round(resolved.b,seed+668265263u));
-    textureStore(next_colour,p,vec4(retained_colour,exposure.values.x));
-    textureStore(next_depth,p,vec4(select(linear_depth,0.0,sky)));
+    textureStore(next_colour,vec2<i32>(id.xy),vec4(retained_colour,exposure.values.x));
+    // Each invocation owns one output pixel and, inside the input rectangle,
+    // one depth texel. The rest of the retained depth allocation is unreadable.
+    if all(id.xy < extent) {
+        let raster = vec2<i32>(id.xy);
+        let z = textureLoad(depth,raster,0);
+        let linear_depth = abs((params.view*world_at(raster,z)).z);
+        textureStore(next_depth,raster,vec4(select(linear_depth,0.0,z == 0.0)));
+    }
 }

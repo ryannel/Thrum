@@ -373,6 +373,7 @@ impl SceneContext<'_> {
                 self.timings.as_deref_mut(),
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
+        self.target.set_drawn_viewport(&mut pass);
         pass.set_pipeline(&stars.pipeline);
         pass.set_bind_group(0, &target.groups[self.exposure_side], &[]);
         pass.draw(0..6, 0..stars.count);

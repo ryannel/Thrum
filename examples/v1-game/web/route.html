@@ -107,6 +107,9 @@
           culling: game.report(),
           reconstruction: JSON.parse(game.route_report(0)).reconstruction,
         };
+        const scaleProof = query.has('scale-proof');
+        const creations = () => window.thrumScaleCreations();
+        if (scaleProof) record.creation_baseline = creations();
         let before = JSON.parse(game.route_report(Number.MAX_SAFE_INTEGER));
         if (before.timestamp_clamps !== 0) fail("the clock clamped before the route");
         // Exit residency submits at tick zero before the half-phase route driver starts.
@@ -139,7 +142,12 @@
           deadline = performance.now() + PERIOD_MS;
           const checkpointCapture = query.has('culling-proof') && checkpoints.has(tick + 1) && !routed;
           if (checkpointCapture) game.begin_submitted_capture(tick + 1);
+          if (scaleProof) game.route_render_scale(Math.max(0, tick + 1 - origin));
+          const creationBefore = scaleProof && creations();
           game.frame(game.route_step_ms(phi));
+          if (scaleProof) {
+            (record.creations ??= {})[tick + 1] = [creationBefore, creations()];
+          }
           const report = JSON.parse(game.route_report(nextSample));
           const step = {
             tick: report.tick, callbacks: report.callbacks - before.callbacks, presented: report.presented - before.presented,

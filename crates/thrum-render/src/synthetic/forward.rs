@@ -86,6 +86,7 @@ impl PreparedSynthetic {
             encoder.clear_buffer(lamps.unshadowed(), 0, None);
         }
         let mut pass = self.begin_forward(encoder, target, compiled, timings)?;
+        target.set_drawn_viewport(&mut pass);
         if let Some(atmosphere) = self.atmosphere.as_ref() {
             atmosphere.draw(&mut pass, exposure_side);
         }

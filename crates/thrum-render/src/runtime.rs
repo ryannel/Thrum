@@ -317,7 +317,9 @@ pub struct FrameSample {
     pub submission_order: u64,
     /// Candidate and predecessor serials packed from the submitted transform state.
     pub history_identity: [u64; 2],
-    /// Pixel extent of the scene target used by this submission.
+    /// Halton phase packed for this submission, if the view was jittered.
+    pub jitter_phase: Option<u32>,
+    /// Pixel extent of the drawn scene subrectangle.
     pub render_extent: [u32; 2],
     /// Committed updates served in this host call, including catch-up work.
     pub completed_ticks: u32,
@@ -551,6 +553,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     last_extracted: ExtractReport,
     last_scene_apply: SceneApplyReport,
     render_extent: [u32; 2],
+    render_scale: crate::synthetic::RenderScale,
     changed_slots: Vec<u32>,
     prepared: PreparedRenderer,
     presenter: Option<SurfacePresenter>,
@@ -879,6 +882,25 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
     }
 
+    /// Set the drawn portion of the prepared output for the next 3D frame.
+    ///
+    /// # Errors
+    /// Reduced scale requires portable temporal reconstruction.
+    pub fn set_render_scale(
+        &mut self,
+        scale: crate::synthetic::RenderScale,
+    ) -> Result<(), FrameError> {
+        if scale != crate::synthetic::RenderScale::Native
+            && self.reconstruction() != crate::synthetic::Reconstruction::Taau
+        {
+            return Err(FrameError::InvalidState(
+                "reduced render scale requires TAAU",
+            ));
+        }
+        self.render_scale = scale;
+        Ok(())
+    }
+
     /// The scene half selected at preparation.
     pub fn scene_kind(&self) -> SceneKind {
         match &self.prepared {
@@ -1162,6 +1184,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             last_extracted: initial_extracted,
             last_scene_apply: initial_scene_apply,
             render_extent,
+            render_scale: crate::synthetic::RenderScale::Native,
             changed_slots,
             prepared: gpu.prepared,
             presenter,
@@ -1956,7 +1979,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .prepared
             .record_mesh_rows(&self.queue)
             .map_err(|error| FrameError::Gpu(format!("mesh row update: {error:?}")))?;
-        self.scene.view = self.view_with_history_reset(&frame_scene.view);
+        let scale = if self.reconstruction() == crate::synthetic::Reconstruction::Taau {
+            self.render_scale
+        } else {
+            crate::synthetic::RenderScale::Native
+        };
+        self.scene.view = self
+            .view_with_history_reset(&frame_scene.view)
+            .with_render_scale(scale);
         self.prepared
             .synchronize_history(&self.queue, authority.epoch, authority.timeline);
         let view_update_start = Instant::now();
@@ -2008,7 +2038,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 lead_status: self.lead_status,
                 submission_order: 0,
                 history_identity: self.prepared.history_identity(),
-                render_extent: self.render_extent,
+                jitter_phase: self
+                    .prepared
+                    .three_d()
+                    .and_then(PreparedSynthetic::pending_jitter_phase),
+                render_extent: scale.extent(self.render_extent),
                 completed_ticks: frame.completed_ticks,
                 queued_ticks: frame.queued_ticks,
                 tick_cpu: frame.tick_cpu,

@@ -55,6 +55,7 @@ pub struct SyntheticView {
     temporal_inputs: bool,
     reconstruction: Reconstruction,
     output_extent: Option<[u32; 2]>,
+    render_scale: super::RenderScale,
     sun_shadow_profile: Option<(u32, f32)>,
 }
 
@@ -86,6 +87,7 @@ impl Default for SyntheticView {
             temporal_inputs: false,
             reconstruction: Reconstruction::Off,
             output_extent: None,
+            render_scale: super::RenderScale::Native,
             sun_shadow_profile: None,
         }
     }
@@ -193,6 +195,7 @@ impl SyntheticView {
             temporal_inputs: false,
             reconstruction: Reconstruction::Off,
             output_extent: None,
+            render_scale: super::RenderScale::Native,
             sun_shadow_profile: None,
         })
     }
@@ -472,6 +475,17 @@ impl SyntheticView {
         view
     }
 
+    /// Select the next drawn subrectangle inside the prepared output grid.
+    #[must_use]
+    pub fn with_render_scale(mut self, scale: super::RenderScale) -> Self {
+        self.render_scale = scale;
+        self
+    }
+
+    pub(super) fn render_scale(&self) -> super::RenderScale {
+        self.render_scale
+    }
+
     pub(super) fn at_jitter_phase(mut self, phase: u32, extent: [u32; 2]) -> Self {
         self.jitter_sample = Some((phase % 32, extent.map(|axis| axis.max(1))));
         self
@@ -541,7 +555,11 @@ impl SyntheticView {
             camera_xyz_time: self.camera.extend(0.0).to_array(),
             pre_exposure_inv_exposure_jitter: [super::PRE_EXPOSURE, inverse, jx, jy],
             unjittered_view_proj: self.view_proj.to_cols_array_2d(),
-            mip_bias: -1.0,
+            mip_bias: if self.reconstruction() {
+                (self.render_scale.percent() as f32 / 100.0).log2() - 1.0
+            } else {
+                0.0
+            },
             jitter_phase: phase,
             padding: [0; 2],
         }

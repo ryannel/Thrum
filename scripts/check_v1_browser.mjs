@@ -24,7 +24,7 @@ cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
-cases.push('route-diagnostic');
+cases.push('route-diagnostic', 'scale');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -1244,8 +1244,9 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const routeCase = (mode.startsWith('route-') && !routeDiagnostic) || exitStop;
   const exitCase = mode === 'exit-scene' || mode === 'exit-sweep';
   const sweep = mode === 'exit-sweep';
-  const movingCase = mode === 'moving-route' || mode.startsWith('moving-route-');
-  const movingControl = movingCase && mode !== 'moving-route' ? mode.slice('moving-route-'.length) : undefined;
+  const scaleCase = mode === 'scale';
+  const movingCase = scaleCase || mode === 'moving-route' || mode.startsWith('moving-route-');
+  const movingControl = movingCase && !scaleCase && mode !== 'moving-route' ? mode.slice('moving-route-'.length) : undefined;
   const routeFile = routeCase ? `showcase-${mode.replace(/^(route|exit-stop)-/, '')}.params.json` : undefined;
   const skyCase = mode === 'sky-reflections' || routeDiagnostic || valleyCase;
   const faults = [], timeline = [];
@@ -1255,7 +1256,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : ''}`
     : movingCase ? `${origin}/route.html?route=${files.movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}${files.movingRouteFile === 'exit-flythrough.json' ? '&scene=exit' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}&route-check` : routeDiagnostic ? `${origin}/?route-check` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
-  const cullingQuery = movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
+  const cullingQuery = scaleCase ? '&reconstruction=taau&scale-proof' : movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
     cdp.event = packet => {
@@ -1276,6 +1277,28 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       }
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
+    if (scaleCase) await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
+      const methods = ['createTexture', 'createView', 'createBindGroup', 'createComputePipeline',
+        'createRenderPipeline', 'createComputePipelineAsync', 'createRenderPipelineAsync'];
+      const counts = Object.fromEntries(methods.map(method => [method, 0]));
+      // Canvas acquisition supplies one drawable per present at every scale.
+      const drawables = new WeakSet();
+      const acquire = GPUCanvasContext.prototype.getCurrentTexture;
+      GPUCanvasContext.prototype.getCurrentTexture = function (...args) {
+        const texture = acquire.apply(this, args);
+        drawables.add(texture);
+        return texture;
+      };
+      for (const method of methods) {
+        const owner = method === 'createView' ? GPUTexture.prototype : GPUDevice.prototype;
+        const original = owner[method];
+        owner[method] = function (...args) {
+          if (method !== "createView" || !drawables.has(this)) counts[method]++;
+          return original.apply(this, args);
+        };
+      }
+      window.thrumScaleCreations = () => ({ ...counts });
+    })()` }, sessionId);
     await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || lateAttach || materialCase || materialDisabled || routeCase || movingCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
@@ -1441,7 +1464,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     else if (oracleCase) oracle = await captureFieldOracle(cdp, sessionId, poll, timeout, output, mode, onDestroy);
     else if (movingControl) route = await qualifyMovingControl(cdp, sessionId, targetId, poll, timeout, output, files, movingControl, otherTarget);
-    else if (movingCase) route = await qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files);
+    else if (movingCase) route = await qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, scaleCase);
     else if (routeCase) {
       route = await qualifyRoute(cdp, sessionId, poll, timeout, output, mode, routeFile, files);
       if (timeline.some(line => /params|refused/.test(line))) throw new Error(`Parameter problem reached #status: ${JSON.stringify(timeline)}`);
@@ -1590,7 +1613,7 @@ async function cookedHead(output) {
   return { generation: Number(head.readBigUInt64LE(16)), root: head.subarray(24, 56).toString('hex') };
 }
 
-async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files) {
+async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, scaleCase = false) {
   const deadline = Date.now() + timeout;
   const route = JSON.parse(files.movingRoute.toString('utf8'));
   const cooked = await cookedHead(output);
@@ -1631,6 +1654,31 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files) 
   const origin = route.origin_tick, last = origin + route.keys.at(-1).tick;
   for (let tick = origin; tick <= last; tick += 1) if (!record.samples[tick]) throw new Error(`moving-route: no sample for routed tick ${tick}`);
   await fs.writeFile(path.join(output, 'moving-route.record.json'), JSON.stringify(record, null, 2));
+  if (scaleCase) {
+    if (record.header.reconstruction !== 'Taau' ||
+        ['createTexture', 'createView', 'createBindGroup', 'createComputePipeline', 'createRenderPipeline']
+          .some(method => record.creation_baseline[method] <= 0)) {
+      throw new Error('Scale route needs TAAU and observed WebGPU creation hooks');
+    }
+    const changes = [];
+    for (let tick = origin + 1; tick <= last; tick++) {
+      const a = record.samples[tick - 1], b = record.samples[tick];
+      if (String(a.render_extent) === String(b.render_extent)) continue;
+      const [before, after] = record.creations[tick];
+      if (!b.surface_presented || b.history_predecessor !== a.history_sample ||
+          b.jitter_phase !== (a.jitter_phase + 1) % 32 || JSON.stringify(before) !== JSON.stringify(after)) {
+        throw new Error(`Scale step ${tick} lost history, jitter continuity or creation invariance`);
+      }
+      changes.push({ tick, extent: b.render_extent, history: b.history_sample, predecessor: b.history_predecessor,
+        jitter: b.jitter_phase, before, after });
+    }
+    const expected = [85, 75, 67, 50, 67, 75, 85, 100]
+      .map(percent => route.render_extent.map(axis => Math.round(axis * percent / 100)));
+    if (JSON.stringify(changes.map(row => row.extent)) !== JSON.stringify(expected)) {
+      throw new Error(`Unexpected sequence of scale steps ${JSON.stringify(changes)}`);
+    }
+    await fs.writeFile(path.join(output, 'scale-steps.json'), JSON.stringify(changes, null, 2));
+  }
   return { file: files.movingRouteFile, sha256: sha(files.movingRoute), cooked, header: record.header, steps: record.steps.length, captures,
     scope: 'Fresh route.html page with no requestAnimationFrame: the actual authored camera driven one fresh tick per step at the route phase from page clock origin 0, paced by one route-owned timer per step plus bounded slot-wait timers (500 ms at most) where no frame slot is free; checkpoint images are Chrome presented canvas compositor captures, not the submitted pre-display image; no timing or cadence claim' };
 }
@@ -2116,7 +2164,7 @@ async function main() {
   if (args['web-root'] === 'target/v1-game-web') {
     execFileSync('sh', ['examples/v1-game/web/build.sh'], { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   }
-  if (args.case === 'exit-scene' && args.cook === 'target/debug/thrum-cook') {
+  if (['exit-scene', 'scale'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
     execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
   }
   if (args.case === 'content-edits' && args.cook === 'target/debug/thrum-cook') {
@@ -2177,10 +2225,10 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && mode !== 'route-diagnostic' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && mode !== 'route-diagnostic' && mode !== 'scale' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
-    if (modes.some(mode => mode.startsWith('moving-route'))) {
+    if (modes.some(mode => mode === 'scale' || mode.startsWith('moving-route'))) {
       await movingRouteFiles(files, directory, args.case === 'moving-route' && process.env.THRUM_SCENE === 'exit'
         ? 'exit-flythrough.json' : undefined);
     }
@@ -2190,7 +2238,7 @@ async function main() {
     let assetsOrigin;
     let assetsSource;
     if (modes.includes('route-diagnostic')) await routeStops(files, directory);
-    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
+    if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     for (const mode of modes) {
       if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms'], files.get('/v1_game_bg.wasm')));
       else if (mode === 'sprites-field' || mode === 'sprites-field-cost') results.push(await qualifySpriteField({

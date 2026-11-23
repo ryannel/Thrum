@@ -5,7 +5,7 @@
 @compute @workgroup_size(1)
 fn probe_depth(@builtin(global_invocation_id) id: vec3<u32>) {
     let row = probe_cases[id.x];
-    let sample = depth_at(vec2(row.y,row.z+f32(id.x*2u)),row.x);
+    let sample = depth_at(vec2(row.y,row.z+f32(id.x*2u)),row.x,textureDimensions(previous_depth));
     let sky = row.w != 0.0;
     let tolerance = max(0.01,row.x*0.01);
     let old_range_control = (sky && sample.y == 0.0)

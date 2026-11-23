@@ -283,6 +283,7 @@ impl SceneContext<'_> {
                 self.timings.as_deref_mut(),
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
+        self.target.set_drawn_viewport(&mut pass);
         let view_offset =
             self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
         let offsets = [view_offset, 0];

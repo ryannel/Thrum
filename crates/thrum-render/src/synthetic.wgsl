@@ -458,9 +458,9 @@ fn ambient_irradiance(n: vec3<f32>, world_position: vec3<f32>, pixel_position: v
 
 fn shade(input: VertexOutput, receiver: ShadowReceiver, front_facing: bool, shadowed: bool) -> vec4<f32> {
     let material=materials[input.material];
-    let base=textureSample(base_textures,material_sampler,input.uv,i32(material.texture_layers.x));
-    let orm=textureSample(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z));
-    let emissive=textureSample(emissive_textures,material_sampler,input.uv,i32(material.texture_layers.w));
+    let base=textureSampleBias(base_textures,material_sampler,input.uv,i32(material.texture_layers.x),view.mip_bias);
+    let orm=textureSampleBias(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z),view.mip_bias);
+    let emissive=textureSampleBias(emissive_textures,material_sampler,input.uv,i32(material.texture_layers.w),view.mip_bias);
     // Keep implicit-derivative texture operations before the divergent Sun searches.
     var sun_factor = 1.0;
     if shadowed { sun_factor = sun_visibility(input,receiver); }

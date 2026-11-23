@@ -490,6 +490,17 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         &self.host
     }
 
+    /// Set the drawn subrectangle of the next frame.
+    ///
+    /// # Errors
+    /// Reduced scale requires portable temporal reconstruction.
+    pub fn set_render_scale(
+        &mut self,
+        scale: thrum_render::synthetic::RenderScale,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        self.host.set_render_scale(scale)
+    }
+
     /// The world, for CPU edits such as input. Allowed while the device is lost.
     pub fn world_mut(&mut self) -> &mut W {
         self.host.world_mut()

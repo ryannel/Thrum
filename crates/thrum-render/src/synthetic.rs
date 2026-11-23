@@ -55,6 +55,10 @@ pub(crate) use raytrace::RetainedRayMeshes;
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
 pub(crate) mod readback;
+mod scale;
+pub use scale::RenderScale;
+#[cfg(feature = "creation-counters")]
+mod scale_witness;
 mod scene_apply;
 mod scene_graph;
 pub(crate) mod scene_source;
@@ -514,6 +518,8 @@ pub enum RenderError {
     InvalidLighting,
     /// Nonfinite or degenerate camera projection.
     InvalidView,
+    /// Reduced render scale was requested on a target without portable TAAU.
+    UnsupportedRenderScale,
     /// Exposure gain is unrepresentable or incident EV settings are unsupported.
     InvalidExposure,
     /// Target/readback belongs to another generation, grid or prepared exposure.
@@ -1192,10 +1198,15 @@ impl PreparedSynthetic {
         presentation_alpha: f32,
     ) -> Result<(), RenderError> {
         self.check_owner(target)?;
+        let output = target.extent();
+        let drawn = scene.view.render_scale().extent(output);
+        if drawn != output
+            && (self.reconstruction() != Reconstruction::Taau || target.native.is_some())
+        {
+            return Err(RenderError::UnsupportedRenderScale);
+        }
         let view = if scene.view.jitter_enabled() || scene.view.reconstruction() {
-            scene
-                .view
-                .at_jitter_phase(self.jitter_phase, target.extent())
+            scene.view.at_jitter_phase(self.jitter_phase, drawn)
         } else {
             scene.view
         };
@@ -1254,7 +1265,8 @@ impl PreparedSynthetic {
                 &view,
                 &self.view_sample,
                 self.history.candidate_identity(view.history_reset())[1] != 0,
-                target.extent(),
+                drawn,
+                output,
             );
         }
         let next_revision = self.frame_revision.wrapping_add(1);
@@ -1264,11 +1276,7 @@ impl PreparedSynthetic {
             u64::from(view_offset),
             &view.pack_view(&self.view_sample, f32::from_bits(self.exposure_bits)),
         );
-        queue.write_buffer(
-            &target.aux_buffer,
-            0,
-            &view.pack_aux(target.width, target.height),
-        );
+        queue.write_buffer(&target.aux_buffer, 0, &view.pack_aux(drawn[0], drawn[1]));
         target.draw_stars =
             self.stars
                 .as_mut()
@@ -1279,7 +1287,7 @@ impl PreparedSynthetic {
                         binding,
                         &view,
                         &self.view_sample,
-                        target.extent(),
+                        drawn,
                         &light_data,
                     )
                 });
@@ -1307,7 +1315,7 @@ impl PreparedSynthetic {
         if let (Some(atmosphere), FrameLighting::Atmosphere(frame)) =
             (&mut self.atmosphere, lighting)
         {
-            atmosphere.update(queue, frame, &view, target.extent());
+            atmosphere.update(queue, frame, &view, drawn);
         }
         self.exposure.update(
             queue,
@@ -1322,6 +1330,7 @@ impl PreparedSynthetic {
         self.pending_view = Some(view);
         self.frame_revision = next_revision;
         target.frame_revision = self.frame_revision;
+        target.drawn = drawn;
         Ok(())
     }
 
@@ -1350,6 +1359,12 @@ impl PreparedSynthetic {
                 .as_ref()
                 .is_some_and(SyntheticView::history_reset),
         )
+    }
+
+    pub(crate) fn pending_jitter_phase(&self) -> Option<u32> {
+        self.pending_view
+            .filter(SyntheticView::jitter_enabled)
+            .map(|view| view.raster_phase())
     }
 
     /// Advance retained camera, transform and exposure sides after successful submission.
@@ -1727,6 +1742,9 @@ pub struct OffscreenTarget {
     stars: Option<StarTarget>,
     depth: wgpu::TextureView,
     day_depth: Option<(wgpu::Texture, wgpu::TextureView)>,
+    drawn: [u32; 2],
+    #[cfg(feature = "creation-counters")]
+    border_witness: Option<wgpu::RenderPipeline>,
     width: u32,
     height: u32,
     generation: u64,
@@ -1989,6 +2007,9 @@ impl OffscreenTarget {
             stars,
             depth,
             day_depth,
+            drawn: [width, height],
+            #[cfg(feature = "creation-counters")]
+            border_witness: None,
             width,
             height,
             generation: prepared.key.device_generation,
@@ -2024,6 +2045,14 @@ impl OffscreenTarget {
 
     pub(crate) fn capture_source(&self) -> CaptureSource {
         self.capture_source
+    }
+
+    fn set_drawn_viewport(&self, pass: &mut wgpu::RenderPass<'_>) {
+        let [width, height] = self.drawn;
+        if self.drawn != self.extent() {
+            pass.set_viewport(0.0, 0.0, width as f32, height as f32, 0.0, 1.0);
+            pass.set_scissor_rect(0, 0, width, height);
+        }
     }
 
     /// Target extent in pixels.

@@ -193,7 +193,7 @@ records! {
         display_selectors: u32,
     }
     ExposureSample { values: [f32; 4], metadata: [u32; 4] }
-    ReconstructionParams { inverse: Matrix, previous_view: Matrix, view: Matrix, state: [f32; 4], jitter: [f32; 4] }
+    ReconstructionParams { inverse: Matrix, previous_view: Matrix, view: Matrix, state: [f32; 4], jitter: [f32; 4], previous_extent: [f32; 4] }
     LampShadowQuality { ray_limit: u32 }
     SpriteView {
         clip_per_world: [f32; 2],

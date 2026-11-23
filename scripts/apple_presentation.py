@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 import tempfile
+from statistics import median
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +40,7 @@ def mac_binary():
     env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     env.update(CARGO_TARGET_DIR=str(ROOT / "target"), RUSTC_WRAPPER="")
     run("rustup", "run", "stable", "cargo", "build", "--locked", "--offline", "--release",
-        "-p", "v1-game", "--bin", "v1-game", env=env, timeout=900)
+        "-p", "v1-game", "--bin", "v1-game", "-p", "thrum-cook", "--bin", "thrum-cook", env=env, timeout=900)
     return ROOT / "target/release/v1-game", env
 
 
@@ -361,9 +362,193 @@ def ios_transition(output):
                 simulator_build=json.loads((route / "identity.json").read_text()))
 
 
+# The fixed route keeps the two history arms at the same submitted state, including phase.
+SCALE_STEPS = {36: 85, 72: 75, 108: 67, 144: 50, 180: 67, 224: 75, 260: 85, 300: 100}
+
+
+def scale_environment(output):
+    from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
+
+    binary, env = mac_binary()
+    store = output / "store"
+    run(str(ROOT / "target/release/thrum-cook"), "cook", str(SOURCE), str(store))
+    route = json.loads(MOVING_ROUTE.read_text())
+    root = store_root(store)
+    if root != route["cooked_root"]:
+        raise ValueError(f"cooked root {root} differs from the route's {route['cooked_root']}")
+    return binary, dict(env, THRUM_ASSET_STORE=str(store), THRUM_SCENE="valley",
+                        THRUM_RECIPE="portable", THRUM_RECONSTRUCTION="taau",
+                        THRUM_ROUTE_OVERLAY=route["overlay"]), route
+
+
+def scale_route(output, binary, env, route_path, arm, windows=()):
+    capture = output / arm
+    run(str(binary), env=dict(env, THRUM_CAPTURE_SCENE=str(capture),
+        THRUM_CAPTURE_ROUTE=str(route_path), THRUM_ROUTE_RENDER_SCALE=arm,
+        THRUM_CAPTURE_WINDOWS=json.dumps(windows)), timeout=300)
+    header, *rows = read_rows(capture / "route.jsonl")
+    if (header["backend"], header["recipe"], header["reconstruction"]) != ("Metal", "Ok(Portable)", "Taau"):
+        raise ValueError(f"wrong scale target: {header}")
+    return capture, header, {row["route_tick"]: row for row in rows}
+
+
+def scale_history(output, binary, env):
+    from run_v1_showcase import MOVING_ROUTE
+
+    windows = [[tick, tick] for tick in SCALE_STEPS]
+    live_path, header, kept = scale_route(output, binary, env, MOVING_ROUTE, "trace", windows)
+    reset_path, _, reset = scale_route(output, binary, env, MOVING_ROUTE, "reset", windows)
+    state_fields = ("tick", "alpha_bits", "rendered_solar_bits", "eye", "yaw", "pitch", "epoch",
+                    "render_extent", "jitter_phase")
+    rows = []
+    for tick, scale in SCALE_STEPS.items():
+        before, actual, control = kept[tick - 1], kept[tick], reset[tick]
+        expected = [(axis * scale + 50) // 100 for axis in header["render_extent"]]
+        if actual["render_extent"] != expected or actual["render_extent"] == before["render_extent"]:
+            raise ValueError(f"scale did not step at routed tick {tick}")
+        if (actual["history"][1] != before["history"][0] or control["history"][1] != 0
+                or actual["jitter_phase"] != (before["jitter_phase"] + 1) % 32
+                or any(actual[key] != control[key] for key in state_fields)):
+            raise ValueError(f"history, jitter or state mismatch at routed tick {tick}")
+        stem = f"tick-{actual['tick']:06}"
+        def image(path):
+            identity = json.loads((path / "windows" / f"{stem}.identity.json").read_text())
+            return identity, (path / "windows" / f"{stem}.rgba8").read_bytes()
+        a, live = image(live_path)
+        b, without_history = image(reset_path)
+        if a["exposure_gpu_words"] != b["exposure_gpu_words"] or a["timeline"] != b["timeline"]:
+            raise ValueError(f"independent control did not hold exposure or timeline at {tick}")
+        different = sum(left != right for left, right in zip(
+            memoryview(live).cast("I"), memoryview(without_history).cast("I"), strict=True))
+        if len(live) != 4 * header["render_extent"][0] * header["render_extent"][1] or different == 0:
+            raise ValueError(f"submitted colour did not detect reset at routed tick {tick}")
+        rows.append(dict(tick=tick, scale=scale, drawn=expected, jitter=actual["jitter_phase"],
+                         previous_jitter=before["jitter_phase"], live_history=actual["history"],
+                         reset_history=control["history"], different_pixels=different,
+                         live_sha256=hashlib.sha256(live).hexdigest(),
+                         reset_sha256=hashlib.sha256(without_history).hexdigest()))
+    return dict(header=header, steps=rows)
+
+
+def scale_reference(output, env):
+    from reconstruction_difference import compare, self_check
+    from run_v1_showcase import ROUTE
+
+    self_check()
+    frames = output / "still-frames"
+    env = dict(env, THRUM_RECONSTRUCTION_OUTPUT=str(frames),
+               THRUM_RECONSTRUCTION_SCALE_STEPS="1", THRUM_REQUIRE_GPU="1")
+    with (output / "reference.log").open("w") as log:
+        subprocess.run(["cargo", "test", "--locked", "--offline", "--release", "-p", "v1-game",
+                        "--lib", "reconstruction_reference_on_submitted_game_frames", "--",
+                        "--ignored", "--nocapture"], cwd=ROOT / "examples/v1-game", env=env,
+                       stdout=log, stderr=subprocess.STDOUT, check=True, timeout=900)
+    checkpoints = {}
+    arms = {"taau": 100, "taau-85": 85, "taau-75": 75, "taau-67": 67, "taau-50": 50}
+    header = b"P6\n640 360\n255\n"
+    for name in ROUTE:
+        folder = frames / name
+        def pixels(mode):
+            raw = (folder / f"{mode}-64.ppm").read_bytes()
+            if not raw.startswith(header) or len(raw) != len(header) + 640 * 360 * 3:
+                raise ValueError(f"invalid whole-frame reference image: {name} {mode}")
+            return raw[len(header):]
+        rows = read_rows(folder / "frames.jsonl")
+        held = {(r["state"], json.dumps(r["celestial"]), tuple(r["exposure"][:4]),
+                 r["cooked_generation"]) for r in rows}
+        if len(held) != 1 or not json.loads((folder / "linear-cycles.json").read_text())["within_float_rounding"]:
+            raise ValueError(f"{name}: M3 reference arms did not hold the same state")
+        reference = pixels("reference")
+        results = {}
+        for arm, percent in arms.items():
+            expected = [(axis * percent + 50) // 100 for axis in (640, 360)]
+            renders = [r for r in rows if r["mode"] == arm]
+            if len(renders) != 64 or any(r["render_extent"] != expected for r in renders):
+                raise ValueError(f"{name}: {arm} missing frames at drawn extent {expected}")
+            results[str(percent)] = dict(drawn=expected, **compare(pixels(arm), reference))
+        no_aa = compare(pixels("off"), reference)
+        checkpoints[name] = dict(scales=results, no_aa=no_aa, held=next(iter(held)))
+    return checkpoints
+
+
+def mac_scale(output):
+    binary, env, _ = scale_environment(output)
+    history = scale_history(output, binary, env)
+    (output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
+    stills = scale_reference(output, env)
+    (output / "stills.json").write_text(json.dumps(stills, indent=2) + "\n")
+    misses = [name for name, row in stills.items()
+              if not (row["scales"]["100"]["p99"] <= 3
+                      and row["scales"]["100"]["p99"] < row["no_aa"]["p99"])]
+    if misses:
+        raise ValueError(f"scale 1.0 missed M3 tolerance at {', '.join(misses)}")
+    return dict(target="mac-metal", history=history, stills=stills,
+                binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+
+
+def scale_cost_rows(rows):
+    """Require complete timestamps. Times and ratios only describe the observed load."""
+    output = []
+    for scale in (100, 85, 75, 67, 50):
+        frames = [row for tick, row in rows.items() if row["render_scale"] == scale
+                  and tick >= 12 and all(rows.get(tick - n, {}).get("render_scale") == scale
+                                        for n in range(1, 9))]
+        if not frames:
+            raise ValueError(f"missing a settled interval at {scale}%")
+        records = []
+        for frame in frames:
+            times = frame["gpu_pass_ns"]
+            if (not times or times.get("synthetic forward opaque") is None
+                    or times.get("portable TAAU") is None):
+                raise ValueError(f"missing forward or TAAU timestamp at {frame['route_tick']}")
+            atmosphere = [value for name, value in times.items()
+                          if name.startswith("atmosphere ") and name != "atmosphere stars"]
+            if not atmosphere or any(value is None for value in atmosphere):
+                raise ValueError(f"missing atmosphere timestamps at {frame['route_tick']}")
+            records.append(dict(forward_sky=times["synthetic forward opaque"]
+                                + (times.get("atmosphere stars") or 0),
+                                taau=times["portable TAAU"], atmosphere=sum(atmosphere)))
+        width, height = frames[0]["render_extent"]
+        output.append(dict(scale=scale, drawn=[width, height], area=width * height,
+                           frames=len(records), p50_ns={name: median(r[name] for r in records)
+                                                       for name in records[0]}))
+    return output
+
+
+def mac_scale_costs(output):
+    from t2_load import LoadRecord
+
+    binary, env, route = scale_environment(output)
+    route["render_extent"] = [1920, 1080]
+    route_path = output / "moving-1080p.json"
+    route_path.write_text(json.dumps(route) + "\n")
+    runs = []
+    for index in (1, 2):
+        directory = output / f"run-{index}"
+        directory.mkdir()
+        load = LoadRecord(directory)
+        try:
+            _, header, rows = scale_route(directory, binary, env, route_path, "trace")
+            costs = scale_cost_rows(rows)
+        finally:
+            observed = load.finish()
+        native = costs[0]["p50_ns"]
+        reduced = costs[3]["p50_ns"]
+        expected_forward = native["forward_sky"] * costs[3]["area"] / costs[0]["area"]
+        runs.append(dict(index=index, header=header, load=observed, costs=costs, tripwires={
+            "forward_and_sky_67_departs_from_pixel_ratio_by_over_25_percent":
+                abs(reduced["forward_sky"] - expected_forward) > 0.25 * expected_forward,
+            "taau_outside_estimate_0_2_to_0_5_ms": any(
+                not 200_000 <= row["p50_ns"]["taau"] <= 500_000 for row in costs),
+            "atmosphere_67_differs_from_native_by_over_25_percent":
+                abs(reduced["atmosphere"] - native["atmosphere"]) > 0.25 * native["atmosphere"],
+        }))
+    return dict(target="mac-metal", build_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
+                runs=runs, timing_decides_pass=False)
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture"])
+    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs"])
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -374,7 +559,8 @@ def main():
     else:
         output = args.output.resolve()
         output.mkdir(parents=True)
-    checks = {("extent", "mac-metal"): mac_extent, ("extent", "ios-sim"): ios_extent,
+    checks = {("scale", "mac-metal"): mac_scale, ("scale-costs", "mac-metal"): mac_scale_costs,
+              ("extent", "mac-metal"): mac_extent, ("extent", "ios-sim"): ios_extent,
               ("transition", "ios-sim"): ios_transition,
               ("transition", "mac-metal"): mac_transition,
               ("configure-fault", "mac-metal"): mac_configure_fault,

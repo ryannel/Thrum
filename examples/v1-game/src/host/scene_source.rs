@@ -204,6 +204,23 @@ fn scale_basis(instance: &mut InstanceRecord, half_extent: f32) {
     }
 }
 
+/// Give two existing static fixtures a small cross-section for the realtime
+/// render-scale inspection. Their simulation positions and the other grid rows
+/// remain the ordinary route's.
+#[cfg(not(target_arch = "wasm32"))]
+fn apply_render_scale_props(scene: &mut SyntheticScene) {
+    for slot in [5063, 5069] {
+        let instance = &mut scene.instances[slot];
+        for axis in [0, 2] {
+            for component in 0..3 {
+                instance.current[axis][component] *= 0.125;
+                instance.previous[axis][component] *= 0.125;
+                instance.normal[axis][component] *= 8.0;
+            }
+        }
+    }
+}
+
 /// The moving-route proof overlay's retuned diagnostic light, above the mirrored pair.
 pub(crate) const ROUTE_OVERLAY_LIGHT: SyntheticPointLight = SyntheticPointLight {
     position: [0.0, 240.55, -3.2],
@@ -505,6 +522,12 @@ impl GameScene {
                 return Err("the route overlay needs grid content".to_owned());
             }
             apply_route_overlay(&mut scene, setup.route_overlay);
+            #[cfg(not(target_arch = "wasm32"))]
+            if std::env::var_os("THRUM_CAPTURE_RUNTIME").is_some()
+                && std::env::var("THRUM_ROUTE_RENDER_SCALE").as_deref() == Ok("trace")
+            {
+                apply_render_scale_props(&mut scene);
+            }
             #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
             if let Ok(control) = std::env::var("THRUM_G3T_OVERLAY_CONTROL") {
                 g3t_overlay_control(&mut scene, &control)?;

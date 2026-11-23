@@ -57,6 +57,10 @@ pub(super) fn profile(
 }
 
 /// Run the route from world time zero and write `route.jsonl` and checkpoint images.
+#[expect(
+    clippy::too_many_lines,
+    reason = "the fixed route drives and observes one ordinary submission per step"
+)]
 pub(super) fn record(
     capabilities: &thrum_render::capabilities::DeviceCapabilities,
     queue: &wgpu::Queue,
@@ -134,6 +138,8 @@ pub(super) fn record(
     let mut checkpoints = route.checkpoints.clone().into_iter().peekable();
     driver.host_mut().world_mut().resume(Duration::ZERO)?;
     let mut pending = Some(route.clone());
+    let scale_arm = std::env::var("THRUM_ROUTE_RENDER_SCALE").ok();
+    let mut scale = thrum_render::synthetic::RenderScale::Native;
     loop {
         let host = driver.host_mut();
         let tick = host.world().tick();
@@ -147,6 +153,18 @@ pub(super) fn record(
         }
         let time = Duration::from_secs_f64(host.route_step_ms(phi) / 1000.0);
         let next_tick = tick + 1;
+        if scale_arm.is_some() {
+            let next_scale =
+                crate::camera::route_render_scale(next_tick.saturating_sub(route.origin_tick));
+            if next_scale != scale {
+                host.set_render_scale(next_scale)
+                    .map_err(|error| error.to_string())?;
+                if scale_arm.as_deref() == Some("reset") {
+                    host.invalidate_history();
+                }
+                scale = next_scale;
+            }
+        }
         let window = next_tick
             .checked_sub(route.origin_tick)
             .is_some_and(|routed| {
@@ -205,6 +223,8 @@ pub(super) fn record(
                 "rendered_solar_hours": rendered, "rendered_solar_bits": rendered.to_bits(),
                 "eye": pose.eye, "yaw": pose.yaw, "pitch": pose.pitch, "epoch": pose.epoch,
                 "submission": sample.submission_order, "visual_revision": sample.visual_revision,
+                "render_extent": sample.render_extent, "jitter_phase": sample.jitter_phase,
+                "history": sample.history_identity, "render_scale": scale.percent(),
                 "dropped_light_references":sample.dropped_light_references,
                 "gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
                 "checkpoint": checkpoint,
