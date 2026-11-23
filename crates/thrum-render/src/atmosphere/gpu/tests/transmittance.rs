@@ -328,7 +328,11 @@ const SURFACE_LOOKUP: &str = concat!(
     // The unused aerial body still resolves against its actual view dependency.
     "struct ViewAux { viewport_inv_viewport: vec4<f32> }\n@group(2) @binding(0) var<uniform> view_aux: ViewAux;\n",
     // LUT_SHADER already supplies the shared atmosphere observer declaration.
-    include_str!("../../../synthetic_aerial.wgsl"),
+    concat!(
+        crate::shaders::wgsl!(@bytes "synthetic_aerial.wgsl"),
+        crate::shaders::wgsl!(@bytes "synthetic_aerial_sample.wgsl"),
+        crate::shaders::wgsl!(@bytes "synthetic_aerial_decode.wgsl")
+    ),
     "\n",
     include_str!("../../../synthetic_sun.wgsl"),
     r"

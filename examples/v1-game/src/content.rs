@@ -250,6 +250,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             _ => return Err("THRUM_LAMP_SHADOWS must be off or on".to_owned()),
         },
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
+        haze: crate::host::haze_selection(launch_value("THRUM_HAZE").ok().as_deref())?,
         content,
         exit_entities: if content == crate::GameContent::Exit
             && launch_value("THRUM_EXIT_NO_ENTITIES").as_deref() == Ok("1")

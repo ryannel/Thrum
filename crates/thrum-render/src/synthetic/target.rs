@@ -127,4 +127,18 @@ impl super::SyntheticTargetInputs {
 
         Ok((shadow, air_shadow))
     }
+
+    pub(super) fn prepare_target_volume(
+        &self,
+        device: &wgpu::Device,
+        shadow: Option<&ShadowTarget>,
+    ) -> Option<wgpu::BindGroup> {
+        self.atmosphere.as_ref()?.prepare_volume_scene_group(
+            device,
+            self.shadow
+                .as_ref()
+                .zip(shadow.map(|target| &target.array_view)),
+            self.cloud.as_ref(),
+        )
+    }
 }

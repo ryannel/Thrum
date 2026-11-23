@@ -23,10 +23,72 @@ pub use environment::{EnvironmentEpoch, EnvironmentFrame, SurfaceSun, TrueSun};
 pub(crate) use gpu::{AtmospherePrepared, SecondaryAerial};
 pub use products::EnvironmentProducts;
 
+/// Resident storage of the opted-in view volume, for renderer diagnostics.
+#[derive(Debug)]
+pub struct ViewVolumeStorage {
+    /// Cells across, down and along one view ray.
+    pub grid: [u32; 3],
+    /// Logical bytes of each prepared buffer and texture.
+    pub resources: Vec<(&'static str, u64)>,
+}
+
+/// Submitted frames for the view volume's temporal blend to settle after a cut.
+/// The reset frame already contains a complete transport column.
+pub const VIEW_VOLUME_SETTLE_FRAMES: u32 = 8;
+
 /// Cloud sampling source shared by the synthetic and cooked draw shader assemblies.
 pub const CLOUD_SHADER_SOURCE: &str = wgsl!("atmosphere/cloud.wgsl");
 
-/// Checked presentation sample for the fixed Earth atmosphere profile.
+/// The Earth profile's aerosol at ground level.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Aerosol {
+    extinction_550_per_m: f32,
+    angstrom_exponent: f32,
+}
+
+impl Default for Aerosol {
+    fn default() -> Self {
+        Self {
+            extinction_550_per_m: spectrum::EARTH.mie_extinction,
+            angstrom_exponent: 0.0,
+        }
+    }
+}
+
+impl Aerosol {
+    /// Construct aerosol from extinction at 550 nm in inverse metres and an
+    /// Ångström exponent in 0–2.
+    ///
+    /// # Errors
+    /// Returns invalid lighting for negative or nonfinite extinction or an
+    /// exponent outside the supported range.
+    pub fn new(extinction_550_per_m: f32, angstrom_exponent: f32) -> Result<Self, RenderError> {
+        if !extinction_550_per_m.is_finite()
+            || extinction_550_per_m < 0.0
+            || !(0.0..=2.0).contains(&angstrom_exponent)
+        {
+            return Err(RenderError::InvalidLighting);
+        }
+        Ok(Self {
+            extinction_550_per_m,
+            angstrom_exponent,
+        })
+    }
+
+    fn extinction_at(self, wavelength_nm: f32) -> f32 {
+        self.extinction_550_per_m * (wavelength_nm / 550.0).powf(-self.angstrom_exponent)
+    }
+
+    fn band_extinction(self) -> [f32; 8] {
+        spectrum::WAVELENGTHS_NM.map(|wavelength| self.extinction_at(wavelength))
+    }
+
+    /// Aerosol-dependent charts are ready in the first submitted frame
+    /// carrying a changed aerosol.
+    pub const CHART_LAG_FRAMES: u32 = 1;
+}
+
+/// Checked presentation sample for the Earth atmosphere profile.
 /// Directions use world +Y up; illuminance is perpendicular, above atmosphere.
 #[derive(Clone, Copy, Debug)]
 pub struct AtmosphereFrame {
@@ -37,6 +99,8 @@ pub struct AtmosphereFrame {
     profile_epoch: u64,
     nightglow: bool,
     simulation_time_seconds: f64,
+    aerosol: Option<Aerosol>,
+    view_volume: bool,
     // One prepared CPU result serves the packed light and the lent identity.
     surface_irradiance_lux: [f32; 3],
 }
@@ -79,10 +143,45 @@ impl AtmosphereFrame {
             profile_epoch,
             nightglow: false,
             simulation_time_seconds: 0.0,
+            aerosol: None,
+            view_volume: false,
             surface_irradiance_lux: std::array::from_fn(|i| {
                 solar_colour[i] * solar_illuminance_lux * transmission[i]
             }),
         })
+    }
+
+    /// Select variable aerosol for the scene's prepared atmosphere. Supply
+    /// aerosol with subsequent frame samples to update its charts in place.
+    #[must_use]
+    pub fn with_aerosol(mut self, aerosol: Aerosol) -> Self {
+        let transmission = model::sun_transmittance_with_aerosol(
+            self.camera_altitude_m,
+            self.toward_sun[1],
+            aerosol,
+        );
+        self.surface_irradiance_lux = std::array::from_fn(|i| {
+            self.solar_colour[i] * self.solar_illuminance_lux * transmission[i]
+        });
+        self.aerosol = Some(aerosol);
+        self
+    }
+
+    pub(crate) fn variable_aerosol(self) -> bool {
+        self.aerosol.is_some()
+    }
+
+    /// Declare the view volume at scene preparation. Subsequent frame samples
+    /// keep the declaration while they change Sun, aerosol or camera.
+    #[must_use]
+    pub fn with_view_volume(mut self) -> Self {
+        self.view_volume = true;
+        self.aerosol = Some(self.aerosol.unwrap_or_default());
+        self
+    }
+
+    pub(crate) fn view_volume(self) -> bool {
+        self.view_volume
     }
 
     /// Include the clear Earth moonless background and its scattered light.

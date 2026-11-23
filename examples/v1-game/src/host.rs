@@ -15,6 +15,9 @@ use thrum_render::{
     synthetic::{CullMode, DisplayOverlay, SunShadowMethod},
 };
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+pub(crate) mod haze_capture;
+
 mod scene_source;
 mod world;
 pub use scene_source::GameScene;
@@ -85,6 +88,8 @@ pub struct GameSetup {
     pub lamp_shadows: bool,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
     pub diagnostic_clouds: bool,
+    /// The diagnostic view volume's clear-air aerosol. Absent in ordinary scenes.
+    pub haze: Option<thrum_render::atmosphere::Aerosol>,
     /// The grid or the dense flythrough field.
     pub content: GameContent,
     /// Draw the exit terrain and sample objects with its entity population suppressed.
@@ -118,6 +123,7 @@ impl Default for GameSetup {
             sun_shadow_method: SunShadowMethod::Maps,
             lamp_shadows: false,
             diagnostic_clouds: false,
+            haze: None,
             content: GameContent::Grid,
             exit_entities: ExitEntities::Draw,
             camera_culling: CullMode::Direct,
@@ -127,6 +133,36 @@ impl Default for GameSetup {
             field_meshes: false,
         }
     }
+}
+
+pub(crate) fn haze_selection(
+    value: Option<&str>,
+) -> Result<Option<thrum_render::atmosphere::Aerosol>, String> {
+    use thrum_render::atmosphere::Aerosol;
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    if value == "default" {
+        return Ok(Some(Aerosol::default()));
+    }
+    let (range, kind) = value
+        .split_once(',')
+        .ok_or("haze takes visual range in km and Ångström exponent")?;
+    let range = range.parse::<f32>().map_err(|error| error.to_string())?;
+    let kind = kind.parse::<f32>().map_err(|error| error.to_string())?;
+    if !(3.0..=300.0).contains(&range) {
+        return Err("haze visual range must be within 3–300 km".to_owned());
+    }
+    let aerosol = thrum_cloud_model::aerosol_extinction(f64::from(range) * 1000.0, 11.6e-6)
+        .map_err(|error| format!("haze extinction: {error:?}"))?;
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the admitted visual range has a bounded f32 GPU extinction"
+    )]
+    let aerosol = aerosol as f32;
+    Aerosol::new(aerosol, kind)
+        .map(Some)
+        .map_err(|error| format!("haze profile: {error:?}"))
 }
 
 impl GameSetup {
@@ -690,6 +726,14 @@ pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<()
     Ok(())
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn scrub_haze_sun(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
+    if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
+        runtime.continuous_source_mut().day_phase_offset = offset;
+    }
+    Ok(())
+}
+
 /// Committed solar time of the runtime's latest world tick.
 pub(crate) fn time_of_day(runtime: &Runtime) -> f32 {
     let source = runtime.source();
@@ -716,6 +760,22 @@ pub(crate) fn set_camera_pitch(runtime: &mut Runtime, radians: f32) -> Result<()
 pub(crate) fn set_camera_yaw(runtime: &mut Runtime, radians: f32) -> Result<(), String> {
     if let Some(yaw) = camera_yaw_edit(runtime.source(), radians)? {
         runtime.continuous_source_mut().camera_yaw = yaw;
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn set_haze_eye(runtime: &mut Runtime, eye: [f32; 3], cut: bool) -> Result<(), String> {
+    if runtime
+        .source()
+        .authored_camera()
+        .is_some_and(|camera| camera.eye().map(f32::to_bits) == eye.map(f32::to_bits))
+    {
+        return Ok(());
+    }
+    runtime.continuous_source_mut().move_capture_eye(eye)?;
+    if cut {
+        runtime.invalidate_history();
     }
     Ok(())
 }

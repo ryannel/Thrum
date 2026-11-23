@@ -51,7 +51,11 @@ impl AtmospherePrepared {
         let textures = self.aerial_textures().map(|texture| {
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some(PASS),
-                size: texture.size(),
+                size: wgpu::Extent3d {
+                    width: AERIAL_EXTENT[0],
+                    height: AERIAL_EXTENT[1],
+                    depth_or_array_layers: AERIAL_EXTENT[2],
+                },
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
@@ -94,6 +98,7 @@ impl AtmospherePrepared {
         // The same shader and chart reads as the camera's aerial stage.
         .chain(super::chart_entries(AtmosphereStage::Aerial, &charts))
         .chain(night.bindings())
+        .chain(self.aerosol.as_ref().map(super::aerosol::entry))
         .collect::<Vec<_>>();
         let pipeline = self.aerial_pipeline.clone();
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {

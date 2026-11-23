@@ -191,7 +191,7 @@ impl Fixture {
                 &views,
                 &sampler,
                 &shader,
-                &night,
+                (&night, None),
             )
         });
         let reader = pipeline(&device, READ, "read");

@@ -22,7 +22,9 @@ use super::{
 mod uniform;
 use uniform::AtmosphereUniform;
 mod aerial_view;
+pub(super) mod aerosol;
 pub(crate) use aerial_view::SecondaryAerial;
+pub(crate) mod view_volume;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 pub(in crate::atmosphere) mod tests;
@@ -66,8 +68,10 @@ pub(crate) struct AtmospherePrepared {
     transmittance_view: wgpu::TextureView,
     aerial_sampler: wgpu::Sampler,
     uniform: wgpu::Buffer,
+    pub(super) aerosol: Option<wgpu::Buffer>,
     // The four chart stages, each under the chart it integrates.
     chart_stages: Charts<(wgpu::ComputePipeline, wgpu::BindGroup)>,
+    aerosol_chart_stages: Option<Box<Charts<(wgpu::ComputePipeline, wgpu::BindGroup)>>>,
     sky_motion: wgpu::Buffer,
     submitted_sky: Option<(SyntheticView, [f32; 3])>,
     pending_sky: Option<(SyntheticView, [f32; 3])>,
@@ -77,6 +81,7 @@ pub(crate) struct AtmospherePrepared {
     diffuse_group: wgpu::BindGroup,
     aerial_pipeline: wgpu::ComputePipeline,
     aerial_group: wgpu::BindGroup,
+    pub(crate) view_volume: Option<Box<view_volume::ViewVolume>>,
     pub(super) reflection: ReflectionPrepared,
     validity: u8,
     sky_dependencies: [u32; 4],
@@ -158,13 +163,18 @@ impl AtmospherePrepared {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+        let extent = if frame.view_volume() {
+            view_volume::EXTENT
+        } else {
+            AERIAL_EXTENT
+        };
         let aerial_textures = std::array::from_fn(|_| {
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("atmosphere aerial volume"),
                 size: wgpu::Extent3d {
-                    width: AERIAL_EXTENT[0],
-                    height: AERIAL_EXTENT[1],
-                    depth_or_array_layers: AERIAL_EXTENT[2],
+                    width: extent[0],
+                    height: extent[1],
+                    depth_or_array_layers: extent[2],
                 },
                 mip_level_count: 1,
                 sample_count: 1,
@@ -190,15 +200,43 @@ impl AtmospherePrepared {
             ..Default::default()
         });
         let night = NightProfile::new(device, queue, frame.nightglow_active());
-        let shader =
-            crate::shaders::Shader::AtmosphereLuts.compile(device, "atmosphere LUT integration");
-        let chart_stages = Charts::from_fn(|chart| {
-            let stage = AtmosphereStage::ORDER
-                .into_iter()
-                .find(|stage| stage.chart_output() == Some(chart))
-                .expect("every chart has its stage");
-            prepare_compute(device, stage, &uniform, &views, &sampler, &shader, &night)
+        let aerosol = frame.aerosol.map(|sample| {
+            let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("atmosphere aerosol"),
+                size: aerosol::BYTES,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            aerosol::write(queue, &buffer, sample);
+            buffer
         });
+        let make_charts = |aerosol| {
+            let shader = aerosol::compile(
+                device,
+                crate::shaders::Shader::AtmosphereLuts,
+                "atmosphere LUT integration",
+                aerosol,
+            );
+            Charts::from_fn(|chart| {
+                let stage = AtmosphereStage::ORDER
+                    .into_iter()
+                    .find(|stage| stage.chart_output() == Some(chart))
+                    .expect("every chart has its stage");
+                prepare_compute(
+                    device,
+                    stage,
+                    &uniform,
+                    &views,
+                    &sampler,
+                    &shader,
+                    (&night, aerosol),
+                )
+            })
+        };
+        let chart_stages = make_charts(None);
+        let aerosol_chart_stages = aerosol
+            .as_ref()
+            .map(|buffer| Box::new(make_charts(Some(buffer))));
         let sky_motion = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("sky submitted motion"),
             size: SKY_MOTION_BYTES,
@@ -211,12 +249,22 @@ impl AtmospherePrepared {
             &sky_motion,
             &views,
             &sampler,
-            exposure_samples,
+            (
+                exposure_samples,
+                frame.view_volume().then_some(&aerial_views[0]),
+            ),
         );
         let (diffuse_pipeline, diffuse_group) =
             prepare_diffuse(device, &uniform, &views, &sampler, environment_light);
-        let (aerial_pipeline, aerial_group) =
-            prepare_aerial(device, &uniform, &views, &aerial_views, &sampler, &night);
+        let (aerial_pipeline, aerial_group) = prepare_aerial(
+            device,
+            &uniform,
+            &views,
+            &aerial_views,
+            &sampler,
+            &night,
+            aerosol.as_ref(),
+        );
         let reflection = ReflectionPrepared::new(
             device,
             &uniform,
@@ -235,7 +283,9 @@ impl AtmospherePrepared {
             transmittance_view: views.transmittance.clone(),
             aerial_sampler,
             uniform,
+            aerosol,
             chart_stages,
+            aerosol_chart_stages,
             sky_motion,
             submitted_sky: None,
             pending_sky: None,
@@ -245,6 +295,7 @@ impl AtmospherePrepared {
             diffuse_group,
             aerial_pipeline,
             aerial_group,
+            view_volume: None,
             reflection,
             validity: 0,
             sky_dependencies: [0; 4],
@@ -255,6 +306,21 @@ impl AtmospherePrepared {
         result
     }
 
+    pub(crate) fn prepare_view_volume(
+        &mut self,
+        device: &crate::runtime::DeviceSite,
+        queue: &wgpu::Queue,
+        view: &SyntheticView,
+        cascades: bool,
+        cloud: Option<(&super::SunOpticalDepth, &super::CloudPrepared)>,
+    ) {
+        if self.frame.view_volume() {
+            let mut volume = view_volume::ViewVolume::new(device, self, cascades, cloud);
+            volume.update(queue, self.frame, view);
+            self.view_volume = Some(Box::new(volume));
+        }
+    }
+
     pub(crate) fn update(
         &mut self,
         queue: &wgpu::Queue,
@@ -262,7 +328,16 @@ impl AtmospherePrepared {
         view: &SyntheticView,
         extent: [u32; 2],
     ) {
+        if let Some(aerosol) = &self.aerosol
+            && frame.aerosol.unwrap_or_default() != self.frame.aerosol.unwrap_or_default()
+        {
+            self.validity &= DFG_VALID;
+            aerosol::write(queue, aerosol, frame.aerosol.unwrap_or_default());
+        }
         self.frame = frame;
+        if let Some(volume) = &mut self.view_volume {
+            volume.update(queue, frame, view);
+        }
         self.environment.update(frame);
         if frame.profile_epoch != self.epoch {
             self.validity &= DFG_VALID;
@@ -325,6 +400,9 @@ impl AtmospherePrepared {
     }
 
     pub(crate) fn commit(&mut self) {
+        if let Some(volume) = &mut self.view_volume {
+            volume.submitted();
+        }
         self.submitted_sky = self.pending_sky.take();
         self.validity = TRANSPORT_VALID
             | SKY_VALID
@@ -337,6 +415,22 @@ impl AtmospherePrepared {
 
     pub(crate) fn environment(&self) -> super::EnvironmentFrame {
         self.environment.sample()
+    }
+
+    pub(crate) fn accepts(&self, frame: AtmosphereFrame) -> bool {
+        self.view_volume.is_some() == frame.view_volume()
+            && (!frame.variable_aerosol() || self.aerosol.is_some())
+    }
+
+    #[cfg(feature = "creation-counters")]
+    pub(crate) fn chart_witnesses(&self) -> [&wgpu::Texture; 4] {
+        let charts = &self.textures;
+        [
+            &charts.transmittance,
+            &charts.multiple_scattering,
+            &charts.sky_view,
+            &charts.ground,
+        ]
     }
 
     pub(crate) fn reflection_sampled(
@@ -360,6 +454,21 @@ impl AtmospherePrepared {
         )
     }
 
+    pub(crate) fn prepare_volume_scene_group(
+        &self,
+        device: &wgpu::Device,
+        shadow: Option<(&wgpu::Buffer, &wgpu::TextureView)>,
+        cloud: Option<&super::CloudPrepared>,
+    ) -> Option<wgpu::BindGroup> {
+        self.view_volume.as_ref().map(|volume| {
+            volume.prepare_scene_group(device, shadow, cloud, (&self.uniform, &self.aerial_sampler))
+        })
+    }
+
+    pub(crate) fn volume_storage(&self) -> Option<super::ViewVolumeStorage> {
+        self.view_volume.as_ref().map(|volume| volume.storage(self))
+    }
+
     pub(crate) fn encode(
         &self,
         stage: AtmosphereStage,
@@ -375,6 +484,11 @@ impl AtmospherePrepared {
         let mut compute = pass
             .begin_compute(encoder, self.generation, timings)?
             .ok_or(RenderError::GraphPassMismatch)?;
+        let charts = self
+            .aerosol_chart_stages
+            .as_deref()
+            .filter(|_| self.frame.aerosol.unwrap_or_default() != super::Aerosol::default())
+            .unwrap_or(&self.chart_stages);
         let (pipeline, group, workgroups) = match stage {
             AtmosphereStage::Dfg | AtmosphereStage::Reflection(_) => {
                 return self.reflection.encode(stage, &mut compute);
@@ -390,7 +504,7 @@ impl AtmospherePrepared {
                 ],
             ),
             AtmosphereStage::Ground => {
-                let (pipeline, group) = &self.chart_stages.ground;
+                let (pipeline, group) = &charts.ground;
                 (pipeline, group, [Chart::Ground.extent()[0], 1, 1])
             }
             AtmosphereStage::Transmittance
@@ -399,7 +513,7 @@ impl AtmospherePrepared {
                 let chart = stage
                     .chart_output()
                     .expect("a chart stage writes its chart");
-                let (pipeline, group) = self.chart_stages.get(chart);
+                let (pipeline, group) = charts.get(chart);
                 let [width, height] = chart.extent();
                 (
                     pipeline,
@@ -490,6 +604,7 @@ fn prepare_aerial(
     aerial: &[wgpu::TextureView; 2],
     sampler: &wgpu::Sampler,
     night: &NightProfile,
+    aerosol: Option<&wgpu::Buffer>,
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
     let visibility = wgpu::ShaderStages::COMPUTE;
     let output = |binding| {
@@ -511,6 +626,7 @@ fn prepare_aerial(
         .into_iter()
         .chain(chart_layout(AtmosphereStage::Aerial, visibility))
         .chain(night::layout_entries())
+        .chain(aerosol.map(|_| aerosol::layout()))
         .collect::<Vec<_>>();
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere aerial integration"),
@@ -521,8 +637,12 @@ fn prepare_aerial(
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let shader =
-        crate::shaders::Shader::AtmosphereAerial.compile(device, "atmosphere aerial integration");
+    let shader = aerosol::compile(
+        device,
+        crate::shaders::Shader::AtmosphereAerial,
+        "atmosphere aerial integration",
+        aerosol,
+    );
     let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some("atmosphere aerial integration"),
         layout: Some(&pipeline_layout),
@@ -553,6 +673,7 @@ fn prepare_aerial(
         .into_iter()
         .chain(chart_entries(AtmosphereStage::Aerial, views))
         .chain(night.bindings())
+        .chain(aerosol.map(aerosol::entry))
         .collect::<Vec<_>>();
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("atmosphere aerial resources"),
@@ -599,8 +720,9 @@ fn prepare_compute(
     views: &Charts<wgpu::TextureView>,
     sampler: &wgpu::Sampler,
     shader: &wgpu::ShaderModule,
-    night: &NightProfile,
+    optics: (&NightProfile, Option<&wgpu::Buffer>),
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
+    let (night, aerosol) = optics;
     let visibility = wgpu::ShaderStages::COMPUTE;
     let output = stage
         .chart_output()
@@ -637,6 +759,10 @@ fn prepare_compute(
     if stage == AtmosphereStage::SkyView {
         entries.extend(night::layout_entries());
         bindings.extend(night.bindings());
+    }
+    if let Some(aerosol) = aerosol {
+        entries.push(aerosol::layout());
+        bindings.push(aerosol::entry(aerosol));
     }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere LUT closure"),
@@ -700,36 +826,62 @@ fn prepare_sky(
     motion: &wgpu::Buffer,
     views: &Charts<wgpu::TextureView>,
     sampler: &wgpu::Sampler,
-    exposure_samples: &[wgpu::Buffer; 2],
+    sky_output: (&[wgpu::Buffer; 2], Option<&wgpu::TextureView>),
 ) -> (wgpu::RenderPipeline, [wgpu::BindGroup; 2]) {
+    let (exposure_samples, volume) = sky_output;
     let visibility = wgpu::ShaderStages::FRAGMENT;
+    let mut entries = vec![
+        binding::uniform(0, visibility, UNIFORM_BYTES),
+        binding::texture(
+            1,
+            visibility,
+            wgpu::TextureSampleType::Float { filterable: true },
+            wgpu::TextureViewDimension::D2,
+        ),
+        binding::texture(
+            2,
+            visibility,
+            wgpu::TextureSampleType::Float { filterable: true },
+            wgpu::TextureViewDimension::D2,
+        ),
+        binding::sampler(3, visibility, wgpu::SamplerBindingType::Filtering),
+        binding::uniform(4, visibility, size_of::<[f32; 4]>() as u64),
+        binding::uniform(5, visibility, SKY_MOTION_BYTES),
+    ];
+    if volume.is_some() {
+        entries.push(binding::texture(
+            6,
+            visibility,
+            wgpu::TextureSampleType::Float { filterable: true },
+            wgpu::TextureViewDimension::D2Array,
+        ));
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere sky resources"),
-        entries: &[
-            binding::uniform(0, visibility, UNIFORM_BYTES),
-            binding::texture(
-                1,
-                visibility,
-                wgpu::TextureSampleType::Float { filterable: true },
-                wgpu::TextureViewDimension::D2,
-            ),
-            binding::texture(
-                2,
-                visibility,
-                wgpu::TextureSampleType::Float { filterable: true },
-                wgpu::TextureViewDimension::D2,
-            ),
-            binding::sampler(3, visibility, wgpu::SamplerBindingType::Filtering),
-            binding::uniform(4, visibility, size_of::<[f32; 4]>() as u64),
-            binding::uniform(5, visibility, SKY_MOTION_BYTES),
-        ],
+        entries: &entries,
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("atmosphere sky"),
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let shader = crate::shaders::Shader::AtmosphereSky.compile(device, "atmosphere sky");
+    let base = crate::shaders::Shader::AtmosphereSky;
+    let shader = if volume.is_some() {
+        device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("atmosphere sky with view volume"),
+            source: wgpu::ShaderSource::Wgsl(
+                concat!(
+                    wgsl!("atmosphere/storage.wgsl"),
+                    wgsl!("atmosphere/geometry.wgsl"),
+                    wgsl!("atmosphere/common.wgsl"),
+                    wgsl!("atmosphere/volume_sky.wgsl")
+                )
+                .into(),
+            ),
+        })
+    } else {
+        base.compile(device, "atmosphere sky")
+    };
     let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("atmosphere background in forward pass"),
         layout: Some(&pipeline_layout),
@@ -774,35 +926,42 @@ fn prepare_sky(
         cache: None,
     });
     let groups = exposure_samples.each_ref().map(|sample| {
+        let mut entries = vec![
+            wgpu::BindGroupEntry {
+                binding: 5,
+                resource: motion.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureView(&views.transmittance),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: wgpu::BindingResource::TextureView(&views.sky_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: wgpu::BindingResource::Sampler(sampler),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: sample.as_entire_binding(),
+            },
+        ];
+        if let Some(view) = volume {
+            entries.push(wgpu::BindGroupEntry {
+                binding: 6,
+                resource: wgpu::BindingResource::TextureView(view),
+            });
+        }
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("atmosphere sky inputs"),
             layout: &layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 5,
-                    resource: motion.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: uniform.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&views.transmittance),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&views.sky_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::Sampler(sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: sample.as_entire_binding(),
-                },
-            ],
+            entries: &entries,
         })
     });
     (pipeline, groups)

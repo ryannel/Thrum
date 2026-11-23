@@ -299,6 +299,11 @@ path = "tests/dynamic_scale.rs"
 required-features = ["creation-counters"]
 
 [[test]]
+name = "air_state_gpu"
+path = "tests/air_state_gpu.rs"
+required-features = ["creation-counters"]
+
+[[test]]
 name = "sprite_crisp"
 path = "tests/sprite_crisp.rs"
 

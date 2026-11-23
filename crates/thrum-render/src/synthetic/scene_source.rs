@@ -24,15 +24,14 @@ impl From<bool> for SunShadows {
 /// Prepare one coherent forward source, shader module and entry selection.
 pub(super) fn prepare(
     device: &crate::runtime::DeviceSite,
-    atmosphere: bool,
-    air_shadow: bool,
+    atmosphere: crate::shaders::AtmosphereVariant,
     cloud: Option<&crate::atmosphere::SunOpticalDepth>,
     shadowed: SunShadows,
     selection: ShadowSelection,
     fail_pipeline: bool,
 ) -> (String, wgpu::ShaderModule, &'static str) {
     let shader = crate::shaders::Shader::Scene(crate::shaders::SceneVariant {
-        atmosphere: crate::shaders::AtmosphereVariant::new(atmosphere, air_shadow),
+        atmosphere,
         cloud: crate::shaders::CloudVariant::from_provider(cloud),
         shadows: shadowed,
         sun: selection.sun,
@@ -226,12 +225,28 @@ pub(super) fn secondary(
 }
 
 pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
-    let source = compose_with_cloud(
-        variant.atmosphere.present(),
-        variant.atmosphere.air_shadow(),
-        variant.cloud.present(),
-        variant.shadows,
-    );
+    let source = if matches!(
+        variant.atmosphere,
+        crate::shaders::AtmosphereVariant::ViewVolume
+    ) {
+        let aerial = format!(
+            "{}{}",
+            crate::atmosphere::gpu::view_volume::aerial_source(),
+            wgsl!("synthetic_aerial_clear.wgsl"),
+        );
+        apply_providers(
+            compose_aerial(true, &aerial),
+            variant.cloud.present(),
+            variant.shadows,
+        )
+    } else {
+        compose_with_cloud(
+            variant.atmosphere.present(),
+            variant.atmosphere.air_shadow(),
+            variant.cloud.present(),
+            variant.shadows,
+        )
+    };
     let source = cloud_variant(source, variant.cloud.gpu());
     traced(
         source,

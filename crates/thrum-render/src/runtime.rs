@@ -1581,6 +1581,18 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             PreparedRenderer::TwoD(scene) => format!("{}\n{slots}", scene.storage_report()),
         }
     }
+
+    /// Resident view-volume bytes, when declared by the prepared 3D scene.
+    #[must_use]
+    pub fn view_volume_storage(&self) -> Option<crate::atmosphere::ViewVolumeStorage> {
+        self.prepared.three_d()?.view_volume_storage()
+    }
+
+    /// Prepared main 3D forward shader, available for diagnostics.
+    #[must_use]
+    pub fn scene_shader_source(&self) -> Option<&str> {
+        Some(self.prepared.three_d()?.scene_shader_source())
+    }
     /// Inspect the prepared slot's graph without encoding or allocating GPU work.
     /// # Errors
     /// Refuses a stale target during an incomplete scene transition.

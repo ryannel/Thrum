@@ -29,6 +29,7 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 let hidden = document.hidden;
 document.addEventListener('visibilitychange', () => { hidden ||= document.hidden; });
 let game;
+let hazeTake;
 const inflight = new Set();
 const reusablePixels = [];
 let uploadWorker;
@@ -96,7 +97,7 @@ async function runCapture() {
   }
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
   if (clouds !== 'off') record.clouds = clouds;
-  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds);
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined);
   if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
@@ -143,6 +144,12 @@ async function runCapture() {
     record.parameters = JSON.parse(parameters);
     applyCaptureParameters(parameters, base);
   }
+  if (query.has('haze-take')) {
+    hazeTake = await (await fetch('/haze-take.json')).text();
+    record.haze_take = JSON.parse(hazeTake);
+    game.sample_haze_take(hazeTake, 0);
+  }
+  if (atmosphere === 'cost') game.enable_haze_timings();
   if (heldSetup) {
     // Match the native witness's held setup before recording elapsed motion.
     // Residency and the phase edit above must not become an AA startup transient.
@@ -159,6 +166,7 @@ async function runCapture() {
     record.held_warmup_submissions = 128;
   }
   record.initial_report = JSON.parse(game.route_report(0));
+  if (query.has('renderer-signature')) record.renderer_signature = JSON.parse(game.renderer_signature());
   record.culling = game.report();
   record.start_before_ms = performance.now();
   if (control !== 'off') {
@@ -240,7 +248,8 @@ async function runCapture() {
   let ordinal = 0;
   let acted = false;
   let released = false;
-  while (atmosphere === 'checkpoint' ? ordinal < 1 : atmosphereMotion ? performance.now() - start < duration :
+  while (atmosphere === 'checkpoint' ? ordinal < 1 : atmosphere === 'cost' ? ordinal < 96 :
+    atmosphereMotion ? performance.now() - start < duration :
     witness !== 'off' ? ordinal < 270 : mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 :
     performance.now() - start < duration || game.committed_tick() < route.origin_tick + route.keys.at(-1).tick + 59) {
     if (hidden) fail('page became hidden during capture');
@@ -271,7 +280,10 @@ async function runCapture() {
       game.set_time_of_day(solar/24);
       record.actions.push({kind:'solar-scrub',frame_ms:timestamp,solar_hours:solar});
     }
-    if (atmosphereMotion) {
+    if (atmosphereMotion && hazeTake) {
+      const pose = JSON.parse(game.sample_haze_take(hazeTake, (timestamp - base) / 1000));
+      record.actions.push({kind:'haze', frame_ms:timestamp, pose});
+    } else if (atmosphereMotion) {
       const scrub = atmosphere === 'scrub';
       const progress = Math.max(0, Math.min(1, (timestamp-base-1000)/(scrub ? 8000 : 5000)));
       const solar = scrub ? 5+19*progress : 17.4+0.4*progress;
@@ -310,6 +322,7 @@ async function runCapture() {
   record.renderer_omissions = game.submitted_capture_omissions();
   record.end_ms = performance.now();
   record.final_report = JSON.parse(game.route_report(0));
+  if (atmosphere === 'cost') record.haze_cost = JSON.parse(game.haze_cost());
   if (record.renderer_omissions || record.export_omissions || exportError) fail(`incomplete capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   record.complete = true;
 }

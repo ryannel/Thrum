@@ -147,18 +147,26 @@ pub(super) fn create(
     });
     EnvironmentProducts {
         layout,
-        shader_source: if far_aerial {
+        shader_source: if atmosphere.view_volume.is_some() {
+            library_with_volume(far_aerial, true)
+        } else if far_aerial {
             crate::shaders::Shader::EnvironmentProductsFar
+                .source()
+                .into_owned()
         } else {
             crate::shaders::Shader::EnvironmentProducts
-        }
-        .source()
-        .into_owned(),
+                .source()
+                .into_owned()
+        },
         groups,
     }
 }
 
 pub(crate) fn library(far_aerial: bool) -> String {
+    library_with_volume(far_aerial, false)
+}
+
+fn library_with_volume(far_aerial: bool, view_volume: bool) -> String {
     let products = format!(
         "{}\n{}\n{}{}{}",
         wgsl!("directional_light.wgsl"),
@@ -178,7 +186,15 @@ pub(crate) fn library(far_aerial: bool) -> String {
         .expect("Sun declarations followed by function")
         .1
         .replace("aerial_frame", "atmosphere");
-    let aerial = wgsl!("synthetic_aerial.wgsl");
+    let aerial = if view_volume {
+        concat!(
+            wgsl!(@bytes "synthetic_aerial.wgsl"),
+            wgsl!(@bytes "atmosphere/volume_sample.wgsl"),
+            wgsl!(@bytes "synthetic_aerial_decode.wgsl"),
+        )
+    } else {
+        wgsl!("synthetic_aerial.wgsl")
+    };
     let sample = aerial
         .split_once("// Cumulative")
         .expect("aerial sample marker")
@@ -190,6 +206,11 @@ pub(crate) fn library(far_aerial: bool) -> String {
         .split_once("// Decode")
         .expect("aerial decode marker")
         .1;
+    let grid = if view_volume {
+        super::gpu::view_volume::grid_source()
+    } else {
+        String::new()
+    };
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n// Cumulative{}\n// Decode{}\n{}",
         wgsl!("atmosphere/storage.wgsl"),
@@ -200,7 +221,7 @@ pub(crate) fn library(far_aerial: bool) -> String {
         sun,
         sample,
         decode.replace("aerial_frame", "atmosphere"),
-        ""
+        grid
     )
 }
 

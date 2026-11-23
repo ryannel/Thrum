@@ -8,6 +8,18 @@ use super::spectrum::EARTH;
 use crate::shader_constants::{ATMOSPHERE_TOP as TOP, PLANET_RADIUS as RADIUS};
 
 pub(super) fn sun_transmittance(height: f32, mu: f32) -> [f32; 3] {
+    sun_transmission(height, mu, [EARTH.mie_extinction; 8])
+}
+
+pub(super) fn sun_transmittance_with_aerosol(
+    height: f32,
+    mu: f32,
+    aerosol: super::Aerosol,
+) -> [f32; 3] {
+    sun_transmission(height, mu, aerosol.band_extinction())
+}
+
+fn sun_transmission(height: f32, mu: f32, aerosol: [f32; 8]) -> [f32; 3] {
     let r = RADIUS + height;
     if mu < -(height * (2.0 * RADIUS + height)).sqrt() / r {
         return [0.0; 3];
@@ -33,9 +45,8 @@ pub(super) fn sun_transmittance(height: f32, mu: f32) -> [f32; 3] {
         ) * step;
     }
     EARTH.project(std::array::from_fn(|i| {
-        let depth = EARTH.rayleigh[i] * columns.x
-            + EARTH.mie_extinction * columns.y
-            + EARTH.ozone[i] * columns.z;
+        let depth =
+            EARTH.rayleigh[i] * columns.x + aerosol[i] * columns.y + EARTH.ozone[i] * columns.z;
         (-depth).exp()
     }))
 }

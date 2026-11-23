@@ -679,3 +679,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   The first focused Metal batch passed in 1.096 s for H4 and 0.251 s for diffuse. Alone they passed in
   0.112 s and 0.225 s. These are test durations under shared builder load.
   [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M11/README.md)
+
+- 2026-11-23 M7 selects the view volume with the diagnostic haze scene. Shared shader fragments
+  preserve the generated legacy source, while live aerosol, cascade and Sun-path sampling and
+  submitted source history run in the opted-in variant. Initial Metal readbacks passed the spectral
+  chart, shadow and terminal-pair comparisons. The first valid T2 stills show the same low Sun haze
+  on Metal and Chrome. [Run records](../../../.orchestrate/evidence/ATMOSPHERE/M7/README.md)

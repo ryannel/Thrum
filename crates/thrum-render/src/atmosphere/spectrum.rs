@@ -7,6 +7,11 @@ use std::fmt::Write;
 
 use crate::light::LUMA;
 use glam::Vec3;
+
+pub(super) const WAVELENGTHS_NM: [f32; 8] = [
+    428.84, 450.21, 471.18, 514.23, 550.21, 574.75, 597.70, 630.96,
+];
+
 pub(crate) struct Profile {
     pub(super) rayleigh_scale_height: f32,
     pub(super) mie_scale_height: f32,
@@ -26,7 +31,6 @@ pub(crate) const EARTH: Profile = Profile {
     ozone_half_width: 15_000.0,
     mie_extinction: 4.4e-6,
     mie_scattering: 3.996e-6,
-    // 428.84, 450.21, 471.18, 514.23, 550.21, 574.75, 597.70, 630.96 nm.
     rayleigh: [
         3.668_017e-5,
         3.019_671_6e-5,

@@ -40,6 +40,22 @@ pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), St
     set_scene_camera(shell, camera.at(eye)?)
 }
 
+pub(crate) fn set_haze_eye(shell: &mut Shell, eye: [f32; 3], cut: bool) -> Result<(), String> {
+    if shell
+        .host()
+        .source()
+        .authored_camera()
+        .is_some_and(|camera| camera.eye().map(f32::to_bits) == eye.map(f32::to_bits))
+    {
+        return Ok(());
+    }
+    if cut {
+        shell.source_mut().move_capture_eye(eye)
+    } else {
+        shell.continuous_source_mut().move_capture_eye(eye)
+    }
+}
+
 impl thrum_app::InlineWorld for GameWorld {
     fn pause(&mut self) -> Result<(), String> {
         GameWorld::pause(self)
@@ -104,6 +120,14 @@ impl RuntimeSetup for PageGame {
 /// Committed solar time: midnight is zero, noon is one half.
 pub(crate) fn time_of_day(shell: &Shell) -> f32 {
     super::time_of_day(shell.host())
+}
+
+pub(crate) fn scrub_haze_sun(shell: &mut Shell, fraction: f32) -> Result<(), String> {
+    let host = shell.host();
+    if let Some(offset) = day_phase_edit(host.world().tick(), host.source(), fraction)? {
+        shell.continuous_source_mut().day_phase_offset = offset;
+    }
+    Ok(())
 }
 
 /// Change the game-authored day phase.

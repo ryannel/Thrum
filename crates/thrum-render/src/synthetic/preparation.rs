@@ -85,6 +85,8 @@ impl PreparedSynthetic {
         // Prepare the declared shadow recipe even while the Sun is dark, so a
         // later live light change can use the same pipelines and target maps.
         let shadow_enabled = scene.sun_shadows;
+        let view_volume =
+            matches!(lighting, FrameLighting::Atmosphere(frame) if frame.view_volume());
         let shadow_selection = ShadowSelection::resolve(
             scene.sun_shadow_method,
             scene.lamp_shadows,
@@ -239,7 +241,7 @@ impl PreparedSynthetic {
             meshes.is_some(),
             camera_mode,
             shadow_enabled,
-            matches!(lighting, FrameLighting::Atmosphere(_)),
+            !view_volume && matches!(lighting, FrameLighting::Atmosphere(_)),
         );
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic view and target aux"),
@@ -366,7 +368,7 @@ impl PreparedSynthetic {
             mapped_at_creation: false,
         });
         let exposure_samples = ExposureResolve::allocate_samples(device);
-        let atmosphere = match lighting {
+        let mut atmosphere = match lighting {
             FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::new(
                 device,
                 queue,
@@ -378,6 +380,15 @@ impl PreparedSynthetic {
             )),
             _ => None,
         };
+        if let Some(air) = &mut atmosphere {
+            air.prepare_view_volume(
+                device,
+                queue,
+                &scene.view,
+                shadow_enabled,
+                scene.sun_optical_depth.as_ref().zip(cloud.as_ref()),
+            );
+        }
         let local_lights = storage_buffer(
             device,
             queue,
@@ -515,7 +526,7 @@ impl PreparedSynthetic {
         } else {
             None
         };
-        let air_shadow = (shadow.is_some() && atmosphere.is_some()).then(|| {
+        let air_shadow = (shadow.is_some() && atmosphere.is_some() && !view_volume).then(|| {
             AirShadowPrepared::new(device, shadow::SAMPLE_BYTES as u64, DIRECTIONAL_BYTES)
         });
         if let Some(shadow) = shadow.as_ref() {
@@ -627,8 +638,11 @@ impl PreparedSynthetic {
         let fail_traced_pipeline = false;
         let (shader_source, shader, fragment_entry) = scene_source::prepare(
             device,
-            atmosphere.is_some(),
-            air_shadow.is_some(),
+            if view_volume {
+                crate::shaders::AtmosphereVariant::ViewVolume
+            } else {
+                crate::shaders::AtmosphereVariant::new(atmosphere.is_some(), air_shadow.is_some())
+            },
             scene.sun_optical_depth.as_ref(),
             scene_source::SunShadows::from(shadow.is_some()),
             shadow_selection,
@@ -801,6 +815,7 @@ impl PreparedSynthetic {
                         records,
                         limits.max_storage_buffer_binding_size,
                         &light_data,
+                        view_volume,
                     )
                 })
                 .transpose()?

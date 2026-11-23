@@ -43,7 +43,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
         )
     );
     let spectral = concat!(
-        include_str!("../transport.wgsl"),
+        crate::shaders::wgsl!("atmosphere/transport.wgsl"),
         "\n",
         include_str!("../night.wgsl")
     );
@@ -65,7 +65,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
         ),
         EARTH.shader(&format!(
             "{common}\n{spectral}\n{}",
-            include_str!("../aerial.wgsl")
+            crate::shaders::wgsl!("atmosphere/aerial.wgsl")
         )),
         format!(
             "{}\n{}\n{}\n{}\n{}",

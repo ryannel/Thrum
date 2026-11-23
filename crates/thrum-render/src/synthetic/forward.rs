@@ -23,7 +23,7 @@ pub(super) fn view_entries(
     meshes: bool,
     camera_mode: super::CullMode,
     shadowed: bool,
-    atmosphere: bool,
+    air_shadow: bool,
 ) -> Vec<wgpu::BindGroupLayoutEntry> {
     let mut entries = vec![
         wgpu::BindGroupLayoutEntry {
@@ -65,7 +65,7 @@ pub(super) fn view_entries(
                 wgpu::TextureViewDimension::D2Array,
             ),
         ]);
-        if atmosphere {
+        if air_shadow {
             entries.push(super::air_shadow::VIEW_ENTRY);
         }
     }

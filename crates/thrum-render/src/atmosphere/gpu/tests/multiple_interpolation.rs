@@ -132,7 +132,7 @@ impl Variant {
                 &views,
                 sampler,
                 &shader,
-                &atmosphere.night,
+                (&atmosphere.night, None),
             )
         };
         let observer_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

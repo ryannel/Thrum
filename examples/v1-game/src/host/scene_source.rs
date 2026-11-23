@@ -13,7 +13,7 @@ use crate::{
 };
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
-    atmosphere::AtmosphereFrame,
+    atmosphere::{Aerosol, AtmosphereFrame},
     error::RenderError,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameError, SceneFrame, SceneSource},
@@ -26,6 +26,7 @@ use thrum_render::{
 fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
+    haze: Option<Aerosol>,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
@@ -38,7 +39,9 @@ fn atmosphere_lighting(
     .with_nightglow()
     .with_simulation_time(sun.simulation_time_seconds)
     .expect("the sampled game clock is finite");
-    FrameLighting::Atmosphere(frame)
+    FrameLighting::Atmosphere(haze.map_or(frame, |aerosol| {
+        frame.with_aerosol(aerosol).with_view_volume()
+    }))
 }
 
 /// `(tick + 1 + φ)·P` in milliseconds at the game's 60 Hz clock.
@@ -350,6 +353,7 @@ pub struct GameScene {
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
+    haze: Option<Aerosol>,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
@@ -387,6 +391,16 @@ impl GameScene {
     /// The authored scene camera, when content selected one.
     pub(super) fn authored_camera(&self) -> Option<SceneCamera> {
         self.camera
+    }
+
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    pub(super) fn move_capture_eye(&mut self, eye: [f32; 3]) -> Result<(), String> {
+        self.route_guard()?;
+        let camera = self
+            .camera
+            .ok_or("haze capture needs the cooked valley camera")?;
+        self.camera = Some(camera.at(eye)?);
+        Ok(())
     }
 
     /// The installed route's pose for `tick` at `alpha`.
@@ -453,6 +467,7 @@ impl GameScene {
             cloud_input: None,
             cloud_sky: None,
             cloud_shapes: None,
+            haze: setup.haze,
             cooked_rows: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
@@ -730,7 +745,8 @@ impl SceneSource<PublishedPage> for GameScene {
         } else {
             sun
         };
-        let lighting = lighting.unwrap_or_else(|| atmosphere_lighting(sun, camera_altitude_m));
+        let lighting =
+            lighting.unwrap_or_else(|| atmosphere_lighting(sun, camera_altitude_m, self.haze));
         let view = if self.valley_stars
             && self.camera.is_some()
             && matches!(lighting, FrameLighting::Atmosphere(_))
@@ -989,6 +1005,7 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            haze: None,
             sprite_scale: None,
             sprite_probe: None,
             sprite_rows: None,

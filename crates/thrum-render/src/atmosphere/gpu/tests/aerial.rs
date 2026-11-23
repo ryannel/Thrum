@@ -45,7 +45,7 @@ impl Output {
         };
         // Only storage declarations and final RGB encoding change. In
         // particular, this is not another numerical transport implementation.
-        let production = include_str!("../../aerial.wgsl");
+        let production = crate::shaders::wgsl!("atmosphere/aerial.wgsl");
         let aerial = if matches!(storage, Storage::Production) {
             production.to_owned()
         } else {
@@ -70,7 +70,7 @@ impl Output {
                     "\n",
                     crate::shaders::wgsl!("atmosphere/common.wgsl"),
                     "\n",
-                    include_str!("../../transport.wgsl"),
+                    crate::shaders::wgsl!("atmosphere/transport.wgsl"),
                     "\n",
                     include_str!("../../night.wgsl")
                 )

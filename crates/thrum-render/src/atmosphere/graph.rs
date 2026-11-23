@@ -30,6 +30,13 @@ pub(crate) fn chart_of_owner(owner: u64) -> Option<Chart> {
 }
 
 impl AtmospherePrepared {
+    pub(crate) fn terminal_read(&self, graph: &FrameGraph) -> Option<Access> {
+        self.view_volume.as_ref()?;
+        let resource = graph.persistent(AERIAL_OWNER_BASE)?;
+        let end = u64::from(self.aerial_textures[0].depth_or_array_layers());
+        Some(Access::new(resource, end - 1..end, AccessKind::SampledRead))
+    }
+
     pub(crate) fn append_graph(
         &self,
         graph: &mut FrameGraph,
@@ -46,6 +53,23 @@ impl AtmospherePrepared {
         )?;
         append_motion_read(graph, forward_accesses)?;
         let night_reads = self.night.graph_reads(graph)?;
+        let aerosol_read = self
+            .aerosol
+            .as_ref()
+            .map(|buffer| {
+                graph
+                    .resource(
+                        ResourceDescriptor::Buffer {
+                            bytes: buffer.size(),
+                            usage: wgpu::BufferUsages::UNIFORM,
+                        },
+                        ResourceScope::Imported { initialized: true },
+                    )
+                    .map(|resource| {
+                        Access::new(resource, 0..buffer.size(), AccessKind::UniformRead)
+                    })
+            })
+            .transpose()?;
         let resources = Charts::try_from_fn(|chart| {
             let texture = self.textures.get(chart);
             graph.resource(
@@ -69,6 +93,7 @@ impl AtmospherePrepared {
                 AccessKind::UniformRead,
             )];
             accesses.extend(chart_reads(stage, &resources));
+            accesses.extend(aerosol_read.iter().cloned());
             if stage == AtmosphereStage::SkyView {
                 accesses.extend(night_reads.iter().cloned());
             }
@@ -100,9 +125,9 @@ impl AtmospherePrepared {
                 graph.resource(
                     ResourceDescriptor::Texture {
                         dimension: crate::graph::TextureKind::D2,
-                        width: AERIAL_EXTENT[0],
-                        height: AERIAL_EXTENT[1],
-                        layers: AERIAL_EXTENT[2],
+                        width: texture.width(),
+                        height: texture.height(),
+                        layers: texture.depth_or_array_layers(),
                         mips: 1,
                         samples: 1,
                         format: texture.format(),
@@ -137,8 +162,11 @@ impl AtmospherePrepared {
             ),
         ])
         .chain(night_reads)
+        .chain(aerosol_read)
         .collect();
-        self.declare_stage(graph, keys, stage, accesses);
+        if self.view_volume.is_none() {
+            self.declare_stage(graph, keys, stage, accesses);
+        }
         self.append_reflection(graph, keys, &uniform, &resources, forward_accesses)?;
         forward_accesses.push(Access::new(
             uniform.clone(),
@@ -152,14 +180,79 @@ impl AtmospherePrepared {
                 AccessKind::SampledRead,
             ));
         }
-        for resource in aerial {
+        for (resource, texture) in aerial.into_iter().zip(self.aerial_textures.iter()) {
             forward_accesses.push(Access::new(
                 resource,
-                0..u64::from(AERIAL_EXTENT[2]),
+                0..u64::from(texture.depth_or_array_layers()),
                 AccessKind::SampledRead,
             ));
         }
         Ok((resources.transmittance.clone(), uniform))
+    }
+
+    pub(crate) fn append_view_volume(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        uniform: &ResourceId,
+        shadow: Option<(&ResourceId, u32, u64)>,
+        cloud: Option<&super::CloudPrepared>,
+    ) -> Result<(), crate::error::RenderError> {
+        use crate::error::RenderError;
+        let Some(volume) = &self.view_volume else {
+            return Ok(());
+        };
+        let stage = AtmosphereStage::Aerial;
+        let mut accesses = stage_reads(graph, stage, &[])?;
+        accesses.push(Access::new(
+            uniform.clone(),
+            0..UNIFORM_BYTES,
+            AccessKind::UniformRead,
+        ));
+        accesses.extend(self.night.graph_reads(graph)?);
+        let aerosol = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: super::gpu::aerosol::BYTES,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access::new(
+            aerosol,
+            0..super::gpu::aerosol::BYTES,
+            AccessKind::UniformRead,
+        ));
+        accesses.extend(volume.graph_reads_and_writes(graph)?);
+        for (index, texture) in self.aerial_textures.iter().enumerate() {
+            let resource = graph
+                .persistent(AERIAL_OWNER_BASE + index as u64)
+                .ok_or(RenderError::GraphPassMismatch)?;
+            accesses.push(Access::new(
+                resource,
+                0..u64::from(texture.depth_or_array_layers()),
+                AccessKind::StorageWrite,
+            ));
+        }
+        if let Some((maps, layers, bytes)) = shadow {
+            let samples = graph.resource(
+                ResourceDescriptor::Buffer {
+                    bytes,
+                    usage: wgpu::BufferUsages::UNIFORM,
+                },
+                ResourceScope::Imported { initialized: true },
+            )?;
+            accesses.push(Access::new(samples, 0..bytes, AccessKind::UniformRead));
+            accesses.push(Access::new(
+                maps.clone(),
+                0..u64::from(layers),
+                AccessKind::SampledRead,
+            ));
+        }
+        if let Some(cloud) = cloud {
+            cloud.append_reads(graph, &mut accesses)?;
+        }
+        self.declare_stage(graph, keys, stage, accesses);
+        Ok(())
     }
 
     fn declare_stage(

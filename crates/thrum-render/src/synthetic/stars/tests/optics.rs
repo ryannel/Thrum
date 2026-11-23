@@ -57,6 +57,7 @@ impl Probe {
             }),
             device.limits().max_storage_buffer_binding_size,
             &DirectionalLight::default(),
+            false,
         )
         .expect("production star pipeline");
         let shader = device.create_shader_module(gpu::ShaderModuleDescriptor {

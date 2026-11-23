@@ -379,6 +379,17 @@ impl super::SyntheticTargetInputs {
             &mut prepared_keys,
             &contribution_reads,
         )?;
+        if let (Some(atmosphere), Some((_, uniform))) = (&self.atmosphere, &atmosphere_inputs) {
+            atmosphere.append_view_volume(
+                &mut graph,
+                &mut prepared_keys,
+                uniform,
+                shadow
+                    .as_ref()
+                    .map(|maps| (maps, 2, shadow::SAMPLE_BYTES as u64)),
+                self.cloud.as_ref(),
+            )?;
+        }
         let air_shadow = self.append_air_shadow(
             &mut graph,
             &mut prepared_keys,
@@ -930,7 +941,12 @@ impl super::SyntheticTargetInputs {
         };
         // Culled camera modes on the bucket route: one compaction lists each
         // pass's casters against that pass's own view, which it reads.
-        let first = if self.surface_uses_cascades() {
+        let first = if self.surface_uses_cascades()
+            || self
+                .atmosphere
+                .as_ref()
+                .is_some_and(|air| air.view_volume.is_some())
+        {
             0
         } else {
             shadow::LAYERS - 1

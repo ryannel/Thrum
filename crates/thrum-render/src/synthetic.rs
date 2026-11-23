@@ -635,11 +635,22 @@ impl SceneContext<'_> {
         stage: crate::pass_key::AtmosphereStage,
         pass: &CompiledPass,
     ) -> Result<(), RenderError> {
-        self.prepared
+        let atmosphere = self
+            .prepared
             .atmosphere
             .as_ref()
-            .ok_or(RenderError::GraphPassMismatch)?
-            .encode(stage, self.encoder, pass, self.timings.as_deref_mut())
+            .ok_or(RenderError::GraphPassMismatch)?;
+        if stage == crate::pass_key::AtmosphereStage::Aerial
+            && let (Some(volume), Some(scene)) =
+                (&atmosphere.view_volume, &self.target.volume_group)
+        {
+            let mut compute = pass
+                .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
+                .ok_or(RenderError::GraphPassMismatch)?;
+            volume.dispatch(&mut compute, scene);
+            return Ok(());
+        }
+        atmosphere.encode(stage, self.encoder, pass, self.timings.as_deref_mut())
     }
 
     /// Write this recording's Sun fit once, before the first pass that reads
@@ -655,7 +666,7 @@ impl SceneContext<'_> {
                 .contribution
                 .as_deref()
                 .and_then(SceneContribution::shadow_bounds);
-            shadow.write_recording(bounds, self.prepared.surface_uses_cascades())
+            shadow.write_recording(bounds, self.prepared.cascade_casters())
         }))
     }
 
@@ -667,7 +678,7 @@ impl SceneContext<'_> {
             .caster_culling
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
-        let result = if self.prepared.surface_uses_cascades() {
+        let result = if self.prepared.cascade_casters() {
             culling.encode(
                 self.encoder,
                 self.generation,
@@ -1043,6 +1054,37 @@ impl PreparedSynthetic {
             .and_then(|compiled| u32::try_from(compiled.pipeline_pass_count()).ok())
             .unwrap_or(0)
     }
+
+    pub(crate) fn view_volume_storage(&self) -> Option<crate::atmosphere::ViewVolumeStorage> {
+        self.atmosphere.as_ref()?.volume_storage()
+    }
+
+    pub(crate) fn scene_shader_source(&self) -> &str {
+        &self.surface.shader_source
+    }
+
+    /// Read the latest prepared atmospheric inputs and diagnostic chart textures.
+    /// Chart order is transmittance, multiple scattering, sky view, ground irradiance.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn atmosphere_witness(
+        &self,
+    ) -> Option<(crate::atmosphere::EnvironmentFrame, [&wgpu::Texture; 4])> {
+        let atmosphere = self.atmosphere.as_ref()?;
+        Some((atmosphere.environment(), atmosphere.chart_witnesses()))
+    }
+
+    /// Inspect the two cumulative view-volume textures and the submitted history phase.
+    /// The scatter texture's last layer carries the terminal pair for sky rays.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn view_volume_witness(&self) -> Option<([&wgpu::Texture; 2], u16)> {
+        let atmosphere = self.atmosphere.as_ref()?;
+        Some((
+            atmosphere.aerial_textures(),
+            atmosphere.view_volume.as_ref()?.submitted_phase(),
+        ))
+    }
     /// Camera opaque draw mode; Frustum adds one timed compute pass and
     /// Occlusion four timed passes.
     pub fn camera_culling(&self) -> CullMode {
@@ -1067,6 +1109,14 @@ impl PreparedSynthetic {
 
     fn surface_uses_cascades(&self) -> bool {
         self.shadow_selection.sun == SunShadowMethod::Maps
+    }
+
+    fn cascade_casters(&self) -> bool {
+        self.surface_uses_cascades()
+            || self
+                .atmosphere
+                .as_ref()
+                .is_some_and(|air| air.view_volume.is_some())
     }
 
     pub(crate) fn lamp_quality(&self) -> &[crate::contribution::QualityKnob] {
@@ -1163,6 +1213,11 @@ impl PreparedSynthetic {
             scene.view
         };
         if self.atmosphere.is_some() != matches!(lighting, FrameLighting::Atmosphere(_)) {
+            return Err(RenderError::InvalidLighting);
+        }
+        if let (Some(atmosphere), FrameLighting::Atmosphere(frame)) = (&self.atmosphere, lighting)
+            && !atmosphere.accepts(frame)
+        {
             return Err(RenderError::InvalidLighting);
         }
         match (&self.cloud, &scene.sun_optical_depth) {
@@ -1714,6 +1769,7 @@ pub struct OffscreenTarget {
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
+    volume_group: Option<wgpu::BindGroup>,
     visibility: Option<VisibilityTarget>,
     occlusion: Option<camera_culling::PrepassCulling>,
     culling_stats: Option<camera_culling::CullingStats>,
@@ -1970,6 +2026,7 @@ impl OffscreenTarget {
             display,
             view_bind_group,
             aux_buffer: aux,
+            volume_group: prepared.prepare_target_volume(device, shadow.as_ref()),
             shadow,
             air_shadow,
             visibility,

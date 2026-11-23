@@ -49,6 +49,7 @@ impl StarPrepared {
         records: &[[f32; 4]],
         max_storage_bytes: u64,
         light: &DirectionalLight,
+        view_volume: bool,
     ) -> Result<Self, RenderError> {
         let count = u32::try_from(records.len()).map_err(|_| RenderError::StarTableCapacity)?;
         let bytes = u64::from(count) * 16;
@@ -70,7 +71,21 @@ impl StarPrepared {
             usage: wgpu::BufferUsages::STORAGE,
         });
         // The same footprint constants drive rasterization and the daylight bound.
-        let shader = crate::shaders::Shader::Stars.compile(device, PASS_NAME);
+        let shader = if view_volume {
+            device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some(PASS_NAME),
+                source: wgpu::ShaderSource::Wgsl(
+                    format!(
+                        "{}\n{}",
+                        shader_source(),
+                        wgsl!("synthetic/stars_volume.wgsl")
+                    )
+                    .into(),
+                ),
+            })
+        } else {
+            crate::shaders::Shader::Stars.compile(device, PASS_NAME)
+        };
         let blend = wgpu::BlendComponent {
             src_factor: wgpu::BlendFactor::One,
             dst_factor: wgpu::BlendFactor::One,
@@ -90,7 +105,11 @@ impl StarPrepared {
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: Some("fragment"),
+                entry_point: Some(if view_volume {
+                    "fragment_view_volume"
+                } else {
+                    "fragment"
+                }),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[
                     Some(wgpu::ColorTargetState {
@@ -148,41 +167,46 @@ impl StarPrepared {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let groups = std::array::from_fn(|side| {
+            let mut entries = vec![
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: self.catalogue.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: uniform.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(depth),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: exposure_samples[side].as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(atmosphere.transmittance_view()),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: atmosphere.observer_uniform().as_entire_binding(),
+                },
+            ];
+            if atmosphere.view_volume.is_some() {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: wgpu::BindingResource::TextureView(atmosphere.aerial_sampled().0[0]),
+                });
+            }
             device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some(PASS_NAME),
                 layout: &self.layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: self.catalogue.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: uniform.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: wgpu::BindingResource::TextureView(depth),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 3,
-                        resource: exposure_samples[side].as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 4,
-                        resource: wgpu::BindingResource::TextureView(
-                            atmosphere.transmittance_view(),
-                        ),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 5,
-                        resource: wgpu::BindingResource::Sampler(&self.sampler),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 6,
-                        resource: atmosphere.observer_uniform().as_entire_binding(),
-                    },
-                ],
+                entries: &entries,
             })
         });
         (StarTarget { uniform, groups }, view_bytes.is_some())
@@ -328,6 +352,11 @@ impl super::SyntheticTargetInputs {
                         store,
                     }
                 })
+                .chain(
+                    self.atmosphere
+                        .as_ref()
+                        .and_then(|air| air.terminal_read(graph)),
+                )
                 .collect(),
                 external_side_effect: false,
             },

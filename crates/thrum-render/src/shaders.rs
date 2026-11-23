@@ -39,7 +39,57 @@ macro_rules! wgsl {
         concat!(
             $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/sun.wgsl")),
+            "\n// thrum-wgsl-source: atmosphere/sky.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "atmosphere/sky.wgsl"),
+            $crate::shaders::wgsl!(@bytes "atmosphere/sky_draw.wgsl"),
+            "\n// thrum-wgsl-end\n",
+        )
+    };
+    ("atmosphere/volume_sky.wgsl") => {
+        concat!(
+            $crate::shaders::wgsl!(@lighting_constants),
+            include_str!(concat!(env!("OUT_DIR"), "/sun.wgsl")),
             $crate::shaders::wgsl!(@file "atmosphere/sky.wgsl"),
+            $crate::shaders::wgsl!(@file "atmosphere/volume_sky.wgsl"),
+        )
+    };
+    ("atmosphere/transport.wgsl") => {
+        concat!(
+            "\n// thrum-wgsl-source: atmosphere/transport.wgsl\n",
+            $crate::shaders::wgsl!(@transport "atmosphere/transport_extinction.wgsl", "atmosphere/transport_scattering.wgsl"),
+            "\n// thrum-wgsl-end\n",
+        )
+    };
+    (@transport $extinction:literal, $scattering:literal) => {
+        concat!(
+            $crate::shaders::wgsl!(@bytes "atmosphere/transport.wgsl"),
+            $crate::shaders::wgsl!(@bytes $extinction),
+            $crate::shaders::wgsl!(@bytes "atmosphere/transport_segments.wgsl"),
+            $crate::shaders::wgsl!(@bytes $scattering),
+            $crate::shaders::wgsl!(@bytes "atmosphere/transport_lit.wgsl"),
+        )
+    };
+    ("atmosphere/lut.wgsl") => {
+        concat!(
+            "\n// thrum-wgsl-source: atmosphere/lut.wgsl\n",
+            $crate::shaders::wgsl!(@lut "atmosphere/lut_multiple.wgsl", "atmosphere/lut_sky_view.wgsl"),
+            "\n// thrum-wgsl-end\n",
+        )
+    };
+    (@lut $multiple:literal, $sky_view:literal) => {
+        concat!(
+            $crate::shaders::wgsl!(@bytes "atmosphere/lut.wgsl"),
+            $crate::shaders::wgsl!(@bytes $multiple),
+            $crate::shaders::wgsl!(@bytes "atmosphere/lut_sky_transport.wgsl"),
+            $crate::shaders::wgsl!(@bytes $sky_view),
+        )
+    };
+    ("atmosphere/aerial.wgsl") => {
+        concat!(
+            "\n// thrum-wgsl-source: atmosphere/aerial.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "atmosphere/aerial.wgsl"),
+            $crate::shaders::wgsl!(@bytes "atmosphere/aerial_main.wgsl"),
+            "\n// thrum-wgsl-end\n",
         )
     };
     ("atmosphere/storage.wgsl") => {
@@ -144,7 +194,11 @@ macro_rules! wgsl {
     ("synthetic_aerial.wgsl") => {
         concat!(
             $crate::shaders::wgsl!(@file "records/observer.wgsl"),
-            $crate::shaders::wgsl!(@file "synthetic_aerial.wgsl"),
+            "\n// thrum-wgsl-source: synthetic_aerial.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "synthetic_aerial.wgsl"),
+            $crate::shaders::wgsl!(@bytes "synthetic_aerial_sample.wgsl"),
+            $crate::shaders::wgsl!(@bytes "synthetic_aerial_decode.wgsl"),
+            "\n// thrum-wgsl-end\n",
         )
     };
     ("synthetic_display.wgsl") => {
@@ -175,6 +229,9 @@ macro_rules! wgsl {
     };
     (@file $path:literal) => {
         concat!("\n// thrum-wgsl-source: ", $path, "\n", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/", $path)), "\n// thrum-wgsl-end\n")
+    };
+    (@bytes $path:literal) => {
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/", $path))
     };
 }
 pub(crate) use wgsl;
@@ -209,6 +266,7 @@ pub(crate) enum AtmosphereVariant {
     Absent,
     Clear,
     Shadowed,
+    ViewVolume,
 }
 
 impl AtmosphereVariant {
@@ -422,6 +480,7 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
         AtmosphereVariant::Absent,
         AtmosphereVariant::Clear,
         AtmosphereVariant::Shadowed,
+        AtmosphereVariant::ViewVolume,
     ] {
         for cloud in [
             CloudVariant::Absent,

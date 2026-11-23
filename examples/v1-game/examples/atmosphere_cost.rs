@@ -129,6 +129,9 @@ async fn measure() -> Result<(), String> {
                     "recipe":format!("{:?}", caps.recipe().map_err(|error| format!("{error:?}"))?), "capture":false,
                     "solar_hours":host.time_of_day()*24.0, "yaw":yaw.to_degrees(), "pitch":pitch.to_degrees(),
                     "frames":frames,
+                    "view_volume":host.view_volume_storage().map(|volume|
+                        serde_json::json!({"grid":volume.grid,"resources":volume.resources})
+                    ),
                 })
             );
             return Ok(());

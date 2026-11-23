@@ -204,6 +204,7 @@ pub async fn create_field_game(
             exit_entities: crate::ExitEntities::Draw,
             cooked_mesh_rows: crate::host::MeshRowSource::Code,
             diagnostic_clouds: false,
+            haze: None,
             camera_culling,
             valley_stars: false,
             route_overlay: crate::RouteOverlay::Off,
@@ -467,6 +468,7 @@ pub async fn create_route_game(
     reconstruction: Option<bool>,
     exit: Option<bool>,
     clouds: Option<String>,
+    haze: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
@@ -493,6 +495,7 @@ pub async fn create_route_game(
             route_overlay: overlay,
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
+            haze: crate::host::haze_selection(haze.as_deref()).map_err(js_error)?,
             camera_culling: valley_culling(culling.as_deref(), true)?,
             field_meshes: meshes.unwrap_or(false),
             cooked_mesh_rows: (exit || meshes.unwrap_or(false)).into(),
@@ -813,6 +816,76 @@ impl BrowserGame {
             return Err(js_error("cloud capture requires Shade or Sky"));
         }
         game::set_capture_eye(&mut self.page.shell, [x, y, z]).map_err(js_error)
+    }
+
+    /// Move the camera and Sun for the opt-in haze inspection.
+    ///
+    /// # Errors
+    /// Refuses a malformed take, missing valley camera or invalid elapsed time.
+    pub fn sample_haze_take(
+        &mut self,
+        take: String,
+        elapsed_seconds: f32,
+    ) -> Result<String, JsValue> {
+        use crate::host::haze_capture::HazeTake;
+        if !elapsed_seconds.is_finite() || elapsed_seconds < 0.0 {
+            return Err(js_error("invalid haze take time"));
+        }
+        let pose = HazeTake::parse(&take)
+            .map_err(js_error)?
+            .at(elapsed_seconds);
+        game::set_haze_eye(&mut self.page.shell, pose.eye, pose.cut).map_err(js_error)?;
+        game::scrub_haze_sun(&mut self.page.shell, pose.solar_hours / 24.0).map_err(js_error)?;
+        game::set_camera_yaw(&mut self.page.shell, pose.yaw_degrees.to_radians())
+            .map_err(js_error)?;
+        serde_json::to_string(&pose).map_err(|error| js_error(&error.to_string()))
+    }
+
+    /// Prepared 3D shader and graph identity for fixed submitted-frame comparisons.
+    #[must_use]
+    pub fn renderer_signature(&self) -> String {
+        let host = self.page.shell.host();
+        serde_json::json!({
+            "shader":host.scene_shader_source(),
+            "graph":host.scene_graph().map(|graph| format!("{graph:?}")).ok(),
+        })
+        .to_string()
+    }
+
+    /// Request named GPU pass timestamps for the held haze cost capture.
+    pub fn enable_haze_timings(&mut self) {
+        self.page
+            .shell
+            .update_profiler(self.page.game.controls_mut(), true);
+    }
+
+    /// Capture-off browser timing samples and the selected volume allocation.
+    #[must_use]
+    pub fn haze_cost(&self) -> String {
+        let shell = &self.page.shell;
+        let samples = shell
+            .samples()
+            .iter()
+            .filter_map(|sample| {
+                let timings = sample.gpu_pass_ns.as_ref()?;
+                let pass_ns: std::collections::BTreeMap<_, _> = timings
+                    .passes()
+                    .iter()
+                    .map(|pass| (pass.name.as_ref(), pass.nanoseconds))
+                    .collect();
+                Some(serde_json::json!({
+                    "submission":sample.submission_order,
+                    "frame_gpu_ns":timings.timed_pass_span_nanoseconds(),
+                    "pass_gpu_ns":pass_ns,
+                }))
+            })
+            .collect::<Vec<_>>();
+        serde_json::json!({
+            "frames":samples,
+            "view_volume":shell.host().view_volume_storage().map(|volume|
+                serde_json::json!({"grid":volume.grid,"resources":volume.resources})),
+        })
+        .to_string()
     }
 
     /// Sample normalized player movement for the next authoritative world tick.

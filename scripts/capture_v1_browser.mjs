@@ -18,6 +18,9 @@ args.clouds = 'off';
 args['cloud-view'] = '';
 args['retain-raw'] = 'off';
 args.atmosphere = 'off';
+args.haze = '';
+args['haze-take'] = '';
+args['renderer-signature'] = 'off';
 args.params = '';
 args['sprite-scale'] = '1.5';
 args['sprite-speed'] = '0.05';
@@ -48,9 +51,10 @@ if (args['cloud-view'] && (args.clouds === 'off' || args.mode !== 'fixed' || arg
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');
 if (!['off','pan','reveal','spawn','stars','scrub'].includes(args.witness) || (args.witness !== 'off' && args.mode !== 'realtime')) throw new Error('Invalid reconstruction witness/mode');
 if (!['off','slab','depth-only'].includes(args.effect)) throw new Error('Invalid effect diagnostic');
-if (!['off','checkpoint','scrub','ground-pan'].includes(args.atmosphere) ||
-    (args.atmosphere !== 'off' && (!args.params || args.witness !== 'off' || args.control !== 'ordinary' ||
-     args.mode !== (args.atmosphere === 'checkpoint' ? 'fixed' : 'realtime')))) throw new Error('Invalid atmosphere capture options');
+if (!['off','checkpoint','scrub','ground-pan','cost'].includes(args.atmosphere) ||
+    (args.atmosphere !== 'off' && (!args.params || args.witness !== 'off' ||
+       args.control !== (args.atmosphere === 'cost' ? 'off' : 'ordinary') ||
+       args.mode !== (['checkpoint','cost'].includes(args.atmosphere) ? 'fixed' : 'realtime')))) throw new Error('Invalid atmosphere capture options');
 if (!['off', 'on'].includes(args['retain-raw']) || (args['retain-raw'] === 'on' &&
     ((args.scene !== 'exit' && args.atmosphere === 'off') ||
       args.mode !== 'realtime' || args.control !== 'ordinary'))) throw new Error('Raw retention requires a realtime exit or atmosphere capture');
@@ -70,6 +74,10 @@ let captureRoute;
 if (args.params) {
   const bytes = await fs.readFile(path.resolve(args.params));
   files.set('/capture-params.json', { bytes, type: 'application/json', sha256: sha(bytes) });
+}
+if (args['haze-take']) {
+  const bytes = await fs.readFile(path.resolve(args['haze-take']));
+  files.set('/haze-take.json', { bytes, type: 'application/json', sha256: sha(bytes) });
 }
 if (args['route-file']) {
   captureRoute = await fs.readFile(path.resolve(args['route-file']));
@@ -111,6 +119,7 @@ if (args.clouds !== 'off') manifest.clouds = args.clouds;
 if (cloudView) manifest.cloud_view = JSON.parse(cloudView);
 manifest.effect = args.effect;
 manifest.atmosphere = args.atmosphere;
+if (args.haze) manifest.haze = args.haze;
 manifest.console = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
 const bundle = path.join(output, 'ThrumCapture.app');
 const launcher = path.join(bundle, 'Contents/MacOS/Launcher');
@@ -178,7 +187,7 @@ try {
     manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
   }
   manifest.load_before = loadavg();
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${cloudView ? '&cloud-view' : ''}${spriteQuery}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${spriteQuery}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;

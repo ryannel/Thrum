@@ -5,6 +5,7 @@ mod native_recovery;
 pub(super) mod scene;
 
 use super::{RuntimeCaptureOutput, WindowGame};
+use crate::host::haze_capture::HazeTake;
 use crate::{GameHost, hosted::HostedGame};
 
 fn shadow_selection(selection: thrum_render::synthetic::ShadowSelection) -> Value {
@@ -683,6 +684,13 @@ async fn record(
         metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
     let (game, preview) = capture_game(output, scenario, capture_output)?;
     let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
+    let haze_take = crate::content::launch_value("THRUM_HAZE_TAKE")
+        .ok()
+        .map(|text| HazeTake::parse(&text))
+        .transpose()?;
+    if let Some(take) = haze_take {
+        crate::host::set_haze_eye(driver.host_mut(), take.eye, true)?;
+    }
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let motion_capture = mode == "realtime" && is_motion_capture(scenario);
     let elapsed_observation = motion_capture || sprite_motion(scenario);
@@ -778,6 +786,7 @@ async fn record(
             &mut night_variant,
             &mut trace,
             origin,
+            haze_take,
         )?;
         recovery
             .checkpoint(
@@ -936,6 +945,13 @@ fn write_runtime_report<G: Game>(
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
     result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
+    if crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1") {
+        let host = driver.host();
+        result["renderer_signature"] = json!({
+            "shader": host.scene_shader_source(),
+            "graph": format!("{:?}", host.scene_graph().map_err(|err| err.to_string())?),
+        });
+    }
     let (scene_kind, present_target_bytes, storage) = driver.scene_storage();
     if scene_kind == thrum_render::runtime::SceneKind::TwoD {
         result["scene_kind"] = json!("TwoD");
@@ -1049,9 +1065,21 @@ fn lighting_edits(
     night_variant: &mut bool,
     trace: &mut Trace,
     origin: Instant,
+    haze_take: Option<HazeTake>,
 ) -> Result<(), String> {
     if matches!(scenario, "atmosphere-scrub" | "atmosphere-ground-pan") {
         let t = scenario_time.as_secs_f32();
+        if let Some(take) = haze_take {
+            let pose = take.at(t);
+            let host = driver.host_mut();
+            crate::host::set_haze_eye(host, pose.eye, pose.cut)?;
+            crate::host::scrub_haze_sun(host, pose.solar_hours / 24.0)?;
+            host.set_camera_yaw(pose.yaw_degrees.to_radians())?;
+            trace.controls.push(
+                json!({"kind": "haze", "scenario_ns": scenario_time.as_nanos(), "pose": pose}),
+            );
+            return Ok(());
+        }
         let (solar, yaw) = if scenario == "atmosphere-scrub" {
             let progress = ((t - 1.0) / 8.0).clamp(0.0, 1.0);
             (
