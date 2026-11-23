@@ -22,7 +22,6 @@ LOOKOUT_EYE = [0, 244.9226672381398, 16]
 # The cooked terrain triangle under x=0, z=16 is at 239.925172 m.
 NEAR_EYE = [0, 241.92517205618816, 16]
 SHAFT_EYE = [500, 145, 425]
-ACROSS_SHAFT_EYE = [520, 150, 600]
 EXTENT = [1280, 720]
 AERIAL = 'atmosphere aerial perspective'
 
@@ -148,8 +147,11 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
             env.update(THRUM_HAZE=haze, THRUM_HAZE_TAKE=json.dumps(pose))
         else:
             env.pop('THRUM_HAZE', None)
+            env.pop('THRUM_HAZE_TAKE', None)
         if cloud:
             env['THRUM_DIAGNOSTIC_CLOUDS'] = 'on'
+        else:
+            env.pop('THRUM_DIAGNOSTIC_CLOUDS', None)
         if signature:
             env['THRUM_CAPTURE_RENDERER_SIGNATURE'] = '1'
         run(sys.executable, 'scripts/capture_v1_runtime.py', '--binary', native,
@@ -284,8 +286,9 @@ def inspection(output, targets, builds, group):
                         checkpoint(target_root / f'haze-{sun}-{height}m-{km}km-{kind}', target,
                                    builds, pose, haze=f'{km},{kind}')
         if group in ('all', 'shafts'):
-            for eye, yaw, name in [(SHAFT_EYE, -74, 'toward'),
-                                  (ACROSS_SHAFT_EYE, -36, 'across')]:
+            for name, eye, yaw in [('toward', [830, 110, 390], -70),
+                                   ('across', [550, 140, 640], -42),
+                                   ('ridge', [950, 103, 208], -81)]:
                 for cloud in [False, True]:
                     pose = {'eye': eye, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
                     checkpoint(target_root / f'shaft-{name}-{cloud}', target, builds, pose,
