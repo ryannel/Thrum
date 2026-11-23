@@ -89,7 +89,7 @@ impl Field {
 }
 
 // One representable RGBA16Float interval at the stored magnitude, then decoded.
-fn stored_step(value: f64, scale: f64) -> f64 {
+pub(super) fn stored_step(value: f64, scale: f64) -> f64 {
     let stored = (value * scale).abs();
     let exponent = stored.log2().floor().max(-14.0);
     2.0_f64.powf(exponent - 10.0) / scale
@@ -165,14 +165,20 @@ pub(super) fn exposure_two(
     prepared: &PreparedSynthetic,
     queue: &wgpu::Queue,
 ) -> EnvironmentProducts {
+    with_exposure(prepared, queue, 2.0)
+}
+
+pub(super) fn with_exposure(
+    prepared: &PreparedSynthetic,
+    queue: &wgpu::Queue,
+    scale: f32,
+) -> EnvironmentProducts {
     let surface = prepared.scene_surface(queue);
     let exposure = surface
         .device
         .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("H row exposure scale two"),
-            contents: [2.0_f32, 0.0, 0.0, 0.0]
-                .map(f32::to_le_bytes)
-                .as_flattened(),
+            label: Some("H row fixed exposure scale"),
+            contents: [scale, 0.0, 0.0, 0.0].map(f32::to_le_bytes).as_flattened(),
             usage: wgpu::BufferUsages::UNIFORM,
         });
     super::super::create(

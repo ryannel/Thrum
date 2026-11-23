@@ -17,6 +17,8 @@ args.effect = 'off';
 args.clouds = 'off';
 args['cloud-view'] = '';
 args['retain-raw'] = 'off';
+args.atmosphere = 'off';
+args.params = '';
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
   if (!Object.hasOwn(args, key) || !process.argv[i + 1]) throw new Error(`Unknown or incomplete option ${process.argv[i]}`);
@@ -37,8 +39,12 @@ if (args['cloud-view'] && (args.clouds === 'off' || args.mode !== 'fixed' || arg
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');
 if (!['off','pan','reveal','spawn','stars','scrub'].includes(args.witness) || (args.witness !== 'off' && args.mode !== 'realtime')) throw new Error('Invalid reconstruction witness/mode');
 if (!['off','slab','depth-only'].includes(args.effect)) throw new Error('Invalid effect diagnostic');
+if (!['off','checkpoint','scrub','ground-pan'].includes(args.atmosphere) ||
+    (args.atmosphere !== 'off' && (!args.params || args.witness !== 'off' || args.control !== 'ordinary' ||
+     args.mode !== (args.atmosphere === 'checkpoint' ? 'fixed' : 'realtime')))) throw new Error('Invalid atmosphere capture options');
 if (!['off', 'on'].includes(args['retain-raw']) || (args['retain-raw'] === 'on' &&
-    (args.scene !== 'exit' || args.mode !== 'realtime' || args.control !== 'ordinary'))) throw new Error('Raw retention requires a realtime exit capture');
+    ((args.scene !== 'exit' && args.atmosphere === 'off') ||
+      args.mode !== 'realtime' || args.control !== 'ordinary'))) throw new Error('Raw retention requires a realtime exit or atmosphere capture');
 const output = path.resolve(args.output);
 const tmp = await fs.realpath('tmp');
 if (!output.startsWith(tmp + path.sep) || !args.output) throw new Error('Use a new output directory under tmp/');
@@ -52,6 +58,10 @@ const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
 const files = await assets(path.resolve(args['web-root']));
 await movingRouteFiles(files, path.resolve(args['web-root']));
 let captureRoute;
+if (args.params) {
+  const bytes = await fs.readFile(path.resolve(args.params));
+  files.set('/capture-params.json', { bytes, type: 'application/json', sha256: sha(bytes) });
+}
 if (args['route-file']) {
   captureRoute = await fs.readFile(path.resolve(args['route-file']));
   files.set('/capture-route.json', { bytes: captureRoute, type: 'application/json', sha256: sha(captureRoute) });
@@ -74,22 +84,24 @@ const route = JSON.parse(captureRoute ?? files.movingRoute);
 const extent = spriteField ? [1920, 1080] : cloudView ? JSON.parse(cloudView).extent : route.render_extent;
 const frameBytes = extent[0] * extent[1] * (args.source === 'scene-linear' ? 8 : 4);
 const spoolRaw = args.mode === 'realtime' && args.control === 'ordinary' &&
-  ( args.scene === 'exit' || args.witness !== 'off' || args.clouds !== 'off');
+  ( args.scene === 'exit' || args.witness !== 'off' || args.clouds !== 'off' || args.atmosphere !== 'off');
 const manifest = { complete: false, target: 'chrome-webgpu', source: args.source, scene: args.scene, reconstruction: args.reconstruction, witness: args.witness, diagnostic_clouds: args['diagnostic-clouds'], overlay: args.overlay, mode: args.mode, control: args.control, records: [], export_peak: 0, export_working_byte_cap: 32 * frameBytes, output_allowance: 16 * 1024 ** 3,
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), dirty_diff_sha256: sha(execFileSync('git', ['diff', 'HEAD'])),
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 if (spriteField || args.scene === 'exit' || spoolRaw) {
-  manifest.record_limit = spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : 270;
+  manifest.record_limit = spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : args.atmosphere !== 'off' ? 1024 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
-  manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4 ? 64 : 24;
+  manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4
+    ? (args.atmosphere !== 'off' ? 128 : 64) : 24;
   if (spriteField) manifest.admission_policy = 'wait';
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }
 if (args.clouds !== 'off') manifest.clouds = args.clouds;
 if (cloudView) manifest.cloud_view = JSON.parse(cloudView);
 manifest.effect = args.effect;
+manifest.atmosphere = args.atmosphere;
 manifest.console = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
 const bundle = path.join(output, 'ThrumCapture.app');
 const launcher = path.join(bundle, 'Contents/MacOS/Launcher');
@@ -135,7 +147,7 @@ try {
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
   if (spriteField) await cdp.call('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: output });
-  const completionSignal = (spriteField || args.scene === 'exit' || args.clouds !== 'off') && args.mode === 'realtime' &&
+  const completionSignal = (spriteField || args.scene === 'exit' || args.clouds !== 'off' || args.atmosphere !== 'off') && args.mode === 'realtime' &&
     (args.control === 'ordinary' || args.control === 'off');
   let captureDone = false;
   if (completionSignal) {
@@ -148,7 +160,7 @@ try {
     };
   }
   manifest.load_before = loadavg();
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${cloudView ? '&cloud-view' : ''}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${cloudView ? '&cloud-view' : ''}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
@@ -161,7 +173,7 @@ try {
   }, 180000, 'submitted-output route');
   manifest.load_after = loadavg();
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
-  if (args.witness !== 'off' && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');
+  if ((args.witness !== 'off' || args.atmosphere !== 'off') && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');
   await Promise.all(pending);
   if (spriteField && record.complete) {
     const file = path.join(output, 'sprites-field.rgba');

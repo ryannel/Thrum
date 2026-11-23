@@ -10,13 +10,17 @@ const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
 const spriteField = scene === 'sprites-field';
 const witness = query.get('witness') ?? 'off';
+const atmosphere = query.get('atmosphere') ?? 'off';
+const heldSetup = witness !== 'off' || atmosphere !== 'off';
+const atmosphereMotion = atmosphere === 'scrub' || atmosphere === 'ground-pan';
 const clouds = query.get('clouds') ?? 'off';
 const cloudView = query.has('cloud-view');
 const configuredExportSlots = Number(query.get('export-slots'));
-const exportSlots = (spriteField || scene === 'exit' || witness !== 'off' || clouds !== 'off') && [24, 32, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
+const allowedExportSlots = atmosphereMotion ? [24, 32, 64, 128] : [24, 32, 64];
+const exportSlots = (spriteField || scene === 'exit' || heldSetup || clouds !== 'off') && allowedExportSlots.includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
-  (spriteField || scene === 'exit' || witness !== 'off' || clouds !== 'off');
-const useAnimationFrame = (scene === 'exit' || clouds !== 'off') && mode === 'realtime' &&
+  (spriteField || scene === 'exit' || heldSetup || clouds !== 'off');
+const useAnimationFrame = (scene === 'exit' || atmosphereMotion || clouds !== 'off') && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
 if (!['day', 'night', 'noon', 'exit', 'sprites-field'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
@@ -30,6 +34,10 @@ let uploadWorker;
 let exportError;
 let withholdUntil = 0;
 const fail = message => { throw new Error(message); };
+function applyCaptureParameters(text, timestamp) {
+  const result = JSON.parse(game.apply_parameters(text, timestamp));
+  if (result.problems.length) fail(result.problems.join('; '));
+}
 function drain() {
   if (control === 'off' || performance.now() < withholdUntil) return;
   for (;;) {
@@ -105,7 +113,7 @@ async function runCapture() {
     game.set_camera_yaw(key.yaw_degrees * Math.PI / 180);
     game.set_camera_pitch(key.pitch_degrees * Math.PI / 180);
   }
-  if (witness === 'off') {
+  if (!heldSetup) {
     // Fixed-time preparation stops at the ordinary route installation barrier.
     while (game.committed_tick() < route.origin_tick - 1) {
       if (!game.route_slot_ready()) { await wait(1); continue; }
@@ -122,14 +130,19 @@ async function runCapture() {
     }
     if (game.committed_tick() !== 0) fail('reconstruction witness advanced during residency');
   }
-  if (witness === 'off') game.install_route(text);
-  else {
+  if (!heldSetup) game.install_route(text);
+  else if (atmosphere === 'off') {
     game.set_time_of_day(witness === 'stars' ? 0 : 0.5);
     if (witness === 'stars') game.set_camera_pitch(7*Math.PI/180);
   }
   const base = game.route_step_ms(0.5) - 1000 / 60;
   game.set_paused(true, base);
-  if (witness !== 'off') {
+  if (atmosphere !== 'off') {
+    const parameters = await (await fetch('/capture-params.json')).text();
+    record.parameters = JSON.parse(parameters);
+    applyCaptureParameters(parameters, base);
+  }
+  if (heldSetup) {
     // Match the native witness's held setup before recording elapsed motion.
     // Residency and the phase edit above must not become an AA startup transient.
     for (let frame = 0; frame < 128; frame++) {
@@ -219,13 +232,16 @@ async function runCapture() {
     withholdUntil = start + 2000;
     record.actions.push({ kind: 'withhold readback collection', start_ms: start, end_ms: withholdUntil });
   }
-  const duration = (route.keys.at(-1).tick + 121) * 1000 / 60;
+  const duration = atmosphereMotion ? (atmosphere === 'scrub' ? 10000 : 7000) :
+    (route.keys.at(-1).tick + 121) * 1000 / 60;
   const fixedExitPhaseMs = scene === 'exit' && mode === 'fixed'
     ? (route.phase[0] / route.phase[1]) * 1000 / 60 : 0;
   let ordinal = 0;
   let acted = false;
   let released = false;
-  while (witness !== 'off' ? ordinal < 270 : mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 : performance.now() - start < duration || game.committed_tick() < route.origin_tick + route.keys.at(-1).tick + 59) {
+  while (atmosphere === 'checkpoint' ? ordinal < 1 : atmosphereMotion ? performance.now() - start < duration :
+    witness !== 'off' ? ordinal < 270 : mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 :
+    performance.now() - start < duration || game.committed_tick() < route.origin_tick + route.keys.at(-1).tick + 59) {
     if (hidden) fail('page became hidden during capture');
     const due = start + ordinal * 1000 / 60;
     let rafMs;
@@ -254,7 +270,15 @@ async function runCapture() {
       game.set_time_of_day(solar/24);
       record.actions.push({kind:'solar-scrub',frame_ms:timestamp,solar_hours:solar});
     }
-    if (!released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
+    if (atmosphereMotion) {
+      const scrub = atmosphere === 'scrub';
+      const progress = Math.max(0, Math.min(1, (timestamp-base-1000)/(scrub ? 8000 : 5000)));
+      const solar = scrub ? 5+19*progress : 17.4+0.4*progress;
+      const yaw = scrub ? -45+22.5*Math.sin(2*Math.PI*progress) : -110+40*progress;
+      applyCaptureParameters(JSON.stringify({'sky.solar_time':solar,'camera.yaw':yaw}), timestamp);
+      record.actions.push({kind:atmosphere,frame_ms:timestamp,solar_hours:solar,yaw_degrees:yaw});
+    }
+    if (atmosphere === 'off' && !released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
       // Resume clears the clock fraction. Put the fixed exit route's origin
       // between the last held callback and this sample to restore its phase.
       game.set_paused(false, timestamp - fixedExitPhaseMs);

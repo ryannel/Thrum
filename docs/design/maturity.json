@@ -259,6 +259,14 @@
         "browser": "Chrome_M3Max_sunset_to_midnight_sweep_reviewed;_paired_720p_star_frame_costs_at_midnight_and_twilight_recorded;_physical_cadence_unqualified",
         "ios": "not_run"
       },
+      "route_closure": {
+        "implementation": "The existing valley atmosphere runs with TAAU selected. M6 adds T2 fixed stops and elapsed-time pans, and checks the lent reflection cube and split-sum table against their stored products.",
+        "correctness": "Metal and hardware Chrome pass the stored table, face and mip addressing, the blend across mip levels, physical units and explicit exposure scales 1 and 2. The four automated M6 item checks pass on the builder branch.",
+        "visuals": "G3s remains open. Metal and Chrome TAAU checkpoints reproduce the near-ridge bright rim and shipped valley terrain-lip brightness step at 17.4 h. The sphere and rock cast clearly visible shadows at noon and have no clearly visible ground shadows at sunrise. The terrain lip persists through the lit portion of both elapsed Ground E pans.",
+        "device": "Apple M3 Max Metal and hardware Chrome WebGPU are the M6 targets. Capture-off 1080p Metal ABBA with TAAU records whole-frame visit medians of 2.675–3.979 ms across the six stops under shared load. The 1-minute load was 94.0–202.6, with three named excursions and elapsed scrub hitches investigated.",
+        "unqualified": "The moving west-lookout shadow crossing, exact finite-disk match, all-orders solar sky and solar aerial accuracy, Moon, weather, calibrated night colour, physical display cadence and physical iPhone are outside the qualification.",
+        "evidence": ["../evidence/ATMOSPHERE/M6/README.md"]
+      },
       "aloft_casters": {
         "implementation": "The exit balloon row is marked aloft. Its buckets draw in both Sun cascades. Only grounded buckets draw in the terrain horizon; contribution casters and Sun fits retain their existing inputs.",
         "correctness": "M10.1 reads the three Metal depth layers. Both cascades equal the unmarked run, and the terrain horizon equals the run with the airborne caster absent, in Direct, Frustum and Occlusion.",

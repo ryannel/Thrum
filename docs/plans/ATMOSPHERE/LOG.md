@@ -641,3 +641,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   brightness step and a warm ridge mean, so that a depth edge and a sunlit crest pass. M6.1 to M6.8 are unchanged. M10's
   note in the plan shrank to its review link. The design has not been reviewed since this change.
 - 2026-11-20 Planner, from the cleanup review (L8-07): M8.8's ask named a file under `docs/evidence`, which the merge refuses; it now names this milestone's evidence. M8 was Not Started.
+- 2026-11-18 M6 adds independent same-run stored-table and cube checks on Metal and Chrome.
+  H5 records P7/P8 differences. All existing guard expectations and H1–H4 cases are unchanged.
+  Paired Metal route timing passes with three pass excursions and two scrub gaps investigated.
+  Both targets reproduce the held 17.4 h terrain-lip step. A terrain ray diagnostic identifies
+  the abrupt receiver distance and normal change. The 6.1 h prop rays also hit the east terrain.
+  A ruling with SHOWCASE and APPLE-TILE is needed to change the scene and refresh the sunset references.
+  [Evidence](../../../.orchestrate/evidence/ATMOSPHERE/M6/README.md) and [handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md)

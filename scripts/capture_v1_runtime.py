@@ -465,7 +465,7 @@ if __name__ == "__main__":
     parser.add_argument('--reconstruction', choices=['off','taau'])
     parser.add_argument('--overlay', choices=['off','proof','motion','reconstruction'])
     parser.add_argument('--recipe', choices=['portable','apple-tile'])
-    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub", "clouds-drift", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route", "exit-route", "exit-drift", "exit-stop", "sprites-field", "sprites-field-cost"], default="pan")
+    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub", "atmosphere-scrub", "atmosphere-ground-pan", "clouds-drift", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route", "exit-route", "exit-drift", "exit-stop", "sprites-field", "sprites-field-cost"], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")

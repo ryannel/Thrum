@@ -310,10 +310,10 @@
           "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this milestone started from. In H1-H4, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. In H5, are the changes only the ones the design names: the stored-cube probe and the stored-table rule added, and the closed-form and quadrature comparisons kept as recorded differences with no assertion on them, while the night term, the agreement across edges and corners, the furnace and the source scaling stand as they were? Is every changed expected value one of the design's five guards, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/prior/chrome-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.7",
@@ -322,10 +322,10 @@
           "ask": "Read the stored-table comparison in `crates/thrum-render/src/atmosphere/products/tests/reflection.rs` and in `scripts/environment_referee.mjs`. In both, does the expected pair come from the table's stored texels, read back in that run and blended by the test's own evaluation, with no call to the lent library and no quadrature, and do the three wrong lookups go through the same bound as the right one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/prior/metal-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.8",
@@ -334,10 +334,10 @@
           "ask": "Read the probe in `crates/thrum-render/src/atmosphere/products/tests/reflection.rs` and in `scripts/environment_referee.mjs`. In both, is the probe stored in the cube the lent layout binds, and not in a texture or a layout the test made; does each expected value come from the colour the fixture stored, with no call to the lent library and no closed form or quadrature; is a midpoint's expected value the blend of the two colours stored for its two levels, and are the lower level alone and the upper level alone run there as wrong lookups; and do all the wrong lookups go through the same bound as the right one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/prior/metal-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.5",
@@ -379,7 +379,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged."
     },
     {
