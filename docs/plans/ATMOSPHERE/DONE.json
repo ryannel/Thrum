@@ -427,10 +427,10 @@
           "lock": "gpu",
           "ask": "Did any existing reference, case, bound or test in the numerical acceptance table change? None may: the defaults draw as before.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.4",
@@ -439,10 +439,10 @@
           "lock": "gpu",
           "ask": "Does the test show that the forward decoder's own split of solar in-scatter by a surface's shadow is not applied on top of the volume's, by comparing a shadowed surface's aerial term with the volume's value at its depth?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.13",
@@ -451,8 +451,8 @@
           "ask": "Does the test take `L` from the clear sky and `(R, \u0394S)` from the volume's own output for the same ray, and neither from the composed pixel? Does it run a sky that takes `\u0394S` twice and a sky left as the clear sky through the same comparison on both shadowed rays, and does each fail there?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
           "verdict": "",
           "review": ""
         },
@@ -462,10 +462,10 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_history_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.6",
@@ -513,30 +513,30 @@
           "check": "python3 scripts/view_volume.py cost --scene haze",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/cost.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.11",
           "statement": "The maturity ledger's atmosphere rows state implementation, correctness, visuals and device apart for the view volume and the haze input, and name what is not qualified: the joint volume against an all-orders reference, and local lights in the air.",
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/design/maturity.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
