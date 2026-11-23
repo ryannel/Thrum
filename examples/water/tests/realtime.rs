@@ -62,7 +62,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     for _ in 0..8 {
         runtime.step().expect("warm submit");
         device
-            .poll(wgpu::PollType::wait_indefinitely())
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_secs(30)),
+            })
             .expect("warm poll");
         while runtime.completed().expect("warm completion").is_some() {}
     }
@@ -148,9 +151,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         if runtime.pending_frames() == 0 && frames.len() >= submitted {
             return Some(true);
         }
-        device
-            .poll(wgpu::PollType::wait_indefinitely())
-            .expect("final poll");
+        device.poll(wgpu::PollType::Poll).expect("final poll");
         // A rejected frame ends the wait; the writer's outcome is reported below.
         drain(&mut runtime, &writer, &mut frames, &mut completed)
             .is_err()

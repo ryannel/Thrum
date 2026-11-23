@@ -227,9 +227,7 @@ impl Fixture {
             .expect("submitted scene");
         self.witness = self.host.submitted_temporal_witness().cloned();
         let sample = thrum_test_support::wait::until("completion", Duration::from_secs(30), || {
-            self.device
-                .poll(wgpu::PollType::wait_indefinitely())
-                .expect("poll");
+            self.device.poll(wgpu::PollType::Poll).expect("poll");
             self.host.poll_completed().expect("completed")
         });
         assert!(
