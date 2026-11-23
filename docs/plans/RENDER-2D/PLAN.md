@@ -37,9 +37,10 @@ checkpoint on main before starting any other M3 item. The next green `long-tests
 RAY-TRACING M3 proceed.
 
 Then tune the [spatial filter](DESIGN.md#6-sampling-two-kinds-of-sheet) for the existing 1.5× scroll and the
-off-grid 2× Metal pan. Keep the authored patterns, camera paths and backing extents for comparison. Reuse the
-camera-sweep proof on Metal and Chrome, and verify bleed neighbours in the uploaded atlas. Retire the exact-box
-checks and their tracked tolerance fixtures when the replacement proofs are ready. [M3 items](DONE.json)
+full off-grid 2× transition in the Metal pan. Keep the authored patterns, camera paths and backing extents for
+comparison. Reuse the camera-sweep proof on Metal and Chrome, and verify bleed neighbours in the uploaded
+atlas. Retire the exact-box checks and their tracked tolerance fixtures when the replacement proofs are ready.
+Close M3 with the shared `long-tests` result covering the merged milestone (M3.13). [M3 items](DONE.json)
 
 ## M4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
 

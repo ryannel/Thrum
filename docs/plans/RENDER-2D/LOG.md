@@ -149,3 +149,17 @@
 - 2026-11-23 Revision validation. The documentation check and the existing native sprite and window
   checks passed. The item dry run reproduced M3.12's inventory failure and stopped at the queue for
   the unchanged Chrome check. Visual acceptance of the compact kernel belongs to the M3 build.
+- 2026-11-23 [Final design review](../../../.orchestrate/evidence/RENDER-2D/design-review.md) Must Fix 1.
+  The compact tent still loses checker contrast near texel-edge crossings. Mechanism 6 and M3.1 now cover
+  the full off-grid 2× transition with frame-local spatial sampling. The revision removes the mandatory
+  compact footprint, quarter-pixel edge mix and off-grid sample-count ceiling. It allows phase-dependent
+  or neighbourhood-dependent sampling within the existing gutter. M3.3 keeps the exact aligned blocks.
+  M3.8 still judges the original stripes and checker in motion at normal size and speed.
+- 2026-11-23 Final design review Must Fix 2. M3.12 retains its focused Metal inventory check and lands
+  first as a test-only checkpoint for WATERS M17 and RAY-TRACING M3. M3.13 requires a shared
+  `long-tests` pass covering the completed M3 landing on main. The final review raised no new
+  suggestions. M3.1 retains the agreed before-and-after timing record.
+- 2026-11-23 Final revision validation. The documentation and done-when checks passed. The M3 item
+  dry run reproduced the stale inventory expectations and reused the existing Metal passes. It stopped
+  in the Chrome queue. A separate M3.13 probe reached the shared check, which reported an in-flight
+  run and no covering pass. The completed M3 landing and its realtime captures supply the remaining proof.

@@ -317,8 +317,8 @@
         },
         {
           "id": "M3.1",
-          "statement": "On both Metal recipes and Chrome WebGPU, pixel sheets use the centred filter in mechanism 6 on the existing one-draw path at the output extent. It widens near 1.5\u00d7, changes edge weights at off-grid 2\u00d7 and selects the authored texels at aligned 2\u00d7. Record: before-and-after sprite-pass timings for the 1920\u00d71080 1.5\u00d7 scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
-          "ask": "At 1.5\u00d7 does the shader apply normalized, nonnegative weights to premultiplied scene-linear RGBA within the claimed support? At 2\u00d7 does the compact kernel reduce to the authored texel on the aligned grid and change the edge mix from the box at a quarter-output-pixel offset using continuous coordinates? Check the support, quad margin and frame-local atlas reads for a standalone frame and a tile. Do the aligned path and wider path use at most one and four bilinear samples respectively with the existing bindings?",
+          "statement": "On both Metal recipes and Chrome WebGPU, the existing sprite draw at the output extent applies the widened pixel filter near 1.5\u00d7 and a frame-local spatial reconstruction through the off-grid 2\u00d7 edge crossings. At aligned 2\u00d7 it selects the authored texels. Record the before-and-after sprite-pass timings for the 1920\u00d71080 1.5\u00d7 scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
+          "ask": "At 1.5\u00d7 does the shader combine premultiplied scene-linear RGBA with normalized, nonnegative weights within mechanism 6's support? At 2\u00d7 does it use continuous projected texel coordinates through single-axis and two-axis texel-edge crossings and converge to the authored sample at alignment? Do the standalone quad margin and transparent gutter cover the chosen footprint, and do tiles use their own extruded edges with unchanged shared-edge ownership?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -429,6 +429,16 @@
           "id": "M3.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.13",
+          "statement": "The shared main-branch check long-tests passes on a commit containing the completed M3 changes, including the feature-gated generation inventory repaired in M3.12.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
