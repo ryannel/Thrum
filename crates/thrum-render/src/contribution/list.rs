@@ -27,7 +27,7 @@ impl SceneContributions {
     fn rebuild_members(
         &mut self,
         surface: &SceneSurface<'_>,
-        mut rebuild: impl FnMut(&mut dyn SceneContribution, &SceneSurface<'_>) -> Result<(), FrameError>,
+        attaching: bool,
     ) -> Result<(), FrameError> {
         let mut first = 0;
         self.rebuild_entries(|entry| {
@@ -43,7 +43,11 @@ impl SceneContributions {
                     .ok_or(FrameError::InvalidState(
                         "secondary view declaration changed during rebuild",
                     ))?;
-            rebuild(entry, &member)?;
+            if attaching {
+                entry.rebuild_for_attachment(&member)?;
+            } else {
+                entry.rebuild(&member)?;
+            }
             first = end;
             Ok(())
         })
@@ -410,12 +414,10 @@ impl SceneContribution for SceneContributions {
         Ok(())
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
-        self.rebuild_members(surface, |entry, member| entry.rebuild(member))
+        self.rebuild_members(surface, false)
     }
     fn rebuild_for_attachment(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
-        self.rebuild_members(surface, |entry, member| {
-            entry.rebuild_for_attachment(member)
-        })
+        self.rebuild_members(surface, true)
     }
     fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         for entry in &mut self.entries {
