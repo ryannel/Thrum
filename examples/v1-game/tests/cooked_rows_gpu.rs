@@ -557,7 +557,13 @@ fn refusal_keeps_the_whole_publication_then_recovers_resizes_and_replaces_device
             );
             let stats = stats.lock().expect("stats");
             if !stats.errors.is_empty() {
-                assert!(stats.errors.last().expect("reason").contains("Capacity"));
+                assert!(
+                    stats
+                        .errors
+                        .last()
+                        .expect("reason")
+                        .ends_with(&MeshRowError::Capacity.to_string())
+                );
                 assert_eq!(stats.drawn, Some(first));
                 break;
             }

@@ -10,7 +10,7 @@ mod ray_tracing {
     #[cfg(target_os = "macos")]
     use std::time::{Duration, Instant};
     #[cfg(target_os = "macos")]
-    use thrum_render::synthetic::mesh_rows::MeshRowStatus;
+    use thrum_render::synthetic::mesh_rows::{MeshRowError, MeshRowStatus};
     #[cfg(target_os = "macos")]
     use v1_game::GameHost as _;
 
@@ -101,7 +101,7 @@ mod ray_tracing {
                 "refusal changed raster bytes or ray answers"
             );
             if let Some(reason) = stats.lock().expect("stats").errors.last().cloned() {
-                assert!(reason.contains("Capacity"), "{reason}");
+                assert!(reason.ends_with(&MeshRowError::Capacity.to_string()), "{reason}");
                 break;
             }
             assert!(
