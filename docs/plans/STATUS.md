@@ -326,7 +326,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Small water checks leave the full sea grids to the long tier (WATERS M17): In Progress · [plan](WATERS/PLAN.md)
 - SCENE-VIEWS's design: Design Ready for Review · [design](SCENE-VIEWS/DESIGN.md) · [plan](SCENE-VIEWS/PLAN.md)
 - Small cloud products check Metal and portable limits with headroom (CLOUDS M18): Not Started · [plan](CLOUDS/PLAN.md)
-- Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): In Progress · [plan](RENDER-2D/PLAN.md)
+- Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): Ready for Review · [plan](RENDER-2D/PLAN.md)
 - SESSION's design: Design Ready for Review · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
 - REVIEW-ENGINE's design: Design Ready for Review · [design](REVIEW-ENGINE/DESIGN.md) · [plan](REVIEW-ENGINE/PLAN.md)
 - REVIEW-RENDER's design: Design Changes Requested · [design](REVIEW-RENDER/DESIGN.md) · [plan](REVIEW-RENDER/PLAN.md)
@@ -449,7 +449,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M3 of 5 · In Progress |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M3 of 5 · Ready for Review |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Design Ready for Review |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
