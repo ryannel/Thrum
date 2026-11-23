@@ -87,8 +87,23 @@ def check_web(folder):
     for case, web_root in [(case, 'v1-game-web') for case in WEB_CASES] + [
         ('material', 'v1-game-web-dev'),
     ]:
-        run('node', WEB_CHECK, '--case', case, '--web-root', ROOT / 'target' / web_root,
-            '--cook', COOKER, '--output', folder / case)
+        for suffix in ('', '-retry', '-retry-2'):
+            output = folder / (case + suffix)
+            try:
+                run('node', WEB_CHECK, '--case', case, '--web-root', ROOT / 'target' / web_root,
+                    '--cook', COOKER, '--output', output)
+            except subprocess.CalledProcessError:
+                receipt = output / 'run.json'
+                if suffix == '-retry-2' or not receipt.is_file():
+                    raise
+                record = json.loads(receipt.read_text())
+                # A finished game can race Chrome's teardown watchdog. Keep the failed
+                # witness and require a fresh profile to pass the whole case and cleanup.
+                if not record.get('results') or not record.get('error', '').startswith('Error: Cleanup failed;'):
+                    raise
+                print(f'{case}: retrying the completed scenario after Chrome teardown failed', flush=True)
+            else:
+                break
 
 
 def check_ios(folder):
