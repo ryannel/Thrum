@@ -29,15 +29,8 @@ const GROUP_WIDTH: u32 = 64;
 const SURF_GROUP: u32 = 1;
 const SURF_BINDING: u32 = 7;
 const PLAIN_QUERY: &str = "
-@compute @workgroup_size(QUERY_WIDTH)
-fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
-    let index = invocation.x;
-    if index >= settings.count { return; }
-    let point = points[index];
-    let gains = query_gains(point);
-    var result: QueryWave;
-    if point.body != 0xffffffffu { result = plain_query(point, gains.x); }
-    write_answer(index, point, gains, result);
+fn surf_query(point: QueryPoint, gain: f32) -> QueryWave {
+    return QueryWave(long_wave(point.position - settings.origin, point.dt, gain, settings.lengths_chop.w, settings.components), 0u);
 }";
 
 #[repr(C)]
@@ -469,12 +462,7 @@ impl Readback {
         }
         for batch in &self.pending {
             pass.set_bind_group(0, &self.slots[batch.slot].group, &[]);
-            let groups = if self.surf.is_some() {
-                batch.count
-            } else {
-                batch.count.div_ceil(GROUP_WIDTH)
-            };
-            pass.dispatch_workgroups(groups, 1, 1);
+            pass.dispatch_workgroups(batch.count.div_ceil(GROUP_WIDTH), 1, 1);
         }
     }
 
@@ -670,19 +658,10 @@ impl Answer {
     }
 }
 
-pub(crate) fn validate(
-    limits: QueryLimits,
-    device: &wgpu::Limits,
-    surf: bool,
-) -> Result<(), String> {
-    let groups = if surf {
-        limits.points
-    } else {
-        limits.points.div_ceil(GROUP_WIDTH)
-    };
+pub(crate) fn validate(limits: QueryLimits, device: &wgpu::Limits) -> Result<(), String> {
     if u64::from(limits.points) * size_of::<Answer>() as u64
         > device.max_storage_buffer_binding_size
-        || groups > device.max_compute_workgroups_per_dimension
+        || limits.points.div_ceil(GROUP_WIDTH) > device.max_compute_workgroups_per_dimension
     {
         return Err("water query exceeds the device buffer or dispatch limit".into());
     }

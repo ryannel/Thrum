@@ -213,7 +213,6 @@ pub(super) fn new(
         query::validate(
             profile.query.expect("enabled query limits"),
             &surface.limits,
-            surf.is_some(),
         )?;
         Some(Readback::new(
             device,
