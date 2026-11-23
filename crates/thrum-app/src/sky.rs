@@ -1055,8 +1055,12 @@ impl Game for SkyGame {
     }
 
     fn frame_edits(&mut self) -> SkyEdits {
-        drop(self.poll_status());
-        drop(self.poll_kept());
+        #[cfg(target_os = "macos")]
+        {
+            drop(self.poll_status());
+            drop(self.poll_kept());
+        }
+        // The browser report consumes the same content outcomes for the live page.
         self.poll_reload();
         self.update()
     }
