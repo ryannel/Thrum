@@ -1,7 +1,7 @@
 use std::f64::consts::{FRAC_1_SQRT_2, TAU};
 use std::time::Duration;
 use thrum_sea_model::{Cascade, Component, LongWaves, Spectrum};
-use thrum_water_model::{Bed, BodyKind, Field, Map, Stage};
+use thrum_water_model::{Bed, BodyKind, CutConfig, Field, Map, Sheet, Stage, cut};
 
 pub(crate) const STEP: Duration = Duration::from_nanos(16_666_667);
 pub(crate) const CHOPPINESS: f64 = 0.5;
@@ -51,4 +51,44 @@ pub(crate) fn beach() -> (Map, Spectrum, Field) {
         tail_slope_variance: 0.0,
     };
     (map, spectrum, field)
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "record both failing controls in the target receipt"
+)]
+pub(crate) fn check_lip(
+    map: &Map,
+    plain: &Map,
+    field: &Field,
+    column: [f64; 2],
+    time: f64,
+    height: f64,
+) {
+    let sheet = map.surf_sheet(field, 0, time).expect("breaker sheet");
+    let cut = cut(&sheet, column, CutConfig::default()).expect("breaker cut");
+    assert!(
+        cut.hits >= 3 && cut.converged,
+        "three-surface witness: {cut:?}"
+    );
+    assert!((cut.height - height).abs() < 0.001);
+    let mut rest = column;
+    for _ in 0..128 {
+        let p = sheet.forward(rest);
+        rest = std::array::from_fn(|a| column[a] - (p.world[a] - rest[a]));
+    }
+    let trough = sheet.forward(rest);
+    let residual = (trough.world[0] - column[0]).hypot(trough.world[1] - column[1]);
+    assert!(
+        residual < 0.001 && height - trough.height > 0.10,
+        "plain iteration must converge on the trough: {trough:?}"
+    );
+    let no_transform = plain
+        .surface(field, column, time)
+        .expect("untransformed wave");
+    assert!((height - no_transform.sample.height).abs() > 0.10);
+    eprintln!(
+        "fold: {} crossings, lip {:.6} m, trough {:.6} m, without transform {:.6} m",
+        cut.hits, height, trough.height, no_transform.sample.height
+    );
 }

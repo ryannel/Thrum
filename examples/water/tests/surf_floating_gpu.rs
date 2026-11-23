@@ -1,59 +1,18 @@
 //! The model and the float query see the same folded sheet and swash.
-#![cfg(target_os = "macos")]
-
+#[cfg(target_os = "macos")]
 mod support;
 
-#[path = "support/surf.rs"]
-mod surf_fixture;
-
-use std::sync::{Arc, Mutex};
-use surf_fixture::{CHOPPINESS, STEP, beach};
-use thrum_water::{Profile, Water, query::QueryLimits};
-use thrum_water_model::{CutConfig, Sheet, SurfProfile, cut};
-use water_scene::floating::{Body, Hull, sample_answer};
-
-const TOLERANCE: f64 = 0.015;
-const LIP: [f64; 2] = [-28.705, 3.2795];
-
-#[expect(clippy::print_stderr, reason = "record both failing controls in the target receipt")]
-fn check_lip(
-    map: &thrum_water_model::Map,
-    plain: &thrum_water_model::Map,
-    field: &thrum_water_model::Field,
-    column: [f64; 2],
-    time: f64,
-    height: f64,
-) {
-    let sheet = map.surf_sheet(field, 0, time).expect("breaker sheet");
-    let cut = cut(&sheet, column, CutConfig::default()).expect("breaker cut");
-    assert!(
-        cut.hits >= 3 && cut.converged,
-        "three-surface witness: {cut:?}"
-    );
-    assert!((cut.height - height).abs() < 0.001);
-    let mut rest = column;
-    for _ in 0..128 {
-        let p = sheet.forward(rest);
-        rest = std::array::from_fn(|a| column[a] - (p.world[a] - rest[a]));
-    }
-    let trough = sheet.forward(rest);
-    let residual = (trough.world[0] - column[0]).hypot(trough.world[1] - column[1]);
-    assert!(
-        residual < 0.001 && height - trough.height > 0.10,
-        "plain iteration must converge on the trough: {trough:?}"
-    );
-    let no_transform = plain
-        .surface(field, column, time)
-        .expect("untransformed wave");
-    assert!((height - no_transform.sample.height).abs() > 0.10);
-    eprintln!(
-        "fold: {} crossings, lip {:.6} m, trough {:.6} m, without transform {:.6} m",
-        cut.hits, height, trough.height, no_transform.sample.height
-    );
-}
-
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn float_queries_match_the_breaker_and_swash() {
+    use std::sync::{Arc, Mutex};
+    use support::surf::{CHOPPINESS, STEP, beach, check_lip};
+    use thrum_water::{Profile, Water, query::QueryLimits};
+    use thrum_water_model::SurfProfile;
+    use water_scene::floating::{Body, Hull, sample_answer};
+
+    const TOLERANCE: f64 = 0.015;
+    const LIP: [f64; 2] = [-28.705, 3.2795];
+
     let (plain, spectrum, field) = beach();
     let mut surf = plain.clone();
     surf.enable_surf(SurfProfile::default())
@@ -130,4 +89,5 @@ fn float_queries_match_the_breaker_and_swash() {
     }
     assert_eq!(mailbox.stats().blocking_reads, 0);
     eprintln!("largest error at a float station: {largest_error:.6} m");
+}
 }

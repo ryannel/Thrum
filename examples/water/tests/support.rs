@@ -3,6 +3,7 @@
     reason = "shared public-seam fixture supports several focused GPU tests"
 )]
 pub(crate) mod island;
+pub(crate) mod surf;
 use std::time::Duration;
 use thrum_app::{
     Game, Gpu,
