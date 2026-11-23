@@ -760,7 +760,10 @@ mod temporal_tests {
             assert_ne!(sample, [0.0; 2]);
         }
         let previous = SyntheticView::default();
-        let current = previous.with_jitter_phase(7, [64, 32]);
+        assert_eq!(previous.view_record(&previous, 1.0).mip_bias.to_bits(), 0);
+        let current = previous
+            .with_reconstruction(true)
+            .with_jitter_phase(7, [64, 32]);
         let record = current.pack_view(&previous, 1.0);
         let mut expected = [0_u8; 240];
         let mut matrix = previous.view_proj;
