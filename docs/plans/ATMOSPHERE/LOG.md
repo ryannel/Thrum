@@ -672,3 +672,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
 |---:|---|
 | 8.116 | `thrum-render atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query` |
 | 6.709 | `thrum-render atmosphere::gpu::tests::diffuse::analytic_fields_preserve_direction_colour_and_physical_units` |
+
+- 2026-11-23 M11.1 reads one stored aerial cell across all depth layers directly from the producer textures.
+  H4 retains its live, known, fixed-texel, clamp, exposure and wrong-lookup comparisons. The diffuse test
+  reuses the CPU reference weights and reduces the constant textures and lobe quadrature within the same bounds.
+  The first focused Metal batch passed in 1.096 s for H4 and 0.251 s for diffuse. Alone they passed in
+  0.112 s and 0.225 s. These are test durations under shared builder load.
+  [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M11/README.md)
