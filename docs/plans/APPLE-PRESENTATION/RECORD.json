@@ -677,7 +677,60 @@
     },
     "M6": {
       "definitions": "3aa93e5ca207c4191e3df81ebb25146d5f664a5ea9c06951534ccb3fda30dced",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "fc180052232daaf8eaf50ca245dbe47821935578",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "items": {
+            "D6.1": "fail",
+            "D6.2": "pass",
+            "D6.3": "pass",
+            "D6.4": "pass",
+            "D6.5": "fail",
+            "D6.6": "fail",
+            "D6.7": "pass",
+            "D6.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Night-lights preset prevents the standard showcase route from launching",
+              "repeat": false
+            },
+            {
+              "name": "Publishing a visual loses the current EDR headroom",
+              "item": "D6.5",
+              "repeat": false
+            },
+            {
+              "name": "An active submitted-output tap stays SDR after EDR promotion",
+              "item": "D6.6",
+              "repeat": false
+            },
+            {
+              "name": "The ordinary window qualification observer silently selects SDR",
+              "item": "D6.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 176359,
+            "cached": 6778880,
+            "output": 17120,
+            "turns": 1
+          },
+          "at": "2026-11-23T18:57:41Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
