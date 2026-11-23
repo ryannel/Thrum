@@ -52,10 +52,6 @@ fn data() -> (Profile, Vec<Type>) {
     clippy::cast_sign_loss,
     reason = "test compares the hash's deliberate low-word integer addressing and bounded floor coordinates"
 )]
-#[expect(
-    clippy::too_many_lines,
-    reason = "one conformance fixture checks weather and Sun-path products through replacement"
-)]
 pub(super) fn conformance(test: &str, portable: bool) {
     let Some(thrum_test_support::Opened {
         gpu, device, queue, ..
