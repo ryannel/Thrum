@@ -369,10 +369,10 @@
           "ask": "Does the run report the window's points, backing scale and surface extent from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-window-final.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.7",
@@ -400,10 +400,10 @@
           "statement": "On the Mac, stills of pixel and smooth sprites at each claimed scale are clean: pixel art has square, even texels with edges no wider than one output pixel, and smooth art has no fringe, halo or bleed and does not alias at 0.25.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234: pixel sprites at scales of 1, 1.5, 2.37, 4 and 6, and smooth sprites at 0.25, 0.5, 1 and 2, over light and dark backgrounds. Judge each frame whole and in native-size crops of outlines, thin lines and the gaps between neighbouring sprites.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/metal-stills.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.10",

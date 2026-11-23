@@ -23,7 +23,7 @@ const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
   (spriteField || scene === 'exit' || heldSetup || clouds !== 'off');
 const useAnimationFrame = (scene === 'exit' || atmosphereMotion || clouds !== 'off') && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
-if (!['day', 'night', 'noon', 'exit', 'sprites-field'].includes(scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 let hidden = document.hidden;
