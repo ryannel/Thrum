@@ -226,8 +226,8 @@
           "check": "cargo test --locked --offline -p thrum-app --test game_contract",
           "ask": "Does any type from winit, AppKit or web-sys appear in what a game implements? Does the sky kit still have a second construction path for the browser? Can the same game value run offscreen and in the window?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/recovery-fixes/README.md#m41-game-contract",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },

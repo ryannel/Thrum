@@ -62,7 +62,8 @@ export function mountPage(game, {
       beforeFrame?.(now);
       game.frame(now);
       view?.refresh();
-      const next = afterFrame?.(now, graphics());
+      const unavailable = graphics();
+      const next = afterFrame?.(now, unavailable);
       if (next instanceof Promise) await next;
     } catch (error) {
       fail(error, 'frame');

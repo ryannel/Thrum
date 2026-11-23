@@ -16,7 +16,7 @@ use thrum_render::{
     synthetic::{CaptureSource, OUTPUT_FORMAT},
 };
 
-use crate::{Game, Gpu, WorldLink};
+use crate::{Game, Gpu, WorldLink, game::apply_frame_edits};
 
 pub mod clock;
 pub mod thread_policy;
@@ -34,6 +34,7 @@ pub struct Offscreen<G: Game> {
     format: wgpu::TextureFormat,
     origin: Instant,
     lifecycle: WorldLifecyclePolicy,
+    replay_pending: bool,
 }
 
 /// Explicit boundary diagnostic, never enabled by the ordinary game loop.
@@ -119,7 +120,8 @@ impl<G: Game> Offscreen<G> {
     }
 
     /// Rebuild GPU resources from the retained game/world after a native error
-    /// or explicit device loss. The platform supplies the newer generation.
+    /// or explicit device loss. The platform supplies the newer generation. The
+    /// next step replays the game's presentation edits before encoding.
     /// # Errors
     /// Refuses stale generation or failed detached preparation before publishing.
     pub async fn recover_device(
@@ -145,6 +147,7 @@ impl<G: Game> Offscreen<G> {
             .output
             .create_view(&wgpu::TextureViewDescriptor::default());
         self.device = capabilities.site().clone();
+        self.replay_pending = true;
         Ok(())
     }
 
@@ -207,6 +210,7 @@ impl<G: Game> Offscreen<G> {
             format,
             origin: prepared.origin.unwrap_or_else(Instant::now),
             lifecycle: WorldLifecyclePolicy::default(),
+            replay_pending: false,
         })
     }
 
@@ -334,7 +338,8 @@ impl<G: Game> Offscreen<G> {
     }
 
     fn drive(&mut self, observation: Duration) -> Result<DriveReport, String> {
-        G::apply(&mut self.host, self.game.frame_edits())?;
+        apply_frame_edits(&mut self.game, &mut self.host, self.replay_pending)?;
+        self.replay_pending = false;
         let report = self
             .host
             .drive(

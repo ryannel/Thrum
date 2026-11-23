@@ -13,6 +13,7 @@ pub(crate) struct HostedGame<T>(pub(crate) T);
 pub(crate) trait RuntimeSetup {
     fn demo(&self) -> &GameControls;
     fn demo_mut(&mut self) -> &mut GameControls;
+    fn replay(&self) -> ControlEdits;
     async fn prepare_runtime(
         &mut self,
         gpu: Gpu<'_>,
@@ -86,7 +87,7 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     }
 
     fn replay(&self) -> ControlEdits {
-        self.0.demo().replay()
+        self.0.replay()
     }
 
     fn apply(host: &mut Runtime, edits: ControlEdits) -> Result<(), String> {

@@ -151,6 +151,7 @@ pub(in crate::window) async fn run(
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
+        replay_controls: false,
         capture_route: None,
         capture_eye: None,
         capture_cooked: None,

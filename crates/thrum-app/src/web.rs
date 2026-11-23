@@ -24,6 +24,7 @@ use web_sys::HtmlCanvasElement;
 
 use crate::{
     Game, Gpu, InlineWorld,
+    game::apply_frame_edits,
     surface::{SurfaceAction, surface_action},
     web_clock::PageClock,
 };
@@ -245,8 +246,9 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         G: Game<World = W, Scene = V>,
     {
         game.observe(G::readback(&self.host));
-        G::apply(&mut self.host, game.frame_edits()).map_err(WebHostError::Edit)?;
-        self.frame(timestamp_ms).map_err(WebHostError::Frame)
+        self.frame_with_edits(timestamp_ms, |host, replaced| {
+            apply_frame_edits(game, host, replaced).map_err(WebHostError::Edit)
+        })
     }
 
     /// Bind a declared profiler to this page. Report pages retain timing demand.
@@ -284,7 +286,19 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// # Errors
     /// Returns a timestamp, authoritative tick or GPU host fault.
     pub fn frame(&mut self, timestamp_ms: f64) -> Result<(), String> {
-        let now = self.clock.now(timestamp_ms)?;
+        self.frame_with_edits(timestamp_ms, |_, _| Ok(()))
+            .map_err(|error| error.to_string())
+    }
+
+    fn frame_with_edits(
+        &mut self,
+        timestamp_ms: f64,
+        apply: impl FnOnce(&mut FrameHost<W, V>, bool) -> Result<(), WebHostError>,
+    ) -> Result<(), WebHostError> {
+        let now = self
+            .clock
+            .now(timestamp_ms)
+            .map_err(|error| WebHostError::Frame(error.to_owned()))?;
         if !self.clock.visible() {
             return Ok(());
         }
@@ -297,7 +311,9 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         );
         self.profile.callback(now);
         let extent = [self.canvas.width(), self.canvas.height()];
-        if let Some((gpu, reconfigure)) = self.recovery.poll(&self.canvas, &mut self.host, extent) {
+        let replacement = self.recovery.poll(&self.canvas, &mut self.host, extent);
+        let replaced = replacement.is_some();
+        if let Some((gpu, reconfigure)) = replacement {
             self.adapter_name = gpu.adapter_name;
             self.config = gpu.config;
             self.device = gpu.device;
@@ -315,6 +331,11 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
                 self.attach_error = Some(error.to_string());
             }
         }
+        apply(&mut self.host, replaced)?;
+        self.present_frame(now, extent).map_err(WebHostError::Frame)
+    }
+
+    fn present_frame(&mut self, now: Duration, extent: [u32; 2]) -> Result<(), String> {
         if self.graphics.is_lost() {
             self.recovery.awaiting_first_present = false;
             self.unavailable += 1;

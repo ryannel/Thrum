@@ -179,6 +179,16 @@ pub trait Game {
     }
 }
 
+pub(crate) fn apply_frame_edits<G: Game>(
+    game: &mut G,
+    host: &mut FrameHost<G::World, G::Scene>,
+    replay: bool,
+) -> Result<(), String> {
+    let replay = replay.then(|| game.replay());
+    let frame = game.frame_edits();
+    G::apply(host, replay.map_or(frame, |edits| edits.merge(frame)))
+}
+
 /// Read a parameter file and apply it to `controls`: the report names any refused entry, which
 /// keeps its value while the others apply. The window and a live capture share it.
 /// # Errors

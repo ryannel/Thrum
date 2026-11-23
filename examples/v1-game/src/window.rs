@@ -179,6 +179,7 @@ pub fn run_window(
             demo: GameControls::new().map_err(|error| error.to_string())?,
             world: None,
             held_keys: 0,
+            replay_controls: true,
             capture_route: None,
             capture_eye: None,
             capture_cooked: None,
@@ -218,6 +219,7 @@ struct WindowGame {
     demo: GameControls,
     world: Option<WorldControls>,
     held_keys: u8,
+    replay_controls: bool,
     capture_route: Option<String>,
     capture_eye: Option<[f32; 3]>,
     capture_cooked: Option<CaptureCooked>,
@@ -272,6 +274,7 @@ fn capture_game_with_route_limit(
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
+        replay_controls: false,
         scene: None,
         cloud_capture,
         capture_cooked,
@@ -323,6 +326,16 @@ impl RuntimeSetup for WindowGame {
             setup.sprite_scale.is_none()
                 && setup.display_overlay != thrum_render::synthetic::DisplayOverlay::TracedGeometry
         })
+    }
+
+    fn replay(&self) -> crate::controls::ControlEdits {
+        // The window queues control edits across threads. Offscreen captures edit
+        // the retained scene source directly, including any scripted route.
+        if self.replay_controls {
+            self.demo.replay()
+        } else {
+            crate::controls::ControlEdits::default()
+        }
     }
 
     fn hardware_requests(&self) -> &[HardwareRequest] {

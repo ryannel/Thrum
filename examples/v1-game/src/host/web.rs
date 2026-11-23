@@ -11,7 +11,11 @@ use thrum_render::synthetic::CullingSelection;
 use super::{
     GameScene, GameSetup, GameWorld, Runtime, camera_pitch_edit, camera_yaw_edit, day_phase_edit,
 };
-use crate::{GameHost, SceneCamera, controls::GameControls, hosted::RuntimeSetup};
+use crate::{
+    GameHost, SceneCamera,
+    controls::{ControlEdits, GameControls},
+    hosted::RuntimeSetup,
+};
 
 /// The engine's browser shell over the V1 world and scene.
 pub(crate) type Shell = thrum_app::web::WebShell<GameWorld, GameScene>;
@@ -59,6 +63,12 @@ impl RuntimeSetup for PageGame {
 
     fn demo_mut(&mut self) -> &mut GameControls {
         &mut self.demo
+    }
+
+    fn replay(&self) -> ControlEdits {
+        // Page edits apply synchronously to the retained scene source, which also
+        // owns the exact scripted camera, solar time and diagnostic overlay.
+        ControlEdits::default()
     }
 
     async fn prepare_runtime(

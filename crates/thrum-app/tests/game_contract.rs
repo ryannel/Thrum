@@ -13,6 +13,7 @@ fn dom_physical_keys_keep_a_platform_neutral_identity() {
 #[test]
 fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
     use std::{
+        cell::Cell,
         sync::{
             Arc,
             atomic::{AtomicU16, Ordering},
@@ -21,7 +22,7 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
     };
 
     use thrum_app::{
-        Game, Gpu, KeyCode, KeyResponse, Prepared, WindowGame,
+        Edits, Game, Gpu, KeyCode, KeyResponse, Prepared, WindowGame,
         offscreen::Offscreen,
         sky::{Camera, Controls, SkyEdits, SkyGame, SkyScene, StillWorld},
     };
@@ -29,16 +30,36 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
 
     type Host = FrameHost<StillWorld, SkyScene>;
 
+    #[derive(Clone, Copy, Default)]
+    struct ProbeEdits {
+        sky: SkyEdits,
+        timing: Option<bool>,
+    }
+
+    impl Edits for ProbeEdits {
+        fn merge(self, newer: Self) -> Self {
+            Self {
+                sky: self.sky.merge(newer.sky),
+                timing: newer.timing.or(self.timing),
+            }
+        }
+
+        fn is_empty(&self) -> bool {
+            self.sky.is_empty() && self.timing.is_none()
+        }
+    }
+
     struct GameProbe {
         sky: SkyGame,
         observed: Vec<Option<u64>>,
         pressed: bool,
+        replays: Cell<u32>,
     }
 
     impl Game for GameProbe {
         type World = StillWorld;
         type Scene = SkyScene;
-        type Edits = SkyEdits;
+        type Edits = ProbeEdits;
         type Readback = Option<u64>;
 
         async fn prepare<'a>(
@@ -57,20 +78,33 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
             self.sky.controls_mut()
         }
 
-        fn take_edits(&mut self) -> (SkyEdits, Option<bool>) {
-            self.sky.take_edits()
+        fn take_edits(&mut self) -> (ProbeEdits, Option<bool>) {
+            let (sky, pause) = self.sky.take_edits();
+            (ProbeEdits { sky, timing: None }, pause)
         }
 
-        fn frame_edits(&mut self) -> SkyEdits {
-            self.sky.frame_edits()
+        fn frame_edits(&mut self) -> ProbeEdits {
+            ProbeEdits {
+                sky: self.sky.frame_edits(),
+                timing: None,
+            }
         }
 
-        fn replay(&self) -> SkyEdits {
-            self.sky.replay()
+        fn replay(&self) -> ProbeEdits {
+            self.replays.set(self.replays.get() + 1);
+            ProbeEdits {
+                sky: self.sky.replay(),
+                timing: Some(false),
+            }
         }
 
-        fn apply(host: &mut Host, edits: SkyEdits) -> Result<(), String> {
-            SkyGame::apply(host, edits)
+        fn apply(host: &mut Host, edits: ProbeEdits) -> Result<(), String> {
+            if let Some(timing) = edits.timing {
+                assert_eq!(host.device_capabilities().generation(), 2);
+                assert!(host.last_submitted_clock().is_none());
+                host.set_timing_requested(timing);
+            }
+            SkyGame::apply(host, edits.sky)
         }
 
         fn readback(host: &Host) -> Option<u64> {
@@ -114,6 +148,7 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
         sky,
         observed: Vec::new(),
         pressed: false,
+        replays: Cell::new(0),
     };
     assert_ne!(
         std::any::TypeId::of::<KeyCode>(),
@@ -135,4 +170,22 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
     };
     assert!(first < second);
     assert_eq!(Some(*second), run.last_submission());
+
+    assert_eq!(run.game().replays.get(), 0);
+    assert!(run.host().timing_requested());
+    let (_device, queue, capabilities) = gpu
+        .gpu
+        .device_with_hardware(
+            DeviceProfile::Portable,
+            &thrum_test_support::Restriction::default(),
+            2,
+            &[],
+        )
+        .unwrap();
+    gpu.device.destroy();
+    pollster::block_on(run.recover_device(&capabilities, &queue)).unwrap();
+    assert!(run.step_at(Duration::from_millis(32)).unwrap().submitted);
+    assert!(!run.host().timing_requested());
+    assert!(run.step_at(Duration::from_millis(48)).unwrap().submitted);
+    assert_eq!(run.game().replays.get(), 1);
 }
