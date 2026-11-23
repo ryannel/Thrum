@@ -278,7 +278,7 @@ def inspection(output, targets, builds, group):
             for height in [2, 40]:
                 for hour, sun in [(12, 'noon'), (LOW_SUN, 'low')]:
                     pose = {'eye': [NEAR_EYE[0], NEAR_EYE[1] + height - 2, NEAR_EYE[2]],
-                            'solar_hours': hour, 'yaw_degrees': 0, 'motion': None}
+                            'solar_hours': hour, 'yaw_degrees': -35, 'motion': None}
                     for km, kind in [(300, 0), (60, 0), (20, 0), (5, 0), (20, 1.3), (5, 1.3)]:
                         checkpoint(target_root / f'haze-{sun}-{height}m-{km}km-{kind}', target,
                                    builds, pose, haze=f'{km},{kind}')

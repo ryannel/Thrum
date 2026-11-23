@@ -3,7 +3,7 @@ use crate::timing::PassTiming;
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
-    view_volume: false,
+    aerial: AerialPass::Chart,
     star_pass: None,
     shadows: Shadows::Off,
     cascades: false,
@@ -201,7 +201,7 @@ fn the_joint_volume_keeps_aerial_timing_after_the_shadows() {
     let layout = SceneTimingLayout {
         shadows: Shadows::Unculled,
         cascades: true,
-        view_volume: true,
+        aerial: AerialPass::ViewVolume,
         ..TRANSFORMS
     };
     let (values, _, _) = pass_durations(&timings(&names), false, layout).unwrap();
