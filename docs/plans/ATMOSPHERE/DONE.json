@@ -472,10 +472,10 @@
           "statement": "As the haze control goes from a 300 km visual range to 5 km, at noon and at a 10\u00b0 Sun, the land fades with distance into the sky's colour at the horizon. The sky and the farthest land meet without a line, and there is no banding, slice step or tile pattern in the haze. With the kind control moved from an exponent of 0 to 1.3 at a 10\u00b0 Sun, the haze at 20 km and 5 km keeps its depth and changes colour from grey-blue toward a warmer, neutral-to-yellow horizon, as the design's measurement says; at noon it changes little.",
           "inspect": "Capture `fixed` stills with T2 engine capture at visual ranges of 300, 60, 20 and 5 km, at noon and at a 10\u00b0 Sun, from 2 m and from 40 m, and at 20 and 5 km again with the exponent at 1.3. Judge each whole, the set side by side, the two exponents in pairs, and native-size crops along the horizon and across the middle distance.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/independent-refined-haze-read.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.7",
