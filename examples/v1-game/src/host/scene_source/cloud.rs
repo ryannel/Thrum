@@ -27,7 +27,7 @@ pub(super) fn diagnostic() -> Result<SunOpticalDepth, thrum_render::error::Rende
 
 /// Directional optical depth of a broken cloud deck, with two clearings.
 /// The field supplies direct sunlight visibility without condensate.
-pub(super) fn haze_banks() -> Result<SunOpticalDepth, String> {
+pub(super) fn haze_banks() -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
     const EXTENT: u32 = 1024;
     const REGION: [f32; 4] = [-28_000.0, -10_500.0, 1_000.0, 5_500.0];
     let mut tau = Vec::with_capacity((EXTENT * EXTENT) as usize);
@@ -48,5 +48,4 @@ pub(super) fn haze_banks() -> Result<SunOpticalDepth, String> {
         }
     }
     SunOpticalDepth::new([EXTENT; 2], &tau, 2_800.0, REGION, 0.001, 1)
-        .map_err(|error| format!("diagnostic cloud banks: {error:?}"))
 }
