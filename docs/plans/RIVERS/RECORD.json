@@ -473,7 +473,7 @@
         {
           "verdict": "fail",
           "commit": "1dd2255411674c579fa2a3d4a2a2b7999c2d7b52",
-          "review": ".orchestrate/evidence/RIVERS/M8-review.md",
+          "review": ".orchestrate/evidence/RIVERS/M8-review-1.md",
           "items": {
             "M8.1": "fail"
           },
@@ -505,6 +505,30 @@
             "turns": 1
           },
           "at": "2026-11-23T12:51:53Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "8f996927d38dfd78d0bff18e67abdf07ff2edd8f",
+          "review": ".orchestrate/evidence/RIVERS/M8-review.md",
+          "items": {
+            "M8.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 64742,
+            "cached": 577920,
+            "output": 2552,
+            "turns": 1
+          },
+          "at": "2026-11-23T12:58:47Z"
         }
       ],
       "authorised": {
@@ -541,6 +565,13 @@
           "output": 38234,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "8f996927d38dfd78d0bff18e67abdf07ff2edd8f",
+        "review": ".orchestrate/evidence/RIVERS/M8-review.md",
+        "checked": "758b8e06ec205dc67e8a1f875b8ebb7d35120f8f",
+        "at": "2026-11-23T12:58:47Z"
       }
     }
   },

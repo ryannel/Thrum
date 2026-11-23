@@ -316,7 +316,7 @@
     {
       "id": "M8",
       "name": "Small river fixtures keep the solver checks fast",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -327,24 +327,12 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/M8/review-fix/M8.1.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/M8-review.md"
         }
       ],
       "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "Lip wetting coincides with the sample midpoint",
-          "item": "M8.1",
-          "repeat": false
-        },
-        {
-          "name": "Sheet growth is sampled at the landing",
-          "item": "M8.1",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "M4",
