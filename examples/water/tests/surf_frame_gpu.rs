@@ -1,13 +1,11 @@
 //! Compare submitted depth and motion against the forward f64 sheet.
 #[cfg(target_os = "macos")]
-mod oracle;
-#[cfg(target_os = "macos")]
 mod support;
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_breaker_depth_motion_and_stage_history() {
     use glam::{Mat4, Vec2, Vec3};
-    use oracle::{CENTER, EXTENT, cut_ray, projected_nodes};
+    use support::surf_frame::{CENTER, EXTENT, cut_ray, projected_nodes};
     use std::sync::{Arc, Mutex};
     use support::surf::{CHOPPINESS, STEP, beach};
     use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};

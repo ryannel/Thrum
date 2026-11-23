@@ -4,6 +4,7 @@
 )]
 pub(crate) mod island;
 pub(crate) mod surf;
+pub(crate) mod surf_frame;
 use std::time::Duration;
 use thrum_app::{
     Game, Gpu,

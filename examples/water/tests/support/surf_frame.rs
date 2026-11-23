@@ -1,12 +1,12 @@
 use glam::{Mat4, Vec2, Vec4};
 use thrum_water_model::{Sheet, SheetPoint};
 
-pub(super) const EXTENT: [u32; 2] = [96, 64];
-pub(super) const CENTER: [f32; 2] = [-28.705, 3.2795];
+pub(crate) const EXTENT: [u32; 2] = [96, 64];
+pub(crate) const CENTER: [f32; 2] = [-28.705, 3.2795];
 const SIDE: usize = 41;
 
 #[derive(Clone, Copy)]
-pub(super) struct ProjectedNode {
+pub(crate) struct ProjectedNode {
     now: Vec4,
     before: Vec4,
 }
@@ -15,7 +15,7 @@ pub(super) struct ProjectedNode {
     clippy::cast_possible_truncation,
     reason = "analytic world positions projected into the submitted f32 camera"
 )]
-pub(super) fn projected_nodes(
+pub(crate) fn projected_nodes(
     now: &impl Sheet,
     old: &impl Sheet,
     matrix: Mat4,
@@ -42,7 +42,7 @@ pub(super) fn projected_nodes(
         .collect()
 }
 
-pub(super) fn cut_ray(nodes: &[ProjectedNode], pixel: Vec2) -> Vec<(f32, Vec2)> {
+pub(crate) fn cut_ray(nodes: &[ProjectedNode], pixel: Vec2) -> Vec<(f32, Vec2)> {
     let mut hits = Vec::new();
     for row in 0..SIDE - 1 {
         for column in 0..SIDE - 1 {
