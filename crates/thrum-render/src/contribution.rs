@@ -339,6 +339,8 @@ pub struct ContributionFrame {
     /// the separately bound unjittered matrices. In 2D it is unjittered and maps
     /// world X and Y to the sprite view's output pixels.
     pub view_proj: [[f32; 4]; 4],
+    /// Pixel extent rasterized into the top-left of the scene attachments.
+    pub render_extent: [u32; 2],
     /// Dynamic byte offset of the packed main view selected for this recording.
     pub view_uniform_offset: u32,
     /// Declared world-space camera position, without matrix inversion. In 2D

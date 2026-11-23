@@ -1224,7 +1224,7 @@ impl PreparedSynthetic {
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         let mut record = view.view_record(&self.view_sample, f32::from_bits(self.exposure_bits));
-        if view.reconstruction() {
+        if drawn != output {
             record.mip_bias = (drawn[0] as f32 / output[0] as f32).log2() - 1.0;
         }
         queue.write_buffer(
@@ -1513,7 +1513,7 @@ impl PreparedSynthetic {
                 generation: self.key.device_generation,
                 readback: None,
                 contribution: None,
-                contribution_frame: self.contribution_frame(),
+                contribution_frame: self.contribution_frame(target.drawn),
                 cooked_shadow_fit: None,
                 exposure_side: self.history.write_side(),
             })
@@ -1562,7 +1562,7 @@ impl PreparedSynthetic {
             generation,
             readback,
             contribution,
-            contribution_frame: self.contribution_frame(),
+            contribution_frame: self.contribution_frame(target.drawn),
             cooked_shadow_fit: None,
             exposure_side: self.history.write_side(),
         })

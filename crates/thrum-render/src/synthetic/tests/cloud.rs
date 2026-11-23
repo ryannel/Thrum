@@ -161,7 +161,7 @@ fn samples(
         }
         pass.set_bind_group(
             1,
-            &prepared.light[prepared.contribution_frame().exposure_side],
+            &prepared.light[prepared.contribution_frame(target.extent()).exposure_side],
             &[],
         );
         pass.draw(0..3, 0..1);

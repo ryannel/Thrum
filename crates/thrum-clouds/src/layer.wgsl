@@ -105,7 +105,7 @@ fn cloud_march_sun_depth(point:vec3<f32>,direction:vec3<f32>,reach:f32,
     return depth;
 }
 fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,sun_alignment:f32)->vec2<f32> {
-    let samples = cloud.settings.y;
+    let samples = cloud.light_samples;
     if samples == 0u { return cloud_sun_depths(world,world.y).xy; }
     let path = mapping.path_border.xyz;
     // At very low Sun, cached height intervals can cover hundreds of
@@ -184,8 +184,9 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let a=(cloud.heights.x-camera.y)/ray.y;let b=(cloud.heights.y-camera.y)/ray.y;
         begin=max(0.0,min(a,b));end=min(end,max(a,b));
     }else if camera.y<cloud.heights.x || camera.y>cloud.heights.y {end=0.0;}
-    // A conservative depth stop; composition tests each render pixel separately.
-    let pixel=vec2<i32>(uv*vec2<f32>(textureDimensions(scene_depth)));
+    // The depth allocation can be larger than the drawn rectangle.
+    // Composition tests each render pixel separately.
+    let pixel=vec2<i32>(uv*vec2<f32>(cloud.render_extent));
     let depth=textureLoad(scene_depth,pixel,0);
     if depth>0.0 {
         let hit=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),depth,1.0);

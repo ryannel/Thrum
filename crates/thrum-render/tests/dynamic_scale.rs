@@ -256,6 +256,12 @@ fn drawn_rectangle_protects_reconstruction_inputs_and_motion() {
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.instances[0].current[3] = [0.0, 2.0, -3.0, 1.0];
         scene.instances[0].previous = scene.instances[0].current;
+        scene.view = camera(0.0, RenderScale::Native).with_reconstruction(false);
+        {
+            let (mut spatial, mut target) = prepared(&device, &queue, &caps, &scene).await;
+            let (_, _, bias) = frame(&device, &queue, &mut spatial, &mut target, &scene);
+            assert_eq!(bias.to_bits(), (-1.0_f32).to_bits(), "native spatial bias");
+        }
         scene.view = camera(0.0, RenderScale::Native);
         let (mut renderer, mut target) = prepared(&device, &queue, &caps, &scene).await;
         let (mut marked_renderer, mut marked) = prepared(&device, &queue, &caps, &scene).await;

@@ -559,7 +559,7 @@ impl SyntheticView {
             camera_xyz_time: self.camera.extend(0.0).to_array(),
             pre_exposure_inv_exposure_jitter: [super::PRE_EXPOSURE, inverse, jx, jy],
             unjittered_view_proj: self.view_proj.to_cols_array_2d(),
-            mip_bias: if self.reconstruction() { -1.0 } else { 0.0 },
+            mip_bias: -1.0,
             jitter_phase: phase,
             padding: [0; 2],
         }
@@ -760,7 +760,10 @@ mod temporal_tests {
             assert_ne!(sample, [0.0; 2]);
         }
         let previous = SyntheticView::default();
-        assert_eq!(previous.view_record(&previous, 1.0).mip_bias.to_bits(), 0);
+        assert_eq!(
+            previous.view_record(&previous, 1.0).mip_bias.to_bits(),
+            (-1.0_f32).to_bits()
+        );
         let current = previous
             .with_reconstruction(true)
             .with_jitter_phase(7, [64, 32]);

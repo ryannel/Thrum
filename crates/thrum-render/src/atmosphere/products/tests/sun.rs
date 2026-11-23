@@ -132,7 +132,7 @@ fn metal_h1_lent_sun_meets_low_altitude_f64_quadrature() {
                 &products,
                 "vec4(sun_irradiance(q.xyz),1.0)",
                 &queries,
-                prepared.contribution_frame().exposure_side,
+                prepared.contribution_frame([8, 8]).exposure_side,
             );
             for ((height, result), query) in heights.into_iter().zip(results).zip(queries) {
                 let expected = transmission(

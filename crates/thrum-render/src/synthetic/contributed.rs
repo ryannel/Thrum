@@ -205,7 +205,7 @@ impl PreparedSynthetic {
     }
 
     /// Camera facts of the view the next encode draws.
-    pub(crate) fn contribution_frame(&self) -> ContributionFrame {
+    pub(crate) fn contribution_frame(&self, render_extent: [u32; 2]) -> ContributionFrame {
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
         ContributionFrame {
             time: self.effect_time,
@@ -215,6 +215,7 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map(crate::atmosphere::AtmospherePrepared::environment),
             view_proj: view.raster_projection().to_cols_array_2d(),
+            render_extent,
             view_uniform_offset: self.view_stride * u32::from(self.frame_revision & 1 != 0),
             camera: view.camera_position(),
             generation: self.key.device_generation,

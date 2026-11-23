@@ -65,7 +65,7 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
         )
         .await
         .unwrap();
-        let first = prepared.contribution_frame().environment.unwrap();
+        let first = prepared.contribution_frame([16, 16]).environment.unwrap();
         let surface = prepared.scene_surface(&queue);
         let products = surface.environment_products().unwrap();
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -121,7 +121,7 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
             pass.set_bind_group(
                 0,
                 products
-                    .group(prepared.contribution_frame().exposure_side)
+                    .group(prepared.contribution_frame([16, 16]).exposure_side)
                     .unwrap(),
                 &[],
             );
@@ -167,7 +167,7 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
                 1.0,
             )
             .unwrap();
-        let scrubbed = prepared.contribution_frame().environment.unwrap();
+        let scrubbed = prepared.contribution_frame([16, 16]).environment.unwrap();
         assert_eq!(scrubbed.epoch, first.epoch);
         assert_eq!(scrubbed.simulation_time_seconds, 20.0);
         let changed = AtmosphereFrame::new([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 2).unwrap();
@@ -180,7 +180,7 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
                 1.0,
             )
             .unwrap();
-        let profile = prepared.contribution_frame().environment.unwrap();
+        let profile = prepared.contribution_frame([16, 16]).environment.unwrap();
         assert_ne!(profile.epoch, first.epoch);
         let (replacement_device, replacement_queue) =
             crate::test_device::portable(&test_gpu.fresh_adapter(), Some(wgpu::Features::empty()))
@@ -197,7 +197,11 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
         .await
         .unwrap();
         assert_ne!(
-            replacement.contribution_frame().environment.unwrap().epoch,
+            replacement
+                .contribution_frame([16, 16])
+                .environment
+                .unwrap()
+                .epoch,
             profile.epoch
         );
     });

@@ -290,6 +290,7 @@ impl SpriteTarget {
             time,
             generation: self.generation,
             view_proj: projection.to_cols_array_2d(),
+            render_extent: self.extent,
             camera: camera.to_array(),
             exposure_side: 0,
             environment: None,
