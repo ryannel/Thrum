@@ -1,7 +1,6 @@
 //! Bounded committed-world presentation using the prepared V1 renderer.
 
 #[cfg(not(target_arch = "wasm32"))]
-use crate::error::RenderError;
 pub(crate) use std::time::Instant;
 use std::{
     collections::VecDeque,
@@ -17,6 +16,7 @@ pub(crate) use web_time::Instant;
 use crate::contribution::{ContributionPasses, SceneContribution};
 use crate::{
     capabilities::DeviceCapabilities,
+    error::RenderError,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::{PresentError, PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
