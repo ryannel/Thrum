@@ -3,25 +3,25 @@
   "design": {
     "verdict": "changes",
     "review": ".orchestrate/evidence/SESSION/design-review.md",
-    "commit": "75b0a47e3102c56a5b370fd62878fe7a3ae132c5",
-    "hash": "f6e3badade6fdcf1b86542c6e7b988e803e866c8b33c3896b5fee01ad3283bb8",
+    "commit": "48811b54f75eb37c3bebad3e8b5f793d4ccd1100",
+    "hash": "45de75ace60b8f3d36cc4ed7b3c7df813691fd661b67665e22ece0242b301acc",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6.2-astra",
+    "model": "gpt-6.2-sol",
     "effort": "high",
     "observed": {
-      "model": "gpt-6.2-astra",
+      "model": "gpt-6.2-sol",
       "effort": "high"
     },
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 129657,
-      "cached": 2923648,
-      "output": 9297,
+      "input": 115625,
+      "cached": 1756416,
+      "output": 10050,
       "turns": 1
     },
-    "at": "2026-11-23T21:25:51Z"
+    "at": "2026-11-23T23:23:28Z"
   },
   "milestones": {
     "M1": {
@@ -846,6 +846,29 @@
       "items_owed": [
         "M8"
       ]
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/SESSION/design-review-6.md",
+      "commit": "75b0a47e3102c56a5b370fd62878fe7a3ae132c5",
+      "hash": "f6e3badade6fdcf1b86542c6e7b988e803e866c8b33c3896b5fee01ad3283bb8",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 129657,
+        "cached": 2923648,
+        "output": 9297,
+        "turns": 1
+      },
+      "at": "2026-11-23T21:25:51Z"
     }
   ]
 }
