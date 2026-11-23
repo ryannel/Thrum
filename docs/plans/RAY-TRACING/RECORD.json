@@ -253,7 +253,7 @@
       }
     },
     "M3": {
-      "definitions": "8d3b77f09920efe1a145abd076dbb8a1dfe441710b83126927e352d859bdb0c7",
+      "definitions": "1ab52bded14e1e99f60f3feebc1f7588b3b692fb58fb2008c10a5662e7ac50a0",
       "reviews": [
         {
           "verdict": "fail",
@@ -489,38 +489,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Mu",
-        "at": "2026-11-19T19:19:10Z"
-      },
-      "ready_for_review": {
-        "commit": "86d04122b518085263412f9ff2516d880fa8fdef",
-        "checked": "db918ef75ea50743ed01eff487989a9aa8513a75",
-        "at": "2026-11-20T10:16:34Z",
-        "reused": [
-          "Test command",
-          "M3.11"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.1",
-        "path": "headless",
-        "usage": {
-          "input": 393890,
-          "cached": 70906240,
-          "output": 44216,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 1189874,
-          "cached": 132395008,
-          "output": 104735,
-          "turns": 3
-        }
+        "task": "Diagnose RAY-TRACING M3, which has failed review five times. Its visual items pass; each review has instead found a new ",
+        "at": "2026-11-23T09:01:05Z"
       }
     },
     "M4": {
@@ -548,7 +518,8 @@
         "by": "plan",
         "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Mu",
         "at": "2026-11-19T19:19:10Z"
-      }
+      },
+      "ends_stretch": true
     }
   },
   "briefs": [
@@ -579,11 +550,15 @@
     {
       "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. This is the last of 2 design review rounds: the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-19T20:13:14Z"
+    },
+    {
+      "task": "Diagnose RAY-TRACING M3, which has failed review five times. Its visual items pass; each review has instead found a new edge case in the fallback from traced shadows to Maps, the latest under M3.6: when an ordered list of contributions falls back, a cooked receiver that was already resident is dropped for the first submission (crates/thrum-asset-gpu/src/lib.rs around lines 869 and 979; review at .orchestrate/evidence/RAY-TRACING/M3-review.md, earlier rounds beside it as M3-review-1..4.md).\nThe pattern suggests M3.6 asks for a property (\"the first fallback submission matches the no-request control\") that the design doesn't yet give the builder a way to guarantee, so each fix closes one path and the next reviewer finds another. Decide what the fallback has to guarantee and by what mechanism (for example, preparation that is all-or-nothing across the whole list, so no member's resident set changes until every member has prepared), and amend M3's design, items and done-when file so a builder can prove it in general rather than one path at a time. Keep checks fast and targeted for the merge tier. Don't change other modules' milestones.\nDone when M3's design, items and done-when file are amended and committed, with a short diagnosis note naming what changed and why.",
+      "at": "2026-11-23T09:01:05Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-19T20:13:14Z"
+    "host": "codex",
+    "at": "2026-11-23T09:01:05Z"
   },
   "design_history": [
     {

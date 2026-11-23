@@ -197,9 +197,9 @@
     {
       "id": "M3",
       "name": "The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges",
-      "status": "in_progress",
-      "failed_reviews": 5,
-      "failed_reviews_with_repeat": 1,
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
       "depends_on": [
         "ATMOSPHERE:M5",
         "APPLE-PRESENTATION:M3",
@@ -214,30 +214,30 @@
           "ask": "Is the value the operation the forward pass compiles, evaluated at the point on the receiving surface itself, so that a ray started beyond the panel would fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.2",
           "statement": "In the populated valley, traced Sun shadows show no acne on a lit surface, no dark facets where a rounded body turns from the Sun, no gap and no leak where a prop or a balloon's basket meets what it stands on, and no shadow missing or out of place: at noon, at a low Sun and at dusk, near the camera and at the far ridge.",
           "inspect": "`fixed` stills at the route's stops at those three times with the method `Traced`, whole and as native-size crops of contact points, grazing slopes, balloons where they turn from the Sun and the far ridge, with the same stops under `Maps` beside them to show what differs.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#fixed-route",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.3",
           "statement": "Shadows of the balloons and of everything else that moves stay under what casts them along the route at normal speed. In no frame is a shadow absent, doubled or a frame behind its caster.",
           "inspect": "A `realtime` sequence of the route with the method `Traced`, as consecutive frames at native size around three movers.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#elapsed-time-route",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.4",
@@ -246,20 +246,20 @@
           "ask": "Is the wall of the off-screen case outside both Sun pass volumes and the camera's view in the test as written, and is the room of the other case prepared with Sun shadows off, so that an instance list or a mask taken from any pass's draws would fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.5",
           "statement": "At the valley's local-light stop at night, each lamp's shadows fall away from it and meet their casters at contact, and nothing behind a wall or a prop is lit by a lamp on its other side.",
           "inspect": "`fixed` stills at that stop with lamp shadows on and off, whole and as native-size crops around each lamp.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#night-lamps",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.6",
@@ -270,8 +270,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.7",
@@ -279,10 +279,10 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_shadow_prepared_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.8",
@@ -290,10 +290,10 @@
           "check": "python3 scripts/ray_tracing_proof.py contributions",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage-checks/M3.8.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.9",
@@ -302,10 +302,10 @@
           "ask": "Is the stated tolerance no wider than rounding between two compilations of the same arithmetic, so that a traced shader that changed any other light term would fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage-checks/M3.9.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.10",
@@ -313,20 +313,20 @@
           "check": "python3 scripts/ray_tracing_cost.py shadows",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#timing-under-load",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.11",
           "statement": "No exact baseline moves: with no request, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.12",
@@ -334,10 +334,10 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_shadow_passes_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.13",
@@ -346,10 +346,10 @@
           "ask": "Is the value the operation the forward pass compiles, and does the test hold both a joined sheet facing away from the ray and a lit band point with no sheet, so that a rule which skips hits by instance and facing fails the first and a rule with no exception fails the second?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#one-crossing",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.14",
@@ -372,13 +372,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "name": "Same-device Maps fallback drops a resident cooked receiver from the first submitted frame",
-          "item": "M3.6",
-          "repeat": true
         }
       ]
     },
