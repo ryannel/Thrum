@@ -693,3 +693,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   5 km haze. Resolving live multiple scattering near the ground recovered the warmer colour in the
   Metal comparison. The fixed chart remains in use at the default coefficients.
   [M7 evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/README.md)
+
+- 2026-11-23 M7 uses a 160 × 90 × 80 view volume to resolve shaft edges. The diagnostic cloud deck
+  sits lower for a steadier sunset scrub, and a separate cooked ridge fixture shows the light through
+  an opaque opening. Fixed captures and submitted sequences show the haze sweep, cloud-gap shafts
+  and first post-cut shaft on Metal and Chrome. The capture-off aerial pass medians were 0.321 ms on
+  Metal and 0.328 ms on Chrome. A small crescent remains on the Metal Sun disc for the first post-cut
+  submission. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/README.md)
