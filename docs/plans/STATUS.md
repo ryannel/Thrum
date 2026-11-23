@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-18 of 36 modules done · 16 in progress · 2 to come
+17 of 36 modules done · 17 in progress · 2 to come
 
 ### Needs you now
 
@@ -311,7 +311,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss (SESSION M5): Not Started · [plan](SESSION/PLAN.md)
 - A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer (REVIEW-RENDER M4): Not Started · [plan](REVIEW-RENDER/PLAN.md)
 - A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first (HOST M4): Not Started · [plan](HOST/PLAN.md)
-- The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges (RAY-TRACING M3): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/M3-review.md)
+- RAY-TRACING's design: Design Ready for Review · [design](RAY-TRACING/DESIGN.md) · [plan](RAY-TRACING/PLAN.md)
 - GATE-TIME M5 The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs: Blocked: Needs Context: GATE-TIME M5.1 counts only four merges from `b69c9812f` and needs five; one more landing from another module whose check runs Rust tests in five minutes or less would let it pass. The lead finds the missing fact, or asks you for it
 
 ### Recently done
@@ -405,29 +405,19 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The sea names its buffers and passes, shares its records with its shaders under a layout test, and uploads its spectrum only when the spectrum changes (REVIEW-ENGINE M2), 16 Nov · [review](../../.orchestrate/evidence/REVIEW-ENGINE/M2-review.md)
 - A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator (SIM-2D M1), 16 Nov · [review](../../.orchestrate/evidence/SIM-2D/M1-review.md)
 - The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves (REPO-RULES M2), 16 Nov · [review](../../.orchestrate/evidence/REPO-RULES/M2-review.md)
-- A saved source is always cooked and published, even when macOS reports the save late or never, so the full check stops failing on a busy Mac (CONTENT-LOOP M4), 16 Nov · [review](../../.orchestrate/evidence/CONTENT-LOOP/M4-review.md)
-- On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes (RIVERS M1), 16 Nov · [review](../../.orchestrate/evidence/RIVERS/M1-review.md)
-- A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a line anyone running the tests sees, or fails when a GPU is required (TEST-SUPPORT M1), 16 Nov · [review](../../.orchestrate/evidence/TEST-SUPPORT/M1-review.md)
-- On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry (PUDDLES M1), 16 Nov · [review](../../.orchestrate/evidence/PUDDLES/M1-review.md)
-- On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee (WATERS M12), 16 Nov · [review](../../.orchestrate/evidence/WATERS/M12-review.md)
-- A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3), 16 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M3-review.md)
-- The iPhone app gets compressed textures and enough storage buffers for the sea, and a rewound game no longer carries a patch that never ran (REVIEW-ENGINE M1), 16 Nov · [review](../../.orchestrate/evidence/REVIEW-ENGINE/M1-review.md)
-- Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see (CLOUDS M13), 16 Nov · [review](../../.orchestrate/evidence/CLOUDS/M13-review.md)
-- A change that adds a string error, a hidden reach across packages, an environment read in a library or a copied device request is refused by `./dev check` (REPO-RULES M1), 16 Nov · [review](../../.orchestrate/evidence/REPO-RULES/M1-review.md)
-- A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh (BASELINE-GUARD M2), 16 Nov · [review](../../.orchestrate/evidence/BASELINE-GUARD/M2-review.md)
 
 ## All modules
 
 | # | Module | What it's for | Needs | Status |
 |---|---|---|---|---|
-| 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
+| 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | M1 of 7 · Waiting: For Planning |
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Done 14 Nov |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 16 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Done 17 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M5 of 12 · Not Started |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M6 of 6 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M5 of 13 · Not Started |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M6 of 10 · Not Started |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Done 17 Nov |
@@ -451,7 +441,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | M4 of 5 · Not Started |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | M4 of 5 · Not Started |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Waiting: On Dependency, HOST:M4 |
-| 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | M3 of 6 · In Progress |
+| 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | Design Ready for Review |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Waiting: On Dependency, SHOWCASE:M8 |
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; TEST-SUPPORT M6 for the guard rules; WATERS M7 for the water scene's slow tests; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the contributor guide | M5 of 13 · Blocked: Needs Context |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone | Done 21 Nov |
