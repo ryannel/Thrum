@@ -171,9 +171,10 @@ fn surf_tick_and_repeat_queries_match_the_model() {
             while host.poll_completed().expect("tick completion").is_some() {}
         }
         let use_tick = tick + 1;
+        let row_offset = if tick == 2 { 0.17 } else { 0.0 };
         let points: Vec<_> = (0_u16..2048)
             .map(|i| {
-                let z = f32::from(i / 64) * 0.60 - 9.0;
+                let z = f32::from(i / 64) * 0.60 - 9.0 + row_offset;
                 let u = f32::from(i % 64) / 63.0;
                 let x = if i % 2 == 0 {
                     -76.0 + 65.0 * u
