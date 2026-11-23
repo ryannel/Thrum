@@ -8,7 +8,7 @@ use thrum_core::ClockConfig;
 use thrum_render::{present::SurfaceProfile, runtime::CaptureLimits, synthetic::CaptureSource};
 
 use super::{
-    Driver, SceneCaptureRequest,
+    Driver, RenderScaleTrace, SceneCaptureRequest,
     motion::{CaptureTarget, completed_sample, write_json_line},
 };
 use crate::{CameraRoute, GameHost};
@@ -138,7 +138,7 @@ pub(super) fn record(
     let mut checkpoints = route.checkpoints.clone().into_iter().peekable();
     driver.host_mut().world_mut().resume(Duration::ZERO)?;
     let mut pending = Some(route.clone());
-    let scale_arm = std::env::var("THRUM_ROUTE_RENDER_SCALE").ok();
+    let scale_arm = request.scale_trace;
     let mut scale = thrum_render::synthetic::RenderScale::Native;
     loop {
         let host = driver.host_mut();
@@ -159,7 +159,7 @@ pub(super) fn record(
             if next_scale != scale {
                 host.set_render_scale(next_scale)
                     .map_err(|error| error.to_string())?;
-                if scale_arm.as_deref() == Some("reset") {
+                if scale_arm == Some(RenderScaleTrace::ResetAtStep) {
                     host.invalidate_history();
                 }
                 scale = next_scale;

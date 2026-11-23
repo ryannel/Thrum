@@ -645,7 +645,7 @@ async fn record(
         .then(|| start_writer(scenario, encoding, disk_limit, recovery_mode))
         .transpose()?;
     let route = requested_route(scenario)?;
-    let scale_origin = if std::env::var("THRUM_ROUTE_RENDER_SCALE").as_deref() == Ok("trace") {
+    let scale_origin = if capture_output == RuntimeCaptureOutput::ScaleTraceImages {
         Some(
             route
                 .as_ref()

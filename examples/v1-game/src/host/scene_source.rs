@@ -207,7 +207,6 @@ fn scale_basis(instance: &mut InstanceRecord, half_extent: f32) {
 /// Give two existing static fixtures a small cross-section for the realtime
 /// render-scale inspection. Their simulation positions and the other grid rows
 /// remain the ordinary route's.
-#[cfg(not(target_arch = "wasm32"))]
 fn apply_render_scale_props(scene: &mut SyntheticScene) {
     for slot in [5063, 5069] {
         let instance = &mut scene.instances[slot];
@@ -522,10 +521,7 @@ impl GameScene {
                 return Err("the route overlay needs grid content".to_owned());
             }
             apply_route_overlay(&mut scene, setup.route_overlay);
-            #[cfg(not(target_arch = "wasm32"))]
-            if std::env::var_os("THRUM_CAPTURE_RUNTIME").is_some()
-                && std::env::var("THRUM_ROUTE_RENDER_SCALE").as_deref() == Ok("trace")
-            {
+            if setup.route_scale_props {
                 apply_render_scale_props(&mut scene);
             }
             #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]

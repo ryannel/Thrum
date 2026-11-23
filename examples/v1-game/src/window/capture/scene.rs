@@ -25,6 +25,15 @@ use crate::{
 mod motion;
 mod route;
 
+/// Scripted scale changes for a fixed-step capture.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RenderScaleTrace {
+    /// Run the route retaining the ordinary submitted history.
+    Continuous,
+    /// Invalidate history at every scale change for the image oracle.
+    ResetAtStep,
+}
+
 /// What a scene capture records. The binary reads it from the launch settings named on each
 /// field; content selection still comes from `selected_setup`'s launch settings.
 #[derive(Clone, Debug, Default)]
@@ -51,6 +60,8 @@ pub struct SceneCaptureRequest {
     pub surface_extent: Option<String>,
     /// `THRUM_CAPTURE_WINDOWS`: routed tick ranges whose every frame is kept, as JSON.
     pub windows: Option<String>,
+    /// Scripted scale changes while driving the moving route.
+    pub scale_trace: Option<RenderScaleTrace>,
     /// `THRUM_CAPTURE_PRESENT_CONTROL`: `on` keeps each checkpoint's surface texture too.
     pub present_control: Option<String>,
     /// `THRUM_CAPTURE_PARAMS`: parameter files, one still each.

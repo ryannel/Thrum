@@ -18,7 +18,7 @@ use crate::{
 };
 
 mod capture;
-pub use capture::scene::SceneCaptureRequest;
+pub use capture::scene::{RenderScaleTrace, SceneCaptureRequest};
 
 /// Process-edge selection for the labelled native recovery capture fixture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -42,6 +42,8 @@ pub const CAPTURE_OBSERVER_VARIABLE: &str = "THRUM_CAPTURE_OBSERVER_ONLY";
 pub enum RuntimeCaptureOutput {
     /// Keep every submitted image.
     Images,
+    /// Keep every image while driving the realtime render-scale trace.
+    ScaleTraceImages,
     /// Keep every submitted image with the opted-in cooked mesh stages.
     #[cfg(feature = "draw-probe")]
     MeshStageImages,
@@ -205,6 +207,7 @@ struct CaptureCooked {
     folder: std::path::PathBuf,
     path: thrum_asset_gpu::CookedDrawPath,
     preview: Option<ContentPreviewCapture>,
+    scale_props: bool,
 }
 
 type ContentPreviewCapture =
@@ -215,6 +218,7 @@ impl CaptureCooked {
         Self {
             folder: folder.to_owned(),
             path: capture.cooked_path(),
+            scale_props: capture == RuntimeCaptureOutput::ScaleTraceImages,
             preview: None,
         }
     }
@@ -321,7 +325,11 @@ impl RuntimeSetup for WindowGame {
             });
         }
         let render_extent = gpu.surface.extent;
-        let setup = crate::selected_setup()?;
+        let mut setup = crate::selected_setup()?;
+        setup.route_scale_props = self
+            .capture_cooked
+            .as_ref()
+            .is_some_and(|capture| capture.scale_props);
         let exit = setup.content == crate::GameContent::Exit;
         let mut host = setup
             .prepare(

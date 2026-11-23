@@ -94,6 +94,8 @@ pub struct GameSetup {
     /// Reseed the moving-route proof overlay (11 static grid slots at valley metres,
     /// one mirrored basis and one retuned local light). Grid content only; off by default.
     pub route_overlay: RouteOverlay,
+    /// Narrow two overlay props for the realtime render-scale witness.
+    pub route_scale_props: bool,
     /// Draw the flythrough field's props as a rock, a column and a spruce,
     /// some mirrored, instead of boxes. Also selects meshes for valley entities. Occlusion uses
     /// the same mesh buckets with a class-matched depth prepass.
@@ -118,6 +120,7 @@ impl Default for GameSetup {
             camera_culling: CullMode::Direct,
             valley_stars: false,
             route_overlay: RouteOverlay::Off,
+            route_scale_props: false,
             field_meshes: false,
         }
     }

@@ -1,5 +1,4 @@
 //! Metal witnesses for the drawn rectangle and preparation-only allocation.
-#![cfg(target_os = "macos")]
 #![expect(
     clippy::unwrap_used,
     reason = "a failed fixture operation fails the witness"
@@ -80,6 +79,9 @@ fn counters(device: &wgpu::Device) -> [isize; 5] {
 
 #[test]
 fn scale_steps_create_no_gpu_objects() {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
     pollster::block_on(async {
         let (device, queue, caps) = device().await;
         let mut scene = SyntheticScene::grid(1).unwrap();
@@ -246,6 +248,9 @@ fn pixel(motion: &[[f32; 2]], x: u32, y: u32) -> [f32; 2] {
 
 #[test]
 fn drawn_rectangle_protects_reconstruction_inputs_and_motion() {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
     pollster::block_on(async {
         let (device, queue, caps) = device().await;
         let mut scene = SyntheticScene::grid(1).unwrap();

@@ -66,6 +66,7 @@ pub fn valley_config(
 }
 #[cfg(target_os = "macos")]
 pub use window::{
-    CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RuntimeCaptureOutput,
-    SceneCaptureRequest, capture_game, run_runtime_capture, run_scene_capture, run_window,
+    CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RenderScaleTrace,
+    RuntimeCaptureOutput, SceneCaptureRequest, capture_game, run_runtime_capture,
+    run_scene_capture, run_window,
 };

@@ -160,6 +160,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     };
     Ok(crate::GameSetup {
         sprite_scale,
+        route_scale_props: false,
         sprite_rows: if sprite_scale.is_some() {
             match launch_value("THRUM_SPRITE_ROWS") {
                 Ok(count) => Some(

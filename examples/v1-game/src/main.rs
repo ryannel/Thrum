@@ -31,6 +31,18 @@ fn main() {
                 "mesh-stage capture requires THRUM_VALLEY_MESH_STAGE_PROBE=culled with image capture",
             ),
         };
+        let capture_output =
+            match render_scale_trace().unwrap_or_else(|error| report_capture_failure(&error)) {
+                Some(v1_game::RenderScaleTrace::Continuous)
+                    if capture_output == v1_game::RuntimeCaptureOutput::Images =>
+                {
+                    v1_game::RuntimeCaptureOutput::ScaleTraceImages
+                }
+                Some(_) => {
+                    report_capture_failure("realtime render scale needs continuous image capture")
+                }
+                None => capture_output,
+            };
         if let Err(error) = v1_game::run_runtime_capture(
             std::path::Path::new(&output),
             &scenario,
@@ -200,6 +212,7 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         surface_format: text("THRUM_CAPTURE_SURFACE_FORMAT")?,
         surface_extent: text("THRUM_CAPTURE_SURFACE_EXTENT")?,
         windows: text("THRUM_CAPTURE_WINDOWS")?,
+        scale_trace: render_scale_trace()?,
         present_control: text("THRUM_CAPTURE_PRESENT_CONTROL")?,
         params: std::env::var_os("THRUM_CAPTURE_PARAMS")
             .map(|value| std::env::split_paths(&value).collect()),
@@ -208,4 +221,15 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         omit_placement: text("THRUM_G3T_OMIT_PLACEMENT")?,
         overlay_control: std::env::var_os("THRUM_G3T_OVERLAY_CONTROL").is_some(),
     })
+}
+
+#[cfg(target_os = "macos")]
+fn render_scale_trace() -> Result<Option<v1_game::RenderScaleTrace>, String> {
+    use v1_game::RenderScaleTrace;
+    match std::env::var("THRUM_ROUTE_RENDER_SCALE").as_deref() {
+        Err(std::env::VarError::NotPresent) => Ok(None),
+        Ok("trace") => Ok(Some(RenderScaleTrace::Continuous)),
+        Ok("reset") => Ok(Some(RenderScaleTrace::ResetAtStep)),
+        _ => Err("THRUM_ROUTE_RENDER_SCALE must be trace or reset".to_owned()),
+    }
 }
