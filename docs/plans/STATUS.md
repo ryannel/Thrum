@@ -415,7 +415,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome (CULLING M3), 17 Nov · [review](../../.orchestrate/evidence/CULLING/M3-review.md)
 - Native providers survive replacement and expose truthful timing (APPLE-TILE M11), 17 Nov · [review](../../.orchestrate/evidence/APPLE-TILE/M11-review.md)
 - On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do (PUDDLES M2), 17 Nov · [review](../../.orchestrate/evidence/PUDDLES/M2-review.md)
-- A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit (T2-CAPTURE M3), 16 Nov · [review](../../.orchestrate/evidence/T2-CAPTURE/M3-review.md)
 
 ## All modules
 
