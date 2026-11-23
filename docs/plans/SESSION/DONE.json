@@ -629,7 +629,9 @@
           "check": "PYTHONPATH=scripts python3 -m unittest test_simulator_lifecycle",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.12",
