@@ -207,6 +207,17 @@ impl ShoreTransform {
         &self.stages
     }
 
+    /// Node values in metres, in stage, sector and wavelength order.
+    /// An unreachable node has infinite lag.
+    pub fn lag_planes(&self) -> impl ExactSizeIterator<Item = &[f64]> {
+        self.lags.iter().map(Lag::values)
+    }
+
+    /// Node values in stage and sector order, each an arriving energy fraction.
+    pub fn exposure_planes(&self) -> impl ExactSizeIterator<Item = &[f64]> {
+        self.exposures.iter().map(Vec::as_slice)
+    }
+
     /// Number of lag layers (eight directions times six wavelengths times stages).
     pub fn layers(&self) -> usize {
         self.lags.len()

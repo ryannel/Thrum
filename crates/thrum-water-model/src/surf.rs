@@ -35,6 +35,21 @@ pub(crate) struct Surf {
 }
 
 impl Map {
+    /// The profile used to prepare the current surf capability.
+    pub fn surf_profile(&self) -> Option<&SurfProfile> {
+        self.surf.as_ref().map(|surf| &surf.profile)
+    }
+
+    /// The immutable shore transform prepared for a still body.
+    pub fn shore_transform(&self, body: usize) -> Option<&ShoreTransform> {
+        self.surf.as_ref()?.transforms.get(body)?.as_ref()
+    }
+
+    /// The immutable depth-bound hierarchy prepared for surf queries.
+    pub fn surf_bed_pyramid(&self) -> Option<&BedPyramid> {
+        self.surf.as_ref().map(|surf| &surf.pyramid)
+    }
+
     /// Forward long-wave sheet for content tools and conformance references.
     /// # Errors
     /// Refuses a disabled capability, unknown body or nonfinite time.

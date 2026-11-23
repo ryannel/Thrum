@@ -11,6 +11,9 @@ autotests = false
 [[test]]
 name = "interaction_gpu"
 
+[[test]]
+name = "surf_gpu"
+
 [lints]
 workspace = true
 

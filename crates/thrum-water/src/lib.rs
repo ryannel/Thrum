@@ -10,7 +10,9 @@ pub mod query;
 mod records;
 #[cfg(test)]
 mod sampling_tests;
+mod surf;
 use std::sync::{Arc, Mutex};
+pub use surf::cache::{SurfTap, SurfWitness};
 use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, EffectGraph, SceneContribution, SceneSurface,
 };
@@ -110,6 +112,7 @@ pub struct Water {
     interaction_tap: Option<interaction::WitnessTap>,
     foam: Option<foam::Whitewater>,
     foam_tap: Option<foam::Tap>,
+    surf_tap: Option<SurfTap>,
     foam_pattern: thrum_asset_gpu::ProductLease,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,
@@ -209,6 +212,7 @@ impl Water {
             interaction_tap: None,
             foam: None,
             foam_tap: None,
+            surf_tap: None,
             foam_pattern: thrum_asset_gpu::ProductLease::default(),
             prepared: None,
             previous: None,
@@ -259,6 +263,11 @@ impl Water {
     pub fn tap_foam(&mut self) -> foam::Tap {
         self.foam_tap.get_or_insert_with(Default::default).clone()
     }
+
+    /// Observe the same surf cache the submitted geometry consumes.
+    pub fn tap_surf(&mut self) -> SurfTap {
+        self.surf_tap.get_or_insert_with(Default::default).clone()
+    }
     /// Lend one cooked ranked 2D texture to the whitewater pass.
     pub fn lend_foam_pattern(&mut self, pattern: thrum_asset_gpu::ProductLease) {
         self.foam_pattern = pattern;
@@ -288,6 +297,12 @@ impl Water {
                         * u64::from(size.depth_or_array_layers),
                 ));
                 resources.push(("water map records".into(), map.info.size()));
+            }
+            if let Some(surf) = &p.surf {
+                resources.extend(surf.bytes());
+            }
+            if let Some(cache) = &p.surf_cache {
+                resources.push((surf::cache::PASS.into(), cache.bytes()));
             }
             if let Some(query) = &p.query {
                 resources.extend(query.resource_bytes());
@@ -347,6 +362,9 @@ impl SceneContribution for Water {
         if let Some(tap) = &self.foam_tap {
             *tap.0.lock().expect("foam witness") = None;
         }
+        if let Some(tap) = &self.surf_tap {
+            *tap.0.lock().expect("surf witness") = None;
+        }
         Ok(())
     }
     fn effect_graph(&self) -> EffectGraph {
@@ -368,6 +386,17 @@ impl SceneContribution for Water {
         let row = map.row(self.body, [0.0; 2]);
         if let Some(gpu) = &mut p.map {
             gpu.record(&p.queue, &map, frame.time);
+        }
+        if let Some(cache) = &mut p.surf_cache {
+            cache.record(
+                &p.queue,
+                &self.spectrum,
+                self.layer_heights,
+                [frame.camera[0], frame.camera[2]],
+                now,
+                now - previous,
+                self.profile.waves.choppiness,
+            );
         }
         if let Some(interaction) = &mut p.interaction {
             interaction.record(&p.queue, encoder, frame, &map);
@@ -434,6 +463,8 @@ impl SceneContribution for Water {
                 && let Some(query) = &p.query
             {
                 query.pending()
+            } else if index == p.surf_cache_index() && p.surf_cache.is_some() {
+                true
             } else {
                 p.foam.as_ref().is_some_and(foam::Foam::pending)
             }
@@ -456,6 +487,10 @@ impl SceneContribution for Water {
                 && let Some(query) = &p.query
             {
                 query.encode(pass);
+            } else if index == p.surf_cache_index()
+                && let Some(cache) = &p.surf_cache
+            {
+                cache.encode(pass);
             } else if let Some(foam) = &p.foam {
                 foam.encode(pass);
             }
@@ -510,6 +545,10 @@ impl SceneContribution for Water {
                 let mut report = self.report.lock().expect("water report");
                 report.foam_pattern = pattern;
                 report.foam_pattern_invalidations += u64::from(changed);
+                if let Some(tap) = &self.surf_tap {
+                    *tap.0.lock().expect("surf witness") =
+                        p.surf_cache.as_ref().map(|cache| cache.witness(&p.mesh));
+                }
             }
             self.previous = Some(self.recorded);
             if let Some(map) = self.prepared.as_mut().and_then(|p| p.map.as_mut()) {

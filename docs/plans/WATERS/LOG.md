@@ -556,3 +556,9 @@
   the sky. The foam suites pass, and the trail and beach captures are unchanged in kind. Design proposal: the design's
   stateless far estimator now carries one measured mean per endpoint (earlier entry, open).
   Target evidence: `.claude/worktrees/waters/tmp/waters-m7-r5/README.md`.
+
+- 2026-11-23 Prepared M13's GPU shore products, forward surf cache, highest-surface query and island surf route.
+  The CPU model suite, WGSL layouts and Wasm compilation passed. The candidate needs target qualification.
+  M13.6 needs a planner ruling on variance removed from a wave whose breaking index never exceeds 1.
+  The existing M7.5 rule prescribes a positive wet birth for that loss.
+  [Target runs and blocker](../../../.orchestrate/evidence/WATERS/M13-handoff.md).

@@ -1,19 +1,15 @@
 //! A plane beach, its independent CPU waterline and the submitted depth cut.
+use crate::frame_fixture::{Clock, Source};
 use std::{
     sync::{Arc, Mutex},
     time::Duration,
-};
-use thrum_core::{
-    WorldEpoch,
-    sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
 use thrum_render::{
     abi::InstanceRecord,
     atmosphere::AtmosphereFrame,
     capabilities::DeviceCapabilities,
-    extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
-    runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource, SurfaceOutput},
+    runtime::{FrameConfig, FrameHost, SurfaceOutput},
     synthetic::{
         FrameLighting, OUTPUT_FORMAT, SyntheticMesh, SyntheticMeshChoice, SyntheticMeshes,
         SyntheticScene, SyntheticVertex, SyntheticView,
@@ -26,109 +22,6 @@ use thrum_water_model::{Bed, Body, BodyKind, Field, Map, Profile, Stage};
 const EXTENT: [u32; 2] = [640, 192];
 const HEIGHT_SLOPE: f64 = 0.1;
 const MAP_TOLERANCE_METRES: f64 = 0.00004;
-
-pub(crate) struct Clock {
-    tick: u64,
-    interpolate: bool,
-    now: Duration,
-}
-
-impl Clock {
-    pub(crate) fn new(interpolate: bool) -> Self {
-        Self {
-            tick: 0,
-            interpolate,
-            now: Duration::ZERO,
-        }
-    }
-}
-
-impl FrameWorld for Clock {
-    type Page = SourceTick;
-    fn source(&self) -> SourceTick {
-        SourceTick {
-            epoch: 1,
-            tick: self.tick,
-            timeline: 1,
-        }
-    }
-    fn has_current_page(&self) -> bool {
-        true
-    }
-    fn is_threaded(&self) -> bool {
-        false
-    }
-    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
-        self.now = now;
-        let next =
-            u64::try_from(now.as_nanos() / self.tick_duration().as_nanos()).expect("short test");
-        let completed_ticks = u32::try_from(next - self.tick).expect("short test");
-        self.tick = next;
-        Ok(WorldAdvance {
-            tick: next,
-            overload: None,
-            completed_ticks,
-            queued_ticks: 0,
-            projected_changes: 0,
-            projection_lost_ticks: 0,
-            skipped_publications: 0,
-            recovered_publication: false,
-            tick_cpu: Duration::ZERO,
-        })
-    }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
-        Ok(WorldPublication {
-            id: SnapshotId {
-                epoch: WorldEpoch(1),
-                tick: self.tick,
-            },
-            timeline: 1,
-            page: self.source(),
-        })
-    }
-    fn presentation_alpha_at(&self, lead: Duration) -> f32 {
-        if self.interpolate {
-            let step = self.tick_duration().as_nanos();
-            let part = self.now.as_nanos() % step + lead.as_nanos();
-            part.min(step) as f32 / step as f32
-        } else {
-            1.0
-        }
-    }
-    fn display_phase_at(&self, lead: Duration) -> f32 {
-        self.presentation_alpha_at(lead)
-    }
-    fn is_interpolating(&self) -> bool {
-        self.interpolate
-    }
-    fn tick_due_time(&self) -> Option<Duration> {
-        None
-    }
-}
-
-pub(crate) struct Source {
-    pub(crate) view: SyntheticView,
-    pub(crate) lighting: FrameLighting,
-}
-impl SceneSource<SourceTick> for Source {
-    fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
-        into.extract(*page, [0.0; 3], |sink| {
-            sink.push(0, 1, 1, [0.0; 3], 0);
-        })
-    }
-    fn frame(
-        &self,
-        _: SourceTick,
-        _: f32,
-        _: [u32; 2],
-        _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
-        Ok(SceneFrame {
-            view: self.view,
-            lighting: self.lighting,
-        })
-    }
-}
 
 pub(crate) fn beach(ratio: f64, max_stage: f64) -> Map {
     let heights = (0_i16..7)

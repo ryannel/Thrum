@@ -7,7 +7,7 @@ use std::{
 use thrum_app::sky::{Camera, ContentStatus, Controls, MeshPlacement, SkyGame};
 use thrum_sea_model::{Forcing, Spectrum};
 use thrum_water::Water;
-use thrum_water_model::{Bed, Body, BodyKind, Map, Profile, Stage};
+use thrum_water_model::{Bed, Body, BodyKind, Map, Profile, Stage, SurfProfile};
 
 use crate::{SharedMap, SharedReport};
 
@@ -60,6 +60,16 @@ impl Wind {
         forcing
     }
 
+    fn surf_forcing(self) -> Forcing {
+        let mut forcing = self.forcing();
+        if let Some(swell) = forcing.swells.first_mut() {
+            let period = 10.0_f64;
+            swell.wavelength = 9.81 * period.powi(2) / std::f64::consts::TAU;
+            swell.direction = std::f64::consts::FRAC_PI_4;
+        }
+        forcing
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "authored wind uses bounded metres per second"
@@ -88,6 +98,20 @@ const INDEX_BYTES: usize = ((COARSE_MESH[0] - 1) * (COARSE_MESH[1] - 1)
 /// # Errors
 /// Returns invalid map or spectrum authoring.
 pub fn map(wind: Wind) -> Result<Map, Box<dyn Error>> {
+    island_map(&wind.forcing(), false)
+}
+
+/// The map and spectrum used by the island's surf scene.
+/// # Errors
+/// Returns invalid terrain, tide, surf or wave declarations.
+pub fn surf_inputs(wind: Wind) -> Result<(Map, Spectrum), Box<dyn Error>> {
+    let forcing = wind.surf_forcing();
+    let map = island_map(&forcing, true)?;
+    let spectrum = Spectrum::build(&forcing).map_err(|e| format!("{e:?}"))?;
+    Ok((map, spectrum))
+}
+
+fn island_map(forcing: &Forcing, surf: bool) -> Result<Map, Box<dyn Error>> {
     let mesh = include_bytes!("../assets/meshes/island.bin");
     let positions: Vec<[f64; 3]> = mesh[..POSITIONS_BYTES]
         .as_chunks::<12>()
@@ -109,7 +133,7 @@ pub fn map(wind: Wind) -> Result<Map, Box<dyn Error>> {
         .collect();
     let bed = Bed::from_triangles([-200.0, -225.0], 2.5, SIZE, -12.0, &triangles)
         .map_err(|e| format!("{e:?}"))?;
-    let forcing = wind.forcing();
+    let tide = if surf { 0.5 } else { 0.0 };
     let mut map = Map::prepare(
         bed,
         vec![
@@ -118,8 +142,8 @@ pub fn map(wind: Wind) -> Result<Map, Box<dyn Error>> {
                 kind: BodyKind::Sea,
                 level: 0.0,
                 stage: Stage {
-                    min: 0.0,
-                    max: 0.0,
+                    min: -tide,
+                    max: tide,
                     value: 0.0,
                 },
                 fetch: forcing.fetch,
@@ -158,7 +182,11 @@ pub fn map(wind: Wind) -> Result<Map, Box<dyn Error>> {
         },
     )
     .map_err(|e| format!("{e:?}"))?;
-    map.set_forcing(&forcing).map_err(|e| format!("{e:?}"))?;
+    map.set_forcing(forcing).map_err(|e| format!("{e:?}"))?;
+    if surf {
+        map.enable_surf(SurfProfile::default())
+            .map_err(|e| format!("{e:?}"))?;
+    }
     Ok(map)
 }
 
@@ -173,6 +201,16 @@ pub const CAMERAS: [Camera; 6] = [
 ];
 /// Forty-metre view of the same shore margin as the sand camera.
 pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0, 0.0, 12.0], 65.0);
+
+/// Sand, overhead, offshore, lee, headland and whole-island surf views.
+pub const SURF_VIEWS: [Camera; 6] = [
+    CAMERAS[0],
+    Camera::look_at([-109.0, 40.0, 9.0], [-145.0, 0.0, -4.0], 78.0),
+    Camera::look_at([-1106.0, 40.0, 8.0], [-106.0, 0.0, 8.0], 20.0),
+    Camera::look_at([362.0, 40.0, 25.0], [351.0, 0.0, 16.0], 72.0),
+    Camera::look_at([-101.0, 40.0, -94.0], [-127.0, 0.0, -98.0], 79.0),
+    Camera::look_at([110.0, 300.0, 85.0], [110.0, 0.0, 84.9], 92.0),
+];
 
 /// Build the island with its cooked ground and the mapped water contribution.
 /// # Errors
@@ -203,8 +241,32 @@ pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
 /// # Panics
 /// Panics if a scene lock is poisoned or a bounded control fails.
 pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
-    let map = Arc::new(Mutex::new(map(wind)?));
-    let spectrum = Spectrum::build(&wind.forcing()).map_err(|e| format!("{e:?}"))?;
+    build_island(wind, draw_water, foam, false)
+}
+
+/// Use the island's surf profile and tide and beach inspection controls.
+/// # Errors
+/// Returns invalid controls, content or water declarations.
+pub fn build_surf(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Error>> {
+    build_island(wind, draw_water, true, true)
+}
+
+fn build_island(
+    wind: Wind,
+    draw_water: bool,
+    foam: bool,
+    surf: bool,
+) -> Result<FoamScene, Box<dyn Error>> {
+    let (map, spectrum) = if surf {
+        surf_inputs(wind)?
+    } else {
+        let forcing = wind.forcing();
+        (
+            island_map(&forcing, false)?,
+            Spectrum::build(&forcing).map_err(|e| format!("{e:?}"))?,
+        )
+    };
+    let map = Arc::new(Mutex::new(map));
     let mut profile = crate::profile(&spectrum);
     if foam {
         profile.query = Some(thrum_water::query::QueryLimits {
@@ -228,15 +290,17 @@ pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene,
     let camera = controls
         .slider(
             "camera.island",
-            if foam {
+            if surf {
+                "Sand / Beach / Offshore / Lee / Headland / Island"
+            } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
                 "Beach / Lake / Pond / Hill / Map / Sill"
             },
-            0.0..=if foam { 6.0 } else { 5.0 },
+            0.0..=if foam && !surf { 6.0 } else { 5.0 },
         )
         .step(1.0)
-        .default(3.0)
+        .default(if surf { 1.0 } else { 3.0 })
         .add()?;
     let stage = controls
         .slider("lake.stage", "Lake stage", 0.0..=1.0)
@@ -247,6 +311,15 @@ pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene,
         .slider("sun.elevation", "Sun elevation", 5.0..=80.0)
         .default(60.0)
         .add()?;
+    let tide = surf
+        .then(|| {
+            controls
+                .slider("sea.stage", "Tide (m)", -0.5..=0.5)
+                .step(0.01)
+                .default(0.0)
+                .add()
+        })
+        .transpose()?;
     let game = SkyGame::new(controls, CAMERAS[3], move |c, sky| {
         #[expect(
             clippy::cast_possible_truncation,
@@ -254,16 +327,22 @@ pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene,
             reason = "bounded discrete camera control"
         )]
         let index = c.get(camera).round() as usize;
-        sky.camera = CAMERAS.get(index).copied().unwrap_or(BEACH_OVERHEAD);
+        sky.camera = if surf {
+            SURF_VIEWS[index]
+        } else {
+            CAMERAS.get(index).copied().unwrap_or(BEACH_OVERHEAD)
+        };
         sky.sun_elevation_degrees = c.get(sun);
         sky.sun_azimuth_degrees = 228.0;
         sky.exposure_compensation_ev = 0.3;
         sky.temporal_inputs = true;
-        display_map
-            .lock()
-            .expect("island map")
-            .set_stage(1, f64::from(c.get(stage)))
+        let mut map = display_map.lock().expect("island map");
+        map.set_stage(1, f64::from(c.get(stage)))
             .expect("bounded stage control");
+        if let Some(tide) = tide {
+            map.set_stage(0, f64::from(c.get(tide)))
+                .expect("bounded tide control");
+        }
     })
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))

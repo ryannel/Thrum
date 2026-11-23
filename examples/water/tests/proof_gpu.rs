@@ -16,9 +16,13 @@ fn settings() -> Settings {
 
 fn island_wind() -> Option<Wind> {
     match settings() {
-        Settings::Island { wind, .. } => Some(wind),
+        Settings::Island { wind, .. } | Settings::Surf(wind) => Some(wind),
         _ => None,
     }
+}
+
+fn surf_route() -> bool {
+    matches!(settings(), Settings::Surf(_))
 }
 
 fn floating() -> Option<Floating> {
@@ -37,6 +41,7 @@ fn wake_route() -> bool {
 fn whitewater() -> bool {
     match settings() {
         Settings::Island { foam, .. } => foam,
+        Settings::Surf(_) => true,
         Settings::Floating(floating) => floating.wake.is_some_and(|wake| wake.whitewater),
         Settings::OpenSea => false,
     }
@@ -51,6 +56,11 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
         Settings::Island { wind, foam } => {
             let (game, report, _, _) =
                 water_scene::island::build_foam(wind, water, foam).expect("island");
+            (game, report)
+        }
+        Settings::Surf(wind) => {
+            let (game, report, _, _) =
+                water_scene::island::build_surf(wind, water).expect("surf island");
             (game, report)
         }
         Settings::OpenSea => water_scene::build_paired(
@@ -149,7 +159,12 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     if let Some(wind) = island_wind() {
         result["wind"] = json!(format!("{wind:?}"));
         result["body_vertices"] = json!(report.bodies);
-        result["cameras"] = json!(water_scene::island::CAMERAS.map(|c| json!({"position":c.position,"target":c.target,"fov_degrees":c.vertical_fov_degrees})));
+        let cameras = if surf_route() {
+            water_scene::island::SURF_VIEWS
+        } else {
+            water_scene::island::CAMERAS
+        };
+        result["cameras"] = json!(cameras.map(|c| json!({"position":c.position,"target":c.target,"fov_degrees":c.vertical_fov_degrees})));
     }
     result["recipe"] =
         json!(std::env::var("THRUM_WATER_RECIPE").unwrap_or_else(|_| "native".into()));
@@ -265,7 +280,9 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 ("low-sun", 2, 90, 6),
                 ("twilight", 2, 90, -4),
             ];
-            let checkpoints: Vec<_> = if whitewater() {
+            let checkpoints: Vec<_> = if surf_route() {
+                surf_checkpoints()
+            } else if whitewater() {
                 let beach = island_wind().is_some();
                 let views: &[(&str, u32)] = if beach {
                     &[("beach", 0), ("overhead", 6), ("lake", 1)]
@@ -311,7 +328,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             };
             for (session, (name, params, time)) in (2_u64..).zip(checkpoints) {
                 fixture.parameters(&params);
-                if whitewater() {
+                if whitewater() && !surf_route() {
                     let steps = if name.ends_with("-0") { 72 } else { 7 };
                     for index in (1..=steps).rev() {
                         fixture.frame_without_timings(time - f64::from(index) * 0.10);
@@ -352,6 +369,23 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         serde_json::to_vec_pretty(&result).expect("json"),
     )
     .expect("record");
+}
+
+#[cfg(target_os = "macos")]
+fn surf_checkpoints() -> Vec<(String, String, f64)> {
+    ["sand", "beach", "offshore", "lee", "headland", "island"]
+        .into_iter()
+        .zip(0_u32..)
+        .flat_map(|(name, view)| {
+            (0_u32..3).map(move |phase| {
+                (
+                    format!("surf-{name}-{phase}"),
+                    format!(r#"{{"camera.island":{view}}}"#),
+                    16.0 + f64::from(view * 3 + phase) * 0.9,
+                )
+            })
+        })
+        .collect()
 }
 
 #[cfg(target_os = "macos")]

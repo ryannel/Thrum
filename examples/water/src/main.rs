@@ -10,6 +10,9 @@ fn main() {
             Settings::Island { wind, foam } => {
                 water_scene::island::build_foam(wind, true, foam).map(|(game, _, _, _)| game)
             }
+            Settings::Surf(wind) => {
+                water_scene::island::build_surf(wind, true).map(|(game, _, _, _)| game)
+            }
             Settings::Floating(floating) => match floating.wake {
                 Some(wake) => water_scene::floating::build_wake(
                     floating.wind,

@@ -165,6 +165,14 @@ impl BreakerSection {
         self.bore
     }
 
+    /// Breaker table rows in increasing index order, with uniform periodic phase samples.
+    pub fn rows(&self) -> impl ExactSizeIterator<Item = (f64, &[SectionPoint])> {
+        self.indices
+            .iter()
+            .copied()
+            .zip(self.rows.iter().map(Vec::as_slice))
+    }
+
     /// Global maximum forward throw in units of the envelope.
     pub fn maximum_throw(&self) -> f64 {
         self.rows

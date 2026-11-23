@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf');
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -64,9 +64,9 @@ const observer = `
   };
   const create=GPUDevice.prototype.createBuffer;
   GPUDevice.prototype.createBuffer=function(desc){
-    if(['sea parameters','interaction sample settings','foam settings'].includes(desc.label))desc={...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC};
+    if(['sea parameters','interaction sample settings','foam settings','surf field settings'].includes(desc.label))desc={...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC};
     const b=create.call(this,desc);
-    if(desc.label?.startsWith('sea ')||desc.label?.startsWith('interaction ')||desc.label?.startsWith('foam '))__buffers[desc.label]=b;
+    if(desc.label?.startsWith('sea ')||desc.label?.startsWith('interaction ')||desc.label?.startsWith('foam ')||['surf field cache','surf field settings','water surface vertices'].includes(desc.label))__buffers[desc.label]=b;
     return b;
   };
   globalThis.__readFoam=async()=>{
@@ -199,6 +199,13 @@ const islandObserver = `
   wrap(GPUDevice.prototype,'createShaderModule',(shader,d)=>{
     if(d.label==='water surface')__island.source=d.code;
   });
+  __island.surfTextures=[];
+  wrap(GPUDevice.prototype,'createTexture',(_,d)=>{
+    if(['surf lags','surf exposures','breaker section','surf bed pyramid'].includes(d.label))__island.surfTextures.push(d);
+  });
+  wrap(GPUDevice.prototype,'createComputePipeline',(_,d)=>{
+    if(d.label==='surf field cache')__island.surfEntries=__island.pipelines.get(d.layout).flatMap(layout=>__island.layouts.get(layout)??[]);
+  });
   wrap(GPUDevice.prototype,'createBindGroupLayout',(layout,d)=>__island.layouts.set(layout,d.entries));
   wrap(GPUDevice.prototype,'createPipelineLayout',(layout,d)=>__island.pipelines.set(layout,d.bindGroupLayouts));
   wrap(GPUDevice.prototype,'createBindGroup',(group,d)=>{
@@ -297,6 +304,65 @@ async function inspectIsland(evaluate, result) {
   result.map={scattered:4096,points:oracle.points.length,shore_crossings:oracle.shore_crossings,
     classifications:seen,max_absolute_error:err,...{stages:report.stages,limits:report.limits,draws:report.draws}};
 }
+async function inspectSurf(evaluate,result,frame) {
+  const witness=await evaluate(`(async()=>{
+    const device=__devices.at(-1);
+    const names=['surf field settings','water surface vertices','surf field cache'];
+    const encoder=device.createCommandEncoder();
+    const staging=names.map(name=>{
+      const source=__buffers[name];
+      if(!source)throw Error('missing surf product: '+name);
+      const buffer=device.createBuffer({size:source.size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+      encoder.copyBufferToBuffer(source,0,buffer,0,buffer.size);
+      return buffer;
+    });
+    device.queue.submit([encoder.finish()]);
+    const [settings,mesh,cache]=await Promise.all(staging.map(async buffer=>{
+      await buffer.mapAsync(GPUMapMode.READ);
+      const values=new Float32Array(buffer.getMappedRange().slice(0));
+      buffer.unmap();buffer.destroy();return values;
+    }));
+    const nodes=[],samples=[];
+    for(let i=0;i<mesh.length/4;i++){
+      const [x,z,spacing,body]=mesh.subarray(i*4,i*4+4);
+      if(cache[i*8+3]===0 || (body===0&&Math.max(Math.abs(x),Math.abs(z))>=32*spacing))continue;
+      if(i%6!==0)continue;
+      nodes.push(body===0?[x+Math.floor(settings[0]),z+Math.floor(settings[1]),body]:[x,z,body]);
+      samples.push(Array.from(cache.subarray(i*8,i*8+3)));
+    }
+    const entries=__island.surfEntries;
+    const limits={};
+    for(const name of ['maxSampledTexturesPerShaderStage','maxStorageBuffersPerShaderStage',
+      'maxStorageBufferBindingSize','maxTextureArrayLayers','maxTextureDimension2D'])limits[name]=device.limits[name];
+    return {nodes,samples,limits,textures:__island.surfTextures,
+      layout:{sampled:entries.filter(e=>e.texture).length,storage:entries.filter(e=>e.buffer?.type?.includes('storage')).length},
+      storageBytes:__buffers['surf field cache'].size,draws:__island.draws.slice(-3)};
+  })()`);
+  const {limits,layout,textures,storageBytes,nodes,samples,draws}=witness;
+  assert(textures.length===4&&draws.length===3,'surf products or body draws missing');
+  assert(layout.sampled<=limits.maxSampledTexturesPerShaderStage&&layout.storage<=limits.maxStorageBuffersPerShaderStage,'surf bindings exceed portable limits');
+  assert(storageBytes<=limits.maxStorageBufferBindingSize,'surf field cache exceeds storage limit');
+  for(const {size} of textures) {
+    const [width,height,layers]=Array.isArray(size)?size:[size.width,size.height,size.depthOrArrayLayers];
+    assert(Math.max(width,height)<=limits.maxTextureDimension2D&&layers<=limits.maxTextureArrayLayers,'surf texture exceeds portable limits');
+  }
+  const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
+  const time=(frame.tick-1+frame.alpha)/60;
+  const oracle=JSON.parse(execFileSync('rustup',['run','stable','cargo','run','--quiet','--release',
+    '--locked','--offline','-p','water-scene','--example','surf_oracle'],{
+    input:JSON.stringify({time,nodes}),maxBuffer:16<<20,
+    env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}
+  }));
+  let checked=0,maxError=0;
+  oracle.answers.forEach((expected,i)=>{
+    if(expected===null)return;
+    checked++;
+    expected.forEach((value,j)=>{maxError=Math.max(maxError,Math.abs(samples[i][j]-value));});
+  });
+  result.surf={time,checked,maxError,limits,layout,textures,storageBytes,draws};
+  assert(checked>200&&maxError<0.015,`surf field comparison: ${checked} samples, ${maxError} m maximum error`);
+}
+
 const log=await fs.open(path.join(output,'command.log'),'w');
 const command=spawn('./dev',['scene','examples/water','--web'],{env:{...process.env,THRUM_SCENE_OUTPUT:output},stdio:['ignore',log.fd,log.fd],detached:true});
 let chrome,cdp,sid,failure;
@@ -326,8 +392,8 @@ try {
   };
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='island'?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
-  const route=mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
+  const route=mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='surf'?'?surf=trade':'';
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
@@ -499,6 +565,9 @@ try {
     assert(hitch.unavailable>end.unavailable&&hitch.blockingReads===0,'hitch did not account for the unavailable replies');
     for(const status of [start,end,hitch]) delete status.replies;
     result.bodies={start,ages:[...ages.values()].slice(0,beforeHitch.size),end,hitch,hitchAges};
+  } else if(mode==='surf'){
+    const frame=await capture('surf-trade',500-now);
+    await inspectSurf(evaluate,result,frame);
   } else if(mode==='island'){
     await capture('island',10000-now);
     await inspectIsland(evaluate,result);

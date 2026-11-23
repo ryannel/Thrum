@@ -61,14 +61,18 @@ struct VertexOut {
     @location(1) rest:vec2<f32>, @location(2) velocity:vec3<f32>,
     @location(3) current:vec4<f32>, @location(4) previous:vec4<f32>,
     @location(5) @interpolate(flat) body:u32,
+    @location(6) surf_weight:f32,
 }
-@vertex fn water_vertex(@location(0) vertex:vec4<f32>)->VertexOut {
+@vertex fn water_vertex(@location(0) vertex:vec4<f32>, @builtin(vertex_index) index:u32)->VertexOut {
     let sea=vertex.w==0.0;
     let body=u32(vertex.w);
     let anchor=select(vec2(0.0),floor(view.camera_xyz_time.xz),sea);
     let rest=anchor+vertex.xy;
     let row=surface_vertex(rest,body);
     var f=field_at(rest,vertex.z,row.gains);
+    var surf_weight = 0.0;
+    var surf_motion = vec3(0.0);
+    let transformed = surf_current(index);
     let local=vertex.xy/vertex.z;
     if sea && max(abs(local.x),abs(local.y))>=32.0 {
         let lo=floor(local/2.0)*2.0;let hi=ceil(local/2.0)*2.0;
@@ -76,6 +80,20 @@ struct VertexOut {
         let a=field_at(p,vertex.z*2.0,surface_vertex(p,body).gains);
         let b=field_at(q,vertex.z*2.0,surface_vertex(q,body).gains);
         f=add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,0.5),b,0.5);
+        if SURF_CACHE_ENABLED && transformed.w > 0.0 {
+            let long_p = long_at(p, vertex.z*2.0);
+            let long_q = long_at(q, vertex.z*2.0);
+            let long = add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),
+                long_p,0.5*surface_vertex(p,body).gains.x),long_q,0.5*surface_vertex(q,body).gains.x);
+            f = add_field(f,long,-1.0);
+        }
+    } else if SURF_CACHE_ENABLED && transformed.w > 0.0 {
+        f = add_field(f,long_at(rest,vertex.z),-row.gains.x);
+    }
+    if SURF_CACHE_ENABLED && transformed.w > 0.0 {
+        surf_weight = transformed.w;
+        f.displacement += vec4(transformed.xyz, 0.0);
+        surf_motion = transformed.xyz - surf_previous(index);
     }
     let wake=wake_at(rest,0.0);
     f.displacement.y+=wake.x;
@@ -85,8 +103,8 @@ struct VertexOut {
     if sea && max(abs(vertex.x),abs(vertex.y))>=524288.0 {world=vec3(anchor.x+vertex.x*100.0,row.level,anchor.y+vertex.y*100.0);}
     var clip=view.view_proj*vec4(world,1.0);clip.z=max(clip.z,0.0000001);
     let current=view.unjittered_view_proj*vec4(world,1.0);
-    let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-vec3(0.0,row.level-row.previous_level,0.0),1.0);
-    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body);
+    let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-surf_motion-vec3(0.0,row.level-row.previous_level,0.0),1.0);
+    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body,surf_weight);
 }
 struct Output { @location(0) colour:vec4<f32>,@location(1) motion:vec2<f32>,@location(2) reactive:f32, }
 struct FilteredLayer { slope:vec2<f32>, second:vec3<f32>, differential:vec3<f32>, }
@@ -119,6 +137,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
 }
 @fragment fn water_fragment(input:VertexOut)->Output {
     let dx=dpdx(input.rest);let dy=dpdy(input.rest);
+    let sheet = cross(dpdx(input.world), dpdy(input.world));
     let wake_slope=wake_at(input.rest,0.0).yz;
     let wake_dx=dpdx(wake_slope);let wake_dy=dpdy(wake_slope);
     let row=surface_pixel(input.rest,input.body);
@@ -167,6 +186,12 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         a*a*covariance.x+2.0*a*b*covariance.y+b*b*covariance.z,
         a*b*covariance.x+(a*c+b*b)*covariance.y+b*c*covariance.z,
         b*b*covariance.x+2.0*b*c*covariance.y+c*c*covariance.z)/(determinant*determinant);
+    if SURF_CACHE_ENABLED && input.surf_weight >= 0.999 {
+        // The depth test selects the nearest branch of the folded sheet.
+        // Its screen derivatives give that branch's tangent plane.
+        let up = select(-sheet, sheet, sheet.y >= 0.0);
+        slope = -up.xz / max(up.y, length(up) * 0.03 + 1e-20);
+    }
     var whitewater=vec4(0.0);
     if FOAM_ENABLED {
         whitewater=foam_surface(input.world,row,max(length(dx),length(dy)),determinant);

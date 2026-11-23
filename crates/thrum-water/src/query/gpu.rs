@@ -4,6 +4,8 @@ use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seco
 use crate::{
     column::{COMPONENT_LIMIT, Component},
     interaction::Interaction,
+    map_gpu::{self, MapGpu},
+    surf::SurfGpu,
 };
 use bytemuck::{Pod, Zeroable};
 use correction::{CascadeSample, MapPrediction};
@@ -24,6 +26,12 @@ mod tests;
 
 const SLOT_COUNT: usize = 4;
 const GROUP_WIDTH: u32 = 64;
+const SURF_GROUP: u32 = 1;
+const SURF_BINDING: u32 = 7;
+const PLAIN_QUERY: &str = "
+fn surf_query(point: QueryPoint, gain: f32) -> QueryWave {
+    return QueryWave(long_wave(point.position - settings.origin, point.dt, gain, settings.lengths_chop.w, settings.components), 0u);
+}";
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -37,6 +45,7 @@ struct Point {
     has_bed: u32,
     gains: [f32; 4],
     dent: [f32; 4],
+    surf_stage: [f32; 4],
 }
 
 #[repr(C)]
@@ -59,7 +68,7 @@ struct Answer {
     current_bed: [f32; 4],
     body_flags: [u32; 4],
     cascades: [CascadeSample; 3],
-    padding: f32,
+    cut_nodes: u32,
     wake: [f32; 4],
 }
 
@@ -87,6 +96,7 @@ struct Batch {
 pub(crate) struct Readback {
     mailbox: QueryMailbox,
     pipeline: wgpu::ComputePipeline,
+    surf: Option<wgpu::BindGroup>,
     slots: [Slot; SLOT_COUNT],
     pending: Vec<Batch>,
     submitted: Option<(u128, u64, u64)>,
@@ -112,18 +122,32 @@ impl Readback {
         ambient: &thrum_sea::Ambient,
         mailbox: QueryMailbox,
         wake: Option<&Interaction>,
+        surf: Option<(&MapGpu, &SurfGpu)>,
     ) -> Self {
         use wgpu::BufferUsages as Usage;
         let count = u64::from(mailbox.limits.points);
+        let surf_source = if surf.is_some() {
+            map_gpu::declarations_at(SURF_GROUP)
+                + &SurfGpu::source(SURF_GROUP, SURF_BINDING)
+                + include_str!("../surf/cut.wgsl")
+        } else {
+            PLAIN_QUERY.to_owned()
+        };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("water body query"),
             source: wgpu::ShaderSource::Wgsl(
                 format!(
-                    "{}\n{}\n{}\n{}",
-                    include_str!("../gains.wgsl"),
+                    "{}\n{}\n{}\n{}\n{}\n{}",
+                    if surf.is_some() {
+                        ""
+                    } else {
+                        include_str!("../gains.wgsl")
+                    },
                     Interaction::sample_source(0, 5, 6, wake.is_some()),
+                    include_str!("../column/records.wgsl"),
                     include_str!("../column.wgsl"),
-                    include_str!("sample.wgsl")
+                    include_str!("sample.wgsl"),
+                    surf_source,
                 )
                 .into(),
             ),
@@ -148,10 +172,30 @@ impl Readback {
             label: Some("water query bindings"),
             entries: &layout,
         });
+        let surf_layout = surf.map(|_| {
+            let mut entries = map_gpu::bindings(visibility).to_vec();
+            entries.extend(SurfGpu::layout(SURF_BINDING, visibility));
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("water query surf"),
+                entries: &entries,
+            })
+        });
+        let mut groups = vec![Some(&layout)];
+        groups.extend(surf_layout.as_ref().map(Some));
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("water query pipeline layout"),
-            bind_group_layouts: &[Some(&layout)],
+            bind_group_layouts: &groups,
             immediate_size: 0,
+        });
+        let surf = surf.zip(surf_layout.as_ref()).map(|((map, surf), layout)| {
+            let view = map.view();
+            let mut entries = map.entries(&view).to_vec();
+            entries.extend(surf.entries(SURF_BINDING));
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("water query surf"),
+                layout,
+                entries: &entries,
+            })
         });
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("water body query"),
@@ -236,6 +280,7 @@ impl Readback {
         Self {
             mailbox,
             pipeline,
+            surf,
             slots,
             pending: Vec::with_capacity(SLOT_COUNT),
             submitted: None,
@@ -411,6 +456,9 @@ impl Readback {
     pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
         if self.pending() {
             pass.set_pipeline(&self.pipeline);
+            if let Some(surf) = &self.surf {
+                pass.set_bind_group(SURF_GROUP, surf, &[]);
+            }
         }
         for batch in &self.pending {
             pass.set_bind_group(0, &self.slots[batch.slot].group, &[]);
@@ -501,6 +549,7 @@ impl Point {
                 .level_slope(sample.body, world)
                 .map(|slope| slope as f32);
             input.gains = row.gains.map(|gain| gain as f32);
+            input.surf_stage[0] = map.body(sample.body).expect("sampled body").stage.value as f32;
         }
         input
     }
@@ -512,6 +561,10 @@ impl Batch {
         if state.epoch != self.epoch {
             return;
         }
+        state.stats.cut_nodes += values
+            .iter()
+            .map(|answer| u64::from(answer.cut_nodes))
+            .sum::<u64>();
         let mut values = values.iter().zip(self.map_revisions);
         for body in self.bodies {
             let mut fields = (&mut values).take(body.points.len());

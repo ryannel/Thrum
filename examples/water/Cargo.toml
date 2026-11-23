@@ -29,6 +29,10 @@ name = "floating_gpu"
 [[test]]
 name = "foam_scene_gpu"
 
+# WATERS M13.2 names this target.
+[[test]]
+name = "surf_capability_gpu"
+
 [lints]
 workspace = true
 

@@ -15,8 +15,10 @@ impl records::Kind for CascadeSample {
 fn query_records_match_the_shader_layout() {
     let source = Interaction::sample_source(0, 5, 6, true)
         + include_str!("../../gains.wgsl")
+        + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
-        + include_str!("../sample.wgsl");
+        + include_str!("../sample.wgsl")
+        + super::PLAIN_QUERY;
     records::named(
         "water query shader",
         &source,
@@ -32,6 +34,7 @@ fn query_records_match_the_shader_layout() {
                 has_bed,
                 gains,
                 dent,
+                surf_stage,
             ),
             record!(
                 Component, vector, amplitude, phase, omega, inverse_k, padding
@@ -54,7 +57,7 @@ fn query_records_match_the_shader_layout() {
                 current_bed,
                 body_flags,
                 cascades,
-                padding,
+                cut_nodes,
                 wake,
             ),
         ],

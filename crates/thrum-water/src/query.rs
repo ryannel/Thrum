@@ -80,6 +80,8 @@ pub struct BodyAnswers {
 pub struct QueryStats {
     /// Submitted batches.
     pub dispatches: u64,
+    /// Lattice nodes evaluated by completed surf column cuts, excluding refinement.
+    pub cut_nodes: u64,
     /// Body requests refused for capacity or invalid point data.
     pub refused: u64,
     /// Recordings skipped because all staging buffers were occupied.

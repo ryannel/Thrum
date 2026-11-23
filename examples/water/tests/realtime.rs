@@ -29,6 +29,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let floating = super::floating();
     let wake = super::wake_route();
     let whitewater = super::whitewater();
+    let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
     let mut fleet = None;
     let (game, report) = if let Some(floating) = floating {
@@ -99,7 +100,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 ))
                 .expect("pan control");
         }
-        if wake || whitewater {
+        if surf && route == "tide" {
+            let stage = if elapsed <= 6.0 {
+                elapsed / 6.0 - 0.5
+            } else {
+                1.5 - elapsed / 6.0
+            };
+            runtime
+                .parameters(&format!(r#"{{"sea.stage":{:.3}}}"#, stage.clamp(-0.5, 0.5)))
+                .expect("tide control");
+        } else if wake || whitewater {
             let change = match (route.as_str(), elapsed) {
                 ("turn", t) if t >= 4.0 => r#"{"craft.turn":65}"#,
                 ("restart", t) if t >= 8.0 => r#"{"craft.speed":6}"#,

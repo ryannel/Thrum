@@ -97,7 +97,8 @@ impl Foam {
         format!(
             "const FOAM_SIDE: i32 = {SIDE};\nconst FOAM_SPACING = array({fine:?}, {coarse:?});\n\
              const HULL_LIMIT: u32 = {HULL_LIMIT}u;\nconst COMPONENT_LIMIT: u32 = {COMPONENT_LIMIT}u;\n"
-        ) + include_str!("../column.wgsl")
+        ) + include_str!("../column/records.wgsl")
+            + include_str!("../column.wgsl")
             + include_str!("sample.wgsl")
     }
 
