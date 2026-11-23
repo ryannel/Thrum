@@ -377,8 +377,10 @@ def measure_surf():
                 assert frame['fleet_query']['floats'] == 8 and frame['fleet_query']['stations'] == 48
                 assert (frame['fleet_query']['cut_nodes'] > 0) == surf
                 query_frames[name] = frame['fleet_query']
-                query_frames[name]['gpu_ms'] = next(
-                    value for label, value in labels.items() if label.endswith('water body query'))
+                elapsed = next((value for label, value in labels.items()
+                                if label.endswith('water body query')), None)
+                assert elapsed is not None, f"{name} query timestamp unavailable: {frame.get('timing_fault')}"
+                query_frames[name]['gpu_ms'] = elapsed
     assert set(query_frames) == {'surf', 'surf-disabled'}
     record['query'] = query_frames
     record['summary'] = table
