@@ -1,27 +1,14 @@
 {
   "module": "SESSION",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/SESSION/design-review.md",
-    "commit": "48811b54f75eb37c3bebad3e8b5f793d4ccd1100",
-    "hash": "45de75ace60b8f3d36cc4ed7b3c7df813691fd661b67665e22ece0242b301acc",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-sol",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-sol",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13",
-    "path": "headless",
-    "usage": {
-      "input": 115625,
-      "cached": 1756416,
-      "output": 10050,
-      "turns": 1
-    },
-    "at": "2026-11-23T23:23:28Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "9796967388b967d3f1d58c87578860cb1e0bdb0ee11bffdab01a29346522311e",
+    "after": [
+      ".orchestrate/evidence/SESSION/design-review-6.md",
+      ".orchestrate/evidence/SESSION/design-review.md"
+    ],
+    "at": "2026-11-23T23:33:41Z"
   },
   "milestones": {
     "M1": {
@@ -638,12 +625,12 @@
       }
     },
     "M5": {
-      "definitions": "9bd900fc7d54a69a8269824934ab05765e4bbee15ee1cd69f7c6b3b67511966d",
+      "definitions": "d9ab1a4b808132d523d153d0a50571f5504c01e346aed0d4aba767f5208d44b9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix fi",
-        "at": "2026-11-23T23:18:45Z"
+        "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix fi",
+        "at": "2026-11-23T23:33:41Z"
       }
     },
     "M6": {
@@ -722,11 +709,15 @@
     {
       "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix findings. The first needs CULLING's, COOKED-DRAW's and PLATFORM-RUNTIME-IOS's files and T2-CAPTURE's guide to align their iOS commands on one simulator lock through verified shutdown (a simulator left booted after Thrum runs storms into ~290 respawning daemons and load 100-422). A previous whole-project planner finished this work but its merge check was interrupted (exit 130, by the lead): its files are in the git stash 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO' (stash@{0}); start from the main branch's tip and reuse what holds up.\n\nYour last turn on this finished, but its files couldn't merge: couldn't merge the plan: it changes the same lines as work that landed meanwhile, in docs/plans/SESSION/PLAN.md. rebase onto origin/main failed: \nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message w. They are kept in the latest stash, 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO'; start from the main branch's tip and reuse what holds up.",
       "at": "2026-11-23T23:18:45Z"
+    },
+    {
+      "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.\n\nA planner limited to SESSION stopped. The end of its report:\nThe CPU probe reproduced the Must Fix. The installed runner returned immediately on cancellation of HOST M4.5\u2019s shell, while simulated shutdown took 400 ms. With an explicit `exec` into the supervisor, the runner waited through shutdown.\n\n[HOST M4.5](docs/plans/HOST/DONE.json#L266) needs a check command that preserves its existing assertion and hands the runner\u2019s PID to the simulator supervisor. The [APPLE-PRESENTATION wrapper](scripts/apple_presentation.py#L559) also needs to keep that supervisor in charge through its own timeout. The revised acceptance case should cancel the outer command and prove that a second contender acquires `simulator` only after verified shutdown, accounting for the runner\u2019s ten-second grace.\n\nThe worktree is unchanged. The fix requires a check definition outside SESSION\u2019s scope.\n\nBLOCKED: needs HOST's files",
+      "at": "2026-11-23T23:33:41Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T23:18:45Z"
+    "at": "2026-11-23T23:33:41Z"
   },
   "design_history": [
     {
@@ -869,6 +860,29 @@
         "turns": 1
       },
       "at": "2026-11-23T21:25:51Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/SESSION/design-review.md",
+      "commit": "48811b54f75eb37c3bebad3e8b5f793d4ccd1100",
+      "hash": "45de75ace60b8f3d36cc4ed7b3c7df813691fd661b67665e22ece0242b301acc",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-sol",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-sol",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 115625,
+        "cached": 1756416,
+        "output": 10050,
+        "turns": 1
+      },
+      "at": "2026-11-23T23:23:28Z"
     }
   ]
 }

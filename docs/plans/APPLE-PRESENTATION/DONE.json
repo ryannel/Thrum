@@ -546,8 +546,8 @@
           "ask": "Where are `preferredDynamicRange` and `contentsHeadroom` set, on which thread, and through which reference to the layer? Does any path take wgpu's layer lock? Is the display's real record kept as a witness beside the forced one the arm uses?",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -558,8 +558,8 @@
           "ask": "Read the test. Is the CPU reference written from the design's formula and not from the shader? Is the shader's output read back from a float target for the same inputs?",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -570,8 +570,8 @@
           "ask": "Are both frames taken from one scene state through engine capture's tap, and is the float frame the one the surface was given?",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -581,8 +581,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -592,8 +592,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -604,8 +604,8 @@
           "ask": "Does engine capture read the float target the surface was given in this mode, without changing what it records in the 8-bit mode?",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -615,8 +615,8 @@
           "lock": "simulator",
           "target": "ios-sim",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -625,27 +625,17 @@
           "inspect": "From the float captures of D6.6 make, for the sunset and the night-lights stops, a false-colour image of values above 1.0 and an image divided by H. Judge each whole and in native-size crops of the Sun, the sky beside it and two lamps, beside the SDR frame of the same state.",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         }
       ],
       "depends_on": [],
-      "failed_reviews": 3,
+      "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
-      "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that.",
-      "findings": [
-        {
-          "name": "EDR presentation ignores the configured surface extent",
-          "repeat": false
-        },
-        {
-          "name": "Display promotion exceeds the capture session\u2019s buffer and byte limits",
-          "repeat": false
-        }
-      ]
+      "status": "not_started",
+      "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that."
     },
     {
       "id": "M7",

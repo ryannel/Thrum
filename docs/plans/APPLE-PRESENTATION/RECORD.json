@@ -676,7 +676,7 @@
       }
     },
     "M6": {
-      "definitions": "3aa93e5ca207c4191e3df81ebb25146d5f664a5ea9c06951534ccb3fda30dced",
+      "definitions": "b085846955d40217c1fc79aa80995e1421633ddcee98471aa696aaa0f2f17bfb",
       "reviews": [
         {
           "verdict": "fail",
@@ -815,51 +815,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
-        "at": "2026-11-15T08:54:22Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ],
-      "ready_for_review": {
-        "commit": "ce687a69effe87668d354d3c5a2979f4a3e82a36",
-        "checked": "ce687a69effe87668d354d3c5a2979f4a3e82a36",
-        "at": "2026-11-23T20:46:51Z",
-        "reused": [
-          "Test command",
-          "D6.1",
-          "D6.2",
-          "D6.3",
-          "D6.4",
-          "D6.5",
-          "D6.6",
-          "D6.7"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13",
-        "path": "headless",
-        "usage": {
-          "input": 101879,
-          "cached": 32794496,
-          "output": 33800,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 909818,
-          "cached": 118152064,
-          "output": 200198,
-          "turns": 3
-        }
+        "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix fi",
+        "at": "2026-11-23T23:33:41Z"
       }
     },
     "M7": {
@@ -1200,11 +1157,15 @@
     {
       "task": "The main-branch check exact-images fails deterministically: baseline chrome-day-sdr (owner APPLE-TILE), stage chrome-day-sdr-compare, 'decoded image changed at ordinal 61: a7cde573... != 8d7dab93...', identical on fdbe70e0a (19:23 UTC) and c8c9100d8, so it is a real change, not contention. The script's first culprit guess was fcc62608e (APPLE-PRESENTATION M6: Present extended linear highlights on Metal); a bisect between f7abcc2a3 and c8c9100d8 is running in .git/orchestrate/main-checks/exact-images (current.json, runner.log). Find the commit that changed the image, decide whether the new image is intended (then the baseline refresh goes through its owner's ruling) or a regression, and plan the fix in the module whose code it is, in its plan or as its next milestone.",
       "at": "2026-11-23T21:14:30Z"
+    },
+    {
+      "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.\n\nA planner limited to SESSION stopped. The end of its report:\nThe CPU probe reproduced the Must Fix. The installed runner returned immediately on cancellation of HOST M4.5\u2019s shell, while simulated shutdown took 400 ms. With an explicit `exec` into the supervisor, the runner waited through shutdown.\n\n[HOST M4.5](docs/plans/HOST/DONE.json#L266) needs a check command that preserves its existing assertion and hands the runner\u2019s PID to the simulator supervisor. The [APPLE-PRESENTATION wrapper](scripts/apple_presentation.py#L559) also needs to keep that supervisor in charge through its own timeout. The revised acceptance case should cancel the outer command and prove that a second contender acquires `simulator` only after verified shutdown, accounting for the runner\u2019s ten-second grace.\n\nThe worktree is unchanged. The fix requires a check definition outside SESSION\u2019s scope.\n\nBLOCKED: needs HOST's files",
+      "at": "2026-11-23T23:33:41Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T21:14:30Z"
+    "at": "2026-11-23T23:33:41Z"
   },
   "design_history": [
     {
