@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/RIVERS/design-review.md",
-    "commit": "92451626edcd245ee115869fae3f2cd11ff14c52",
-    "hash": "49d52adc822aa6e1eda035cc1a0fea376f7c868e582a07c1c0d5ae209b502e7a",
+    "commit": "8366452380db1ec9c3ba722ad6a8fcf40acf913c",
+    "hash": "f5c8ab1d2cebd21f41868bb98bc6768c63be527f786f0b3f0c9dbd05d2c29a50",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -13,18 +13,15 @@
       "model": "gpt-6.2-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 71467,
-      "cached": 422528,
-      "output": 2481,
+      "input": 75223,
+      "cached": 731136,
+      "output": 3973,
       "turns": 1
     },
-    "at": "2026-11-18T05:23:05Z",
-    "items_owed": [
-      "M8"
-    ]
+    "at": "2026-11-23T12:31:50Z"
   },
   "milestones": {
     "M1": {
@@ -629,6 +626,32 @@
         "turns": 1
       },
       "at": "2026-11-18T03:40:40Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/RIVERS/design-review-6.md",
+      "commit": "92451626edcd245ee115869fae3f2cd11ff14c52",
+      "hash": "49d52adc822aa6e1eda035cc1a0fea376f7c868e582a07c1c0d5ae209b502e7a",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 71467,
+        "cached": 422528,
+        "output": 2481,
+        "turns": 1
+      },
+      "at": "2026-11-18T05:23:05Z",
+      "items_owed": [
+        "M8"
+      ]
     }
   ]
 }
