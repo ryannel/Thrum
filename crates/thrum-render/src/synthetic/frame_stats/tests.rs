@@ -3,6 +3,7 @@ use crate::timing::PassTiming;
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
+    view_volume: false,
     star_pass: None,
     shadows: Shadows::Off,
     cascades: false,
@@ -187,6 +188,25 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
     )
     .expect("traced Sun keeps the height timing");
     assert_eq!(&[values.shadow_near(), values.shadow_far()], &[0.0, 1.0]);
+}
+
+#[test]
+fn the_joint_volume_keeps_aerial_timing_after_the_shadows() {
+    let names = [
+        "synthetic Sun shadow near",
+        "synthetic Sun shadow far",
+        "synthetic Sun horizon heights",
+        AtmosphereStage::Aerial.name(),
+    ];
+    let layout = SceneTimingLayout {
+        shadows: Shadows::Unculled,
+        cascades: true,
+        view_volume: true,
+        ..TRANSFORMS
+    };
+    let (values, _, _) = pass_durations(&timings(&names), false, layout).unwrap();
+    assert_eq!(values.aerial(), 1.0);
+    assert!(pass_durations(&timings(&names[..3]), false, layout).is_none());
 }
 
 #[test]

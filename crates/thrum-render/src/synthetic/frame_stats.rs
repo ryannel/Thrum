@@ -41,6 +41,7 @@ pub(crate) struct SceneTimingLayout {
     cascades: bool,
     clusters: bool,
     transforms: bool,
+    view_volume: bool,
     star_pass: Option<&'static str>,
     /// Bit `index` of [`CULLING_PASSES`] is set for each camera culling pass
     /// the frame records exactly once. Frustum: one `camera visibility`
@@ -80,6 +81,10 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
             cascades: prepared.shadowed() && prepared.surface_uses_cascades(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
+            view_volume: prepared
+                .atmosphere
+                .as_ref()
+                .is_some_and(|air| air.view_volume.is_some()),
             star_pass: None,
             culling: culling_passes(prepared.camera_culling()),
         }
@@ -149,6 +154,7 @@ pub(crate) fn pass_durations(
     let culling = layout.culling;
     let mut contribution = None;
     let mut air_shadow = None;
+    let mut view_volume = false;
     let mut visibility = None;
     let mut culled = 0_u8;
     let mut stars = None;
@@ -165,10 +171,17 @@ pub(crate) fn pass_durations(
             // These are prepared contribution passes. Keep their original names in
             // SceneGpuTimings below; they do not belong to the fixed scene sequence.
         } else if pass.name.as_ref() == super::AIR_SHADOW_PASS {
-            if air_shadow.is_some() || layout.shadows == Shadows::Off {
+            if air_shadow.is_some() || layout.shadows == Shadows::Off || layout.view_volume {
                 return None;
             }
             air_shadow = Some(pass.nanoseconds);
+        } else if layout.view_volume && pass.name.as_ref() == AtmosphereStage::Aerial.name() {
+            // The joint volume reads the Sun cascades, so its aerial work is
+            // recorded after them instead of among the prefix charts.
+            if view_volume {
+                return None;
+            }
+            view_volume = true;
         } else if pass.name.as_ref() == super::stars::PASS_NAME {
             if stars.is_some() || layout.star_pass != Some(pass.name.as_ref()) {
                 return None;
@@ -199,6 +212,7 @@ pub(crate) fn pass_durations(
         }
     }
     if culled != culling
+        || layout.view_volume != view_volume
         || (layout.star_pass.is_some() && stars.is_none())
         || (layout.shadows == Shadows::Culled) != caster_cull.is_some()
     {
