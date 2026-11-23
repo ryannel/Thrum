@@ -393,7 +393,7 @@
       }
     },
     "M3": {
-      "definitions": "aadc5d4ae459f193fe30989c73aa2aed9ab7734c7c20d2e02a68d79c3eff9cc0",
+      "definitions": "ba83c9834261fed20b58846f9c85ea9a3b8df59eac2f832e0123f02a66948ac7",
       "reviews": [
         {
           "verdict": "fail",
@@ -456,8 +456,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Diagnose RENDER-2D M3. Its last review found something only a planner can settle: Fine patterns pulse during Metal scrol",
-        "at": "2026-11-23T15:52:18Z"
+        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its Must Fix ",
+        "at": "2026-11-23T22:00:07Z"
       }
     },
     "M4": {
@@ -514,11 +514,15 @@
     {
       "task": "Diagnose RENDER-2D M3. Its last review found something only a planner can settle: Fine patterns pulse during Metal scroll (M3.8): Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design. | Fine patterns pulse during Chrome scroll (M3.10): Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.. Its reviews, oldest first: .orchestrate/evidence/RENDER-2D/M3-review.md. What failed in each review: review 1 (2026-11-23): Fine patterns pulse during Metal scroll (M3.8), new; Fine patterns pulse during Chrome scroll (M3.10), new; Bleed witness has no left neighbour in the sampled atlas (M3.4), new; Chrome weight check never moves the camera (M3.7), new. A plan you keep ends with `KEEP RENDER-2D M3: ...`.\n\n\nLead's note on the visual bar: the owner's bar is what shipped high-end games look like, judged by eye, and references diagnose rather than gate. A visible pulse on fine patterns during an ordinary scroll would read as a defect in a shipped 2D game, so prefer a sampling design that removes it over accepting it, unless the design shows the pulse is invisible at normal viewing. That preference is the lead's assumption, not the owner's ruling; record it as an assumption.",
       "at": "2026-11-23T15:52:18Z"
+    },
+    {
+      "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its Must Fix findings. Also, urgent: main's long-tests fails on RENDER-2D's own test crates/thrum-render/tests/scene_2d.rs (creation-counters feature), which still expects a 1x1 atlas and 16-byte frame table after M3 commits 67abaa0ab and 909111165 changed packing to 12x12 with gutters and an eight-field SpriteFrameRecord; WATERS M17 and RAY-TRACING M3 are blocked on it. Make updating that test the first item of the current milestone so the builder lands it before anything else.",
+      "at": "2026-11-23T22:00:07Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T15:52:18Z"
+    "at": "2026-11-23T22:00:07Z"
   },
   "design_history": [
     {

@@ -311,12 +311,14 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.1",
-          "statement": "On both Metal recipes and Chrome WebGPU, pixel sheets use the centred filter in mechanism 6 on the existing one-draw path at the output extent. It widens near 1.5×, changes edge weights at off-grid 2× and selects the authored texels at aligned 2×. Record: before-and-after sprite-pass timings for the 1920×1080 1.5× scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
-          "ask": "At 1.5× does the shader apply normalized, nonnegative weights to premultiplied scene-linear RGBA within the claimed support? At 2× does the compact kernel reduce to the authored texel on the aligned grid and change the edge mix from the box at a quarter-output-pixel offset using continuous coordinates? Check the support, quad margin and frame-local atlas reads for a standalone frame and a tile. Do the aligned path and wider path use at most one and four bilinear samples respectively with the existing bindings?",
+          "statement": "On both Metal recipes and Chrome WebGPU, pixel sheets use the centred filter in mechanism 6 on the existing one-draw path at the output extent. It widens near 1.5\u00d7, changes edge weights at off-grid 2\u00d7 and selects the authored texels at aligned 2\u00d7. Record: before-and-after sprite-pass timings for the 1920\u00d71080 1.5\u00d7 scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
+          "ask": "At 1.5\u00d7 does the shader apply normalized, nonnegative weights to premultiplied scene-linear RGBA within the claimed support? At 2\u00d7 does the compact kernel reduce to the authored texel on the aligned grid and change the edge mix from the box at a quarter-output-pixel offset using continuous coordinates? Check the support, quad margin and frame-local atlas reads for a standalone frame and a tile. Do the aligned path and wider path use at most one and four bilinear samples respectively with the existing bindings?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -337,7 +339,7 @@
         },
         {
           "id": "M3.3",
-          "statement": "At aligned whole-number scales from 1× through 6×, the image is the authored texels repeated as pixel blocks. Scrolling an aligned view by whole output pixels translates the image by exactly that amount and preserves the translated texel bytes.",
+          "statement": "At aligned whole-number scales from 1\u00d7 through 6\u00d7, the image is the authored texels repeated as pixel blocks. Scrolling an aligned view by whole output pixels translates the image by exactly that amount and preserves the translated texel bytes.",
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
