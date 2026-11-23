@@ -533,6 +533,35 @@
         "by": "plan",
         "task": "The design review of REVIEW-RENDER at .orchestrate/evidence/REVIEW-RENDER/design-review.md asked for changes, with its M",
         "at": "2026-11-23T15:23:34Z"
+      },
+      "ready_for_review": {
+        "commit": "2d41e287199f4826f22bc8cedb6851626bc25e26",
+        "checked": "2d41e287199f4826f22bc8cedb6851626bc25e26",
+        "at": "2026-11-23T16:18:15Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 183411,
+          "cached": 18095104,
+          "output": 30042,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 183411,
+          "cached": 18095104,
+          "output": 30042,
+          "turns": 1
+        }
       }
     }
   },
