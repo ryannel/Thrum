@@ -380,6 +380,24 @@
       "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function."
     },
     {
+      "id": "M14",
+      "name": "The retained native valley images reflect the corrected material mip bias",
+      "status": "not_started",
+      "items": [
+        {
+          "id": "M14.1",
+          "statement": "The `apple-tile-native` references affected by the native spatial mip bias restored in `32dfd3c14` match fresh registered captures for both Metal recipes. Both module logs record the cause and every replaced file's old and new SHA-256. The reference guard and the exact-images verifier pass under the native mip-bias ruling.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "ask": "Do the matched captures show the bias change accounts for the replaced references, starting with `portable-sdr-approach`? Do the candidate verification record, both logs and the landing diff agree on the files and hashes, the `apple-tile-native` pin and refresh, and the unchanged comparison and capture settings?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M13",
       "name": "A small exposure check catches a twilight brightness rebound",
       "status": "not_started",

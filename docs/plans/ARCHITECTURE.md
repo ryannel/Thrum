@@ -839,6 +839,18 @@ adds this reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`
 retained files and `APPLE-TILE`'s items do not change. If a set does not match on untouched main, the builder
 ends `BLOCKED` and `APPLE-TILE` refreshes it under rule 1.
 
+<a id="ruling-on-native-mip-bias"></a>
+
+**Ruling on the native material mip bias (with `APPLE-TILE`).** `APPLE-PRESENTATION` M5 deliberately restored
+the [designed mip bias](APPLE-PRESENTATION/DESIGN.md#techniques-and-evidence) of −1 at native width in
+`32dfd3c14`, including with temporal reconstruction off. That changes `apple-tile-native` starting at
+`portable-sdr-approach`. `APPLE-PRESENTATION` M14 regenerates the native references attributable to this
+correction with `APPLE-TILE`'s capture scripts. Both modules' logs record the cause and each replaced file's
+old and new SHA-256. The refresh follows rule 2, including `verify --full` on the candidate before landing.
+The registry changes only `apple-tile-native`'s `pin` and `refresh`, with the refresh naming
+`ruling-on-native-mip-bias`, `APPLE-PRESENTATION` and `M14`. The comparison files and their sampling stay as
+they are. Report any other baseline mismatch to the lead with its capture record.
+
 <a id="ruling-on-atmosphere-m9"></a>
 
 **Ruling on `ATMOSPHERE` M9 (with `APPLE-TILE` and `SHOWCASE`), 14 November 2026.** M9 is meant to change

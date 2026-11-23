@@ -36,6 +36,20 @@ New proof arms go in `scripts/apple_presentation.py` and new browser cases in
 
 [Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-review.md)
 
+## M14 The retained native valley images reflect the corrected material mip bias
+
+`32dfd3c14` restored the designed mip bias of −1 at native width with reconstruction off. Its parent
+`f582a2af1` matched all five portable SDR checkpoints. At `approach`, the correction changed 99,274 pixels
+and produced the same bytes as the later failing capture. Restoring only zero bias recovered all five
+byte matches with the cloud depth correction still in place.
+[Attribution record](../../../.orchestrate/evidence/APPLE-PRESENTATION/M14-attribution.json) ·
+[M5 review](../../../.orchestrate/evidence/APPLE-PRESENTATION/M5-review.md)
+
+Refresh the affected native references under the [mip-bias ruling](../ARCHITECTURE.md#ruling-on-native-mip-bias)
+before M13. Compare registered captures against a matched native spatial zero-bias control to determine
+which references the correction moves. Record every replaced reference's old and new SHA-256 in both
+modules' logs and qualify the refresh as described in the ruling.
+
 ## M13 A small exposure check catches a twilight brightness rebound
 
 Use the [fixture design](DESIGN.md#twilight-exposure-regression-m13) for the cases in the [case list and baseline times](LOG.md#m13-workspace-timing-baseline).
