@@ -187,3 +187,10 @@
   supervised cleanup. M5 defines which PID the runner waits for, the ten-second grace and recovery before the next
   device use. M5.14 exercises outer cancellation and the presentation deadline with the installed runner,
   a queued contender and an early-release control. [Review](../../../.orchestrate/evidence/SESSION/design-review.md)
+
+## M8 reliable-lane fixture
+
+- 2026-11-24 Kept both reliable-delivery cases in the fast tier with one link and an unpadded integer world.
+  On the Mac, recovery resumed datagrams on the same link and matched the authority digest at stop. The
+  persistent-full control closed at the deadline. The first two-case workspace batch passed at 0.032 s and
+  0.060 s. The individual runs, baseline and assertion audit are in the [M8 evidence](../../../.orchestrate/evidence/SESSION/M8/README.md).

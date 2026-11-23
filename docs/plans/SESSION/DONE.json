@@ -496,7 +496,7 @@
     {
       "id": "M8",
       "name": "A small in-memory match catches reliable-lane recovery regressions",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -505,8 +505,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-network --test it -E 'test(=reliable_delivery::a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play) | test(=reliable_delivery::a_peer_whose_reliable_send_stays_full_closes_at_the_deadline)' --no-tests=fail --test-threads 1",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/SESSION/M8/README.md"
         }
       ],
       "failed_reviews": 0,
