@@ -336,7 +336,9 @@
           "ask": "Does the record show the original case excluded from normal workspace runs and per-test times for the compact case in the default workspace build, under 6 s alone and passing the first attempt within 10 s under recorded ordinary builder load? Does the compact case cover slot churn and use dispatch counters to prove serial execution, requested Rayon fallback and forced multi-chunk dispatch? Does it compare complete authority immediately before and after each refusal (kernel, Resolve after tentative kernel writes, and inside corrected replay), then show that the correction changes the endpoint and that final complete authority and the published page match the straight corrected run?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M6.2",
@@ -345,7 +347,9 @@
           "ask": "Does the covering log show the original full-size replay test running and passing in the long tier on a main commit that includes this repair?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
