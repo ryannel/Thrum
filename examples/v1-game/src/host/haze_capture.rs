@@ -59,8 +59,11 @@ impl HazeTake {
             Some(Motion::Pan) => pose.yaw_degrees += 40.0 * progress,
             Some(Motion::Walk) => pose.eye[0] += 40.0 * progress,
             Some(Motion::Cut) if elapsed_seconds >= 3.0 => {
+                // Keep the far shaft visible on both sides of the cut, at a
+                // different screen position and a different camera distance.
                 pose.eye[0] += 40.0;
-                pose.yaw_degrees += 35.0;
+                pose.eye[2] += 180.0;
+                pose.yaw_degrees -= 24.0;
                 pose.cut = true;
             }
             Some(Motion::Scrub) => pose.solar_hours = 16.6 + 2.2 * progress,
