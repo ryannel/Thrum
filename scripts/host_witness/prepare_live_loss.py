@@ -151,7 +151,7 @@ replace(window, "        self.demo.observe_camera(host.camera_orientation());", 
         if std::env::var_os("THRUM_LIVE_WITNESS").is_some() {
             // Freeze the initial endpoint before startup can admit a tick.
             // The window still sends and awaits the normal preset Pause.
-            host.pause()?;
+            host.world_mut().pause()?;
             if let Some(stats) = stats {
                 drop(WITNESS_COOKED.set(stats));
             }
