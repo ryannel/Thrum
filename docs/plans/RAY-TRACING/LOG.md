@@ -129,3 +129,7 @@
   selection and primary pipeline fallback. M3.14 checks the shared boundary on the CPU and M3.15 compares
   the first submitted bytes and residency on Metal in a small, bounded-upload fixture.
   [Final review and previous finding](../../../.orchestrate/evidence/RAY-TRACING/M3-review.md).
+- 2026-11-23 M3 design review. Existing contributions keep their Maps hooks and admit tracing only through
+  optional candidate preparation. The boundary includes host construction and stages coupled resize before
+  publication. M3.14 and M3.15 remain small merge guards, and M3.16 waits for the registered `long-tests`
+  result on main. [Design review](../../../.orchestrate/evidence/RAY-TRACING/design-review.md).

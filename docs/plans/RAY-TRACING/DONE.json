@@ -286,7 +286,7 @@
         },
         {
           "id": "M3.8",
-          "statement": "Every contribution that compiles the scene's shader draws under `Traced`: cooked placements read the traced operation, and a secondary view keeps its own cascade and the map method, with its bytes unchanged. In a cooked scene with Sun shadows off and lamp shadows asked for, a wall that is a cooked placement keeps a lamp off the receiver behind it.",
+          "statement": "On an admitted traced scene, cooked placements read the traced operation. A secondary view keeps its own cascade and the map method, with its bytes unchanged. With Sun shadows off and lamp shadows requested, a cooked wall keeps a lamp off the receiver behind it.",
           "check": "python3 scripts/ray_tracing_proof.py contributions",
           "lock": "gpu",
           "target": "mac-metal",
@@ -353,9 +353,9 @@
         },
         {
           "id": "M3.14",
-          "statement": "The production prepare-and-commit boundary publishes one complete 3D scene and contribution list. Device-free stand-ins cover an empty list, a standalone contribution and a list with three leaf members, one of them nested. Fail each leaf in turn and fail final scene validation after all members prepare. Each aborted attempt drops its staged state and commits no member, routing metadata or scene state. Maps sees the original accepted state and commits once in list order. When Maps also fails, the accepted state is still available. A successful traced attempt commits once without a Maps retry.",
+          "statement": "Merge-tier CPU guard for admission and publication through the production boundary. With a stateful member implementing only the required hooks inside a nested list, a ray request resolves directly to Maps and reports that a contribution lacks candidate preparation. The attempt log contains only Maps. When a later leaf fails, the rebuild calls and recovery match the same list with no ray request. With every leaf opted in, cover an empty list, a standalone member and a three-leaf list with one nested leaf. Fail each leaf in turn and fail final scene validation after all leaves prepare. Aborts drop the candidate without publishing scene, member or routing state. The Maps retry starts from the accepted state and commits once in list order. If it also fails, the accepted state survives. A successful traced attempt commits once without a retry.",
           "check": "cargo nextest run --locked --offline -p thrum-render --lib -E 'test(contribution_preparation)'",
-          "ask": "Do 3D attachment, same-device visual publication and device replacement all use this boundary, with candidate-only writes and all graph, target, presenter and GPU error-scope results checked before the first install? Check the cooked member's resident set, loader and upload progress, material, lease and row publication, and the list's routing metadata.",
+          "ask": "Trace every 3D operation that attempts traced preparation into the CPU-tested boundary, including FrameHost::new, attachment, same-device visual publication, device replacement and extent changes that rebuild traced resources. Does first-host fallback cover the slots and presenter binding? Does a coupled resize with secondary views stage the rebuild with the new targets and presenter, so a double failure or stale epoch keeps the prior grid and list? Check that graph, target, presenter and GPU error-scope results precede installation and that cooked residency, loader and upload progress, materials, leases, rows and list routing stay with their accepted owners until commit.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -364,7 +364,7 @@
         },
         {
           "id": "M3.15",
-          "statement": "On Apple tile Metal, attach an ordered two-member scene with traced Sun and lamp shadows requested and a traced-only pipeline fault in the second member. Let the receiver in the first member become resident under Maps. The receiver takes more than one frame's configured upload budget. At the next same-device visual publication the first member prepares before the GPU API reports the second member's traced pipeline error again. The first submitted frame for the new revision reports `Maps`, lamp shadows off and `PreparationFailed`. Its bytes and drawn cooked generation match those of the first submission for the same revision in the no-request control. Both copy zero cooked bytes on that submission, and the control image shows the receiver.",
+          "statement": "Merge-tier Metal guard for the first submitted image and upload progress. On Apple tile, attach two ordered members that both opt into candidate preparation. Request traced Sun and lamp shadows and inject a traced-only pipeline fault in the second member. Let the first member's cooked receiver become resident under Maps. Its upload takes more than one frame's configured budget. At the next same-device visual publication the first member prepares before the GPU API reports the second member's traced pipeline error again. The first submission for the new revision reports `Maps`, lamp shadows off and `PreparationFailed`. Its image bytes and drawn cooked generation match the no-request control's first submission for that revision. Both copy zero cooked bytes on that submission, and the control image shows the receiver.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-asset-gpu --test it -E 'test(cooked_view_gpu::maps_fallback)'",
           "lock": "gpu",
           "target": "mac-metal",
@@ -372,6 +372,14 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M3.16",
+          "statement": "The registered main-branch check `long-tests` passes on main with the M3 commit included. It covers the feature-gated fallback tests for ray selection and cooked contributions.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
         }
       ]
     },

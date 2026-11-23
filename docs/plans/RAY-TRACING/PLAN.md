@@ -37,13 +37,14 @@ that work on this Mac.
 ## M3 The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges
 
 The shadow shaders, proving-ground selections, timed-pass span and [terminator passage](DESIGN.md#a-rounded-meshs-own-facets)
-are built. M3.6 and M3.14–M3.15 close [the preparation boundary](DESIGN.md#scene-preparation-and-maps-fallback-m3).
-`thrum-render/src/runtime/preparation.rs` owns 3D preparation, and `contribution/list.rs` dispatches
-to members. The secondary resize job already separates preparation from publication. The current
-`CookedAssets::rebuild_inner` validates one member and then installs live state.
-[The final review's probe](../../../.orchestrate/evidence/RAY-TRACING/M3-review/c7cbfaf/composed-retry.diff)
-shows the two-member failure. Keep the merge regression in `thrum-asset-gpu`'s `it` binary and the
-device-free checks in `thrum-render`'s library tests.
+are built. `thrum-render/src/runtime/preparation.rs` owns 3D preparation, and `contribution/list.rs` dispatches
+to members. The constructor binds its presenter in `runtime.rs`. The detached visual, device and extent
+operations are in `runtime/visual.rs`, `runtime/device.rs` and `runtime/extent.rs`. The detached extent job
+already stages secondary view bindings. `CookedAssets::rebuild_inner` currently validates one member and
+then installs its live state. [The retained probe](../../../.orchestrate/evidence/RAY-TRACING/M3-review/c7cbfaf/composed-retry.diff)
+shows the two-member failure. `ObserveView` and `Fault` in the existing `ray_tracing_gpu` proof need the
+opt-in to reach their traced cases. Keep the CPU guard in `thrum-render`'s library tests and the Metal
+guard in `thrum-asset-gpu`'s `it` binary.
 
 ## M4 Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge
 

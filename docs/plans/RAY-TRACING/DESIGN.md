@@ -388,9 +388,9 @@ A lamp's ray tests the cast bit of [the mask](#the-structure-m1-m2) and nothing 
 no cascade and no shadow pipeline, so a room lit only by lamps, in a scene with Sun shadows off, is shadowed
 by its walls.
 
-**Shader text.** The traced operations and the `enable wgpu_ray_query` directive are in the composed shader
-only for a scene that asked. Every contribution that compiles the scene's shader takes them from it, as it
-takes the cloud factor.
+**Shader text.** The composed shader includes the traced operations and `enable wgpu_ray_query` only when
+the scene resolves to tracing. An admitted contribution that compiles the scene's shader takes the traced
+operations from it, as it takes the cloud factor.
 
 ### Soft Sun shadows (M4)
 
@@ -565,17 +565,18 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 - **Resolution, with a plain fallback.** One function of the registry resolves the requests against the
   generation, before anything is allocated. A ray request that cannot be met resolves to what the portable
   path has: `Traced` to `Maps`, lamp shadows and ambient occlusion to off, the structure to none. The scene
-  prepares Maps directly on the resolved recipe. If an admitted traced candidate fails while the device is
-  usable, [prepare Maps once from the inputs to the same operation](#scene-preparation-and-maps-fallback-m3).
+  prepares Maps directly on the resolved recipe. A request the registry admits also needs every contribution
+  to support candidate preparation. If an admitted traced candidate fails while the device is usable,
+  [prepare Maps once from the inputs to the same operation](#scene-preparation-and-maps-fallback-m3).
 - **Report.** For each request: what was asked, what it resolved to and, where the two differ, why. The
-  reasons are that the device did not enable ray queries, that the recipe lists no ray effect, and that
-  preparation failed. With them go the hardware names the launch gave, which were enabled, and why any was
-  not, the recipe the generation resolved to and, where a preferred recipe was not taken, why, the
-  settle lengths and the dive limit. All of it is reported where the culling mode is, so
-  [a run can say what it ran](../ARCHITECTURE.md#interfaces-track-5). A fallback is never silent.
+  reasons are that the device did not enable ray queries, that the recipe lists no ray effect, that a
+  contribution lacks candidate preparation, or that preparation failed. The report also gives the hardware
+  names the launch asked for, which were enabled and why, the resolved recipe, why a preferred recipe was
+  skipped where applicable, the settle lengths and the dive limit. It appears with the culling mode so
+  [a run can say what it ran](../ARCHITECTURE.md#interfaces-track-5).
 - **Everything is prepared.** Pipelines for the resolved methods are created on a device generation before
   the scene is ready on it, and none is created while that generation draws. A replacement device creates its
-  own before its first ready frame. No method is switched while a scene runs.
+  own before its first ready frame. The method stays fixed between accepted scene preparations.
 - **Quality values.** Penumbra, lamp-ray count, ambient occlusion and its resolution, the two settle
   lengths and the dive limit are runtime values declared through the contribution seam's quality knobs, each
   with the history it invalidates, for the governor.
@@ -711,16 +712,39 @@ attachment or a replacement device starts with the residency and upload budget o
 for that operation. Compare both from the start of streaming. A fallback neither warms up the scene nor
 speeds up its uploads to make the comparison pass.
 
-The frame host owns one prepare-and-commit boundary for traced 3D preparation and its Maps retry.
-Attachment, same-device visual publication and device replacement all use it when they admit a traced
-attempt. The boundary covers the scene and the full ordered contribution list, including a
-single contribution, an empty list and lists inside lists. Every member participates through the
-`SceneContribution` seam. Its prepare operation yields a candidate with the resources and declarations it
-will install, and its commit takes that candidate. The host uses the candidate declarations to validate the
-combined graph, secondary views, frame targets and presenter bindings. All fallible work finishes before
-publication. This includes structure and pipeline creation and resolving the GPU error scopes for
-validation, internal errors and out-of-memory errors on the usable device. Commit installs the scene and
-members together on the render owner at the existing safe boundary.
+**Contribution admission.** `SceneContribution` keeps `passes`, `rebuild` and `encode_upload` as its required
+hooks. A new object-safe hook exposes candidate preparation and defaults to unsupported. An
+opted-in member prepares from a shared borrow of its accepted state and returns a candidate with the
+resources and declarations it will install. Its infallible commit takes that candidate and installs it on
+the member. The cooked contribution implements this for both traced and Maps candidates. A
+`SceneContributions` list admits candidate preparation only if every leaf opts in, including leaves in
+nested lists. The empty list is eligible. Admission reads support before any traced preparation or call
+to `rebuild`. Detached visual and device preparation carry that decision with their host identity. Check
+that identity before publication so a change to the list cannot reuse an older admission decision.
+
+If the device and recipe admit rays but any leaf lacks candidate preparation, the game gets the ordinary
+Maps path for the whole list. Preserve the requests in the report, resolve the Sun to `Maps` and the other
+ray effects to off, and report that a contribution lacks support for candidate preparation. This is an
+admission result distinct from `PreparationFailed`. Ordinary Maps callers, including this direct Maps
+path, keep the existing `rebuild` and `rebuild_for_attachment` hooks, their list order and their error and
+recovery behaviour. A member implementing only the required hooks can still draw with Maps. The traced
+preparation boundary and its retry use candidate preparation for every member.
+
+**Host operations.** The frame host owns one prepare-and-commit boundary for any operation that attempts
+traced 3D preparation and for its Maps retry. This includes `FrameHost::new` with an empty list, 3D
+attachment, same-device visual preparation and publication, device replacement, and extent changes that
+rebuild a traced scene or member. Initial construction includes the frame slots and optional presenter
+binding in the attempt. For coupled `resize_scene_surface` and `resize_scene_surface_if`, stage any traced
+rebuild for resized secondary views alongside the new slots, presenter and extent. Keep the prior grid and
+contribution list live until the whole candidate passes, including the platform epoch check. A failed or
+stale traced resize leaves that grid and list usable. Resizes that only refit the presenter or use the existing
+extent preparation against accepted pipelines keep their target-only path.
+
+The host uses the candidate declarations to validate the combined graph, secondary views, frame targets
+and presenter bindings. Finish all fallible work before the first install, including structure and pipeline
+creation and resolving GPU error scopes for validation, internal errors and out-of-memory errors on the
+usable device. Commit installs the scene and full ordered contribution list together on the render owner
+at the existing safe boundary.
 
 Both attempts start from the same accepted state and use the same publication inputs. Until commit, the
 live scene, list routing, raster residency and bindings, loader and upload progress, material selection,
@@ -733,8 +757,8 @@ commit may retire ray-only resources under the same lifetime rules and keeps nor
 semantics under C05. Each submitted frame still commits uploads and history at its existing submission
 boundary.
 
-Failure at any member or in the remaining scene preparation aborts the whole candidate. Drop the abandoned
-candidate before preparing Maps. A successful retry publishes the requested operation and reports
+Failure at any stage aborts the whole candidate. The host drops it and starts one Maps attempt from the
+same inputs. A successful retry publishes the requested operation and reports
 `PreparationFailed` for the ray requests it replaced. If the retry fails too, the host reports the error
 without publishing a partial scene or detaching a member. The ordinary recovery policy still applies to
 operations that resolve directly to Maps. On a lost device the accepted CPU inputs remain available for
@@ -808,7 +832,7 @@ it for each method, and no sentence drawn from it speaks of the whole frame's GP
   thing in the scene. M1 and M2 record resident bytes.
 - **Preparation overlap.** A transition retains the live resources and one candidate. Reuse compatible
   raster buffers by reference and allocate incompatible storage only for the candidate that needs it.
-  The preparation boundary adds no work to the frame loop.
+  Check contribution support once per preparation. The boundary adds no work to the frame loop.
 - **Each frame, CPU.** One instance write for each entity and placement in the scene.
 - **Each frame, GPU.** The scene structure's rebuild, which M1 records for a still scene, for the
   representative movers and with every instance moving. Hard Sun: one ray for each shaded opaque pixel that
@@ -867,11 +891,12 @@ that moved, through a third mask bit.
   not admit Apple tile, through the registry's functions, and a failed device request, structure or pipeline
   through a fault the test injects.
 - Tests that need only entities live in `thrum-render`'s tests. Proofs that need cooked meshes or the valley
-  run in the proving ground through a script, except M3's fallback regression. That proof uses the existing
-  `thrum-asset-gpu` integration test binary and a receiver just large enough to need a second upload. Exercise
-  failure and commit order on the CPU through the production preparation path and use Metal for the first
-  submitted bytes and upload evidence. Both regression checks run in the merge tier without opt-in Cargo
-  features.
+  run in the proving ground through a script, except M3's merge-tier guards. M3.14 checks admission and commit
+  order on the CPU through the production boundary. The reviewer traces each caller into that boundary.
+  M3.15 uses the existing `thrum-asset-gpu` integration test binary on Metal and a receiver just large enough
+  to need a second upload. It checks the first submitted bytes and upload progress. Both guards run without
+  opt-in Cargo features. M3.16 requires the existing main-branch `long-tests` result covering the M3 commit,
+  including the feature-gated selection and contribution tests.
 - Visual items use T2 engine capture on `mac-metal`, `fixed` for stills and `realtime` for motion, in the
   proving ground's valley with each effect and the traced view behind a selection that is off by default.
 - An item that judges motion names its frames: the frame occlusion changed, and each frame after it up to the
