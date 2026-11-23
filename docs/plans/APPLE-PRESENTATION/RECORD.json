@@ -681,7 +681,7 @@
         {
           "verdict": "fail",
           "commit": "fc180052232daaf8eaf50ca245dbe47821935578",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review-1.md",
           "items": {
             "D6.1": "fail",
             "D6.2": "pass",
@@ -729,6 +729,47 @@
             "turns": 1
           },
           "at": "2026-11-23T18:57:41Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "8ecd3a30a990fde7ff6f15f987a6882cdc00b149",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "items": {
+            "D6.1": "pass",
+            "D6.2": "pass",
+            "D6.3": "pass",
+            "D6.4": "pass",
+            "D6.5": "pass",
+            "D6.6": "pass",
+            "D6.7": "pass",
+            "D6.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "An open EDR capture tap uses retired GPU resources after device replacement",
+              "repeat": false
+            },
+            {
+              "name": "The Mac backing-grid diagnostic fails its first frame on XDR",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 142421,
+            "cached": 4511744,
+            "output": 12224,
+            "turns": 1
+          },
+          "at": "2026-11-23T19:47:55Z"
         }
       ],
       "authorised": {
