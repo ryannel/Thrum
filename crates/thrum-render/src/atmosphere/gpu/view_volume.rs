@@ -12,7 +12,7 @@ const INTERVALS: u32 = 80;
 const NEAR_INTERVALS: u32 = 40;
 const NEAR_DISTANCE: f32 = 500.0;
 const HISTORY_GAIN: f32 = 262_144.0;
-pub(crate) const EXTENT: [u32; 3] = [96, 54, INTERVALS + 2];
+pub(crate) const EXTENT: [u32; 3] = [160, 90, INTERVALS + 2];
 
 pub(crate) fn grid_source() -> String {
     format!(
