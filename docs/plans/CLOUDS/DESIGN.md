@@ -16,7 +16,7 @@ of a ground row and the headless query, and
 the yardstick its proofs quote. Revised 16 November 2026:
 [drift is taken at the display phase](#time-drift-at-the-displays-time-evolution-on-the-tick), which
 `EFFECT-GRAPH` M4 provides. Revised again that day after that revision's review (finding MF1;
-`git show f1076615a:.orchestrate/evidence/CLOUDS/design-review.md`): past the committed tick the travel is carried a
+`git show f1076615a:docs/evidence/CLOUDS/design-review.md`): past the committed tick the travel is carried a
 tick at a time by the step's own arithmetic, and the phase describes the target the clock consumes.
 Revised 17 November 2026 after [M3's handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md): the Sun term of
 [cloud light](#cloud-light) is a beam and a diffuse solution, in place of four fixed orders. Revised that day
@@ -32,7 +32,7 @@ level of [the weather map](#the-weather-map) holds the query's own column at its
 clearing factor takes a cell's coverage to zero with its thickness. Revised 18 November 2026 on the lead's
 decision to park the form of a single cloud: M3 closes on the sky at a glance and M17 judges each cloud, from
 the diagnosis in [risk 2](#risks). No mechanism and no interface changed. Revised that day after the review
-of that parking (two findings; `git show 061432e11:.orchestrate/evidence/CLOUDS/design-review.md`): M17 judges the
+of that parking (two findings; `git show 061432e11:docs/evidence/CLOUDS/design-review.md`): M17 judges the
 form in [a sky of weather alone](#risks), with no library shape in it, on both targets from both heights, and
 the flaws are excused only until M17 starts.
 
@@ -1437,7 +1437,7 @@ the yardstick, which is 5.5% of the reference radiance.
   integrators; the two grains, a cell sixteen pixels across against a texel of four. M15.13's stills see both.
 
 From `cloud_shape_proof.py`, run on 18 November after M3 stopped on repeated domes and shelves
-(`git show 6c696409396a:.orchestrate/evidence/CLOUDS/M3-handoff.md`). It makes the fair sky's cells and their density
+(`git show 6c696409396a:docs/evidence/CLOUDS/M3-handoff.md`). It makes the fair sky's cells and their density
 as `build/clouds` computes them at that commit, and draws the same cells from the side in three forms
 ([the picture](../../../.orchestrate/evidence/CLOUDS/design-proof/cloud-shape-proof.png)). An outline is the top of a cloud's
 silhouette across its width, both scaled to 1.
@@ -1470,7 +1470,7 @@ silhouette across its width, both scaled to 1.
 
 From [M3's controls](../../../.orchestrate/evidence/CLOUDS/M3-plane/README.md) on Metal and `lit_plane_proof.py`, both of 18
 November, after M3 stopped a second time, on a bright underside under a dark stripe toward the noon Sun
-(`git show f38c7d77ad24:.orchestrate/evidence/CLOUDS/M3-handoff.md`).
+(`git show f38c7d77ad24:docs/evidence/CLOUDS/M3-handoff.md`).
 
 - **XIX, the lit plane.** *On turrets, in the engine.* The toward-Sun still drawn one light term at a time:
   the lip over the face above it is 1.8 to 1 as built, 1.1 in the beam, 0.9 in the ambient light and 2.2 in
@@ -1639,8 +1639,10 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    list. From M17 on nothing excuses them. One that shows on a procedural fair-weather cloud fails the
    inspected item whose view shows it, in M17 and in M12.
 
-   What M3 found, in `.orchestrate/evidence/CLOUDS/M3-erosion/README.md` and `M3-type-plane/README.md` (they land
-   with M3; before that, `git show 5f84d354a3bf:<path>`):
+   What M3 found, in [the erosion notes](../../../.orchestrate/evidence/CLOUDS/M3-erosion/README.md) and
+   [the type-plane notes](../../../.orchestrate/evidence/CLOUDS/M3-type-plane/README.md). At `5f84d354a3bf`
+   Git stored both under `docs/evidence/CLOUDS/`.
+
    - The fold is in the density and not in the light. It is in the trace's opacity before light is composed,
      and turning the lit plane by 0.25, 0.50 and 0.75 changed its brightness and not its outline. The shelves
      stayed through those turns too.
@@ -1720,7 +1722,8 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 
 ## Proof and builder handoff
 
-Add Chrome cases in the shared `scripts/check_v1_browser.mjs` while preserving existing cases.
+Add V1 game Chrome cases in the shared `scripts/check_v1_browser.mjs` while preserving existing cases. For the
+water scene, M11.5 uses `scripts/check_water_browser.mjs`.
 
 - **Targets.** `mac-metal` on both recipes and `chrome-webgpu`. `ios-sim` is not a target. Chrome checks need a
   browser launch outside the Codex sandbox, granted per run; if one is refused, leave the item open and say so.
@@ -1733,9 +1736,8 @@ Add Chrome cases in the shared `scripts/check_v1_browser.mjs` while preserving e
   ([rules](../ARCHITECTURE.md#exact-baselines)).
 - **Broadsides.** Read it at the commits [What Broadsides offers](#what-broadsides-offers) names; never change
   it, and never build against it. A file may be copied or translated where it does what this design states, on
-  the owner's words of 14 November. Each copied or translated file is listed in
-  `.orchestrate/evidence/CLOUDS/PROVENANCE.md` with its source commit and path, goes through review like any other code,
-  and meets this module's items: a verdict it passed in Broadsides is not a verdict here. Material
+  the owner's words of 14 November. List each copied or translated file with its source commit and path in
+  [the tracked provenance record](../../provenance/CLOUDS.md), and review it against this module's items. Material
   that came into Broadsides from elsewhere keeps its own licence, recorded with it, and nothing GPL or
   share-alike is copied. The cloud library is read from Git LFS without changing the Broadsides checkout, and its
   licence record is copied beside it.
@@ -1792,3 +1794,9 @@ fractional or wrapped coordinates, cadence, rollback or rebuild, and replacement
 GPU witness of the submitted weather and Sun-path outputs against the CPU queries on both profiles. Use
 the CPU for comparisons and state transitions that need no GPU. Retain each row-age, cell identity,
 optical-depth and limiting-profile assertion on the compact cases.
+
+Run the two cases side by side on the shared GPU during the focused timing run. Select them in the workspace
+test build with the default Nextest profile and worker count used for the workspace check's first attempt.
+Keep the usual test groups and timeout settings. Under normal builder load, both cases must pass on that first run in
+at most 9 seconds each, leaving at least 1 second before the existing 10-second timeout. Measure each case
+alone for comparison with the isolated baseline in the log.

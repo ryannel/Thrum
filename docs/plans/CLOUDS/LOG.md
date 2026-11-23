@@ -569,7 +569,7 @@
   The [loaded 1440p pair](../../../tests/fixtures/clouds/low-sun-cost.json) records first fill, trace and compose tripwires.
 
 - 2026-11-23 M3 planning archive. The handoff at `5f84d354a3bf` can be read with
-  `git show 5f84d354a3bf:.orchestrate/evidence/CLOUDS/M3-handoff.md`. The retained type-plane captures used
+  `git show 5f84d354a3bf:docs/evidence/CLOUDS/M3-handoff.md`. The retained type-plane captures used
   erosion 0.61 for the at-a-glance inspection. M17 carries the close-up form work.
 
 ## M18 workspace timing baseline
@@ -580,3 +580,9 @@
 |---:|---|
 | 5.437 | `thrum-clouds::it portable_limits_gpu::weather_and_sun_path_work_with_default_limits` |
 | 5.215 | `thrum-clouds::it sun_path_gpu::coarse_sun_paths_match_the_cpu_reference` |
+
+- 2026-11-23 Design review Must Fix 1: M18.1 now selects both GPU cases in the workspace Nextest build with
+  its normal parallel scheduling. The first focused run must show both passing within 9 seconds each under
+  builder load, leaving 1 second before the 10-second limit. Isolated times are recorded for comparison.
+- 2026-11-23 Design review suggestions: corrected the provenance and historical Git paths so builders can find
+  both records, and scoped the Chrome runner instruction to the V1 game so M11.5 uses the water scene's runner.

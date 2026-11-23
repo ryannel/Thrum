@@ -10,6 +10,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 ## Open for the human
 
 - Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
+- Assumption: for M18's focused parallel run, 1 second below the existing 10-second timeout is enough headroom.
 - Assumption: the owner's "it should start from first principles" (14 November) governs.
 - Assumption: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera (its M7 and M8, after G3s closes) and this module's trace beyond. It adds M13 to M16 and three items to M11.
 - Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops M13.4 and M16.1.
@@ -55,9 +56,10 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 Use the [fixture design](DESIGN.md#weather-map-and-sun-path-regressions-m18) for the cases in the [case list and baseline times](LOG.md#m18-workspace-timing-baseline).
 
-Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
-check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
-focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
+Record the command and the first focused run's Nextest output on the Mac under normal builder load, with both
+named outcomes and per-test times excluding compilation. Use M18.1's command with the workspace check's
+default worker count and test groups. Record each case's time alone beside its isolated baseline and note
+where any assertion moved to CPU coverage.
 
 ## M6 A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys
 

@@ -766,9 +766,9 @@
       "items": [
         {
           "id": "M18.1",
-          "statement": "Both cloud cases that overran under load pass in the fast tier on compact fixtures. Their native and portable-default GPU results still exercise weather columns and coarse Sun-path behavior, including age, repeated-tick identity, rebuild and replacement. Guard: the two small Metal and default-WebGPU-limit cloud checks.",
-          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-clouds --test it -E 'test(=portable_limits_gpu::weather_and_sun_path_work_with_default_limits) | test(=sun_path_gpu::coarse_sun_paths_match_the_cpu_reference)' --no-tests=fail --test-threads 1",
-          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Are both device profiles exercised and do the compact grids preserve the address and age cases?",
+          "statement": "The native and portable-default GPU conformance cases compare submitted weather-map and coarse Sun-path outputs with CPU queries on compact grids. Both pass within 9 seconds each on the first focused run with the workspace check's parallel scheduling under normal builder load. Guard: the two small Metal and default-WebGPU-limit cloud checks.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline --workspace --test it --profile default -E 'package(=thrum-clouds) & binary(=it) & (test(=portable_limits_gpu::weather_and_sun_path_work_with_default_limits) | test(=sun_path_gpu::coarse_sun_paths_match_the_cpu_reference))' --no-tests=fail",
+          "ask": "Do both profiles retain the original assertions and tolerances for weather columns, addressing, row age, repeated-tick cell identity, Sun-path optical depth, rebuild and device replacement? Does the focused run record both named cases passing within 9 seconds each in one invocation with the default workspace scheduling, timeout and retry settings? Does the record include the separate isolated times for comparison?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
