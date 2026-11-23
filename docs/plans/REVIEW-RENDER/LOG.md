@@ -78,3 +78,8 @@
   reads, roles, timing buckets and timestamp capacity for SDR and scene-linear targets. Both cases passed
   the focused run on the first attempt in 0.010 s and 0.354 s, down from the original test's 9.200 s.
   They passed alone in 0.008 s and 0.039 s. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M6/README.md).
+- 2026-11-23 Addressed the M4 review. Public frame callbacks return `FrameError`, and the string-error rule scans
+  public trait methods. The frame host preserves native reservation and V1 camera and provider causes.
+  Bucket storage and dispatch limits and sprite row admission have distinct diagnostics. Verified the callback,
+  capacity and recovery cases on the M3 Max and checked the iOS simulator target and Wasm builds.
+  [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M4/review-fix-audit.md).
