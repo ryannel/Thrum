@@ -32,9 +32,10 @@ thrum-sea it release # forward_cache_gpu portable light and high wind: base-texe
 # <package> features=<feature>[,<feature>...] [<test binary> ...]
 thrum-render features=creation-counters
 thrum-asset-gpu features=draw-probe error_types
-v1-game features=draw-probe lib ray_tracing_gpu cooked_assets_gpu
+# draw-probe already enables the renderer's creation counters. Name the
+# dependency feature explicitly for the view-volume witnesses' manifest gates.
+v1-game features=draw-probe,thrum-render/creation-counters lib ray_tracing_gpu cooked_assets_gpu view_volume_shadow_gpu view_volume_sky_gpu view_volume_history_gpu
 v1-game features=thrum-asset-gpu/fault-probe cooked_fault_gpu
-v1-game features=thrum-render/creation-counters view_volume_shadow_gpu view_volume_sky_gpu view_volume_history_gpu
 
 # Not run: a binary behind a feature that failed when it was listed. It runs in no tier until the
 # module that owns it fixes it and moves it to a feature line above; `./dev check` still lints it.
