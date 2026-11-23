@@ -257,8 +257,8 @@
           "statement": "A second game would copy nothing from the first: what is left in `examples/v1-game` is its scenes, rules, controls declaration, camera policy, content and entry points.",
           "ask": "Read the game's library. What would a 2D game with other rules have to copy from it unchanged to run in the window, on the page and in the offscreen driver? Name each item, or say there is none.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/recovery-fixes/README.md#m44-ordinary-game-on-the-shared-page",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },

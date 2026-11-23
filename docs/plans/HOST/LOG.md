@@ -59,3 +59,8 @@
   edits, frame callbacks, visibility and recovery. The simulator command reuses only an ancestor's lock.
   Verified changing offscreen readback on Metal, a plain Game in Chrome through device replacement,
   and the starter and V1 Chrome cases. [Review-fix evidence](../../../.orchestrate/evidence/HOST/M4/review-fixes/README.md)
+- 2026-11-23 Fixed recovery replay on the offscreen and browser hosts and made the shared browser driver
+  refresh recovery controls independently of frame callbacks. Metal and Chrome each applied a replay-only
+  edit before the first replacement submission. In Chrome, an ordinary game using only the shared recovery
+  button exposed it after real device loss and presented on generation 2 after a click.
+  [Device replacement evidence](../../../.orchestrate/evidence/HOST/M4/recovery-fixes/README.md)
