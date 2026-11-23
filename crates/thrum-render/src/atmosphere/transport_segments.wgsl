@@ -1,3 +1,4 @@
+
 struct Segment {
     radiance: vec4<f32>,
     transmission: vec4<f32>,

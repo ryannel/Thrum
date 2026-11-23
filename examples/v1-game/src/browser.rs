@@ -854,6 +854,7 @@ impl BrowserGame {
 
     /// Request named GPU pass timestamps for the held haze cost capture.
     pub fn enable_haze_timings(&mut self) {
+        use thrum_app::Game as _;
         self.page
             .shell
             .update_profiler(self.page.game.controls_mut(), true);

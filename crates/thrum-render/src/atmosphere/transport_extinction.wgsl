@@ -7,4 +7,3 @@ fn surface_extinction(densities: vec3<f32>) -> vec3<f32> {
     return vec3(5.802e-6,13.558e-6,33.100e-6)*densities.x
         + MIE_EXTINCTION*densities.y + vec3(0.650e-6,1.881e-6,0.085e-6)*densities.z;
 }
-

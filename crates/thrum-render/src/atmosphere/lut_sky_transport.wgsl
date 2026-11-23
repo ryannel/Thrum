@@ -21,4 +21,3 @@ fn ground_radiance(h: f32, mu: f32, bank: u32) -> vec4<f32> {
     let indirect=spectral_lut(ground_irradiance_uv(mu),bank,ground_irradiance,lut_sampler)/GROUND_IRRADIANCE_GAIN;
     return (direct+indirect)*(0.1/PI);
 }
-

@@ -1,3 +1,4 @@
+
 @compute @workgroup_size(LUT_WORKGROUP_EDGE, LUT_WORKGROUP_EDGE)
 fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size=textureDimensions(output_lut);
