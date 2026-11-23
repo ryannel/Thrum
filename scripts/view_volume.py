@@ -21,7 +21,7 @@ LOW_SUN = 12 + 12 / math.pi * math.acos(math.sqrt(2) * math.sin(math.radians(10)
 LOOKOUT_EYE = [0, 244.9226672381398, 16]
 # The cooked terrain triangle under x=0, z=16 is at 239.925172 m.
 NEAR_EYE = [0, 241.92517205618816, 16]
-SHAFT_EYE = [200, 124, 120]
+SHAFT_EYE = [390, 115, 230]
 EXTENT = [1280, 720]
 AERIAL = 'atmosphere aerial perspective'
 
@@ -116,11 +116,18 @@ def witness_baseline_archive(base, output):
     baseline_capture = output / 'examples/v1-game/src/window/capture.rs'
     before = baseline_capture.read_text()
     begin = 'fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {'
+    witness_begin = 'fn warmup<G: Game>(driver: &mut Offscreen<G>, parity_checkpoint: bool) -> Result<(), String> {'
     end = '\nfn capture_settings()'
     current = (ROOT / baseline_capture.relative_to(output)).read_text()
-    warmup = current.split(begin, 1)[1].split(end, 1)[0]
+    warmup = current.split(witness_begin, 1)[1].split(end, 1)[0]
     start, original = before.split(begin, 1)
-    baseline_capture.write_text(start + begin + warmup + end + original.split(end, 1)[1])
+    baseline_capture.write_text(start + witness_begin + warmup + end + original.split(end, 1)[1])
+    before = baseline_capture.read_text()
+    call = '    warmup(driver)?;'
+    if before.count(call) != 1:
+        raise ValueError('archive warmup marker moved')
+    baseline_capture.write_text(before.replace(call, '''    warmup(driver,
+        crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1"))?;'''))
 
 
 def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=False, motion=None,
@@ -277,7 +284,7 @@ def inspection(output, targets, builds, group):
                         checkpoint(target_root / f'haze-{sun}-{height}m-{km}km-{kind}', target,
                                    builds, pose, haze=f'{km},{kind}')
         if group in ('all', 'shafts'):
-            for yaw, name in [(-80, 'toward'), (-20, 'across')]:
+            for yaw, name in [(-90, 'toward'), (-42, 'across')]:
                 for cloud in [False, True]:
                     pose = {'eye': SHAFT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
                     checkpoint(target_root / f'shaft-{name}-{cloud}', target, builds, pose,

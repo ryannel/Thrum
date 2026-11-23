@@ -457,9 +457,8 @@ fn start_writer(
     .map_err(|e| e.to_string())
 }
 
-fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
+fn warmup<G: Game>(driver: &mut Offscreen<G>, parity_checkpoint: bool) -> Result<(), String> {
     let warmup = Instant::now();
-    let parity_checkpoint = std::env::var_os("THRUM_CAPTURE_RENDERER_SIGNATURE").is_some();
     let last_warmup_submission = driver.host().last_submission().map_or(127, |id| id + 128);
     while if parity_checkpoint {
         driver
@@ -597,6 +596,7 @@ fn prepare_parameters(
     scenario: &str,
     mode: &str,
     haze_take: Option<HazeTake>,
+    parity_checkpoint: bool,
 ) -> Result<(Instant, Instant), String> {
     let preset_requested = Instant::now();
     let parameters = std::env::var_os("THRUM_CAPTURE_RUNTIME_PARAMS")
@@ -620,7 +620,7 @@ fn prepare_parameters(
         host.set_camera_yaw(pose.yaw_degrees.to_radians())?;
     }
     let preset_accepted = Instant::now();
-    warmup(driver)?;
+    warmup(driver, parity_checkpoint)?;
     settle_placed_capture(driver, mode, parameters.as_deref())?;
     Ok((preset_requested, preset_accepted))
 }
@@ -698,6 +698,8 @@ async fn record(
     let mut admission = admission::Admission::new(wait, hold_full, &mode)?;
     let (source, extent) = (capture_source()?, capture_extent()?);
     let (qos, encoding, disk_limit) = capture_settings()?;
+    let parity_checkpoint =
+        crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1");
     let active_pacing = active_pacing()?;
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) =
@@ -715,7 +717,7 @@ async fn record(
         driver.set_timing_requested(false);
     }
     let (preset_requested, preset_accepted) =
-        prepare_parameters(&mut driver, scenario, &mode, haze_take)?;
+        prepare_parameters(&mut driver, scenario, &mode, haze_take, parity_checkpoint)?;
     reset_native_capture(&mut driver);
     let sprite_cost = scenario == "sprites-field-cost";
     let observer_only = sprite_cost || capture_output == RuntimeCaptureOutput::ObserverOnly;
@@ -920,7 +922,14 @@ async fn record(
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
-    write_runtime_report(output, result, &driver, &capabilities, &admission)
+    write_runtime_report(
+        output,
+        result,
+        &driver,
+        &capabilities,
+        &admission,
+        parity_checkpoint,
+    )
 }
 
 fn is_motion_capture(scenario: &str) -> bool {
@@ -955,6 +964,7 @@ fn write_runtime_report<G: Game>(
     driver: &Offscreen<G>,
     capabilities: &DeviceCapabilities,
     admission: &admission::Admission,
+    parity_checkpoint: bool,
 ) -> Result<(), String> {
     result["admission_policy"] = json!(admission.policy);
     result["admission_waits"] = json!(admission.waits);
@@ -963,7 +973,7 @@ fn write_runtime_report<G: Game>(
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
     result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
-    if crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1") {
+    if parity_checkpoint {
         let host = driver.host();
         result["renderer_signature"] = json!({
             "shader": host.scene_shader_source(),
