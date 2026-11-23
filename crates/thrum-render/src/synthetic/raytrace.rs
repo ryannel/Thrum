@@ -94,6 +94,7 @@ pub(super) fn binding(id: usize) -> RecordBinding<SceneFamily> {
 }
 
 /// A same-device visual candidate's snapshot of the host's prepared meshes.
+#[derive(Clone)]
 pub(crate) struct RetainedRayMeshes(Vec<MeshStructure>);
 
 #[derive(Clone)]

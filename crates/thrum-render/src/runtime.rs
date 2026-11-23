@@ -815,6 +815,58 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.contribution_error = None;
             return Ok(());
         }
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.scene.ray_admission(self.prepared.capabilities())
+            == crate::capabilities::RayStructureSelection::Enabled
+        {
+            let capabilities = self.prepared.capabilities().clone();
+            let selection = preparation::contribution_admission(
+                self.scene.ray_admission(&capabilities),
+                contribution.supports_candidate_preparation(),
+            );
+            let extent = self.render_extent;
+            let frame = self.replacement_frame(extent, self.visual_lighting)?;
+            let queue = self.queue.clone();
+            let presenter = self.presenter.take();
+            let staged = self.stage_3d_transition(
+                selection,
+                None,
+                preparation::TransitionInputs {
+                    capabilities: &capabilities,
+                    queue: &queue,
+                    extent,
+                    presenter: presenter.as_ref(),
+                    frame: &frame,
+                    exposure: self.prepared.fallback_exposure(),
+                },
+                Some(contribution.as_ref()),
+            );
+            self.presenter = presenter;
+            let mut staged = staged?;
+            if staged.contribution.is_none() {
+                // Direct Maps admission keeps the original attachment hook and error policy.
+                if let Some(slots) = preparation::rebuild_3d_contribution(
+                    &mut staged.scene.prepared,
+                    contribution.as_mut(),
+                    &queue,
+                    &self.scene,
+                    extent,
+                    self.presenter.as_ref(),
+                    true,
+                )? {
+                    staged.scene.slots = slots;
+                }
+            }
+            let (scene, view) = staged.commit(&mut self.prepared, Some(contribution.as_mut()));
+            self.prepared = scene.prepared;
+            self.slots = scene.slots;
+            self.scene.view = view;
+            self.visual_owner = Arc::new(());
+            self.reset_replacement_history();
+            self.contribution = Some(contribution);
+            self.contribution_error = None;
+            return Ok(());
+        }
         let slots = preparation::rebuild_3d_contribution(
             &mut self.prepared,
             contribution.as_mut(),
@@ -824,22 +876,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.presenter.as_ref(),
             true,
         );
-        #[cfg(not(target_arch = "wasm32"))]
-        let slots = if slots.is_err() && self.prepared.traces() {
-            let (fallback, view) = self.prepare_same_device_maps(
-                contribution.as_mut(),
-                self.prepared.fallback_exposure(),
-                self.visual_lighting,
-                self.render_extent,
-                None,
-                true,
-            )?;
-            self.prepared = fallback.prepared;
-            self.scene.view = view;
-            Ok(Some(fallback.slots))
-        } else {
-            slots
-        };
         if let Some(slots) = slots? {
             self.slots = slots;
             self.visual_owner = Arc::new(());
@@ -881,24 +917,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.presenter.as_ref(),
             false,
         );
-        #[cfg(not(target_arch = "wasm32"))]
-        let result = if result.is_err() && self.prepared.traces() {
-            self.prepare_same_device_maps(
-                contribution.as_mut(),
-                self.prepared.fallback_exposure(),
-                self.visual_lighting,
-                self.render_extent,
-                None,
-                false,
-            )
-            .map(|(fallback, view)| {
-                self.prepared = fallback.prepared;
-                self.scene.view = view;
-                Some(fallback.slots)
-            })
-        } else {
-            result
-        };
         match result {
             Ok(Some(slots)) => {
                 self.slots = slots;
@@ -915,39 +933,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     fn record_contribution_error(&mut self, error: &FrameError) {
         self.contribution_error = Some(error.contribution_diagnostic());
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn prepare_same_device_maps(
-        &mut self,
-        contribution: &mut dyn SceneContribution,
-        exposure: f32,
-        lighting: Option<FrameLighting>,
-        extent: [u32; 2],
-        replacement_presenter: Option<&SurfacePresenter>,
-        attaching: bool,
-    ) -> Result<(preparation::PreparedScene, SyntheticView), FrameError> {
-        let queue = self.queue.clone();
-        let frame = self.replacement_frame(extent, lighting)?;
-        let mut fallback = preparation::prepare_maps_fallback(
-            self.prepared.capabilities(),
-            &queue,
-            &self.scene,
-            &frame,
-            exposure,
-            extent,
-            replacement_presenter.or(self.presenter.as_ref()),
-        )?;
-        let (view, _) = self.refresh_replacement(&mut fallback, &queue, &frame)?;
-        fallback.rebuild_contribution(
-            contribution,
-            &queue,
-            &self.scene,
-            extent,
-            replacement_presenter.or(self.presenter.as_ref()),
-            attaching,
-        )?;
-        Ok((fallback, view))
     }
 
     /// Maximum submitted scene frames awaiting GPU completion.
@@ -1104,34 +1089,47 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .frame(world.source(), 0.0, config.render_extent, None)
             .map_err(FrameError::Scene)?;
         scene.view = initial_frame.view;
-        let mut gpu = preparation::prepare_scene(
-            capabilities,
-            queue,
-            &scene,
-            initial_frame.lighting,
-            exposure,
-            config.render_extent,
-            config.surface.is_some(),
-            ContributionPasses::default(),
-            crate::contribution::EffectGraph::default(),
-            None,
+        let (gpu, presenter) = preparation::prepare_3d_transition(
+            scene.ray_admission(capabilities),
+            async |selection| {
+                preparation::validate_attempt(capabilities, selection, async || {
+                    let mut gpu = preparation::prepare_scene(
+                        capabilities,
+                        queue,
+                        &scene,
+                        initial_frame.lighting,
+                        exposure,
+                        config.render_extent,
+                        config.surface.is_some(),
+                        ContributionPasses::default(),
+                        crate::contribution::EffectGraph::default(),
+                        None,
+                        selection,
+                    )
+                    .await?;
+                    let presenter = match config.surface {
+                        Some(profile) => Some(
+                            SurfacePresenter::prepare(capabilities, config.render_extent, profile)
+                                .await
+                                .map_err(|error| match error {
+                                    PresentError::Extent => {
+                                        FrameError::InvalidState("invalid surface extent")
+                                    }
+                                    PresentError::UnsupportedFormat => {
+                                        FrameError::InvalidState("unsupported surface format")
+                                    }
+                                    error => FrameError::gpu("surface prepare", error),
+                                })?,
+                        ),
+                        None => None,
+                    };
+                    gpu.bind_presenter(presenter.as_ref())?;
+                    Ok((gpu, presenter))
+                })
+                .await
+            },
         )
         .await?;
-        let presenter = match config.surface {
-            Some(profile) => Some(
-                SurfacePresenter::prepare(capabilities, config.render_extent, profile)
-                    .await
-                    .map_err(|error| match error {
-                        PresentError::Extent => FrameError::InvalidState("invalid surface extent"),
-                        PresentError::UnsupportedFormat => {
-                            FrameError::InvalidState("unsupported surface format")
-                        }
-                        error => FrameError::gpu("surface prepare", error),
-                    })?,
-            ),
-            None => None,
-        };
-        gpu.bind_presenter(presenter.as_ref())?;
         drop(build);
         creations.ready();
         Ok(Self::from_prepared(
@@ -1327,6 +1325,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             owner: Arc::clone(&self.visual_owner),
             creations: self.creations.detach(),
             kind: self.scene_kind(),
+            supports_candidates: preparation::supports_candidates(self.contribution.as_deref()),
         }
     }
 
@@ -1359,7 +1358,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     ///
     /// Returns a binding, upload or failed Maps retry without replacing the active view.
-    /// If neither shadow method can prepare the contribution, it is detached.
     ///
     #[cfg(not(target_arch = "wasm32"))]
     pub fn publish_visual(&mut self, candidate: &mut PreparedVisual) -> Result<bool, FrameError> {
@@ -1374,65 +1372,66 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         let creations = self.creations.clone();
         let _region = creations.region(CreationPhase::Transition, "publish-visual");
-        let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
-            "visual candidate already published",
-        ))?;
-        if candidate.extent.is_none() {
-            scene.bind_presenter(self.presenter.as_ref())?;
-        }
+        let selection = candidate
+            .scene
+            .as_ref()
+            .ok_or(FrameError::InvalidState(
+                "visual candidate already published",
+            ))?
+            .prepared
+            .ray_structure_selection();
         let queue = self.queue.clone();
         let extent = candidate
             .extent
             .as_ref()
             .map_or(self.render_extent, |(extent, _)| *extent);
-        let lighting = Some(candidate.lighting);
-        let frame = self.replacement_frame(extent, lighting)?;
-        let (mut view, inherited_rows) = self.refresh_replacement(scene, &queue, &frame)?;
-        let replacement_presenter = candidate.extent.as_ref().map(|(_, presenter)| presenter);
-        let mut contribution_prepared = false;
-        if scene.prepared.traces()
-            && let Some(mut contribution) = self.contribution.take()
-        {
-            contribution_prepared = true;
-            if scene
-                .rebuild_contribution(
-                    contribution.as_mut(),
-                    &queue,
-                    &self.scene,
-                    extent,
-                    replacement_presenter.or(self.presenter.as_ref()),
+        let frame = self.replacement_frame(extent, Some(candidate.lighting))?;
+        let (scene, view, contribution_prepared) =
+            if preparation::is_candidate_transition(selection) {
+                let detached = candidate.scene.take().ok_or(FrameError::InvalidState(
+                    "visual candidate already published",
+                ))?;
+                let capabilities = detached.prepared.capabilities().clone();
+                let exposure = detached.prepared.fallback_exposure();
+                let presenter = self.presenter.take();
+                let replacement = candidate.extent.as_ref().map(|(_, presenter)| presenter);
+                let staged = self.stage_attached_3d_transition(
+                    selection,
+                    Some(detached),
+                    preparation::TransitionInputs {
+                        capabilities: &capabilities,
+                        queue: &queue,
+                        extent,
+                        presenter: replacement.or(presenter.as_ref()),
+                        frame: &frame,
+                        exposure,
+                    },
+                    || true,
+                );
+                self.presenter = presenter;
+                let (scene, view) = staged?.ok_or(FrameError::InvalidState(
+                    "visual candidate was not installed",
+                ))?;
+                (scene, view, true)
+            } else {
+                let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
+                    "visual candidate already published",
+                ))?;
+                if candidate.extent.is_none() {
+                    scene.bind_presenter(self.presenter.as_ref())?;
+                }
+                let (view, inherit_rows) = self.refresh_replacement(scene, &queue, &frame)?;
+                if inherit_rows {
+                    scene.prepared.commit_mesh_rows(&mut self.prepared);
+                }
+                (
+                    candidate.scene.take().ok_or(FrameError::InvalidState(
+                        "visual candidate already published",
+                    ))?,
+                    view,
                     false,
                 )
-                .is_err()
-            {
-                let exposure = scene.prepared.fallback_exposure();
-                if inherited_rows {
-                    scene.prepared.swap_mesh_rows(&mut self.prepared);
-                }
-                drop(candidate.scene.take());
-                match self.prepare_same_device_maps(
-                    contribution.as_mut(),
-                    exposure,
-                    lighting,
-                    extent,
-                    replacement_presenter,
-                    false,
-                ) {
-                    Ok((fallback, fallback_view)) => {
-                        candidate.scene = Some(fallback);
-                        view = fallback_view;
-                    }
-                    Err(error) => {
-                        self.record_contribution_error(&error);
-                        return Err(error);
-                    }
-                }
-            }
-            self.contribution = Some(contribution);
-        }
-        let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
-            "visual candidate already published",
-        ))?;
+            };
         self.prepared = scene.prepared;
         self.slots = scene.slots;
         self.scene.view = view;
@@ -1477,11 +1476,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let view = frame.view.with_history_reset(true);
         let previous = std::mem::replace(&mut self.scene.view, view);
         replacement.prepared.inherit_submitted_view(&self.prepared);
-        let mut inherited_rows = false;
-        let refreshed: Result<(), FrameError> = (|| {
-            inherited_rows = replacement
+        let refreshed = (|| {
+            let inherit_rows = replacement
                 .prepared
-                .inherit_mesh_rows(&mut self.prepared, queue)
+                .stage_mesh_rows(&self.prepared, queue)
                 .map_err(|error| FrameError::gpu("replacement mesh rows", error))?;
             replacement
                 .prepared
@@ -1505,14 +1503,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .prepared
                 .upload_instances(queue, &self.scene.instances, &self.changed_slots)
                 .map_err(|error| FrameError::gpu("replacement full upload", error))?;
-            Ok(())
+            Ok((view, inherit_rows))
         })();
         self.scene.view = previous;
-        if refreshed.is_err() && inherited_rows {
-            replacement.prepared.swap_mesh_rows(&mut self.prepared);
-        }
-        refreshed?;
-        Ok((view, inherited_rows))
+        refreshed
     }
 
     fn reset_replacement_history(&mut self) {

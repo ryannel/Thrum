@@ -21,27 +21,6 @@ use crate::records::{CloudField, ClusterHead, LocalSource};
 use std::sync::Arc;
 
 impl PreparedSynthetic {
-    #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) async fn prepare_ray_fallback(
-        capabilities: &DeviceCapabilities,
-        queue: &wgpu::Queue,
-        scene: &SyntheticScene,
-        lighting: FrameLighting,
-        exposure: f32,
-    ) -> Result<Self, RenderError> {
-        Self::prepare_candidate(
-            capabilities,
-            queue,
-            scene,
-            lighting,
-            exposure,
-            None,
-            None,
-            RayStructureSelection::PreparationFailed,
-        )
-        .await
-    }
-
     pub(super) async fn prepare_with_meshes(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
@@ -52,11 +31,7 @@ impl PreparedSynthetic {
         mut retained_ray_meshes: Option<RetainedRayMeshes>,
     ) -> Result<Self, RenderError> {
         capabilities.recipe().map_err(RenderError::Recipe)?;
-        let requested = scene.ray_structure
-            || scene.view.traced_geometry()
-            || scene.sun_shadow_method == SunShadowMethod::Traced
-            || scene.lamp_shadows;
-        let mut admission = capabilities.resolve_ray_structure(requested);
+        let mut admission = scene.ray_admission(capabilities);
         loop {
             match Self::prepare_candidate(
                 capabilities,
@@ -84,7 +59,7 @@ impl PreparedSynthetic {
         clippy::too_many_lines,
         reason = "one finite pipeline preparation transaction keeps the layouts and validation together"
     )]
-    async fn prepare_candidate(
+    pub(super) async fn prepare_candidate(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         scene: &SyntheticScene,

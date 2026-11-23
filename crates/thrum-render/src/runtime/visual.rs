@@ -3,7 +3,7 @@
 use super::{
     FrameError,
     creation::{CreationPhase, Detached},
-    preparation::{PreparedScene, prepare_scene},
+    preparation::{self, PreparedScene, prepare_scene},
 };
 use crate::{
     capabilities::DeviceCapabilities,
@@ -15,6 +15,7 @@ use std::sync::Arc;
 /// A detached copy of the scene and executor handles for preparing one cooked
 /// visual generation without borrowing the ticking host.
 pub struct VisualPrepareInputs {
+    pub(super) supports_candidates: bool,
     pub(super) kind: super::SceneKind,
     pub(super) queue: wgpu::Queue,
     pub(super) capabilities: DeviceCapabilities,
@@ -48,6 +49,16 @@ impl VisualPrepareInputs {
         exposure: f32,
         revision: Option<[u8; 32]>,
     ) -> Result<PreparedVisual, FrameError> {
+        self.prepare_bound(lighting, exposure, revision, None).await
+    }
+
+    async fn prepare_bound(
+        self,
+        lighting: FrameLighting,
+        exposure: f32,
+        revision: Option<[u8; 32]>,
+        presenter: Option<&crate::present::SurfacePresenter>,
+    ) -> Result<PreparedVisual, FrameError> {
         if self.kind == super::SceneKind::TwoD {
             return Err(FrameError::InvalidState(
                 "2D scene refuses a 3D visual replacement",
@@ -56,18 +67,41 @@ impl VisualPrepareInputs {
         let region = self
             .creations
             .region(CreationPhase::Transition, "prepare-visual");
-        let scene = prepare_scene(
-            &self.capabilities,
-            &self.queue,
-            &self.scene,
-            lighting,
-            exposure,
-            self.render_extent,
-            self.surface,
-            self.contribution_passes,
-            self.effect_graph,
-            self.retained_ray_meshes,
-        )
+        let admission = preparation::contribution_admission(
+            self.scene.ray_admission(&self.capabilities),
+            self.supports_candidates,
+        );
+        let scene = preparation::prepare_3d_transition(admission, async |selection| {
+            preparation::validate_attempt(&self.capabilities, selection, async || {
+                let (passes, graph) = if preparation::is_candidate_transition(selection) {
+                    (
+                        ContributionPasses::default(),
+                        crate::contribution::EffectGraph::default(),
+                    )
+                } else {
+                    (self.contribution_passes, self.effect_graph.clone())
+                };
+                let mut scene = prepare_scene(
+                    &self.capabilities,
+                    &self.queue,
+                    &self.scene,
+                    lighting,
+                    exposure,
+                    self.render_extent,
+                    self.surface,
+                    passes,
+                    graph,
+                    self.retained_ray_meshes.clone(),
+                    selection,
+                )
+                .await?;
+                if presenter.is_some() {
+                    scene.bind_presenter(presenter)?;
+                }
+                Ok(scene)
+            })
+            .await
+        })
         .await?;
         drop(region);
         Ok(PreparedVisual {
@@ -103,12 +137,8 @@ impl VisualPrepareInputs {
             .await
             .map_err(|error| FrameError::gpu("extent presenter", error))?;
         // Extent preparation nests the full scene preparation future.
-        let mut candidate = Box::pin(self.prepare(lighting, exposure, None)).await?;
-        candidate
-            .scene
-            .as_mut()
-            .ok_or(FrameError::InvalidState("extent candidate was consumed"))?
-            .bind_presenter(Some(&presenter))?;
+        let mut candidate =
+            Box::pin(self.prepare_bound(lighting, exposure, None, Some(&presenter))).await?;
         candidate.extent = Some((extent, presenter));
         drop(region);
         Ok(candidate)

@@ -5,8 +5,9 @@ use super::*;
 use glam::{Mat4, Vec3};
 use thrum_render::{
     contribution::{
-        ContributionFrame, ContributionPasses, SceneContribution, SceneContributions, SceneSurface,
-        SecondaryView, SecondaryViewRequest, SecondaryViewSlot, ViewAir,
+        ContributionCandidate, ContributionFrame, ContributionPasses, SceneContribution,
+        SceneContributions, SceneSurface, SecondaryView, SecondaryViewRequest, SecondaryViewSlot,
+        ViewAir,
     },
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameHost as EngineHost, SceneFrame, SceneSource},
@@ -223,17 +224,24 @@ impl SceneContribution for ObserveView {
             compute: false,
         }
     }
+    fn supports_candidate_preparation(&self) -> bool {
+        true
+    }
+    fn prepare_candidate(
+        &self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<ContributionCandidate, thrum_render::runtime::FrameError> {
+        let slot = self.prepared_slot(surface);
+        Ok(ContributionCandidate::new(
+            self.passes(),
+            self.effect_graph(),
+            move |owner: &mut Self| {
+                owner.accept_slot(slot);
+            },
+        ))
+    }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        assert_eq!(
-            surface.shader_source.contains("enable wgpu_ray_query"),
-            self.traced
-        );
-        let secondary = &surface.secondary_surfaces[0];
-        assert!(!secondary.shader_source.contains("enable wgpu_ray_query"));
-        let slot = surface.secondary_views[0].clone();
-        *self.observed.lock().expect("secondary observation") =
-            Some(slot.colour().texture().clone());
-        self.slot = Some(slot);
+        self.accept_slot(self.prepared_slot(surface));
         Ok(())
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
@@ -242,6 +250,27 @@ impl SceneContribution for ObserveView {
             .expect("slot")
             .request(&self.request)
             .expect("secondary recording");
+    }
+}
+
+impl ObserveView {
+    fn prepared_slot(&self, surface: &SceneSurface<'_>) -> SecondaryView {
+        assert_eq!(
+            surface.shader_source.contains("enable wgpu_ray_query"),
+            self.traced
+        );
+        assert!(
+            !surface.secondary_surfaces[0]
+                .shader_source
+                .contains("enable wgpu_ray_query")
+        );
+        surface.secondary_views[0].clone()
+    }
+
+    fn accept_slot(&mut self, slot: SecondaryView) {
+        *self.observed.lock().expect("secondary observation") =
+            Some(slot.colour().texture().clone());
+        self.slot = Some(slot);
     }
 }
 

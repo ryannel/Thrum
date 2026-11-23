@@ -107,6 +107,58 @@ impl SecondaryResize {
     }
 }
 
+/// Prepared 3D contribution resources and the declarations they will install.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct ContributionCandidate {
+    pub(crate) passes: ContributionPasses,
+    pub(crate) graph: EffectGraph,
+    commit: PublishSecondary,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl ContributionCandidate {
+    /// Stage declarations and an infallible installation on the member that prepared them.
+    /// The installation must not create GPU resources.
+    ///
+    /// # Panics
+    /// Installation panics if given a member of a different type.
+    pub fn new<T: SceneContribution>(
+        passes: ContributionPasses,
+        graph: EffectGraph,
+        commit: impl FnOnce(&mut T) + Send + 'static,
+    ) -> Self {
+        Self {
+            passes,
+            graph,
+            commit: Box::new(move |owner| {
+                commit(
+                    owner
+                        .downcast_mut::<T>()
+                        .expect("contribution candidate owner"),
+                );
+            }),
+        }
+    }
+
+    /// Forward a wrapped member's candidate through an adapter.
+    #[must_use]
+    pub fn map_owner<T: SceneContribution, M: SceneContribution>(
+        self,
+        member: impl FnOnce(&mut T) -> &mut M + Send + 'static,
+    ) -> Self {
+        let Self {
+            passes,
+            graph,
+            commit,
+        } = self;
+        Self::new(passes, graph, move |owner| commit(member(owner)))
+    }
+
+    pub(crate) fn commit(self, owner: &mut dyn SceneContribution) {
+        (self.commit)(owner);
+    }
+}
+
 /// The scene forward shader's material hook point: the fragment's one read of its material
 /// record, inside the scene's `shade(input: VertexOutput, ..)` body before any texture sample.
 /// A wrapper `fn(MaterialRecord, VertexOutput) -> MaterialRecord` may replace it. The renderer
@@ -392,6 +444,27 @@ pub struct SpriteContributionSurface<'a> {
 /// - [`Self::encode_compute`] is called only in a frame where [`Self::computes`] returned true,
 ///   and [`Self::submitted`] is where the work [`Self::encode_upload`] staged is committed.
 pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
+    /// Whether this member can prepare independently of its accepted state.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn supports_candidate_preparation(&self) -> bool {
+        false
+    }
+
+    /// Create a traced or Maps candidate using the declared secondary view slots.
+    /// Until installation, writes must be confined to resources owned by the candidate.
+    ///
+    /// # Errors
+    /// Returns a preparation fault or the default refusal for a legacy member.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn prepare_candidate(
+        &self,
+        _surface: &SceneSurface<'_>,
+    ) -> Result<ContributionCandidate, crate::runtime::FrameError> {
+        Err(crate::runtime::FrameError::InvalidState(
+            "contribution does not support candidate preparation",
+        ))
+    }
+
     /// Legacy drawing stages this contribution needs. Pure upload/simulate
     /// contributions declare an empty list and implement [Self::rebuild_2d].
     fn draw_stages(&self) -> Vec<SceneDrawStage> {

@@ -323,8 +323,8 @@ struct Fault {
     phase: Phase,
 }
 
-impl SceneContribution for Fault {
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+impl Fault {
+    fn attempted_surface<'a>(&self, surface: &SceneSurface<'a>) -> SceneSurface<'a> {
         let mut attempts = self.attempts.lock().expect("rebuild attempts");
         let inject = match self.phase {
             Phase::Attachment => true,
@@ -337,6 +337,24 @@ impl SceneContribution for Fault {
         if inject && surface.ray_demand {
             surface.fragment_entry = "injected_missing_entry";
         }
+        surface
+    }
+}
+
+impl SceneContribution for Fault {
+    fn supports_candidate_preparation(&self) -> bool {
+        true
+    }
+    fn prepare_candidate(
+        &self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<ContributionCandidate, thrum_render::runtime::FrameError> {
+        self.cooked
+            .prepare_candidate(&self.attempted_surface(surface))
+            .map(|candidate| candidate.map_owner(|owner: &mut Self| &mut owner.cooked))
+    }
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        let surface = self.attempted_surface(surface);
         self.cooked.rebuild(&surface)
     }
     fn passes(&self) -> ContributionPasses {

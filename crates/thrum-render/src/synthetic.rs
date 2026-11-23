@@ -206,6 +206,15 @@ pub struct SyntheticMeshes {
 const MESH_COORDINATE_LIMIT: f32 = 1e30;
 
 impl SyntheticScene {
+    pub(crate) fn ray_admission(&self, capabilities: &DeviceCapabilities) -> RayStructureSelection {
+        capabilities.resolve_ray_structure(
+            self.ray_structure
+                || self.view.traced_geometry()
+                || self.sun_shadow_method == SunShadowMethod::Traced
+                || self.lamp_shadows,
+        )
+    }
+
     /// Empty CPU storage for a host that never enters the 3D renderer.
     pub(crate) fn empty() -> Self {
         Self {
@@ -976,15 +985,17 @@ impl PreparedSynthetic {
         Self::prepare_with_meshes(capabilities, queue, scene, lighting, exposure, None, None).await
     }
 
-    pub(crate) async fn prepare_with_retained_ray_meshes(
+    pub(crate) async fn prepare_host_candidate(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         scene: &SyntheticScene,
         lighting: FrameLighting,
         exposure: f32,
         retained: Option<RetainedRayMeshes>,
+        selection: RayStructureSelection,
     ) -> Result<Self, RenderError> {
-        Self::prepare_with_meshes(
+        capabilities.recipe().map_err(RenderError::Recipe)?;
+        Self::prepare_candidate(
             capabilities,
             queue,
             scene,
@@ -992,6 +1003,7 @@ impl PreparedSynthetic {
             exposure,
             None,
             retained,
+            selection,
         )
         .await
     }

@@ -35,7 +35,9 @@ pub enum RayStructureSelection {
     MissingRayQuery,
     /// The resolved recipe does not support ray effects.
     UnsupportedRecipe,
-    /// The scene could not prepare its structures and fell back.
+    /// A scene contribution does not support candidate preparation.
+    UnsupportedContribution,
+    /// The scene could not prepare its resources and fell back.
     PreparationFailed,
 }
 

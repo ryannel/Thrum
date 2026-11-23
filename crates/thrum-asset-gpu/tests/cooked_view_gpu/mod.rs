@@ -137,3 +137,5 @@ fn compare(expected: &[[f32; 8]], actual: &[[f32; 8]]) {
     assert!(covered > 10);
     eprintln!("{covered} covered pixels, max colour/depth steps {maximum:?}");
 }
+
+mod maps_fallback;

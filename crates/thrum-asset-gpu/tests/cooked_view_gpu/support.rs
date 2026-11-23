@@ -30,7 +30,7 @@ const PAGE: SourceTick = SourceTick {
     tick: 0,
     timeline: 1,
 };
-const LIGHT: FrameLighting = FrameLighting::Photometric(PhotometricEnvironment {
+pub(super) const LIGHT: FrameLighting = FrameLighting::Photometric(PhotometricEnvironment {
     toward_sun: [0.0, 0.8, 0.6],
     sun_lux: 50_000.0,
     sun_colour: [1.0; 3],
@@ -38,7 +38,7 @@ const LIGHT: FrameLighting = FrameLighting::Photometric(PhotometricEnvironment {
     background_radiance: [0.1; 3],
 });
 
-struct World;
+pub(super) struct World;
 impl FrameWorld for World {
     type Page = SourceTick;
     fn source(&self) -> SourceTick {
@@ -87,7 +87,7 @@ impl FrameWorld for World {
     }
 }
 
-struct Source(SyntheticView);
+pub(super) struct Source(pub(super) SyntheticView);
 impl SceneSource<SourceTick> for Source {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
         into.extract(*page, [0.0; 3], |_| {})

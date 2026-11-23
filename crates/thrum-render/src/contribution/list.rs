@@ -30,10 +30,8 @@ impl SceneContributions {
         invalid_views: impl Fn(&str) -> E,
         mut rebuild: impl FnMut(&mut dyn SceneContribution, &SceneSurface<'_>) -> Result<(), E>,
     ) -> Result<(), E> {
-        self.pass_counts.clear();
-        self.after_counts.clear();
         let mut first = 0;
-        for entry in &mut self.entries {
+        self.rebuild_entries(|entry| {
             let end = first + entry.secondary_view_slots().len();
             let mut member = surface.clone();
             if !entry.secondary_views_enabled() {
@@ -42,13 +40,60 @@ impl SceneContributions {
             member.secondary_views = surface.secondary_views.get(first..end).ok_or_else(|| {
                 invalid_views("secondary view declaration changed during rebuild")
             })?;
-            rebuild(entry.as_mut(), &member)?;
+            rebuild(entry, &member)?;
             first = end;
+            Ok(())
+        })
+    }
+
+    pub(crate) fn rebuild_entries<E>(
+        &mut self,
+        mut rebuild: impl FnMut(&mut dyn SceneContribution) -> Result<(), E>,
+    ) -> Result<(), E> {
+        self.pass_counts.clear();
+        self.after_counts.clear();
+        for entry in &mut self.entries {
+            rebuild(entry.as_mut())?;
             let graph = entry.effect_graph();
             self.pass_counts.push(graph.passes.len());
             self.after_counts.push(graph.after_opaque.len());
         }
         Ok(())
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn prepare_members(
+        &self,
+        mut prepare: impl FnMut(
+            &dyn SceneContribution,
+        ) -> Result<super::ContributionCandidate, FrameError>,
+    ) -> Result<super::ContributionCandidate, FrameError> {
+        let candidates = self
+            .entries
+            .iter()
+            .map(|member| prepare(member.as_ref()))
+            .collect::<Result<Vec<_>, _>>()?;
+        let passes = candidates
+            .iter()
+            .fold(ContributionPasses::default(), |mut passes, member| {
+                passes.upload |= member.passes.upload;
+                passes.compute |= member.passes.compute;
+                passes
+            });
+        let graph = Self::combined_graph(candidates.iter().map(|member| member.graph.clone()));
+        Ok(super::ContributionCandidate::new(
+            passes,
+            graph,
+            move |owner: &mut Self| {
+                owner.pass_counts.clear();
+                owner.after_counts.clear();
+                for (entry, candidate) in owner.entries.iter_mut().zip(candidates) {
+                    owner.pass_counts.push(candidate.graph.passes.len());
+                    owner.after_counts.push(candidate.graph.after_opaque.len());
+                    candidate.commit(entry.as_mut());
+                }
+            },
+        ))
     }
 
     fn combined_graph(
@@ -93,6 +138,37 @@ impl SceneContributions {
 }
 
 impl SceneContribution for SceneContributions {
+    #[cfg(not(target_arch = "wasm32"))]
+    fn supports_candidate_preparation(&self) -> bool {
+        self.entries
+            .iter()
+            .all(|entry| entry.supports_candidate_preparation())
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn prepare_candidate(
+        &self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<super::ContributionCandidate, FrameError> {
+        let mut first = 0;
+        self.prepare_members(|entry| {
+            let end = first + entry.secondary_view_slots().len();
+            let mut member = surface.clone();
+            if !entry.secondary_views_enabled() {
+                member.secondary_surfaces.clear();
+            }
+            member.secondary_views =
+                surface
+                    .secondary_views
+                    .get(first..end)
+                    .ok_or(FrameError::InvalidState(
+                        "secondary view declaration changed during preparation",
+                    ))?;
+            first = end;
+            entry.prepare_candidate(&member)
+        })
+    }
+
     fn ray_instances(&self, instances: &mut super::RayInstances<'_>) {
         for entry in &self.entries {
             entry.ray_instances(instances);

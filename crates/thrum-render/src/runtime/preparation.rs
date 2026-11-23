@@ -1,10 +1,11 @@
 //! One preparation body for initial and replacement scene resources.
 
-#[cfg(not(target_arch = "wasm32"))]
-use super::SceneFrame;
 use super::{FrameError, FrameSlot, IN_FLIGHT, SlotState};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::contribution::ContributionCandidate;
+use crate::contribution::SceneContribution;
 use crate::{
-    capabilities::DeviceCapabilities,
+    capabilities::{DeviceCapabilities, RayStructureSelection},
     contribution::ContributionPasses,
     present::{SurfacePresenter, SurfaceProfile},
     sprite::{PreparedSprites, SpriteTarget},
@@ -28,7 +29,7 @@ pub(super) struct PreparedScene {
 /// A new slot set is needed only when the graph or secondary views changed.
 pub(super) fn rebuild_3d_contribution(
     prepared: &mut PreparedRenderer,
-    contribution: &mut dyn crate::contribution::SceneContribution,
+    contribution: &mut dyn SceneContribution,
     queue: &wgpu::Queue,
     scene: &SyntheticScene,
     extent: [u32; 2],
@@ -37,14 +38,6 @@ pub(super) fn rebuild_3d_contribution(
 ) -> Result<Option<Vec<FrameSlot>>, FrameError> {
     use crate::contribution::SecondaryViewError;
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let scopes = prepared.requires_ray_preparation_scopes().then(|| {
-        let device = prepared.capabilities().device();
-        let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
-        let memory = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
-        let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
-        [validation, memory, internal]
-    });
     let had_views = prepared.secondary_view_count() != 0;
     let previous_views = prepared.take_secondary();
     let previous_graph = prepared.effect_graph().clone();
@@ -91,16 +84,6 @@ pub(super) fn rebuild_3d_contribution(
         bind_presenter(prepared, &mut slots, presenter)?;
         Ok(Some(slots))
     })();
-    #[cfg(not(target_arch = "wasm32"))]
-    let result = if let Some(scopes) = scopes {
-        let errors = scopes.map(|scope| pollster::block_on(scope.pop()));
-        match errors.into_iter().flatten().next() {
-            Some(error) => Err(FrameError::gpu("contribution preparation", error)),
-            None => result,
-        }
-    } else {
-        result
-    };
     if result.is_err() {
         prepared.set_effect_graph(previous_graph);
         prepared.set_contribution_passes(previous_passes);
@@ -117,19 +100,8 @@ pub(super) enum PreparedRenderer {
 #[cfg(not(target_arch = "wasm32"))]
 impl PreparedRenderer {
     pub(super) fn traces(&self) -> bool {
-        use crate::capabilities::RayStructureSelection;
         self.three_d()
             .is_some_and(|scene| scene.ray_structure_selection() == RayStructureSelection::Enabled)
-    }
-
-    fn requires_ray_preparation_scopes(&self) -> bool {
-        use crate::capabilities::RayStructureSelection;
-        self.three_d().is_some_and(|scene| {
-            matches!(
-                scene.ray_structure_selection(),
-                RayStructureSelection::Enabled | RayStructureSelection::PreparationFailed
-            )
-        })
     }
 }
 
@@ -321,27 +293,46 @@ three_d_access!(FrameTarget, OffscreenTarget);
 
 impl PreparedScene {
     #[cfg(not(target_arch = "wasm32"))]
-    pub(super) fn rebuild_contribution(
+    pub(super) fn stage_contribution(
         &mut self,
-        contribution: &mut dyn crate::contribution::SceneContribution,
+        contribution: &dyn SceneContribution,
         queue: &wgpu::Queue,
         scene: &SyntheticScene,
         extent: [u32; 2],
         presenter: Option<&SurfacePresenter>,
-        attaching: bool,
-    ) -> Result<(), FrameError> {
-        if let Some(slots) = rebuild_3d_contribution(
-            &mut self.prepared,
-            contribution,
+    ) -> Result<ContributionCandidate, FrameError> {
+        use crate::contribution::SecondaryViewError;
+
+        self.prepared
+            .prepare_secondary_views(
+                queue,
+                &contribution.secondary_view_slots(),
+                extent,
+                &scene.local_lights,
+            )
+            .map_err(|error| match error {
+                SecondaryViewError::RecordLimit
+                | SecondaryViewError::LightingLimit
+                | SecondaryViewError::ShaderLimit => FrameError::gpu("secondary view preparation", error),
+                _ => FrameError::SecondaryView(error),
+            })?;
+        let surface = self
+            .prepared
+            .scene_surface_with_views(queue, contribution.secondary_views_enabled());
+        let candidate = contribution.prepare_candidate(&surface)?;
+        candidate.graph.validate().map_err(FrameError::EffectGraph)?;
+        self.prepared.set_effect_graph(candidate.graph.clone());
+        let mut passes = candidate.passes;
+        passes.upload |= self.prepared.secondary_view_count() != 0;
+        self.prepared.set_contribution_passes(passes);
+        self.slots = prepare_slots(
+            &self.prepared,
             queue,
-            scene,
             extent,
-            presenter,
-            attaching,
-        )? {
-            self.slots = slots;
-        }
-        Ok(())
+            presenter.map(SurfacePresenter::profile),
+        )?;
+        self.bind_presenter(presenter)?;
+        Ok(candidate)
     }
 
     pub(super) fn bind_presenter(
@@ -352,35 +343,188 @@ impl PreparedScene {
     }
 }
 
+pub(super) fn contribution_admission(
+    selection: RayStructureSelection,
+    supported: bool,
+) -> RayStructureSelection {
+    if selection == RayStructureSelection::Enabled && !supported {
+        RayStructureSelection::UnsupportedContribution
+    } else {
+        selection
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
-pub(super) fn prepare_maps_fallback(
+pub(super) fn supports_candidates(contribution: Option<&dyn SceneContribution>) -> bool {
+    contribution.is_none_or(SceneContribution::supports_candidate_preparation)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(super) fn is_candidate_transition(selection: RayStructureSelection) -> bool {
+    matches!(
+        selection,
+        RayStructureSelection::Enabled | RayStructureSelection::PreparationFailed
+    )
+}
+
+// The same retry decision encloses the initial scene and all render-owner
+// transitions. Each attempt returns owned resources for installation.
+pub(super) async fn prepare_3d_transition<T>(
+    selection: RayStructureSelection,
+    mut attempt: impl AsyncFnMut(RayStructureSelection) -> Result<T, FrameError>,
+) -> Result<T, FrameError> {
+    match attempt(selection).await {
+        Err(_) if selection == RayStructureSelection::Enabled => {
+            attempt(RayStructureSelection::PreparationFailed).await
+        }
+        result => result,
+    }
+}
+
+pub(super) async fn validate_attempt<T>(
     capabilities: &DeviceCapabilities,
-    queue: &wgpu::Queue,
-    scene: &SyntheticScene,
-    frame: &SceneFrame,
-    exposure: f32,
-    extent: [u32; 2],
-    presenter: Option<&SurfacePresenter>,
-) -> Result<PreparedScene, FrameError> {
-    let mut inputs = scene.clone();
-    inputs.view = frame.view;
-    let prepared = pollster::block_on(PreparedSynthetic::prepare_ray_fallback(
-        capabilities,
-        queue,
-        &inputs,
-        frame.lighting,
-        exposure,
-    ))
-    .map_err(|error| FrameError::gpu("fallback Maps scene", error))?;
-    let prepared = PreparedRenderer::ThreeD(Box::new(prepared));
-    let mut slots = prepare_slots(
-        &prepared,
-        queue,
-        extent,
-        presenter.map(SurfacePresenter::profile),
-    )?;
-    bind_presenter(&prepared, &mut slots, presenter)?;
-    Ok(PreparedScene { prepared, slots })
+    selection: RayStructureSelection,
+    attempt: impl AsyncFnOnce() -> Result<T, FrameError>,
+) -> Result<T, FrameError> {
+    #[cfg(not(target_arch = "wasm32"))]
+    if is_candidate_transition(selection) {
+        let device = capabilities.device();
+        let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
+        let memory = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+        let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let result = attempt().await;
+        let errors = [validation, memory, internal].map(wgpu::ErrorScopeGuard::pop);
+        let [validation, memory, internal] = errors;
+        if let Some(error) = validation.await.or(memory.await).or(internal.await) {
+            return Err(FrameError::gpu("3D scene preparation", error));
+        }
+        return result;
+    }
+    #[cfg(target_arch = "wasm32")]
+    let _ = (capabilities, selection);
+    attempt().await
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(super) struct SceneTransition {
+    pub(super) scene: PreparedScene,
+    pub(super) view: crate::synthetic::SyntheticView,
+    pub(super) contribution: Option<ContributionCandidate>,
+    inherit_rows: bool,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl SceneTransition {
+    pub(super) fn commit(
+        mut self,
+        previous: &mut PreparedRenderer,
+        contribution: Option<&mut dyn SceneContribution>,
+    ) -> (PreparedScene, crate::synthetic::SyntheticView) {
+        if let Some(member) = self.contribution.take() {
+            member.commit(contribution.expect("prepared contribution owner"));
+        }
+        if self.inherit_rows {
+            self.scene.prepared.commit_mesh_rows(previous);
+        }
+        (self.scene, self.view)
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Clone, Copy)]
+pub(super) struct TransitionInputs<'a> {
+    pub(super) capabilities: &'a DeviceCapabilities,
+    pub(super) queue: &'a wgpu::Queue,
+    pub(super) extent: [u32; 2],
+    pub(super) presenter: Option<&'a SurfacePresenter>,
+    pub(super) frame: &'a super::SceneFrame,
+    pub(super) exposure: f32,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<W: super::FrameWorld, V: super::SceneSource<W::Page>> super::FrameHost<W, V> {
+    pub(super) fn stage_attached_3d_transition(
+        &mut self,
+        selection: RayStructureSelection,
+        detached: Option<PreparedScene>,
+        inputs: TransitionInputs<'_>,
+        current: impl FnOnce() -> bool,
+    ) -> Result<Option<(PreparedScene, crate::synthetic::SyntheticView)>, FrameError> {
+        let mut contribution = self.contribution.take();
+        let result = self
+            .stage_3d_transition(selection, detached, inputs, contribution.as_deref())
+            .map(|staged| {
+                current().then(|| staged.commit(&mut self.prepared, contribution.as_deref_mut()))
+            });
+        self.contribution = contribution;
+        result
+    }
+
+    pub(super) fn stage_3d_transition(
+        &mut self,
+        selection: RayStructureSelection,
+        mut detached: Option<PreparedScene>,
+        inputs: TransitionInputs<'_>,
+        contribution: Option<&dyn SceneContribution>,
+    ) -> Result<SceneTransition, FrameError> {
+        pollster::block_on(prepare_3d_transition(selection, async |selection| {
+            let mut scene = match detached.take() {
+                Some(scene) if scene.prepared.ray_structure_selection() == selection => scene,
+                _ => {
+                    validate_attempt(inputs.capabilities, selection, async || {
+                        let mut scene = self.scene.clone();
+                        scene.view = inputs.frame.view;
+                        prepare_scene(
+                            inputs.capabilities,
+                            inputs.queue,
+                            &scene,
+                            inputs.frame.lighting,
+                            inputs.exposure,
+                            inputs.extent,
+                            inputs.presenter.is_some(),
+                            ContributionPasses::default(),
+                            crate::contribution::EffectGraph::default(),
+                            if selection == RayStructureSelection::Enabled {
+                                self.prepared.retained_ray_meshes()
+                            } else {
+                                None
+                            },
+                            selection,
+                        )
+                        .await
+                    })
+                    .await?
+                }
+            };
+            let (view, contribution, inherit_rows) =
+                validate_attempt(inputs.capabilities, selection, async || {
+                    let member = if let Some(contribution) =
+                        contribution.filter(|_| is_candidate_transition(selection))
+                    {
+                        Some(scene.stage_contribution(
+                            contribution,
+                            inputs.queue,
+                            &self.scene,
+                            inputs.extent,
+                            inputs.presenter,
+                        )?)
+                    } else {
+                        scene.bind_presenter(inputs.presenter)?;
+                        None
+                    };
+                    let (view, inherit_rows) =
+                        self.refresh_replacement(&mut scene, inputs.queue, inputs.frame)?;
+                    Ok((view, member, inherit_rows))
+                })
+                .await?;
+            Ok(SceneTransition {
+                scene,
+                view,
+                contribution,
+                inherit_rows,
+            })
+        }))
+    }
 }
 
 pub(super) fn bind_presenter(
@@ -427,14 +571,16 @@ pub(super) async fn prepare_scene(
     contribution_passes: ContributionPasses,
     effect_graph: crate::contribution::EffectGraph,
     retained_ray_meshes: Option<RetainedRayMeshes>,
+    selection: RayStructureSelection,
 ) -> Result<PreparedScene, FrameError> {
-    let mut prepared = PreparedSynthetic::prepare_with_retained_ray_meshes(
+    let mut prepared = PreparedSynthetic::prepare_host_candidate(
         capabilities,
         queue,
         scene,
         lighting,
         exposure,
         retained_ray_meshes,
+        selection,
     )
     .await
     .map_err(|error| FrameError::gpu("scene prepare", error))?;
@@ -544,3 +690,6 @@ impl TargetPreparation {
         Ok(slots)
     }
 }
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod contribution_preparation;

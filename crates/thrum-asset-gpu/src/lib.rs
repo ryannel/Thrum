@@ -656,6 +656,22 @@ impl Live {
 #[cfg(feature = "draw-probe")]
 pub mod draw_probe;
 
+struct PreparedCooked {
+    target: material::Target,
+    pipelines: draw::Pipelines,
+    readback: Option<Readback>,
+    current: Option<(Arc<load::ResidentSet>, draw::Bound)>,
+    loader: Option<load::Loader>,
+    reuse_live: bool,
+    retiring_rays: bool,
+    indexed_path: CookedDrawPath,
+    fallback: Option<String>,
+    recipe: thrum_render::capabilities::Recipe,
+    generation: u64,
+    secondary_count: usize,
+    ray_queue: Option<wgpu::Queue>,
+}
+
 /// Cooked products drawn in the scene. Attach with
 /// `FrameHost::set_scene_contribution(Box::new(assets))`.
 pub struct CookedAssets {
@@ -738,25 +754,12 @@ impl CookedAssets {
         self.lease.clone()
     }
 
-    fn start(
+    fn prepare_loader(
         &self,
         surface: &SceneSurface<'_>,
-        pipelines: draw::Pipelines,
-        readback: Option<Readback>,
-        current: Option<(Arc<load::ResidentSet>, draw::Bound)>,
-    ) -> Live {
-        // One newest staged set waits for the render thread; a newer one replaces it and the
-        // superseded staging retires at once, even while no frame encodes.
-        let mailbox = Arc::new(load::Mailbox::default());
-        let posting = Arc::clone(&mailbox);
-        let (resident_tx, resident_rx) = channel();
-        let stop = Arc::new(AtomicBool::new(false));
-        let confirmed = current
-            .as_ref()
-            .map_or_else(load::Confirmed::default, |(set, _)| {
-                load::Loader::confirm(set)
-            });
-        let loader = load::Loader {
+        pipelines: &draw::Pipelines,
+    ) -> load::Loader {
+        load::Loader {
             ray_demand: surface.ray_demand,
             #[cfg(all(feature = "draw-probe", target_os = "macos"))]
             ray_build_probe: surface.ray_build_probe.clone(),
@@ -787,7 +790,29 @@ impl CookedAssets {
             ),
             volume_profiles: volume_profiles(surface.features),
             stats: Arc::clone(&self.stats),
-        };
+        }
+    }
+
+    fn start(&self, loader: load::Loader, prepared: PreparedCooked) -> Live {
+        let PreparedCooked {
+            generation,
+            ray_queue,
+            pipelines,
+            secondary_count,
+            current,
+            readback,
+            ..
+        } = prepared;
+        // Only accepted preparations may start consuming loader or upload progress.
+        let mailbox = Arc::new(load::Mailbox::default());
+        let posting = Arc::clone(&mailbox);
+        let (resident_tx, resident_rx) = channel();
+        let stop = Arc::new(AtomicBool::new(false));
+        let confirmed = current
+            .as_ref()
+            .map_or_else(load::Confirmed::default, |(set, _)| {
+                load::Loader::confirm(set)
+            });
         let mut remote = None;
         let handle = match &self.config.source {
             #[cfg(target_arch = "wasm32")]
@@ -813,14 +838,13 @@ impl CookedAssets {
                 handle
             }
             CookedSource::Remote(feed) => {
-                let mut state = Remote {
+                let state = Remote {
                     loader,
                     feed: feed.clone(),
                     seen: None,
                     confirmed,
                     filler: None,
                 };
-                state.prepare_newest(&posting, &stop);
                 remote = Some(state);
                 None
             }
@@ -828,8 +852,8 @@ impl CookedAssets {
         Live {
             #[cfg(feature = "draw-probe")]
             sun_caster_draws: std::cell::RefCell::default(),
-            generation: surface.generation,
-            ray_queue: surface.ray_demand.then(|| surface.queue.clone()),
+            generation,
+            ray_queue,
             stop,
             stats: Arc::clone(&self.stats),
             loader: handle,
@@ -837,7 +861,7 @@ impl CookedAssets {
             mailbox,
             resident_tx,
             pipelines,
-            secondary_views: Vec::with_capacity(surface.secondary_surfaces.len()),
+            secondary_views: Vec::with_capacity(secondary_count),
             pending: None,
             current,
             readback,
@@ -846,18 +870,8 @@ impl CookedAssets {
         }
     }
 
-    /// Rebuild pipelines and bindings for `surface`, or restart on a new device generation.
-    fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn stage_rebuild(&self, surface: &SceneSurface<'_>) -> PreparedCooked {
         let (indexed_path, mut fallback) = self.config.draw_path.resolve(surface);
-        // Finish validation before touching the draw bindings, loader or material of
-        // the last published scene. The host may retry with a different shader.
-        let internal = surface.device.push_error_scope(wgpu::ErrorFilter::Internal);
-        let memory = surface
-            .device
-            .push_error_scope(wgpu::ErrorFilter::OutOfMemory);
-        let validation = surface
-            .device
-            .push_error_scope(wgpu::ErrorFilter::Validation);
         let mut target = material::Target::new(surface, self.epoch + 1);
         let pipelines = draw::Pipelines::new(
             surface,
@@ -893,6 +907,34 @@ impl CookedAssets {
             });
         let readback =
             (indexed_path == CookedDrawPath::Indirect).then(|| Readback::new(surface.device));
+        let reuse_live = reuse.is_some() && !retiring_rays;
+        let loader = (!reuse_live).then(|| self.prepare_loader(surface, &pipelines));
+        PreparedCooked {
+            target,
+            pipelines,
+            readback,
+            current,
+            loader,
+            reuse_live,
+            retiring_rays,
+            indexed_path,
+            fallback,
+            recipe: surface.recipe,
+            generation: surface.generation,
+            secondary_count: surface.secondary_surfaces.len(),
+            ray_queue: surface.ray_demand.then(|| surface.queue.clone()),
+        }
+    }
+
+    fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        let internal = surface.device.push_error_scope(wgpu::ErrorFilter::Internal);
+        let memory = surface
+            .device
+            .push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+        let validation = surface
+            .device
+            .push_error_scope(wgpu::ErrorFilter::Validation);
+        let prepared = self.stage_rebuild(surface);
         // Native wgpu validates synchronously. A backend whose scope is still pending
         // reports any uncaptured error through the device handler, as on first attach.
         let errors = [validation, memory, internal].map(|scope| {
@@ -908,34 +950,52 @@ impl CookedAssets {
         if let Some(error) = errors.into_iter().flatten().next() {
             return Err(format!("cooked pipelines: {error}"));
         }
-        let reuse_live = reuse.is_some() && !retiring_rays;
+        let restart = !prepared.reuse_live;
+        self.install_rebuild(prepared);
+        if restart
+            && let Some(live) = &mut self.live
+            && let Some(remote) = &mut live.remote
+        {
+            remote.prepare_newest(&live.mailbox, &live.stop);
+        }
+        Ok(())
+    }
 
+    fn install_rebuild(&mut self, mut prepared: PreparedCooked) {
+        let PreparedCooked {
+            reuse_live,
+            retiring_rays,
+            indexed_path,
+            generation,
+            secondary_count,
+            ..
+        } = prepared;
         // A material candidate for the previous surface cannot publish. The new pipelines draw
         // the built-in material until the accepted hook validates against this surface.
         self.epoch += 1;
         if let Some(held) = self.live.as_mut().and_then(|live| live.material.take()) {
             self.material.release(&held);
         }
-        self.material.retarget(&target);
+        self.material.retarget(&prepared.target);
         if let Ok(mut stats) = self.stats.lock() {
-            stats.draw_path = Some(if stages {
+            stats.draw_path = Some(if prepared.pipelines.uses_mesh_stages() {
                 CookedDrawPath::MeshStages
             } else {
                 indexed_path
             });
             stats.requested_draw_path = Some(self.config.draw_path);
-            stats.recipe = Some(surface.recipe);
-            stats.draw_fallback = fallback;
+            stats.recipe = Some(prepared.recipe);
+            stats.draw_fallback = prepared.fallback.take();
             stats.visible_meshlets = None;
             stats.secondary_draw_paths.clear();
         }
         if let Some(live) = self.live.as_mut().filter(|_| reuse_live) {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.
-            live.readback = readback;
-            live.pipelines = pipelines;
-            live.current = current;
-            live.secondary_views = Vec::with_capacity(surface.secondary_surfaces.len());
+            live.readback = prepared.readback;
+            live.pipelines = prepared.pipelines;
+            live.current = prepared.current;
+            live.secondary_views = Vec::with_capacity(secondary_count);
             live.tentative = None;
             #[cfg(feature = "draw-probe")]
             live.sun_caster_draws.get_mut().clear();
@@ -954,8 +1014,8 @@ impl CookedAssets {
                     if pending.ready
                         && (self.config.rows.is_some() || !self.config.leased.is_empty())
                     {
-                        if let Some((set, _)) = &current {
-                            offer_leases(&self.lease, &self.config.leased, set, surface.generation);
+                        if let Some((set, _)) = &prepared.current {
+                            offer_leases(&self.lease, &self.config.leased, set, generation);
                         } else {
                             self.lease.clear();
                         }
@@ -984,7 +1044,10 @@ impl CookedAssets {
                 }
             }
             drop(old);
-            self.live = Some(self.start(surface, pipelines, readback, current));
+            self.live = Some(self.start(
+                prepared.loader.take().expect("staged cooked loader"),
+                prepared,
+            ));
         }
         #[cfg(feature = "draw-probe")]
         if let Some(live) = &self.live
@@ -1000,7 +1063,6 @@ impl CookedAssets {
                 set.report_mesh_storage(&self.config.meshes, &mut stats);
             }
         }
-        Ok(())
     }
 
     fn live_for(&mut self, frame: &ContributionFrame) -> Option<&mut Live> {
@@ -1037,6 +1099,25 @@ fn offer_leases(
 }
 
 impl SceneContribution for CookedAssets {
+    #[cfg(not(target_arch = "wasm32"))]
+    fn supports_candidate_preparation(&self) -> bool {
+        true
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn prepare_candidate(
+        &self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<thrum_render::contribution::ContributionCandidate, thrum_render::runtime::FrameError>
+    {
+        let prepared = self.stage_rebuild(surface);
+        Ok(thrum_render::contribution::ContributionCandidate::new(
+            self.passes(),
+            self.effect_graph(),
+            move |owner: &mut Self| owner.install_rebuild(prepared),
+        ))
+    }
+
     fn ray_instances(&self, instances: &mut thrum_render::contribution::RayInstances<'_>) {
         if let Some(bound) = self.live.as_ref().and_then(Live::drawn) {
             bound.ray_instances(instances);

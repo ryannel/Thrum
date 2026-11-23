@@ -299,6 +299,40 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let _region = self
             .creations
             .region(CreationPhase::Transition, "resize-scene-surface");
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.prepared.traces() && self.prepared.secondary_view_count() != 0 {
+            let presenter = presenter
+                .refit(extent, extent)
+                .map_err(|error| FrameError::gpu("scene presenter resize", error))?;
+            let capabilities = self.prepared.capabilities().clone();
+            let queue = self.queue.clone();
+            let frame = self.replacement_frame(extent, self.visual_lighting)?;
+            let Some((scene, view)) = self.stage_attached_3d_transition(
+                crate::capabilities::RayStructureSelection::Enabled,
+                None,
+                preparation::TransitionInputs {
+                    capabilities: &capabilities,
+                    queue: &queue,
+                    extent,
+                    presenter: Some(&presenter),
+                    frame: &frame,
+                    exposure: self.prepared.fallback_exposure(),
+                },
+                current,
+            )?
+            else {
+                return Ok(false);
+            };
+            self.prepared = scene.prepared;
+            self.slots = scene.slots;
+            self.presenter = Some(presenter);
+            self.render_extent = extent;
+            self.scene.view = view;
+            self.presenter_generation += 1;
+            self.visual_owner = Arc::new(());
+            self.reset_replacement_history();
+            return Ok(true);
+        }
         let view = if self.scene_kind() == super::SceneKind::ThreeD {
             Some(
                 self.source
