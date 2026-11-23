@@ -191,3 +191,10 @@
 |---:|---|
 | 8.991 | `v1-game::it cooked_rows_gpu::supersession_discarded_protected_switch_and_retired_space_reuse` |
 | 8.104 | `v1-game::cooked_assets_gpu a_newer_publication_supersedes_an_upload_still_being_filled` |
+
+- 2026-11-23 M5 keeps both regressions in the fast tier with smaller cooked products and 64×64 targets.
+  The row test retained exact submitted-frame checks through supersession, a discarded protected switch
+  and retired-space reuse. The volume test observed the full staging ring before supersession on both
+  indexed draw paths. The first Metal batch passed in 3.947 s for rows and 0.934 s for volume. Individual
+  runs took 5.490 s and 1.911 s under builder load.
+  [Timing and coverage](../../../.orchestrate/evidence/CONTENT-LOOP/M5/README.md)
