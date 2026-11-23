@@ -18,7 +18,10 @@ ROOT = Path(__file__).resolve().parent.parent
 BASE_FIXTURE = ROOT / 'crates/thrum-render/tests/data/view-volume-base.json'
 TARGETS = ('mac-metal', 'chrome-webgpu')
 LOW_SUN = 12 + 12 / math.pi * math.acos(math.sqrt(2) * math.sin(math.radians(10)))
-NEAR_EYE = [0, 244.9226672381398, 16]
+LOOKOUT_EYE = [0, 244.9226672381398, 16]
+# The cooked terrain triangle under x=0, z=16 is at 239.925172 m.
+NEAR_EYE = [0, 241.92517205618816, 16]
+SHAFT_EYE = [200, 124, 120]
 EXTENT = [1280, 720]
 AERIAL = 'atmosphere aerial perspective'
 
@@ -168,7 +171,7 @@ def off_parity(output, targets, builds):
         base_web = base_target / 'v1-game-web'
         shutil.copyfile(ROOT / 'examples/v1-game/web/capture.mjs', base_web / 'capture.mjs')
     base_builds = (base_target / 'release/v1-game', cook, base_target / 'v1-game-web', store)
-    pose = {'eye': NEAR_EYE, 'solar_hours': 12.0, 'yaw_degrees': 0, 'motion': None}
+    pose = {'eye': LOOKOUT_EYE, 'solar_hours': 12.0, 'yaw_degrees': 0, 'motion': None}
     report = {'base': base, 'commit': git_commit(), 'targets': {}}
     for target in targets:
         prior, reference = checkpoint(output / f'{target}-base', target, base_builds, pose, signature=True)
@@ -192,7 +195,7 @@ def off_parity(output, targets, builds):
 
 def cost(output, targets, builds):
     _, _, _, store = builds
-    pose = {'eye': NEAR_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': -65, 'motion': None}
+    pose = {'eye': LOOKOUT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': -65, 'motion': None}
     params = output / 'cost.params.json'
     save(params, {'world.paused': True, 'sky.solar_time': round(LOW_SUN, 2),
                   'camera.yaw': -65, 'camera.pitch': 0})
@@ -252,12 +255,12 @@ def inspection(output, targets, builds, group):
         if group in ('all', 'shafts'):
             for yaw, name in [(-80, 'toward'), (-20, 'across')]:
                 for cloud in [False, True]:
-                    pose = {'eye': NEAR_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
+                    pose = {'eye': SHAFT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': None}
                     checkpoint(target_root / f'shaft-{name}-{cloud}', target, builds, pose,
                                haze='20,0', cloud=cloud)
         if group in ('all', 'motion'):
             for motion in ['pan', 'walk', 'scrub', 'cut']:
-                pose = {'eye': NEAR_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': -80, 'motion': motion}
+                pose = {'eye': SHAFT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': -65, 'motion': motion}
                 checkpoint(target_root / motion, target, builds, pose, haze='20,0', cloud=True, motion=motion)
 
 

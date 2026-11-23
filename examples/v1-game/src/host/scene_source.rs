@@ -548,7 +548,11 @@ impl GameScene {
                 1,
             )?);
         } else if setup.diagnostic_clouds {
-            scene.sun_optical_depth = Some(cloud::diagnostic()?);
+            scene.sun_optical_depth = Some(if setup.haze.is_some() {
+                cloud::haze_banks()?
+            } else {
+                cloud::diagnostic()?
+            });
         }
         if setup.route_overlay != scene::RouteOverlay::Off {
             if setup.content != GameContent::Grid {

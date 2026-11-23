@@ -304,7 +304,7 @@ finally {
   cook?.kill();
   // Realtime atmosphere takes can keep large readback pools alive until the
   // owned Chrome process exits. Allow it to drain those pools under shared load.
-  const drainLargeCapture = spriteField || (spoolRaw && args.atmosphere !== 'off');
+  const drainLargeCapture = spriteField || Boolean(args.haze) || (spoolRaw && args.atmosphere !== 'off');
   try { await cleanup(child, () => ended, cdp, server, profile, drainLargeCapture ? 45000 : undefined); } catch (error) { failure ??= error; }
   try {
     manifest.permission_preflight = JSON.parse(await fs.readFile(path.join(output, 'launcher.json'), 'utf8'));
