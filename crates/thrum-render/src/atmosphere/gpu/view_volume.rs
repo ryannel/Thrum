@@ -103,7 +103,8 @@ pub(crate) fn source(cascades: bool, cloud: CloudVariant) -> String {
         )
     } else {
         "fn volume_cloud_visibility(eye: vec3<f32>, direction: vec3<f32>,\n\
-             sun: vec3<f32>, start: f32, end: f32) -> f32 { return 1.0; }".to_owned()
+             sun: vec3<f32>, start: f32, end: f32) -> f32 { return 1.0; }"
+            .to_owned()
     };
     format!(
         "{}\n{}\n{cascade}\n{cloud}",
