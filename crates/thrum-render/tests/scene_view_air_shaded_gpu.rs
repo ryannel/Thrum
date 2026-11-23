@@ -2,6 +2,7 @@
 //! their reference. Stored aerial texels supply rounding, never an integrator.
 mod support;
 use glam::{Mat4, Vec3, Vec4};
+use std::sync::{Arc, Mutex};
 use support::*;
 use thrum_render::{
     abi::InstanceRecord,
@@ -11,14 +12,14 @@ use thrum_render::{
     synthetic::{FrameLighting, SyntheticScene, SyntheticView},
 };
 
-fn camera(eye: Vec3, pitch: f32, extent: [u32; 2]) -> SyntheticView {
+fn camera(eye: Vec3, pitch: f32, aspect: f32) -> SyntheticView {
     let direction = Vec3::new(0.0, pitch.sin(), -pitch.cos());
     SyntheticView::perspective(
         eye.to_array(),
         (eye + direction * 8192.0).to_array(),
         Vec3::Y.to_array(),
         60.0_f32.to_radians(),
-        extent[0] as f32 / extent[1] as f32,
+        aspect,
         0.1,
         10000.0,
     )
@@ -114,49 +115,78 @@ fn sample(
     }
     (value, quantum)
 }
-async fn main_pixel(
-    device: &wgpu::Device,
-    cap: &DeviceCapabilities,
-    queue: &wgpu::Queue,
-    scene: SyntheticScene,
+struct PanelFixture<'a> {
+    device: &'a wgpu::Device,
+    cap: &'a DeviceCapabilities,
+    queue: &'a wgpu::Queue,
     sun: Vec3,
     extent: [u32; 2],
     index: usize,
-) -> [f32; 4] {
-    let lighting = light(scene.view.camera_position()[1], sun);
-    let mut host = host_with_extent(cap, queue, scene, lighting, extent).await;
-    let (probe, control) = MainObserver::new(extent);
-    host.set_scene_contribution(Box::new(probe))
-        .expect("ordinary observer");
-    host.capture_pixels().expect("ordinary main draw");
-    pixel(
-        &output(device, queue, &control.lock().expect("control").outputs[0]),
-        index,
-    )
-    .0
 }
-async fn volume(
-    device: &wgpu::Device,
-    cap: &DeviceCapabilities,
-    queue: &wgpu::Queue,
-    scene: SyntheticScene,
-    sun: Vec3,
-    view: &SyntheticView,
-) -> Vec<f32> {
-    let lighting = light(scene.view.camera_position()[1], sun);
-    let mut host = host_with_extent(cap, queue, scene, lighting, AIR_EXTENT).await;
-    let request = SecondaryViewRequest::new(
-        view,
-        AIR_EXTENT,
-        Some(ViewClipPlane::new([0.0, 1.0, 0.0, -50.0]).expect("plane")),
-        ViewAir::Plane,
-    )
-    .expect("volume request");
-    let (probe, control) = AirProbe::new(Some(&request));
-    host.set_scene_contribution(Box::new(probe))
-        .expect("volume observer");
-    host.capture_pixels().expect("raw volume");
-    air_output(device, queue, &control.lock().expect("control").outputs[1])
+impl PanelFixture<'_> {
+    async fn observe(
+        &self,
+        scene: SyntheticScene,
+        request: Option<SecondaryViewRequest>,
+    ) -> (Host, Arc<Mutex<Control>>) {
+        let lighting = light(scene.view.camera_position()[1], self.sun);
+        let mut host = host_with_extent(self.cap, self.queue, scene, lighting, self.extent).await;
+        let control = if let Some(request) = request {
+            let (observer, control) = Observer::new(1);
+            control.lock().expect("control").requests[0] = Some(request);
+            host.set_scene_contribution(Box::new(observer))
+                .expect("view observer");
+            control
+        } else {
+            let (observer, control) = MainObserver::new(self.extent);
+            host.set_scene_contribution(Box::new(observer))
+                .expect("ordinary observer");
+            control
+        };
+        (host, control)
+    }
+
+    fn read(&self, host: &mut Host, control: &Mutex<Control>) -> [f32; 4] {
+        // The observer supplies the readback. Skip the host's final colour readback.
+        host.render_once().expect("panel draw");
+        pixel(
+            &output(
+                self.device,
+                self.queue,
+                &control.lock().expect("control").outputs[0],
+            ),
+            self.index,
+        )
+        .0
+    }
+
+    async fn main_pixel(&self, scene: SyntheticScene) -> [f32; 4] {
+        let (mut host, control) = self.observe(scene, None).await;
+        self.read(&mut host, &control)
+    }
+
+    async fn volume(&self, scene: SyntheticScene) -> Vec<f32> {
+        let view = scene.view;
+        let lighting = light(view.camera_position()[1], self.sun);
+        let mut host = host_with_extent(self.cap, self.queue, scene, lighting, AIR_EXTENT).await;
+        let request = SecondaryViewRequest::new(&view, AIR_EXTENT, Some(plane()), ViewAir::Plane)
+            .expect("volume request");
+        let (probe, control) = AirProbe::new(Some(&request));
+        host.set_scene_contribution(Box::new(probe))
+            .expect("volume observer");
+        host.render_once().expect("raw volume");
+        air_output(
+            self.device,
+            self.queue,
+            &control.lock().expect("control").outputs[1],
+        )
+    }
+}
+
+const LUMINOUS_RADIANCE: f32 = 100.0;
+
+fn plane() -> ViewClipPlane {
+    ViewClipPlane::new([0.0, 1.0, 0.0, -50.0]).expect("plane")
 }
 
 #[expect(
@@ -213,12 +243,230 @@ fn check_wrong_stretch(
         }
     }
 }
-#[test]
+#[derive(Clone, Copy, Debug)]
+enum Caster {
+    None,
+    BeyondCrossing,
+    BeforeCrossing,
+}
+
+#[derive(Clone, Copy)]
+enum Controls {
+    CrossingOnly,
+    WholeCamera,
+    Casters,
+    GrazingHorizon,
+}
+
+struct Crossing {
+    eye: Vec3,
+    point: Vec3,
+    direction: Vec3,
+    distance: f32,
+    extent: [u32; 2],
+    index: usize,
+    uv: [f32; 2],
+    view: SyntheticView,
+    reference: SyntheticView,
+    request: SecondaryViewRequest,
+}
+impl Crossing {
+    fn new(below: f32, distance: f32, controls: Controls) -> Self {
+        // Retain the old centre ray or grazing row and the projections that
+        // define the aerial columns. Only the observed column needs pixels.
+        let (height, row, aspect, pitch) = if matches!(controls, Controls::GrazingHorizon) {
+            (331, 164_u32, 65.0 / 331.0, 0.0)
+        } else {
+            (1, 0, 1.0, 10.0_f32.to_radians())
+        };
+        let extent = [1, height];
+        let uv = [0.5, (row as f32 + 0.5) / height as f32];
+        let eye = Vec3::new(0.0, 50.0 - below, 0.0);
+        let view = camera(eye, pitch, aspect);
+        let direction = pixel_direction(&view, uv);
+        let point = eye + direction * (below / direction.y);
+        let reference = camera(point, pitch, aspect);
+        let request = SecondaryViewRequest::new(&view, extent, Some(plane()), ViewAir::Plane)
+            .expect("request")
+            .with_shadows(0, 128.0)
+            .expect("profile");
+        Self {
+            eye,
+            point,
+            direction,
+            distance,
+            extent,
+            index: row as usize,
+            uv,
+            view,
+            reference,
+            request,
+        }
+    }
+
+    fn scene(&self) -> SyntheticScene {
+        let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.view = self.view;
+        scene.instances[0] = instance(
+            0,
+            self.point + self.direction * self.distance,
+            Vec3::new(self.distance * 0.1, self.distance * 0.1, 0.01),
+        );
+        scene.materials[0].base_rgba = [0.0, 0.0, 0.0, 1.0];
+        scene.materials[0].surface[2] = 1.0;
+        scene.materials[1] = scene.materials[0];
+        scene.materials[1].emissive_cutoff =
+            [LUMINOUS_RADIANCE, LUMINOUS_RADIANCE, LUMINOUS_RADIANCE, 0.0];
+        scene
+    }
+
+    fn add_caster(&self, scene: &mut SyntheticScene, sun: Vec3, caster: Caster) {
+        // The long stretch lets the 64 m shadow-height cells lie wholly on
+        // either side of the crossing.
+        let (midpoint, half) = match caster {
+            Caster::None => return,
+            Caster::BeyondCrossing => (
+                self.point + self.direction * 1500.0,
+                Vec3::new(128.0, 80.0, 200.0),
+            ),
+            Caster::BeforeCrossing => (
+                self.eye + self.direction * 126.0,
+                Vec3::new(64.0, 16.0, 40.0),
+            ),
+        };
+        scene.sun_shadows = true;
+        scene
+            .instances
+            .push(instance(1, midpoint + sun * 512.0, half));
+    }
+
+    fn allowance(&self, reference: [f32; 4], raw: &[f32], radiance: f32, reads: u32) -> [f32; 3] {
+        allowance(reference, raw, self.stretch(), self.uv, radiance, reads)
+    }
+
+    fn stretch(&self) -> f32 {
+        // The front surface is 1 cm before the panel centre in Z.
+        self.distance - 0.01 / self.direction.z.abs()
+    }
+}
+
+async fn check_panels(
+    fixture: &PanelFixture<'_>,
+    crossing: &Crossing,
+    raw: &[f32],
+    caster: Caster,
+) -> ([f32; 4], [f32; 4]) {
+    let mut scene = crossing.scene();
+    crossing.add_caster(&mut scene, fixture.sun, caster);
+    let (mut view_host, view_control) =
+        fixture.observe(scene.clone(), Some(crossing.request)).await;
+    scene.view = crossing.reference;
+    let (mut main_host, main_control) = fixture.observe(scene, None).await;
+
+    let actual = fixture.read(&mut view_host, &view_control);
+    let reference = fixture.read(&mut main_host, &main_control);
+    check_match(fixture, crossing, raw, caster, 0.0, actual, reference);
+
+    // Keep the same geometry and pipelines and resubmit with the emissive material.
+    // A radiance response on each path witnesses the switch in the readback.
+    view_host.source_mut().instances[0].1 = 1;
+    main_host.source_mut().instances[0].1 = 1;
+    let luminous = fixture.read(&mut view_host, &view_control);
+    let luminous_reference = fixture.read(&mut main_host, &main_control);
+    check_match(
+        fixture,
+        crossing,
+        raw,
+        caster,
+        LUMINOUS_RADIANCE,
+        luminous,
+        luminous_reference,
+    );
+    for c in 0..3 {
+        assert!(
+            luminous[c] > actual[c] && luminous_reference[c] > reference[c],
+            "both panels respond to radiance in channel {c}"
+        );
+    }
+    (actual, reference)
+}
+
 #[expect(
-    clippy::too_many_lines,
-    reason = "one proof walks every plane case through the crossing and the wrong-stretch controls"
+    clippy::print_stderr,
+    reason = "the proof reports differences and stored-step allowances"
 )]
-fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches() {
+fn check_match(
+    fixture: &PanelFixture<'_>,
+    crossing: &Crossing,
+    raw: &[f32],
+    caster: Caster,
+    radiance: f32,
+    actual: [f32; 4],
+    reference: [f32; 4],
+) {
+    assert_eq!(actual[3], 1.0, "covered panel");
+    let reads = if matches!(caster, Caster::None) {
+        4
+    } else {
+        18
+    };
+    let limit = crossing.allowance(reference, raw, radiance, reads);
+    for (c, bound) in limit.into_iter().enumerate() {
+        let difference = (actual[c] - reference[c]).abs();
+        eprintln!(
+            "eye={} distance={} sun={} radiance={radiance} caster={caster:?} channel={c}: difference={difference} allowance={bound}",
+            crossing.eye.y, crossing.distance, fixture.sun
+        );
+        assert!(difference <= bound, "ordinary crossing reference");
+    }
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "the proof reports the grazing horizon negative control"
+)]
+fn check_horizon(crossing: &Crossing, raw: &[f32], actual: [f32; 4], limit: [f32; 3]) {
+    let (empty, _) = sample(raw, 0, crossing.stretch(), crossing.uv, true);
+    for (c, bound) in limit.into_iter().enumerate() {
+        let wrong = empty[c] * 100_000.0 / (1024.0 * 1024.0);
+        let difference = (actual[c] - wrong).abs();
+        eprintln!(
+            "emptied never-crossing row channel={c}: difference={difference} allowance={bound}"
+        );
+        assert!(difference > bound, "empty never-crossing row must miss");
+    }
+}
+
+async fn check_crossing(fixture: &PanelFixture<'_>, crossing: &Crossing, controls: Controls) {
+    // The plane's aerial product depends on the view and Sun, so both surface
+    // radiances and all caster comparisons use the same stored-step evidence.
+    let raw = fixture.volume(crossing.scene()).await;
+    let (actual, reference) = check_panels(fixture, crossing, &raw, Caster::None).await;
+    let before_camera = if matches!(controls, Controls::Casters) {
+        let beyond = check_panels(fixture, crossing, &raw, Caster::BeyondCrossing).await;
+        let before = check_panels(fixture, crossing, &raw, Caster::BeforeCrossing).await;
+        check_casters(
+            &[(actual, reference), beyond, before],
+            crossing.allowance(reference, &raw, 0.0, 18),
+        );
+
+        let mut before_scene = crossing.scene();
+        crossing.add_caster(&mut before_scene, fixture.sun, Caster::BeforeCrossing);
+        Some(fixture.main_pixel(before_scene).await)
+    } else {
+        None
+    };
+    let limit = crossing.allowance(reference, &raw, 0.0, 4);
+    if !matches!(controls, Controls::CrossingOnly) {
+        let wrong = fixture.main_pixel(crossing.scene()).await;
+        check_wrong_stretch(actual, wrong, before_camera, limit);
+    }
+    if matches!(controls, Controls::GrazingHorizon) {
+        check_horizon(crossing, &raw, actual, limit);
+    }
+}
+
+fn panels(below: f32, distance: f32, controls: Controls) {
     let Some(thrum_test_support::Opened {
         gpu, device, queue, ..
     }) = thrum_test_support::open(
@@ -230,199 +478,51 @@ fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches
     else {
         return;
     };
+    let crossing = Crossing::new(below, distance, controls);
+    let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     pollster::block_on(async {
-        let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
-        for (below, distance, horizon) in [
-            (2.0, 20.0, false),
-            (2.0, 3000.0, false),
-            (40.0, 20.0, false),
-            (40.0, 3000.0, false),
-            (2.0, 1000.0, true),
+        for sun in [
+            Vec3::new(1.0, 1.0, 0.0).normalize(),
+            Vec3::new(
+                0.0,
+                10.0_f32.to_radians().sin(),
+                10.0_f32.to_radians().cos(),
+            ),
         ] {
-            let extent = if horizon { [65, 331] } else { [65, 65] };
-            let xy = if horizon { [32, 164] } else { [32, 32] };
-            let uv = [
-                (xy[0] as f32 + 0.5) / extent[0] as f32,
-                (xy[1] as f32 + 0.5) / extent[1] as f32,
-            ];
-            let eye = Vec3::new(0.0, 50.0 - below, 0.0);
-            let pitch = if horizon { 0.0 } else { 10.0_f32.to_radians() };
-            let view = camera(eye, pitch, extent);
-            let direction = pixel_direction(&view, uv);
-            let crossing = eye + direction * (below / direction.y);
-            let plane = ViewClipPlane::new([0.0, 1.0, 0.0, -50.0]).expect("plane");
-            let request = SecondaryViewRequest::new(&view, extent, Some(plane), ViewAir::Plane)
-                .expect("request")
-                .with_shadows(0, 128.0)
-                .expect("profile");
-            for (sun_index, sun) in [
-                Vec3::new(1.0, 1.0, 0.0).normalize(),
-                Vec3::new(
-                    0.0,
-                    10.0_f32.to_radians().sin(),
-                    10.0_f32.to_radians().cos(),
-                ),
-            ]
-            .into_iter()
-            .enumerate()
-            {
-                for radiance in [0.0, 100.0] {
-                    let mut scene = SyntheticScene::grid(1).expect("scene");
-                    scene.view = view;
-                    scene.instances = vec![instance(
-                        0,
-                        crossing + direction * distance,
-                        Vec3::new(distance * 0.1, distance * 0.1, 0.01),
-                    )];
-                    scene.materials[0].base_rgba = [0.0, 0.0, 0.0, 1.0];
-                    scene.materials[0].surface[2] = 1.0;
-                    scene.materials[0].emissive_cutoff = [radiance, radiance, radiance, 0.0];
-                    let mut reference_scene = scene.clone();
-                    reference_scene.view = camera(crossing, pitch, extent);
-                    let expected = main_pixel(
-                        &device,
-                        &cap,
-                        &queue,
-                        reference_scene.clone(),
-                        sun,
-                        extent,
-                        (xy[1] * extent[0] + xy[0]) as usize,
-                    )
-                    .await;
-                    let raw = volume(&device, &cap, &queue, scene.clone(), sun, &view).await;
-                    // The front surface is 1 cm before the panel centre in Z.
-                    let stretch = distance - 0.01 / direction.z.abs();
-                    let limit = allowance(expected, &raw, stretch, uv, radiance, 4);
-                    let mut results = Vec::new();
-                    let mut before_camera = None;
-                    // The shadowed cases use a substantial stretch so a caster
-                    // and its 64 m shadow-height cells can lie wholly on one side.
-                    let casters = if below > 39.0 && distance > 2999.0 {
-                        3
-                    } else {
-                        1
-                    };
-                    for caster in 0..casters {
-                        let mut variant = scene.clone();
-                        variant.sun_shadows = caster != 0;
-                        if caster != 0 {
-                            let midpoint = if caster == 1 {
-                                crossing + direction * 1500.0
-                            } else {
-                                eye + direction * 126.0
-                            };
-                            let half = if caster == 1 {
-                                Vec3::new(128.0, 80.0, 200.0)
-                            } else {
-                                Vec3::new(64.0, 16.0, 40.0)
-                            };
-                            variant
-                                .instances
-                                .push(instance(1, midpoint + sun * 512.0, half));
-                        }
-                        let mut host = host_with_extent(
-                            &cap,
-                            &queue,
-                            variant.clone(),
-                            light(eye.y, sun),
-                            extent,
-                        )
-                        .await;
-                        let (observer, control) = Observer::new(1);
-                        control.lock().expect("control").requests[0] = Some(request);
-                        host.set_scene_contribution(Box::new(observer))
-                            .expect("view observer");
-                        host.capture_pixels().expect("panel view");
-                        let actual = pixel(
-                            &output(
-                                &device,
-                                &queue,
-                                &control.lock().expect("control").outputs[0],
-                            ),
-                            (xy[1] * extent[0] + xy[0]) as usize,
-                        )
-                        .0;
-                        assert_eq!(actual[3], 1.0, "covered panel");
-                        if caster == 2 && radiance == 0.0 {
-                            before_camera = Some(
-                                main_pixel(
-                                    &device,
-                                    &cap,
-                                    &queue,
-                                    variant.clone(),
-                                    sun,
-                                    extent,
-                                    (xy[1] * extent[0] + xy[0]) as usize,
-                                )
-                                .await,
-                            );
-                        }
-                        variant.view = reference_scene.view;
-                        let reference = if caster == 0 {
-                            expected
-                        } else {
-                            main_pixel(
-                                &device,
-                                &cap,
-                                &queue,
-                                variant,
-                                sun,
-                                extent,
-                                (xy[1] * extent[0] + xy[0]) as usize,
-                            )
-                            .await
-                        };
-                        let allowance = allowance(
-                            reference,
-                            &raw,
-                            stretch,
-                            uv,
-                            radiance,
-                            if caster == 0 { 4 } else { 18 },
-                        );
-                        for c in 0..3 {
-                            let difference = (actual[c] - reference[c]).abs();
-                            eprintln!(
-                                "below={below} stretch={distance} horizon={horizon} sun={sun_index} radiance={radiance} caster={caster} channel={c}: difference={difference} allowance={}",
-                                allowance[c]
-                            );
-                            assert!(difference <= allowance[c], "ordinary crossing reference");
-                        }
-                        results.push((actual, reference));
-                    }
-                    if casters == 3 && radiance == 0.0 {
-                        check_casters(
-                            &results,
-                            allowance(expected, &raw, stretch, uv, radiance, 18),
-                        );
-                    }
-                    if radiance == 0.0 && !(below < 3.0 && distance > 2999.0) {
-                        let wrong = main_pixel(
-                            &device,
-                            &cap,
-                            &queue,
-                            scene,
-                            sun,
-                            extent,
-                            (xy[1] * extent[0] + xy[0]) as usize,
-                        )
-                        .await;
-                        check_wrong_stretch(results[0].0, wrong, before_camera, limit);
-                    }
-                    if horizon && radiance == 0.0 {
-                        let (empty, _) = sample(&raw, 0, stretch, uv, true);
-                        for c in 0..3 {
-                            let wrong = empty[c] * 100_000.0 / (1024.0 * 1024.0);
-                            let difference = (results[0].0[c] - wrong).abs();
-                            eprintln!(
-                                "emptied never-crossing row channel={c}: difference={difference} allowance={}",
-                                limit[c]
-                            );
-                            assert!(difference > limit[c], "empty never-crossing row must miss");
-                        }
-                    }
-                }
-            }
+            let fixture = PanelFixture {
+                device: &device,
+                cap: &cap,
+                queue: &queue,
+                sun,
+                extent: crossing.extent,
+                index: crossing.index,
+            };
+            check_crossing(&fixture, &crossing, controls).await;
         }
     });
+}
+
+#[test]
+fn near_panel_two_metres_below_matches_crossing() {
+    panels(2.0, 20.0, Controls::WholeCamera);
+}
+
+#[test]
+fn far_panel_two_metres_below_matches_crossing() {
+    panels(2.0, 3000.0, Controls::CrossingOnly);
+}
+
+#[test]
+fn near_panel_forty_metres_below_matches_crossing() {
+    panels(40.0, 20.0, Controls::WholeCamera);
+}
+
+#[test]
+fn far_panel_forty_metres_below_matches_crossing_with_casters() {
+    panels(40.0, 3000.0, Controls::Casters);
+}
+
+#[test]
+fn grazing_panel_matches_crossing_through_never_crossing_rows() {
+    panels(2.0, 1000.0, Controls::GrazingHorizon);
 }
