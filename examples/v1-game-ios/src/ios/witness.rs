@@ -211,11 +211,10 @@ impl Witness {
             .max(frame.acquire_wall.unwrap_or_default().as_micros());
         self.raced_presents += u64::from(frame.platform.raced_present);
         match frame.target_status {
-            Some(TargetLeadStatus::Future) => {}
+            Some(TargetLeadStatus::Future) | None => {}
             Some(TargetLeadStatus::Late) => self.late_targets += 1,
             Some(TargetLeadStatus::Invalid) => self.invalid_targets += 1,
             Some(TargetLeadStatus::Clamped) => self.clamped_targets += 1,
-            None => {}
         }
         self.empty_submits += u64::from(frame.platform.empty_submit);
         self.lost_abandons += u64::from(frame.platform.abandoned);
