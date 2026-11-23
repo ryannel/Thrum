@@ -382,7 +382,7 @@
     {
       "id": "M14",
       "name": "The retained native valley images reflect the corrected material mip bias",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "items": [
         {
           "id": "M14.1",

@@ -790,6 +790,35 @@
         "by": "plan",
         "task": "The main-branch check exact-images fails on 8eb94b243300 and passed on 25d601c146. The failing baseline is apple-tile-na",
         "at": "2026-11-23T13:12:37Z"
+      },
+      "ready_for_review": {
+        "commit": "a07d0c1bffe2b90c8d8924f332cb7312d635ef26",
+        "checked": "a07d0c1bffe2b90c8d8924f332cb7312d635ef26",
+        "at": "2026-11-23T14:56:18Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 284013,
+          "cached": 39377152,
+          "output": 54274,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 284013,
+          "cached": 39377152,
+          "output": 54274,
+          "turns": 3
+        }
       }
     }
   },
