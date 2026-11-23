@@ -402,7 +402,7 @@
     {
       "id": "M13",
       "name": "A small exposure check catches a twilight brightness rebound",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -412,8 +412,8 @@
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M13/README.md"
         }
       ],
       "failed_reviews": 0,

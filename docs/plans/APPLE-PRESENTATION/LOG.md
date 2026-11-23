@@ -282,6 +282,12 @@
 |---:|---|
 | 6.131 | `thrum-render synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky` |
 
+- 2026-11-23 M13. The twilight case stays in the fast tier with both original samples and thresholds.
+  It draws a single sky pixel and checks the submitted SDR luminance as well as the physical and exposed
+  luminance. On M3 Max Metal the original case took 2.765 s alone. The compact case took 0.570 s alone
+  and 0.142 s in the eight-case exposure batch, which passed on its first run under shared load.
+  [Coverage and timings](../../../.orchestrate/evidence/APPLE-PRESENTATION/M13/README.md).
+
 - 2026-11-23 APPLE-PRESENTATION M14 refreshed the affected `apple-tile-native` images under the
   [native mip-bias ruling](../ARCHITECTURE.md#ruling-on-native-mip-bias). Commit `32dfd3c14` restored
   a −1 material mip bias for native spatial rendering. On Mac Metal, zero bias recovered the old
