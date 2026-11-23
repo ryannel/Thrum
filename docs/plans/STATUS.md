@@ -336,6 +336,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Render scale steps during play with no hitch and no history reset (APPLE-PRESENTATION M5), 23 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/M5-review.md)
 - Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text (GATE-TIME M4), 22 Nov · [review](../../.orchestrate/evidence/GATE-TIME/M4-review.md)
 - The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep (GATE-TIME M3), 22 Nov · [review](../../.orchestrate/evidence/GATE-TIME/M3-review.md)
 - Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time (GATE-TIME M11), 22 Nov · [review](../../.orchestrate/evidence/GATE-TIME/M11-review.md)
