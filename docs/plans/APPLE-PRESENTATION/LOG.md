@@ -372,3 +372,9 @@
     `ed49185b614138d97531a4d103fd4a7a3aee05087c56b3744c706c17c4100557` → `3b1acc0b7cd40e190f0df280c24d2a0dc26be84ca628101505f8df8c74959dcb`
   - `chrome-night-scene-linear`
     `94f57fabf1be209376074776ca1cfe9db1254109ae0761382aa484c275c01c0a` → `c71bee067d8607eb65319358f3babf6dff9cd66be6ca73118e40c82354ea3b9b`
+
+- 2026-11-23 M6. The Mac configures a float drawable with a retained AppKit layer and applies current headroom
+  in the prepared present pass. All seven target commands passed, including H=1 identity on both Metal recipes,
+  drawable bounds through the headroom step and SDR lease continuity on the iPhone simulator. Builder and
+  independent visual inspection pass the Sun, sky and four night lamp cores at H=2 and H=8.
+  [Target receipts and crops](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/README.md).
