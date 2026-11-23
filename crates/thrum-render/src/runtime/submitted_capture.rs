@@ -307,7 +307,6 @@ impl Tap {
         std::sync::Arc::strong_count(&self.leases) - 1
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     fn trim_retired(&mut self) {
         self.slots.retain(|slot| slot.reserved);
         let outstanding = self.outstanding();
@@ -524,7 +523,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             if let Some(active) = &mut self.submitted_capture {
                 active.omitted += tap.omitted - before;
             }
-            #[cfg(not(target_arch = "wasm32"))]
             tap.trim_retired();
             return result;
         }
@@ -629,7 +627,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         )
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn invalidate_capture_device(&mut self) {
         for tap in self
             .submitted_capture
