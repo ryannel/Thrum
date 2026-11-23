@@ -133,3 +133,6 @@
   optional candidate preparation. The boundary includes host construction and stages coupled resize before
   publication. M3.14 and M3.15 remain small merge guards, and M3.16 waits for the registered `long-tests`
   result on main. [Design review](../../../.orchestrate/evidence/RAY-TRACING/design-review.md).
+- 2026-11-23 Final design review of `3ce33cc0c`. RAY-TRACING M5 owns candidate preparation for the valley's
+  cloud provider. M5.3 now verifies traced ambient occlusion at a prop's base with the production cloud sky
+  active under CLOUDS M7's overcast preset. [Design review](../../../.orchestrate/evidence/RAY-TRACING/design-review.md).

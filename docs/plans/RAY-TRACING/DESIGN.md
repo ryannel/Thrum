@@ -540,6 +540,24 @@ last frame's filtered value, and after an occluder arrives or leaves, on screen 
 own settle length and one more frame. Ambient occlusion is broad and faint, and shipped ray-traced occlusion
 lags in the same way. A darkening still visible after that is a trail, and fails.
 
+**Overcast valley.** With the visible cloud sky selected, the valley composes cooked geometry and
+`thrum_clouds::Shade` in its `SceneContributions` list. RAY-TRACING M5 adds candidate preparation to `Shade`
+for both traced and Maps surfaces so the production list can admit traced occlusion. The cloud provider keeps
+its existing lighting, graph passes and Sun-path product. It offers no ray instances. The inspection uses
+[CLOUDS M7's overcast preset](../CLOUDS/PLAN.md#m7-the-sky-runs-from-clear-through-fair-and-broken-to-overcast-and-back-and-its-clouds-drift-form-grow-and-thin)
+with the visible sky and its shade active. At the same cloud state, camera and time, traced occlusion darkens
+the base of a prop while open ground stays unchanged. Verify Apple tile and resolved occlusion in both reports.
+
+`Shade` prepares through [the M3 boundary](#scene-preparation-and-maps-fallback-m3). It keeps compatible
+accepted cloud resources and temporal state. If the device generation changes, stage a full replacement. On
+the same generation, read the compatible weather resources while staging the bindings and resources that the
+candidate's Sun-path target and sky surface need. Describe the resulting graph for host validation. Keep any
+one-time GPU initialization inside the host's preparation attempt, with writes confined to candidate-owned
+resources and GPU errors resolved before installation. Only commit can replace the live GPU state or the
+mailbox's prepared resource handles. The mailbox keeps its weather input and publishes submitted sky products
+at the existing submission boundary. A dropped candidate leaves the accepted cloud state, history and
+mailbox usable. The Maps retry follows the same rule with its own surface and the same accepted state.
+
 <a id="selection-fallback-and-promotion"></a>
 
 ### Selection, fallback and the opt-in
@@ -716,11 +734,12 @@ speeds up its uploads to make the comparison pass.
 hooks. A new object-safe hook exposes candidate preparation and defaults to unsupported. An
 opted-in member prepares from a shared borrow of its accepted state and returns a candidate with the
 resources and declarations it will install. Its infallible commit takes that candidate and installs it on
-the member. The cooked contribution implements this for both traced and Maps candidates. A
-`SceneContributions` list admits candidate preparation only if every leaf opts in, including leaves in
-nested lists. The empty list is eligible. Admission reads support before any traced preparation or call
-to `rebuild`. Detached visual and device preparation carry that decision with their host identity. Check
-that identity before publication so a change to the list cannot reuse an older admission decision.
+the member. M3 opts the cooked contribution in for both traced and Maps candidates. M5 opts the
+[valley's cloud provider](#ambient-occlusion-m5) in through the same hook. A `SceneContributions` list admits
+candidate preparation only if every leaf opts in, including leaves in nested lists. The empty list is eligible.
+Admission reads support before any traced preparation or call to `rebuild`. Detached visual and device
+preparation carry that decision with their host identity. Check that identity before publication so a change
+to the list cannot reuse an older admission decision.
 
 If the device and recipe admit rays but any leaf lacks candidate preparation, the game gets the ordinary
 Maps path for the whole list. Preserve the requests in the report, resolve the Sun to `Maps` and the other

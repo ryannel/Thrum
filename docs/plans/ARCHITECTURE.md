@@ -2276,6 +2276,10 @@ belongs to its owner: later work there keeps its tests passing.
     `MESH-SHADING`'s launch selection states a preference for Apple tile, and only on a generation that
     enabled `mesh-stages`. `RAY-TRACING`'s states the same preference, and only on a generation that
     enabled `ray-query`.
+13. **Candidate preparation with the valley's cloud sky** (`RAY-TRACING` M5, in `thrum-clouds` and the
+    proving ground). The production list includes cooked geometry and `Shade`. `Shade` stages for traced and
+    Maps surfaces through the [M3 preparation boundary](RAY-TRACING/DESIGN.md#scene-preparation-and-maps-fallback-m3)
+    and keeps its cloud lighting and Sun-path product. `CLOUDS` M7 provides the overcast preset for inspection.
 
 ### Interfaces (track 5)
 

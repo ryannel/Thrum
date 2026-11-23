@@ -44,7 +44,7 @@ already stages secondary view bindings. `CookedAssets::rebuild_inner` currently 
 then installs its live state. [The retained probe](../../../.orchestrate/evidence/RAY-TRACING/M3-review/c7cbfaf/composed-retry.diff)
 shows the two-member failure. `ObserveView` and `Fault` in the existing `ray_tracing_gpu` proof need the
 opt-in to reach their traced cases. Keep the CPU guard in `thrum-render`'s library tests and the Metal
-guard in `thrum-asset-gpu`'s `it` binary.
+guard in `thrum-asset-gpu`'s `it` binary. M5 owns the cloud provider's opt-in.
 
 ## M4 Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge
 
@@ -53,6 +53,9 @@ The FidelityFX Shadow Denoiser's source may be ported, with its licence recorded
 ## M5 Props and terrain are grounded: sky light is dimmed in creases and where things stand close together
 
 `indirect_radiance` is in `synthetic_environment.wgsl` and `synthetic_plain.wgsl`. Microsoft's real-time denoised ambient occlusion sample is the reference for the filter.
+The production list is assembled by `examples/v1-game/src/clouds.rs`. Its `Shade::rebuild_for_attachment`
+can take the accepted weather map before validation, and cloud setup currently submits noise work directly.
+Use [the candidate preparation boundary](DESIGN.md#scene-preparation-and-maps-fallback-m3) for this opt-in.
 
 ## M6 A person turns ray-traced shadows on for this Mac with one launch setting, the record shows how the valley looks with them and what they cost beside shadow maps, and where rays cannot run the same launch draws shadow maps
 

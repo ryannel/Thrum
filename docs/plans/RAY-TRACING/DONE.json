@@ -509,7 +509,9 @@
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
-      "depends_on": [],
+      "depends_on": [
+        "CLOUDS:M7"
+      ],
       "quality_bar": "Ray-traced ambient occlusion as Metro Exodus Enhanced Edition and Cyberpunk 2077 show it: contact darkening that belongs to the scene, with no halo at a silhouette, nothing that depends on what is on screen, and no trail at normal speed.",
       "items": [
         {
@@ -525,8 +527,9 @@
         },
         {
           "id": "M5.3",
-          "statement": "In the populated valley in shade and after sunset, props, balloon baskets on the ground and creases of terrain are darker where they meet, and open ground is not darkened.",
-          "inspect": "`fixed` stills at the route's stops in shade and at dusk with ambient occlusion on and off, whole and as native-size crops of contact points and of open ground.",
+          "statement": "In the populated valley in shade and after sunset, traced ambient occlusion darkens contact at props, grounded balloon baskets and terrain creases. With the valley's cooked geometry and visible cloud sky active under the overcast preset, it darkens the base of a prop. Open ground stays unchanged in the on/off pairs.",
+          "inspect": "Take paired `fixed` stills of the shade and dusk stops and of a prop under the overcast preset. Match the camera, world and weather state, and Sun and lamp settings within each pair. Settle the occlusion through submitted frames before sampling the still. Verify Apple tile in both reports, with traced ambient occlusion resolved in the on capture and occlusion off in its control. In both overcast stills confirm a visible overcast sky with the game's Shade provider active. Check the whole views and native-size contact and open-ground crops for the stated differences.",
+          "ask": "Does the production cooked-plus-Shade list opt into the M3 boundary for traced and Maps surfaces? Trace same-generation visual replacement and device replacement. Does Shade leave the accepted weather, history and mailbox intact if the candidate is dropped, with fallible preparation and candidate initialization complete before commit?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
