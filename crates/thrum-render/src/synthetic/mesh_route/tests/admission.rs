@@ -1,10 +1,10 @@
 //! The public mesh selection: every invalid slot, index or mesh is refused
 //! before GPU work, and a valid selection prepares the bucket route.
 
-use crate::error::RenderError;
 use std::sync::Arc;
 
 use super::gpu;
+use crate::error::{ArenaError, RenderError};
 use crate::synthetic::{
     FrameLighting, PreparedSynthetic, SyntheticLight, SyntheticMesh, SyntheticMeshChoice,
     SyntheticMeshes, SyntheticScene, SyntheticVertex,
@@ -72,7 +72,6 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
     large.vertices[1].position = [1e29, 0.0, 0.0];
     let mut occlusion = with(vec![triangle()], vec![Cube, Mesh(0), Cube]);
     occlusion.camera_culling = CullMode::Occlusion;
-    use crate::error::ArenaError;
     let short = with(vec![triangle()], vec![Cube, Mesh(0)]);
     let long = with(vec![], vec![Cube; 4]);
     assert!(matches!(prepare(&short), Err(RenderError::MeshSlotCount)));
