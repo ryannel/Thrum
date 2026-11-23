@@ -46,6 +46,7 @@ cp examples/v1-game/web/capture.mjs "$build_root/$web/capture.mjs"
 cp examples/v1-game/web/capture_upload.mjs "$build_root/$web/capture_upload.mjs"
 cp examples/v1-game/routes/*.json "$build_root/$web/"
 cp crates/thrum-controls/web/thrum-controls.js "$build_root/$web/thrum-controls.js"
+cp crates/thrum-app/web/host-page.js "$build_root/$web/host-page.js"
 cp examples/v1-game/params/*.params.json "$build_root/$web/"
 if [ -n "$features" ]; then
   cp examples/v1-game/materials/*.material.wgsl "$build_root/$web/"

@@ -8,14 +8,17 @@ use wasm_bindgen::prelude::*;
 impl BrowserGame {
     /// Select a motion capture without the optional GPU pass timing observer.
     pub fn capture_without_pass_timings(&mut self) {
-        self.shell.update_profiler(self.game.controls_mut(), false);
+        self.page
+            .shell
+            .update_profiler(self.page.game.controls_mut(), false);
     }
 
     /// Start submitted-output capture with three GPU slots and eight CPU buffers.
     /// # Errors
     /// Refuses a lost device, an active session or allocation failure.
     pub fn begin_submitted_capture(&mut self, session: u32) -> Result<(), JsValue> {
-        self.shell
+        self.page
+            .shell
             .begin_submitted_capture(u64::from(session))
             .map_err(super::js_error)
     }
@@ -25,7 +28,8 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a lost device, an active session or an extent beyond the byte allowance.
     pub fn begin_fixed_submission(&mut self, session: u32) -> Result<(), JsValue> {
-        self.shell
+        self.page
+            .shell
             .begin_submitted_capture_with_limits(
                 u64::from(session),
                 thrum_render::runtime::CaptureLimits {
@@ -41,7 +45,8 @@ impl BrowserGame {
     /// # Errors
     /// Refuses loss, an active session or preparation failure.
     pub fn begin_linear_capture(&mut self, session: u32) -> Result<(), JsValue> {
-        self.shell
+        self.page
+            .shell
             .begin_linear_capture(u64::from(session))
             .map_err(super::js_error)
     }
@@ -55,7 +60,12 @@ impl BrowserGame {
         &mut self,
         reuse: Option<js_sys::Uint8Array>,
     ) -> Result<JsValue, JsValue> {
-        let Some(image) = self.shell.next_submitted_image().map_err(super::js_error)? else {
+        let Some(image) = self
+            .page
+            .shell
+            .next_submitted_image()
+            .map_err(super::js_error)?
+        else {
             return Ok(JsValue::UNDEFINED);
         };
         let mut metadata = serde_json::json!({
@@ -86,7 +96,7 @@ impl BrowserGame {
         } else {
             js_sys::Uint8Array::from(image.rgba.as_slice())
         };
-        self.shell.recycle_submitted_image(image);
+        self.page.shell.recycle_submitted_image(image);
         let result = js_sys::Object::new();
         js_sys::Reflect::set(&result, &"metadata".into(), &metadata.to_string().into())?;
         js_sys::Reflect::set(&result, &"pixels".into(), &pixels)?;
@@ -101,14 +111,15 @@ impl BrowserGame {
             reason = "finite capture sessions remain below 2^53"
         )]
         {
-            self.shell.host().submitted_capture_omissions() as f64
+            self.page.shell.host().submitted_capture_omissions() as f64
         }
     }
 
     /// Readbacks still owned by the GPU, used for a bounded final drain.
     #[must_use]
     pub fn submitted_capture_pending(&self) -> usize {
-        self.shell
+        self.page
+            .shell
             .host()
             .submitted_capture_usage()
             .map_or(0, |usage| usage.0)
@@ -116,6 +127,6 @@ impl BrowserGame {
 
     /// Cancel pending readbacks without waiting for the GPU.
     pub fn end_submitted_capture(&mut self) {
-        self.shell.end_submitted_capture();
+        self.page.shell.end_submitted_capture();
     }
 }

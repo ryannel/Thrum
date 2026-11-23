@@ -88,7 +88,7 @@ try {
   results.build={
     revision:execFileSync('git',['rev-parse','HEAD'],{ encoding:'utf8' }).trim(),files:{}
   };
-  for(const file of ['web/scene_bg.wasm','web/page.js','web/thrum-controls.js','store/HEAD']) results.build.files[file]=hash(await fs.readFile(path.join(output,file)));
+  for(const file of ['web/scene_bg.wasm','web/page.js','web/host-page.js','web/thrum-controls.js','store/HEAD']) results.build.files[file]=hash(await fs.readFile(path.join(output,file)));
   results.gameSource=hash(await fs.readFile('examples/starter/src/main.rs'));
   results.captureScope='Fixed still-scene checkpoints from the renderer submitted-output tap; DOM screenshots separately. Hardware WebGPU function only.';
   const profile=path.join(output,'chrome-profile');

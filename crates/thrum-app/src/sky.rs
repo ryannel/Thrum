@@ -72,7 +72,7 @@ use thrum_render::{
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Config;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-use crate::{Edits, Game, GameInput, Gpu, Prepared};
+use crate::{Edits, Game, Gpu, Prepared};
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
 #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
@@ -1110,9 +1110,6 @@ impl Game for SkyGame {
 
     fn observe(&mut self, (): ()) {}
 }
-
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-impl<K> GameInput<K> for SkyGame {}
 
 /// The scene's one instance row: the ground slab, or an inactive row (generation zero) that
 /// draws nothing, since the renderer needs at least one.

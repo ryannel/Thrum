@@ -5,7 +5,7 @@ use std::time::Instant;
 use thrum_render::capabilities::HardwareRequest;
 use thrum_render::synthetic::CullMode;
 
-use thrum_app::{Config, Game, GameInput, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
+use thrum_app::{Config, Game, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
 use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
 
 use thrum_render::runtime::FrameConfig;
@@ -250,7 +250,7 @@ impl CaptureCooked {
 /// Construct the ordinary game for the engine's headless presenter adapter.
 /// # Errors
 /// Returns a demo-control declaration failure.
-pub fn capture_game() -> Result<impl Game + GameInput<KeyCode>, String> {
+pub fn capture_game() -> Result<impl Game, String> {
     capture_game_with_route_limit(false, None)
 }
 
@@ -435,9 +435,7 @@ impl RuntimeSetup for WindowGame {
     fn readback(host: &Runtime) -> f32 {
         host::time_of_day(host)
     }
-}
 
-impl GameInput<KeyCode> for WindowGame {
     fn key(&mut self, code: KeyCode, pressed: bool) -> Result<KeyResponse, String> {
         const FIVE_DEGREES: f32 = 0.087_266_46;
         if pressed {

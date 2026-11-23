@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Rebuild and run the Mac, Chrome and iPhone simulator lifecycle checks."""
+"""Rebuild and run the Mac, Chrome and iPhone simulator lifecycle checks.
+
+For direct Chrome or simulator runs, set ORCHESTRATE_SCRIPT to agent_loop.py.
+"""
 
 import argparse
 import json
@@ -113,10 +116,35 @@ def check_ios(folder):
     check_ios_overload(folder, ROOT / 'target/v1-game-ios-sim/ThrumV1.app')
 
 
-def check_locked(lock, target, output):
+def orchestration_script():
     script = os.environ.get('ORCHESTRATE_SCRIPT')
     if not script:
-        raise RuntimeError(f'Set ORCHESTRATE_SCRIPT to agent_loop.py to acquire the {lock} lock')
+        raise RuntimeError('Set ORCHESTRATE_SCRIPT to agent_loop.py to acquire resource locks')
+    return script
+
+
+def inherits_lock(lock):
+    script = os.environ.get('ORCHESTRATE_SCRIPT')
+    if not script:
+        return False
+    report = subprocess.check_output(
+        [sys.executable, script, 'locks', '--worktree', ROOT, '--json'], text=True)
+    holders = {holder['pid'] for resource in json.loads(report)['locks']
+               if resource['lock'] == lock for holder in resource['holders']}
+    if not holders:
+        return False
+    processes = subprocess.check_output(['ps', '-axo', 'pid=,ppid='], text=True)
+    parents = {int(pid): int(parent) for pid, parent in (line.split() for line in processes.splitlines())}
+    parent = os.getppid()
+    while parent > 1:
+        if parent in holders:
+            return True
+        parent = parents.get(parent, 0)
+    return False
+
+
+def check_locked(lock, target, output):
+    script = orchestration_script()
     run(sys.executable, script, 'lock', lock, '--', sys.executable, __file__, 'run-target',
         '--target', target, '--output', output)
 
@@ -134,6 +162,8 @@ def main():
         # Internal callback for a target protected by check_locked.
         if args.output is None or len(args.target) != 1 or args.target[0] == 'mac-metal':
             parser.error('run-target requires one Chrome or simulator target and --output')
+        if args.target[0] == 'ios-sim' and not inherits_lock('simulator'):
+            parser.error('run-target for ios-sim needs an inherited simulator lock; use check')
         check = check_web if args.target[0] == 'chrome-webgpu' else check_ios
         check(args.output)
         return
@@ -173,12 +203,13 @@ def main():
                 keep_awake.wait()
         if 'chrome-webgpu' in args.target:
             check_locked('chrome', 'chrome-webgpu', output / 'chrome')
-        if args.target == ['ios-sim']:
-            # HOST M4.5 holds the simulator around this entire single-target check.
-            # For a manual single-target run, take that same lock at the command line.
-            check_ios(output / 'ios')
-        elif 'ios-sim' in args.target:
-            check_locked('simulator', 'ios-sim', output / 'ios')
+        if 'ios-sim' in args.target:
+            # HOST M4.5 already holds the simulator. An unrelated holder cannot
+            # authorize this invocation, even when iOS is the only target.
+            if inherits_lock('simulator'):
+                check_ios(output / 'ios')
+            else:
+                check_locked('simulator', 'ios-sim', output / 'ios')
 
 
 if __name__ == '__main__':

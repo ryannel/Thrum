@@ -9,8 +9,8 @@
 //!
 //! [`web`] (wasm32 only) is the browser shell: the WebGPU canvas surface and device, device-loss
 //! gating and detached replacement, the page clock policy, the frame step and typed counters. The
-//! page keeps its animation-frame loop, DOM events and input, and calls the shell; a game keeps
-//! its report text, controls and authored scene. Mobile shells own their own loops.
+//! shared page driver owns browser callbacks, visibility and recovery, and a game keeps its report
+//! text, controls and authored scene. Mobile shells own their own loops.
 
 // platform-only tests: they drive the winit and AppKit shell, which exists only on macOS.
 #[cfg(target_os = "macos")]
@@ -31,6 +31,7 @@ pub mod capture_writer;
 mod file_watch;
 pub mod frame;
 mod game;
+mod key;
 #[cfg(target_os = "macos")]
 pub mod offscreen;
 pub mod profile;
@@ -49,10 +50,8 @@ pub use app::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use game::WorldLink;
-pub use game::{Edits, Game, GameInput, Gpu, InlineWorld, KeyResponse, Prepared};
-/// Physical key codes delivered to [`GameInput::key`].
-#[cfg(target_os = "macos")]
-pub use winit::keyboard::KeyCode;
+pub use game::{Edits, Game, Gpu, InlineWorld, KeyResponse, Prepared};
+pub use key::KeyCode;
 
 mod config;
 pub use config::Config;

@@ -19,7 +19,7 @@ use std::{
 };
 
 use thrum_app::web::SAMPLES;
-use thrum_app::{Game, web::ControlBinding};
+use thrum_app::web::{ControlTiming, PageGame, PageRuntime};
 use thrum_asset::{BrowserFetch, DevClient};
 use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
 #[cfg(feature = "dev-material")]
@@ -30,11 +30,7 @@ use web_sys::HtmlCanvasElement;
 
 use thrum_render::runtime::FrameSample;
 
-use crate::{
-    controls::GameControls,
-    host::web::{self as game, Shell},
-    hosted::HostedGame,
-};
+use crate::{controls::GameControls, host::web as game, hosted::HostedGame};
 
 /// The cooked valley's dev-server client and the feed of generations it has fetched.
 #[wasm_bindgen]
@@ -93,7 +89,7 @@ impl CookedValley {
 pub struct BrowserGame {
     content: crate::GameContent,
     temporal_inputs: bool,
-    shell: Shell,
+    page: PageGame<HostedGame<game::PageGame>>,
     cloud_sky: Option<thrum_clouds::SkyProfile>,
     cloud_observation: Option<Rc<RefCell<cloud_observation::PreviousSun>>>,
     cooked: Option<Arc<Mutex<CookedStats>>>,
@@ -104,11 +100,21 @@ pub struct BrowserGame {
     /// The material revision last reported, so an idle page builds no report.
     #[cfg(feature = "dev-material")]
     material_reported: u64,
-    game: HostedGame<game::PageGame>,
-    control_binding: ControlBinding,
     /// The page's outstanding capture, finished from a later animation frame.
     capture: Option<thrum_render::runtime::PendingCapture>,
 }
+
+impl BrowserGame {
+    fn page_runtime(&self) -> &dyn PageRuntime {
+        &self.page
+    }
+
+    fn page_runtime_mut(&mut self) -> &mut dyn PageRuntime {
+        &mut self.page
+    }
+}
+
+thrum_app::export_page_methods!(BrowserGame);
 
 /// Prepare the existing V1 simulation and renderer for a WebGPU canvas.
 /// `valley_stars` selects the star catalogue before attaching the cooked valley.
@@ -312,20 +318,25 @@ async fn create_game_with_shapes(
         web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
     }));
     let cloud_sky = setup.clouds.sky_profile([canvas.width(), canvas.height()]);
-    let mut hosted = HostedGame(game::PageGame {
+    let hosted = HostedGame(game::PageGame {
         demo: GameControls::new().map_err(js_error)?,
         setup,
         shapes,
         initial_downlevel: String::new(),
     });
-    let shell = thrum_app::web::create_game(canvas, game::DEVICE_GENERATION, &mut hosted)
-        .await
-        .map_err(js_error)?;
+    let page = PageGame::new(
+        canvas,
+        game::DEVICE_GENERATION,
+        hosted,
+        ControlTiming::Immediate,
+    )
+    .await
+    .map_err(js_error)?;
     Ok(BrowserGame {
         content: setup.content,
         temporal_inputs: setup.display_overlay
             == thrum_render::synthetic::DisplayOverlay::TemporalInputs,
-        shell,
+        page,
         cloud_sky,
         cloud_observation: None,
         cooked: None,
@@ -334,8 +345,6 @@ async fn create_game_with_shapes(
         material: None,
         #[cfg(feature = "dev-material")]
         material_reported: 0,
-        game: hosted,
-        control_binding: ControlBinding::default(),
         capture: None,
     })
 }
@@ -356,7 +365,7 @@ impl BrowserGame {
     /// Returns an error when no cooked valley is attached, or `graphics device is lost` while
     /// the device is lost (compiling would call it).
     pub fn reload_material(&mut self, name: String, source: String) -> Result<f64, JsValue> {
-        if self.shell.graphics_lost() {
+        if self.page.shell.graphics_lost() {
             // Compiling would call the lost device; the accepted hook is restored on the
             // replacement, and a fresh reload is accepted once it is published.
             return Err(js_error("graphics device is lost"));
@@ -540,7 +549,7 @@ impl BrowserGame {
             .cooked
             .as_ref()
             .and_then(|stats| stats.lock().ok().and_then(|stats| stats.drawn));
-        game::install_route(&mut self.shell, route, drawn).map_err(js_error)
+        game::install_route(&mut self.page.shell, route, drawn).map_err(js_error)
     }
 
     /// Collect GPU completions without admitting time and report whether a frame
@@ -548,12 +557,14 @@ impl BrowserGame {
     /// # Errors
     /// Returns a device polling fault.
     pub fn route_slot_ready(&mut self) -> Result<bool, JsValue> {
-        game::route_slot_ready(&mut self.shell).map_err(js_error)
+        game::route_slot_ready(&mut self.page.shell).map_err(js_error)
     }
 
     /// Release completed route samples older than the page's copied tick.
     pub fn discard_route_samples_before(&mut self, tick: u32) {
-        self.shell.discard_report_samples_before(u64::from(tick));
+        self.page
+            .shell
+            .discard_report_samples_before(u64::from(tick));
     }
 
     /// Latest committed authority tick.
@@ -563,7 +574,7 @@ impl BrowserGame {
             clippy::cast_precision_loss,
             reason = "route runs stay far below 2^53 ticks"
         )]
-        let tick = game::committed_tick(&self.shell) as f64;
+        let tick = game::committed_tick(&self.page.shell) as f64;
         tick
     }
 
@@ -571,7 +582,7 @@ impl BrowserGame {
     /// `(tick + 1 + phi)·P`. Route mode starts the clock with `set_visible(true, 0)`.
     #[must_use]
     pub fn route_step_ms(&self, phi: f64) -> f64 {
-        game::route_step_ms(&self.shell, phi)
+        game::route_step_ms(&self.page.shell, phi)
     }
 
     /// Apply the moving route's scripted render scale before recording a frame.
@@ -579,7 +590,8 @@ impl BrowserGame {
     /// # Errors
     /// Reduced scale requires portable temporal reconstruction.
     pub fn route_render_scale(&mut self, routed_tick: u32) -> Result<(), JsValue> {
-        self.shell
+        self.page
+            .shell
             .set_render_scale(crate::camera::route_render_scale(u64::from(routed_tick)))
             .map_err(|error| js_error(error.to_string()))
     }
@@ -593,18 +605,18 @@ impl BrowserGame {
             reason = "the page passes a committed tick it read from this game"
         )]
         let from = from_tick.max(0.0) as u64;
-        game::route_report(&self.shell, from).to_string()
+        game::route_report(&self.page.shell, from).to_string()
     }
 
     /// Latest submitted Shapes report as JSON for the browser proof.
     pub fn placed_cloud_report(&self) -> Option<String> {
-        let report = game::cloud_input(&self.shell)?.shapes_report()?;
+        let report = game::cloud_input(&self.page.shell)?.shapes_report()?;
         Some(
             serde_json::json!({
                 "volume_instances": report.volume_instances,
                 "volume_refusals": report.volume_refusals,
                 "directed_refusals": report.directed_refusals,
-                "resources": game::cloud_input(&self.shell)?.resource_bytes(),
+                "resources": game::cloud_input(&self.page.shell)?.resource_bytes(),
             })
             .to_string(),
         )
@@ -639,7 +651,7 @@ impl BrowserGame {
             crate::showcase::prepare_showcase(source)
         }
         .map_err(js_error)?;
-        let assets = if let Some(reader) = self.shell.host().mesh_rows() {
+        let assets = if let Some(reader) = self.page.shell.host().mesh_rows() {
             let generation = valley
                 .feed
                 .generation()
@@ -647,7 +659,7 @@ impl BrowserGame {
             let rows = thrum_asset_gpu::rows::CookedRows::from_generation(
                 &generation,
                 crate::showcase::entity_mesh_names(self.content),
-                self.shell.host().mesh_row_binding_limit(),
+                self.page.shell.host().mesh_row_binding_limit(),
             )
             .map_err(js_error)?
             .with_reader(reader);
@@ -661,12 +673,16 @@ impl BrowserGame {
         let mut observation = None;
         let contribution: Box<dyn thrum_render::contribution::SceneContribution> = if preview {
             let rows = self
+                .page
                 .shell
                 .host()
                 .mesh_rows()
                 .ok_or_else(|| js_error("content preview needs cooked mesh rows"))?;
-            let (contribution, record) =
-                crate::content_preview::attach(assets, rows, self.shell.host().reconstruction());
+            let (contribution, record) = crate::content_preview::attach(
+                assets,
+                rows,
+                self.page.shell.host().reconstruction(),
+            );
             observation = Some(record);
             contribution
         } else if let Some(refraction) = effect_slab {
@@ -681,19 +697,29 @@ impl BrowserGame {
         };
         let contribution = crate::clouds::with_shade(
             contribution,
-            game::cloud_input(&self.shell),
+            game::cloud_input(&self.page.shell),
             self.cloud_sky,
-            game::cloud_shapes(&self.shell),
+            game::cloud_shapes(&self.page.shell),
         )
         .map_err(js_error)?;
-        self.shell
+        self.page
+            .shell
             .set_scene_contribution(contribution)
             .map_err(js_error)?;
-        game::set_scene_camera(&mut self.shell, camera).map_err(js_error)?;
-        self.game
+        game::set_scene_camera(&mut self.page.shell, camera).map_err(js_error)?;
+        self.page
+            .game
             .0
             .demo
-            .observe_camera(game::camera_orientation(&self.shell));
+            .observe_camera(game::camera_orientation(&self.page.shell));
+        let stats_for_errors = Arc::clone(&stats);
+        self.page.on_attachment_error(move |error| {
+            if let Ok(mut stats) = stats_for_errors.lock() {
+                stats.errors.push(format!(
+                    "cooked valley attach on the replacement device: {error}"
+                ));
+            }
+        });
         self.cooked = Some(stats);
         self.content_preview = observation;
         #[cfg(feature = "dev-material")]
@@ -708,8 +734,8 @@ impl BrowserGame {
     #[must_use]
     pub fn content_preview_frame(&self) -> Option<String> {
         let mut row = self.content_preview.as_ref()?.frame()?;
-        row["submissionId"] = serde_json::json!(self.shell.host().last_submission());
-        row["presented"] = serde_json::json!(self.shell.presented());
+        row["submissionId"] = serde_json::json!(self.page.shell.host().last_submission());
+        row["presented"] = serde_json::json!(self.page.shell.presented());
         Some(row.to_string())
     }
 
@@ -719,10 +745,10 @@ impl BrowserGame {
         Some(
             serde_json::json!({
                 "drawn": stats.drawn,
-                "rowGeneration": self.shell.host().mesh_rows().and_then(|rows| rows.report().generation),
-                "rowWrittenBytes": self.shell.host().mesh_rows().map(|rows| rows.report().submitted_bytes),
+                "rowGeneration": self.page.shell.host().mesh_rows().and_then(|rows| rows.report().generation),
+                "rowWrittenBytes": self.page.shell.host().mesh_rows().map(|rows| rows.report().submitted_bytes),
                 "drawPath": format!("{:?}", stats.draw_path),
-                "initialDownlevel": self.game.0.initial_downlevel,
+                "initialDownlevel": self.page.game.0.initial_downlevel,
                 "visibleMeshlets": stats.visible_meshlets,
                 "swaps": stats.swaps.len(),
                 "uploadedBytes": stats.swaps.last().map_or(0, |swap| swap.uploaded_bytes),
@@ -738,28 +764,30 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a nonfinite time or one outside the normalized day.
     pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), JsValue> {
-        game::set_time_of_day(&mut self.shell, fraction).map_err(js_error)?;
-        self.game
+        game::set_time_of_day(&mut self.page.shell, fraction).map_err(js_error)?;
+        self.page
+            .game
             .0
             .demo
-            .observe_time(game::time_of_day(&self.shell));
+            .observe_time(game::time_of_day(&self.page.shell));
         Ok(())
     }
 
     /// Observe the solar time of the latest committed world endpoint.
     pub fn time_of_day(&self) -> f32 {
-        game::time_of_day(&self.shell)
+        game::time_of_day(&self.page.shell)
     }
 
     /// Look up/down within the scene's supported camera range.
     /// # Errors
     /// Refuses a nonfinite pitch or one outside plus/minus 0.6 radians.
     pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), JsValue> {
-        game::set_camera_pitch(&mut self.shell, radians).map_err(js_error)?;
-        self.game
+        game::set_camera_pitch(&mut self.page.shell, radians).map_err(js_error)?;
+        self.page
+            .game
             .0
             .demo
-            .observe_camera(game::camera_orientation(&self.shell));
+            .observe_camera(game::camera_orientation(&self.page.shell));
         Ok(())
     }
 
@@ -767,11 +795,12 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a nonfinite yaw or one outside that range.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), JsValue> {
-        game::set_camera_yaw(&mut self.shell, radians).map_err(js_error)?;
-        self.game
+        game::set_camera_yaw(&mut self.page.shell, radians).map_err(js_error)?;
+        self.page
+            .game
             .0
             .demo
-            .observe_camera(game::camera_orientation(&self.shell));
+            .observe_camera(game::camera_orientation(&self.page.shell));
         Ok(())
     }
 
@@ -780,78 +809,10 @@ impl BrowserGame {
     /// # Errors
     /// Refuses an invalid eye, missing cooked camera or active route.
     pub fn set_cloud_capture_eye(&mut self, x: f32, y: f32, z: f32) -> Result<(), JsValue> {
-        if game::cloud_input(&self.shell).is_none() {
+        if game::cloud_input(&self.page.shell).is_none() {
             return Err(js_error("cloud capture requires Shade or Sky"));
         }
-        game::set_capture_eye(&mut self.shell, [x, y, z]).map_err(js_error)
-    }
-
-    /// Every demo control as JSON for `thrum-controls.js` to build the page's widgets:
-    /// keys, labels, kinds, ranges and values in display units. The page is then in sync.
-    pub fn controls_json(&mut self) -> String {
-        self.control_binding.describe(self.game.controls())
-    }
-
-    /// Controls changed since the page last synced, as JSON, or `undefined` when none did.
-    pub fn control_changes(&mut self) -> Option<String> {
-        self.control_binding.changes(self.game.controls())
-    }
-
-    /// Apply a person's edit from the page and route it through the game's checked setters
-    /// at once. Sliders take a display value (hours, degrees) and snap to their stops;
-    /// toggles take a boolean; text fields a string. `world.paused` takes the same path as
-    /// [`Self::set_paused`]. Returns whether the value changed.
-    /// # Errors
-    /// Names an unknown key (with the nearest declared one), a value of the wrong type,
-    /// or a setter or lifecycle refusal.
-    pub fn edit_control(
-        &mut self,
-        key: &str,
-        value: &JsValue,
-        timestamp_ms: f64,
-    ) -> Result<bool, JsValue> {
-        let changed = ControlBinding::edit(self.game.controls_mut(), key, value)?;
-        self.shell
-            .apply_game_edits(&mut self.game, timestamp_ms)
-            .map_err(js_error)?;
-        Ok(changed)
-    }
-
-    /// Apply a parameter file: a JSON object of control keys to display values. Valid
-    /// entries apply at once; the result lists how many changed and explains each refusal.
-    /// # Errors
-    /// Refuses text that is not a JSON object, or a setter or lifecycle refusal.
-    pub fn apply_parameters(&mut self, json: &str, timestamp_ms: f64) -> Result<String, JsValue> {
-        let report = ControlBinding::parameters(self.game.controls_mut(), json)?;
-        self.shell
-            .apply_game_edits(&mut self.game, timestamp_ms)
-            .map_err(js_error)?;
-        let problems: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
-        Ok(format!(
-            "{{\"changed\":{},\"unchanged\":{},\"problems\":{}}}",
-            report.changed,
-            report.unchanged,
-            serde_json::to_string(&problems).map_err(js_error)?
-        ))
-    }
-
-    /// Advance the fixed clock and encode the scene before acquiring a drawable.
-    ///
-    /// # Errors
-    /// Returns a JavaScript error for an authoritative tick or GPU host fault.
-    pub fn frame(&mut self, timestamp_ms: f64) -> Result<(), JsValue> {
-        let result = self
-            .shell
-            .frame_game(&mut self.game, timestamp_ms)
-            .map_err(js_error);
-        if let Some(error) = self.shell.take_attach_error()
-            && let Some(Ok(mut stats)) = self.cooked.as_ref().map(|stats| stats.lock())
-        {
-            stats.errors.push(format!(
-                "cooked valley attach on the replacement device: {error}"
-            ));
-        }
-        result
+        game::set_capture_eye(&mut self.page.shell, [x, y, z]).map_err(js_error)
     }
 
     /// Sample normalized player movement for the next authoritative world tick.
@@ -859,68 +820,16 @@ impl BrowserGame {
     /// # Errors
     /// Returns a JavaScript error for a nonfinite or out-of-range axis.
     pub fn set_controls(&mut self, x: f32, y: f32) -> Result<(), JsValue> {
-        game::set_controls(&mut self.shell, [x, y, 0.0]).map_err(js_error)
+        game::set_controls(&mut self.page.shell, [x, y, 0.0]).map_err(js_error)
     }
 
     /// Committed position of the one local player in this V1 fixture.
     #[must_use]
     pub fn controlled_position(&self) -> String {
-        game::controlled_position(&self.shell).map_or_else(
+        game::controlled_position(&self.page.shell).map_or_else(
             || "player unavailable".to_owned(),
             |position| format!("player x={:.3} y={:.3}", position[0], position[1]),
         )
-    }
-
-    /// Pause for a hidden tab and restart the clock when it becomes visible.
-    /// Queued accepted ticks drain before resume; hidden wall time is not admitted.
-    ///
-    /// # Errors
-    /// Returns a JavaScript error if a retained tick or clock restart fails.
-    pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), JsValue> {
-        self.shell
-            .set_visible(visible, timestamp_ms)
-            .map_err(js_error)
-    }
-
-    /// Stop admitting world time while retaining camera and sky controls.
-    /// Already accepted updates drain through ordinary frame callbacks.
-    /// Tab visibility cannot override this explicit local pause preference.
-    /// # Errors
-    /// Returns a timestamp, retained-update or clock restart failure.
-    pub fn set_paused(&mut self, paused: bool, timestamp_ms: f64) -> Result<(), JsValue> {
-        self.shell
-            .set_paused(paused, timestamp_ms)
-            .map_err(js_error)?;
-        self.game.0.demo.observe_paused(self.shell.paused());
-        Ok(())
-    }
-
-    /// Whether the local user requested pause, independent of tab visibility.
-    pub fn paused(&self) -> bool {
-        self.shell.paused()
-    }
-
-    /// Persistent device-loss diagnostic. Rendering stops while the world and
-    /// local controls remain usable until a complete replacement is published.
-    pub fn graphics_fault(&self) -> Option<String> {
-        self.shell.graphics_fault()
-    }
-
-    /// Start detached graphics reconstruction without borrowing the running world.
-    /// # Errors
-    /// Refuses a healthy device, duplicate attempt or invalid retained inputs.
-    pub fn request_graphics_recovery(&mut self) -> Result<(), JsValue> {
-        self.shell.request_graphics_recovery().map_err(js_error)
-    }
-
-    /// Whether an explicit attempt is preparing or awaiting its first present call.
-    pub fn recovering(&self) -> bool {
-        self.shell.recovering()
-    }
-
-    /// Last failed reconstruction attempt; a fresh explicit request clears it.
-    pub fn graphics_recovery_error(&self) -> Option<String> {
-        self.shell.recovery_error().map(str::to_owned)
     }
 
     /// Submit a capture of the committed endpoint for the page's oracle and
@@ -930,10 +839,10 @@ impl BrowserGame {
     /// Refuses a lost device or a second outstanding capture, or returns a
     /// recording failure.
     pub fn begin_capture(&mut self) -> Result<String, JsValue> {
-        if self.capture.is_some() && !self.shell.graphics_lost() {
+        if self.capture.is_some() && !self.page.shell.graphics_lost() {
             return Err(JsValue::from_str("a capture is already outstanding"));
         }
-        let pending = self.shell.begin_capture().map_err(js_error)?;
+        let pending = self.page.shell.begin_capture().map_err(js_error)?;
         let [width, height] = pending.extent();
         let identity = format!(
             "tick={};extent={width}x{height};generation={}",
@@ -954,7 +863,7 @@ impl BrowserGame {
         let Some(pending) = self.capture.as_mut() else {
             return Ok(None);
         };
-        match self.shell.try_finish_capture(pending) {
+        match self.page.shell.try_finish_capture(pending) {
             Ok(None) => Ok(None),
             Ok(Some(pixels)) => {
                 self.capture = None;
@@ -970,13 +879,13 @@ impl BrowserGame {
     /// Number of surface presentation calls, not physical displayed frames.
     #[must_use]
     pub fn presented(&self) -> u64 {
-        self.shell.presented()
+        self.page.shell.presented()
     }
 
     /// True after 600 GPU-complete frame samples have been collected.
     #[must_use]
     pub fn complete(&self) -> bool {
-        self.shell.samples().len() == SAMPLES
+        self.page.shell.samples().len() == SAMPLES
     }
 
     /// Committed mover and submitted row observations for the exit scene.
@@ -985,20 +894,21 @@ impl BrowserGame {
         if self.content != crate::GameContent::Exit {
             return None;
         }
-        let samples = self.shell.samples();
+        let samples = self.page.shell.samples();
         let counts = samples
             .iter()
             .rev()
             .find_map(|sample| sample.camera_culling);
         let row_generation = self
+            .page
             .shell
             .host()
             .mesh_rows()
             .and_then(|rows| rows.report().generation);
         Some(
             serde_json::json!({
-                "tick": game::committed_tick(&self.shell),
-                "mover": game::exit_mover_position(&self.shell),
+                "tick": game::committed_tick(&self.page.shell),
+                "mover": game::exit_mover_position(&self.page.shell),
                 "row_generation": row_generation,
                 "active": counts.map(|counts| counts.active),
                 "in_view": counts.map(|counts| counts.drawn),
@@ -1012,6 +922,7 @@ impl BrowserGame {
     #[must_use]
     pub fn exit_sweep_samples(&self) -> String {
         let rows = self
+            .page
             .shell
             .samples()
             .iter()
@@ -1040,9 +951,9 @@ impl BrowserGame {
     /// Final callback, world and GPU report after 600 completed frames.
     #[must_use]
     pub fn report(&self) -> String {
-        let samples = self.shell.samples();
-        let status = self.shell.status();
-        let (shed_views, report_drops) = game::dropped(&self.shell);
+        let samples = self.page.shell.samples();
+        let status = self.page.shell.status();
+        let (shed_views, report_drops) = game::dropped(&self.page.shell);
         let timed = samples
             .iter()
             .filter(|sample| sample.gpu_pass_ns.is_some() && sample.gpu_present_ns.is_some())
@@ -1152,7 +1063,7 @@ impl BrowserGame {
             status.callbacks,
             status.presented,
             samples.len(),
-            game::tick(&self.shell),
+            game::tick(&self.page.shell),
             status.last_frame.as_secs_f64(),
             status.unavailable,
             status.overload_events,
@@ -1169,11 +1080,11 @@ impl BrowserGame {
             tick.1,
             encode.0,
             encode.1,
-            game::camera_culling(&self.shell).resolved,
+            game::camera_culling(&self.page.shell).resolved,
         ) + &format!(
             "; culling_requested={:?} culling_reason={:?}",
-            game::camera_culling(&self.shell).requested,
-            game::camera_culling(&self.shell).reason
+            game::camera_culling(&self.page.shell).requested,
+            game::camera_culling(&self.page.shell).reason
         )
     }
 }

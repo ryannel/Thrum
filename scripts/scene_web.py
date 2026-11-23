@@ -24,7 +24,7 @@ def main(folder):
     bindgen = shutil.which('wasm-bindgen') or str(Path.home() / '.cargo/bin/wasm-bindgen')
     subprocess.run([bindgen, '--target', 'web', '--out-name', 'scene', '--out-dir', str(web),
                     str(target / 'wasm32-unknown-unknown/release' / (binary + '.wasm'))], check=True)
-    for name in ['index.html', 'scene.js']:
+    for name in ['index.html', 'scene.js', 'host-page.js']:
         shutil.copy(root / 'crates/thrum-app/web' / name, web / name.replace('scene.js', 'page.js'))
     shutil.copy(root / 'crates/thrum-controls/web/thrum-controls.js', web)
     for params in (root / folder).glob('*.params.json'):

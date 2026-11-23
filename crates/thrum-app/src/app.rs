@@ -42,20 +42,20 @@ use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
-    keyboard::{KeyCode, PhysicalKey},
+    keyboard::PhysicalKey,
     window::{Window, WindowId},
 };
 
 use crate::{
-    Config, Game, GameInput, Gpu, KeyResponse,
+    Config, Game, Gpu, KeyCode, KeyResponse,
     file_watch::{self, FileWatch, Kinds, Reload},
     game::apply_params_file,
 };
 
 /// A game whose runtime can move to the window's render thread and accepts physical keys.
-pub trait WindowGame: Game<World: Send, Scene: Send> + GameInput<KeyCode> {}
+pub trait WindowGame: Game<World: Send, Scene: Send> {}
 
-impl<G> WindowGame for G where G: Game<World: Send, Scene: Send> + GameInput<KeyCode> {}
+impl<G> WindowGame for G where G: Game<World: Send, Scene: Send> {}
 
 const DEFAULT_FRAMES: usize = 600;
 const MAX_FRAMES: usize = 100_000;
@@ -1415,7 +1415,9 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 result
             }
             WindowEvent::KeyboardInput { event, .. } => {
-                if let PhysicalKey::Code(code) = event.physical_key {
+                if let PhysicalKey::Code(code) = event.physical_key
+                    && let Some(code) = KeyCode::from_winit(code)
+                {
                     if code == KeyCode::KeyR && !self.recovery.ready() {
                         if self.recovery.failed()
                             && event.state == ElementState::Pressed

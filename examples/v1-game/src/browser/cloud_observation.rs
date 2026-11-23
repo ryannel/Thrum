@@ -21,7 +21,7 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a page without cloud products.
     pub fn observe_next_cloud_submission(&mut self, ground: bool) -> Result<(), JsValue> {
-        game::cloud_input(&self.shell)
+        game::cloud_input(&self.page.shell)
             .ok_or_else(|| js_error("cloud observation requires Shade or Sky"))?
             .observe_next_submission(ground);
         if ground && self.cloud_observation.is_none() {
@@ -33,7 +33,7 @@ impl BrowserGame {
     /// Compare the frame's actual products with their CPU references.
     /// The caller waits for the result before allowing another frame to write them.
     pub fn inspect_cloud_submission(&self) -> Option<js_sys::Promise> {
-        let frame = game::cloud_input(&self.shell)?.take_submission()?;
+        let frame = game::cloud_input(&self.page.shell)?.take_submission()?;
         let previous = self.cloud_observation.as_ref().map(Rc::clone);
         Some(wasm_bindgen_futures::future_to_promise(async move {
             let record = inspect(frame, previous.as_deref())

@@ -49,6 +49,7 @@
     <script type="module">
       import init, { create_browser_game, create_placed_browser_game, create_field_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } from "./v1_game.js";
       import { bindControls } from "./thrum-controls.js";
+      import { mountPage } from "./host-page.js";
 
       const canvas = document.querySelector("#scene");
       const status = document.querySelector("#status");
@@ -166,11 +167,8 @@
         const overloadProbe = probe.has("overload-probe");
         const qualify = probe.has("qualify") || pauseProbe || resizeProbe || overloadProbe;
         let exitReported = false;
-        let simulatedHidden = false;
-        let rafId = 0;
         let stopped = false;
         const cloudCheck = (clouds || placed) && probe.has("cloud-check") ? globalThis.thrumCloudCheck : undefined;
-        let checkingCloudFrame = false;
         const pressed = new Set();
         // Sliders, the pause toggle and the Sun readout come from the game's typed controls.
         // Edits go through the game's checked setters at once; pause takes the same path as
@@ -289,71 +287,36 @@
           if (event.target instanceof Element && event.target.closest("input, button")) clearControls();
         });
         let lastPlayerUpdate = 0;
-        const restoreGraphics = document.querySelector("#restore-graphics");
-        let graphicsUnavailable = false;
-        let restoreError = null;
-        const updateGraphicsState = () => {
-          const fault = game.graphics_fault();
-          const recovering = game.recovering();
-          const error = game.graphics_recovery_error() ?? restoreError;
-          const hidden = !fault && !recovering;
-          const buttonText = recovering ? "Restoring graphics…" : "Restore graphics";
-          if (restoreGraphics.hidden !== hidden) restoreGraphics.hidden = hidden;
-          if (restoreGraphics.disabled !== recovering) restoreGraphics.disabled = recovering;
-          if (restoreGraphics.textContent !== buttonText) restoreGraphics.textContent = buttonText;
-          const wasUnavailable = graphicsUnavailable;
-          graphicsUnavailable = Boolean(fault || recovering);
-          if (graphicsUnavailable) {
-            const progress = recovering ? "Restoring graphics… Simulation and controls remain available."
-              : error ? `Restore failed: ${error}\nSimulation continues. You can retry Restore graphics.`
-                : "Simulation continues. Choose Restore graphics to try again.";
-            const message = fault ? `Graphics fault: ${fault}\n${progress}`
-              : "Restoring graphics… Waiting for the first frame.\nSimulation and controls remain available.";
-            if (status.textContent !== message) status.textContent = message;
-          } else if (wasUnavailable) {
-            restoreError = null;
-            status.textContent = running;
-          }
-          return graphicsUnavailable;
-        };
-        const schedule = () => {
-          if (!rafId && !checkingCloudFrame && !cloudCheck?.hold && !stopped && !document.hidden && !simulatedHidden) {
-            rafId = requestAnimationFrame(draw);
-          }
-        };
-        const cancelPending = () => {
-          if (rafId) cancelAnimationFrame(rafId);
-          rafId = 0;
-        };
-        if (cloudCheck) cloudCheck.resume = schedule;
-        restoreGraphics.addEventListener("click", () => {
-          if (stopped) return;
-          restoreError = null;
-          try { game.request_graphics_recovery(); }
-          catch (error) { restoreError = String(error); }
-          updateGraphicsState();
-          schedule();
-        });
-        const draw = async (time) => {
-          rafId = 0;
-          if (document.hidden || simulatedHidden || stopped || cloudCheck?.hold) return;
-          try {
+        let beforeCloudFrame;
+        const page = mountPage(game, {
+          controlView: controls,
+          recoveryButton: document.querySelector("#restore-graphics"),
+          physicalKeys: false,
+          canFrame: () => !cloudCheck?.hold,
+          onHidden: clearControls,
+          beforeFrame() {
             syncBackingSize();
-            const checkCloudFrame = cloudCheck?.enabled;
-            const beforeCloudFrame = checkCloudFrame ? game.presented() : 0n;
-            if (checkCloudFrame) game.observe_next_cloud_submission(cloudCheck.ground);
-            game.frame(time);
-            if (checkCloudFrame && game.presented() !== beforeCloudFrame) {
+            beforeCloudFrame = cloudCheck?.enabled ? game.presented() : undefined;
+            if (beforeCloudFrame !== undefined) game.observe_next_cloud_submission(cloudCheck.ground);
+          },
+          onGraphics({ fault, recovering, error, unavailable, wasUnavailable }) {
+            if (unavailable) {
+              const progress = recovering ? "Restoring graphics… Simulation and controls remain available."
+                : error ? `Restore failed: ${error}\nSimulation continues. You can retry Restore graphics.`
+                : "Simulation continues. Choose Restore graphics to try again.";
+              const message = fault ? `Graphics fault: ${fault}\n${progress}`
+                : "Restoring graphics… Waiting for the first frame.\nSimulation and controls remain available.";
+              if (status.textContent !== message) status.textContent = message;
+            } else if (wasUnavailable) {
+              status.textContent = running;
+            }
+          },
+          async afterFrame(time, graphicsUnavailable) {
+            if (beforeCloudFrame !== undefined && game.presented() !== beforeCloudFrame) {
               const observation = game.inspect_cloud_submission();
               if (!observation) throw new Error("Submitted frame did not publish cloud products");
-              checkingCloudFrame = true;
-              try {
-                cloudCheck.frames.push({presented: Number(game.presented()), callback_ms: time, ...JSON.parse(await observation)});
-              } finally {
-                checkingCloudFrame = false;
-              }
+              cloudCheck.frames.push({presented: Number(game.presented()), callback_ms: time, ...JSON.parse(await observation)});
             }
-            controls.refresh();
             pollMaterial();
             if (time - lastPlayerUpdate >= 500) {
               player.textContent = game.controlled_position();
@@ -366,62 +329,32 @@
                 }
               }
             }
-            if (updateGraphicsState()) {
-              schedule();
-            } else if (qualify && game.complete()) {
+            if (!graphicsUnavailable && qualify && game.complete()) {
               status.textContent = game.report();
               stopped = true;
-            } else {
-              schedule();
+              page.stop();
             }
-          } catch (error) {
-            status.textContent = `Frame fault: ${error}; ${game.report()}`;
+          },
+          onError(error, phase) {
+            status.textContent = phase === "lifecycle" ? `Lifecycle fault: ${error}` : `Frame fault: ${error}; ${game.report()}`;
             stopped = true;
-          }
-        };
-        document.addEventListener("visibilitychange", () => {
-          if (stopped) return;
-          try {
-            if (document.hidden) {
-              cancelPending();
-              clearControls();
-            }
-            game.set_visible(!document.hidden && !simulatedHidden, performance.now());
-            schedule();
-          } catch (error) {
-            status.textContent = `Lifecycle fault: ${error}`;
-            stopped = true;
-          }
+          },
         });
-        game.set_visible(!document.hidden && !simulatedHidden, performance.now());
-        schedule();
+        if (cloudCheck) cloudCheck.resume = page.schedule;
         if (pauseProbe) {
           setTimeout(() => {
             if (stopped) return;
-            try {
-              simulatedHidden = true;
-              cancelPending();
-              clearControls();
-              game.set_visible(false, performance.now());
-              status.textContent = "Paused for the two-second lifecycle probe…";
-              setTimeout(() => {
-                if (stopped) return;
-                try {
-                  simulatedHidden = false;
-                  game.set_visible(!document.hidden && !simulatedHidden, performance.now());
-                  status.textContent = document.hidden
-                    ? "Lifecycle probe complete; waiting for visibility…"
-                    : running.replace("Running", "Resumed");
-                  schedule();
-                } catch (error) {
-                  status.textContent = `Lifecycle fault: ${error}`;
-                  stopped = true;
-                }
-              }, 2000);
-            } catch (error) {
-              status.textContent = `Lifecycle fault: ${error}`;
-              stopped = true;
-            }
+            page.setSuspended(true);
+            if (stopped) return;
+            status.textContent = "Paused for the two-second lifecycle probe…";
+            setTimeout(() => {
+              if (stopped) return;
+              page.setSuspended(false);
+              if (stopped) return;
+              status.textContent = document.hidden
+                ? "Lifecycle probe complete; waiting for visibility…"
+                : running.replace("Running", "Resumed");
+            }, 2000);
           }, 1000);
         }
         if (resizeProbe) {
@@ -435,10 +368,10 @@
         if (overloadProbe) {
           setTimeout(() => {
             if (stopped) return;
-            cancelPending();
+            page.cancelPending();
             status.textContent = "Delaying one visible animation callback by 250 ms…";
             setTimeout(() => {
-              if (!stopped) schedule();
+              if (!stopped) page.schedule();
             }, 250);
           }, 1000);
         }

@@ -334,6 +334,7 @@ impl<G: Game> Offscreen<G> {
     }
 
     fn drive(&mut self, observation: Duration) -> Result<DriveReport, String> {
+        G::apply(&mut self.host, self.game.frame_edits())?;
         let report = self
             .host
             .drive(
@@ -344,6 +345,7 @@ impl<G: Game> Offscreen<G> {
                 }),
             )
             .map_err(|e| e.to_string())?;
+        self.game.observe(G::readback(&self.host));
         Ok(report)
     }
 

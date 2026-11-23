@@ -8,20 +8,21 @@ use wasm_bindgen::prelude::*;
 impl BrowserGame {
     /// Authored card texels used by the check's independent CPU rasterizer.
     pub fn sprite_card_texels(&self) -> Option<Vec<u8>> {
-        (self.shell.host().scene_kind() == SceneKind::TwoD).then(crate::sprite_card::texels)
+        (self.page.shell.host().scene_kind() == SceneKind::TwoD).then(crate::sprite_card::texels)
     }
 
     /// Report the sprite scene's compiled plan and completed presentation samples.
     /// # Errors
     /// Refuses a different scene or a graph that cannot be inspected.
     pub fn sprite_scene_report(&self) -> Result<String, JsValue> {
-        let host = self.shell.host();
+        let host = self.page.shell.host();
         if host.scene_kind() != SceneKind::TwoD {
             return Err(super::js_error("sprite scene is not selected"));
         }
         let graph = host.scene_graph().map_err(super::js_error)?;
         let limits = host.device_capabilities().limits();
         let samples: Vec<_> = self
+            .page
             .shell
             .samples()
             .iter()

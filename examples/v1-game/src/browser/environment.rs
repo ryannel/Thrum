@@ -39,9 +39,10 @@ impl BrowserGame {
     /// # Errors
     /// Refuses loss or a scene without atmosphere products.
     pub fn environment_library(&mut self) -> Result<String, JsValue> {
-        self.shell.poll_completed().map_err(super::js_error)?;
+        self.page.shell.poll_completed().map_err(super::js_error)?;
         let library = Rc::new(RefCell::new(String::new()));
-        self.shell
+        self.page
+            .shell
             .set_scene_contribution(Box::new(EnvironmentContribution {
                 library: Rc::clone(&library),
                 products: None,

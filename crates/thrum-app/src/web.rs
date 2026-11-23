@@ -1,10 +1,9 @@
 //! Browser shell shared by Thrum games (wasm32 only).
 //!
 //! [`WebShell`] owns a game's prepared [`FrameHost`] together with the WebGPU canvas surface,
-//! its device, the device-loss signal and detached device replacement. The page keeps its
-//! `requestAnimationFrame` loop, DOM events and input, and calls [`WebShell::frame`],
-//! [`WebShell::set_visible`] and [`WebShell::set_paused`] with page timestamps; the shell installs
-//! no listener. A game keeps its report text, controls and authored scene, reading typed
+//! its device, the device-loss signal and detached device replacement. [`create_page`] exposes the
+//! ordinary game through an engine-owned wasm interface. The shared page driver forwards animation,
+//! input and visibility events. Explicit capture drivers can supply timestamps directly. A game keeps its report text, controls and authored scene, reading typed
 //! counters from [`WebShell::status`] and [`WebShell::samples`].
 //!
 //! Loss policy: once loss is observed, no call reaches the lost device. Frames only advance
@@ -32,6 +31,9 @@ use crate::{
 mod capture;
 mod controls;
 pub use controls::ControlBinding;
+mod page;
+mod page_exports;
+pub use page::{ControlTiming, Page, PageGame, PageRuntime, create_page, parameter_json};
 mod recovery;
 
 /// Frame samples kept per device generation, the size of one report.

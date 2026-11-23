@@ -1,5 +1,6 @@
 import init, { create_scene } from './scene.js';
 import { bindControls } from './thrum-controls.js';
+import { mountPage } from './host-page.js';
 const canvas = document.querySelector('canvas');
 const status = document.querySelector('#status');
 const problems = document.querySelector('#problems');
@@ -13,10 +14,6 @@ try {
   const game = await create_scene(canvas, query.get('store') ?? config.store);
   window.game = game;
   const recover = document.querySelector('#recover');
-  recover.addEventListener('click', () => {
-    try { game.recover_graphics(); recover.hidden = true; }
-    catch (error) { report(error); }
-  });
   document.title = game.title();
   const view = bindControls(document.querySelector('#controls'), game, { onError: report });
   if (query.has('params')) {
@@ -32,21 +29,20 @@ try {
       report(`Parameter file ${url}: ${error}; fix its path or contents and reopen the URL.`);
     }
   }
-  document.addEventListener('visibilitychange', () => game.set_visible(!document.hidden, performance.now()));
-  function frame(now) {
-    try {
-      game.frame(now);
+  mountPage(game, {
+    controlView: view,
+    recoveryButton: recover,
+    afterFrame() {
       const nextStatus = game.report();
-      recover.hidden = !nextStatus.startsWith('Graphics device unavailable:');
       if (status.textContent !== nextStatus) status.textContent = nextStatus;
-      view.refresh();
-      requestAnimationFrame(frame);
-    }
-    catch(error) {
+    },
+    onGraphics({ error, recovering }) {
+      if (error && !recovering) report(error);
+    },
+    onError(error) {
       report(`Scene frame: ${error}; fix the reported object and rerun the scene command.`);
-    }
-  }
-  requestAnimationFrame(frame);
+    },
+  });
 }
 catch(error) {
   status.textContent = `Scene could not start: ${error}; check that the scene command is still serving its cooked asset store, fix the reported cause and rerun it.`;

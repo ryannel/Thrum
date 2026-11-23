@@ -1,8 +1,6 @@
 //! V1's hosted runtime and control policy shared by its platform entry points.
 
-use thrum_app::{Edits, Game, Gpu, Prepared};
-#[cfg(target_os = "macos")]
-use thrum_app::{GameInput, KeyResponse};
+use thrum_app::{Edits, Game, Gpu, KeyCode, KeyResponse, Prepared};
 use thrum_controls::Controls;
 
 use crate::{
@@ -27,6 +25,14 @@ pub(crate) trait RuntimeSetup {
     fn world(&self) -> Option<&dyn thrum_app::WorldLink>;
 
     fn readback(host: &Runtime) -> f32;
+
+    fn key(&mut self, _key: KeyCode, _pressed: bool) -> Result<KeyResponse, String> {
+        Ok(KeyResponse::Ignored)
+    }
+
+    fn focus_lost(&mut self) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 impl<T: RuntimeSetup> Game for HostedGame<T> {
@@ -103,11 +109,8 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     fn observe_paused(&mut self, paused: bool) {
         self.0.demo_mut().observe_paused(paused);
     }
-}
 
-#[cfg(target_os = "macos")]
-impl<T: GameInput<K>, K> GameInput<K> for HostedGame<T> {
-    fn key(&mut self, key: K, pressed: bool) -> Result<KeyResponse, String> {
+    fn key(&mut self, key: KeyCode, pressed: bool) -> Result<KeyResponse, String> {
         self.0.key(key, pressed)
     }
 

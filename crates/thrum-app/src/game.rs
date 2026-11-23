@@ -160,17 +160,13 @@ pub trait Game {
     fn observe_paused(&mut self, paused: bool) {
         let _ = paused;
     }
-}
-
-/// An input adapter for the key type supplied by a shell.
-pub trait GameInput<K> {
     /// Handle a game key.
     /// # Errors
     /// A refused input, which ends the run.
-    fn key(&mut self, _code: K, _pressed: bool) -> Result<KeyResponse, String> {
+    fn key(&mut self, _code: crate::KeyCode, _pressed: bool) -> Result<KeyResponse, String> {
         Ok(KeyResponse::Ignored)
     }
-    /// Release held input when the window loses focus; the shell then requests a frame.
+    /// Release held input when the host loses focus.
     /// # Errors
     /// A refused input, which ends the run.
     fn focus_lost(&mut self) -> Result<(), String> {

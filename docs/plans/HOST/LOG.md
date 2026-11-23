@@ -54,3 +54,8 @@
   callers. The full exact-image verifier passed on `f582a2af1214`, which contains the initial HOST M4 merge. The
   verifier bisected the later `apple-tile-native` failure on main to APPLE-PRESENTATION M5 (`32dfd3c14a0f`).
   [Exact-image records](../../../.orchestrate/evidence/HOST/M4/README.md#m47-registered-exact-images)
+- 2026-11-23 Fixed the M4 review findings. The offscreen driver applies frame edits and observes readback.
+  Games receive an engine-owned physical key on Mac and Chrome, and the shared page runtime owns control
+  edits, frame callbacks, visibility and recovery. The simulator command reuses only an ancestor's lock.
+  Verified changing offscreen readback on Metal, a plain Game in Chrome through device replacement,
+  and the starter and V1 Chrome cases. [Review-fix evidence](../../../.orchestrate/evidence/HOST/M4/review-fixes/README.md)

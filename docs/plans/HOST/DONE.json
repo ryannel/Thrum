@@ -226,8 +226,8 @@
           "check": "cargo test --locked --offline -p thrum-app --test game_contract",
           "ask": "Does any type from winit, AppKit or web-sys appear in what a game implements? Does the sky kit still have a second construction path for the browser? Can the same game value run offscreen and in the window?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/review-fixes/README.md#m41-game-contract-and-offscreen-frame-hooks",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
@@ -236,8 +236,8 @@
           "statement": "The browser binding of typed controls is the engine's, as the Mac panel is: a game declares its controls once and writes no page glue for them.",
           "ask": "What control code does the V1 game's browser module still hold that the starter also holds, or would have to copy?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/review-fixes/README.md#m42-engine-owned-browser-controls",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
@@ -257,8 +257,8 @@
           "statement": "A second game would copy nothing from the first: what is left in `examples/v1-game` is its scenes, rules, controls declaration, camera policy, content and entry points.",
           "ask": "Read the game's library. What would a 2D game with other rules have to copy from it unchanged to run in the window, on the page and in the offscreen driver? Name each item, or say there is none.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/review-fixes/README.md#m44-second-game-through-the-shared-page",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
