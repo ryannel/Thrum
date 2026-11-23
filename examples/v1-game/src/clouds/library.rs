@@ -52,8 +52,8 @@ impl PlacementDemo {
             update(
                 state,
                 FAIR,
-                smooth(time / 24.0).powi(2),
-                1.0 - smooth((time - 25.0) / 65.0),
+                smooth(time / 22.0).powi(2),
+                1.0 - smooth((time - 22.0) / 38.0),
                 0.0,
             )?;
             update(
