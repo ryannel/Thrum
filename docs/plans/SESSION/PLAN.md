@@ -48,15 +48,16 @@ focused batch under normal builder load. The batch passes the existing ten-secon
 
 ## M5 Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss
 
-Criteria: M5.1–M5.13 in the done-when file.
+Criteria: M5.1–M5.14 in the done-when file.
 
 `TRANSPORT` left the three socket adapters, the relay and its proof programs in `examples/link-proof` with
 `scripts/transport_link.py`, which show how each target is started and how a page reaches the host. Use the relay.
 
 Adopt the [shared simulator lifecycle](DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5) before
 rerunning the socket proofs. Limit changes to other proof commands, including `scripts/transport_link.py`, to
-simulator admission, clean starting state and cleanup. Use the short device proof to verify cleanup and the
-existing socket fault run to verify the live peer restart on one boot. Set `ORCHESTRATE_SCRIPT` to the installed
+simulator admission, clean starting state and cleanup. Use the short device proof to verify cleanup, the
+CPU record to verify outer lock release on cancellation and presentation timeout, and the existing socket
+fault run to verify the live peer restart on one boot. Set `ORCHESTRATE_SCRIPT` to the installed
 `agent_loop.py` and run `python3 scripts/session_match.py image --target ios-sim` once as M5 evidence. The
 command manages its own admission and records the full comparison across eight simulator turns.
 

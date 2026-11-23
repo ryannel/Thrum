@@ -611,7 +611,7 @@
         {
           "id": "D6.7",
           "statement": "On the iPhone simulator the game runs the 8-bit SDR path, and a headroom value forced on the iOS display record reaches the render owner through the polling path without touching the surface lease.",
-          "check": "python3 scripts/apple_presentation.py edr --target ios-sim",
+          "check": "exec python3 scripts/apple_presentation.py edr --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
           "evidence": "",

@@ -182,3 +182,8 @@
   checkpoints on the migrated path. [Review](../../../.orchestrate/evidence/SESSION/design-review.md)
 - 2026-11-23 Took the suggestion to define a fresh start on the reused device. The design and M5.12 cover
   app, proof and XCTest state after cancellation. The T2 guide describes verified shutdown and reuse after M5.
+- 2026-11-24 Final design review, Must Fix 1. HOST M4.5 keeps its single-definition assertion and execs the
+  HOST command. APPLE-PRESENTATION D6.7 execs the presentation command and its route deadline goes through
+  supervised cleanup. M5 defines which PID the runner waits for, the ten-second grace and recovery before the next
+  device use. M5.14 exercises outer cancellation and the presentation deadline with the installed runner,
+  a queued contender and an early-release control. [Review](../../../.orchestrate/evidence/SESSION/design-review.md)

@@ -785,7 +785,8 @@ For Cooked Draw and T2 capture, the waiting supervisor owns admission and cleanu
 handoff and passes its selected UDID to the attributed launcher and driver. Keep the existing permission
 preflights and their launcher-to-driver attribution.
 
-The outer check declarations for [CULLING M2.2](../CULLING/DONE.json),
+The outer check declarations for [HOST M4.5](../HOST/DONE.json),
+[APPLE-PRESENTATION D6.7](../APPLE-PRESENTATION/DONE.json), [CULLING M2.2](../CULLING/DONE.json),
 [COOKED-DRAW M1.7–M1.9](../COOKED-DRAW/DONE.json), [PLATFORM-RUNTIME-IOS M7.2](../PLATFORM-RUNTIME-IOS/DONE.json)
 and [the T2 capture guide's command](../../CAPTURE.md#ios-simulator-submitted-output-workflow) already take
 `simulator`. M5 adapts those entry points to reuse that admission through verified shutdown. Update the Culling,
@@ -816,16 +817,36 @@ Re-establish that state at the start of each proof, including after cancellation
 backgrounding or recovery preserve the app state those steps depend on within the turn. Preserve unrelated
 simulators and their data.
 
-The supervisor outlives the proof worker on failure, timeout or cancellation. It stops the run's child work,
-including any launcher and driver started through LaunchServices, requests shutdown, and confirms `Shutdown`
-from fresh CoreSimulator state before returning to its lock holder. Cancelling the simulator turn waits for that
-cleanup. Keep the foreground process alive through teardown so the outer lock holder waits
-for verification. On an outer stop, begin teardown on the first termination signal while the lock holder is
-still waiting. Allow bounded recovery when shutdown is slow and report a cleanup failure with the UDID and
-observed state. If shutdown cannot be verified or a forced stop interrupts cleanup, the next turn reclaims the
-stranded Thrum device before starting work. A successful run requires verified shutdown. Keep simulator work out
-of `./dev check`. The fast guard exercises ownership and failure handling with simulated state. The locked
-proof uses real CoreSimulator state.
+The outer orchestrate lock holder waits for the process it launched. Run supervision in that process or use
+`exec` to hand its PID to the supervisor before touching the device. The HOST M4.5 shell checks for one
+`SAMPLE_SLOTS` definition across `crates` and `examples`, then execs the iOS-only HOST command. That command
+supervises its route and overload workers in process. APPLE-PRESENTATION D6.7 execs the presentation command,
+which also supervises its iOS route in process. Treat the existing 1,500-second presentation route limit as a
+budget that reserves time for cleanup. Expiry stops the worker and goes through the same verified shutdown path.
+Apply this to the presentation extent, transition and EDR routes and keep their existing assertions and reports.
+Any shell front end that the lock holder waits on must hand its PID over before device work. The Cooked Draw
+and T2 waiting processes continue to supervise across LaunchServices.
+
+Install the supervisor's signal handlers before changing device state. On the first termination signal from
+the outer runner, it stops the worker and any launcher or driver it owns, requests shutdown, and confirms
+`Shutdown` from fresh CoreSimulator state before exiting. Bound this cancellation path to fit inside the
+runner's ten seconds from SIGTERM to SIGKILL, including child termination and status queries. Reserve time
+for normal deadline cleanup within the turn's budget. Report a cleanup failure with the UDID and last observed
+state if verification fails. A successful run requires verified shutdown. If the runner forces termination
+or shutdown remains unverified, the next holder can obtain the lock, but it must verify shutdown of the stranded
+Thrum device before any new device work. Abort the turn if recovery remains unverified.
+
+Keep simulator work out of `./dev check`. The fast guard exercises ownership and failure handling with
+simulated state. The real device proof runs supervision in process and queries CoreSimulator independently
+under admission. A separate CPU record uses the installed runner's `install_stop` and `run_check`, as a
+build does, with a second `simulator` contender in an isolated lock namespace. Run the HOST M4.5 and
+APPLE-PRESENTATION D6.7 commands as declared, using the production wrappers and supervisor with simulated
+device and route workers. Queue the contender while the first turn owns the lock. With the worker active,
+signal the lock holder to cancel each outer check. Also exercise the presentation deadline with an injected
+clock. Keep simulated shutdown pending briefly within the runner's grace and check the device state as the
+contender's first action under admission. The contender must see verified shutdown and the first check must
+report cancellation or timeout. The ordering check must reject a control in which a waiting shell exits
+while its supervisor is still cleaning up.
 
 ## Open questions
 

@@ -265,7 +265,7 @@
         {
           "id": "M4.5",
           "statement": "The render owner's frame job and reply are one pair of platform-neutral types in `thrum-app`, used by the Mac render actor and by the iPhone app's render owner. What `examples/v1-game-ios` still holds that `thrum-app` also holds is on the design's list of what `GAME-UI` M6 moves, and nothing else.",
-          "check": "sh -c 'test \"$(git grep -h \"const SAMPLE_SLOTS: usize\" -- crates examples | wc -l)\" -eq 1 && python3 scripts/host_lifecycle.py check --target ios-sim'",
+          "check": "test \"$(git grep -h \"const SAMPLE_SLOTS: usize\" -- crates examples | wc -l)\" -eq 1 && exec python3 scripts/host_lifecycle.py check --target ios-sim",
           "lock": "simulator",
           "ask": "List what the iPhone app's render owner and `thrum-app`'s render actor both still define. Is each entry the owner thread, the UIKit lifecycle, the surface lease, touch or the command table, which the design leaves to `GAME-UI` M6? Is the device request, the lifecycle policy, the outcome mapping, the frame host or the frame job and reply defined twice anywhere?",
           "target": "ios-sim",
