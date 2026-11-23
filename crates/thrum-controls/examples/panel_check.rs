@@ -24,7 +24,7 @@ fn main() -> Result<(), String> {
     let one_degree = 1.0_f32.to_radians();
     let yaw = controls
         .slider(
-            "camera.yaw",
+            "view.heading",
             "Look around",
             -std::f32::consts::PI..=std::f32::consts::PI,
         )

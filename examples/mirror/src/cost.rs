@@ -61,17 +61,16 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
     let mut game = mirror_scene::build_with_pool(
         Pool::new(MIRROR_POOL).with_cost_requests(Arc::clone(&requests)),
     )?;
-    let mut host = game
-        .prepare(
-            Gpu {
-                device: &device,
-                queue: &queue,
-                capabilities: &caps,
-                surface,
-            },
-            Box::new(|| {}),
-        )?
-        .host;
+    let mut host = pollster::block_on(game.prepare(
+        Gpu {
+            device: &device,
+            queue: &queue,
+            capabilities: &caps,
+            surface,
+        },
+        Box::new(|| {}),
+    ))?
+    .host;
     let deadline = Instant::now() + Duration::from_secs(30);
     loop {
         drop(frame(&mut host, &device, &output, &start)?);
