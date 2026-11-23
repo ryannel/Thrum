@@ -125,18 +125,19 @@
       ]
     },
     "RAY_TRACING_M3": {
-      "implementation": "Hard centre-ray Sun visibility and clustered lamp shadows on opt-in Apple tile. The ray can pass through one crossing of the receiving mesh within the terminator reach. The air keeps its height map and secondary views keep Maps. A failed traced contribution retries with Maps on attachment, visual publication and device replacement. Same-device Maps publication keeps the resident cooked draw streams and retires their ray structures.",
-      "functional_validation": "Mac Metal builder checks verified receivers through 20 km, a lamp wall outside the camera and Sun volumes, cooked and mirrored casters, and both windings of a joined or separate sheet within and beyond the terminator reach. Injected primary and cooked pipeline failures restored the Maps bytes. The first same-device fallback frame matched Maps with a resident mesh larger than one upload budget. The checks also covered secondary and air-shadow parity, a dark Sun, and readiness on two device generations.",
-      "experienced_quality": "Inspected Apple M3 Max Metal T2 fixed Maps and Traced pairs on the exit route at noon, low Sun and dusk, consecutive elapsed-time frames around three balloon casters, and the four-lamp night stop.",
+      "implementation": "Hard centre-ray Sun visibility and clustered lamp shadows on opt-in Apple tile. The ray can pass through one crossing of the receiving mesh within the terminator reach. The air keeps its height map and secondary views keep Maps. The host stages the scene and all contributions together. A traced preparation failure retries with Maps from accepted state. Same-device Maps publication keeps compatible resident cooked buffers.",
+      "functional_validation": "Mac Metal checked receivers through 20 km, lamp casters outside the camera and Sun volumes, cooked casters and secondary-view parity, and both sheet windings at the terminator. The CPU guard verified nested admission and ordered commit. The Metal guard verified the first same-device fallback image and cooked generation match the no-request control with zero copied bytes after a fault in a later contribution.",
+      "experienced_quality": "Inspected the fixed Maps and Traced valley at noon, low Sun and dusk, four night lamps, and consecutive realtime frames around three moving balloons on Apple M3 Max Metal.",
       "platform_performance": {
-        "mac_apple_tile": "Under load, median timed-pass spans were 4.27, 6.49 and 5.41 ms for Maps and Traced with lamps off and on, respectively. Median frame CPU times were 1.75, 3.53 and 1.91 ms. The evidence records the forward-pass and encoding costs and the observed timing variation.",
+        "mac_apple_tile": "In the contended repeat, median timed-pass spans were 3.21, 4.63 and 4.92 ms for Maps and Traced with lamps off and on, respectively. Median frame CPU times were 1.48, 2.69 and 2.61 ms. The record keeps both runs and investigates the initial spikes.",
         "browser": "Ordinary output is covered by the shared exact-images check. No traced browser qualification.",
         "ios": "No traced iPhone qualification."
       },
       "evidence": [
         "../../.orchestrate/evidence/RAY-TRACING/M3/passage.md",
         "../../.orchestrate/evidence/RAY-TRACING/M3/passage-checks/M3.10.json",
-        "../../.orchestrate/evidence/RAY-TRACING/M3/preparation-checks/cooked.json"
+        "../../.orchestrate/evidence/RAY-TRACING/M3/preparation-checks/cooked.json",
+        "../../.orchestrate/evidence/RAY-TRACING/M3/transaction/README.md"
       ]
     },
     "SCENE_VIEWS": {

@@ -136,3 +136,10 @@
 - 2026-11-23 Final design review of `3ce33cc0c`. RAY-TRACING M5 owns candidate preparation for the valley's
   cloud provider. M5.3 now verifies traced ambient occlusion at a prop's base with the production cloud sky
   active under CLOUDS M7's overcast preset. [Design review](../../../.orchestrate/evidence/RAY-TRACING/design-review.md).
+- 2026-11-23 Scene preparation now stages the whole contribution list before publication. The CPU guard
+  verified admission, ordered commit and rollback. On Apple M3 Max Metal the first same-device fallback
+  submission matched the no-request control with its original cooked generation and zero copied bytes.
+  Repeated the fixed and realtime route, hard-shadow fixtures and timing. The timing repeat confirmed
+  increased forward cost with tracing. Main's workspace check failed independently of this branch.
+  M3.11 and M3.16 remain open for the registered checks after integration.
+  [Verification and captures](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/README.md).
