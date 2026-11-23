@@ -148,7 +148,7 @@
   and three sets of six consecutive realtime shadow frames. The realtime run retained 1,472
   submissions with zero capture omissions.
   [Merged Metal inspection](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/merged/README.md).
-  The registered exact-image check failed at `portable-sdr-approach` on `8eb94b243300` with
+- 2026-11-23 The registered exact-image check failed at `portable-sdr-approach` on `8eb94b243300` with
   M3 included. The bisect reproduced the same failure on earlier main revision `65e73b3aebc2`.
   M3.11 remains open pending a passing registered run.
   [Main failure](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/exact-images-merged-failure.json) ·
@@ -158,3 +158,7 @@
   The fixtures now stage their geometry through the public contribution candidate API. The
   renderer carries the observer with the same-device mesh snapshot, and a replacement device
   prepares its own snapshot. [Focused Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/long-regressions-metal.log).
+- 2026-11-23 The registered `exact-images` run passed on `7c0238bf0184` with M3 and the approved
+  APPLE-PRESENTATION M14 refresh included. The verifier matched both Metal matrices and all four
+  Chrome sets. [M3.11 coverage](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.11-coverage.log) ·
+  [Verifier record](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/exact-images-main-verifier.json).

@@ -323,8 +323,8 @@
           "statement": "No exact baseline moves: with no request, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         },
