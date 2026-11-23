@@ -600,6 +600,20 @@
         "by": "plan",
         "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
         "at": "2026-11-20T10:47:17Z"
+      },
+      "ready_for_review": {
+        "commit": "125e95e429663db685e0c601857a5deb5ab60aab",
+        "checked": "125e95e429663db685e0c601857a5deb5ab60aab",
+        "at": "2026-11-23T17:12:37Z",
+        "reused": [
+          "Test command",
+          "M6.11"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {},
+        "cli": "codex-cli 0.171.0-alpha.13"
       }
     },
     "M7": {
