@@ -64,9 +64,8 @@
     "library-env": {
       "version": 2,
       "files": {
-        "crates/thrum-app/src/app.rs": 6,
+        "crates/thrum-app/src/app.rs": 4,
         "crates/thrum-app/src/app/profile_recording.rs": 2,
-        "crates/thrum-app/src/app/qualification.rs": 4,
         "crates/thrum-app/src/sky.rs": 4,
         "crates/thrum-app/src/sky/capture.rs": 1,
         "crates/thrum-app/src/sky/live_capture.rs": 2,
@@ -160,7 +159,7 @@
         "crates/thrum-app/src/offscreen.rs": 11,
         "crates/thrum-app/src/offscreen/clock.rs": 1,
         "crates/thrum-app/src/sky.rs": 1,
-        "crates/thrum-app/src/web.rs": 9,
+        "crates/thrum-app/src/web.rs": 8,
         "crates/thrum-app/src/web/capture.rs": 3,
         "crates/thrum-render/src/contribution/graph.rs": 1,
         "crates/thrum-render/src/runtime.rs": 1,

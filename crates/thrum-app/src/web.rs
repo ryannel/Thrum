@@ -12,14 +12,14 @@
 //! stay allowed and the replacement draws them; capture is refused; a scene contribution
 //! attached while lost is held and attached right after the replacement is published.
 
-use std::{future::Future, rc::Rc, time::Duration};
+use std::{error::Error, fmt, rc::Rc, time::Duration};
 
 use thrum_core::sim::{WorldLifecycle, WorldLifecyclePolicy};
 use thrum_render::{
-    capabilities::{DeviceCapabilities, DeviceWatch, configure_surface},
+    capabilities::{DeviceWatch, SurfaceConfigError, configure_surface},
     contribution::SceneContribution,
     present::SurfaceProfile,
-    runtime::{FrameConfig, FrameHost, FrameSample, PendingCapture, SceneSource, SurfaceOutput},
+    runtime::{FrameHost, FrameSample, PendingCapture, SceneSource, SurfaceOutput},
 };
 use web_sys::HtmlCanvasElement;
 
@@ -37,18 +37,47 @@ mod recovery;
 /// Frame samples kept per device generation, the size of one report.
 pub const SAMPLES: usize = 600;
 
-/// The first device, handed to the game to prepare its runtime. The `FrameHost` it returns
-/// keeps generation-bound handles, which the shell replaces through recovery; the game must not
-/// keep separate copies of these handles, since they would outlive a lost device.
-pub struct WebGpu {
-    /// The first device; replacements reach the runtime through recovery.
-    pub device: wgpu::Device,
-    /// The device's queue.
-    pub queue: wgpu::Queue,
-    /// The recorded capabilities the runtime prepares against.
-    pub capabilities: DeviceCapabilities,
-    /// The configured canvas extent and surface profile.
-    pub frame_config: FrameConfig,
+/// Failure while starting or driving a hosted browser game.
+#[derive(Debug)]
+pub enum WebHostError {
+    /// The browser canvas could not be turned into a graphics surface.
+    Surface(wgpu::CreateSurfaceError),
+    /// No compatible device or canvas configuration was available.
+    Device(String),
+    /// The device refused to configure the canvas surface.
+    Configure(SurfaceConfigError),
+    /// The game could not prepare its runtime.
+    Prepare(String),
+    /// The game refused presentation edits.
+    Edit(String),
+    /// The world refused a pause or resume.
+    Lifecycle(String),
+    /// A browser frame could not advance or present.
+    Frame(String),
+}
+
+impl fmt::Display for WebHostError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Surface(error) => error.fmt(formatter),
+            Self::Configure(error) => error.fmt(formatter),
+            Self::Device(message)
+            | Self::Prepare(message)
+            | Self::Edit(message)
+            | Self::Lifecycle(message)
+            | Self::Frame(message) => formatter.write_str(message),
+        }
+    }
+}
+
+impl Error for WebHostError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Surface(error) => Some(error),
+            Self::Configure(error) => Some(error),
+            _ => None,
+        }
+    }
 }
 
 /// Typed counters and state behind a game's report.
@@ -112,20 +141,17 @@ pub struct WebShell<W: InlineWorld, V: SceneSource<W::Page>> {
     attach_error: Option<String>,
 }
 
-/// Create the canvas surface and first device, and let the game prepare its runtime on it.
+/// Create the canvas surface and first device, and let the game prepare its inline runtime.
 /// `generation` numbers the first device; replacements count up from it.
 /// # Errors
-/// Returns no compatible adapter, surface format or device, or the game's preparation failure.
-pub async fn create<W, V, F, Fut>(
+/// Returns a device, surface or game preparation failure.
+pub async fn create_game<G: Game>(
     canvas: HtmlCanvasElement,
     generation: u64,
-    prepare: F,
-) -> Result<WebShell<W, V>, String>
+    game: &mut G,
+) -> Result<WebShell<G::World, G::Scene>, WebHostError>
 where
-    W: InlineWorld,
-    V: SceneSource<W::Page>,
-    F: FnOnce(WebGpu) -> Fut,
-    Fut: Future<Output = Result<FrameHost<W, V>, String>>,
+    G::World: InlineWorld,
 {
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::BROWSER_WEBGPU;
@@ -133,7 +159,7 @@ where
     let surface = Rc::new(
         instance
             .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
-            .map_err(|error| error.to_string())?,
+            .map_err(WebHostError::Surface)?,
     );
     let gpu = recovery::open_canvas_device(
         &instance,
@@ -141,22 +167,24 @@ where
         [canvas.width().max(1), canvas.height().max(1)],
         generation,
     )
-    .await?;
-    configure_surface(&surface, &gpu.device, &gpu.config).map_err(|error| error.to_string())?;
-    let extent = [gpu.config.width, gpu.config.height];
-    let host = prepare(WebGpu {
-        device: gpu.device.clone(),
-        queue: gpu.queue.clone(),
-        capabilities: gpu.capabilities.clone(),
-        frame_config: FrameConfig {
-            render_extent: extent,
-            surface: Some(SurfaceProfile {
-                format: gpu.config.format,
-                extent,
-            }),
-        },
-    })
-    .await?;
+    .await
+    .map_err(WebHostError::Device)?;
+    configure_surface(&surface, &gpu.device, &gpu.config).map_err(WebHostError::Configure)?;
+    let prepared = game
+        .prepare(
+            Gpu {
+                device: &gpu.device,
+                queue: &gpu.queue,
+                capabilities: &gpu.capabilities,
+                surface: SurfaceProfile {
+                    format: gpu.config.format,
+                    extent: [gpu.config.width, gpu.config.height],
+                },
+            },
+            Box::new(|| {}),
+        )
+        .await
+        .map_err(WebHostError::Prepare)?;
     let recovery = recovery::Recovery::new(instance, Rc::clone(&surface), generation);
     Ok(WebShell {
         canvas,
@@ -167,7 +195,7 @@ where
         device: gpu.device,
         graphics: gpu.fault,
         queue: gpu.queue,
-        host,
+        host: prepared.host,
         clock: PageClock::new(),
         callbacks: 0,
         presented: 0,
@@ -185,46 +213,23 @@ where
     })
 }
 
-/// Prepare a game for the page. The page drives the inline world and its own clock.
-/// # Errors
-/// Returns a device, surface or game preparation failure.
-pub async fn create_game<G: Game>(
-    canvas: HtmlCanvasElement,
-    generation: u64,
-    game: &mut G,
-) -> Result<WebShell<G::World, G::Scene>, String>
-where
-    G::World: InlineWorld,
-{
-    create(canvas, generation, |gpu| async move {
-        let prepared = game
-            .prepare(
-                Gpu {
-                    device: &gpu.device,
-                    queue: &gpu.queue,
-                    capabilities: &gpu.capabilities,
-                    surface: gpu.frame_config.surface.ok_or("canvas profile missing")?,
-                },
-                Box::new(|| {}),
-            )
-            .await?;
-        Ok(prepared.host)
-    })
-    .await
-}
-
 impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Apply the game's pending control edits, including an explicit pause request.
     /// # Errors
     /// Returns a refused game edit or world lifecycle transition.
-    pub fn apply_game_edits<G>(&mut self, game: &mut G, timestamp_ms: f64) -> Result<(), String>
+    pub fn apply_game_edits<G>(
+        &mut self,
+        game: &mut G,
+        timestamp_ms: f64,
+    ) -> Result<(), WebHostError>
     where
         G: Game<World = W, Scene = V>,
     {
         let (edits, paused) = game.take_edits();
-        G::apply(&mut self.host, edits)?;
+        G::apply(&mut self.host, edits).map_err(WebHostError::Edit)?;
         if let Some(paused) = paused {
-            self.set_paused(paused, timestamp_ms)?;
+            self.set_paused(paused, timestamp_ms)
+                .map_err(WebHostError::Lifecycle)?;
             game.observe_paused(self.paused());
         }
         Ok(())
@@ -233,13 +238,13 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Run the game's frame hooks and drive a browser animation callback.
     /// # Errors
     /// Returns a refused game edit or frame error.
-    pub fn frame_game<G>(&mut self, game: &mut G, timestamp_ms: f64) -> Result<(), String>
+    pub fn frame_game<G>(&mut self, game: &mut G, timestamp_ms: f64) -> Result<(), WebHostError>
     where
         G: Game<World = W, Scene = V>,
     {
         game.observe(G::readback(&self.host));
-        G::apply(&mut self.host, game.frame_edits())?;
-        self.frame(timestamp_ms)
+        G::apply(&mut self.host, game.frame_edits()).map_err(WebHostError::Edit)?;
+        self.frame(timestamp_ms).map_err(WebHostError::Frame)
     }
 
     /// Bind a declared profiler to this page. Report pages retain timing demand.
