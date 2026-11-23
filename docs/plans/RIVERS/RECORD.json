@@ -469,7 +469,44 @@
     },
     "M8": {
       "definitions": "c2e23b74b53c81a3bf18789b01eaf063234319c47f77ac04ac3ca4c07f9b9b51",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "1dd2255411674c579fa2a3d4a2a2b7999c2d7b52",
+          "review": ".orchestrate/evidence/RIVERS/M8-review.md",
+          "items": {
+            "M8.1": "fail"
+          },
+          "findings": [
+            {
+              "name": "Lip wetting coincides with the sample midpoint",
+              "item": "M8.1",
+              "repeat": false
+            },
+            {
+              "name": "Sheet growth is sampled at the landing",
+              "item": "M8.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 78877,
+            "cached": 1210624,
+            "output": 5051,
+            "turns": 1
+          },
+          "at": "2026-11-23T12:51:53Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps faili",

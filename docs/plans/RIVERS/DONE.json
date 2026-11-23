@@ -316,7 +316,7 @@
     {
       "id": "M8",
       "name": "Small river fixtures keep the solver checks fast",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -325,12 +325,26 @@
           "check": "cargo nextest run --locked --offline -p thrum-river-model --test it -E 'test(=chart::the_map_takes_the_chart_and_joins_it_to_the_lake_at_both_ends_of_its_stage) | test(=chart::the_stored_chart_is_the_solve_and_its_wet_cells_are_the_solvers) | test(=chop::the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the_pool) | test(=closed_forms::a_slow_flow_with_friction_holds_its_made_depth) | test(=energy::in_the_valley_the_head_lost_beyond_friction_lies_round_the_rock_and_below_the_narrows_and_ledge) | test(=fall_gauge::a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge) | test(=fall_gauge::a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting) | test(=fall_gauge::no_running_part_lands_on_a_dry_reach_and_the_terrace_waits_for_its_lip) | test(=flow_bands::a_sea_a_basin_and_a_chart_that_is_no_river_s_lie_at_their_level) | test(=flow_bands::with_no_wind_the_riffle_has_the_chop_s_height) | test(=gauge::every_chart_of_a_river_takes_the_one_gauge) | test(=gauge::the_mixed_row_is_near_a_solve_at_the_level_between_and_one_sample_raised_is_not) | test(=report::a_solve_stops_on_its_tolerances_and_reports_its_work) | test(=store::a_river_file_decodes_to_the_same_bytes_and_the_same_chart) | test(=valley::the_valley_keeps_its_discharge_fills_its_pool_to_the_weir_and_quickens_in_the_narrows) | test(=flow_bands::without_the_bands_every_answer_is_what_it_was) | test(=gauge::a_spring_fed_river_s_gauge_is_its_own_stage) | test(=report::doubling_the_rectangle_round_the_valley_barely_changes_its_work) | test(=samples::a_spring_fed_stream_is_solved_at_its_declared_discharges_and_gauged_at_its_spring)' --no-tests=fail --test-threads 1",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Does the padding control still compare the same solved reach across doubled rectangles?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/M8/M8.1.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RIVERS/M8-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Lip wetting coincides with the sample midpoint",
+          "item": "M8.1",
+          "repeat": false
+        },
+        {
+          "name": "Sheet growth is sampled at the landing",
+          "item": "M8.1",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M4",
