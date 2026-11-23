@@ -42,11 +42,20 @@ fn cascade_wave(point: QueryPoint, band: u32) -> Wave {
 
 struct QueryWave { wave: Wave, cut_nodes: u32, }
 
-@compute @workgroup_size(64)
-fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
-    let index = invocation.x;
-    if index >= settings.count { return; }
-    let point = points[index];
+const QUERY_WIDTH = 64u;
+
+fn query_gains(point: QueryPoint) -> vec4<f32> {
+    let row = point.level_current_bed;
+    let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
+    return limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);
+}
+
+fn plain_query(point: QueryPoint, gain: f32) -> QueryWave {
+    return QueryWave(long_wave(point.position - settings.origin, point.dt, gain,
+        settings.lengths_chop.w, settings.components), 0u);
+}
+
+fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWave) {
     let row = point.level_current_bed;
     var out: Answer;
     out.body_flags = vec4(point.body, 0u, point.has_bed, 0u);
@@ -68,8 +77,6 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
     }
     if point.body != 0xffffffffu {
         let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
-        let gains = limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);
-        let result = surf_query(point, gains.x);
         let long = result.wave;
         out.cut_nodes = result.cut_nodes;
         let long_slope = world_slope(long);

@@ -342,7 +342,7 @@ def measure_surf():
     env = dict(os.environ, THRUM_WATER_PROOF='surf-cost', THRUM_ASSET_STORE=str(store),
                THRUM_WATER_OUTPUT=str(output), THRUM_REQUIRE_GPU='1')
     run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
-         '--test', 'proof_gpu'], env=env)
+         '--test', 'proof_gpu', '--', '--nocapture'], env=env)
     record = json.loads((output / 'surf-cost.json').read_text())
     prior = json.loads(SURF_HISTORY.read_text())
     assert record['target'] == 'mac-metal' and record['extent'] == prior['extent'] == [2560, 1440]

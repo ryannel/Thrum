@@ -87,6 +87,10 @@ fn breaker_fleet(wind: Wind) -> (Vec<BodyQuery>, usize) {
     (fleet, eligible)
 }
 
+#[expect(
+    clippy::print_stderr,
+    reason = "locate a failed GPU wait in the recorded cost arm"
+)]
 pub(super) fn run(gpu: &Gpu) -> Value {
     let wind = Wind::Gale;
     let (fleet, eligible) = breaker_fleet(wind);
@@ -97,9 +101,11 @@ pub(super) fn run(gpu: &Gpu) -> Value {
         let mut fixture = Fixture::from_game(gpu, [2560, 1440], game, report);
         fixture.parameters(r#"{"camera.island":0}"#);
         fixture.warm_cooked();
+        eprintln!("prepared gale cost arm: water={water}, surf={surf}");
         let mut frames = Vec::new();
         for index in 0..32_u32 {
             if water && index == 14 {
+                eprintln!("submitting eight floats at tick {QUERY_TICK}, surf={surf}");
                 query.post(u64::from(QUERY_TICK), fleet.clone());
             }
             let sample = fixture.frame(1.000_001 + f64::from(index) / 120.0);
@@ -114,6 +120,7 @@ pub(super) fn run(gpu: &Gpu) -> Value {
                 assert_eq!(stats.blocking_reads, 0);
                 assert_eq!(stats.dispatches, 1);
                 assert_eq!(stats.cut_nodes > 0, surf);
+                eprintln!("read forty-eight stations, {} cut nodes", stats.cut_nodes);
                 frame["fleet_query"] = json!({
                     "floats": replies.len(), "stations": 6 * replies.len(),
                     "use_tick": QUERY_TICK + 2, "cut_nodes": stats.cut_nodes,
