@@ -565,3 +565,5 @@
   Metal passed M13.1 at 4,096 cache nodes and 4,096 query points with maximum query height error 0.419 mm.
   Removing phase lag alone or removing the section failed the corresponding controls.
   M13.2 passed on Metal with and without the capability. The checkpoint is local pending the remaining items.
+  The island's portable Metal route submitted six camera views and a tide sweep. The normals now read neighbouring
+  displaced nodes. The remaining seams, absent far foam line and measured cache cost remain in the handoff.

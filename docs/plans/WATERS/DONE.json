@@ -1061,7 +1061,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M13/surf-gpu-r4.log",
+          "evidence": ".orchestrate/evidence/WATERS/M13/surf-gpu-r5.log",
           "verdict": "",
           "review": ""
         },
