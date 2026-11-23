@@ -366,8 +366,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Read this milestone's own commits with `git diff`. Do they leave `examples/v1-game/assets/showcase/` and the stop presets as they were? If they change `.config/exact-baselines.json`, is every change a `pin` or a `refresh` naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `M6`, does the log name the change to the look that moved each reference with its old and new SHA-256, and are the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": "main-branch check exact-images",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         }
