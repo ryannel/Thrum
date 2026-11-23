@@ -246,3 +246,6 @@ fn box_mip(pixels: &mut Vec<[f32; 4]>, width: u32, height: u32) {
     }
     pixels.truncate(reduced * height as usize / 2);
 }
+
+#[cfg(test)]
+mod tests;

@@ -11,8 +11,8 @@ use thrum_render::{
 /// Select a test scene in place of the V1 sprite registration card.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SpriteProbe {
-    /// A grid of isolated texels translated through each of 256 subpixel positions.
-    Coverage(f32),
+    /// An isolated texel seen from 256 camera poses at the selected scale.
+    Sweep(f32),
     /// Pixel sprites, adjacent ground tiles, and the registration card moving together.
     Scroll {
         /// Output pixels per world unit.
@@ -27,29 +27,32 @@ pub enum SpriteProbe {
 pub(crate) struct Scene {
     probe: SpriteProbe,
     rows: Vec<SpriteRow>,
+    sweep_step: u32,
 }
 
 impl Scene {
     pub(crate) fn new(probe: SpriteProbe) -> Self {
         let rows = match probe {
-            SpriteProbe::Coverage(scale) => coverage_rows(scale),
+            SpriteProbe::Sweep(scale) => vec![SpriteRow {
+                scale: [scale; 2],
+                ..SpriteRow::new(0, [0.0; 2])
+            }],
             SpriteProbe::Scroll { .. } => scroll_rows(),
             SpriteProbe::Stills => still_rows(),
         };
-        Self { probe, rows }
+        Self {
+            probe,
+            rows,
+            sweep_step: 0,
+        }
     }
 
-    pub(crate) fn frame(
-        &self,
-        source: SourceTick,
-        alpha: f32,
-        extent: [u32; 2],
-    ) -> SpriteFrame<'_> {
+    pub(crate) fn frame(&self, source: SourceTick, alpha: f32) -> SpriteFrame<'_> {
         let (centre, pixels_per_unit) = match self.probe {
-            SpriteProbe::Coverage(_) => (
-                [f64::from(extent[0]) * 0.5, -f64::from(extent[1]) * 0.5],
-                1.0,
-            ),
+            SpriteProbe::Sweep(_) => {
+                let offset = f64::from(self.sweep_step) / 256.0;
+                ([-offset, offset], 1.0)
+            }
             SpriteProbe::Scroll { scale, speed } => {
                 let travelled = (source.tick.saturating_sub(1) as f64 + f64::from(alpha))
                     * f64::from(speed / scale);
@@ -64,6 +67,15 @@ impl Scene {
             },
             rows: &self.rows,
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) fn set_sweep_step(&mut self, step: u32) -> Result<(), String> {
+        if !matches!(self.probe, SpriteProbe::Sweep(_)) || step >= 256 {
+            return Err("sprite camera sweep requires a pose in 0..256".into());
+        }
+        self.sweep_step = step;
+        Ok(())
     }
 
     pub(crate) fn extract(&self, sink: &mut SpriteSink<'_>, tick: SourceTick) {
@@ -89,7 +101,7 @@ impl Scene {
 }
 
 pub(crate) fn assets(probe: SpriteProbe) -> SpriteScene {
-    if matches!(probe, SpriteProbe::Coverage(_)) {
+    if matches!(probe, SpriteProbe::Sweep(_)) {
         let art = EmbeddedSheet {
             extent: [1; 2],
             rgba: [255; 4].into(),
@@ -100,14 +112,9 @@ pub(crate) fn assets(probe: SpriteProbe) -> SpriteScene {
             .into(),
             texels_per_unit: 1.0,
         };
-        let mut scene = SpriteScene::new(art.clone(), 512);
-        scene.sheets.push(NamedSheet {
-            sampling: SpriteSampling::NearestControl,
-            ..NamedSheet::pixel("nearest control", art)
-        });
-        return scene;
+        return SpriteScene::new(art, 1);
     }
-    let mut scene = SpriteScene::new(pixel_sheet(), 5000);
+    let mut scene = SpriteScene::new(pixel_sheet(probe == SpriteProbe::Stills), 5000);
     scene.sheets[0].tiles = vec![1, 2, 4];
     scene.sheets.push(NamedSheet {
         sampling: SpriteSampling::Smooth,
@@ -119,23 +126,7 @@ pub(crate) fn assets(probe: SpriteProbe) -> SpriteScene {
     scene
 }
 
-fn coverage_rows(scale: f32) -> Vec<SpriteRow> {
-    (0..2_u32)
-        .flat_map(|sheet| {
-            (0..256_u32).map(move |offset| {
-                let x = f64::from((sheet * 16 + offset % 16) * 8 + 2) + f64::from(offset) / 256.0;
-                let y = f64::from(offset / 16 * 8 + 2) + f64::from(offset * 73 % 256) / 256.0;
-                SpriteRow {
-                    sheet,
-                    scale: [scale; 2],
-                    ..SpriteRow::new(0, [x, -y])
-                }
-            })
-        })
-        .collect()
-}
-
-fn pixel_sheet() -> EmbeddedSheet {
+fn pixel_sheet(include_patterns: bool) -> EmbeddedSheet {
     let mut bytes = crate::sprite_card::texels();
     for y in 0..32_i32 {
         for x in 0..256_i32 {
@@ -166,6 +157,13 @@ fn pixel_sheet() -> EmbeddedSheet {
         origin: [i * 32, 128],
         size: [32; 2],
     }));
+    if include_patterns {
+        // The still shows the original card's three one-texel patterns together.
+        frames.push(SpriteRect {
+            origin: [14, 90],
+            size: [212, 23],
+        });
+    }
     EmbeddedSheet {
         extent: [256, 160],
         rgba: bytes.into(),
@@ -237,7 +235,11 @@ fn scroll_rows() -> Vec<SpriteRow> {
 }
 
 fn still_rows() -> Vec<SpriteRow> {
-    let mut rows = Vec::new();
+    let mut rows = vec![SpriteRow {
+        scale: [1.5; 2],
+        layer: 1,
+        ..SpriteRow::new(6, [-309.0, -144.0])
+    }];
     for (half, y) in [(0, 157.0), (1, -4.0)] {
         let tone = if half == 0 {
             [0.83, 0.87, 0.95, 1.0]
@@ -298,8 +300,8 @@ pub(crate) fn parse(selection: &str) -> Result<SpriteProbe, String> {
     if selection == "stills" {
         return Ok(SpriteProbe::Stills);
     }
-    if let Some(scale) = selection.strip_prefix("coverage:") {
-        return Ok(SpriteProbe::Coverage(number(scale, 1.0..=6.0)?));
+    if let Some(scale) = selection.strip_prefix("sweep:") {
+        return Ok(SpriteProbe::Sweep(number(scale, 1.0..=6.0)?));
     }
     if let Some((scale, speed)) = selection
         .strip_prefix("scroll:")

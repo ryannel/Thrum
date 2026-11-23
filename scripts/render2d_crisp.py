@@ -1,4 +1,4 @@
-"""Capture and validate sprite coverage and native backing-size proofs."""
+"""Capture and validate native sprite backing-size proofs."""
 
 import csv
 import hashlib
@@ -11,62 +11,10 @@ from apple_presentation import mac_arm, mac_binary
 from capture_v1_runtime import console_observation
 
 ROOT = Path(__file__).resolve().parents[1]
-RETAINED = ROOT / "crates/thrum-render/tests/support/coverage-mac-metal.json"
-RECIPES = ("portable", "apple-tile")
-SCALES = (1.0, 1.25, 1.5, 2.0, 2.37, 3.0, 4.0, 6.0)
-MODES = ("Pixel", "NearestControl", "BilinearControl")
 
 
 def revision():
     return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-
-
-def coverage():
-    command = [
-        "cargo", "test", "--locked", "--offline", "-p", "thrum-render", "--test", "sprite_crisp",
-        "records_scene_linear_coverage_for_both_metal_recipes", "--", "--nocapture",
-    ]
-    result = subprocess.run(command, cwd=ROOT, env=dict(
-        os.environ, THRUM_REQUIRE_GPU="1", THRUM_MEASURE_SPRITE_COVERAGE="1",
-    ), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    if result.returncode:
-        raise ValueError(result.stdout)
-    rows = [json.loads(line.removeprefix("coverage ")) for line in result.stdout.splitlines()
-            if line.startswith("coverage ")]
-    record = dict(target="mac-metal", commit=revision(), offsets=256, rows=rows)
-    record["bounds"] = coverage_bounds(rows)
-    return record
-
-
-def coverage_bounds(rows):
-    index = {(row["recipe"], round(row["scale"], 2), row["sampling"]): row for row in rows}
-    if len(index) != len(RECIPES) * len(SCALES) * len(MODES) or len(index) != len(rows):
-        raise ValueError("Incomplete Metal coverage sweep")
-    limits = {}
-    for recipe in RECIPES:
-        measured = []
-        for scale in SCALES:
-            pixel, nearest, bilinear = (index[recipe, scale, mode] for mode in MODES)
-            if pixel["pixel_at"] is None or not 0 < pixel["pixel_error"] < 0.01:
-                raise ValueError(f"Invalid pixel error for {recipe} at {scale}")
-            if pixel["weight_at"] is None or not 0 < pixel["weight_error"] < 0.05:
-                raise ValueError(f"Invalid weight error for {recipe} at {scale}")
-            if not scale.is_integer() and not pixel["pixel_error"] < min(
-                nearest["pixel_error"], bilinear["pixel_error"]
-            ):
-                raise ValueError(f"A control beat coverage on {recipe} at {scale}")
-            measured.append(pixel["weight_error"])
-        limits[recipe] = max(measured)
-    return limits
-
-
-def prove_coverage():
-    retained = json.loads(RETAINED.read_text())
-    if retained.get("target") != "mac-metal" or retained.get("offsets") != 256:
-        raise ValueError("Invalid retained Metal coverage record")
-    if coverage_bounds(retained["rows"]) != retained["bounds"]:
-        raise ValueError("A retained bound differs from the largest measured weight error")
-    return coverage()
 
 
 def verify_card(raw, source, size, scale=2):

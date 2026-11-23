@@ -167,3 +167,8 @@
   one-frame atlas and the 32-byte frame record. The focused test passed on portable Metal and
   Apple tile, including its live allocations, graph, pipeline and submitted-frame checks against
   the 3D control. [Focused Metal run](../../../.orchestrate/evidence/RENDER-2D/M3/M3.12-generation-inventory.log)
+- 2026-11-24 M3 widens the sprite filter around 1.5×, reconstructs local texel edge crossings
+  near 2×, and leaves aligned texels exact. The Metal and Chrome camera proofs drive a fixed marker
+  through 256 submitted poses and reject replays of its first frame. The Metal atlas upload and
+  edge tests share the same four-neighbour fixture. The 1920×1080 timing record covers both Metal
+  recipes and Chrome WebGPU. [Filter and timings](../../../.orchestrate/evidence/RENDER-2D/M3/M3.1-filter-review.md)

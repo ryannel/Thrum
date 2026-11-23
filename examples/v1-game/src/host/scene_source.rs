@@ -375,6 +375,14 @@ pub struct GameScene {
 }
 impl GameScene {
     #[cfg(target_arch = "wasm32")]
+    pub(super) fn set_sprite_sweep_step(&mut self, step: u32) -> Result<(), String> {
+        self.sprite_probe
+            .as_mut()
+            .ok_or("sprite camera sweep requires a prepared probe")?
+            .set_sweep_step(step)
+    }
+
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn is_exit(&self) -> bool {
         self.content == GameContent::Exit
     }
@@ -640,7 +648,7 @@ impl SceneSource<PublishedPage> for GameScene {
     ) -> Result<thrum_render::sprite::SpriteFrame<'_>, FrameError> {
         let scale = self.sprite_scale.ok_or(RenderError::MissingSpriteSource)?;
         Ok(if let Some(probe) = &self.sprite_probe {
-            probe.frame(source, alpha, extent)
+            probe.frame(source, alpha)
         } else if self.sprite_rows.is_some() {
             crate::sprite_field::frame(extent)
         } else {

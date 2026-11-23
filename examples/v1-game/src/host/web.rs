@@ -31,6 +31,10 @@ pub(crate) fn cloud_shapes(shell: &Shell) -> Option<&crate::PlacedSky> {
     shell.host().source().cloud_shapes.as_ref()
 }
 
+pub(crate) fn set_sprite_sweep_step(shell: &mut Shell, step: u32) -> Result<(), String> {
+    shell.continuous_source_mut().set_sprite_sweep_step(step)
+}
+
 pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), String> {
     let camera = shell
         .host()

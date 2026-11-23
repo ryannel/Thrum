@@ -201,7 +201,7 @@ async function existingGame(cdp, sessionId) {
   const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
   await cdp.call('Runtime.releaseObject', { objectId: prototype.result.objectId }, sessionId);
   const invoke = async (body, args = []) => {
-    const result = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId, returnByValue: true,
+    const result = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId, returnByValue: true, awaitPromise: true,
       functionDeclaration: `function(...args){if(this.length!==1)throw new Error(\`Expected one existing BrowserGame, found \${this.length}\`);const game=this[0];${body}}`,
       arguments: args.map(value => ({ value })) }, sessionId);
     if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));

@@ -184,6 +184,8 @@ try {
       deviceScaleFactor: spriteDpr, mobile: false,
     }, sessionId);
     spriteQuery = `&sprite-probe=scroll:${args['sprite-scale']}:${args['sprite-speed']}`;
+    if (process.env.THRUM_SPRITE_PASS_TIMING === '1') spriteQuery += '&sprite-pass-timing';
+
     manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
   }
   manifest.load_before = loadavg();

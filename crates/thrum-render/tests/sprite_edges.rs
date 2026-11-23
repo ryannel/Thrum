@@ -8,49 +8,14 @@ mod support {
     pub(crate) mod sprite_fixture;
 }
 use support::sprite_fixture as fixture;
+use thrum_fixtures::sprite_edges::{self, CYAN, WHITE, YELLOW};
 
 use thrum_render::{
-    sprite::{SpriteRect, SpriteRow, SpriteSampling, SpriteScene},
+    sprite::{EmbeddedSheet, SpriteRect, SpriteRow, SpriteSampling, SpriteScene},
     synthetic::CaptureSource,
 };
 
 const SCALES: [f32; 10] = [0.25, 0.375, 0.5, 0.75, 1.0, 1.25, 1.5, 2.37, 4.0, 6.0];
-const WHITE: [u8; 4] = [255; 4];
-const CYAN: [u8; 4] = [0, 255, 255, 255];
-const YELLOW: [u8; 4] = [255, 255, 0, 255];
-const PINK: [u8; 4] = [255, 0, 255, 255];
-
-fn art() -> thrum_render::sprite::EmbeddedSheet {
-    let tiles = [PINK, PINK, PINK, PINK, CYAN, PINK, PINK, PINK, PINK];
-    let mut rgba: Vec<_> = (0..24)
-        .flat_map(|y| (0..24).flat_map(move |x| tiles[y / 8 * 3 + x / 8]))
-        .collect();
-    // White with poisoned transparent RGB inside the same frame, over white.
-    for y in 0..8 {
-        for x in 0..8 {
-            let i = ((y + 16) * 24 + x + 16) * 4;
-            rgba[i..i + 4].copy_from_slice(if (2..6).contains(&x) && (1..7).contains(&y) {
-                &WHITE
-            } else {
-                &[255, 0, 0, 0]
-            });
-        }
-    }
-    rgba.extend((0..8).flat_map(|_| {
-        (0..24).flat_map(|x| match x / 8 {
-            0 => WHITE,
-            1 => CYAN,
-            _ => YELLOW,
-        })
-    }));
-    let frames: Vec<_> = (0..12)
-        .map(|tile| SpriteRect {
-            origin: [tile % 3 * 8, tile / 3 * 8],
-            size: [8; 2],
-        })
-        .collect();
-    fixture::sheet([24, 32], &rgba, &frames)
-}
 
 fn row(frame: u32, [x, y]: [f64; 2], scale: f32, rotation: f32, order: i32) -> SpriteRow {
     SpriteRow {
@@ -81,7 +46,7 @@ fn witness_rows(offset: u32, extent: [u32; 2]) -> Vec<SpriteRow> {
                     0.17 + offset as f32 * 0.079,
                     1,
                 ),
-                row(4, [x + 5.0 + dx, y + 52.0 + dy], scale, 0.0, 1),
+                row(5, [x + 5.0 + dx, y + 52.0 + dy], scale, 0.0, 1),
                 row(0, [x, y + 104.0], 12.0, 0.0, 0),
                 row(10, [x + 2.0 + dx, y + 106.0 + dy], scale, 0.0, 1),
                 row(11, [x + 2.0 + dx + length, y + 106.0 + dy], scale, 0.0, 1),
@@ -151,7 +116,18 @@ fn check_frame(
 #[test]
 fn outlines_mips_and_tiles_remain_clean_on_metal() {
     let extent = [530, 312];
-    let art = art();
+    let (rgba, origins) = sprite_edges::art();
+    let art = EmbeddedSheet {
+        extent: sprite_edges::EXTENT,
+        rgba: rgba.into(),
+        frames: origins
+            .map(|origin| SpriteRect {
+                origin,
+                size: sprite_edges::FRAME_SIZE,
+            })
+            .into(),
+        texels_per_unit: 1.0,
+    };
     for recipe in fixture::RECIPES {
         let Some(gpu) = fixture::open("sprite edges", recipe) else {
             return;

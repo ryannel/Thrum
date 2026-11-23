@@ -720,7 +720,9 @@ async fn record(
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let motion_capture = mode == "realtime" && is_motion_capture(scenario);
     let elapsed_observation = motion_capture || sprite_motion(scenario);
-    if elapsed_observation {
+    let sprite_scroll_timings = scenario == "sprites-scroll"
+        && crate::content::launch_value("THRUM_SPRITE_PASS_TIMING").as_deref() == Ok("1");
+    if elapsed_observation && !sprite_scroll_timings {
         driver.set_timing_requested(false);
     }
     let (preset_requested, preset_accepted) =
@@ -925,7 +927,7 @@ async fn record(
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     result["display_phase_counts"] = phase_counts;
-    result["gpu_pass_timing"] = json!(!elapsed_observation);
+    result["gpu_pass_timing"] = json!(!elapsed_observation || sprite_scroll_timings);
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);

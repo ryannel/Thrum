@@ -1,4 +1,4 @@
-//! Measure coverage at the scene-linear tap and compare whole-pixel scroll at the SDR tap.
+//! Verify the submitted camera sweep, aligned texel bytes and smooth-sheet minification.
 
 #[expect(
     dead_code,
@@ -9,38 +9,17 @@ mod support {
 }
 use support::sprite_fixture as fixture;
 
-use serde_json::{Value, json};
+use serde_json::json;
 use thrum_render::{
-    sprite::{NamedSheet, SpriteRect, SpriteRow, SpriteSampling, SpriteScene},
+    sprite::{SpriteRect, SpriteRow, SpriteSampling, SpriteScene},
     synthetic::CaptureSource,
 };
 
-const SCALES: [f32; 8] = [1.0, 1.25, 1.5, 2.0, 2.37, 3.0, 4.0, 6.0];
-const MODES: [SpriteSampling; 3] = [
-    SpriteSampling::Pixel,
-    SpriteSampling::NearestControl,
-    SpriteSampling::BilinearControl,
-];
 const OFFSETS: u32 = 256;
-const ART_SIDE: u32 = 4;
-const WEIGHT: SpriteRect = SpriteRect {
-    origin: [0, 4],
-    size: [1, 1],
-};
+const CHECKPOINTS: [u32; 5] = [0, 64, 128, 192, OFFSETS - 1];
 
-fn random_art() -> Vec<u8> {
-    let mut state = 0xC493_671A_u32;
-    let mut next = || {
-        state ^= state << 13;
-        state ^= state >> 17;
-        state ^= state << 5;
-        state.to_le_bytes()[0]
-    };
-    (0..ART_SIDE.pow(2))
-        .flat_map(|_| [next(), next(), next(), 255])
-        .chain([255; 4])
-        .chain([0; 12])
-        .collect()
+fn subpixel(index: u32) -> [f64; 2] {
+    [index, (index * 73) % OFFSETS].map(|offset| f64::from(offset) / f64::from(OFFSETS))
 }
 
 fn srgb_to_linear(code: u8) -> f64 {
@@ -52,195 +31,34 @@ fn srgb_to_linear(code: u8) -> f64 {
     }
 }
 
-fn box_pixel(art: &[[f64; 3]], scale: f64, origin: [f64; 2], xy: [u32; 2]) -> [f64; 3] {
-    let overlap = |axis: usize, texel: u32| {
-        let start = origin[axis] + f64::from(texel) * scale;
-        let pixel = f64::from(xy[axis]);
-        ((start + scale).min(pixel + 1.0) - start.max(pixel)).max(0.0)
-    };
-    let mut result = [0.0; 3];
-    for y in 0..ART_SIDE {
-        for x in 0..ART_SIDE {
-            let weight = overlap(0, x) * overlap(1, y);
-            let index = (y * ART_SIDE + x) as usize;
-            for (channel, total) in result.iter_mut().enumerate() {
-                *total += art[index][channel] * weight;
-            }
-        }
+fn marker_centroid(bytes: &[u8], width: usize) -> [f64; 2] {
+    let mut mass = 0.0;
+    let mut moment = [0.0; 2];
+    for (index, pixel) in bytes.as_chunks::<8>().0.iter().enumerate() {
+        let red = half::f16::from_le_bytes([pixel[0], pixel[1]]).to_f64();
+        mass += red;
+        moment[0] += red * (index % width) as f64;
+        moment[1] += red * (index / width) as f64;
     }
-    result
+    assert!(mass > 0.0, "the submitted marker must be visible");
+    moment.map(|axis| axis / mass)
 }
 
-fn channel(bytes: &[u8], [width, _]: [u32; 2], x: u32, y: u32, channel: usize) -> f64 {
-    let offset = ((y * width + x) * 8) as usize + channel * 2;
-    f64::from(half::f16::from_le_bytes([bytes[offset], bytes[offset + 1]]).to_f32())
+fn moves_diagonally(positions: &[[f64; 2]; 5]) -> bool {
+    positions
+        .windows(2)
+        .all(|pair| pair[1][0] > pair[0][0] && pair[1][1] > pair[0][1])
 }
 
-#[derive(Default)]
-struct Figures {
-    pixel: f64,
-    pixel_at: Option<Value>,
-    weight: f64,
-    weight_at: Option<Value>,
-}
-
-fn take_case(
-    figures: &mut Figures,
-    art: &[[f64; 3]],
-    image: &thrum_render::runtime::SubmittedImage,
-    scale: f64,
-    cell: [u32; 2],
-    offset: u32,
-    cell_side: u32,
-) {
-    let [x, y] = cell;
-    let position = subpixel(offset);
-    let origin = [
-        f64::from(x + 4) + position[0],
-        f64::from(y + 4) + position[1],
-    ];
-    for py in y..y + cell_side {
-        for px in x..x + cell_side {
-            for (c, expected) in box_pixel(art, scale, origin, [px, py])
-                .into_iter()
-                .enumerate()
-            {
-                let actual = channel(&image.rgba, image.extent, px, py, c);
-                let error = (actual - expected).abs();
-                if error > figures.pixel {
-                    figures.pixel = error;
-                    figures.pixel_at = Some(json!({"offset": offset, "pixel": [px - x, py - y],
-                            "channel": c, "expected": expected, "measured": actual}));
-                }
-            }
-        }
-    }
-    let mut weight = 0.0;
-    for py in y + cell_side..y + 2 * cell_side {
-        for px in x..x + cell_side {
-            weight += channel(&image.rgba, image.extent, px, py, 0);
-        }
-    }
-    let error = (weight - scale * scale).abs();
-    if error > figures.weight {
-        figures.weight = error;
-        figures.weight_at =
-            Some(json!({"offset": offset, "expected": scale * scale, "measured": weight}));
-    }
-}
-
-fn subpixel(index: u32) -> [f64; 2] {
-    [index, (index * 73) % OFFSETS].map(|offset| f64::from(offset) / f64::from(OFFSETS))
-}
-
-fn measure(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    caps: &thrum_render::capabilities::DeviceCapabilities,
-    scale: f32,
-) -> Vec<Figures> {
-    let art = random_art();
-    let sheet = fixture::sheet(
-        [ART_SIDE, ART_SIDE + 1],
-        &art,
-        &[
-            SpriteRect {
-                origin: [0; 2],
-                size: [ART_SIDE; 2],
-            },
-            WEIGHT,
-        ],
-    );
-    let side = 32;
-    let linear: Vec<_> = art[..64]
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .map(|rgba| std::array::from_fn(|channel| srgb_to_linear(rgba[channel])))
-        .collect();
-    let mode_count = u32::try_from(MODES.len()).expect("three modes");
-    let extent = [16 * side * mode_count, 32 * side];
-    let cell =
-        |mode: u32, offset: u32| [side * (16 * mode + offset % 16), 2 * side * (offset / 16)];
-    let mut rows = Vec::new();
-    let mut config = SpriteScene::new(sheet.clone(), 2 * OFFSETS * mode_count);
-    config.sheets = MODES
-        .iter()
-        .map(|sampling| NamedSheet {
-            sampling: *sampling,
-            ..NamedSheet::pixel(format!("{sampling:?}"), sheet.clone())
-        })
-        .collect();
-    for slot in 0..mode_count {
-        for offset in 0..OFFSETS {
-            let [x, y] = cell(slot, offset);
-            let [dx, dy] = subpixel(offset);
-            for (frame, top) in [(0, y), (1, y + side)] {
-                let mut row = SpriteRow::new(
-                    frame,
-                    [
-                        f64::from(x + 4) + dx - f64::from(extent[0]) * 0.5,
-                        f64::from(extent[1]) * 0.5 - f64::from(top + 4) - dy,
-                    ],
-                );
-                row.sheet = slot;
-                row.scale = [scale; 2];
-                rows.push(row);
-            }
-        }
-    }
-    // Spatially batch translations of the same view, separated by black gutters,
-    // so one Metal submission measures all 256 positions of each mode.
-    let mut host =
-        fixture::configured_host(caps, queue, extent, fixture::Scene::new(rows, 1), config);
-    let image = fixture::capture(&mut host, device, extent, CaptureSource::SceneLinear);
-    (0..mode_count)
-        .map(|mode| {
-            let mut figures = Figures::default();
-            for offset in 0..OFFSETS {
-                take_case(
-                    &mut figures,
-                    &linear,
-                    &image,
-                    f64::from(scale),
-                    cell(mode, offset),
-                    offset,
-                    side,
-                );
-            }
-            figures
-        })
-        .collect()
-}
-
-#[test]
-fn records_scene_linear_coverage_for_both_metal_recipes() {
-    if std::env::var_os("THRUM_MEASURE_SPRITE_COVERAGE").is_none() {
+#[expect(
+    clippy::print_stdout,
+    reason = "records submitted centroids for the milestone"
+)]
+fn verify_scroll(recipe: &str) {
+    let Some(gpu) = fixture::open("submitted sprite camera sweep", recipe) else {
         return;
-    }
-    for recipe in fixture::RECIPES {
-        let Some(gpu) = fixture::open("sprite coverage record", recipe) else {
-            return;
-        };
-        for scale in SCALES {
-            let results = measure(&gpu.device, &gpu.queue, &gpu.capabilities, scale);
-            if scale.fract() != 0.0 {
-                assert!(results[0].pixel < results[1].pixel && results[0].pixel < results[2].pixel);
-            }
-            for (mode, figures) in MODES.into_iter().zip(results) {
-                println!(
-                    "coverage {}",
-                    json!({"recipe": recipe, "scale": scale, "sampling": format!("{mode:?}"),
-                    "pixel_error": figures.pixel, "pixel_at": figures.pixel_at,
-                    "weight_error": figures.weight, "weight_at": figures.weight_at})
-                );
-            }
-        }
-    }
-}
-
-fn scroll_weights(gpu: &thrum_test_support::Opened) -> [[f64; 2]; 3] {
-    let extent = [48, 8];
+    };
+    let extent = [16, 16];
     let art = fixture::sheet(
         [1; 2],
         &[255; 4],
@@ -249,91 +67,63 @@ fn scroll_weights(gpu: &thrum_test_support::Opened) -> [[f64; 2]; 3] {
             size: [1; 2],
         }],
     );
-    let mut config = SpriteScene::new(art.clone(), 6);
-    config.sheets.push(NamedSheet {
-        sampling: SpriteSampling::NearestControl,
-        ..NamedSheet::pixel("nearest", art)
-    });
-    let scales = [1.25_f32, 1.5, 2.37];
-    let rows = scales
-        .into_iter()
-        .enumerate()
-        .flat_map(|(i, scale)| {
-            (0..2_u32).map(move |sheet| {
-                let position = [(i * 16 + sheet as usize * 8 + 2) as f64 - 24.0, 2.0];
-                SpriteRow {
-                    sheet,
-                    scale: [scale; 2],
-                    ..SpriteRow::new(0, position)
-                }
-            })
-        })
-        .collect();
-    let mut host = fixture::configured_host(
-        &gpu.capabilities,
-        &gpu.queue,
-        extent,
-        fixture::Scene::new(rows, 1),
-        config,
-    );
-    let mut maxima = [[0.0_f64; 2]; 3];
-    for offset in 0..OFFSETS {
-        let [x, y] = subpixel(offset);
-        host.source_mut().centre = [-x, y];
-        let image = fixture::capture(&mut host, &gpu.device, extent, CaptureSource::SceneLinear);
-        for (index, scale) in scales.into_iter().enumerate() {
-            for mode in 0..2_u32 {
-                let left = (u32::try_from(index).expect("three scales") * 2 + mode) * 8;
-                let mut measured = 0.0;
-                for y in 0..8 {
-                    for x in left..left + 8 {
-                        measured += channel(&image.rgba, extent, x, y, 0);
-                    }
-                }
-                let error = (measured - f64::from(scale).powi(2)).abs();
-                let maximum = &mut maxima[index][mode as usize];
-                *maximum = maximum.max(error);
+    for scale in [1.25_f32, 1.5, 2.37] {
+        let row = SpriteRow {
+            scale: [scale; 2],
+            ..SpriteRow::new(0, [0.0; 2])
+        };
+        let mut host = fixture::host(
+            &gpu.capabilities,
+            &gpu.queue,
+            extent,
+            fixture::Scene::new(vec![row], 1),
+            art.clone(),
+        );
+        let mut previous_submission = None;
+        let mut positions = [[0.0; 2]; CHECKPOINTS.len()];
+        let mut frozen = [[0.0; 2]; CHECKPOINTS.len()];
+        let mut first = Vec::new();
+        for step in 0..OFFSETS {
+            let offset = f64::from(step) / f64::from(OFFSETS);
+            host.continuous_source_mut().centre = [-offset, offset];
+            let image =
+                fixture::capture(&mut host, &gpu.device, extent, CaptureSource::SceneLinear);
+            assert!(previous_submission.is_none_or(|old| image.sample.submission_order > old));
+            previous_submission = Some(image.sample.submission_order);
+            if step == 0 {
+                first.clone_from(&image.rgba);
+            }
+            if let Some(checkpoint) = CHECKPOINTS.iter().position(|&value| value == step) {
+                positions[checkpoint] = marker_centroid(&image.rgba, extent[0] as usize);
+                frozen[checkpoint] = marker_centroid(&first, extent[0] as usize);
             }
         }
-    }
-    maxima
-}
-
-#[expect(
-    clippy::print_stdout,
-    reason = "records device measurements for the milestone proof"
-)]
-fn verify_scroll(recipe: &str) {
-    let bounds: Value = serde_json::from_str(include_str!("support/coverage-mac-metal.json"))
-        .expect("retained Metal sweep");
-    let Some(gpu) = fixture::open("sprite coverage scroll", recipe) else {
-        return;
-    };
-    let bound = bounds["bounds"][recipe]
-        .as_f64()
-        .expect("measured recipe bound");
-    for (scale, [coverage, nearest]) in [1.25, 1.5, 2.37].into_iter().zip(scroll_weights(&gpu)) {
         assert!(
-            coverage <= bound,
-            "{recipe} {scale}: observed {coverage}, retained {bound}"
+            moves_diagonally(&positions),
+            "{recipe} {scale}: {positions:?}"
         );
         assert!(
-            nearest >= 1.0 && nearest > bound,
-            "{recipe} {scale}: nearest did not lose or gain an output pixel"
+            !moves_diagonally(&frozen),
+            "frozen pixels satisfied the movement proof"
         );
         println!(
-            "{recipe} {scale}: coverage error {coverage}, nearest error {nearest}, retained bound {bound}"
+            "{}",
+            json!({
+                "recipe": recipe, "scale": scale, "submissions": OFFSETS,
+                "checkpoint_steps": CHECKPOINTS, "centroids": positions,
+                "frozen_centroids": frozen, "frozen_rejected": true,
+            })
         );
     }
 }
 
 #[test]
-fn fractional_camera_scroll_conserves_weight_on_portable() {
+fn fractional_camera_scroll_on_portable() {
     verify_scroll("portable");
 }
 
 #[test]
-fn fractional_camera_scroll_conserves_weight_on_apple_tile() {
+fn fractional_camera_scroll_on_apple_tile() {
     verify_scroll("apple-tile");
 }
 

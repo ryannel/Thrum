@@ -6,6 +6,14 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 impl BrowserGame {
+    /// Select the next camera pose of the diagnostic sprite sweep.
+    ///
+    /// # Errors
+    /// Refuses an inactive sweep or a pose outside 0..256.
+    pub fn set_sprite_sweep_step(&mut self, step: u32) -> Result<(), JsValue> {
+        super::game::set_sprite_sweep_step(&mut self.page.shell, step).map_err(super::js_error)
+    }
+
     /// Authored card texels used by the check's independent CPU rasterizer.
     pub fn sprite_card_texels(&self) -> Option<Vec<u8>> {
         (self.page.shell.host().scene_kind() == SceneKind::TwoD).then(crate::sprite_card::texels)

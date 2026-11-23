@@ -99,12 +99,6 @@ pub enum SpriteSampling {
     Pixel,
     /// Linear filtering between texels and mip levels.
     Smooth,
-    /// Point sampling for the coverage proof's control.
-    #[doc(hidden)]
-    NearestControl,
-    /// Bilinear sampling for the coverage proof's control.
-    #[doc(hidden)]
-    BilinearControl,
 }
 
 /// One embedded sheet and its identity in preparation diagnostics.

@@ -63,6 +63,11 @@
         const sprites = probe.get("scene") === "sprites";
         const clouds = probe.get("clouds") ?? undefined;
         const placed = probe.get("placed-clouds");
+        const spriteSweep = sprites && probe.get("sprite-probe")?.startsWith("sweep:");
+        if (spriteSweep) {
+          canvas.style.width = "64px";
+          canvas.style.height = "64px";
+        }
         if ((sprites || exit || probe.has("field")) && clouds !== undefined && clouds !== "off") {
           throw new Error("Cloud selection requires the grid or cooked valley scene");
         }
@@ -133,7 +138,7 @@
           : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
         // Arm the scene-linear checkpoint before the first animation frame.
         // Switching tap sources on a continuously driven game needs retirement.
-        if (sprites && probe.get("sprite-probe")?.startsWith("coverage:")) {
+        if (spriteSweep) {
           game.begin_linear_capture(1);
         }
         if (probe.has("extent-probe")) {
@@ -292,7 +297,7 @@
           controlView: controls,
           recoveryButton: document.querySelector("#restore-graphics"),
           physicalKeys: false,
-          canFrame: () => !cloudCheck?.hold,
+          canFrame: () => !spriteSweep && !cloudCheck?.hold,
           onHidden: clearControls,
           beforeFrame() {
             syncBackingSize();

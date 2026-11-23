@@ -343,7 +343,8 @@ async function captureSpriteField() {
   } else {
     game = await create_sprite_game(canvas, 2, 10000);
   }
-  game.capture_without_pass_timings();
+  const passTimings = spriteScroll && query.has('sprite-pass-timing');
+  if (!passTimings) game.capture_without_pass_timings();
   game.set_visible(true, 0);
   game.set_paused(true, 0);
   uploadWorker = await startCaptureUploadWorker({ spool: true });
@@ -365,7 +366,7 @@ async function captureSpriteField() {
   record.scheduling = 'elapsed timer opportunities against a 45 Hz schedule on the visible headless page';
   record.admission_policy = 'wait';
   record.spool_backpressure_opportunities = 0;
-  record.gpu_pass_timing = false;
+  record.gpu_pass_timing = passTimings;
   record.start_before_ms = performance.now();
   game.begin_submitted_capture(1);
   const start = performance.now();
@@ -407,6 +408,7 @@ async function captureSpriteField() {
   record.renderer_omissions = game.submitted_capture_omissions();
   record.end_ms = performance.now();
   record.final_report = JSON.parse(game.route_report(0));
+  if (passTimings) record.sprite_timing = JSON.parse(game.sprite_scene_report());
   if (record.renderer_omissions || record.export_omissions || exportError || !record.images.length) {
     fail(`incomplete sprite capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   }
