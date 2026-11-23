@@ -43,3 +43,10 @@
   `await_drawn`, the kit's `ContentStatus` wait and the native-witness route preparation all use it. On Mac Metal the
   wait tests, the kit's sky tests, the starter's live reload (10 saves) and still capture, and a Metal-witness route
   capture passed. [Evidence](../../../.orchestrate/evidence/HOST/M3/)
+- 2026-11-23 Built M4's hosted game contract, browser control binding, caller-supplied Mac qualification
+  observer and shared render-owner frame request and reply. V1 and the sky kit use the shared preparation
+  path. Verified the starter on Mac Metal and in Chrome, V1's Mac held-drawable recovery and overload,
+  all eleven V1 Chrome lifecycle cases, and the simulator's G3b route and overload. The Mac collector
+  produced capture-on grid replacement and
+  capture-off valley records. The registered images are covered by the shared main-branch verifier.
+  [Evidence](../../../.orchestrate/evidence/HOST/M4/README.md)

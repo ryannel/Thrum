@@ -731,6 +731,20 @@
       ],
       "scope": "Local world lifecycle and drawable acquisition. Exact image verification runs through the shared main-branch check."
     },
+    "host_game_contract": {
+      "implementation": "The window, browser and offscreen adapters prepare a game through one runtime contract. The Mac and iPhone owners exchange shared frame requests and replies. The browser control view and Mac qualification observer take their inputs from the caller.",
+      "functional_validation": "The Mac Metal contract test submitted an offscreen frame. Starter ran in a bounded Mac window and passed Chrome controls and live asset reload checks. V1 passed the Mac recovery and overload audits, all eleven Chrome lifecycle cases and the simulator G3b lifecycle and overload runs.",
+      "experienced_quality": "Reviewed selected Mac owned-window, Chrome starter and simulator stills for scene and UI continuity.",
+      "platform_performance": {
+        "mac": "Metal function evidence and untraced qualification records",
+        "browser": "Chrome WebGPU function on Apple Metal",
+        "ios": "iPhone 18 Pro simulator function"
+      },
+      "evidence": [
+        ".orchestrate/evidence/HOST/M4/README.md"
+      ],
+      "scope": "Hosting, controls, render-owner messages and observation. Cadence and physical-device performance remain outside this verification."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
       "functional_validation": "Mac_live_held_drawable_Metal_recovery_preserves_authority_with_zero_old_queue_calls;_Mac_overload_drain_resume_and_Chrome_reconstruction_and_real_tab_switches_pass;_iOS_simulator_off_main_input_surface_replacement_rotation_and_injected_device_loss_recovery_pass",
