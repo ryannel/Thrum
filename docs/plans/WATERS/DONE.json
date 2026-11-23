@@ -1060,8 +1060,8 @@
           "ask": "Does the test fail when the lag is left out, and when the section is?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M13/surf-gpu-r4.log",
           "verdict": "",
           "review": ""
         },
@@ -1071,8 +1071,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_capability_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M13/surf-capability-r2.log",
           "verdict": "",
           "review": ""
         },

@@ -562,3 +562,6 @@
   M13.6 needs a planner ruling on variance removed from a wave whose breaking index never exceeds 1.
   The existing M7.5 rule prescribes a positive wet birth for that loss.
   [Target runs and blocker](../../../.orchestrate/evidence/WATERS/M13-handoff.md).
+  Metal passed M13.1 at 4,096 cache nodes and 4,096 query points with maximum query height error 0.419 mm.
+  Removing phase lag alone or removing the section failed the corresponding controls.
+  M13.2 passed on Metal with and without the capability. The checkpoint is local pending the remaining items.
