@@ -66,12 +66,21 @@ pub(crate) fn check_lip(
     height: f64,
 ) {
     let sheet = map.surf_sheet(field, 0, time).expect("breaker sheet");
-    let cut = cut(&sheet, column, CutConfig::default()).expect("breaker cut");
+    let lip = cut(&sheet, column, CutConfig::default()).expect("breaker cut");
     assert!(
-        cut.hits >= 3 && cut.converged,
-        "three-surface witness: {cut:?}"
+        lip.hits >= 3 && lip.converged,
+        "three-surface witness: {lip:?}"
     );
-    assert!((cut.height - height).abs() < 0.001);
+    assert!((lip.height - height).abs() < 0.001);
+    for &train in field.layers[0].components() {
+        let mut alone = Field {
+            layers: field.layers.clone(),
+        };
+        alone.layers[0] = LongWaves::new(vec![train], CHOPPINESS).expect("one train");
+        let alone = map.surf_sheet(&alone, 0, time).expect("one-train sheet");
+        let column = cut(&alone, column, CutConfig::default()).expect("one-train cut");
+        assert_eq!(column.hits, 1, "the overhang needs both trains: {column:?}");
+    }
     let mut rest = column;
     for _ in 0..128 {
         let p = sheet.forward(rest);
@@ -89,6 +98,6 @@ pub(crate) fn check_lip(
     assert!((height - no_transform.sample.height).abs() > 0.10);
     eprintln!(
         "fold: {} crossings, lip {:.6} m, trough {:.6} m, without transform {:.6} m",
-        cut.hits, height, trough.height, no_transform.sample.height
+        lip.hits, height, trough.height, no_transform.sample.height
     );
 }
