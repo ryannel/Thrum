@@ -1,30 +1,27 @@
 {
   "module": "REVIEW-ENGINE",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/REVIEW-ENGINE/design-review.md",
-    "commit": "e5377f7e75424fbf6bc672180c7f272344af52da",
+    "commit": "05fda168e0c7d4cc1972be31c0640053b4739b9b",
     "hash": "8f69ea665932238295a8daae2aa31152f79d50c6d2d9081f98a8ffdb25f189b4",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6-astra",
+    "model": "gpt-6.2-sol",
     "effort": "high",
     "observed": {
-      "model": "gpt-6-astra",
+      "model": "gpt-6.2-sol",
       "effort": "high"
     },
-    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 68957,
-      "cached": 583936,
-      "output": 5557,
+      "input": 118200,
+      "cached": 1397632,
+      "output": 10018,
       "turns": 1
     },
-    "at": "2026-11-14T23:30:01Z",
-    "items_owed": [
-      "M6"
-    ]
+    "at": "2026-11-23T23:38:37Z"
   },
   "milestones": {
     "M1": {
@@ -550,6 +547,32 @@
         "turns": 1
       },
       "at": "2026-11-14T22:32:24Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/REVIEW-ENGINE/design-review-2.md",
+      "commit": "e5377f7e75424fbf6bc672180c7f272344af52da",
+      "hash": "8f69ea665932238295a8daae2aa31152f79d50c6d2d9081f98a8ffdb25f189b4",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 68957,
+        "cached": 583936,
+        "output": 5557,
+        "turns": 1
+      },
+      "at": "2026-11-14T23:30:01Z",
+      "items_owed": [
+        "M6"
+      ]
     }
   ]
 }
