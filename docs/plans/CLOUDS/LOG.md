@@ -591,3 +591,14 @@
   tolerances pass on both Metal profiles. With the default workspace scheduling the first focused run took
   2.139 s native and 2.145 s portable. The isolated runs took 2.309 s and 2.083 s respectively.
   [Mac Metal evidence](../../../.orchestrate/evidence/CLOUDS/M18/README.md).
+
+## M6 review fixes
+
+- 2026-11-23 The headless query applies authored slab floors and marks footprint estimates from hash-selected cells.
+  The game scripts only its own demo shapes. Placement storage retains metadata and rows, with Metal evidence of
+  80 bytes for a drifting instance, 144 after changing the weather anchor and zero on an unchanged frame.
+- The mixed demo spreads formation across weather time, including the distant bank at the placed range. The
+  visible slab uses bounded filtering at billow scale. Builder and fresh inspection found matching edge softness,
+  no placement seam and both overlap directions in the Metal matrix. Consecutive 1× and 60× submissions show a
+  continuous range crossing. Chrome submitted the resident R8 stacks with no validation errors.
+  [Target evidence and reproduction](../../../.orchestrate/evidence/CLOUDS/M6/recheck/README.md).
