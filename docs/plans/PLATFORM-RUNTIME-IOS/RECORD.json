@@ -3,19 +3,25 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/design-review.md",
-    "commit": "38fbbe2588fa09271a58dfe47b2daceb96509584",
-    "hash": "fe29a169655e23cdf8a7a8fb677a2fb62e9a95558d39fbfd4a17cb0bc1b512c9",
+    "commit": "8c9daaf399df16a4fe8dabe777a3c017285e5862",
+    "hash": "8e4b686021e2f321a5c9911d5b3570dc7b6e54b5c0689882c98c6fa60a430c55",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6.1-sol",
+    "model": "gpt-6.2-astra",
     "effort": "high",
     "observed": {
-      "model": "gpt-6.1-sol",
+      "model": "gpt-6.2-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.3.2",
-    "path": "visible",
-    "at": "2026-11-09T15:03:58Z"
+    "cli": "codex-cli 0.171.0-alpha.13",
+    "path": "headless",
+    "usage": {
+      "input": 45010,
+      "cached": 340992,
+      "output": 2673,
+      "turns": 1
+    },
+    "at": "2026-11-23T09:29:12Z"
   },
   "milestones": {
     "M7": {
@@ -64,5 +70,24 @@
         "at": "2026-11-09T16:06:43Z"
       }
     }
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/design-review-1.md",
+      "commit": "38fbbe2588fa09271a58dfe47b2daceb96509584",
+      "hash": "fe29a169655e23cdf8a7a8fb677a2fb62e9a95558d39fbfd4a17cb0bc1b512c9",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.1-sol",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "visible",
+      "at": "2026-11-09T15:03:58Z"
+    }
+  ]
 }
