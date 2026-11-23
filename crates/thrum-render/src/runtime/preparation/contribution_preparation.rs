@@ -102,9 +102,7 @@ fn mock_prepare(
     if let Some(list) = member.downcast_ref::<SceneContributions>() {
         return list.prepare_members(|child| mock_prepare(child, failure));
     }
-    let member = (member as &dyn std::any::Any)
-        .downcast_ref::<Member>()
-        .unwrap();
+    let member = member.downcast_ref::<Member>().expect("test member");
     let Legacy { id, value, events } = &member.0;
     events
         .lock()
