@@ -266,7 +266,7 @@
       }
     },
     "M3": {
-      "definitions": "1ab52bded14e1e99f60f3feebc1f7588b3b692fb58fb2008c10a5662e7ac50a0",
+      "definitions": "cf9315e34900aa69ca174177deae3da045ff0093c962ba5de88e3e2d1b8140aa",
       "reviews": [
         {
           "verdict": "fail",
@@ -502,8 +502,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Diagnose RAY-TRACING M3, which has failed review five times. Its visual items pass; each review has instead found a new ",
-        "at": "2026-11-23T09:01:05Z"
+        "task": "Answer the Must Fix findings in RAY-TRACING's latest design review (.orchestrate/evidence/RAY-TRACING/design-review.md),",
+        "at": "2026-11-23T09:16:09Z"
       }
     },
     "M4": {
@@ -567,11 +567,15 @@
     {
       "task": "Diagnose RAY-TRACING M3, which has failed review five times. Its visual items pass; each review has instead found a new edge case in the fallback from traced shadows to Maps, the latest under M3.6: when an ordered list of contributions falls back, a cooked receiver that was already resident is dropped for the first submission (crates/thrum-asset-gpu/src/lib.rs around lines 869 and 979; review at .orchestrate/evidence/RAY-TRACING/M3-review.md, earlier rounds beside it as M3-review-1..4.md).\nThe pattern suggests M3.6 asks for a property (\"the first fallback submission matches the no-request control\") that the design doesn't yet give the builder a way to guarantee, so each fix closes one path and the next reviewer finds another. Decide what the fallback has to guarantee and by what mechanism (for example, preparation that is all-or-nothing across the whole list, so no member's resident set changes until every member has prepared), and amend M3's design, items and done-when file so a builder can prove it in general rather than one path at a time. Keep checks fast and targeted for the merge tier. Don't change other modules' milestones.\nDone when M3's design, items and done-when file are amended and committed, with a short diagnosis note naming what changed and why.",
       "at": "2026-11-23T09:01:05Z"
+    },
+    {
+      "task": "Answer the Must Fix findings in RAY-TRACING's latest design review (.orchestrate/evidence/RAY-TRACING/design-review.md), which judged the M3 re-plan you made at 6a485a5d3 (one commit for the scene and its whole ordered contribution list). Take its Suggestions where they are cheap. Keep the merge-tier proofs fast and targeted, and don't change other modules' milestones. Done when the design, M3's items and done-when file agree with the review's findings and are committed, with a short note.",
+      "at": "2026-11-23T09:16:09Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T09:01:05Z"
+    "at": "2026-11-23T09:16:09Z"
   },
   "design_history": [
     {
