@@ -316,7 +316,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SCENE-VIEWS's design: Design Ready for Review · [design](SCENE-VIEWS/DESIGN.md) · [plan](SCENE-VIEWS/PLAN.md)
 - A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS M6): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M6-review.md)
 - RENDER-2D's design: Design Ready for Review · [design](RENDER-2D/DESIGN.md) · [plan](RENDER-2D/PLAN.md)
-- SESSION's design: Design Ready for Review · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
+- SESSION's design: Design Changes Requested · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
 - REVIEW-ENGINE's design: Design Ready for Review · [design](REVIEW-ENGINE/DESIGN.md) · [plan](REVIEW-ENGINE/PLAN.md)
 - A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer (REVIEW-RENDER M4): In Progress · [plan](REVIEW-RENDER/PLAN.md) · [latest review](../../.orchestrate/evidence/REVIEW-RENDER/M4-review.md)
 - A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first (HOST M4): In Progress · [plan](HOST/PLAN.md) · [latest review](../../.orchestrate/evidence/HOST/M4-review.md)
@@ -441,7 +441,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Design Ready for Review |
-| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Design Ready for Review |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Design Changes Requested |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, GAME-SPLIT:M3, GATE-TIME:M5 |
