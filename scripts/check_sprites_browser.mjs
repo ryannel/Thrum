@@ -309,6 +309,15 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
         }, timeout, 'ordinary sprite canvas startup');
         return existingGame(cdp, sessionId);
       };
+      const retireCanvas = async game => {
+        await game.invoke('game.set_visible(false, performance.now());return true;');
+        // Give the compositor two callbacks to release the current canvas image
+        // before navigation destroys the surface and its WebGPU device.
+        await call('Runtime.evaluate', {
+          expression: 'new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
+          awaitPromise: true,
+        });
+      };
       const surface = async (game, css) => {
         const grid = await waitFor(() => game.invoke(`
           const c = document.querySelector('canvas');
@@ -359,6 +368,7 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
         cardRows.push({ ...grid, submission: frame.meta.submission_id, presenter: frame.meta.presenter_generation });
       }
       if (cardRows[0].presenter === cardRows[1].presenter) throw new Error('Resize did not change the presenter generation');
+      await retireCanvas(card);
       const weights = [];
       for (const scale of [1.25, 1.5, 2.37]) {
         const game = await visit(`&sprite-probe=coverage:${scale}`);
@@ -371,6 +381,7 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
           throw new Error(JSON.stringify({ dpr, scale, bound: retained?.bound, ...frame }));
         }
         weights.push({ scale, ...grid, ...frame });
+        await retireCanvas(game);
       }
       const receipt = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
       rows.push({ dpr, card: cardRows, weights, receipt });
