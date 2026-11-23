@@ -19,6 +19,9 @@ args['cloud-view'] = '';
 args['retain-raw'] = 'off';
 args.atmosphere = 'off';
 args.params = '';
+args['sprite-scale'] = '1.5';
+args['sprite-speed'] = '0.3';
+args.dpr = '1';
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
   if (!Object.hasOwn(args, key) || !process.argv[i + 1]) throw new Error(`Unknown or incomplete option ${process.argv[i]}`);
@@ -26,8 +29,14 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 if (!['fixed', 'realtime'].includes(args.mode) || !['ordinary', 'stall', 'saturation', 'resize', 'loss', 'slow', 'off'].includes(args.control)) throw new Error('Invalid mode/control');
 if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-linear' && args.control !== 'ordinary')) throw new Error('Unsupported capture source/control');
-if (!['day', 'night', 'noon', 'exit', 'sprites-field'].includes(args.scene)) throw new Error('Unknown route scene');
-const spriteField = args.scene === 'sprites-field';
+if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll'].includes(args.scene)) throw new Error('Unknown route scene');
+const spriteScroll = args.scene === 'sprites-scroll';
+const spriteField = args.scene === 'sprites-field' || spriteScroll;
+const spriteDpr = Number(args.dpr);
+if (spriteScroll && (!['1.5', '2', '2.37'].includes(args['sprite-scale']) ||
+    !['0.3', '3'].includes(args['sprite-speed']) || ![1, 2].includes(spriteDpr))) {
+  throw new Error('Invalid sprite scroll scale, speed or DPR');
+}
 if (spriteField && (args.mode !== 'realtime' || args.control !== 'ordinary' || args.source !== 'sdr' ||
     args.clouds !== 'off' || args.reconstruction !== 'off' || args.effect !== 'off' || args.witness !== 'off')) {
   throw new Error('Sprite field requires ordinary realtime SDR without 3D selections');
@@ -159,8 +168,17 @@ try {
           event.params.name === 'thrumCaptureDone') captureDone = true;
     };
   }
+  let spriteQuery = '';
+  if (spriteScroll) {
+    await cdp.call('Emulation.setDeviceMetricsOverride', {
+      width: extent[0] / spriteDpr, height: extent[1] / spriteDpr,
+      deviceScaleFactor: spriteDpr, mobile: false,
+    }, sessionId);
+    spriteQuery = `&sprite-probe=scroll:${args['sprite-scale']}:${args['sprite-speed']}`;
+    manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
+  }
   manifest.load_before = loadavg();
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${cloudView ? '&cloud-view' : ''}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${cloudView ? '&cloud-view' : ''}${spriteQuery}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
@@ -173,6 +191,10 @@ try {
   }, 180000, 'submitted-output route');
   manifest.load_after = loadavg();
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
+  if (spriteScroll && (record.device_pixel_ratio !== spriteDpr ||
+      JSON.stringify(record.css_extent.map(side => side * spriteDpr)) !== JSON.stringify(extent))) {
+    throw new Error('Scroll did not run at one canvas backing pixel per device pixel');
+  }
   if ((args.witness !== 'off' || args.atmosphere !== 'off') && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');
   await Promise.all(pending);
   if (spriteField && record.complete) {

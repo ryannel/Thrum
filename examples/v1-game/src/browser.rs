@@ -275,6 +275,27 @@ pub async fn create_placed_browser_game(
     create_game_with_shapes(canvas, setup, Some(placed)).await
 }
 
+/// Prepare an authored sprite sampling scene on a WebGPU canvas.
+///
+/// # Errors
+/// Refuses an unknown probe or a graphics startup error.
+#[wasm_bindgen]
+pub async fn create_sprite_probe(
+    canvas: HtmlCanvasElement,
+    probe: &str,
+) -> Result<BrowserGame, JsValue> {
+    let sprite_probe = crate::sprite_probe::parse(probe).map_err(js_error)?;
+    create_game(
+        canvas,
+        crate::GameSetup {
+            sprite_scale: Some(2),
+            sprite_probe: Some(sprite_probe),
+            ..Default::default()
+        },
+    )
+    .await
+}
+
 async fn create_game(
     canvas: HtmlCanvasElement,
     setup: crate::GameSetup,

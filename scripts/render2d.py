@@ -471,14 +471,31 @@ def prove_field(args, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("field", "costs", "record-costs"))
+    parser.add_argument("action", choices=("field", "costs", "record-costs", "coverage", "record-coverage", "window"))
     parser.add_argument("--target", choices=TARGETS, required=True)
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--binary", type=Path, default=ROOT / "target/release/v1-game")
+    parser.add_argument("--binary", type=Path)
     parser.add_argument("--web-root", type=Path, default=ROOT / "target/v1-game-web")
     for name in ("before", "before-load", "base-binary", "binary", "route", "store"):
         parser.add_argument(f"--valley-{name}", type=Path)
     args = parser.parse_args()
+    if args.action in ("coverage", "record-coverage", "window"):
+        import render2d_crisp
+        if args.target != "mac-metal":
+            parser.error(f"{args.action} is a Metal proof")
+        (ROOT / "tmp").mkdir(exist_ok=True)
+        if args.action == "window":
+            with tempfile.TemporaryDirectory(prefix="render2d-window-", dir=ROOT / "tmp") as scratch:
+                record = render2d_crisp.window(Path(scratch), args.binary)
+        elif args.action == "record-coverage":
+            record = render2d_crisp.coverage()
+        else:
+            record = render2d_crisp.prove_coverage()
+        if args.output:
+            args.output.write_text(json.dumps(record, indent=2) + "\n")
+        print(json.dumps(record, separators=(",", ":")))
+        return
+    args.binary = args.binary or ROOT / "target/release/v1-game"
     retained = FIXTURES / f"cost-{args.target}.json.gz"
     if args.action in ("field", "costs"):
         if args.action == "costs":

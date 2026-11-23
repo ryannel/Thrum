@@ -63,10 +63,13 @@ fn pixel_check(
         let y = f64::from(EXTENT[1]) * 0.5 - (index / width) as f64 - 0.5 - pivot[1];
         let u = (x * cos + y * sin) / scale[0];
         let v = (x * sin - y * cos) / scale[1];
-        // Rasterizer edge ownership is unspecified across backends.
+        // Compare the solid interior and the clear exterior independently of
+        // footprint coverage. Sprite edges have their own submitted-image test.
+        let footprint = scale[0].min(scale[1]).recip();
+        let transition = footprint.max(1.0);
         if [u, v, u - 12.0, v - 10.0]
             .iter()
-            .any(|edge| edge.abs() < 0.003)
+            .any(|edge| edge.abs() <= transition)
         {
             continue;
         }
@@ -241,9 +244,9 @@ fn one_recorded_draw_binds_eight_sheets_and_writes_only_changed_world_rows() {
         [240, 193, 201, 255],
     ];
     for (slot, colour) in (0_u32..8).zip(colours) {
-        config.sheets.push(NamedSheet {
-            name: format!("sheet {slot}"),
-            sheet: fixture::sheet(
+        config.sheets.push(NamedSheet::pixel(
+            format!("sheet {slot}"),
+            fixture::sheet(
                 [1; 2],
                 &colour,
                 &[SpriteRect {
@@ -251,7 +254,7 @@ fn one_recorded_draw_binds_eight_sheets_and_writes_only_changed_world_rows() {
                     size: [1; 2],
                 }],
             ),
-        });
+        ));
         for i in 0..2 {
             let x = slot * 2 + i;
             scene.world_rows.push((

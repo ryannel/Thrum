@@ -1,5 +1,5 @@
 // A separate capture driver. The deterministic route page keeps its original refusals.
-import init, { create_route_game, create_sprite_game, fetch_cooked_valley } from './v1_game.js';
+import init, { create_route_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } from './v1_game.js';
 import { startCaptureUploadWorker, uploadCapture } from './capture_upload.mjs';
 const record = { done: false, complete: false, opportunities: [], images: [], actions: [], export_peak: 0 };
 window.thrumCapture = record;
@@ -8,7 +8,8 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
-const spriteField = scene === 'sprites-field';
+const spriteScroll = scene === 'sprites-scroll';
+const spriteField = scene === 'sprites-field' || spriteScroll;
 const witness = query.get('witness') ?? 'off';
 const atmosphere = query.get('atmosphere') ?? 'off';
 const heldSetup = witness !== 'off' || atmosphere !== 'off';
@@ -318,7 +319,16 @@ async function captureSpriteField() {
   const canvas = document.querySelector('canvas');
   const extent = [1920, 1080];
   [canvas.width, canvas.height] = extent;
-  game = await create_sprite_game(canvas, 2, 10000);
+  if (spriteScroll) {
+    canvas.style.width = `${extent[0] / devicePixelRatio}px`;
+    canvas.style.height = `${extent[1] / devicePixelRatio}px`;
+    game = await create_sprite_probe(canvas, query.get('sprite-probe'));
+    const bounds = canvas.getBoundingClientRect();
+    record.device_pixel_ratio = devicePixelRatio;
+    record.css_extent = [bounds.width, bounds.height];
+  } else {
+    game = await create_sprite_game(canvas, 2, 10000);
+  }
   game.capture_without_pass_timings();
   game.set_visible(true, 0);
   game.set_paused(true, 0);
@@ -349,7 +359,7 @@ async function captureSpriteField() {
   game.set_paused(false, 0);
   const period = 1000 / 45;
   let next = 0;
-  while (performance.now() - start < 22400) {
+  while (performance.now() - start < (spriteScroll ? 4400 : 22400)) {
     if (hidden) fail('sprite capture page became hidden');
     drain();
     const elapsed = performance.now() - start;
@@ -386,7 +396,7 @@ async function captureSpriteField() {
   if (record.renderer_omissions || record.export_omissions || exportError || !record.images.length) {
     fail(`incomplete sprite capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   }
-  if (record.images.at(-1).submit_ms - record.images[0].submit_ms < 20000) fail('sprite capture spans less than twenty seconds');
+  if (record.images.at(-1).submit_ms - record.images[0].submit_ms < (spriteScroll ? 3500 : 20000)) fail('sprite capture interval was too short');
   record.spool_bytes = await uploadWorker.seal();
   const directory = await navigator.storage.getDirectory();
   const entry = await directory.getFileHandle('sprite-capture.rgba');

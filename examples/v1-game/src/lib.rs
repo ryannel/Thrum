@@ -24,6 +24,8 @@ mod scene;
 mod showcase;
 pub mod simulation;
 mod sprite_card;
+mod sprite_probe;
+pub use sprite_probe::SpriteProbe;
 mod sprite_field;
 #[cfg(target_os = "macos")]
 mod window;
@@ -33,7 +35,7 @@ use thrum_fixtures::mixed_field::{self as field, day_cycle as environment};
 #[cfg(target_arch = "wasm32")]
 pub use browser::{
     BrowserGame, CookedValley, create_browser_game, create_field_game, create_placed_browser_game,
-    create_route_game, create_sprite_game, fetch_cooked_valley, qualify_effect_after_opaque,
+    create_route_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley, qualify_effect_after_opaque,
     qualify_effect_state, qualify_lent_products,
 };
 #[cfg(all(target_arch = "wasm32", feature = "draw-probe"))]

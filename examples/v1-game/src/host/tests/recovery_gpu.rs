@@ -380,6 +380,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
         let old = Gpu::new(&test_gpu, 21).await;
         let mut host = GameSetup {
             sprite_scale: None,
+            sprite_probe: None,
             sprite_rows: None,
             cooked_mesh_rows: crate::MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,

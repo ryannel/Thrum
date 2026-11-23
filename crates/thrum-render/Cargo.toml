@@ -296,3 +296,11 @@ path = "tests/wgsl_single_declaration.rs"
 name = "dynamic_scale"
 path = "tests/dynamic_scale.rs"
 required-features = ["creation-counters"]
+
+[[test]]
+name = "sprite_crisp"
+path = "tests/sprite_crisp.rs"
+
+[[test]]
+name = "sprite_edges"
+path = "tests/sprite_edges.rs"

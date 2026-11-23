@@ -64,7 +64,7 @@ pub struct EmbeddedSheet {
 /// Preparation-time assets and maximum frame-row count for a 2D scene.
 #[derive(Clone, Debug)]
 pub struct SpriteScene {
-    /// Pixel-art sheets in slot order, addressed by sprite rows.
+    /// Sheets in slot order, addressed by sprite rows.
     pub sheets: Vec<NamedSheet>,
     /// Number of physical world slots available to extraction.
     pub world_capacity: u32,
@@ -79,15 +79,28 @@ impl SpriteScene {
     #[must_use]
     pub fn new(sheet: EmbeddedSheet, row_capacity: u32) -> Self {
         Self {
-            sheets: vec![NamedSheet {
-                name: "default".into(),
-                sheet,
-            }],
+            sheets: vec![NamedSheet::pixel("default", sheet)],
             world_capacity: 0,
             row_capacity,
             order_band: 0.0,
         }
     }
+}
+
+/// Filtering for an embedded sprite sheet.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SpriteSampling {
+    /// Coverage sampling preserves the authored grid at magnification.
+    #[default]
+    Pixel,
+    /// Linear filtering between texels and mip levels.
+    Smooth,
+    /// Point sampling for the coverage proof's control.
+    #[doc(hidden)]
+    NearestControl,
+    /// Bilinear sampling for the coverage proof's control.
+    #[doc(hidden)]
+    BilinearControl,
 }
 
 /// One embedded sheet and its identity in preparation diagnostics.
@@ -97,6 +110,23 @@ pub struct NamedSheet {
     pub name: String,
     /// Authored pixels and their frames.
     pub sheet: EmbeddedSheet,
+    /// Sampling applied to this sheet.
+    pub sampling: SpriteSampling,
+    /// Indices of frames that must share their outside edges with adjacent tiles.
+    pub tiles: Vec<u32>,
+}
+
+impl NamedSheet {
+    /// An embedded pixel sheet with transparent margins around its frames.
+    #[must_use]
+    pub fn pixel(name: impl Into<String>, sheet: EmbeddedSheet) -> Self {
+        Self {
+            name: name.into(),
+            sheet,
+            sampling: SpriteSampling::Pixel,
+            tiles: Vec::new(),
+        }
+    }
 }
 
 /// Measurements from one recorded sprite frame.

@@ -138,7 +138,7 @@ pub(crate) struct Scene {
     pub(crate) rows: Vec<SpriteRow>,
     pub(crate) world_rows: Vec<(u32, u64, u128, SpriteRow)>,
     pub(crate) published_poses: std::collections::BTreeMap<u32, Option<SpritePose>>,
-    pub(crate) scale: u8,
+    pub(crate) scale: f32,
     pub(crate) centre: [f64; 2],
     pub(crate) lighting: Option<FrameLighting>,
     pub(crate) view: SyntheticView,
@@ -149,7 +149,7 @@ impl Scene {
             rows,
             world_rows: Vec::new(),
             published_poses: std::collections::BTreeMap::new(),
-            scale,
+            scale: f32::from(scale),
             centre: [0.0; 2],
             lighting: None,
             view: SyntheticView::default(),
@@ -185,8 +185,8 @@ impl SceneSource<SourceTick> for Scene {
         }
     }
     fn sprites(&self, _: SourceTick, _: f32, extent: [u32; 2]) -> Result<SpriteFrame<'_>, String> {
-        let pixels_per_unit = f32::from(self.scale);
-        let [x, y] = extent.map(|side| f64::from(side % 2) / (2.0 * f64::from(self.scale)));
+        let pixels_per_unit = self.scale;
+        let [x, y] = extent.map(|side| f64::from(side % 2) / (2.0 * f64::from(pixels_per_unit)));
         Ok(SpriteFrame {
             view: SpriteView {
                 centre: [self.centre[0] + x, self.centre[1] - y],
@@ -275,8 +275,16 @@ pub(crate) fn capture(
     extent: [u32; 2],
     source: CaptureSource,
 ) -> SubmittedImage {
-    host.enable_submitted_capture_from(42, CaptureLimits::default(), source)
-        .expect("open a bounded capture session");
+    host.enable_submitted_capture_from(
+        42,
+        CaptureLimits {
+            staging_slots: 1,
+            cpu_buffers: 1,
+            byte_allowance: 48 * 1024 * 1024,
+        },
+        source,
+    )
+    .expect("open a bounded capture session");
     let output = drawable(device, extent);
     let encoded = host
         .advance(Duration::ZERO)

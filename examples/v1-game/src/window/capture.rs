@@ -76,6 +76,7 @@ pub(super) fn run(
             | "exit-stop"
             | "sprites-field"
             | "sprites-field-cost"
+            | "sprites-scroll"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -542,6 +543,7 @@ fn world_moves(scenario: &str) -> bool {
                 | "exit-drift"
                 | "sprites-field"
                 | "sprites-field-cost"
+                | "sprites-scroll"
         )
 }
 
@@ -587,7 +589,7 @@ fn prepare_parameters(
         .map(std::fs::read_to_string)
         .transpose()
         .map_err(|error| error.to_string())?;
-    if is_route(scenario) || scenario.starts_with("sprites-field") {
+    if is_route(scenario) || scenario.starts_with("sprites-") {
         driver.parameters(r#"{"world.paused":true}"#)?;
     } else {
         driver.parameters(
@@ -683,7 +685,7 @@ async fn record(
     let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let motion_capture = mode == "realtime" && is_motion_capture(scenario);
-    let elapsed_observation = motion_capture || scenario == "sprites-field";
+    let elapsed_observation = motion_capture || sprite_motion(scenario);
     if elapsed_observation {
         driver.set_timing_requested(false);
     }
@@ -734,7 +736,7 @@ async fn record(
     let mut last_sample_time = Duration::ZERO;
     let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);
     loop {
-        if mode == "still" || matches!(scenario, "clouds-still" | "checkpoint") {
+        if mode == "still" || held_sample(scenario) {
             break;
         }
         admission.wait(&mut driver, &mut trace, writer.as_ref(), origin, &mut clock)?;
@@ -854,7 +856,7 @@ async fn record(
         .count();
     let writer_result = trace.finish_writer(&mut driver, writer, origin, submitted)?;
     let interval_complete = mode == "still"
-        || matches!(scenario, "clouds-still" | "checkpoint")
+        || held_sample(scenario)
         || (scenario == "exit-stop" && mode == "fixed" && trace.images.len() >= 24)
         || (mode == "fixed" && last_sample_time >= Duration::from_secs(4))
         || (mode == "realtime"
@@ -1113,12 +1115,21 @@ fn drain_fixed<G: Game>(
     Ok(())
 }
 
+fn sprite_motion(scenario: &str) -> bool {
+    matches!(scenario, "sprites-field" | "sprites-scroll")
+}
+
+fn held_sample(scenario: &str) -> bool {
+    matches!(scenario, "clouds-still" | "checkpoint")
+}
+
 fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64, f64) {
     if recovery != super::NativeRecovery::Disabled {
         return (24.0, 20.0, 3.0);
     }
     match scenario {
         "sprites-field-cost" => (11.5, 10.0, 10.0),
+        "sprites-scroll" => (5.5, 4.75, 4.25),
         "clouds-drift" => (22.5, 22.0, 21.0),
         "clouds-placed" => (31.1, 31.0, 31.0),
         "clouds-dusk" => (14.5, 14.0, f64::INFINITY),
@@ -1177,6 +1188,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 | "sprites-field-cost"
                 | "atmosphere-scrub"
                 | "atmosphere-ground-pan"
+                | "sprites-scroll"
         )
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());

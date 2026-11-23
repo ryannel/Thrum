@@ -194,6 +194,15 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     Ok(crate::GameSetup {
         sprite_scale,
         route_scale_props: false,
+        sprite_probe: if sprite_scale.is_some() {
+            match launch_value("THRUM_SPRITE_PROBE") {
+                Ok(value) => Some(crate::sprite_probe::parse(&value)?),
+                Err(std::env::VarError::NotPresent) => None,
+                Err(error) => return Err(error.to_string()),
+            }
+        } else {
+            None
+        },
         sprite_rows: if sprite_scale.is_some() {
             match launch_value("THRUM_SPRITE_ROWS") {
                 Ok(count) => Some(

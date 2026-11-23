@@ -12,7 +12,8 @@ pub(super) fn coverage_at(
     alpha: f32,
     measure: bool,
 ) -> Option<f64> {
-    let rect = scene.sheets[row.sheet as usize].sheet.frames[frame as usize];
+    let sheet = &scene.sheets[row.sheet as usize];
+    let rect = sheet.sheet.frames[frame as usize];
     let project = |high: f32, low: f32, axis: usize| {
         (f64::from(high) - view.centre[axis] + f64::from(low)) * f64::from(view.pixels_per_unit)
     };
@@ -29,24 +30,35 @@ pub(super) fn coverage_at(
         return None;
     }
     let [w, h] = dimensions(rect, row, view.pixels_per_unit, alpha);
-    if w.abs() + h.abs() > limit {
+    // The quad can extend four source texels on each side.
+    let [sx, sy] = [w / f64::from(rect.size[0]), h / f64::from(rect.size[1])];
+    if (w.abs() + h.abs()) + 8.0 * (sx.abs() + sy.abs()) > limit {
         return None;
     }
     if !measure {
         return Some(0.0);
     }
     let angle = row.rotation + alpha * row.rotation_delta;
-    let pivot = [
+    let mut pivot = [
         position[0] + f64::from(extent[0]) * 0.5,
         -position[1] + f64::from(extent[1]) * 0.5,
     ];
+    let margin = if sheet.tiles.contains(&frame) {
+        0.0
+    } else {
+        sx.abs().min(sy.abs()).recip().clamp(1.0, 4.0)
+    };
+    let (sin, cos) = f64::from(angle).sin_cos();
+    pivot[0] -= margin * (sx * cos + sy * sin);
+    pivot[1] -= margin * (-sx * sin + sy * cos);
+    let w = w + 2.0 * margin * sx;
+    let h = h + 2.0 * margin * sy;
     if angle == 0.0 {
         return Some(
             axis_aligned_pixels(pivot[0], w, extent[0])
                 * axis_aligned_pixels(pivot[1], h, extent[1]),
         );
     }
-    let (sin, cos) = f64::from(angle).sin_cos();
     Some(clipped_quad_area(
         pivot,
         [w * cos, -w * sin],

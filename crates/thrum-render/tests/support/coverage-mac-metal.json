@@ -1,0 +1,1028 @@
+{
+  "target": "mac-metal",
+  "offsets": 256,
+  "source_commit": "2139f1903a736ebdc0b06e83d711cc8c36304a08",
+  "shader_sha256": "1ecf403810dcea41949a29f20d9549299d900121c7297859669132b2b57dc3cf",
+  "bounds": {
+    "portable": 0.013627973175061925,
+    "apple-tile": 0.013627973175061925
+  },
+  "rows": [
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.5137179998833145,
+        "measured": 0.51416015625,
+        "offset": 235,
+        "pixel": [
+          6,
+          7
+        ]
+      },
+      "pixel_error": 0.00044215636668554215,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 1.0,
+      "weight_at": {
+        "expected": 1.0,
+        "measured": 1.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          6,
+          8
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 1.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.5137179998833145,
+        "measured": 0.51416015625,
+        "offset": 235,
+        "pixel": [
+          6,
+          7
+        ]
+      },
+      "pixel_error": 0.00044215636668554215,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 1.0,
+      "weight_at": {
+        "expected": 1.0,
+        "measured": 1.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.5395990857721634,
+        "measured": 0.5400390625,
+        "offset": 225,
+        "pixel": [
+          6,
+          8
+        ]
+      },
+      "pixel_error": 0.0004399767278365774,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 1.25,
+      "weight_at": {
+        "expected": 1.5625,
+        "measured": 1.56298828125,
+        "offset": 12
+      },
+      "weight_error": 0.00048828125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.331868549930046,
+        "measured": 1.0,
+        "offset": 199,
+        "pixel": [
+          8,
+          8
+        ]
+      },
+      "pixel_error": 0.668131450069954,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 1.25,
+      "weight_at": {
+        "expected": 1.5625,
+        "measured": 4.0,
+        "offset": 64
+      },
+      "weight_error": 2.4375
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.82666015625,
+        "offset": 64,
+        "pixel": [
+          7,
+          8
+        ]
+      },
+      "pixel_error": 0.17333984375,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 1.25,
+      "weight_at": {
+        "expected": 1.5625,
+        "measured": 1.9556884765625,
+        "offset": 224
+      },
+      "weight_error": 0.3931884765625
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.8500707554419596,
+        "measured": 0.849609375,
+        "offset": 117,
+        "pixel": [
+          8,
+          6
+        ]
+      },
+      "pixel_error": 0.0004613804419596468,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 1.5,
+      "weight_at": {
+        "expected": 2.25,
+        "measured": 2.250732421875,
+        "offset": 12
+      },
+      "weight_error": 0.000732421875
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          7,
+          10
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 1.5,
+      "weight_at": {
+        "expected": 2.25,
+        "measured": 4.0,
+        "offset": 1
+      },
+      "weight_error": 1.75
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.72314453125,
+        "offset": 128,
+        "pixel": [
+          8,
+          9
+        ]
+      },
+      "pixel_error": 0.27685546875,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 1.5,
+      "weight_at": {
+        "expected": 2.25,
+        "measured": 2.76904296875,
+        "offset": 192
+      },
+      "weight_error": 0.51904296875
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          9,
+          6
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 2.0,
+      "weight_at": {
+        "expected": 4.0,
+        "measured": 4.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          8,
+          12
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 2.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.60107421875,
+        "offset": 0,
+        "pixel": [
+          9,
+          11
+        ]
+      },
+      "pixel_error": 0.39892578125,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 2.0,
+      "weight_at": {
+        "expected": 4.0,
+        "measured": 4.000732421875,
+        "offset": 24
+      },
+      "weight_error": 0.000732421875
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.7461416074523025,
+        "measured": 0.7431640625,
+        "offset": 43,
+        "pixel": [
+          8,
+          9
+        ]
+      },
+      "pixel_error": 0.0029775449523025133,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 2.369999885559082,
+      "weight_at": {
+        "expected": 5.616899457550062,
+        "measured": 5.603271484375,
+        "offset": 95
+      },
+      "weight_error": 0.013627973175061925
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3264089147493533,
+        "measured": 1.0,
+        "offset": 193,
+        "pixel": [
+          9,
+          13
+        ]
+      },
+      "pixel_error": 0.6735910852506467,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 2.369999885559082,
+      "weight_at": {
+        "expected": 5.616899457550062,
+        "measured": 9.0,
+        "offset": 36
+      },
+      "weight_error": 3.383100542449938
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.56201171875,
+        "offset": 231,
+        "pixel": [
+          11,
+          12
+        ]
+      },
+      "pixel_error": 0.43798828125,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 2.369999885559082,
+      "weight_at": {
+        "expected": 5.616899457550062,
+        "measured": 6.027587890625,
+        "offset": 82
+      },
+      "weight_error": 0.4106884330749381
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          11,
+          7
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 3.0,
+      "weight_at": {
+        "expected": 9.0,
+        "measured": 9.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          10,
+          16
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 3.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.49169921875,
+        "offset": 0,
+        "pixel": [
+          12,
+          15
+        ]
+      },
+      "pixel_error": 0.50830078125,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 3.0,
+      "weight_at": {
+        "expected": 9.0,
+        "measured": 9.001388549804688,
+        "offset": 75
+      },
+      "weight_error": 0.0013885498046875
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          13,
+          8
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 4.0,
+      "weight_at": {
+        "expected": 16.0,
+        "measured": 16.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          12,
+          20
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 4.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.438720703125,
+        "offset": 0,
+        "pixel": [
+          15,
+          19
+        ]
+      },
+      "pixel_error": 0.561279296875,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 4.0,
+      "weight_at": {
+        "expected": 16.0,
+        "measured": 16.0029296875,
+        "offset": 25
+      },
+      "weight_error": 0.0029296875
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          17,
+          10
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "portable",
+      "sampling": "Pixel",
+      "scale": 6.0,
+      "weight_at": {
+        "expected": 36.0,
+        "measured": 36.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          16,
+          28
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "portable",
+      "sampling": "NearestControl",
+      "scale": 6.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.388671875,
+        "offset": 0,
+        "pixel": [
+          21,
+          27
+        ]
+      },
+      "pixel_error": 0.611328125,
+      "recipe": "portable",
+      "sampling": "BilinearControl",
+      "scale": 6.0,
+      "weight_at": {
+        "expected": 36.0,
+        "measured": 36.003173828125,
+        "offset": 10
+      },
+      "weight_error": 0.003173828125
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.5137179998833145,
+        "measured": 0.51416015625,
+        "offset": 235,
+        "pixel": [
+          6,
+          7
+        ]
+      },
+      "pixel_error": 0.00044215636668554215,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 1.0,
+      "weight_at": {
+        "expected": 1.0,
+        "measured": 1.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          6,
+          8
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 1.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.5137179998833145,
+        "measured": 0.51416015625,
+        "offset": 235,
+        "pixel": [
+          6,
+          7
+        ]
+      },
+      "pixel_error": 0.00044215636668554215,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 1.0,
+      "weight_at": {
+        "expected": 1.0,
+        "measured": 1.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.5395990857721634,
+        "measured": 0.5400390625,
+        "offset": 225,
+        "pixel": [
+          6,
+          8
+        ]
+      },
+      "pixel_error": 0.0004399767278365774,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 1.25,
+      "weight_at": {
+        "expected": 1.5625,
+        "measured": 1.56298828125,
+        "offset": 12
+      },
+      "weight_error": 0.00048828125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.331868549930046,
+        "measured": 1.0,
+        "offset": 199,
+        "pixel": [
+          8,
+          8
+        ]
+      },
+      "pixel_error": 0.668131450069954,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 1.25,
+      "weight_at": {
+        "expected": 1.5625,
+        "measured": 4.0,
+        "offset": 64
+      },
+      "weight_error": 2.4375
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.82666015625,
+        "offset": 64,
+        "pixel": [
+          7,
+          8
+        ]
+      },
+      "pixel_error": 0.17333984375,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 1.25,
+      "weight_at": {
+        "expected": 1.5625,
+        "measured": 1.9556884765625,
+        "offset": 224
+      },
+      "weight_error": 0.3931884765625
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.8500707554419596,
+        "measured": 0.849609375,
+        "offset": 117,
+        "pixel": [
+          8,
+          6
+        ]
+      },
+      "pixel_error": 0.0004613804419596468,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 1.5,
+      "weight_at": {
+        "expected": 2.25,
+        "measured": 2.250732421875,
+        "offset": 12
+      },
+      "weight_error": 0.000732421875
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          7,
+          10
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 1.5,
+      "weight_at": {
+        "expected": 2.25,
+        "measured": 4.0,
+        "offset": 1
+      },
+      "weight_error": 1.75
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.72314453125,
+        "offset": 128,
+        "pixel": [
+          8,
+          9
+        ]
+      },
+      "pixel_error": 0.27685546875,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 1.5,
+      "weight_at": {
+        "expected": 2.25,
+        "measured": 2.76904296875,
+        "offset": 192
+      },
+      "weight_error": 0.51904296875
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          9,
+          6
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 2.0,
+      "weight_at": {
+        "expected": 4.0,
+        "measured": 4.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          8,
+          12
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 2.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.60107421875,
+        "offset": 0,
+        "pixel": [
+          9,
+          11
+        ]
+      },
+      "pixel_error": 0.39892578125,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 2.0,
+      "weight_at": {
+        "expected": 4.0,
+        "measured": 4.000732421875,
+        "offset": 24
+      },
+      "weight_error": 0.000732421875
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.7461416074523025,
+        "measured": 0.7431640625,
+        "offset": 43,
+        "pixel": [
+          8,
+          9
+        ]
+      },
+      "pixel_error": 0.0029775449523025133,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 2.369999885559082,
+      "weight_at": {
+        "expected": 5.616899457550062,
+        "measured": 5.603271484375,
+        "offset": 95
+      },
+      "weight_error": 0.013627973175061925
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3264089147493533,
+        "measured": 1.0,
+        "offset": 193,
+        "pixel": [
+          9,
+          13
+        ]
+      },
+      "pixel_error": 0.6735910852506467,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 2.369999885559082,
+      "weight_at": {
+        "expected": 5.616899457550062,
+        "measured": 9.0,
+        "offset": 36
+      },
+      "weight_error": 3.383100542449938
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.56201171875,
+        "offset": 231,
+        "pixel": [
+          11,
+          12
+        ]
+      },
+      "pixel_error": 0.43798828125,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 2.369999885559082,
+      "weight_at": {
+        "expected": 5.616899457550062,
+        "measured": 6.027587890625,
+        "offset": 82
+      },
+      "weight_error": 0.4106884330749381
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          11,
+          7
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 3.0,
+      "weight_at": {
+        "expected": 9.0,
+        "measured": 9.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          10,
+          16
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 3.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.49169921875,
+        "offset": 0,
+        "pixel": [
+          12,
+          15
+        ]
+      },
+      "pixel_error": 0.50830078125,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 3.0,
+      "weight_at": {
+        "expected": 9.0,
+        "measured": 9.001388549804688,
+        "offset": 75
+      },
+      "weight_error": 0.0013885498046875
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          13,
+          8
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 4.0,
+      "weight_at": {
+        "expected": 16.0,
+        "measured": 16.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          12,
+          20
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 4.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.438720703125,
+        "offset": 0,
+        "pixel": [
+          15,
+          19
+        ]
+      },
+      "pixel_error": 0.561279296875,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 4.0,
+      "weight_at": {
+        "expected": 16.0,
+        "measured": 16.0029296875,
+        "offset": 25
+      },
+      "weight_error": 0.0029296875
+    },
+    {
+      "pixel_at": {
+        "channel": 0,
+        "expected": 0.880835918146201,
+        "measured": 0.88037109375,
+        "offset": 235,
+        "pixel": [
+          17,
+          10
+        ]
+      },
+      "pixel_error": 0.00046482439620099125,
+      "recipe": "apple-tile",
+      "sampling": "Pixel",
+      "scale": 6.0,
+      "weight_at": {
+        "expected": 36.0,
+        "measured": 36.000274658203125,
+        "offset": 109
+      },
+      "weight_error": 0.000274658203125
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 0.3272243675423155,
+        "measured": 1.0,
+        "offset": 121,
+        "pixel": [
+          16,
+          28
+        ]
+      },
+      "pixel_error": 0.6727756324576846,
+      "recipe": "apple-tile",
+      "sampling": "NearestControl",
+      "scale": 6.0,
+      "weight_at": null,
+      "weight_error": 0.0
+    },
+    {
+      "pixel_at": {
+        "channel": 2,
+        "expected": 1.0,
+        "measured": 0.388671875,
+        "offset": 0,
+        "pixel": [
+          21,
+          27
+        ]
+      },
+      "pixel_error": 0.611328125,
+      "recipe": "apple-tile",
+      "sampling": "BilinearControl",
+      "scale": 6.0,
+      "weight_at": {
+        "expected": 36.0,
+        "measured": 36.003173828125,
+        "offset": 10
+      },
+      "weight_error": 0.003173828125
+    }
+  ]
+}

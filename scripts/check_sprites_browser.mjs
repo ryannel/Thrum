@@ -254,3 +254,139 @@ export async function qualifySpriteField({ cdp, origin, output, mode, timeout, w
   await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
   return record;
 }
+
+function coverageWeights(bytes, width, height, scale) {
+  if (bytes.length !== width * height * 8 || width < 256 || height < 128) {
+    throw new Error('Coverage grid requires a scene-linear backing of at least 256×128');
+  }
+  const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const results = [];
+  for (let mode = 0; mode < 2; mode++) {
+    let worst = { error: 0 };
+    for (let offset = 0; offset < 256; offset++) {
+      const x = (16 * mode + offset % 16) * 8;
+      const y = Math.floor(offset / 16) * 8;
+      let weight = 0;
+      for (let py = y; py < y + 8; py++) {
+        for (let px = x; px < x + 8; px++) {
+          weight += data.getFloat16(8 * (py * width + px), true);
+        }
+      }
+      const expected = Math.fround(scale) ** 2;
+      const error = Math.abs(weight - expected);
+      if (error > worst.error) worst = { offset, error, weight, expected };
+    }
+    results.push(worst);
+  }
+  return { coverage: results[0], nearest: results[1] };
+}
+
+export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, existingGame, waitFor, commit }) {
+  const retainedFile = new URL('../tests/fixtures/render-2d/coverage-chrome-webgpu.json', import.meta.url);
+  const measure = process.env.THRUM_MEASURE_SPRITE_COVERAGE === '1';
+  const retained = measure ? null : JSON.parse(await fs.readFile(retainedFile, 'utf8'));
+  const rows = [];
+  for (const dpr of [1, 2]) {
+    const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+    const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
+    const call = (method, params = {}) => cdp.call(method, params, sessionId);
+    try {
+      await call('Page.enable');
+      await call('Runtime.enable');
+      await installWasmReceipt(cdp, sessionId);
+      await call('Emulation.setDeviceMetricsOverride', { width: 668, height: 550, deviceScaleFactor: dpr, mobile: false });
+      await cdp.call('Target.activateTarget', { targetId });
+      const visit = async query => {
+        const url = `${origin}/?scene=sprites&scale=2${query}`;
+        await call('Page.navigate', { url });
+        await waitFor(async () => {
+          const state = (await call('Runtime.evaluate', {
+            expression: `location.href === ${JSON.stringify(url)} && document.querySelector('#status')?.textContent`,
+            returnByValue: true,
+          })).result.value;
+          if (/fault:/i.test(state ?? '')) throw new Error(state);
+          return typeof state === 'string' && state.startsWith('Running');
+        }, timeout, 'ordinary sprite canvas startup');
+        return existingGame(cdp, sessionId);
+      };
+      const surface = async (game, css) => {
+        const grid = await waitFor(() => game.invoke(`
+          const c = document.querySelector('canvas');
+          const r = c.getBoundingClientRect();
+          if (args[0] && (r.width !== args[0][0] || r.height !== args[0][1])) return null;
+          if (c.width !== Math.round(r.width * devicePixelRatio) ||
+              c.height !== Math.round(r.height * devicePixelRatio)) return null;
+          const report = JSON.parse(game.sprite_scene_report());
+          if (!report.storage.includes(\`bytes=\${c.width*c.height*8}\\n\`)) return null;
+          return { css: [r.width, r.height], backing: [c.width, c.height], dpr: devicePixelRatio, passes: report.passes };
+        `, [css]), timeout, 'CSS/device pixel and sprite grids match');
+        if (grid.dpr !== dpr || JSON.stringify(grid.passes) !== JSON.stringify(graphPasses)) {
+          throw new Error(JSON.stringify(grid));
+        }
+        return grid;
+      };
+      const capture = async (game, source, grid, body, args) => {
+        await waitFor(async () => {
+          try {
+            return await game.invoke(`game.${source === 'Sdr' ? 'begin_submitted_capture' : 'begin_linear_capture'}(1);return true;`);
+          } catch (error) {
+            if (String(error).includes('capture stage change requires retired frames')) return false;
+            throw error;
+          }
+        }, timeout, 'submitted image tap armed');
+        try {
+          return await waitFor(() => game.invoke(`
+            const image = game.next_submitted_image();
+            if (!image) return null;
+            const meta = JSON.parse(image.metadata);
+            if (!meta.surface_presented || meta.pixel_source !== args[0] ||
+                image.pixels.length !== args[1] * args[2] * (args[0] === "Sdr" ? 4 : 8)) return null;
+            ${body}
+          `, [source, ...grid.backing, ...args]), timeout, `submitted ${source} sprite image`);
+        } finally {
+          await game.invoke('game.end_submitted_capture();return true;');
+        }
+      };
+      const card = await visit('');
+      const cardRows = [];
+      for (const css of [null, [517, 293]]) {
+        if (css) await card.invoke(`
+          const c = document.querySelector('canvas');
+          c.style.width = args[0] + 'px'; c.style.height = args[1] + 'px';
+          return true;
+        `, css);
+        const grid = await surface(card, css);
+        const frame = await capture(card, 'Sdr', grid, `
+          const compare = ${compareCard.toString()};
+          return {meta, mismatch: compare(image.pixels, game.sprite_card_texels(), args[1], args[2], 2)};
+        `, []);
+        if (frame.mismatch) throw new Error(JSON.stringify(frame));
+        cardRows.push({ ...grid, submission: frame.meta.submission_id, presenter: frame.meta.presenter_generation });
+      }
+      if (cardRows[0].presenter === cardRows[1].presenter) throw new Error('Resize did not change the presenter generation');
+      const weights = [];
+      for (const scale of [1.25, 1.5, 2.37]) {
+        const game = await visit(`&sprite-probe=coverage:${scale}`);
+        const grid = await surface(game, null);
+        const frame = await capture(game, 'SceneLinear', grid, `
+          const measure = ${coverageWeights.toString()};
+          return {meta, ...measure(image.pixels, args[1], args[2], args[3])};
+        `, [scale]);
+        if ((!measure && !(frame.coverage.error <= retained.bound)) || !(frame.nearest.error >= 1)) {
+          throw new Error(JSON.stringify({ dpr, scale, bound: retained?.bound, ...frame }));
+        }
+        weights.push({ scale, ...grid, ...frame });
+      }
+      const receipt = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
+      rows.push({ dpr, card: cardRows, weights, receipt });
+      console.log(`sprites-crisp: DPR ${dpr}, two CSS grids and 3 × 256 subpixel positions passed`);
+    } finally {
+      await cdp.call('Target.closeTarget', { targetId });
+    }
+  }
+  const bound = Math.max(...rows.flatMap(row => row.weights.map(test => test.coverage.error)));
+  if (!(bound > 0 && bound < 0.05)) throw new Error(`Unexpected Chrome coverage bound ${bound}`);
+  const record = { target: 'chrome-webgpu', commit, offsets: 256, bound, rows };
+  await fs.writeFile(path.join(output, 'sprites-crisp.json'), JSON.stringify(record, null, 2) + '\n');
+  return record;
+}

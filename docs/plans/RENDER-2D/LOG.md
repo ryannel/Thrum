@@ -92,3 +92,7 @@
   Chrome replayed the original crossing and verified a 22-second realtime take against hashes saved
   before the browser spool write. The [evidence](../../../.orchestrate/evidence/RENDER-2D/M2/chrome-realtime-adjacent/inspection.md)
   includes the crossing, elapsed-time playback and the download-integrity control.
+- 2026-11-23 M3 adds coverage filtering, linear-light box mips with per-frame gutters, and tile edge ownership
+  to the one sprite pass. Both Metal recipes preserved authored SDR bytes at whole-number scales. In the retained
+  scene-linear sweep, the largest colour error was 0.00298 and the largest single-texel area error was 0.01363
+  output pixels. Both sampling controls had greater colour error at each fractional scale.

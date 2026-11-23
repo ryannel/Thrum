@@ -1,7 +1,7 @@
 //! Embedded sheets, changed-row uploads and the single ordered sprite draw.
 
 use super::{
-    EmbeddedSheet, SpriteFrame, SpriteFrameStats, SpriteRect, SpriteScene,
+    SpriteFrame, SpriteFrameStats, SpriteRect, SpriteScene,
     world::{self, OrderedRow, SpritePose, SpriteWorld},
 };
 use crate::error::RenderError;
@@ -12,19 +12,16 @@ use crate::{
     records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView},
     render_config::SCENE_FORMAT,
     runtime::Instant,
-    shader_constants::{
-        SRGB_ENCODED_KNEE, SRGB_GAMMA_F32, SRGB_OFFSET, SRGB_SCALE, SRGB_SLOPE_F32,
-    },
     timing::GpuTimings,
 };
 use bytemuck::Zeroable;
 use coverage::coverage_at;
 
 mod coverage;
+mod sheet;
 use wgpu::util::DeviceExt;
 
 pub(crate) const PASS: &str = crate::pass_key::PassKey::Sprites.constant_name();
-const SHEET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const SHEET_SLOTS: usize = 8;
 
 #[cfg(test)]
@@ -37,6 +34,7 @@ pub(super) struct SpritePass {
     pub(super) order: wgpu::Buffer,
     pub(super) frames: wgpu::Buffer,
     pub(super) sheets: Vec<(wgpu::Texture, wgpu::TextureView)>,
+    sampler: wgpu::Sampler,
     frame_bases: Vec<u32>,
     world_capacity: usize,
     row_capacity: usize,
@@ -67,6 +65,7 @@ impl SpritePass {
             order: self.order.clone(),
             frames: self.frames.clone(),
             sheets: self.sheets.clone(),
+            sampler: self.sampler.clone(),
             frame_bases: Vec::new(),
             world_capacity: self.world_capacity,
             row_capacity: self.row_capacity,
@@ -149,24 +148,18 @@ impl SpritePass {
         for entry in &scene.sheets {
             frame_bases
                 .push(u32::try_from(table.len()).map_err(|_| RenderError::SpriteFrameCapacity)?);
-            table.extend(entry.sheet.frames.iter().map(|rect| GpuRect {
-                origin: rect.origin,
-                size: rect.size,
-            }));
-            sheets.push(upload_sheet(device, queue, &entry.sheet));
+            sheets.push(sheet::upload(device, queue, entry, &mut table)?);
         }
         if sheets.len() < SHEET_SLOTS {
-            sheets.push(upload_sheet(
-                device,
-                queue,
-                &EmbeddedSheet {
-                    extent: [1; 2],
-                    rgba: [0; 4].into(),
-                    frames: [].into(),
-                    texels_per_unit: 1.0,
-                },
-            ));
+            sheets.push(sheet::placeholder(device));
         }
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("sprite filtering"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            ..Default::default()
+        });
         let frames = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("sprite frames"),
             contents: bytemuck::cast_slice(&table),
@@ -220,6 +213,7 @@ impl SpritePass {
             order,
             frames,
             sheets,
+            sampler,
             frame_bases,
             world_capacity: scene.world_capacity as usize,
             row_capacity: scene.row_capacity as usize,
@@ -244,7 +238,7 @@ impl SpritePass {
             VIEW_BYTES,
             wgpu::BufferUsages::UNIFORM,
         );
-        let mut entries = Vec::with_capacity(4 + SHEET_SLOTS);
+        let mut entries = Vec::with_capacity(5 + SHEET_SLOTS);
         for (binding, source) in [&view, &self.rows, &self.frames, &self.order]
             .into_iter()
             .enumerate()
@@ -262,6 +256,10 @@ impl SpritePass {
                 resource: wgpu::BindingResource::TextureView(texture),
             });
         }
+        entries.push(wgpu::BindGroupEntry {
+            binding: 12,
+            resource: wgpu::BindingResource::Sampler(&self.sampler),
+        });
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("sprite inputs"),
             layout: &self.pipeline.get_bind_group_layout(0),
@@ -402,7 +400,7 @@ impl SpritePass {
                 centre_high: [x, y],
                 centre_low: [x_low, y_low],
                 alpha,
-                padding: 0.0,
+                pixels_per_unit: frame.view.pixels_per_unit,
             }),
         );
 
@@ -573,63 +571,4 @@ fn angles(previous: f32, current: f32) -> (f32, f32) {
     let current = f64::from(current) % turn;
     let delta = (current - previous + half).rem_euclid(turn) - half;
     (previous as f32, delta as f32)
-}
-
-fn upload_sheet(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    source: &EmbeddedSheet,
-) -> (wgpu::Texture, wgpu::TextureView) {
-    let extent = wgpu::Extent3d {
-        width: source.extent[0],
-        height: source.extent[1],
-        depth_or_array_layers: 1,
-    };
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("embedded sprite sheet"),
-        size: extent,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: SHEET_FORMAT,
-        usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
-        view_formats: &[],
-    });
-    let pixels: Vec<_> = source
-        .rgba
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .flat_map(|rgba| {
-            let alpha = f32::from(rgba[3]) / 255.0;
-            let mut values = [alpha; 4];
-            for (dest, &code) in values[..3].iter_mut().zip(rgba) {
-                let srgb = f32::from(code) / 255.0;
-                let linear = if srgb <= SRGB_ENCODED_KNEE {
-                    srgb / SRGB_SLOPE_F32
-                } else {
-                    ((srgb + SRGB_OFFSET) / SRGB_SCALE).powf(SRGB_GAMMA_F32)
-                };
-                *dest = linear * alpha;
-            }
-            values
-                .into_iter()
-                .map(|value| half::f16::from_f32(value).to_bits())
-        })
-        .collect();
-    queue.write_texture(
-        texture.as_image_copy(),
-        bytemuck::cast_slice(&pixels),
-        wgpu::TexelCopyBufferLayout {
-            offset: 0,
-            bytes_per_row: Some(8 * extent.width),
-            rows_per_image: Some(extent.height),
-        },
-        extent,
-    );
-    let view = texture.create_view(&wgpu::TextureViewDescriptor {
-        dimension: Some(wgpu::TextureViewDimension::D2Array),
-        ..Default::default()
-    });
-    (texture, view)
 }

@@ -200,7 +200,7 @@ records! {
         centre_high: [f32; 2],
         centre_low: [f32; 2],
         alpha: f32,
-        padding: f32,
+        pixels_per_unit: f32,
     }
     SpriteRow {
         current: [f32; 4],
@@ -217,7 +217,9 @@ records! {
         padding1: u32,
         padding2: u32,
     }
-    SpriteFrameRecord { origin: [u32; 2], size: [u32; 2] }
+    SpriteFrameRecord {
+        origin: [u32; 2], size: [u32; 2], page: u32, kind: u32, tile: u32, padding: u32,
+    }
 }
 
 /// Host layouts for shader reflection tooling.

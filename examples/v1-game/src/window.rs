@@ -118,7 +118,17 @@ pub fn run_window(
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
     // are reported when the host is prepared.
-    let (window_title, title) = match crate::selected_setup() {
+    let setup = crate::selected_setup();
+    let sprite_card = matches!(
+        &setup,
+        Ok(crate::GameSetup {
+            sprite_scale: Some(_),
+            sprite_probe: None,
+            sprite_rows: None,
+            ..
+        })
+    );
+    let (window_title, title) = match setup {
         Ok(crate::GameSetup {
             sprite_scale: Some(_),
             ..
@@ -170,14 +180,27 @@ pub fn run_window(
         }))
     };
     if let Some(capture) = capture {
+        if sprite_card {
+            write_card_texels(&capture.output);
+        }
         thrum_app::run_with_extent_capture(config, capture, game);
     } else if let Some(proof) = transition {
+        if sprite_card && proof.tap {
+            write_card_texels(&proof.output);
+        }
         thrum_app::run_with_transition_proof(config, proof, game);
     } else if let Some(qualification) = qualification {
         thrum_app::run_with_qualification(config, qualification, game);
     } else {
         thrum_app::run(config, game);
     }
+}
+
+fn write_card_texels(output: &std::path::Path) {
+    let _source_receipt = std::fs::write(
+        output.join("card-source.rgba"),
+        crate::sprite_card::texels(),
+    );
 }
 
 struct WindowGame {

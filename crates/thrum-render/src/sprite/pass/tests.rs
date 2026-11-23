@@ -15,7 +15,7 @@ fn sprite_abi_matches_wgsl_layout() {
                 offset_of!(GpuView, centre_high),
                 offset_of!(GpuView, centre_low),
                 offset_of!(GpuView, alpha),
-                offset_of!(GpuView, padding),
+                offset_of!(GpuView, pixels_per_unit),
             ][..],
         ),
         (
@@ -40,7 +40,14 @@ fn sprite_abi_matches_wgsl_layout() {
         (
             "SpriteFrameRecord",
             size_of::<GpuRect>(),
-            &[offset_of!(GpuRect, origin), offset_of!(GpuRect, size)][..],
+            &[
+                offset_of!(GpuRect, origin),
+                offset_of!(GpuRect, size),
+                offset_of!(GpuRect, page),
+                offset_of!(GpuRect, kind),
+                offset_of!(GpuRect, tile),
+                offset_of!(GpuRect, padding),
+            ][..],
         ),
     ] {
         let (_, ty) = module

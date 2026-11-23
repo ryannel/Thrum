@@ -67,6 +67,8 @@ pub struct GameSetup {
     pub sprite_scale: Option<u16>,
     /// If selected with sprites, map this many simulated entities instead of the card.
     pub sprite_rows: Option<u32>,
+    /// Use a sprite scene authored for sampling inspection.
+    pub sprite_probe: Option<crate::SpriteProbe>,
     /// Valley entity meshes follow cooked publications instead of code-authored props.
     pub cooked_mesh_rows: MeshRowSource,
     /// Opt-in CPU Weather and GPU Shade, with no cloud layer. Off by default.
@@ -107,6 +109,7 @@ impl Default for GameSetup {
         Self {
             sprite_scale: None,
             sprite_rows: None,
+            sprite_probe: None,
             cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
@@ -238,6 +241,11 @@ impl GameSetup {
             ));
         }
         if let Some(scale) = setup.sprite_scale {
+            if setup.sprite_probe.is_some() && setup.sprite_rows.is_some() {
+                return Err(FrameError::InvalidState(
+                    "a sprite sampling probe and a sprite field cannot be selected together",
+                ));
+            }
             let temporal_sampling = match setup.display_overlay {
                 DisplayOverlay::Off => false,
                 DisplayOverlay::TemporalInputs => true,
@@ -317,9 +325,10 @@ impl GameSetup {
                 config,
                 world,
                 GameScene::new(setup),
-                match setup.sprite_rows {
-                    Some(count) => crate::sprite_field::scene(count),
-                    None => crate::sprite_card::scene(scale)?,
+                match (setup.sprite_probe, setup.sprite_rows) {
+                    (Some(probe), _) => crate::sprite_probe::assets(probe),
+                    (None, Some(count)) => crate::sprite_field::scene(count),
+                    (None, None) => crate::sprite_card::scene(scale)?,
                 },
                 runtime::SpriteSceneRequests {
                     temporal_sampling,

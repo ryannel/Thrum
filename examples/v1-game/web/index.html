@@ -47,7 +47,7 @@
       <output id="status">Starting WebGPU…</output>
     </main>
     <script type="module">
-      import init, { create_browser_game, create_placed_browser_game, create_field_game, create_sprite_game, fetch_cooked_valley } from "./v1_game.js";
+      import init, { create_browser_game, create_placed_browser_game, create_field_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } from "./v1_game.js";
       import { bindControls } from "./thrum-controls.js";
 
       const canvas = document.querySelector("#scene");
@@ -86,7 +86,7 @@
           }
         }
         // The route comparison uses the canvas's authored backing size at the calibrated viewport.
-        const fixedGrid = sprites || (exit && probe.has("measure")) || probe.has("resize-probe") || probe.has("route-check");
+        const fixedGrid = (sprites && probe.has("backing")) || (exit && probe.has("measure")) || probe.has("resize-probe") || probe.has("route-check");
         let backingDirty = true;
         let lastDpr;
         if (!fixedGrid) {
@@ -117,10 +117,16 @@
         if (sprites && spriteRows !== undefined && (!Number.isInteger(spriteRows) || spriteRows < 4 || spriteRows > 10000)) {
           throw new Error("Sprite row count must be a whole number in 4..10000");
         }
+        if (sprites && probe.has("sprite-probe") &&
+            (spriteRows !== undefined || probe.has("culling") || ![null, "off"].includes(probe.get("reconstruction")))) {
+          throw new Error("Sprite sampling probes require the ordinary 2D path without a sprite field");
+        }
         const game = placed
           ? await create_placed_browser_game(canvas, placed)
           : sprites
-          ? await create_sprite_game(canvas, scale, spriteRows, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
+          ? probe.has("sprite-probe")
+            ? await create_sprite_probe(canvas, probe.get("sprite-probe"))
+            : await create_sprite_game(canvas, scale, spriteRows, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
           : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
           : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
