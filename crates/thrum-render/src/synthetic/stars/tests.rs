@@ -258,13 +258,15 @@ fn assert_variant(target: &OffscreenTarget, stars: bool) {
             .collect::<Vec<_>>();
         let forward = passes
             .iter()
-            .position(|pass| pass.name == "synthetic forward opaque")
+            .position(|pass| pass.name.as_ref() == "synthetic forward opaque")
             .expect("forward pass");
         let tone = passes
             .iter()
-            .position(|pass| pass.name == "synthetic tone encode")
+            .position(|pass| pass.name.as_ref() == "synthetic tone encode")
             .expect("display pass");
-        let star = passes.iter().position(|pass| pass.name == PASS_NAME);
+        let star = passes
+            .iter()
+            .position(|pass| pass.name.as_ref() == PASS_NAME);
         assert_eq!(star.is_some(), stars);
         if let Some(star) = star {
             assert!(forward < star && star < tone);
@@ -281,7 +283,7 @@ fn assert_variant(target: &OffscreenTarget, stars: bool) {
             }
         );
         assert_eq!(
-            passes.last().expect("last pass").name,
+            passes.last().expect("last pass").name.as_ref(),
             if capture {
                 "output readback"
             } else {

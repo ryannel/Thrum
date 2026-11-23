@@ -43,27 +43,27 @@ fn all_public_errors_implement_error() {
 }
 
 #[test]
-fn presentation_failure_preserves_the_graph_cause() {
+fn presentation_failure_preserves_the_timing_cause() {
     let frame = FrameError::gpu(
         "prepare surface",
-        PresentError::Graph(GraphError::DependencyCycle),
+        PresentError::Timing(TimingError::Capacity),
     );
     assert!(matches!(
         frame,
         FrameError::Gpu {
-            error: FrameGpuError::Present(PresentError::Graph(GraphError::DependencyCycle)),
+            error: FrameGpuError::Present(PresentError::Timing(TimingError::Capacity)),
             ..
         }
     ));
     assert_eq!(
         frame.to_string(),
-        "frame GPU: prepare surface: Presentation graph: Live pass dependencies form a cycle"
+        "frame GPU: prepare surface: Presentation timing: All timestamp query pairs are in use"
     );
     let gpu = frame.source().expect("GPU operation cause");
     let present = gpu.source().expect("presenter cause");
-    let graph = present.source().expect("graph cause");
+    let timing = present.source().expect("timing cause");
     assert!(matches!(
-        graph.downcast_ref::<GraphError>(),
-        Some(GraphError::DependencyCycle)
+        timing.downcast_ref::<TimingError>(),
+        Some(TimingError::Capacity)
     ));
 }

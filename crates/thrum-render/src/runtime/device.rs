@@ -350,6 +350,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 false,
             )
         };
+        self.retire_device_timings();
         let discarded = self.pending_frames().saturating_add(self.completed.len());
         self.dropped_reports = self
             .dropped_reports

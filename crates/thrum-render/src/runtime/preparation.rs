@@ -13,7 +13,7 @@ use crate::{
         CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, RetainedRayMeshes,
         SceneTimingLayout, SyntheticScene, SyntheticTargetInputs,
     },
-    timing::GpuTimings,
+    timing::{GpuTimings, TimingRecords},
 };
 use std::sync::{
     Arc,
@@ -679,11 +679,23 @@ impl TargetPreparation {
                     )
                 }
             };
+            let timings = GpuTimings::new(capabilities, queue, passes + u32::from(surface))
+                .map_err(|error| FrameError::gpu("scene timings", error))?;
+            let timing_records = if timings.is_enabled() {
+                let graph_passes = match &target {
+                    FrameTarget::ThreeD(target) => target.timing_metadata_capacity(),
+                    FrameTarget::TwoD(target) => target.timing_metadata_capacity(),
+                };
+                // The host can queue IN_FLIGHT samples while callers hold earlier reports.
+                TimingRecords::new(2 * IN_FLIGHT + 1, timings.capacity() as usize, graph_passes)
+            } else {
+                TimingRecords::new(0, 0, 0)
+            };
             slots.push(FrameSlot {
                 target,
                 presentation: None,
-                timings: GpuTimings::new(capabilities, queue, passes + u32::from(surface))
-                    .map_err(|error| FrameError::gpu("scene timings", error))?,
+                timings,
+                timing_records,
                 timing_layout,
                 timing_readback: false,
                 render_done: Arc::new(AtomicBool::new(false)),

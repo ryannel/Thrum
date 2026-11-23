@@ -6,11 +6,11 @@ use crate::graph::{
     PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::pass_key::{PassKey, PipelineRole};
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, sync::Arc};
 
 pub(super) struct TargetEffects {
     pub(super) groups: Vec<wgpu::BindGroup>,
-    pub(super) names: Vec<String>,
+    pub(super) names: Vec<Arc<str>>,
 }
 pub(super) struct LateGraph {
     pub(super) copy: Option<ResourceId>,
@@ -45,7 +45,7 @@ impl super::OffscreenTarget {
             .plan()
             .pass_bindings()
             .find(|(_, pass)| pass.key == Some(PassKey::AfterOpaque(0)))
-            .map(|(_, pass)| pass.name.as_str())
+            .map(|(_, pass)| pass.name.as_ref())
     }
 }
 
@@ -219,6 +219,7 @@ impl SyntheticTargetInputs {
                     .filter(|(_, pass)| pass.kind == crate::contribution::AfterOpaqueKind::Compute)
                     .map(|(index, pass)| format!("effect after {index}: {}", pass.name)),
             )
+            .map(Arc::from)
             .collect();
         Ok(TargetEffects { groups, names })
     }

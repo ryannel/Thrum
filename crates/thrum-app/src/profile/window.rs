@@ -26,7 +26,7 @@ pub(crate) struct ProfileWindow {
 }
 
 impl ProfileWindow {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(crate) fn is_enabled(&self) -> bool {
         self.enabled
     }

@@ -62,17 +62,17 @@ fn completed_callback_drop_cannot_poison_concurrent_reuse() {
 #[test]
 fn pass_names_reuse_slots_across_batches_and_replace_changed_roles() {
     let mut names = PassNames::with_capacity(2);
-    assert_eq!(names.push("depth", TimingCategory::Forward), 0);
-    assert_eq!(names.push("forward", TimingCategory::Forward), 1);
+    names.push("depth", TimingCategory::Forward, || "depth".into());
+    names.push("forward", TimingCategory::Forward, || "forward".into());
     let first = Arc::clone(&names.slots[0]);
     let second = Arc::clone(&names.slots[1]);
     names.clear();
-    assert_eq!(names.push("depth", TimingCategory::Forward), 0);
-    assert_eq!(names.push("forward", TimingCategory::Forward), 1);
+    names.push("depth", TimingCategory::Forward, || "depth".into());
+    names.push("forward", TimingCategory::Forward, || "forward".into());
     assert!(Arc::ptr_eq(&first, &names.slots[0]));
     assert!(Arc::ptr_eq(&second, &names.slots[1]));
     names.clear();
-    assert_eq!(names.push("shadow", TimingCategory::Forward), 0);
+    names.push("shadow", TimingCategory::Forward, || "shadow".into());
     assert!(!Arc::ptr_eq(&first, &names.slots[0]));
     assert_eq!(names.slots[1].as_ref(), "forward");
 }
@@ -102,8 +102,13 @@ fn named_scene_timings_preserve_optional_pass_identity_and_unavailable_transfers
         },
     ];
     let mut named = SceneGpuTimings::new(&passes);
-    named.unmeasured(["contribution upload".to_owned()].into_iter());
-    named.effect_passes(["effect 0: skipped".to_owned()].into_iter());
+    let record = Arc::get_mut(&mut named.0).unwrap();
+    record.frame = Some(super::TimingFrame {
+        device_generation: 1,
+        submission_order: 2,
+    });
+    record.unmeasured(["contribution upload".into()].into_iter());
+    record.effect_passes(["effect 0: skipped".into()].into_iter());
     assert_eq!(
         named.execution("effect 0: skipped"),
         Some(PassExecution::NotRun)

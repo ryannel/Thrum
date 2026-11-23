@@ -21,9 +21,9 @@ use crate::{
     present::{PresentError, PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
         CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic,
-        SceneApplyReport, SceneTimingLayout, SyntheticScene, SyntheticView, pass_durations,
+        SceneApplyReport, SceneTimingLayout, SyntheticScene, SyntheticView,
     },
-    timing::{GpuTimings, TimingError},
+    timing::{GpuTimings, TimingError, TimingFrame, TimingRecords, TimingStats},
 };
 use preparation::{FrameTarget, PreparedRenderer};
 use thrum_core::sim::{WorldAdvance, WorldPublication};
@@ -38,6 +38,7 @@ mod device;
 mod extent;
 #[cfg(not(target_arch = "wasm32"))]
 mod extent_transition;
+mod frame_timing;
 mod preparation;
 mod presentation;
 mod sprites;
@@ -385,9 +386,7 @@ impl SurfaceFault {
             }
             RenderError::GraphPassMismatch
             | RenderError::Graph(_)
-            | RenderError::Present(PresentError::GraphPassMismatch | PresentError::Graph(_)) => {
-                Self::Graph
-            }
+            | RenderError::Present(PresentError::GraphPassMismatch) => Self::Graph,
             _ => Self::Render,
         }
     }
@@ -516,6 +515,19 @@ pub struct FrameSample {
     pub visual_revision: Option<[u8; 32]>,
 }
 
+impl FrameSample {
+    /// Move GPU timing data into storage owned by this consumer.
+    ///
+    /// Call this before retaining a long history of frame samples. The host
+    /// publishes from a finite pool so short-lived samples need no allocation.
+    /// Detaching may allocate on the consumer's thread.
+    pub fn detach_gpu_timing(&mut self) {
+        if let Some(timing) = &mut self.gpu_pass_ns {
+            timing.detach();
+        }
+    }
+}
+
 /// Clock of a frame accepted for GPU submission, available before completion.
 #[derive(Clone, Copy, Debug)]
 pub struct SubmittedFrameClock {
@@ -595,6 +607,7 @@ struct FrameSlot {
     target: FrameTarget,
     presentation: Option<PresentationBinding>,
     timings: GpuTimings,
+    timing_records: TimingRecords,
     timing_layout: Option<SceneTimingLayout>,
     timing_readback: bool,
     render_done: Arc<AtomicBool>,
@@ -670,6 +683,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     retired_slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
     next_submission_order: u64,
+    timing_stats: TimingStats,
     submitted_clock: Option<SubmittedFrameClock>,
     timing_requested: bool,
     native_failed_generation: Option<u64>,
@@ -1288,6 +1302,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             retired_slots: Vec::with_capacity(IN_FLIGHT),
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
+            timing_stats: TimingStats::default(),
             submitted_clock: None,
             timing_requested: true,
             native_failed_generation: None,
@@ -2297,7 +2312,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             {
                 tap.abandon(index);
             }
-            let discarded = slot.timings.discard_unsubmitted(self.generation);
+            let discarded = slot.discard_timing(self.generation, &mut self.timing_stats);
             self.flush_staged_uploads()?;
             discarded.map_err(|timing| FrameError::gpu("render timing discard", timing))?;
             return Err(FrameError::gpu("render encode", error));
@@ -2358,8 +2373,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             {
                 tap.abandon(index);
             }
-            slot.timings
-                .discard_unsubmitted(self.generation)
+            slot.discard_timing(self.generation, &mut self.timing_stats)
                 .map_err(|e| FrameError::gpu("submission discard", e))?;
             self.history_reset_pending = true;
             return Err(error);
@@ -2392,8 +2406,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             {
                 tap.abandon(index);
             }
-            slot.timings
-                .discard_unsubmitted(self.generation)
+            slot.discard_timing(self.generation, &mut self.timing_stats)
                 .map_err(|error| FrameError::gpu("native presentation discard", error))?;
             self.history_reset_pending = true;
             self.flush_staged_uploads()?;
@@ -2401,37 +2414,58 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return surface_encode_outcome(report, surface_error);
         }
         if edr_capture {
-            capture_slot = submitted_capture::copy_drawable(
+            match submitted_capture::copy_drawable(
                 self.submitted_capture.as_mut(),
                 self.generation,
                 surface.filter(|_| surface_presented),
                 self.prepared.three_d(),
                 &mut encoder,
-            )?;
-        }
-        if let Err(error) = if sample.timing_requested {
-            slot.timings.finish_render(self.generation, &encoder)
-        } else {
-            Ok(())
-        } {
-            drop(encoder);
-            if let Some(index) = capture_slot
-                && let Some(tap) = self.submitted_capture.as_mut()
-            {
-                tap.abandon(index);
+            ) {
+                Ok(index) => capture_slot = index,
+                Err(error) => {
+                    drop(encoder);
+                    slot.discard_timing(self.generation, &mut self.timing_stats)
+                        .map_err(|discard| FrameError::gpu("drawable copy discard", discard))?;
+                    self.flush_staged_uploads()?;
+                    return Err(error);
+                }
             }
-            let discarded = slot.timings.discard_unsubmitted(self.generation);
-            self.flush_staged_uploads()?;
-            discarded.map_err(|discard| FrameError::TimingDiscard {
-                finish: error,
-                discard,
-            })?;
-            return Err(FrameError::gpu("finish timestamps", error));
         }
         if let Some(index) = capture_slot
             && let Some(tap) = self.submitted_capture.as_mut()
+            && let Err(error) = tap.finish_timing(index, &encoder)
         {
-            tap.finish_timing(index, &encoder)?;
+            drop(encoder);
+            tap.abandon(index);
+            slot.discard_timing(self.generation, &mut self.timing_stats)
+                .map_err(|discard| FrameError::gpu("capture submission discard", discard))?;
+            self.flush_staged_uploads()?;
+            return Err(error);
+        }
+        sample.submission_order = self.next_submission_order;
+        if sample.timing_requested {
+            let frame = TimingFrame {
+                device_generation: self.generation,
+                submission_order: sample.submission_order,
+            };
+            match slot.timings.finish_frame(frame, &encoder) {
+                Ok(gathered) => self.timing_stats.gathered += u64::from(gathered),
+                Err(error) => {
+                    drop(encoder);
+                    if let Some(index) = capture_slot
+                        && let Some(tap) = self.submitted_capture.as_mut()
+                    {
+                        tap.abandon(index);
+                    }
+                    let discarded = slot.discard_timing(self.generation, &mut self.timing_stats);
+                    self.flush_staged_uploads()?;
+                    discarded.map_err(|discard| FrameError::TimingDiscard {
+                        finish: error,
+                        discard,
+                    })?;
+                    return Err(FrameError::gpu("finish timestamps", error));
+                }
+            }
         }
         slot.render_done.store(false, Ordering::Release);
         self.queue.submit(
@@ -2477,7 +2511,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         sample.surface_presented = surface_presented;
         sample.surface_fault = report.surface_fault;
-        sample.submission_order = self.next_submission_order;
         self.submitted_clock = Some(SubmittedFrameClock {
             tick: sample.tick,
             presentation_alpha: sample.presentation_alpha,
@@ -2822,7 +2855,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     sample.camera_culling = sample
                         .camera_culling
                         .or_else(|| slot.target.take_culling_counts_if_3d());
-                    if !sample.timing_requested || !slot.timings.is_enabled() {
+                    if slot.timings.pending_frame().is_none() {
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         continue;
                     }
@@ -2835,12 +2868,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                             slot.state = SlotState::Resolving(sample);
                         }
                         Ok(false) => slot.state = SlotState::Rendering(sample),
-                        Err(_) => {
-                            sample.timing_fault = true;
-                            // A replacement batch times what the slot's own did.
-                            let capacity = slot.timings.capacity();
-                            slot.timings =
-                                new_timings(self.prepared.capabilities(), &self.queue, capacity)?;
+                        Err(error) => {
+                            slot.refuse_timing(&mut sample, &mut self.timing_stats, error);
+                            slot.recover_timings(self.prepared.capabilities(), &self.queue)?;
                             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         }
                     }
@@ -2849,55 +2879,21 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     sample.camera_culling = sample
                         .camera_culling
                         .or_else(|| slot.target.take_culling_counts_if_3d());
-                    match slot.timings.try_collect(self.generation) {
-                        Ok(Some(passes)) => {
-                            let timings = match &slot.target {
-                                FrameTarget::ThreeD(_) => slot.timing_layout.and_then(|layout| {
-                                    pass_durations(passes, sample.surface_presented, layout)
-                                }),
-                                FrameTarget::TwoD(target) => target.timings(
-                                    passes,
-                                    slot.timing_readback,
-                                    sample.surface_presented,
-                                ),
-                            };
-                            if let Some((mut scene, present, contribution)) = timings {
-                                if let FrameTarget::ThreeD(target) = &slot.target {
-                                    scene.effect_passes(target.effect_pass_names());
-                                    let boundary = target.first_late_pass().and_then(|name| {
-                                        Some(slot.timings.gap_before(name)? + scene.get(name)?)
-                                    });
-                                    scene.set_effect_boundary(boundary);
-                                    scene.unmeasured(target.untimed_pass_names(
-                                        slot.timing_readback,
-                                        sample.surface_presented,
-                                    ));
-                                }
-                                scene.set_timed_pass_span(slot.timings.timed_pass_span());
-                                sample.gpu_pass_ns = Some(scene);
-                                sample.gpu_present_ns = present;
-                                sample.gpu_contribution_ns = contribution;
-                            } else {
-                                sample.timing_fault = true;
-                            }
-                            retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
+                    match slot.collect_timing(self.generation, &mut sample, &mut self.timing_stats)
+                    {
+                        Ok(false) => {
+                            slot.state = SlotState::Resolving(sample);
+                            continue;
                         }
-                        Ok(None) => slot.state = SlotState::Resolving(sample),
+                        Ok(true) => {}
                         Err(error) => {
-                            sample.timing_fault = true;
-                            // Collection unmaps and resets this batch even when its counter values
-                            // are unusable. Keep the resources for the next submission.
+                            slot.refuse_timing(&mut sample, &mut self.timing_stats, error);
                             if !matches!(error, TimingError::InvalidTimestamp { .. }) {
-                                let capacity = slot.timings.capacity();
-                                slot.timings = new_timings(
-                                    self.prepared.capabilities(),
-                                    &self.queue,
-                                    capacity,
-                                )?;
+                                slot.recover_timings(self.prepared.capabilities(), &self.queue)?;
                             }
-                            retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         }
                     }
+                    retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                 }
             }
         }
@@ -2913,15 +2909,6 @@ fn publication_source<P>(publication: &WorldPublication<P>) -> SourceTick {
         tick: publication.id.tick,
         timeline: publication.timeline,
     }
-}
-
-fn new_timings(
-    capabilities: &DeviceCapabilities,
-    queue: &wgpu::Queue,
-    capacity: u32,
-) -> Result<GpuTimings, FrameError> {
-    GpuTimings::new(capabilities, queue, capacity)
-        .map_err(|error| FrameError::gpu("GPU timing recovery", error))
 }
 
 fn duration_ns_u32(value: Duration) -> u32 {

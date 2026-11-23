@@ -23,7 +23,7 @@ fn metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resi
                     let boundary = plan.pre_acquire_passes.expect("late acquisition partition");
                     let names: Vec<_> = plan
                         .pass_bindings()
-                        .map(|(_, pass)| pass.name.as_str())
+                        .map(|(_, pass)| pass.name.as_ref())
                         .collect();
                     assert_eq!(&names[boundary..], &[crate::present::PASS_NAME]);
                     assert!(names[..boundary].contains(&"synthetic tone encode"));

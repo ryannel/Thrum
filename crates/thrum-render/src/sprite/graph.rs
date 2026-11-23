@@ -1,6 +1,6 @@
 //! The 2D scene half, composed with the same graph, SDR output and surface consumer.
 
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, sync::Arc};
 
 use super::{
     SpriteFrame, SpriteFrameStats, SpriteScene, SpriteSink,
@@ -24,7 +24,7 @@ use crate::{
         CaptureSource, PixelReadback,
         display::{DISPLAY_REFERRED_PASS, DisplayReferredStage},
     },
-    timing::{GpuTimings, PassTiming, SceneGpuTimings, TimingCategory},
+    timing::{GpuTimings, PassTiming, TimingCategory, TimingRecord},
 };
 use crate::{
     error::RenderError,
@@ -462,42 +462,56 @@ impl SpriteTarget {
         )
     }
 
-    pub(crate) fn timings(
+    pub(crate) fn timing_metadata_capacity(&self) -> usize {
+        self.plan(false)
+            .pass_order
+            .len()
+            .max(self.plan(true).pass_order.len())
+    }
+
+    pub(crate) fn timing_metadata(
         &self,
-        passes: &[PassTiming],
+        record: &mut TimingRecord,
         capture: bool,
         presented: bool,
-    ) -> Option<crate::synthetic::frame_stats::PassDurations> {
+    ) {
         let plan = self.plan(capture);
         let limit = if presented {
             usize::MAX
         } else {
             plan.pre_acquire_passes.unwrap_or(usize::MAX)
         };
-        let present = passes
-            .iter()
-            .find(|pass| pass.category == TimingCategory::Surface)
-            .map(|pass| pass.nanoseconds);
-        let mut scene = SceneGpuTimings::new(passes);
-        scene.get(pass::PASS)?;
-        scene.get(DISPLAY_REFERRED_PASS)?;
-        if present.is_some() != presented {
-            return None;
-        }
-        scene.effect_passes(
+        record.effect_passes(
             plan.pass_bindings()
                 .filter(|(_, pass)| matches!(pass.key, Some(PassKey::Effect(_))))
-                .map(|(_, pass)| pass.name.clone()),
+                .map(|(_, pass)| Arc::clone(&pass.name)),
         );
-        scene.unmeasured(
+        record.unmeasured(
             plan.pass_bindings()
                 .take(limit)
                 .filter(|(_, pass)| pass.kind == Some(PassKind::Copy))
-                .map(|(_, pass)| pass.name.clone()),
+                .map(|(_, pass)| Arc::clone(&pass.name)),
         );
-        let contribution = scene.get(crate::synthetic::CONTRIBUTION_COMPUTE);
-        Some((scene, present, contribution))
     }
+}
+
+pub(crate) fn validate_sprite_timings(
+    passes: &[PassTiming],
+    presented: bool,
+) -> Option<(Option<f64>, Option<f64>)> {
+    let get = |name| {
+        passes
+            .iter()
+            .find(|pass| pass.name.as_ref() == name)
+            .map(|pass| pass.nanoseconds)
+    };
+    get(pass::PASS)?;
+    get(DISPLAY_REFERRED_PASS)?;
+    let present = passes
+        .iter()
+        .find(|pass| pass.category == TimingCategory::Surface)
+        .map(|pass| pass.nanoseconds);
+    (present.is_some() == presented).then(|| (present, get(crate::synthetic::CONTRIBUTION_COMPUTE)))
 }
 
 fn sprite_inputs(graph: &mut FrameGraph, sprites: &SpritePass) -> Result<Vec<Access>, RenderError> {

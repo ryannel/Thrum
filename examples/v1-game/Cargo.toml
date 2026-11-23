@@ -41,7 +41,7 @@ path = "tests/support/field_occlusion_gpu.rs"
 [dependencies]
 thrum-fixtures = { path = "../../crates/thrum-fixtures" }
 pollster = "=1.0.1"
-serde = { version = "=1.0.229", features = ["derive"] }
+serde = { version = "=1.0.229", features = ["derive", "rc"] }
 serde_json = "=1.0.154"
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 thrum-asset = { path = "../../crates/thrum-asset" }

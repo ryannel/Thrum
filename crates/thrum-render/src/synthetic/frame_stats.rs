@@ -3,16 +3,26 @@
 use super::{CullMode, OffscreenTarget, PreparedSynthetic};
 use crate::pass_key::{AtmosphereStage, PassKey};
 use crate::timing::TimingCategory;
+use std::sync::Arc;
 
 impl OffscreenTarget {
-    pub(crate) fn effect_pass_names(&self) -> impl Iterator<Item = String> + '_ {
+    pub(crate) fn timing_metadata_capacity(&self) -> usize {
+        self.graph(false)
+            .plan()
+            .pass_order
+            .len()
+            .max(self.graph(true).plan().pass_order.len())
+            .max(self.effects.names.len())
+    }
+
+    pub(crate) fn effect_pass_names(&self) -> impl Iterator<Item = Arc<str>> + '_ {
         self.effects.names.iter().cloned()
     }
     pub(crate) fn untimed_pass_names(
         &self,
         readback: bool,
         presented: bool,
-    ) -> impl Iterator<Item = String> + '_ {
+    ) -> impl Iterator<Item = Arc<str>> + '_ {
         let plan = self.graph(readback).plan();
         let executed = if presented {
             usize::MAX
@@ -31,7 +41,7 @@ impl OffscreenTarget {
                     )
                 )
             })
-            .map(|(_, pass)| pass.name.clone())
+            .map(|(_, pass)| Arc::clone(&pass.name))
     }
 }
 
@@ -117,6 +127,7 @@ impl SceneTimingLayout {
 
 /// Named executed scene passes, the optional surface blit and the contribution's
 /// compute pass alone. Summaries never reinterpret an ordinal.
+#[cfg(test)]
 pub(crate) type PassDurations = (crate::timing::SceneGpuTimings, Option<f64>, Option<f64>);
 
 /// Every camera culling pass name, in any layout.
@@ -128,11 +139,25 @@ pub(crate) const CULLING_PASSES: [&str; 5] = [
     crate::visibility::FINAL_PASS,
 ];
 
+#[cfg(test)]
 pub(crate) fn pass_durations(
     passes: &[crate::timing::PassTiming],
     presented: bool,
     layout: SceneTimingLayout,
 ) -> Option<PassDurations> {
+    let (present, contribution) = validate_pass_timings(passes, presented, layout)?;
+    Some((
+        crate::timing::SceneGpuTimings::new(passes),
+        present,
+        contribution,
+    ))
+}
+
+pub(crate) fn validate_pass_timings(
+    passes: &[crate::timing::PassTiming],
+    presented: bool,
+    layout: SceneTimingLayout,
+) -> Option<(Option<f64>, Option<f64>)> {
     // The fixed scene sequence, in recording order.
     const ALL: [PassKey; 8] = [
         PassKey::ShadowNear,
@@ -144,8 +169,7 @@ pub(crate) fn pass_durations(
         PassKey::History,
         PassKey::Display,
     ];
-    let raw_passes = passes;
-    let names = ALL
+    let mut names = ALL
         .into_iter()
         .filter(|&key| match key {
             PassKey::ShadowNear | PassKey::ShadowFar => layout.cascades,
@@ -155,7 +179,6 @@ pub(crate) fn pass_durations(
             _ => true,
         })
         .map(PassKey::constant_name);
-    let count = names.clone().count();
     // A scene contribution adds one timed compute pass that the graph may order anywhere before
     // forward; it is reported on its own and the fixed scene sequence is matched without it.
     // The Sun air shadow heights pass, present with shadows under atmosphere lighting, is likewise
@@ -167,11 +190,11 @@ pub(crate) fn pass_durations(
     let mut contribution = None;
     let mut air_shadow = None;
     let mut view_volume = false;
-    let mut visibility = None;
     let mut culled = 0_u8;
     let mut stars = None;
     let mut caster_cull = None;
-    let mut scene_passes = Vec::with_capacity(passes.len());
+    let mut stages = Some(AtmosphereStage::ORDER.into_iter());
+    let mut surface = None;
     for pass in passes {
         if pass.category == TimingCategory::Temporal {
             continue;
@@ -208,7 +231,6 @@ pub(crate) fn pass_durations(
                 return None;
             }
             culled |= bit;
-            visibility = Some(visibility.unwrap_or(0.0) + pass.nanoseconds);
         } else if pass.name.as_ref() == crate::visibility::casters::PASS {
             if caster_cull.is_some() || layout.shadows != Shadows::Culled {
                 return None;
@@ -220,7 +242,22 @@ pub(crate) fn pass_durations(
             }
             contribution = Some(pass.nanoseconds);
         } else {
-            scene_passes.push(pass);
+            if let Some(stages) = &mut stages
+                && stages.any(|stage| stage.name() == pass.name.as_ref())
+            {
+                continue;
+            }
+            stages = None;
+            match names.next() {
+                Some(expected) if expected == pass.name.as_ref() => {}
+                None if presented
+                    && surface.is_none()
+                    && pass.category == TimingCategory::Surface =>
+                {
+                    surface = Some(pass.nanoseconds);
+                }
+                _ => return None,
+            }
         }
     }
     if culled != culling
@@ -230,31 +267,7 @@ pub(crate) fn pass_durations(
     {
         return None;
     }
-    let passes = scene_passes.as_slice();
-
-    let mut offset = 0;
-    for stage in AtmosphereStage::ORDER {
-        let name = stage.name();
-        if passes
-            .get(offset)
-            .is_some_and(|pass| pass.name.as_ref() == name)
-        {
-            offset += 1;
-        }
-    }
-    (passes.len() == offset + count + usize::from(presented)
-        && passes[offset..]
-            .iter()
-            .zip(names)
-            .all(|(pass, name)| pass.name.as_ref() == name)
-        && (!presented || passes[offset + count].category == TimingCategory::Surface))
-        .then(|| {
-            (
-                crate::timing::SceneGpuTimings::new(raw_passes),
-                presented.then(|| passes[offset + count].nanoseconds),
-                contribution,
-            )
-        })
+    (names.next().is_none() && surface.is_some() == presented).then_some((surface, contribution))
 }
 
 #[cfg(test)]

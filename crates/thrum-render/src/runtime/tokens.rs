@@ -314,9 +314,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         {
             tap.abandon(index);
         }
-        let discarded = host.slots[recorded.slot_index]
-            .timings
-            .discard_unsubmitted(host.generation);
+        let discarded =
+            host.slots[recorded.slot_index].discard_timing(host.generation, &mut host.timing_stats);
         debug_assert!(discarded.is_ok(), "unsubmitted scene timing state changed");
         host.dropped_views = host.dropped_views.saturating_add(1);
         if host.presenter.is_some() {

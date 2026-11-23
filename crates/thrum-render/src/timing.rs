@@ -103,10 +103,14 @@ pub struct PassTiming {
 /// optional passes are absent; unsupported or faulted batches are `None` in
 /// `FrameSample`. Buckets sum by declared category; no name or ordinal selects one.
 #[derive(Clone, Debug, PartialEq)]
-pub struct SceneGpuTimings {
+pub struct SceneGpuTimings(Arc<TimingRecord>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct TimingRecord {
+    frame: Option<TimingFrame>,
     passes: Vec<PassTiming>,
-    unmeasured: Vec<String>,
-    not_run: Vec<String>,
+    unmeasured: Vec<Arc<str>>,
+    not_run: Vec<Arc<str>>,
     effect_boundary: Option<f64>,
     timed_pass_span: Option<f64>,
 }
@@ -122,56 +126,82 @@ pub enum PassExecution {
     Unmeasured,
 }
 
-impl SceneGpuTimings {
-    pub(crate) fn new(passes: &[PassTiming]) -> Self {
+impl TimingRecord {
+    pub(crate) fn with_capacity(passes: usize, graph_passes: usize) -> Self {
         Self {
-            passes: passes.to_vec(),
-            unmeasured: Vec::new(),
-            not_run: Vec::new(),
+            frame: None,
+            passes: Vec::with_capacity(passes),
+            unmeasured: Vec::with_capacity(graph_passes),
+            not_run: Vec::with_capacity(graph_passes),
             effect_boundary: None,
             timed_pass_span: None,
         }
     }
 
-    pub(crate) fn unmeasured(&mut self, names: impl Iterator<Item = String>) {
+    pub(crate) fn unmeasured(&mut self, names: impl Iterator<Item = Arc<str>>) {
         self.unmeasured.extend(names);
-        self.unmeasured
-            .push("timestamp query resolve/readback".to_owned());
     }
-    pub(crate) fn effect_passes(&mut self, names: impl Iterator<Item = String>) {
+
+    pub(crate) fn effect_passes(&mut self, names: impl Iterator<Item = Arc<str>>) {
         for name in names {
-            if self.get(&name).is_none() {
+            if !self.passes.iter().any(|pass| pass.name == name) {
                 self.not_run.push(name);
             }
         }
     }
+
     pub(crate) fn set_effect_boundary(&mut self, value: Option<f64>) {
         self.effect_boundary = value;
     }
-    pub(crate) fn set_timed_pass_span(&mut self, value: Option<f64>) {
-        self.timed_pass_span = value;
+
+    fn get(&self, name: &str) -> Option<f64> {
+        self.passes
+            .iter()
+            .find(|pass| pass.name.as_ref() == name)
+            .map(|pass| pass.nanoseconds)
+    }
+}
+
+impl SceneGpuTimings {
+    pub(crate) fn new(passes: &[PassTiming]) -> Self {
+        let mut record = TimingRecord::with_capacity(passes.len(), 0);
+        record.passes.extend_from_slice(passes);
+        Self(Arc::new(record))
+    }
+
+    pub(crate) fn detach(&mut self) {
+        Arc::make_mut(&mut self.0);
+    }
+
+    /// Identity recorded by the timestamp batch when its frame was submitted.
+    /// Standalone diagnostics that construct a sample from pass values have no identity.
+    #[must_use]
+    pub fn frame(&self) -> Option<TimingFrame> {
+        self.0.frame
     }
     /// First timed pass begin to output consumer end, including intervening work.
     /// Queued writes before the first pass are outside the interval.
     #[must_use]
     pub fn timed_pass_span_nanoseconds(&self) -> Option<f64> {
-        self.timed_pass_span
+        self.0.timed_pass_span
     }
     /// Upper bracket from the preceding timed pass's end through the first late pass.
     /// Includes a requested refraction copy, the pass boundary and that render pass's work.
     /// This overlaps `passes()` and must never be added to the scene sum.
     #[must_use]
     pub fn effect_boundary_nanoseconds(&self) -> Option<f64> {
-        self.effect_boundary
+        self.0.effect_boundary
     }
     /// Execution of a named pass, absent only when it is outside this frame's graph.
     #[must_use]
     pub fn execution(&self, name: &str) -> Option<PassExecution> {
         if let Some(value) = self.get(name) {
             Some(PassExecution::Timed(value))
-        } else if self.not_run.iter().any(|n| n == name) {
+        } else if self.0.not_run.iter().any(|n| n.as_ref() == name) {
             Some(PassExecution::NotRun)
-        } else if self.unmeasured.iter().any(|n| n == name) {
+        } else if (name == RESOLVE_PASS && self.0.frame.is_some())
+            || self.0.unmeasured.iter().any(|n| n.as_ref() == name)
+        {
             Some(PassExecution::Unmeasured)
         } else {
             None
@@ -179,27 +209,25 @@ impl SceneGpuTimings {
     }
     /// Declared compute passes skipped in this frame, under their executor names.
     #[must_use]
-    pub fn not_run_passes(&self) -> &[String] {
-        &self.not_run
+    pub fn not_run_passes(&self) -> &[Arc<str>] {
+        &self.0.not_run
     }
 
     /// Actual executed, timed graph passes (including the surface consumer).
     pub fn passes(&self) -> &[PassTiming] {
-        &self.passes
+        &self.0.passes
     }
 
     /// A measured pass, or `None` when absent. Zero is a valid measured delta.
     pub fn get(&self, name: &str) -> Option<f64> {
-        self.passes
-            .iter()
-            .find(|p| p.name.as_ref() == name)
-            .map(|p| p.nanoseconds)
+        self.0.get(name)
     }
 
     /// Scene pass sum; surface is reported separately. Untimed commands are
     /// outside this sum, never inferred as zero.
     pub fn sum(&self) -> f64 {
-        self.passes
+        self.0
+            .passes
             .iter()
             .filter(|p| p.category != TimingCategory::Surface)
             .map(|p| p.nanoseconds)
@@ -213,7 +241,8 @@ impl SceneGpuTimings {
     }
 
     fn sum_where(&self, predicate: impl Fn(TimingCategory) -> bool) -> f64 {
-        self.passes
+        self.0
+            .passes
             .iter()
             .filter(|p| predicate(p.category))
             .map(|p| p.nanoseconds)
@@ -271,11 +300,77 @@ impl SceneGpuTimings {
     /// Named values for serializers, without imposing a serialization dependency.
     /// Executed transfers and query resolution without counters have `None` values.
     pub fn values(&self) -> std::collections::BTreeMap<&str, Option<f64>> {
-        self.passes
+        self.0
+            .passes
             .iter()
             .map(|p| (p.name.as_ref(), Some(p.nanoseconds)))
-            .chain(self.unmeasured.iter().map(|n| (n.as_str(), None)))
+            .chain(self.0.unmeasured.iter().map(|n| (n.as_ref(), None)))
+            .chain(self.0.frame.map(|_| (RESOLVE_PASS, None)))
             .collect()
+    }
+}
+
+const RESOLVE_PASS: &str = "timestamp query resolve/readback";
+
+/// Identity of a frame whose GPU pass timestamps were recorded.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TimingFrame {
+    /// The renderer's device generation.
+    pub device_generation: u64,
+    /// The host's frame submission order.
+    pub submission_order: u64,
+}
+
+/// Why a gathered GPU timestamp batch produced no timing.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TimingRefusal {
+    /// A counter was zero.
+    Zero,
+    /// A counter was the backend error sentinel.
+    Sentinel,
+    /// A pass ended before it began.
+    Inverted,
+    /// A counter predates the last valid batch from this query set.
+    Repeated,
+    /// The batch belonged to a device that was replaced.
+    RetiredDevice,
+    /// The frame encoder was abandoned before it was submitted.
+    Discarded,
+    /// Render completion or query readback failed.
+    Readback,
+    /// The recorded pass layout or frame identity did not agree with the frame.
+    Layout,
+    /// Consumers still hold every prepared timing record for this slot.
+    ReportsHeld,
+}
+
+/// Cumulative outcomes for GPU frame timing in one host.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct TimingStats {
+    /// Batches submitted or discarded after reserving timestamp queries.
+    pub gathered: u64,
+    /// Batches published to a completed frame sample.
+    pub published: u64,
+    /// Submitted batches still in render or readback.
+    pub pending: usize,
+    refused: [u64; TimingRefusal::ReportsHeld as usize + 1],
+}
+
+impl TimingStats {
+    /// Number of batches refused for this reason.
+    #[must_use]
+    pub fn refused(&self, reason: TimingRefusal) -> u64 {
+        self.refused[reason as usize]
+    }
+
+    /// Number of batches refused across all reasons.
+    #[must_use]
+    pub fn total_refused(&self) -> u64 {
+        self.refused.iter().sum()
+    }
+
+    pub(crate) fn refuse(&mut self, reason: TimingRefusal) {
+        self.refused[reason as usize] += 1;
     }
 }
 
@@ -294,6 +389,8 @@ pub enum TimingError {
     StaleGeneration,
     /// Timestamp order or sentinel was invalid; never fabricate a duration.
     InvalidTimestamp {
+        /// Reason the raw pair is unusable.
+        reason: TimingRefusal,
         /// Raw beginning counter.
         start: u64,
         /// Raw ending counter.
@@ -311,8 +408,11 @@ impl std::fmt::Display for TimingError {
             Self::StaleGeneration => {
                 f.write_str("Timestamp batch belongs to a retired device generation")
             }
-            Self::InvalidTimestamp { start, end } => {
-                write!(f, "Invalid timestamp interval from {start} to {end}")
+            Self::InvalidTimestamp { reason, start, end } => {
+                write!(
+                    f,
+                    "Invalid timestamp interval from {start} to {end}: {reason:?}"
+                )
             }
         }
     }
@@ -327,6 +427,8 @@ struct Enabled {
     period: f64,
     capacity: u32,
     names: PassNames,
+    frame: Option<TimingFrame>,
+    last_counter: u64,
     results: Vec<PassTiming>,
     preceding_gaps: Vec<Option<f64>>,
     timed_pass_span: Option<f64>,
@@ -403,19 +505,18 @@ impl PassNames {
         }
     }
 
-    fn push(&mut self, name: &str, category: TimingCategory) -> usize {
+    fn push(&mut self, name: &str, category: TimingCategory, own: impl FnOnce() -> Arc<str>) {
         let index = self.active;
         if let Some(slot) = self.slots.get_mut(index) {
             if slot.as_ref() != name {
-                *slot = Arc::from(name);
+                *slot = own();
             }
             self.categories[index] = category;
         } else {
-            self.slots.push(Arc::from(name));
+            self.slots.push(own());
             self.categories.push(category);
         }
         self.active += 1;
-        index
     }
 
     fn clear(&mut self) {
@@ -449,18 +550,16 @@ impl GpuTimings {
         self.enabled.as_ref().map_or(0, |enabled| enabled.capacity)
     }
 
-    pub(crate) fn timed_pass_span(&self) -> Option<f64> {
-        self.enabled.as_ref()?.timed_pass_span
-    }
-
-    pub(crate) fn gap_before(&self, name: &str) -> Option<f64> {
+    pub(crate) fn effect_boundary(&self, name: &str) -> Option<f64> {
         let enabled = self.enabled.as_ref()?;
-        let index = enabled
+        let (index, pass) = enabled
             .results
             .iter()
-            .position(|pass| pass.name.as_ref() == name)?;
-        enabled.preceding_gaps[index]
+            .enumerate()
+            .find(|(_, pass)| pass.name.as_ref() == name)?;
+        Some(enabled.preceding_gaps[index]? + pass.nanoseconds)
     }
+
     pub(crate) fn ready_to_resolve(&self) -> bool {
         self.enabled.as_ref().is_some_and(|e| {
             matches!(e.phase, Phase::Rendering) && e.completion.ready() == Ok(true)
@@ -534,6 +633,8 @@ impl GpuTimings {
                 period,
                 capacity: max_passes,
                 names: PassNames::with_capacity(max_passes as usize),
+                frame: None,
+                last_counter: 0,
                 results: Vec::with_capacity(max_passes as usize),
                 preceding_gaps: Vec::with_capacity(max_passes as usize),
                 timed_pass_span: None,
@@ -586,7 +687,9 @@ impl GpuTimings {
         category: TimingCategory,
     ) -> Result<Option<wgpu::RenderPassTimestampWrites<'_>>, TimingError> {
         Ok(self
-            .reserve_pass(generation, name, category)?
+            .reserve_pass(generation, name.as_ref(), category, || {
+                Arc::from(name.as_ref())
+            })?
             .map(|(query_set, index)| wgpu::RenderPassTimestampWrites {
                 query_set,
                 beginning_of_pass_write_index: Some(index * 2),
@@ -604,7 +707,9 @@ impl GpuTimings {
         category: TimingCategory,
     ) -> Result<Option<wgpu::ComputePassTimestampWrites<'_>>, TimingError> {
         Ok(self
-            .reserve_pass(generation, name, category)?
+            .reserve_pass(generation, name.as_ref(), category, || {
+                Arc::from(name.as_ref())
+            })?
             .map(|(query_set, index)| wgpu::ComputePassTimestampWrites {
                 query_set,
                 beginning_of_pass_write_index: Some(index * 2),
@@ -612,11 +717,21 @@ impl GpuTimings {
             }))
     }
 
+    pub(crate) fn reserve_compiled_pass(
+        &mut self,
+        generation: u64,
+        name: &Arc<str>,
+        category: TimingCategory,
+    ) -> Result<Option<(&wgpu::QuerySet, u32)>, TimingError> {
+        self.reserve_pass(generation, name, category, || Arc::clone(name))
+    }
+
     fn reserve_pass(
         &mut self,
         generation: u64,
-        name: impl AsRef<str>,
+        name: &str,
         category: TimingCategory,
+        own: impl FnOnce() -> Arc<str>,
     ) -> Result<Option<(&wgpu::QuerySet, u32)>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
@@ -629,7 +744,7 @@ impl GpuTimings {
         if index >= enabled.capacity {
             return Err(TimingError::Capacity);
         }
-        enabled.names.push(name.as_ref(), category);
+        enabled.names.push(name, category, own);
         Ok(Some((&enabled.query, index)))
     }
     /// Release pass reservations after dropping their unsubmitted encoder.
@@ -642,15 +757,20 @@ impl GpuTimings {
     /// Returns an error for a stale generation or pending render/readback batch,
     /// leaving its reservations unchanged.
     pub fn discard_unsubmitted(&mut self, generation: u64) -> Result<(), TimingError> {
+        self.discard_recorded(generation).map(|_| ())
+    }
+
+    pub(crate) fn discard_recorded(&mut self, generation: u64) -> Result<bool, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
-            return Ok(());
+            return Ok(false);
         };
         if !matches!(enabled.phase, Phase::Recording) {
             return Err(TimingError::Busy);
         }
+        let recorded = !enabled.names.is_empty();
         enabled.names.clear();
-        Ok(())
+        Ok(recorded)
     }
     /// Finish recording timestamps on the render command buffer. The executor
     /// submits normally; completion notification is only a nonblocking message.
@@ -681,6 +801,31 @@ impl GpuTimings {
         });
         Ok(())
     }
+    pub(crate) fn finish_frame(
+        &mut self,
+        frame: TimingFrame,
+        encoder: &wgpu::CommandEncoder,
+    ) -> Result<bool, TimingError> {
+        self.finish_render(frame.device_generation, encoder)?;
+        if let Some(enabled) = &mut self.enabled
+            && matches!(enabled.phase, Phase::Rendering)
+        {
+            enabled.frame = Some(frame);
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    pub(crate) fn pending_frame(&self) -> Option<TimingFrame> {
+        self.enabled.as_ref()?.frame
+    }
+
+    pub(crate) fn clear_frame(&mut self) {
+        if let Some(enabled) = &mut self.enabled {
+            enabled.frame = None;
+        }
+    }
+
     /// Encode resolve/copy in a *later* host-owned command buffer, only after
     /// the render completion callback. Returns false without encoding or waiting
     /// while completion is pending (or timing is disabled). This avoids the
@@ -781,7 +926,8 @@ impl GpuTimings {
         enabled.timed_pass_span = None;
         let mut first_start = None;
         let mut previous_end = None;
-        let mut invalid = None;
+        let mut latest = enabled.last_counter;
+        let mut result = Ok(());
         for (index, (name, category)) in enabled.names.iter().enumerate() {
             let base = index * 16;
             let start =
@@ -791,47 +937,97 @@ impl GpuTimings {
                     .try_into()
                     .expect("query scalar"),
             );
-            if start != 0 && start != u64::MAX && end != u64::MAX && end >= start {
-                first_start.get_or_insert(start);
-                if category == TimingCategory::Surface {
-                    enabled.timed_pass_span = first_start
-                        .and_then(|first| end.checked_sub(first))
-                        .map(|ticks| ticks as f64 * enabled.period);
-                }
-                enabled.preceding_gaps.push(
-                    previous_end
-                        .map(|previous| {
-                            if start >= previous {
-                                (start - previous) as f64
-                            } else {
-                                -((previous - start) as f64)
-                            }
-                        })
-                        .map(|ticks| ticks * enabled.period),
-                );
-                previous_end = Some(end);
-                let delta = end - start;
-                enabled.results.push(PassTiming {
-                    name: Arc::clone(name),
-                    category,
-                    nanoseconds: delta as f64 * enabled.period,
-                });
-            } else {
-                previous_end = None;
-                invalid = Some((start, end));
+            if let Err(error) = validate_pair(start, end, enabled.last_counter) {
+                result = Err(error);
+                break;
             }
+            latest = latest.max(end);
+            first_start.get_or_insert(start);
+            if category == TimingCategory::Surface {
+                enabled.timed_pass_span = first_start
+                    .and_then(|first| end.checked_sub(first))
+                    .map(|ticks| ticks as f64 * enabled.period);
+            }
+            enabled.preceding_gaps.push(previous_end.map(|previous| {
+                let ticks = if start >= previous {
+                    (start - previous) as f64
+                } else {
+                    -((previous - start) as f64)
+                };
+                ticks * enabled.period
+            }));
+            previous_end = Some(end);
+            enabled.results.push(PassTiming {
+                name: Arc::clone(name),
+                category,
+                nanoseconds: (end - start) as f64 * enabled.period,
+            });
         }
         drop(values);
         enabled.readback.unmap();
         enabled.names.clear();
-        if let Some((start, end)) = invalid {
+        if let Err(error) = result {
             enabled.results.clear();
             enabled.preceding_gaps.clear();
             enabled.timed_pass_span = None;
-            return Err(TimingError::InvalidTimestamp { start, end });
+            return Err(error);
         }
+        enabled.last_counter = latest;
         Ok(Some(&enabled.results))
     }
+
+    pub(crate) fn move_frame_results(&mut self, record: &mut TimingRecord) {
+        let enabled = self.enabled.as_mut().expect("collected a timed frame");
+        record.frame = enabled.frame.take();
+        record.unmeasured.clear();
+        record.not_run.clear();
+        record.effect_boundary = None;
+        record.timed_pass_span = enabled.timed_pass_span;
+        std::mem::swap(&mut enabled.results, &mut record.passes);
+        enabled.results.clear();
+    }
+}
+
+/// Own reusable records independently of the frame samples that borrow them.
+/// A retained sample keeps its record immutable until its last clone is dropped.
+pub(crate) struct TimingRecords(Vec<Arc<TimingRecord>>);
+
+impl TimingRecords {
+    pub(crate) fn new(count: usize, passes: usize, graph_passes: usize) -> Self {
+        Self(
+            (0..count)
+                .map(|_| Arc::new(TimingRecord::with_capacity(passes, graph_passes)))
+                .collect(),
+        )
+    }
+
+    pub(crate) fn publish(
+        &mut self,
+        populate: impl FnOnce(&mut TimingRecord),
+    ) -> Option<SceneGpuTimings> {
+        let entry = self
+            .0
+            .iter_mut()
+            .find(|entry| Arc::strong_count(entry) == 1)?;
+        let record = Arc::get_mut(entry).expect("only the pool owns this record");
+        populate(record);
+        Some(SceneGpuTimings(Arc::clone(entry)))
+    }
+}
+
+pub(crate) fn validate_pair(start: u64, end: u64, last_counter: u64) -> Result<(), TimingError> {
+    let reason = if start == 0 || end == 0 {
+        TimingRefusal::Zero
+    } else if start == u64::MAX || end == u64::MAX {
+        TimingRefusal::Sentinel
+    } else if start > end {
+        TimingRefusal::Inverted
+    } else if last_counter != 0 && (start < last_counter || end <= last_counter) {
+        TimingRefusal::Repeated
+    } else {
+        return Ok(());
+    };
+    Err(TimingError::InvalidTimestamp { reason, start, end })
 }
 
 #[cfg(test)]

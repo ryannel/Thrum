@@ -685,7 +685,7 @@ pub(crate) struct CompiledPass {
     /// Declared reads retained for prepared input correspondence checks.
     pub(crate) reads: Vec<Access>,
     /// Stable diagnostic label chosen at graph closure.
-    pub(crate) name: String,
+    pub(crate) name: Arc<str>,
     /// The declared timing bucket.
     pub(crate) timing: TimingCategory,
     /// The renderer's key, which selects the recorder; absent for a pass
@@ -731,7 +731,17 @@ impl CompiledPass {
             return Ok(None);
         }
         let timestamp_writes = timings
-            .map(|timings| timings.compute_writes(generation, &self.name, self.timing))
+            .map(|timings| {
+                timings
+                    .reserve_compiled_pass(generation, &self.name, self.timing)
+                    .map(|writes| {
+                        writes.map(|(query_set, index)| wgpu::ComputePassTimestampWrites {
+                            query_set,
+                            beginning_of_pass_write_index: Some(index * 2),
+                            end_of_pass_write_index: Some(index * 2 + 1),
+                        })
+                    })
+            })
             .transpose()?
             .flatten();
         Ok(Some(encoder.begin_compute_pass(
@@ -822,7 +832,17 @@ impl CompiledPass {
         };
         let color_attachments = &colors[..];
         let timestamp_writes = timings
-            .map(|timings| timings.pass_writes(generation, &self.name, self.timing))
+            .map(|timings| {
+                timings
+                    .reserve_compiled_pass(generation, &self.name, self.timing)
+                    .map(|writes| {
+                        writes.map(|(query_set, index)| wgpu::RenderPassTimestampWrites {
+                            query_set,
+                            beginning_of_pass_write_index: Some(index * 2),
+                            end_of_pass_write_index: Some(index * 2 + 1),
+                        })
+                    })
+            })
             .transpose()?
             .flatten();
         Ok(Some(encoder.begin_render_pass(
@@ -1016,14 +1036,14 @@ impl CompiledGraph {
 
     /// Live diagnostic pass names in execution order.
     pub fn pass_names(&self) -> impl Iterator<Item = &str> {
-        self.passes.iter().map(|pass| pass.name.as_str())
+        self.passes.iter().map(|pass| pass.name.as_ref())
     }
 
     /// Live passes' names and declared timing buckets in execution order.
     pub fn pass_timings(&self) -> impl Iterator<Item = (&str, TimingCategory)> {
         self.passes
             .iter()
-            .map(|pass| (pass.name.as_str(), pass.timing))
+            .map(|pass| (pass.name.as_ref(), pass.timing))
     }
 
     /// Number of render or compute pipelines requiring timestamp slots.
@@ -1750,6 +1770,13 @@ impl FrameGraph {
                 slots.push((resource.descriptor.clone(), life.last));
             }
         }
+        #[cfg(feature = "test-support")]
+        crate::registry_audit::compiled(
+            order.len(),
+            order
+                .iter()
+                .any(|&index| self.keys[index] == Some(PassKey::Surface)),
+        );
         Ok(CompiledGraph {
             async_eligible: order
                 .iter()
@@ -1781,7 +1808,7 @@ impl FrameGraph {
                         .filter(|a| a.kind.reads())
                         .cloned()
                         .collect(),
-                    name: self.passes[index].name.clone(),
+                    name: Arc::from(self.passes[index].name.as_str()),
                     timing: self.passes[index].timing,
                     key: self.keys[index],
                     pipeline: self.passes[index].pipeline,
@@ -1944,7 +1971,7 @@ mod tests {
         assert_eq!(
             compiled
                 .pass_bindings()
-                .map(|(_, pass)| pass.name.as_str())
+                .map(|(_, pass)| pass.name.as_ref())
                 .collect::<Vec<_>>(),
             ["producer", "consumer", "present"]
         );
@@ -1984,7 +2011,7 @@ mod tests {
         );
         let visited = compiled
             .pass_bindings()
-            .map(|(_, pass)| pass.name.as_str())
+            .map(|(_, pass)| pass.name.as_ref())
             .collect::<Vec<_>>();
         assert_eq!(visited, ["producer", "consumer"]);
     }
@@ -2287,7 +2314,7 @@ mod tests {
         assert_eq!(compiled.dependencies, [(prerequisite, output)]);
         let recorded = compiled
             .pass_bindings()
-            .map(|(_, pass)| pass.name.as_str())
+            .map(|(_, pass)| pass.name.as_ref())
             .collect::<Vec<_>>();
         assert_eq!(recorded, ["prerequisite", "output"]);
     }

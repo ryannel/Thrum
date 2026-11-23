@@ -2,15 +2,11 @@
 mod support;
 
 use std::time::Duration;
-use thrum_render::timing::TimingCategory;
 use thrum_render::{
     capabilities::DeviceCapabilities,
-    present::{PresentError, SurfacePresenter, SurfaceProfile},
+    present::SurfaceProfile,
     runtime::{FrameConfig, SurfaceFault, SurfaceOutput},
-    synthetic::{
-        FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
-    },
-    timing::{GpuTimings, TimingError},
+    synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
 };
 
 #[test]
@@ -35,7 +31,7 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
     let mut host = pollster::block_on(support::host_with_config(
         &cap,
         &queue,
-        scene.clone(),
+        scene,
         FrameLighting::Diagnostic(SyntheticLight::default()),
         FrameConfig {
             render_extent: profile.extent,
@@ -59,71 +55,22 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
     };
     let drawable = device.create_texture(&stale_drawable);
     let view = drawable.create_view(&wgpu::TextureViewDescriptor::default());
-    let report = host
-        .drive(
-            Duration::ZERO,
-            Some(&SurfaceOutput {
-                view: &view,
-                extent: [32, 64],
-            }),
-        )
-        .expect("the extent may change at acquisition");
-    assert!(report.submitted && report.dropped_view && !report.surface_presented);
-    assert_eq!(report.surface_fault, Some(SurfaceFault::ExtentMismatch));
-    assert_eq!(host.dropped_surface(), 1);
-    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-    let sample = host.poll_completed().unwrap().expect("scene completion");
-    assert!(!sample.surface_presented);
-    assert_eq!(sample.surface_fault, report.surface_fault);
-
-    pollster::block_on(async {
-        let prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
-            .await
-            .unwrap();
-        let target = OffscreenTarget::new(&device, &prepared, 64, 64).unwrap();
-        let presenter = SurfacePresenter::prepare(&cap, profile.extent, profile)
-            .await
-            .unwrap();
-        let retired = SurfacePresenter::prepare(&cap, profile.extent, profile)
-            .await
-            .unwrap();
-        let binding = presenter.bind_target(&device, &target).unwrap();
-        let old_binding = retired.bind_target(&device, &target).unwrap();
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        assert!(matches!(
-            presenter.encode(&mut encoder, &old_binding, &view, profile.extent, None),
-            Err(PresentError::StaleTarget)
-        ));
-        assert!(matches!(
-            presenter.encode(&mut encoder, &binding, &view, [32, 64], None),
-            Err(PresentError::Extent)
-        ));
-        let drawable = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("drawable matching the configured extent"),
-            size: wgpu::Extent3d {
-                width: profile.extent[0],
-                height: profile.extent[1],
-                ..stale_drawable.size
-            },
-            ..stale_drawable
-        });
-        let view = drawable.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut timings = GpuTimings::new(&cap, &queue, 1).unwrap();
-        assert!(
-            timings
-                .pass_writes(1, "earlier scene pass", TimingCategory::Effects)
-                .unwrap()
-                .is_some()
-        );
-        assert!(matches!(
-            presenter.encode(
-                &mut encoder,
-                &binding,
-                &view,
-                profile.extent,
-                Some(&mut timings)
-            ),
-            Err(PresentError::Timing(TimingError::Capacity))
-        ));
-    });
+    for (index, extent) in [[32, 64], profile.extent].into_iter().enumerate() {
+        let report = host
+            .drive(
+                Duration::ZERO,
+                Some(&SurfaceOutput {
+                    view: &view,
+                    extent,
+                }),
+            )
+            .expect("the extent may change at acquisition");
+        assert!(report.submitted && report.dropped_view && !report.surface_presented);
+        assert_eq!(report.surface_fault, Some(SurfaceFault::ExtentMismatch));
+        assert_eq!(host.dropped_surface(), index as u64 + 1);
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+        let sample = host.poll_completed().unwrap().expect("scene completion");
+        assert!(!sample.surface_presented);
+        assert_eq!(sample.surface_fault, report.surface_fault);
+    }
 }

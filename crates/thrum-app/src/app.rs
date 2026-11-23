@@ -663,7 +663,7 @@ impl<G: WindowGame + 'static> App<G> {
         }
     }
 
-    fn receive_render(&mut self, reply: RenderReply<G::Readback>) -> Result<(), String> {
+    fn receive_render(&mut self, mut reply: RenderReply<G::Readback>) -> Result<(), String> {
         self.trim_history();
         if let RenderOutcome::Recovered { attempted, result } = reply.outcome {
             let success = result.is_ok();
@@ -675,7 +675,11 @@ impl<G: WindowGame + 'static> App<G> {
             }
             self.render_in_flight = None;
             self.counters = reply.platform.counters;
-            self.samples.extend(reply.samples.into_iter().flatten());
+            self.samples
+                .extend(reply.samples.into_iter().flatten().map(|mut sample| {
+                    sample.detach_gpu_timing();
+                    sample
+                }));
             match result {
                 Ok(info) => {
                     self.adapter_name = info.adapter_name;
@@ -711,6 +715,9 @@ impl<G: WindowGame + 'static> App<G> {
             reply.device_generation,
             reply.platform.profile_minimum,
         );
+        for sample in reply.samples.iter_mut().flatten() {
+            sample.detach_gpu_timing();
+        }
         if reply.platform.profile_revision == crate::profile::revision(self.game.controls()) {
             for sample in reply.samples.iter().flatten() {
                 self.profile.push(sample, self.origin.elapsed());

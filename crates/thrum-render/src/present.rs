@@ -2,17 +2,15 @@
 //! presentation; this module only declares and encodes one view-sized GPU pass.
 
 use crate::binding;
-use std::{collections::BTreeSet, sync::Arc};
+use std::sync::Arc;
 
 use crate::{
     capabilities::DeviceCapabilities,
     graph::{
         Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphError, PassBody,
-        PassKind, PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+        PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
     },
-    graph_record::{ExecutableGraph, RecordBinding, RecordFamily},
     pass_key::{PassKey, PipelineRole},
-    render_config::OUTPUT_FORMAT,
     synthetic::OffscreenTarget,
     timing::{GpuTimings, TimingError},
 };
@@ -39,8 +37,6 @@ pub enum PresentError {
     Extent,
     /// A target or binding belongs to another device generation or presenter.
     StaleTarget,
-    /// The one-pass graph fails its source/target closure.
-    Graph(GraphError),
     /// The closed graph contains no prepared presentation recorder.
     GraphPassMismatch,
     /// Optional timestamp batch lacks this pass or belongs to another generation.
@@ -59,7 +55,6 @@ impl std::fmt::Display for PresentError {
             Self::StaleTarget => {
                 f.write_str("Surface binding belongs to another presenter or device generation")
             }
-            Self::Graph(error) => write!(f, "Presentation graph: {error}"),
             Self::GraphPassMismatch => f.write_str("Presentation graph lacks a matching recorder"),
             Self::Timing(error) => write!(f, "Presentation timing: {error}"),
             Self::Validation(error) => write!(f, "GPU refused the presentation pipeline: {error}"),
@@ -70,7 +65,6 @@ impl std::fmt::Display for PresentError {
 impl std::error::Error for PresentError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Graph(error) => Some(error),
             Self::Timing(error) => Some(error),
             Self::Validation(error) => Some(error),
             _ => None,
@@ -80,19 +74,16 @@ impl std::error::Error for PresentError {
 
 /// Bound source texture retained by one host frame slot. A new surface texture
 /// does not change this binding; the source is generation-bound and reused.
-pub struct PresentationBinding {
+pub(crate) struct PresentationBinding {
     group: wgpu::BindGroup,
     owner: Arc<()>,
 }
 
-/// One prepared surface pipeline and compiled imported-resource pass plan.
-/// Resize recompiles only the small graph; device loss prepares a new owner.
-pub struct SurfacePresenter {
+/// Pipeline and bindings for the surface pass in the host graph.
+pub(crate) struct SurfacePresenter {
     device: wgpu::Device,
     pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
-    plan: ExecutableGraph<PresentFamily>,
-    surface_resource: ResourceId,
     generation: u64,
     extent_limit: u32,
     source_extent: [u32; 2],
@@ -109,26 +100,12 @@ pub(crate) struct PresenterInputs {
     format: wgpu::TextureFormat,
 }
 
-struct PresentFamily;
-
-impl RecordFamily for PresentFamily {
-    type Frame<'a> = PresentContext<'a>;
-    type Error = PresentError;
-}
-
 struct PresentContext<'a> {
     presenter: &'a SurfacePresenter,
     binding: &'a PresentationBinding,
     surface_view: &'a wgpu::TextureView,
     encoder: &'a mut wgpu::CommandEncoder,
     timings: Option<&'a mut GpuTimings>,
-}
-
-fn record_present(
-    frame: &mut PresentContext<'_>,
-    compiled: &CompiledPass,
-) -> Result<(), PresentError> {
-    record_present_resource(frame, compiled, &frame.presenter.surface_resource)
 }
 
 fn record_present_resource(
@@ -211,10 +188,10 @@ impl SurfacePresenter {
         record_present_resource(&mut frame, compiled, surface_resource)
     }
 
-    /// Prepare the pipeline and graph before the first surface draw.
+    /// Prepare the pipeline before the first surface draw.
     /// # Errors
-    /// Refuses unsupported formats/extents, invalid graph closure or GPU validation.
-    pub async fn prepare(
+    /// Refuses unsupported formats/extents or GPU validation.
+    pub(crate) async fn prepare(
         capabilities: &DeviceCapabilities,
         source_extent: [u32; 2],
         profile: SurfaceProfile,
@@ -234,7 +211,6 @@ impl SurfacePresenter {
         let extent_limit = capabilities.limits().max_texture_dimension_2d;
         check_extent(extent_limit, source_extent)?;
         check_extent(extent_limit, profile.extent)?;
-        let (plan, surface_resource) = compile_plan(generation, source_extent, profile)?;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("V1 surface source"),
@@ -291,8 +267,6 @@ impl SurfacePresenter {
             device: wgpu::Device::clone(device),
             pipeline,
             layout,
-            plan,
-            surface_resource,
             generation,
             extent_limit,
             source_extent,
@@ -304,7 +278,7 @@ impl SurfacePresenter {
     /// Prepare a reusable binding to a target from this device generation.
     /// # Errors
     /// Refuses a stale target or a target with a different source extent.
-    pub fn bind_target(
+    pub(crate) fn bind_target(
         &self,
         device: &wgpu::Device,
         target: &OffscreenTarget,
@@ -341,33 +315,21 @@ impl SurfacePresenter {
         })
     }
 
-    /// Recompile the extent-dependent graph after the platform configures a
-    /// nonzero surface. Existing GPU submissions retain their prior resources.
-    /// # Errors
-    /// Refuses an invalid extent or graph closure without changing this presenter.
-    pub fn resize(&mut self, device: &wgpu::Device, extent: [u32; 2]) -> Result<(), PresentError> {
+    /// Update the configured extent after validation.
+    pub(crate) fn resize(
+        &mut self,
+        device: &wgpu::Device,
+        extent: [u32; 2],
+    ) -> Result<(), PresentError> {
         if self.device != *device {
             return Err(PresentError::StaleTarget);
         }
         check_extent(self.extent_limit, extent)?;
-        if self.profile.extent == extent {
-            return Ok(());
-        }
-        let profile = SurfaceProfile {
-            format: self.profile.format,
-            extent,
-        };
-        let (plan, surface_resource) = compile_plan(self.generation, self.source_extent, profile)?;
-        self.plan = plan;
-        self.surface_resource = surface_resource;
-        self.profile = profile;
+        self.profile.extent = extent;
         Ok(())
     }
 
     /// Prepare new source and destination extents, retaining the pipeline.
-    /// The original remains usable if validation or graph compilation fails.
-    /// # Errors
-    /// Refuses zero/oversized extents or an invalid graph.
     pub(crate) fn refit(
         &self,
         source_extent: [u32; 2],
@@ -407,13 +369,10 @@ impl PresenterInputs {
         check_extent(self.extent_limit, source_extent)?;
         check_extent(self.extent_limit, extent)?;
         let profile = SurfaceProfile { format, extent };
-        let (plan, surface_resource) = compile_plan(self.generation, source_extent, profile)?;
         Ok(SurfacePresenter {
             device: self.device,
             pipeline: self.pipeline,
             layout: self.layout,
-            plan,
-            surface_resource,
             generation: self.generation,
             extent_limit: self.extent_limit,
             source_extent,
@@ -425,7 +384,7 @@ impl PresenterInputs {
 
 impl SurfacePresenter {
     /// Source grid and viewport used by the presentation pass.
-    pub fn source_viewport(&self) -> ([u32; 2], [u32; 4]) {
+    pub(crate) fn source_viewport(&self) -> ([u32; 2], [u32; 4]) {
         (
             self.source_extent,
             letterbox(self.source_extent, self.profile.extent),
@@ -433,33 +392,8 @@ impl SurfacePresenter {
     }
 
     /// Current configured surface extent.
-    pub fn extent(&self) -> [u32; 2] {
+    pub(crate) fn extent(&self) -> [u32; 2] {
         self.profile.extent
-    }
-
-    /// Encode one letterboxed pass into an acquired surface texture. The caller
-    /// submits and presents on its own queue in the same frame transaction.
-    /// # Errors
-    /// Refuses a stale binding/extent or unavailable timestamp slot before a pass begins.
-    pub fn encode(
-        &self,
-        encoder: &mut wgpu::CommandEncoder,
-        binding: &PresentationBinding,
-        surface_view: &wgpu::TextureView,
-        surface_extent: [u32; 2],
-        timings: Option<&mut GpuTimings>,
-    ) -> Result<(), PresentError> {
-        if self.plan.plan().device_generation != self.generation {
-            return Err(PresentError::StaleTarget);
-        }
-        self.validate_output(binding, surface_view, surface_extent)?;
-        self.plan.execute(&mut PresentContext {
-            presenter: self,
-            binding,
-            surface_view,
-            encoder,
-            timings,
-        })
     }
 }
 
@@ -475,8 +409,7 @@ pub(crate) fn pipeline_key(generation: u64) -> PipelineKey {
     PipelineRole::Surface.pipeline_key(generation, REVISION)
 }
 
-/// Declare the unchanged SDR surface consumer in either the standalone utility
-/// or the host's complete graph. Surface binding is supplied only at execution.
+/// Declare the surface consumer in the host graph. The surface view is bound at execution.
 pub(crate) fn surface_pass(
     graph: &mut FrameGraph,
     source: &ResourceId,
@@ -506,46 +439,6 @@ pub(crate) fn surface_pass(
         external_side_effect: true,
     };
     Ok((surface, pass))
-}
-
-fn compile_plan(
-    generation: u64,
-    source_extent: [u32; 2],
-    profile: SurfaceProfile,
-) -> Result<(ExecutableGraph<PresentFamily>, ResourceId), PresentError> {
-    let key = pipeline_key(generation);
-    let mut graph = FrameGraph::default();
-    let source = graph
-        .resource(
-            ResourceDescriptor::Texture {
-                dimension: crate::graph::TextureKind::D2,
-                width: source_extent[0],
-                height: source_extent[1],
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: OUTPUT_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::COPY_SRC
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-            },
-            ResourceScope::Imported { initialized: true },
-        )
-        .map_err(PresentError::Graph)?;
-    let (surface, pass) =
-        surface_pass(&mut graph, &source, profile, generation).map_err(PresentError::Graph)?;
-    let present_pass = graph.declare(PassKey::Surface, pass);
-    let plan = graph
-        .compile(generation, &BTreeSet::from([key]))
-        .map_err(PresentError::Graph)?;
-    let plan = plan
-        .bind(vec![RecordBinding::new(
-            present_pass,
-            PassKind::Render,
-            record_present,
-        )])
-        .map_err(PresentError::Graph)?;
-    Ok((plan, surface))
 }
 
 /// Integer viewport preserving the source aspect without a per-frame upload.

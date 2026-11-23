@@ -149,18 +149,47 @@ fn late_surface_submit_reports_main_thread_allocation_cost() {
                 advance_allocations.push(advanced_allocs);
                 encode_allocations.push(encoded_allocs);
             }
-            while host.poll_completed().expect("GPU progress").is_none() {
+            let wait = || {
                 device
                     .poll(wgpu::PollType::Wait {
                         submission_index: None,
                         timeout: Some(Duration::from_secs(10)),
                     })
-                    .expect("GPU completion");
+                    .expect("GPU completion")
+            };
+            wait();
+            assert!(
+                host.poll_completed()
+                    .expect("submit the later resolve")
+                    .is_none()
+            );
+            wait();
+            ALLOCS.with(|count| count.set(0));
+            BYTES.with(|count| count.set(0));
+            TRACK.with(|track| track.set(true));
+            let completed = host.poll_completed();
+            TRACK.with(|track| track.set(false));
+            let sample = completed
+                .expect("poll mapped timestamps")
+                .expect("completed frame");
+            let timing = sample.gpu_pass_ns.as_ref().expect("valid GPU timestamps");
+            let identity = timing.frame().expect("timestamp identity");
+            assert_eq!(identity.submission_order, sample.submission_order);
+            let completed_allocations = ALLOCS.with(Cell::get);
+            let completed_bytes = BYTES.with(Cell::get);
+            // wgpu's first mapped view grows its internal range list once.
+            if tick > 1 {
+                assert_eq!(
+                    (completed_allocations, completed_bytes),
+                    (0, 0),
+                    "publish timing for submission {}",
+                    sample.submission_order
+                );
             }
         }
         let max = |values: &[u64]| values.iter().copied().max().expect("measured frames");
         println!(
-            "G3b late-surface submit {MEASURED_FRAMES} warm frames: advance alloc median/max={}/{}; scene encode alloc median/max={}/{}; submit alloc median/max={}/{}, bytes median/max={}/{}",
+            "G3b late-surface submit {MEASURED_FRAMES} warm frames: advance alloc median/max={}/{}; scene encode alloc median/max={}/{}; submit alloc median/max={}/{}, bytes median/max={}/{}; completed timing publication allocs=0",
             median(&advance_allocations),
             max(&advance_allocations),
             median(&encode_allocations),

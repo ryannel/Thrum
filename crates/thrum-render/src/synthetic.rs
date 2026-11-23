@@ -93,7 +93,7 @@ pub(crate) use display::{
     PreToneInput, PreToneViews, PreparedPreToneInput, SdrToneStage, ToneOutput,
 };
 use exposure::ExposureResolve;
-pub(crate) use frame_stats::{SceneTimingLayout, pass_durations};
+pub(crate) use frame_stats::{SceneTimingLayout, validate_pass_timings};
 use history_gpu::TransformHistory;
 use mesh_arena::{ArenaLimits, MeshArena};
 use mesh_route::{BucketRoute, MeshSelection, admit_meshes};

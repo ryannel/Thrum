@@ -651,7 +651,7 @@ async fn veiled_frames(
             .graph(false)
             .plan()
             .pass_bindings()
-            .map(|(_, pass)| pass.name.as_str())
+            .map(|(_, pass)| pass.name.as_ref())
             .collect();
         let at = |name: &str| order.iter().position(|&pass| pass == name).expect(name);
         let forward = at("synthetic forward opaque");

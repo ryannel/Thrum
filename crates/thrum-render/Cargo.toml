@@ -315,3 +315,13 @@ path = "tests/sprite_edges.rs"
 [[test]]
 name = "edr_transform"
 path = "tests/edr_transform.rs"
+
+
+# REVIEW-RENDER M5 invokes these targets by name.
+[[test]]
+name = "timing_validity"
+path = "tests/timing_validity.rs"
+
+[[test]]
+name = "presenter_single_path"
+path = "tests/presenter_single_path.rs"

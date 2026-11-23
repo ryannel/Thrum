@@ -107,14 +107,6 @@ impl<F: RecordFamily> ExecutableGraph<F> {
         }
         Ok(())
     }
-    /// Run already bound closures in the plan's topological order.
-    pub(crate) fn execute(&self, frame: &mut F::Frame<'_>) -> Result<(), F::Error> {
-        for (pass, record) in self.plan.pass_bindings().zip(&self.recorders) {
-            record(frame, pass.1)?;
-        }
-        Ok(())
-    }
-
     /// Access the closed plan for timing capacity and transient resources.
     pub(crate) fn plan(&self) -> &CompiledGraph {
         &self.plan
@@ -203,7 +195,9 @@ mod tests {
             .bind(vec![binding(2), binding(1)])
             .expect("one per live pass");
         let mut frame = Frame::default();
-        executable.execute(&mut frame).expect("record");
+        executable
+            .execute_before_acquire(&mut frame)
+            .expect("record");
         assert_eq!(frame.order, [1, 2]);
         assert_eq!(frame.written, 2);
         assert_eq!(executable.plan().culled_passes, 1);
@@ -223,7 +217,7 @@ mod tests {
             .bind(vec![first, second])
             .expect("valid bindings");
         let mut frame = Frame::default();
-        assert_eq!(executable.execute(&mut frame), Err(()));
+        assert_eq!(executable.execute_before_acquire(&mut frame), Err(()));
         assert_eq!(frame.written, 1);
     }
 

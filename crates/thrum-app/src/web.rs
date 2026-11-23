@@ -442,11 +442,14 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     }
 
     fn collect_completed(&mut self) -> Result<(), String> {
-        while let Some(sample) = self
+        while let Some(mut sample) = self
             .host
             .poll_completed()
             .map_err(|error| error.to_string())?
         {
+            if self.samples.len() < SAMPLES || self.profile.is_enabled() {
+                sample.detach_gpu_timing();
+            }
             self.profile.push(&sample, self.clock.last());
             if self.samples.len() < SAMPLES {
                 self.samples.push(sample);

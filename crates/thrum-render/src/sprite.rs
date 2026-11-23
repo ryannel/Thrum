@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-mod graph;
+pub(crate) mod graph;
 mod pass;
 mod world;
 pub(crate) use graph::{PreparedSprites, SpriteTarget};
