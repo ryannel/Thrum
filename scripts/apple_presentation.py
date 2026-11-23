@@ -476,6 +476,7 @@ def scale_reference(output, env):
 
 def mac_scale(output):
     binary, env, _ = scale_environment(output)
+    build_sha256 = hashlib.sha256(binary.read_bytes()).hexdigest()
     history = scale_history(output, binary, env)
     (output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
     stills = scale_reference(output, env)
@@ -485,8 +486,7 @@ def mac_scale(output):
                       and row["scales"]["100"]["p99"] < row["no_aa"]["p99"])]
     if misses:
         raise ValueError(f"scale 1.0 missed M3 tolerance at {', '.join(misses)}")
-    return dict(target="mac-metal", history=history, stills=stills,
-                binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+    return dict(target="mac-metal", history=history, stills=stills, binary_sha256=build_sha256)
 
 
 def scale_cost_rows(rows):
@@ -522,6 +522,7 @@ def mac_scale_costs(output):
     from t2_load import LoadRecord
 
     binary, env, route = scale_environment(output)
+    build_sha256 = hashlib.sha256(binary.read_bytes()).hexdigest()
     route["render_extent"] = [1920, 1080]
     route_path = output / "moving-1080p.json"
     route_path.write_text(json.dumps(route) + "\n")
@@ -536,18 +537,22 @@ def mac_scale_costs(output):
         finally:
             observed = load.finish()
         native = costs[0]["p50_ns"]
-        reduced = costs[3]["p50_ns"]
-        expected_forward = native["forward_sky"] * costs[3]["area"] / costs[0]["area"]
-        runs.append(dict(index=index, header=header, load=observed, costs=costs, tripwires={
-            "forward_and_sky_67_departs_from_pixel_ratio_by_over_25_percent":
-                abs(reduced["forward_sky"] - expected_forward) > 0.25 * expected_forward,
-            "taau_outside_estimate_0_2_to_0_5_ms": any(
-                not 200_000 <= row["p50_ns"]["taau"] <= 500_000 for row in costs),
-            "atmosphere_67_differs_from_native_by_over_25_percent":
-                abs(reduced["atmosphere"] - native["atmosphere"]) > 0.25 * native["atmosphere"],
-        }))
-    return dict(target="mac-metal", build_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
-                runs=runs, timing_decides_pass=False)
+        for row in costs:
+            measured = row["p50_ns"]
+            expected_forward = native["forward_sky"] * row["area"] / costs[0]["area"]
+            row["cost_account"] = dict(pixel_bound_forward_sky_ns=expected_forward,
+                                       fixed_atmosphere_ns=native["atmosphere"],
+                                       taau_estimate_ns=[200_000, 500_000])
+            row["tripwires"] = {
+                "forward_sky_differs_from_pixel_ratio_by_over_25_percent":
+                    abs(measured["forward_sky"] - expected_forward) > 0.25 * expected_forward,
+                "taau_outside_estimate_0_2_to_0_5_ms":
+                    not 200_000 <= measured["taau"] <= 500_000,
+                "atmosphere_differs_from_native_by_over_25_percent":
+                    abs(measured["atmosphere"] - native["atmosphere"]) > 0.25 * native["atmosphere"],
+            }
+        runs.append(dict(index=index, header=header, load=observed, costs=costs))
+    return dict(target="mac-metal", build_sha256=build_sha256, runs=runs, timing_decides_pass=False)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -571,8 +576,9 @@ def main():
     check = checks.get((args.check, args.target))
     if check is None:
         parser.error(f"{args.check} is unavailable on {args.target}")
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     report = check(output)
-    report["commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    report["commit"] = commit
     report_path = output / f"{args.check}.json"
     report_path.write_text(json.dumps(report, indent=2) + "\n")
     print(f"{args.target} {args.check} passed in {report_path}")
