@@ -776,7 +776,32 @@
     },
     "M13": {
       "definitions": "5de658f5c235547cdcb196ca431293788e7ef842ec180861a21f7a54df79594b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "8206105532efab6a794e1a5fef29bc5de935569f",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M13-review.md",
+          "items": {
+            "M13.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 43883,
+            "cached": 531200,
+            "output": 2344,
+            "turns": 1
+          },
+          "at": "2026-11-23T15:47:07Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps faili",
@@ -810,6 +835,13 @@
           "output": 18923,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "8206105532efab6a794e1a5fef29bc5de935569f",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M13-review.md",
+        "checked": "20a4c35d9ae42845a04d35205b4065f0156fd859",
+        "at": "2026-11-23T15:47:07Z"
       }
     },
     "M14": {
