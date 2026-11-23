@@ -427,7 +427,7 @@
           "lock": "gpu",
           "ask": "Did any existing reference, case, bound or test in the numerical acceptance table change? None may: the defaults draw as before.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/finer-grid-metal-contracts.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -439,7 +439,7 @@
           "lock": "gpu",
           "ask": "Does the test show that the forward decoder's own split of solar in-scatter by a surface's shadow is not applied on top of the volume's, by comparing a shadowed surface's aerial term with the volume's value at its depth?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/finer-grid-metal-contracts.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -452,7 +452,7 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/finer-grid-metal-contracts.log",
           "verdict": "",
           "review": ""
         },
@@ -462,7 +462,7 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_history_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/metal-contracts-final.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/finer-grid-metal-contracts.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -472,7 +472,7 @@
           "statement": "As the haze control goes from a 300 km visual range to 5 km, at noon and at a 10\u00b0 Sun, the land fades with distance into the sky's colour at the horizon. The sky and the farthest land meet without a line, and there is no banding, slice step or tile pattern in the haze. With the kind control moved from an exponent of 0 to 1.3 at a 10\u00b0 Sun, the haze at 20 km and 5 km keeps its depth and changes colour from grey-blue toward a warmer, neutral-to-yellow horizon, as the design's measurement says; at noon it changes little.",
           "inspect": "Capture `fixed` stills with T2 engine capture at visual ranges of 300, 60, 20 and 5 km, at noon and at a 10\u00b0 Sun, from 2 m and from 40 m, and at 20 and 5 km again with the exponent at 1.3. Judge each whole, the set side by side, the two exponents in pairs, and native-size crops along the horizon and across the middle distance.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/independent-refined-haze-read.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/finer-grid-haze.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -482,20 +482,20 @@
           "statement": "In haze of a 20 km visual range at a 10\u00b0 Sun, shafts of sunlight stand below a ridge line and below the test cloud field's gaps, lined up with the sunlit and shaded ground beneath them, soft-edged, with no stair-step along their depth.",
           "inspect": "Capture `fixed` stills toward and across the Sun with the labelled test cloud field on and off. Judge each whole and in native-size crops of a shaft against dark terrain and of where it meets the ground.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/shaft-inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.8",
           "statement": "In a pan, a 40 m walk and a time scrub through sunset, the haze and its shafts do not crawl, flicker or trail, and after a cut they are whole in the first frame.",
           "inspect": "Capture `realtime` sequences of each at a 20 km visual range. Judge consecutive frames at 1x, whole and in native-size crops of a shaft's edge.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/finer-grid-motion-inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.9",

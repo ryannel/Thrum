@@ -306,8 +306,8 @@
       "view_volume": {
         "implementation": "The opt-in frustum volume integrates air, cascade shadows and the registered Sun-path optical depth. The forward decoder reads the joint transport. The background and stars take the terminal pair, and history advances on submission.",
         "correctness": "Metal probes exercise the independent solar, transmittance and night terms, terminal correction exactly once and history reseeding on cut, epoch and replacement device.",
-        "visuals": "Fixed Metal captures show softer air and ground transitions when the diagnostic cloud field casts shade. Shaft alignment and elapsed-motion appearance remain under visual qualification.",
-        "device": "Held 1280 × 720 valley GPU timestamps and per-resource nominal bytes are recorded with and without the view volume on Apple M3 Max Metal and hardware Chrome WebGPU under shared load.",
+        "visuals": "Native crops show cloud-gap shafts aligned with the lit ground on Metal and Chrome WebGPU, and a shaft through a diagnostic ridge on Metal. Submitted-frame inspection covers the pan, 40 m walk, sunset scrub and first post-cut shaft on both targets.",
+        "device": "Held 1280 × 720 valley GPU timestamps and per-resource nominal bytes are recorded with and without the 160 × 90 × 80 view volume on Apple M3 Max Metal and hardware Chrome WebGPU under shared load.",
         "unqualified": "The joint volume against an independent all-orders reference and local lights in the air are outside the qualification.",
         "evidence": [
           "../../.orchestrate/evidence/ATMOSPHERE/M7/README.md",
