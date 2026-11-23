@@ -88,14 +88,15 @@ fn reach_depth(point: vec2<f32>, reach: f32) -> f32 {
 
 struct CutResult { hit: CutHit, nodes: u32, }
 
-fn highest_cut(query: QueryPoint, reach: f32) -> CutResult {
+fn cut_rows(query: QueryPoint, reach: f32, lane: u32) -> CutResult {
     let cell = surf.controls.z;
     let base = floor((query.position - reach) / cell);
     let end = ceil((query.position + reach) / cell) + 1.0;
     let origin = base * cell - query.position;
     let extent = vec2<u32>(end - base);
     var hit: CutHit;
-    for (var z = 0u; z < extent.y; z++) {
+    var nodes = 0u;
+    for (var z = lane; z < extent.y; z += QUERY_WIDTH) {
         let start = origin + vec2(0.0, f32(z) * cell);
         var a = node(query, start);
         var d = node(query, start + vec2(0.0, cell));
@@ -108,8 +109,9 @@ fn highest_cut(query: QueryPoint, reach: f32) -> CutResult {
             a = b;
             d = c;
         }
+        nodes += 2u * (extent.x + 1u);
     }
-    return CutResult(hit, 2u * (extent.x + 1u) * extent.y);
+    return CutResult(hit, nodes);
 }
 
 fn sheet_jacobian(query: QueryPoint, rest: vec2<f32>, h: f32) -> mat2x3<f32> {
@@ -122,18 +124,7 @@ fn sheet_jacobian(query: QueryPoint, rest: vec2<f32>, h: f32) -> mat2x3<f32> {
     return mat2x3(dx + vec3(1.0, 0.0, 0.0), dz + vec3(0.0, 0.0, 1.0));
 }
 
-fn surf_query(point: QueryPoint, gain: f32) -> QueryWave {
-    if point.has_bed == 0u {
-        return QueryWave(long_wave(point.position - settings.origin, point.dt, gain, settings.lengths_chop.w, settings.components), 0u);
-    }
-    var reach = ceiling(surf.controls.x).x;
-    for (var i = 0u; i < 2u; i++) {
-        reach = min(reach, ceiling(reach_depth(point.position, reach)).x);
-    }
-    var cut: CutResult;
-    if ceiling(reach_depth(point.position, reach)).y > 0.0 {
-        cut = highest_cut(point, reach);
-    }
+fn surf_query(point: QueryPoint, cut: CutResult) -> QueryWave {
     let hit = cut.hit;
     var rest = hit.rest;
     var height = hit.height;
@@ -175,4 +166,58 @@ fn surf_query(point: QueryPoint, gain: f32) -> QueryWave {
     let velocity = (cut_node(point, rest, point.dt + h).displacement -
         cut_node(point, rest, point.dt - h).displacement) / (2.0 * h);
     return QueryWave(Wave(vec3(0.0, height, 0.0), slope, vec3(0.0), velocity), cut.nodes);
+}
+
+
+var<workgroup> cut_reach: f32;
+var<workgroup> cut_enabled: bool;
+var<workgroup> cut_parts: array<CutResult, QUERY_WIDTH>;
+
+fn needs_cut(point: QueryPoint) -> vec2<f32> {
+    var reach = ceiling(surf.controls.x).x;
+    for (var i = 0u; i < 2u; i++) {
+        reach = min(reach, ceiling(reach_depth(point.position, reach)).x);
+    }
+    return vec2(reach, ceiling(reach_depth(point.position, reach)).y);
+}
+
+@compute @workgroup_size(QUERY_WIDTH)
+fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
+    let point = points[group.x];
+    if lane == 0u {
+        cut_enabled = false;
+        if point.body != 0xffffffffu && point.has_bed != 0u {
+            let reach = needs_cut(point);
+            cut_reach = reach.x;
+            cut_enabled = reach.y > 0.0;
+        }
+    }
+    workgroupBarrier();
+    var part: CutResult;
+    if cut_enabled { part = cut_rows(point, cut_reach, lane); }
+    cut_parts[lane] = part;
+    workgroupBarrier();
+    if lane != 0u { return; }
+    let gains = query_gains(point);
+    var result: QueryWave;
+    if point.body != 0xffffffffu {
+        if point.has_bed == 0u {
+            result = plain_query(point, gains.x);
+        } else {
+            var cut: CutResult;
+            for (var i = 0u; i < QUERY_WIDTH; i++) {
+                let next = cut_parts[i];
+                cut.nodes += next.nodes;
+                let earlier = next.hit.cell.y < cut.hit.cell.y ||
+                    (next.hit.cell.y == cut.hit.cell.y && next.hit.cell.x < cut.hit.cell.x);
+                // Match the sequential row-major tie break at equal height.
+                if next.hit.valid && (!cut.hit.valid || next.hit.height > cut.hit.height ||
+                    (next.hit.height == cut.hit.height && earlier)) {
+                    cut.hit = next.hit;
+                }
+            }
+            result = surf_query(point, cut);
+        }
+    }
+    write_answer(group.x, point, gains, result);
 }
