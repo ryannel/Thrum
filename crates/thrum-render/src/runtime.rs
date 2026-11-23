@@ -256,8 +256,9 @@ impl std::fmt::Display for FrameError {
             Self::World(message) => write!(f, "frame world: {message}"),
             Self::Scene(message) => write!(f, "frame scene: {message}"),
             Self::Gpu { operation, error } => write!(f, "frame GPU: {operation}: {error}"),
-            Self::DeviceLost(message) => write!(f, "frame GPU: {message}"),
-            Self::ContributionDeviceLimit(message) => write!(f, "frame GPU: {message}"),
+            Self::DeviceLost(message) | Self::ContributionDeviceLimit(message) => {
+                write!(f, "frame GPU: {message}")
+            }
             Self::EffectGraph(error) => write!(f, "frame scene: {error}"),
             Self::SecondaryView(error) => write!(f, "frame scene: {error}"),
             Self::SpriteCulling(mode) => write!(

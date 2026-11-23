@@ -85,6 +85,10 @@ name = "device_recipe"
 path = "tests/device_recipe.rs"
 
 [[test]]
+name = "error_types"
+path = "tests/error_types.rs"
+
+[[test]]
 name = "extract"
 path = "tests/extract.rs"
 
