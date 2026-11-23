@@ -398,7 +398,36 @@
         "task": "The design review of SCENE-VIEWS at .orchestrate/evidence/SCENE-VIEWS/design-review.md asked for changes, with its 1 Mus",
         "at": "2026-11-23T22:19:19Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "08fdbcbbaf6060006c69becf7d87c3eb8a6158a1",
+        "checked": "08fdbcbbaf6060006c69becf7d87c3eb8a6158a1",
+        "at": "2026-11-23T23:13:39Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 186956,
+          "cached": 23525376,
+          "output": 43732,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 186956,
+          "cached": 23525376,
+          "output": 43732,
+          "turns": 1
+        }
+      }
     }
   },
   "briefs": [
