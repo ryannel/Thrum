@@ -317,6 +317,13 @@ impl AtmospherePrepared {
         queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&record));
     }
 
+    /// Skip the geometry lighting products in the sky-only exposure fixture.
+    /// Call after updating the atmosphere, with no active geometry or effects.
+    #[cfg(all(test, not(target_arch = "wasm32")))]
+    pub(crate) fn omit_geometry_products_for_sky_test(&mut self) {
+        self.validity |= AERIAL_VALID | REFLECTION_VALID | DFG_VALID;
+    }
+
     pub(crate) fn commit(&mut self) {
         self.submitted_sky = self.pending_sky.take();
         self.validity = TRANSPORT_VALID

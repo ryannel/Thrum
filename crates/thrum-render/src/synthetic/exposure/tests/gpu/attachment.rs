@@ -7,6 +7,9 @@ use thrum_test_support::readback::Readback;
 use super::{SAMPLE_BYTES, Sample, decode_sample, device};
 use crate::atmosphere::AtmosphereFrame;
 use crate::capabilities::DeviceCapabilities;
+use crate::shader_constants::{
+    SRGB_ENCODED_KNEE, SRGB_GAMMA_F32, SRGB_OFFSET, SRGB_SCALE, SRGB_SLOPE_F32,
+};
 use crate::synthetic::{
     FrameLighting, OffscreenTarget, PreparedSynthetic, SdrToneMap, SyntheticScene, SyntheticView,
 };
@@ -107,7 +110,8 @@ impl Probe {
             std::array::from_fn(|i| f32::from_le_bytes(mapped.as_chunks::<4>().0[i]))
         };
         let pixels = pixels.try_collect(GENERATION).unwrap().unwrap();
-        let pixel = usize::try_from((SIDE / 2) * (SIDE + 1)).unwrap();
+        let [width, height] = target.extent();
+        let pixel = (height as usize / 2) * width as usize + width as usize / 2;
         (sample, hdr, pixels.as_chunks::<4>().0[pixel])
     }
 }
@@ -154,6 +158,15 @@ fn assert_dim_card(sample: &Sample, hdr: [f32; 4], display: [u8; 4]) {
         display[0]
     )
     .unwrap();
+}
+
+fn decode_srgb(code: u8) -> f32 {
+    let encoded = f32::from(code) / 255.0;
+    if encoded <= SRGB_ENCODED_KNEE {
+        encoded / SRGB_SLOPE_F32
+    } else {
+        ((encoded + SRGB_OFFSET) / SRGB_SCALE).powf(SRGB_GAMMA_F32)
+    }
 }
 
 #[test]
@@ -243,8 +256,12 @@ fn falling_twilight_radiance_does_not_brighten_the_metered_sky() {
         return;
     };
     pollster::block_on(async {
+        let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let capabilities = DeviceCapabilities::capture_device(&device, GENERATION);
         let mut scene = SyntheticScene::grid(1).unwrap();
+        // Synthetic preparation requires a nonempty instance table. The sky
+        // needs no geometry, so leave its only row inactive.
+        scene.instances[0].deactivate();
         // Approximate the fixed valley upper-sky witness at sea-level-relative
         // altitude 245 m, looking 21.5 degrees above the horizon.
         let altitude = 245.0;
@@ -289,26 +306,52 @@ fn falling_twilight_radiance_does_not_brighten_the_metered_sky() {
         )
         .await
         .unwrap();
-        let mut target = OffscreenTarget::new(&device, &prepared, SIDE, SIDE).unwrap();
+        let mut target = OffscreenTarget::new(&device, &prepared, 1, 1).unwrap();
         let probe = Probe::new(&device, &target);
+        let luma = |rgb: [f32; 3]| {
+            rgb.into_iter()
+                .zip([0.2126, 0.7152, 0.0722])
+                .map(|(channel, weight)| channel * weight)
+                .sum::<f32>()
+        };
         let [twilight, night] = [18.85, 19.65].map(|hours| {
             prepared
                 .update_frame(&queue, &mut target, &scene, lighting(hours), 1.0)
                 .unwrap();
-            let (sample, hdr, _) = probe.capture(&device, &queue, &prepared, &target);
+            assert_eq!(prepared.active_instance_count(), 0);
+            prepared
+                .atmosphere
+                .as_mut()
+                .unwrap()
+                .omit_geometry_products_for_sky_test();
+            let (sample, [r, g, b, _], display) =
+                probe.capture(&device, &queue, &prepared, &target);
             prepared.commit_frame();
-            let stored = hdr[..3]
-                .iter()
-                .zip([0.2126, 0.7152, 0.0722])
-                .map(|(channel, weight)| channel * weight)
-                .sum::<f32>();
-            let physical = stored / sample.values[0];
-            (physical, physical / sample.values[1])
+            assert!(sample.values[3] > 0.0, "incident meter must resolve: {sample:?}");
+            let physical = luma([r, g, b]) / sample.values[0];
+            let exposed = physical / sample.values[1];
+            let [r, g, b, alpha] = display;
+            assert_eq!(alpha, 255);
+            let displayed = luma([r, g, b].map(decode_srgb));
+            writeln!(
+                std::io::stdout().lock(),
+                "{hours}: physical luma={physical}, exposed luma={exposed}, SDR luma={displayed}, pixel={display:?}, {sample:?}"
+            )
+            .unwrap();
+            (physical, exposed, displayed)
         });
-        assert!(night.0 > 0.0 && night.0 < twilight.0 * 0.01);
+        assert!(
+            night.0 > 0.0 && night.0 < twilight.0 * 0.01,
+            "physical sky luma should fall: {twilight:?} to {night:?}"
+        );
         assert!(
             night.1 < twilight.1 * 0.90,
-            "displayed linear luma rebounded: {twilight:?} to {night:?}"
+            "exposed sky luma rebounded: {twilight:?} to {night:?}"
         );
+        assert!(
+            night.2 < twilight.2,
+            "submitted SDR sky luma rebounded: {twilight:?} to {night:?}"
+        );
+        assert!(scope.pop().await.is_none());
     });
 }
