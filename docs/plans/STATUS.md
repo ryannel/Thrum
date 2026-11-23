@@ -308,14 +308,14 @@ A planner or the lead chose each of these where your words left it open. Each st
 ### Now and next
 
 - CREATOR's design: Design Ready for Review · [design](CREATOR/DESIGN.md) · [plan](CREATOR/PLAN.md)
-- Chrome's SDR valley matches the retained frames again (APPLE-PRESENTATION M15): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- Chrome's SDR valley matches the retained frames again (APPLE-PRESENTATION M15): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md)
 - EFFECT-GRAPH's design: Design Ready for Review · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
 - CONTENT-LOOP's design: Design Ready for Review · [design](CONTENT-LOOP/DESIGN.md) · [plan](CONTENT-LOOP/PLAN.md)
 - Small water checks leave the full sea grids to the long tier (WATERS M17): In Progress · [plan](WATERS/PLAN.md)
 - SCENE-VIEWS's design: Design Ready for Review · [design](SCENE-VIEWS/DESIGN.md) · [plan](SCENE-VIEWS/PLAN.md)
 - A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS M6): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M6-review.md)
-- RENDER-2D's design: Design Ready for Review · [design](RENDER-2D/DESIGN.md) · [plan](RENDER-2D/PLAN.md)
+- RENDER-2D's design: Design Changes Requested · [design](RENDER-2D/DESIGN.md) · [plan](RENDER-2D/PLAN.md)
 - SESSION's design: Design Changes Requested · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
 - REVIEW-ENGINE's design: Design Ready for Review · [design](REVIEW-ENGINE/DESIGN.md) · [plan](REVIEW-ENGINE/PLAN.md)
 - A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer (REVIEW-RENDER M4): In Progress · [plan](REVIEW-RENDER/PLAN.md) · [latest review](../../.orchestrate/evidence/REVIEW-RENDER/M4-review.md)
@@ -425,7 +425,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Design Ready for Review |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M15 of 16 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M15 of 16 · In Progress |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · In Progress |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
@@ -440,7 +440,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Design Ready for Review |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Design Changes Requested |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Design Changes Requested |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
