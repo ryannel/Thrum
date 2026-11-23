@@ -307,7 +307,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- CREATOR's design: Design Ready for Review · [design](CREATOR/DESIGN.md) · [plan](CREATOR/PLAN.md)
+- CREATOR's design: Design Changes Requested · [design](CREATOR/DESIGN.md) · [plan](CREATOR/PLAN.md)
 - Chrome's SDR valley matches the retained frames again (APPLE-PRESENTATION M15): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md)
 - EFFECT-GRAPH's design: Design Ready for Review · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
@@ -424,7 +424,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 16 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
-| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Design Ready for Review |
+| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Design Changes Requested |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M15 of 16 · In Progress |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · In Progress |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
