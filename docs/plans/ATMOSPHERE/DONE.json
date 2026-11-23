@@ -462,10 +462,10 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_history_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/review-fix/metal-history.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.6",
@@ -523,10 +523,10 @@
           "statement": "The maturity ledger's atmosphere rows state implementation, correctness, visuals and device apart for the view volume and the haze input, and name what is not qualified: the joint volume against an all-orders reference, and local lights in the air.",
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/design/maturity.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.12",

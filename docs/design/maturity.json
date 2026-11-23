@@ -305,13 +305,14 @@
       },
       "view_volume": {
         "implementation": "The opt-in frustum volume integrates air, cascade shadows and the registered Sun-path optical depth. The forward decoder reads the joint transport. The background and stars take the terminal pair, and history advances on submission.",
-        "correctness": "Metal probes exercise the independent solar, transmittance and night terms, terminal correction exactly once and history reseeding on cut, epoch and replacement device.",
-        "visuals": "Native crops on Metal and Chrome WebGPU show soft shafts aligned with the lit ground under the diagnostic cloud gaps and through the diagnostic ridge opening. Submitted-frame inspection covers the pan, 40 m walk, sunset scrub and first post-cut shaft on both targets.",
-        "device": "Held 1280 × 720 valley GPU timestamps and per-resource nominal bytes are recorded with and without the 160 × 90 × 80 view volume on Apple M3 Max Metal and hardware Chrome WebGPU under shared load.",
+        "correctness": "Metal probes exercise the independent solar, transmittance and night terms and terminal correction exactly once. First submitted scatter, transmission and image bytes match a cold frame after a camera cut, numeric profile change, nightglow enable and disable, and device replacement.",
+        "visuals": "Native crops on Metal and Chrome WebGPU show soft shafts aligned with the lit ground under the diagnostic cloud gaps and through the diagnostic ridge opening. Submitted-frame inspection covers the pan, 40 m walk and sunset scrub on both targets. The low-Sun cut shows a whole shaft and a continuous solar rim in the first new submission.",
+        "device": "Held valley GPU timestamps and nominal resource bytes are recorded with and without the 160 × 90 × 80 view volume under shared load. Apple M3 Max Metal renders at 1920 × 1080 and hardware Chrome WebGPU renders at 1280 × 720.",
         "unqualified": "The joint volume against an independent all-orders reference and local lights in the air are outside the qualification.",
         "evidence": [
           "../../.orchestrate/evidence/ATMOSPHERE/M7/README.md",
-          "../../.orchestrate/evidence/ATMOSPHERE/M7/cost.md"
+          "../../.orchestrate/evidence/ATMOSPHERE/M7/cost.md",
+          "../../.orchestrate/evidence/ATMOSPHERE/M7/review-fix/README.md"
         ]
       },
       "evidence": [

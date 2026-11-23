@@ -706,3 +706,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   The parity check verifies that each removed edge still has an indirect path in the current graph,
   compares the rest of the graph byte for byte, and records both graph hashes against the original
   M7 starting commit. [Target parity receipt](../../../.orchestrate/evidence/ATMOSPHERE/M7/parity/comparison.json)
+
+- 2026-11-24 M7 review fixes. View-volume history uses the lent environment epoch. Metal matches cold
+  scatter, transmission and image bytes on both nightglow transitions. The view-volume reconstruction
+  uses the centre sky sample when the spatial filter undershoots the neighbourhood luminance. The
+  first low-Sun cut submission shows a complete shaft and solar rim on Metal and Chrome. The ledger
+  names the tested reset cases and records 1920 × 1080 Metal and 1280 × 720 Chrome timings.
+  [Review-fix evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/review-fix/README.md)
