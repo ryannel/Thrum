@@ -208,7 +208,7 @@
     {
       "id": "M4",
       "name": "A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -222,8 +222,8 @@
           "statement": "No public function in `thrum-render` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-render",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/string-errors.log"
         },
         {
           "id": "M4.2",
@@ -231,8 +231,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test error_types",
           "ask": "Does the test's list hold every error type the crate exports? Does a degenerate instance transform still come back as a lighting error? How many causes does each capacity variant now cover?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/README.md#m42-public-error-contract",
           "verdict": "",
           "review": ""
         },
@@ -241,8 +241,8 @@
           "statement": "The atmosphere and the contribution seam import neither their error nor their shared constants from the scene renderer: errors come from the error module and the shared constants from a neutral module both depend on. An effect graph that fails validation returns a typed error, not a string code.",
           "ask": "What does `atmosphere` still import from the scene renderer, and is any of it an error, a constant or a format? Can a caller match on why an effect graph was refused?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/code-review.md#m43-shared-renderer-definitions-and-typed-effect-graph-refusal",
           "verdict": "",
           "review": ""
         },
@@ -253,8 +253,8 @@
           "lock": "gpu",
           "ask": "Is any error still turned into text with `{:?}` on its way up through the runtime?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/README.md#m44-frame-error-propagation",
           "verdict": "",
           "review": ""
         },
@@ -263,8 +263,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images"
         }
       ]
     },

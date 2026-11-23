@@ -65,3 +65,8 @@
   3D slot reads its target's compiled graphs, and timing recovery reuses the slot's capacity. On Metal a stored read
   took 3 ns, against 47 µs per compile. `pass_keys` checks that the target's count equals the compiled count. The 2D
   binder now lists every key. Verified: the three M3 checks and `scene_2d` passed on Metal.
+- 2026-11-23 Built M4. Renderer and effect graph failures carry typed causes through the frame host.
+  The instance uploader distinguishes invalid transforms from lighting errors, and scene admission errors
+  identify the limits they checked. Verified 547 tests on Metal with the GPU required, plus the separate
+  public error contract test and string-error check on the M3 Max. The registered image comparison is
+  assigned to the shared main-branch run. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M4/README.md).
