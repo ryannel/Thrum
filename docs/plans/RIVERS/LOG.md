@@ -165,3 +165,9 @@
   one focused batch, with a maximum of 0.957 s in each run. The padding control held the declaration,
   interior bed and wet mask fixed while doubling the rectangle with dry rows.
   [Per-case coverage and timings](../../../.orchestrate/evidence/RIVERS/M8/M8.1.md)
+
+- 2026-11-23 M8.1 review fix. The upper-only lips and their dependent cells wet at 3.58 m, 30 mm above
+  the sample midpoint. The common fall measures sheet thickness at a point strictly inside its path.
+  Verified on the M3 Max. Both tests caught the review's regressions when reintroduced. All 19 cases
+  passed again in isolation and in the focused batch.
+  [Review fix evidence](../../../.orchestrate/evidence/RIVERS/M8/review-fix/M8.1.md)
