@@ -86,6 +86,8 @@ use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
 pub(crate) use contributed::CONTRIBUTION_COMPUTE;
+#[cfg(target_os = "macos")]
+pub use display::mac_backing_grid_requested;
 pub use display::{DisplayOverlay, SdrToneMap};
 pub(crate) use display::{
     PreToneInput, PreToneViews, PreparedPreToneInput, SdrToneStage, ToneOutput,

@@ -55,12 +55,16 @@ def mac_edr(output):
 def observe_display_selection(output, binary, env):
     formats = {}
     for name, override in (("ordinary", None), ("observed", None),
-                           ("observed-sdr", "sdr"), ("observed-edr", "2")):
+                           ("observed-sdr", "sdr"), ("observed-edr", "2"),
+                           ("backing-grid", None)):
         directory = output / name
         directory.mkdir()
         launch = dict(env, THRUM_V1_FRAMES="2", THRUM_RECIPE="portable")
-        if name != "ordinary":
+        observed = name.startswith("observed")
+        if observed:
             launch.update(THRUM_MAC_QUALIFY=str(directory), THRUM_MAC_TAP="off")
+        if name == "backing-grid":
+            launch["THRUM_MAC_PATTERN"] = "1"
         if override is not None:
             launch["THRUM_MAC_EDR"] = override
         with (directory / "launch.log").open("w") as log:
@@ -71,11 +75,13 @@ def observe_display_selection(output, binary, env):
         if match is None:
             raise ValueError(f"{name}: missing two presented frames")
         formats[name] = match[1]
-        if name != "ordinary" and f"format={match[1]}\n" not in (directory / "window.txt").read_text():
+        if observed and f"format={match[1]}\n" not in (directory / "window.txt").read_text():
             raise ValueError(f"{name}: observer and presentation formats disagree")
     if (formats["observed"] != formats["ordinary"] or formats["observed-sdr"] == "Rgba16Float"
             or formats["observed-edr"] != "Rgba16Float"):
         raise ValueError(f"the control observer changed display selection: {formats}")
+    if formats["backing-grid"] not in {"Bgra8Unorm", "Bgra8UnormSrgb", "Rgba8Unorm", "Rgba8UnormSrgb"}:
+        raise ValueError(f"the backing-grid diagnostic needs an 8-bit surface: {formats['backing-grid']}")
     return formats
 
 

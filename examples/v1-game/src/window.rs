@@ -322,10 +322,12 @@ impl RuntimeSetup for WindowGame {
     }
 
     fn supports_edr(&self) -> bool {
-        crate::selected_setup().is_ok_and(|setup| {
-            setup.sprite_scale.is_none()
-                && setup.display_overlay != thrum_render::synthetic::DisplayOverlay::TracedGeometry
-        })
+        !thrum_render::synthetic::mac_backing_grid_requested()
+            && crate::selected_setup().is_ok_and(|setup| {
+                setup.sprite_scale.is_none()
+                    && setup.display_overlay
+                        != thrum_render::synthetic::DisplayOverlay::TracedGeometry
+            })
     }
 
     fn replay(&self) -> crate::controls::ControlEdits {

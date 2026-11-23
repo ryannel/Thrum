@@ -134,7 +134,7 @@ impl TapSpec {
 
 pub(super) struct Tap {
     #[cfg(not(target_arch = "wasm32"))]
-    pub(super) spec: TapSpec,
+    spec: TapSpec,
     pub(super) source: CaptureSource,
     owner: std::sync::Arc<()>,
     session: u64,
@@ -161,6 +161,7 @@ pub(super) fn reserve(
 
 pub(super) fn copy_drawable(
     tap: Option<&mut Tap>,
+    generation: u64,
     surface: Option<&super::SurfaceOutput<'_>>,
     scene: Option<&crate::synthetic::PreparedSynthetic>,
     encoder: &mut wgpu::CommandEncoder,
@@ -173,7 +174,7 @@ pub(super) fn copy_drawable(
         tap.omitted += 1;
         return Ok(None);
     }
-    let Some((index, readback)) = tap.reserve(tap.generation, surface.extent, CaptureSource::Edr)
+    let Some((index, readback)) = tap.reserve(generation, surface.extent, CaptureSource::Edr)
     else {
         return Ok(None);
     };
@@ -187,6 +188,11 @@ pub(super) fn copy_drawable(
 }
 
 impl Tap {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn spec_for_generation(&self, generation: u64) -> Option<TapSpec> {
+        (self.generation == generation).then_some(self.spec)
+    }
+
     #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn owner(&self) -> std::sync::Arc<()> {
         std::sync::Arc::clone(&self.owner)
@@ -514,15 +520,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub(super) fn switch_capture_extent(&mut self, mut capture: Option<Tap>) {
-        if let (Some(next), Some(previous)) = (&mut capture, self.submitted_capture.take()) {
+    pub(super) fn switch_capture_extent(&mut self, capture: Option<Tap>) {
+        // An invalidated device session remains visible to its caller until closed.
+        // An extent publication cannot reactivate or retire that old-device tap.
+        let Some(mut next) = capture else {
+            return;
+        };
+        if let Some(previous) = self.submitted_capture.take() {
             next.accepting = previous.accepting;
             next.omitted = previous.omitted;
             if previous.pending() {
                 self.retired_capture.push_back(previous);
             }
         }
-        self.submitted_capture = capture;
+        self.submitted_capture = Some(next);
     }
 
     /// Stop admitting copies while pending mappings drain. Does not submit or wait.

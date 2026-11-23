@@ -2401,6 +2401,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if edr_capture {
             capture_slot = submitted_capture::copy_drawable(
                 self.submitted_capture.as_mut(),
+                self.generation,
                 surface.filter(|_| surface_presented),
                 self.prepared.three_d(),
                 &mut encoder,

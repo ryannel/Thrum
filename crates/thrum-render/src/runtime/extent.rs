@@ -210,7 +210,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             owner: Arc::clone(&self.visual_owner),
             generation: self.generation,
             source: self.slots[0].target.capture_source(),
-            capture: self.submitted_capture.as_ref().map(|tap| tap.spec),
+            capture: self
+                .submitted_capture
+                .as_ref()
+                .and_then(|tap| tap.spec_for_generation(self.generation)),
             capture_owner: self.submitted_capture.as_ref().map(Tap::owner),
             secondary,
         })

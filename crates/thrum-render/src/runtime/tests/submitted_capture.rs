@@ -382,69 +382,81 @@ fn pending_capture_device_loss_is_rejected_without_polling_the_lost_queue() {
     ) else {
         return;
     };
-    pollster::block_on(async {
-        let (mut host, output) =
-            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
-        host.enable_submitted_capture(1).unwrap();
-        let view = output.create_view(&wgpu::TextureViewDescriptor::default());
-        assert!(
-            host.drive(
-                Duration::ZERO,
-                Some(&SurfaceOutput {
-                    view: &view,
-                    extent: [65, 37]
-                })
-            )
-            .unwrap()
-            .submitted
-        );
-        host.device.destroy();
-        let inputs = host.device_prepare_inputs().unwrap();
-        let (capabilities, queue) = device::gpu(&test_gpu.fresh_adapter(), 8).await;
-        let mut replacement = inputs
-            .prepare(
-                &capabilities,
-                &queue,
-                Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                    extent: [65, 37],
-                }),
-            )
-            .await
-            .unwrap();
-        host.publish_device(&mut replacement).unwrap();
-        assert!(matches!(
-            host.try_submitted_image(),
-            Err(super::super::FrameError::InvalidState(
-                "retired capture generation"
-            ))
-        ));
-        let output = host.device.create_texture(&wgpu::TextureDescriptor {
-            label: None,
-            size: wgpu::Extent3d {
-                width: 65,
-                height: 37,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[],
+    for format in [
+        wgpu::TextureFormat::Rgba8Unorm,
+        wgpu::TextureFormat::Rgba16Float,
+    ] {
+        if format == wgpu::TextureFormat::Rgba16Float && !cfg!(target_os = "macos") {
+            continue;
+        }
+        pollster::block_on(async {
+            let (mut host, output) = Box::pin(host_and_output(&test_gpu, format)).await;
+            host.enable_submitted_capture(1).unwrap();
+            let view = output.create_view(&wgpu::TextureViewDescriptor::default());
+            assert!(
+                host.drive(
+                    Duration::ZERO,
+                    Some(&SurfaceOutput {
+                        view: &view,
+                        extent: [65, 37],
+                    })
+                )
+                .unwrap()
+                .surface_presented
+            );
+            host.device.destroy();
+            let inputs = host.device_prepare_inputs().unwrap();
+            let (capabilities, queue) = device::gpu(&test_gpu.fresh_adapter(), 8).await;
+            let mut replacement = inputs
+                .prepare(
+                    &capabilities,
+                    &queue,
+                    Some(SurfaceProfile {
+                        format,
+                        extent: [65, 37],
+                    }),
+                )
+                .await
+                .unwrap();
+            host.publish_device(&mut replacement).unwrap();
+            let validation = host.device.push_error_scope(wgpu::ErrorFilter::Validation);
+            let output = output_texture(&host, format);
+            assert!(submit(&mut host, &output).surface_presented);
+            assert_eq!(host.submitted_capture_omissions(), 1, "{format:?}");
+            assert!(matches!(
+                host.try_submitted_image(),
+                Err(super::super::FrameError::InvalidState(
+                    "retired capture generation"
+                ))
+            ));
+
+            // A later extent publication must also leave the old session invalidated.
+            let extent = host
+                .extent_prepare_inputs(host.render_extent)
+                .unwrap()
+                .build(&std::sync::atomic::AtomicBool::new(false))
+                .unwrap()
+                .unwrap();
+            assert!(host.publish_extent(extent));
+            assert!(submit(&mut host, &output).surface_presented);
+            assert_eq!(host.submitted_capture_omissions(), 2, "{format:?}");
+            assert!(matches!(
+                host.try_submitted_image(),
+                Err(super::super::FrameError::InvalidState(
+                    "retired capture generation"
+                ))
+            ));
+
+            host.disable_submitted_capture();
+            host.enable_submitted_capture(2).unwrap();
+            assert!(submit(&mut host, &output).surface_presented);
+            let fresh = image(&mut host);
+            assert_eq!(fresh.session, 2);
+            assert_eq!(fresh.device_generation, 8);
+            assert_eq!(fresh.presenter_generation, 3);
+            assert!(validation.pop().await.is_none(), "{format:?}");
         });
-        // An invalidated observer never prevents the continuing app submitting
-        // on its replacement device, even before the caller ends capture.
-        submit(&mut host, &output);
-        assert_eq!(host.submitted_capture_omissions(), 1);
-        host.disable_submitted_capture();
-        host.enable_submitted_capture(2).unwrap();
-        submit(&mut host, &output);
-        let fresh = image(&mut host);
-        assert_eq!(fresh.session, 2);
-        assert_eq!(fresh.device_generation, 8);
-        assert_eq!(fresh.presenter_generation, 2);
-    });
+    }
 }
 
 #[test]

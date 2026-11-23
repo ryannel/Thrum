@@ -18,6 +18,12 @@ use crate::timing::GpuTimings;
 
 mod edr;
 
+/// Whether the Mac backing-grid diagnostic is requesting exact 8-bit output.
+#[cfg(target_os = "macos")]
+pub fn mac_backing_grid_requested() -> bool {
+    std::env::var("THRUM_MAC_PATTERN").as_deref() == Ok("1")
+}
+
 /// Per-view SDR tone/gamut policy, independent of fixed or incident exposure.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(u32)]
@@ -248,7 +254,7 @@ impl SdrToneStage {
         // A cold, explicit Mac qualification fixture uses this same final output,
         // tap and presentation binding. It changes only the authored diagnostic pixels.
         #[cfg(target_os = "macos")]
-        let pattern = std::env::var("THRUM_MAC_PATTERN").as_deref() == Ok("1");
+        let pattern = mac_backing_grid_requested();
         #[cfg(not(target_os = "macos"))]
         let pattern = false;
         let shader = if pattern {
