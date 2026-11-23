@@ -230,9 +230,9 @@
       "items": [
         {
           "id": "M4.1",
-          "statement": "The three listed hook cases keep their first-frame coalescing, non-finite fallback and device replacement coverage in the fast tier. The retained device cases observe the selected material on a real submission. Guard: compact material-hook regressions in the game suite.",
-          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p v1-game --test it -E 'test(=cooked_material_gpu::a_hook_that_writes_non_finite_factors_draws_the_placement_material) | test(=cooked_material_gpu::a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload) | test(=cooked_material_gpu::requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws)' --no-tests=fail --test-threads 1",
-          "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
+          "statement": "The three listed material-hook regressions preserve first-frame coalescing, non-finite fallback and device replacement in the fast tier, with material selection observed on direct and indirect submissions. Every retained or replacement case passes on the first attempt in a focused batch with the workspace's default nextest scheduling and ten-second limit. Guard: compact material-hook regressions in the workspace suite.",
+          "check": "CARGO_INCREMENTAL=0 THRUM_REQUIRE_GPU=1 rustup run stable cargo nextest run --locked --offline --workspace --profile default -E 'test(/(^|::)(requests_before_the_first_frame_|a_hook_that_writes_non_finite_factors_|a_replaced_device_draws_the_last_accepted_hook_)/)' --no-tests=fail",
+          "ask": "Do the executed test names account for every retained and replacement case in the disposition record, including CPU splits, and do they preserve the three originals' assertions, boundary cases and tolerances at the smaller scale? Do the results show individual timings and a first-attempt batch pass with default scheduling, the ten-second limit and concurrent load recorded?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",

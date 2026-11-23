@@ -35,6 +35,9 @@ lines. This design does not reopen those mechanisms.
    built after `APPLE-TILE:M3`; [the frame timing feed](#the-frame-timing-feed) says why.
 3. A fresh agent builds a new scene for both targets from the public docs alone, and the gate closes (M3).
 
+**Follow-up (M4).** Keep the three slow material-hook regressions listed in the plan in the fast tier with a
+smaller fixture.
+
 **Not commissioned:** the clipping and shadow-cascade overlays, parameter files as a cooked product kind, a
 browser-hosted editor, shader hot reload on the public page, iOS. The G6 decision lists them as held or parked and
 they stay so.
@@ -225,6 +228,27 @@ then runs the driver on the reviewed checkout and judges its captures. Computer 
 select the starter, which `./dev starter` runs as an unbundled executable, and with the same executable wrapped in
 an app bundle it shows the scene window but not the panel. The starter stays unbundled: that is how a creator runs
 it, and a bundle would not have made the panel reachable.
+
+### Fast material-hook regressions
+
+Use a cooked placement just large enough to distinguish the material on a submitted draw. On both direct and
+indirect submissions, observe the newest hook requested before the first frame drawing with the placement,
+non-finite hook factors yielding the placement material, and the last accepted hook drawing on a replacement
+device. The outstanding reload retires and a subsequent reload draws. Prove request ordering, validation and
+queue assertions on the CPU where they can be decided there.
+
+The focused nextest selector follows each regression by the start of its test function name, across workspace
+packages and test binaries. Every case that carries part of the original proof, including a CPU split, uses
+the corresponding prefix.
+
+- `requests_before_the_first_frame_`
+- `a_hook_that_writes_non_finite_factors_`
+- `a_replaced_device_draws_the_last_accepted_hook_`
+
+Run the focused batch with the workspace build and the default nextest scheduler and ten-second timeout.
+Running nextest directly makes the batch result its first attempt. Record concurrent load with the batch and
+keep the one-at-a-time timings as a separate measurement. Match the executed test names to the coverage of
+each original regression in the disposition record.
 
 ## The system as it runs
 

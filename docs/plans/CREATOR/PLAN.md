@@ -43,17 +43,12 @@ fresh run only when the builder or a review asks for one.
 
 ## M4 Small hot-reload checks prove which material the device draws
 
-Keep the three material-hook regressions in the fast tier. Use the smallest cooked placement that produces
-a distinctive pixel for each material choice. Check request ordering, validation and reload queue logic on
-the CPU where it can be decided there. Retain device witnesses for the first accepted draw, non-finite
-fallback to the placement material and a replacement device drawing the last accepted hook while the
-outstanding reload is retired.
-
-Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
-record before and after per-test times on the Mac in the default nextest test build used by the workspace
-check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
-normal builder work. Use the supplied run for the starting times where available. The batch passes the
-existing ten-second limit on its first run.
+Record each original test’s disposition and map its assertions to the retained or replacement tests by
+nextest name, including any CPU cases. Use the [design’s prefixes](DESIGN.md#fast-material-hook-regressions)
+to include those cases in M4.1. Record the supplied starting times and each revised case’s solo and batch
+times on the Mac, excluding compilation. For the batch, run M4.1 alongside normal builder work and record the
+overlapping build or test activity and the nextest results. Every mapped test passes on the first attempt
+under the workspace’s default scheduling and ten-second limit.
 
 These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
 

@@ -259,3 +259,10 @@
   Computer Use, which cannot select the unbundled starter and, given a bundle, shows the scene window but not the
   panel. Reviews 1 and 3 passed the item with the retained window driver, so the item now names that route. The
   owner assumption that the reviewer runs the fresh proof is withdrawn, at the owner's direction in the re-plan task.
+
+- 2026-11-23 [M4 design review](../../../.orchestrate/evidence/CREATOR/design-review.md), Must Fix 1. The focused
+  M4.1 batch now uses the workspace build, default nextest scheduling and ten-second timeout. The plan asks
+  for a first-attempt pass with concurrent load recorded alongside the separate solo timings.
+- 2026-11-23 M4 design review, Must Fix 2. The design and M4.1 now use three test-name prefixes across the
+  workspace so the batch follows split GPU and CPU cases. The disposition record maps the original assertions
+  to executed test names for the review.
