@@ -595,7 +595,72 @@
     },
     "M6": {
       "definitions": "5b586fd15a01d52aaeb6ac91f0686a6f7ef98276db5d5c0a2691be915c5d5a0b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "5203f907b04dd8d38190ac513c1241466374205e",
+          "review": ".orchestrate/evidence/CLOUDS/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "pass",
+            "M6.3": "pass",
+            "M6.4": "fail",
+            "M6.5": "fail",
+            "M6.6": "pass",
+            "M6.7": "pass",
+            "M6.8": "pass",
+            "M6.9": "fail",
+            "M6.10": "pass",
+            "M6.11": "pass",
+            "M6.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Voxel queries ignore the authored slab floor",
+              "repeat": false
+            },
+            {
+              "name": "Hash-placed footprint estimates are reported as exact",
+              "repeat": false
+            },
+            {
+              "name": "The demo lifecycle removes caller-authored shapes by ID",
+              "item": "M6.9",
+              "repeat": false
+            },
+            {
+              "name": "The placed crest has a visibly different edge from its neighbor",
+              "item": "M6.4",
+              "repeat": false
+            },
+            {
+              "name": "The mixed bank gains a formed lobe in one submitted frame at 60\u00d7",
+              "item": "M6.5",
+              "repeat": false
+            },
+            {
+              "name": "Repeated frames rebuild and upload the full placement buffer",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 212933,
+            "cached": 10537088,
+            "output": 20754,
+            "turns": 1
+          },
+          "at": "2026-11-23T17:26:03Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
