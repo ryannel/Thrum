@@ -71,7 +71,6 @@ wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
 [dev-dependencies]
-thrum-render = { path = "../../crates/thrum-render", features = ["creation-counters"] }
 half = { version = "=2.7.1", default-features = false }
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 sha2 = "=0.10.9"
@@ -108,14 +107,17 @@ path = "tests/it.rs"
 [[test]]
 name = "view_volume_shadow_gpu"
 path = "tests/view_volume/view_volume_shadow_gpu.rs"
+required-features = ["thrum-render/creation-counters"]
 
 [[test]]
 name = "view_volume_sky_gpu"
 path = "tests/view_volume/view_volume_sky_gpu.rs"
+required-features = ["thrum-render/creation-counters"]
 
 [[test]]
 name = "view_volume_history_gpu"
 path = "tests/view_volume/view_volume_history_gpu.rs"
+required-features = ["thrum-render/creation-counters"]
 
 [[test]]
 name = "clouds_library"
