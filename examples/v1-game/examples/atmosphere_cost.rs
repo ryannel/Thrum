@@ -1,7 +1,10 @@
 //! Capture-off GPU timestamps for one held showcase preset.
 use std::{collections::BTreeMap, time::Duration};
-use thrum_render::present::SurfaceProfile;
-use v1_game::{FrameConfig, FrameHost, SurfaceOutput, controls::GameControls};
+use thrum_render::{
+    present::SurfaceProfile,
+    runtime::{FrameConfig, SurfaceOutput},
+};
+use v1_game::{GameHost as _, controls::GameControls};
 
 const EXTENT: [u32; 2] = [1920, 1080];
 const SETTLED_FRAMES: u32 = 32;
@@ -59,20 +62,20 @@ async fn measure() -> Result<(), String> {
         view: &view,
         extent: EXTENT,
     };
-    let mut host = FrameHost::new_with_setup(
-        &device,
-        &queue,
-        &caps,
-        FrameConfig {
-            render_extent: EXTENT,
-            surface: Some(profile),
-        },
-        v1_game::selected_setup()?,
-    )
-    .await?;
+    let mut host = v1_game::selected_setup()?
+        .prepare(
+            &device,
+            &queue,
+            &caps,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: Some(profile),
+            },
+        )
+        .await?;
     let content =
         v1_game::attach_cooked_scene(&mut host)?.ok_or("route needs the cooked valley")?;
-    host.pause()?;
+    host.world_mut().pause()?;
     host.set_time_of_day(state.time_of_day.ok_or("missing solar time")?)?;
     host.set_camera_yaw(state.camera_yaw.ok_or("missing yaw")?)?;
     host.set_camera_pitch(state.camera_pitch.ok_or("missing pitch")?)?;
@@ -89,7 +92,9 @@ async fn measure() -> Result<(), String> {
             }
             stats.drawn.is_some()
         };
-        let report = host.drive(elapsed, Some(&surface))?;
+        let report = host
+            .drive(elapsed, Some(&surface))
+            .map_err(|error| error.to_string())?;
         if report.submitted {
             if !report.surface_presented {
                 return Err("GPU submission omitted offscreen output".to_owned());
@@ -97,7 +102,7 @@ async fn measure() -> Result<(), String> {
             device
                 .poll(wgpu::PollType::wait_indefinitely())
                 .map_err(|error| error.to_string())?;
-            while let Some(sample) = host.poll_completed()? {
+            while let Some(sample) = host.poll_completed().map_err(|error| error.to_string())? {
                 let timings = sample.gpu_pass_ns.ok_or("GPU timestamps unavailable")?;
                 let pass_ns: BTreeMap<_, _> = timings
                     .passes()
