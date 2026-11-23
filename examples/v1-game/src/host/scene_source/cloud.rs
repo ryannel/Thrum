@@ -29,7 +29,8 @@ pub(super) fn diagnostic() -> Result<SunOpticalDepth, thrum_render::error::Rende
 /// The field supplies direct sunlight visibility without condensate.
 pub(super) fn haze_banks() -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
     const EXTENT: u32 = 1024;
-    const REGION: [f32; 4] = [-28_000.0, -10_500.0, 1_000.0, 5_500.0];
+    const DECK_HEIGHT: f32 = 1_100.0;
+    const REGION: [f32; 4] = [-18_510.0, -8_800.0, 10_490.0, 7_200.0];
     let mut tau = Vec::with_capacity((EXTENT * EXTENT) as usize);
     let bank = |distance: f32| {
         let edge = ((1.0 - distance) / 0.30).clamp(0.0, 1.0);
@@ -39,13 +40,13 @@ pub(super) fn haze_banks() -> Result<SunOpticalDepth, thrum_render::error::Rende
         let z = REGION[1] + (row as f32 + 0.5) / EXTENT as f32 * (REGION[3] - REGION[1]);
         for column in 0..EXTENT {
             let x = REGION[0] + (column as f32 + 0.5) / EXTENT as f32 * (REGION[2] - REGION[0]);
-            let deck = ((x + 15_900.0) / 12_000.0).powi(2) + ((z + 2_550.0) / 6_800.0).powi(2);
+            let deck = ((x + 6_410.0) / 12_000.0).powi(2) + ((z + 850.0) / 6_800.0).powi(2);
             // At a 10° Sun the first opening illuminates the plain east of
             // the lookout. The other opening falls farther up the valley.
-            let near = ((x + 14_860.0) / 230.0).powi(2) + ((z + 2_480.0) / 140.0).powi(2);
-            let far = ((x + 15_520.0) / 340.0).powi(2) + ((z + 2_485.0) / 120.0).powi(2);
+            let near = ((x + 5_370.0) / 230.0).powi(2) + ((z + 780.0) / 140.0).powi(2);
+            let far = ((x + 6_030.0) / 340.0).powi(2) + ((z + 785.0) / 120.0).powi(2);
             tau.push(4.6 * bank(deck) * (1.0 - bank(near).max(bank(far))));
         }
     }
-    SunOpticalDepth::new([EXTENT; 2], &tau, 2_800.0, REGION, 0.001, 1)
+    SunOpticalDepth::new([EXTENT; 2], &tau, DECK_HEIGHT, REGION, 0.001, 1)
 }
