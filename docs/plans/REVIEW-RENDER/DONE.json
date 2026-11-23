@@ -230,7 +230,7 @@
     {
       "id": "M4",
       "name": "A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -246,7 +246,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/review-fix-string-errors.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
         },
         {
@@ -257,7 +257,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/review-fix-audit.md#m42-error-contract-and-capacity",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
         },
         {
@@ -279,7 +279,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/review-fix-audit.md#m44-frame-propagation",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
         },
         {
@@ -291,33 +291,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Public renderer trait methods return String errors",
-          "item": "M4.1",
-          "repeat": false
-        },
-        {
-          "name": "V1 converts renderer failures to Debug text before returning FrameError",
-          "item": "M4.4",
-          "repeat": false
-        },
-        {
-          "name": "The frame host discards the native reservation error",
-          "item": "M4.4",
-          "repeat": false
-        },
-        {
-          "name": "Bucket admission merges storage and dispatch limits",
-          "item": "M4.2",
-          "repeat": false
-        },
-        {
-          "name": "A zero sprite row count reports that capacity was exceeded",
-          "item": "M4.2",
-          "repeat": false
         }
       ]
     },
