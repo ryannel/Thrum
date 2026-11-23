@@ -295,6 +295,25 @@
           "../../.orchestrate/evidence/ATMOSPHERE/M9-checks.md"
         ]
       },
+      "haze_input": {
+        "implementation": "The atmosphere profile accepts extinction at 550 nm and an Ångström exponent. The enabled chart family and lent Sun light use the eight-band extinction at submission. The default uses the original chart pipelines.",
+        "correctness": "Metal readbacks exercise default chart identity, changed Sun and transmittance, distinct spectral bands and the unchanged environment epoch.",
+        "visuals": "T2 valley captures show the distance fade as the visual range drops. The 5 km low-Sun kind comparison remains under visual qualification.",
+        "device": "The chart byte and lag tests run on Apple M3 Max Metal. The haze controls and volume run in hardware Chrome WebGPU.",
+        "unqualified": "The joint volume against an independent all-orders reference and local lights in the air are outside the qualification.",
+        "evidence": ["../../.orchestrate/evidence/ATMOSPHERE/M7/README.md"]
+      },
+      "view_volume": {
+        "implementation": "The opt-in frustum volume integrates air, cascade shadows and the registered Sun-path optical depth. The forward decoder reads the joint transport. The background and stars take the terminal pair, and history advances on submission.",
+        "correctness": "Metal probes exercise the independent solar, transmittance and night terms, terminal correction exactly once and history reseeding on cut, epoch and replacement device.",
+        "visuals": "Fixed Metal captures show softer air and ground transitions when the diagnostic cloud field casts shade. Shaft alignment and elapsed-motion appearance remain under visual qualification.",
+        "device": "Held 1280 × 720 valley GPU timestamps and per-resource nominal bytes are recorded with and without the view volume on Apple M3 Max Metal and hardware Chrome WebGPU under shared load.",
+        "unqualified": "The joint volume against an independent all-orders reference and local lights in the air are outside the qualification.",
+        "evidence": [
+          "../../.orchestrate/evidence/ATMOSPHERE/M7/README.md",
+          "../../.orchestrate/evidence/ATMOSPHERE/M7/cost.md"
+        ]
+      },
       "evidence": [
         "../../.orchestrate/evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md",
         "../../.orchestrate/evidence/v1-workload/G3S-SOLAR-PENUMBRA-2026-11-07.md",

@@ -116,17 +116,16 @@ def witness_baseline_archive(base, output):
     baseline_capture = output / 'examples/v1-game/src/window/capture.rs'
     before = baseline_capture.read_text()
     begin = 'fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {'
-    witness_begin = 'fn warmup<G: Game>(driver: &mut Offscreen<G>, parity_checkpoint: bool) -> Result<(), String> {'
     end = '\nfn capture_settings()'
     current = (ROOT / baseline_capture.relative_to(output)).read_text()
-    warmup = current.split(witness_begin, 1)[1].split(end, 1)[0]
+    warmup = current.split(begin, 1)[1].split(end, 1)[0]
     start, original = before.split(begin, 1)
-    baseline_capture.write_text(start + witness_begin + warmup + end + original.split(end, 1)[1])
+    baseline_capture.write_text(start + begin + warmup + end + original.split(end, 1)[1])
     before = baseline_capture.read_text()
     call = '    warmup(driver)?;'
     if before.count(call) != 1:
         raise ValueError('archive warmup marker moved')
-    baseline_capture.write_text(before.replace(call, '''    warmup(driver,
+    baseline_capture.write_text(before.replace(call, '''    warmup_checkpoint(driver,
         crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1"))?;'''))
 
 

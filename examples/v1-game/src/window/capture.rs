@@ -457,7 +457,14 @@ fn start_writer(
     .map_err(|e| e.to_string())
 }
 
-fn warmup<G: Game>(driver: &mut Offscreen<G>, parity_checkpoint: bool) -> Result<(), String> {
+fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
+    warmup_checkpoint(driver, false)
+}
+
+fn warmup_checkpoint<G: Game>(
+    driver: &mut Offscreen<G>,
+    parity_checkpoint: bool,
+) -> Result<(), String> {
     let warmup = Instant::now();
     let last_warmup_submission = driver.host().last_submission().map_or(127, |id| id + 128);
     while if parity_checkpoint {
@@ -620,7 +627,7 @@ fn prepare_parameters(
         host.set_camera_yaw(pose.yaw_degrees.to_radians())?;
     }
     let preset_accepted = Instant::now();
-    warmup(driver, parity_checkpoint)?;
+    warmup_checkpoint(driver, parity_checkpoint)?;
     settle_placed_capture(driver, mode, parameters.as_deref())?;
     Ok((preset_requested, preset_accepted))
 }
