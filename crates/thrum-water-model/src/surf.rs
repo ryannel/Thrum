@@ -5,6 +5,20 @@ use crate::{
 use std::f64::consts::{FRAC_PI_4, TAU};
 use thrum_sea_model::Sample;
 
+/// Nearest shore-transform sector for a finite nonzero wave vector.
+/// A vector on a boundary belongs to the sector in the increasing angle direction.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "wrapped angle yields an index in the eight prepared sectors"
+)]
+pub fn shore_sector([x, z]: [f64; 2]) -> u32 {
+    let sectors = z.atan2(x).rem_euclid(TAU) / FRAC_PI_4;
+    // The sea spectrum lies on sector boundaries. The addition covers
+    // rounding in vector construction and atan2 on either target.
+    ((sectors + 0.5 + 1e-12).floor() as u32) % 8
+}
+
 /// Authored surf capability. Omitting it leaves the original model untouched.
 pub struct SurfProfile {
     /// Minimum dispersion depth, metres.
@@ -362,15 +376,7 @@ impl SurfSheet<'_> {
         for component in self.field.layers[0].components() {
             let k0 = component.wave_vector[0].hypot(component.wave_vector[1]);
             let wavelength = TAU / k0;
-            let angle = component.wave_vector[1]
-                .atan2(component.wave_vector[0])
-                .rem_euclid(TAU);
-            #[expect(
-                clippy::cast_possible_truncation,
-                clippy::cast_sign_loss,
-                reason = "wrapped lattice direction"
-            )]
-            let direction = (angle / FRAC_PI_4).round() as usize % 8;
+            let direction = shore_sector(component.wave_vector) as usize;
             let (lag, exposure) = self
                 .surf
                 .transform(self.map, body, rest, direction, wavelength);

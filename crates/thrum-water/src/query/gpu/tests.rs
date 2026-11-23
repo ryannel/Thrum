@@ -37,7 +37,14 @@ fn query_records_match_the_shader_layout() {
                 surf_stage,
             ),
             record!(
-                Component, vector, amplitude, phase, omega, inverse_k, padding
+                Component,
+                vector,
+                amplitude,
+                phase,
+                omega,
+                inverse_k,
+                shore_sector,
+                padding
             ),
             record!(
                 Settings,

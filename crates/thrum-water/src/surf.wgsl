@@ -93,13 +93,12 @@ fn shore_exposure(cell: Cell, stage: u32, sector: u32) -> f32 {
     return exposure;
 }
 
-fn shore_sample(cell: Cell, point: vec2<f32>, body: u32, stage: f32, k: vec2<f32>, wavelength: f32) -> ShoreSample {
+fn shore_sample(cell: Cell, point: vec2<f32>, body: u32, stage: f32, direction: u32, wavelength: f32) -> ShoreSample {
     let record = surf.bodies[body];
     if record.count == 0u || !cell.inside || wavelength < 20.0 || wavelength > 640.0 {
         return ShoreSample(0.0, vec2(0.0), 1.0, cell.inside);
     }
-    let angle = atan2(k.y, k.x) / (SURF_TAU / f32(SURF_SECTORS));
-    let sector = u32(i32(round(angle)) + i32(SURF_SECTORS)) % SURF_SECTORS;
+    let sector = direction % SURF_SECTORS;
     let band = log2(wavelength / 20.0);
     let stages = surf_stages(record, stage);
     let base = fitted_lag(cell, stages, sector, band);
@@ -192,7 +191,7 @@ fn surf_forward(
         var lag = 0.0;
         var vector = k;
         if fade > 0.0 && wavelength >= 20.0 && wavelength <= 640.0 && cell.inside {
-            let shore = shore_sample(cell, point, body, stage, k, wavelength);
+            let shore = shore_sample(cell, point, body, stage, wave.shore_sector, wavelength);
             if shore.valid {
                 gain = mix(1.0, surf_shoaling(k0, floor_depth) * sqrt(max(0.0, shore.exposure)), fade);
                 lag = k0 * shore.lag * fade;

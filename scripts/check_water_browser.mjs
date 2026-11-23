@@ -353,13 +353,16 @@ async function inspectSurf(evaluate,result,frame) {
     input:JSON.stringify({time,nodes}),maxBuffer:16<<20,
     env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}
   }));
-  let checked=0,maxError=0;
+  let checked=0,maxError=0,worst=null;
   oracle.answers.forEach((expected,i)=>{
     if(expected===null)return;
     checked++;
-    expected.forEach((value,j)=>{maxError=Math.max(maxError,Math.abs(samples[i][j]-value));});
+    expected.forEach((value,j)=>{
+      const error=Math.abs(samples[i][j]-value);
+      if(error>maxError){maxError=error;worst={node:nodes[i],component:j,actual:samples[i],expected};}
+    });
   });
-  result.surf={time,checked,maxError,limits,layout,textures,storageBytes,draws};
+  result.surf={time,checked,maxError,worst,limits,layout,textures,storageBytes,draws};
   assert(checked>200&&maxError<0.015,`surf field comparison: ${checked} samples, ${maxError} m maximum error`);
 }
 

@@ -73,3 +73,22 @@ fn preparation_covers_all_directions_wavelengths_and_stages() {
         }
     }
 }
+
+#[test]
+fn spectrum_sector_boundaries_have_the_same_tie_rule_at_every_wavelength() {
+    use std::f64::consts::{FRAC_PI_4, TAU};
+    use thrum_water_model::shore_sector;
+    for sector in 0_u32..8 {
+        let boundary = (f64::from(sector) + 0.5) * FRAC_PI_4;
+        for wavelength in [20.0, 31.7, 156.0, 640.0] {
+            let vector = |angle: f64| {
+                let (z, x) = angle.sin_cos();
+                [x * TAU / wavelength, z * TAU / wavelength]
+            };
+            let following = (sector + 1) % 8;
+            assert_eq!(shore_sector(vector(boundary - 1e-9)), sector);
+            assert_eq!(shore_sector(vector(boundary)), following);
+            assert_eq!(shore_sector(vector(boundary + 1e-9)), following);
+        }
+    }
+}

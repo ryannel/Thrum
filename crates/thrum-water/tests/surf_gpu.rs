@@ -349,14 +349,7 @@ fn without_lag_height(
     for wave in field.layers[0].components() {
         let [kx, kz] = wave.wave_vector;
         let k = kx.hypot(kz);
-        let angle = kz.atan2(kx).rem_euclid(TAU);
-        let sector = (0_u8..8)
-            .min_by(|&a, &b| {
-                let score = |i| (angle - f64::from(i) * TAU / 8.0).cos();
-                score(b).total_cmp(&score(a))
-            })
-            .map(usize::from)
-            .expect("eight sectors");
+        let sector = thrum_water_model::shore_sector(wave.wave_vector) as usize;
         if !transform
             .sample(sector, TAU / k, stage, point)
             .0
