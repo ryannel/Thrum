@@ -106,3 +106,31 @@
   after APPLE-PRESENTATION M14 refreshed the references for the corrected spatial mip bias.
   [Coverage receipt](../../../.orchestrate/evidence/RENDER-2D/M3/exact-images-covered.json) ·
   [Verifier record](../../../.orchestrate/evidence/RENDER-2D/M3/exact-images-d1ef5f918-record.json)
+- 2026-11-23 M3 diagnosis of [review 1](../../../.orchestrate/evidence/RENDER-2D/M3-review.md). M3.8 and
+  M3.10 exposed a conflict in the design. Exact box coverage shifts the SDR contrast of the one-texel stripes
+  and checker at 1.5× even with constant integrated scene-linear weight. Both targets show it. The lead
+  assumes visible pulsing during an ordinary scroll is a defect at the owner's shipped-game bar. PLAN.md
+  records that assumption. The atlas and camera findings describe two independent gaps in the proofs.
+- 2026-11-23 M3.1 replaces the box-error qualification with a review of the bounded box-and-tent sampler.
+  A CPU sweep integrated the original card's two reds through the kernels at 64 phases per axis. At 1.5×,
+  the stripe's within-period SDR red standard deviation ranged from 52.7 to 93.7 codes with the box and
+  from 30.5 to 36.7 with the proposed filter. The checker went from 39.8–78.0 to 12.9–13.5. This models a
+  smaller swing and a softer pattern. The real-time and still inspections decide whether both are acceptable.
+- 2026-11-23 M3.2 and M3.7 retire the retained Metal and Chrome weight thresholds. Both now check the
+  submitted motion of a fixed marker under the same camera sweep, with a frozen-view control. The original
+  Chrome coverage grid moved copies of the sprite while leaving the camera fixed. M3.7 keeps the DPR and
+  resize checks.
+- 2026-11-23 M3.4 now requires four contrasting neighbours on the same uploaded page at every tested mip.
+  The source grid surrounded frame 4, while the packed shelf placed it against the left page edge. The outline
+  and shared-edge checks still cover both sheet kinds.
+- 2026-11-23 M3.8 and M3.10 now judge visible contrast stability and retained detail in the original stripes
+  and checker at normal playback size and speed, with the original seams, outlines and capture matrix.
+  M3.9 replaces the one-output-pixel transition limit with a fixed-view check for legible fine marks and
+  clean edges. M3.3, M3.5, M3.6 and M3.11 retain their exact checks.
+- 2026-11-23 Diagnosis validation. The documentation check passed. The item dry run exercised the existing
+  native test commands for M3.2–M3.5. The window, browser and exact-image checks reached the dry run's
+  45-second limit. The revised sampling and submitted-camera proofs are for the M3 build.
+- 2026-11-23 Trimmed the plan to current milestones and open assumptions. The M1 handoff pointed to the
+  existing shell and capture routes and introduced `scripts/render2d.py`. The M2 handoff used extraction
+  and changed-row upload in the 3D instance field as precedents. The completed milestones now link to their
+  reviews. The design carries cooker parity, ownership and proof guidance.

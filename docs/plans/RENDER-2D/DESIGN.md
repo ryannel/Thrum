@@ -88,7 +88,7 @@ is one sprite to draw: a **world row** comes from the tick page and a **frame ro
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
 | **C1 A crowd.** Thousands of sprites on screen, smooth at the display's refresh | 2,000, 5,000 and 10,000 moving rows, packed three deep, with spawn and despawn churn; the built-in display's full 3456×2234 pixels and 1920×1080; Chrome | A sparse crowd, or a small window. Rejected by `SIM-2D`'s packed crowd at the display's pixel size, with shaded pixels recorded beside each time. Times are baselines ([cost](#cost-account)) |
-| **C2 Crisp and still.** A texel never changes size, swims or sparkles; edges are clean | Scales from 1 to 6 output pixels a texel for pixel art, whole and fractional; 0.25 to 2 for smooth art; any sub-pixel position; view scrolling slowly and fast; rotated sprites; every window size and both densities | Crisp at one window size. Nearest sampling, which is sharp in a still and shimmers in motion. Rejected by a box-filter oracle over scroll offsets, with nearest sampling as a control that must fail |
+| **C2 Crisp and still.** Pixel art stays legible through a scroll, with clean edges and no visible contrast pulse or crawl | Pixel art from 1 to 6 output pixels per texel, with exact aligned whole scales, and smooth art from 0.25 to 2. Subpixel scroll and rotation use the M3 motion scales. The output follows window size and both densities | Crisp stills can hide a pulse in motion. Too much softening can erase fine marks. Judge the same one-texel stripes and checker at normal size in elapsed-time motion and fixed stills |
 | **C3 Order holds still.** Where two sprites overlap, the same one stays in front until one has passed the other by more than the band | Equal sort values; slots reused; rows that jitter inside the band, standing and while travelling together; three or more rows overlapping at once; sheets and blends mixed | An unstable sort. An order that only looks stable because nothing overlaps. A band on each row's own value, which lets two rows that travel together swap. A band so wide that nothing reorders. Rejected by overlapping rows of known colours read back at the overlap, by [the travelling pair](#4-order), and by a row that passes its neighbour and must exchange |
 | **C4 Smooth between ticks.** Sprites glide when the display runs faster than the simulation | 60 Hz ticks on a 120 Hz display; a repeated tick; a pause; a spawn into a reused slot; a new timeline | The same pose shown twice, or a new sprite sliding in from where the slot's last owner died. Rejected by positions at known alphas, and by a reused slot that must not move |
 | **C5 Sprite effects.** Frame animation in step with the world, tint, hit flash, transparency, additive glow | Any mix, interleaved in one pass | Additive drawn in a second pass, out of order. Rejected by a normal sprite over an additive one over a normal one, compared with a CPU blend |
@@ -116,13 +116,17 @@ judged in words, in the running scenes.
   linear, so a filtered edge has no dark fringe, and one blend state covers alpha and additive: "It is a superset
   of both conventional and additive blending"
   ([Hargreaves](https://www.shawnhargreaves.com/blog/premultiplied-alpha.html)).
-- **Pixel art that moves smoothly is sampled by coverage.** The sample is moved to the texel centre except within
-  one output pixel of a texel edge, where a linear sampler ramps across it
-  ([d7samurai](https://gist.github.com/d7samurai/9f17966ba6130a75d1bfb0f1894ed377), who asks for premultiplied
-  textures and a transparent border; the same method ships in emulators as "sharp bilinear"). The older way is to
-  draw to a low-resolution target and scale it by a whole number, as Celeste is reported to do at 320×180. That
-  is exact, and it ties motion and window size to whole texels. Coverage sampling gives the same exact image when
-  a game does align to whole texels, and a stable one when it does not, so it is chosen.
+- **Fractional pixel-art magnification needs extra filtering near native size.** The original sharp bilinear
+  sample ([d7samurai](https://gist.github.com/d7samurai/9f17966ba6130a75d1bfb0f1894ed377)) implements a
+  one-output-pixel box and preserves an aligned integer image. At 1.5× it also preserves high-frequency
+  content that aliases on the output grid. One bright texel in a repeating three-output-pixel stripe period
+  contributes weights `[0.75, 0.75, 0]` or `[0.25, 1, 0.25]` at two phases. Both sum to 1.5. The SDR reds
+  are respectively `[215, 215, 21]` and `[132, 244, 132]`. The same cause is visible in the submitted
+  Metal and Chrome strips and checker in [M3's first review](../../../.orchestrate/evidence/RENDER-2D/M3-review.md).
+  A bounded, positive prefilter lowers the aliased harmonics before output sampling and blends transparent edges
+  without ringing. A tent gives this roll-off with compact support. [Turkowski, Filters for Common Resampling Tasks](https://people.csail.mit.edu/ericchan/bib/pdf/ResamplingFilters.pdf)
+  Pixel snapping or an integer-scaled intermediate would step motion or change the requested framing.
+  Frame accumulation would add history and lag to a view drawn directly at its output extent.
 - **Shipped games order by height with a fixed tie-break, and nothing published goes further.** The usual advice
   for two sprites that flicker is to sort on the feet and break ties with a unique identity, so equal keys never
   fall in an arbitrary order (for example
@@ -298,22 +302,36 @@ never change when a sheet arrives, changes or leaves.
 
 A sheet is **pixel** or **smooth**.
 
-- **Pixel** sheets are sampled by coverage. The sample goes to the texel centre, except within half an output
-  pixel of a texel edge, where it ramps across the edge. For axis-aligned sprites at a scale of 1 or more this is
-  the exact area of each texel under each output pixel, so every texel keeps the same weight on screen at every
-  sub-pixel offset, and at a whole-number scale on the pixel grid it is the texel itself. A rotated sprite gets
-  an edge one output pixel wide. Pixel sheets are never block-compressed.
+- **Pixel** sheets use a separable filter in the sprite's projected local axes. In each axis the base kernel
+  is a centred box one output pixel wide. For magnification between 1× and 2×, convolve that box with a
+  centred, unit-area tent. The tent radius varies smoothly with projected scale, peaks near 1.5× and falls
+  to zero at 1× and 2×. Use a smooth fade to zero as the smaller axis reaches minification. Start with a
+  radius of `20 (s - 1)² (2 - s)²` output pixels for axis scale `s` in that interval and a fade from
+  zero to full strength as the smaller axis moves from 1× to 1.25×. Tune the radius by the M3 still and
+  motion inspections, keeping the support within 1.25 source texels on either side of the sample in each
+  magnified axis. The filter follows scale and position continuously during a scroll. At zero radius use
+  ordinary box coverage. This keeps aligned integer images exact at 1× through 6×, independently of the backing extent.
+  Pixel sheets are never block-compressed.
 - **Smooth** sheets are sampled trilinearly from mip levels, and may take the profile's compressed format as
   other textures do.
+
+Integrate each kernel over the source texel intervals for its weights and combine premultiplied linear RGBA
+with those weights. The weights are nonnegative and sum to one. The translates of the unit output box sum
+to one on the output grid. Convolution with a unit-area tent preserves that partition of unity and thus
+the total scene-linear weight of an isolated, unclipped, axis-aligned texel in the ideal calculation.
+That identity is independent of how much contrast survives in any given set of SDR pixels. At 1× the finest
+alternating pattern lies at the output grid's Nyquist limit. The byte guarantee is for grid alignment, and
+the visual claim for scrolling is judged at the scales and viewing conditions in M3.
 
 Below one output pixel a texel, both kinds read mip levels, which are box-filtered in linear light from the
 premultiplied texels. Frames are separated by a gutter wide enough that no mip level the sheet holds reaches a
 neighbour, and the shader keeps a sample inside its own frame. The smallest scale claimed is 0.25. Below it a
 sprite is still drawn, from its smallest level, and no claim is made for how it looks.
 
-A sprite's quad reaches one texel past its frame into transparent texels, so its outline is antialiased by the
-same sampling and needs no multisampling. A frame marked as a **tile** has no such margin: two tiles that share
-an edge share its vertices, and no background shows between them at any scale or offset.
+A standalone sprite's quad covers the support of the filter past its frame into the transparent gutter,
+so its outline is antialiased by the same sampling. The widened magnification filter fits the existing
+gutter. A frame marked as a **tile** has no expanded geometry. Filter taps past a tile edge use that frame's
+extruded edge. Adjacent tiles keep their shared vertices and ownership of the output pixels along the join.
 
 ### 7. Colour
 
@@ -327,8 +345,8 @@ All 256 codes survive the half-float target with 0.46 of a code to spare
 ([probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md#3-do-authored-8-bit-colours-survive-the-half-float-scene-target)).
 
 Blending is in linear light, which is the engine's one colour contract (C07). Soft art therefore looks lighter
-over dark than in a paint tool that blends in display space: white at half alpha over black is code 188, not
-128. Hard-edged pixel art is unaffected.
+over dark than in a paint tool that blends in display space. White at half alpha over black is code 188.
+An opaque, aligned texel passes through at its authored colour.
 
 Tints and additive sprites may push a value above 1. The target keeps it. SDR output clips each channel at white,
 as every SDR 2D game does. Where the output half has resolved an EDR display mode, the value reaches it
@@ -345,6 +363,8 @@ tiles, and grid cell sizes. Its syntax is the builder's.
 writes one product: the pages as one array texture, for each profile, and a frame table with each frame's name,
 page, rectangle, trim, source size, pivot and tile mark. A frame larger than a page is refused by name. This is
 the sprite-sheet product the module list asks of `CONTENT-LOOP`.
+The cooker produces the same mip levels, transparent gutters and extruded tile edges as the embedded path.
+Both products use the sampling rules in [mechanism 6](#6-sampling-two-kinds-of-sheet).
 
 **Residency.** A sheet is a [lease](../CONTENT-LOOP/DESIGN.md#leases-m1): residency uploads the pages under its
 own budget and lends them after the frame that recorded the last copy is submitted. In a 2D scene residency runs
@@ -380,12 +400,10 @@ product exists. An embedded sheet is rebuilt from its retained bytes after devic
 - **One draw with eight sheets.** Eight array textures and one sampler fit WebGPU's defaults. WGSL forbids an
   implicit-derivative sample inside a branch on the sheet number; coverage sampling already computes the
   footprint itself, so derivatives are taken before the branch and the sample inside it is explicit.
-- **Coverage.** The probe compared it with the exact box filter at ten scales and 200 offsets: equal to rounding
-  error at every scale of 1 or more, while nearest sampling made a texel 2 or 3 pixels wide by turns at 2.37.
-  A GPU blends with fewer weight bits than the probe, so M3 measures the renderer's own difference first, as two
-  figures: the difference in a pixel, and the change in one texel's total weight on screen. The second is what
-  "a texel keeps its size" means. It is not inferred from the first, because a small error in every pixel a texel
-  touches can add up in its weight.
+- **Magnification.** The original coverage probe measured texel weight and agreed with a texel-area reference.
+  M3's first review showed why that missed the visible defect. The widened kernel retains the weight identity
+  and attenuates the alias before the SDR transfer. The planning calculation in the log checks that direction.
+  The device captures decide whether the retained detail and residual motion meet the visual bar.
 - **Lifecycle.** A 2D scene has no history, so a resize, a discarded frame and a capture frame have nothing to
   carry or roll back beyond what the host already does for uploads.
 
@@ -434,7 +452,9 @@ on what the owning module has landed by then, with the behaviour defined here, a
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): scene-kind selection, the display-referred
    transfer, and a scene that declares no reconstruction. Built in M1.
 2. **Content** (`CONTENT-LOOP`, `EFFECT-GRAPH`): the sheet product, pages as a lease, and residency and the
-   contribution list in a 2D scene. Built in M4.
+   contribution list in a 2D scene. M4 extends the texture cooker in `thrum-cook` and runtime views in
+   `thrum-asset`. The game connects `thrum-asset-gpu` residency to the sprite scene, so `thrum-render` can
+   consume the views without a residency dependency.
 3. **The V1 game and its shells** (`SHOWCASE`, `T2-CAPTURE`, `PLATFORM-RUNTIME-IOS`): a `sprites` scene
    selection, off by default, that the window, the page, the iOS shell and the capture scripts accept. Built in
    M1, and for the simulator in M5.
@@ -466,6 +486,7 @@ No budget is set (brief, decision 3). Estimates, to be replaced by measurements:
 | Order a tick | 121 µs at 10,000 natively for the kept order in the probe's crowd, where an exact sort is 76 µs; Chrome not measured. The worst case is a tick that gives every row with history a new value: about 25 million exchanges and 10 ms at 10,000. Rows without history are sorted, not exchanged in, so a rewind or a wave of spawns does not pay it |
 | Draw | One call; four vertices a row |
 | Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. A crowd three deep shades about three times its own area |
+| Pixel filter | The widened footprint meets at most four source texels per axis. Pair adjacent positive weights in each axis for up to four hardware bilinear samples per affected fragment. An axis using the box needs one pair and the existing box path uses one bilinear sample when neither axis widens. The extra cost scales with shaded pixels and overdraw in the affected sprites. Reuse level zero, the sampler and the sheet bindings. Derive scale-dependent terms once per quad and reuse the current one-draw path |
 | A sheet | 16 MiB a 2048² page uncompressed, a third more with mips |
 | 3D work | None |
 
@@ -481,10 +502,10 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 
 ## Risks
 
-1. **The host change moves a 3D image or breaks a lifecycle rule.** Early sign: the verifier, or a V1 test, in
-   M1. The 3D kind is the default and must compile to the same passes and bytes.
-2. **V1 ends with a frame runtime this design did not foresee.** Early sign: M1's first reading. The builder
-   writes the difference in the log and ends `BLOCKED` if a mechanism here cannot stand.
+1. **A 2D change moves a 3D image or breaks a lifecycle rule.** The 3D kind is the default and must compile
+   to the same passes and bytes. Fix a regression before continuing with 2D work.
+2. **A mechanism needs a change to the shared runtime.** Reuse the frame host, presentation path and content
+   loader. If the shared runtime cannot support the mechanism, record the gap in the log and end `BLOCKED`.
 3. **The full-size target is the cost in Chrome.** Early sign: M1's cost rows. The answer is under research.
 4. **Overdraw of a packed crowd.** Early sign: M2's and M5's rows. The answer is under research.
 5. **Jitter is larger than a band that still looks right, or chains leave overlapping rows visibly out of
@@ -494,7 +515,8 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 6. **Exact colour fails by a code on one target**, from the GPU's sRGB decode or a fast-math `pow`. Early sign:
    M1.5. Stop and diagnose; do not widen the comparison silently.
 7. **The lease is not the shape a sheet needs.** `CONTENT-LOOP` M1 is unbuilt. Early sign: M4's first reading.
-8. **A convincing fake of C2:** crisp stills of an aligned card. Motion at a fractional scale is the proof.
+8. **C2 can appear to pass** in crisp stills of an aligned card or in a scroll that washes away the checker.
+   Compare the original one-texel patterns in motion and keep isolated marks legible.
 9. **A convincing fake of C4:** frames captured at the tick rate. The proof reads positions at alphas between
    ticks.
 10. **Linear-light blending surprises an artist.** It is stated in the guide, and it is an assumption in the plan
@@ -512,30 +534,37 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
   package, on `thrum-app`'s window and page.
 - **Art.** Test cards are generated in code. The few sprites the scenes need are drawn by the builder, original
   and simple. Nothing is lifted from another game or from Broadsides.
-- **Oracles.** Every exact comparison is against a CPU reference written from the source texels and this design's
-  rules, never against a retained image and never through the renderer's shaders. No baseline is registered.
-  These comparisons, and M3.1's retained bound, are this module's under
-  [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines).
+- **Exact sprite checks.** The aligned image, resize, tile and mip witnesses use expectations taken from
+  the source texels and this design's rules. No sprite image is registered as an exact baseline. These tests
+  are this module's under [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines).
 - **Capture.** Inspected items use T2 engine capture and name their mode. Motion is judged from `realtime`
   captures at 1920×1080 as consecutive frames at 1x; the display's full 3456×2234 is captured as `fixed` stills
   and timed in the cost records, because twenty seconds of it would not fit capture's output bound.
-- **Measured bounds.** M3.1 measures how far the renderer's coverage sampling is from the box filter on each
-  target, as a pixel figure and a weight figure, and retains both; M3.2 and M3.7 test against the retained weight
-  figure, not a number written here. M5.3's out-of-order figures are records, and none is a pass mark.
-- **Costs never stop the build.** A row that trips a tripwire is recorded as measured, with what was found.
+- **Camera proof and diagnostics.** M3.2 and M3.7 step the camera over retained rows and test that the
+  submitted pixels follow it. Scene-linear texel sums and phase contrast can help diagnose a capture.
+  The old Metal and Chrome coverage-error limits belong to the box-filter run and are retired as checks.
+- **Filter cost.** For M3, use the existing profile record to compare the sprite pass before and after the
+  change at 1920×1080 on Metal and Chrome for the 1.5× scroll. Include recipe, device, shaded pixels,
+  overdraw and load. The timings are tripwires. M5 measures the packed crowd.
+- **Cost records.** Record the revision and machine load. Keep the specified crowd size and backing extent
+  when investigating a tripwire. Record the observed cost and finding, then continue the build.
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,
-  and moves no retained image. Each milestone carries the verifier.
+  and moves no retained image. Each milestone uses the shared main-branch verifier. Diagnose a failed
+  source-texel comparison against its original expectation. If another module owns a failing test, baseline
+  or witness that requires a change, retain it and log the proposed fix before ending `BLOCKED`.
+  [Project proof rules](../../../ORCHESTRATE.md#targets)
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/render-2d-<milestone>/`; selected evidence
   in `.orchestrate/evidence/RENDER-2D/`.
-- **Maturity.** Ledger rows for 2D are added in M5, with implementation, correctness, visuals and device results
-  kept apart.
+- **Creator guide and maturity.** M5 updates [the creator guide](../../design/ENGINE-EXPERIENCE.md) and adds
+  2D rows to [the maturity ledger](../../design/maturity.json) for implementation, correctness, visuals and
+  device results.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
 | What do the full-size target and the two output passes cost on the Mac and in Chrome? | M1 records it |
-| How far is a GPU's coverage sampling from the box filter? | M3.1 measures and retains it |
+| Is the widened filter sharp enough with no visible contrast pulse? | M3.8–M3.10 inspect the submitted images |
 | How much does `SIM-2D`'s crowd jitter, what band hides it, and how far out of order do chains leave overlapping rows? | M5.3 measures all three and sets the band |
 | Does a packed crowd of 10,000 fit the refresh interval at the display's full size? | M5 records it; a miss is a finding, not a stop |
 | Does `SWARM` want more than eight sheets, or display-space blending? | Its planner asks here |
