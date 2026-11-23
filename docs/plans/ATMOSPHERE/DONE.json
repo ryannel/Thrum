@@ -288,10 +288,10 @@
           "statement": "On the Mac, on the six-stop route and a continuous dawn-to-night scrub with slow pans, a clean-context reviewer finds none of: a horizontal brightness step across the ground, a flat near ridge with a hard bright rim at low Sun, a ridge lit warm with the Sun behind it, missing object shadows at sunrise, shadow acne at low Sun, a hard horizon line, banding in the sky gradient and twilight, or sky light reflected off a surface in blotches, separate spots or with a seam.",
           "inspect": "Capture the route stops as fixed-time stills and the scrub and pans, including the Ground E pan, with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the moving shadow edge on the authored spur between 17.40 and 17.80 h. The held 17.4 h stop is judged, and the Ground E terrain lip is judged as a brightness step.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/README.md#m61-and-m62-visual-inspection",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.2",
