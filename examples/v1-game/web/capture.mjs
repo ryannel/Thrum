@@ -282,7 +282,7 @@ async function runCapture() {
       record.actions.push({kind:'solar-scrub',frame_ms:timestamp,solar_hours:solar});
     }
     if (atmosphereMotion && hazeTake) {
-      const pose = JSON.parse(game.sample_haze_take((timestamp - base) / 1000));
+      const pose = JSON.parse(game.sample_haze_take(Math.max(0, (timestamp - base) / 1000)));
       record.actions.push({kind:'haze', frame_ms:timestamp, pose});
     } else if (atmosphereMotion) {
       const scrub = atmosphere === 'scrub';
