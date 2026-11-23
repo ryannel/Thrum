@@ -196,7 +196,7 @@ pub(super) fn append_placed_map(
     ]);
     graph.passes.push(EffectPass {
         name: crate::shapes::map::PASS.into(),
-        cadence: EffectCadence::EveryFrame,
+        cadence: EffectCadence::Skippable,
         async_eligible: true,
         accesses: reads,
     });

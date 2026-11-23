@@ -1,4 +1,4 @@
-use super::{Shapes, shader};
+use super::{Shapes, ShapesReport, shader, upload_changes};
 use crate::{WeatherMap, WeatherProfile};
 use thrum_render::{binding, runtime::DeviceSite};
 
@@ -15,6 +15,9 @@ pub(crate) struct ShapeMap {
     pub(crate) params: wgpu::Buffer,
     pipeline: wgpu::ComputePipeline,
     group: wgpu::BindGroup,
+    uploaded: MapParams,
+    upload_bytes: usize,
+    dirty: bool,
 }
 
 impl ShapeMap {
@@ -97,6 +100,11 @@ impl ShapeMap {
             params,
             pipeline,
             group,
+            uploaded: MapParams {
+                level: [[0.0; 4]; 4],
+            },
+            upload_bytes: 0,
+            dirty: true,
         }
     }
 
@@ -104,9 +112,14 @@ impl ShapeMap {
         clippy::cast_possible_truncation,
         reason = "weather coordinates narrow relative to the innermost window"
     )]
-    pub(crate) fn upload(&self, queue: &wgpu::Queue, weather: &WeatherMap) {
+    pub(crate) fn upload(
+        &mut self,
+        queue: &wgpu::Queue,
+        weather: &WeatherMap,
+        instance_bytes: usize,
+    ) {
         let origin = weather.origins()[0];
-        let level = std::array::from_fn(|i| {
+        let level: [_; 4] = std::array::from_fn(|i| {
             [
                 (weather.origins()[i][0] - origin[0]) as f32,
                 (weather.origins()[i][1] - origin[1]) as f32,
@@ -114,7 +127,20 @@ impl ShapeMap {
                 0.0,
             ]
         });
-        queue.write_buffer(&self.params, 0, bytemuck::bytes_of(&MapParams { level }));
+        self.upload_bytes =
+            upload_changes(queue, &self.params, 0, &level, &mut self.uploaded.level);
+        // Queue writes survive an abandoned recording, but the map dispatch
+        // does not. Keep the map dirty until a submission has used the inputs.
+        self.dirty |= self.upload_bytes != 0 || instance_bytes != 0;
+    }
+
+    pub(crate) fn runs(&self) -> bool {
+        self.dirty
+    }
+
+    pub(crate) fn submitted(&mut self, report: &mut ShapesReport) {
+        report.placement_upload_bytes += self.upload_bytes;
+        report.placed_map_updated = std::mem::take(&mut self.dirty);
     }
 
     pub(crate) fn encode(&self, shapes: &Shapes, pass: &mut wgpu::ComputePass<'_>) {

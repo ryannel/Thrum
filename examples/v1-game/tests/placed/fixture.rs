@@ -137,9 +137,13 @@ impl Fixture {
         let mut bytes = fs::read(&source).expect("old stack");
         bytes[16 + 8 * 8 * 3 + 3] ^= 1;
         fs::write(source, bytes).expect("changed stack");
-        let report = self.cooker.cook_all().expect("recook");
+        self.publish_stacks(1)
+    }
+
+    pub(super) fn publish_stacks(&mut self, expected: usize) -> u64 {
+        let report = self.cooker.cook_all().expect("cook stacks");
         assert_eq!(report.failed, []);
-        assert_eq!(report.cooked, 1);
+        assert_eq!(report.cooked, expected);
         report.published.expect("new publication").generation
     }
 

@@ -81,24 +81,30 @@ fn no_lease() {
     ) else {
         return;
     };
-    let fixture = fixture::Fixture::new(false);
+    let mut fixture = fixture::Fixture::new(false);
     let mut host = pollster::block_on(fixture.host(&gpu));
     let mut frames = fixture::Frames::new(&gpu);
     let report = frames.placed_submitted(&mut host, |row| row.volume_refusals == 2);
     assert_eq!(report.volume_instances, 0);
     assert_eq!(report.invalidations, 0);
+    assert!(report.placed_map_updated);
+    host.world_mut().pause().expect("hold the placement state");
+    frames.submit(&mut host);
     let (texture, origin, state) = host
         .cloud_placed_input()
         .expect("Shapes")
         .placed_map()
         .expect("columns");
-    let raw = thrum_test_support::readback::texture(
-        &gpu.device,
-        &gpu.queue,
-        &texture,
-        thrum_test_support::readback::Mip::layer(0, 0),
-        ..,
-    );
+    let read = || {
+        thrum_test_support::readback::texture(
+            &gpu.device,
+            &gpu.queue,
+            &texture,
+            thrum_test_support::readback::Mip::layer(0, 0),
+            ..,
+        )
+    };
+    let raw = read();
     let profile = v1_game::clouds::shade_config();
     let field = thrum_cloud_model::Field::new(profile.seed, profile.model, profile.types)
         .expect("headless model");
@@ -110,7 +116,11 @@ fn no_lease() {
         .find_map(|(index, row)| {
             let words = row.as_chunks::<4>().0;
             let tau = f32::from_le_bytes(words[2]);
-            (tau > 1.0).then_some((index, tau, f32::from_le_bytes(words[1])))
+            (words[0] == 1.0_f32.to_le_bytes() && tau > 1.0).then_some((
+                index,
+                tau,
+                f32::from_le_bytes(words[1]),
+            ))
         })
         .expect("denied volume still draws its column");
     let width = texture.width() as usize;
@@ -123,6 +133,23 @@ fn no_lease() {
     assert_eq!(column.2.to_bits(), 0.0_f32.to_bits());
     let expected = field.query(point, &state).optical_depth;
     assert!((expected - f64::from(column.1)).abs() < 0.001);
+    assert_eq!(fixture.publish_stacks(2), 1);
+    let resident = thrum_test_support::wait::until(
+        "paused map uses the new lease",
+        std::time::Duration::from_secs(4),
+        || {
+            host.capture_pixels().expect("draw with pending lease");
+            frames.retire(&mut host);
+            fixture::report(&host).filter(|row| row.volume_instances == 1)
+        },
+    );
+    assert_eq!(resident.placement_upload_bytes, 80);
+    assert!(resident.placed_map_updated && resident.history_invalid);
+    assert_eq!(resident.invalidations, 0);
+    let raw = read();
+    let words = raw.as_chunks::<16>().0[column.0].as_chunks::<4>().0;
+    assert_eq!(f32::from_le_bytes(words[1]).to_bits(), 1.0_f32.to_bits());
+    assert_eq!(f32::from_le_bytes(words[2]).to_bits(), column.1.to_bits());
 }
 
 thrum_test_support::macos_gpu_test! {
@@ -142,33 +169,45 @@ fn placement_upload() {
     ) else {
         return;
     };
-    let fixture = fixture::Fixture::with_placements(true, &[[0.0, -12_000.0]], [40.0, 0.0]);
+    // Centre a shape in a coarse map texel inside the volume fade band.
+    let fixture = fixture::Fixture::with_placements(true, &[[-7_840.0, -9_120.0]], [40.0, 0.0]);
     let mut host = pollster::block_on(fixture.host(&gpu));
     let mut frames = fixture::Frames::new(&gpu);
     frames.placed_submitted(&mut host, |row| row.volume_instances == 1);
-    let placement = |host: &fixture::Host| {
-        let (_, _, state) = host
-            .cloud_placed_input()
-            .expect("Shapes")
-            .placed_map()
-            .expect("submitted map");
-        (
-            fixture::report(host)
-                .expect("submitted placement report")
-                .placement_upload_bytes,
-            state.travel(),
+    let input = host.cloud_placed_input().expect("Shapes").clone();
+    let report = || input.shapes_report().expect("submitted placement report");
+    let map = || input.placed_map().expect("submitted map");
+    let read = || {
+        let (texture, _, _) = map();
+        thrum_test_support::readback::texture(
+            &gpu.device,
+            &gpu.queue,
+            &texture,
+            thrum_test_support::readback::Mip::layer(0, 2),
+            ..,
         )
     };
     frames.submit(&mut host);
-    let (bytes_before, travel_before) = placement(&host);
+    let before = report();
+    let travel_before = map().2.travel();
+    let previous_map = read();
     frames.submit(&mut host);
-    let (bytes_after, travel_after) = placement(&host);
+    let after = report();
+    let (_, previous_origin, state) = map();
     assert_ne!(
         travel_before.map(f64::to_bits),
-        travel_after.map(f64::to_bits)
+        state.travel().map(f64::to_bits)
     );
     // Only the weight in one row changes as it drifts through the fade band.
-    assert_eq!([bytes_before, bytes_after], [80; 2]);
+    assert_eq!(
+        [before.placement_upload_bytes, after.placement_upload_bytes],
+        [80; 2]
+    );
+    assert!(before.placed_map_updated && after.placed_map_updated);
+    assert!(
+        read() != previous_map,
+        "the map must contain the new weight"
+    );
     host.set_scene_camera(
         v1_game::SceneCamera::perspective(
             [2_500.0, 40.0, 0.0],
@@ -181,17 +220,33 @@ fn placement_upload() {
     )
     .expect("move camera across the weather anchor");
     frames.submit(&mut host);
+    assert_ne!(map().1.map(f64::to_bits), previous_origin.map(f64::to_bits));
     assert_eq!(
-        placement(&host).0,
-        64 + 80,
-        "anchor changes the header and one row"
+        report().placement_upload_bytes,
+        64 + 80 + 2 * 16,
+        "anchor changes the header, one instance and two relative windows"
     );
+    assert!(report().placed_map_updated);
     host.world_mut().pause().expect("pause the inline weather");
     frames.submit(&mut host);
-    // A stopped camera and weather, with the same lease, touch no placement bytes.
+    let paused_map = read();
     host.capture_pixels().expect("first paused draw");
     frames.retire(&mut host);
-    host.capture_pixels().expect("repeated paused draw");
-    frames.retire(&mut host);
-    assert_eq!(placement(&host).0, 0);
+    assert_eq!(report().placement_upload_bytes, 0);
+    assert!(!report().placed_map_updated);
+    host.set_scene_camera(
+        v1_game::SceneCamera::perspective(
+            [2_500.0, 40.0, 0.0],
+            [3_000.0, 1_700.0, -1_700.0],
+            0.75,
+            1.0,
+            200_000.0,
+        )
+        .expect("pan at the same camera position"),
+    )
+    .expect("pan while weather is paused");
+    frames.submit(&mut host);
+    assert_eq!(report().placement_upload_bytes, 0);
+    assert!(!report().placed_map_updated);
+    assert!(read() == paused_map, "the skipped map retains its texels");
 }

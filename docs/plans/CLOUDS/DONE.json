@@ -823,8 +823,8 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_placed_lease_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/map-refresh/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },

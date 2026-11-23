@@ -60,8 +60,10 @@ pub struct ShapesReport {
     pub volume_refusals: usize,
     /// Placement operations the authoritative weather state refused.
     pub directed_refusals: u64,
-    /// Placement buffer bytes queued by this recording, excluding cooked products.
+    /// Instance and placed-weather window bytes queued by this recording, excluding cooked products.
     pub placement_upload_bytes: usize,
+    /// Whether this submission dispatched the placed-weather map.
+    pub placed_map_updated: bool,
     /// Whether this recording observed a pending lease change.
     pub history_invalid: bool,
     /// Lease changes consumed by advancing submissions.
@@ -424,7 +426,7 @@ impl Shapes {
         kind: Type,
         weather: &WeatherMap,
         camera: [f64; 2],
-    ) -> Result<(), Error> {
+    ) -> Result<usize, Error> {
         use bytemuck::Zeroable;
         self.offer(generation);
         let data = &mut self.staging;
@@ -507,10 +509,10 @@ impl Shapes {
         if data.header.count[0] > 0 {
             data.header.bounds = bounds.map(|value| value as f32);
         }
-        pending.placement_upload_bytes =
-            data.upload_changed(queue, &self.instances, &mut self.uploaded);
+        let bytes = data.upload_changed(queue, &self.instances, &mut self.uploaded);
+        pending.placement_upload_bytes = bytes;
         self.pending = pending;
-        Ok(())
+        Ok(bytes)
     }
 
     #[expect(

@@ -429,9 +429,9 @@ impl SceneContribution for Shade {
         let camera = [f64::from(frame.camera[0]), f64::from(frame.camera[2])];
         let weather = gpu.weather.upload(&gpu.queue, frame.time, &state, camera);
         let result = weather.and_then(|()| {
-            if let Some(shapes) = &mut gpu.shapes {
+            if let (Some(shapes), Some(map)) = (&mut gpu.shapes, &mut gpu.placed_map) {
                 let (_, kind) = gpu.weather.density_data(&state);
-                shapes.upload(
+                let instance_bytes = shapes.upload(
                     &gpu.queue,
                     frame.generation,
                     &state,
@@ -439,9 +439,7 @@ impl SceneContribution for Shade {
                     &gpu.weather,
                     camera,
                 )?;
-            }
-            if let Some(map) = &gpu.placed_map {
-                map.upload(&gpu.queue, &gpu.weather);
+                map.upload(&gpu.queue, &gpu.weather, instance_bytes);
                 gpu.recorded_placed_state = Some(Arc::clone(&state));
             }
             gpu.sun.upload_with_shapes(
@@ -474,7 +472,10 @@ impl SceneContribution for Shade {
         self.valid_recording
             && self.gpu.as_ref().is_some_and(|gpu| match index {
                 0 => gpu.weather.runs(),
-                6 => gpu.placed_map.is_some(),
+                6 => gpu
+                    .placed_map
+                    .as_ref()
+                    .is_some_and(crate::shapes::map::ShapeMap::runs),
                 _ => gpu.sun.runs(index - 1),
             })
     }
@@ -537,14 +538,21 @@ impl SceneContribution for Shade {
             if let Some(sky) = &mut gpu.sky {
                 sky.submitted();
             }
+            let shapes_report = gpu.shapes.as_mut().map(|shapes| {
+                let mut report = shapes.submitted(history_advanced);
+                if let Some(map) = &mut gpu.placed_map {
+                    map.submitted(&mut report);
+                }
+                report
+            });
             if (cfg!(target_arch = "wasm32") || gpu.sky.is_some() || gpu.shapes.is_some())
                 && let Ok(mut input) = self.input.0.lock()
             {
                 if let Some(sky) = &gpu.sky {
                     input.sky = Some(sky.products());
                 }
-                if let Some(shapes) = &mut gpu.shapes {
-                    input.shapes = Some(shapes.submitted(history_advanced));
+                if let Some(shapes) = &gpu.shapes {
+                    input.shapes = shapes_report;
                     input.shape_resources = shapes.resource_bytes();
                 }
                 if let (Some(map), Some(state)) =

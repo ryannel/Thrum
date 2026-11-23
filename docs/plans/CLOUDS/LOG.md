@@ -602,3 +602,9 @@
   no placement seam and both overlap directions in the Metal matrix. Consecutive 1× and 60× submissions show a
   continuous range crossing. Chrome submitted the resident R8 stacks with no validation errors.
   [Target evidence and reproduction](../../../.orchestrate/evidence/CLOUDS/M6/recheck/README.md).
+
+- 2026-11-24 M6.3 retains the placed-weather map until its windows or instance data change. On Metal, the
+  paused capture and in-place pan queued zero placement bytes, skipped the map pass and kept identical
+  texels. Drift queued one 80-byte row. Moving the fixture's anchor queued 176 bytes, including both changed
+  relative windows. Restoring residency while paused updated the volume weight and preserved column optical
+  depth. [Metal test and reproduction](../../../.orchestrate/evidence/CLOUDS/M6/map-refresh/README.md).
