@@ -655,3 +655,8 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   H1–H4 and existing guard expectations are unchanged by M6. H5 adds the stored-product comparisons and retains
   the P7/P8 differences as records. The exact sets remain under the shared verifier. A small dark edge on the
   moving solar disc is visible in both targets. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M6/README.md)
+- 2026-11-23 M6 rebased onto HOST M4 and APPLE-PRESENTATION M5. The capture driver uses the hosted game
+  for the same continuous controls. Fresh Metal and Chrome fixed stops and elapsed takes agree on the
+  route inspection. Both stored Metal checks and Chrome H1–H5 passed. The Chrome referee uses the existing
+  longer GPU teardown allowance and still requires a clean exit. The refreshed paired Metal tripwire
+  investigates the startup and resident timing departures under shared load. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M6/README.md#integrated-route)
