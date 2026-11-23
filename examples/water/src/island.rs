@@ -291,7 +291,7 @@ fn build_island(
         .slider(
             "camera.island",
             if surf {
-                "Sand / Beach / Offshore / Lee / Headland / Island"
+                "Sand / Beach / Sea / Lee / Headland / Island"
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
