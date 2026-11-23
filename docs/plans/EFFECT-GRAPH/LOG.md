@@ -242,3 +242,8 @@
   and the delayed observation in both spans. The test took 0.053 s alone and 0.058 s in the first focused batch
   (11 passes), against 6.213 s in the plan's workspace run.
   [Timing and coverage](../../../.orchestrate/evidence/EFFECT-GRAPH/M5/M5.1.md).
+- 2026-11-24 M5.1 now maps the worker's resume and advance samples and the caller's bracket through
+  the same clock offset. The reviewer's 25 ms probe failed at the acknowledgment identity, with
+  resumed tick 3 and paused tick 2. On the Mac the revised check took 0.018 s alone and 0.017 s in
+  the first focused batch, which passed all 11 tests.
+  [Review fix and proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M5/M5.1-review-fix.md).

@@ -83,11 +83,38 @@ const TOLERANCE_SECONDS: f64 = 2e-6;
 const LEADS_MS: [u64; 4] = [0, 8, 30, 50];
 const WORKER_TIMEOUT: Duration = Duration::from_secs(2);
 
-/// The lane still owns lifecycle, publication and pair selection. The test
-/// supplies the clocked world's time through the lane's control mailbox.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ClockInput {
+    Stepped(Duration),
+    ResumeBracket {
+        host_start: Duration,
+        stepped_start: Duration,
+    },
+}
+
+impl ClockInput {
+    fn sample(self, host: Duration) -> Duration {
+        match self {
+            Self::Stepped(at) => at,
+            Self::ResumeBracket {
+                host_start,
+                stepped_start,
+            } => {
+                stepped_start
+                    + host
+                        .checked_sub(host_start)
+                        .expect("host sample predates the resume bracket")
+            }
+        }
+    }
+}
+
+/// The lane still owns lifecycle, publication and pair selection. Manual
+/// steps set the observation time. For the resume exchange, a single offset
+/// maps both worker timestamps and the caller's bracket onto that same clock.
 struct SteppedWorld {
     world: World,
-    now: Duration,
+    clock: ClockInput,
     samples: Sender<WorldSample>,
 }
 
@@ -102,15 +129,15 @@ enum WorldSample {
 }
 
 impl WorldTask for SteppedWorld {
-    type Control = Duration;
+    type Control = ClockInput;
     type Page = u64;
     type Error = ClockedWorldError<std::convert::Infallible>;
 
-    fn validate_control(_: Duration) -> Result<(), Self::Error> {
+    fn validate_control(_: ClockInput) -> Result<(), Self::Error> {
         Ok(())
     }
 
-    fn same_control(left: Duration, right: Duration) -> bool {
+    fn same_control(left: ClockInput, right: ClockInput) -> bool {
         left == right
     }
 
@@ -118,8 +145,8 @@ impl WorldTask for SteppedWorld {
         self.world.initial()
     }
 
-    fn apply_control(&mut self, now: Duration) -> Result<(), Self::Error> {
-        self.now = now;
+    fn apply_control(&mut self, clock: ClockInput) -> Result<(), Self::Error> {
+        self.clock = clock;
         Ok(())
     }
 
@@ -128,16 +155,17 @@ impl WorldTask for SteppedWorld {
     }
 
     fn resume(&mut self, worker_sample: Duration) -> Result<(), Self::Error> {
-        // Keep the real lane's host-time sample independently observable, even
-        // though the clocked world receives the scripted sample.
-        let _ = self.samples.send(WorldSample::Resume(worker_sample));
-        WorldTask::resume(&mut self.world, self.now)
+        let at = self.clock.sample(worker_sample);
+        WorldTask::resume(&mut self.world, at)?;
+        let _ = self.samples.send(WorldSample::Resume(at));
+        Ok(())
     }
 
-    fn advance(&mut self, _: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error> {
-        let mut update = WorldTask::advance(&mut self.world, self.now)?;
+    fn advance(&mut self, worker_sample: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error> {
+        let at = self.clock.sample(worker_sample);
+        let mut update = WorldTask::advance(&mut self.world, at)?;
         let _ = self.samples.send(WorldSample::Advance {
-            at: self.now,
+            at,
             completed: update.completed_ticks,
             published: update.publication.is_some(),
             interpolating: update.clock.is_interpolating(),
@@ -163,12 +191,13 @@ impl LaneRun {
         let (notify, wakes) = mpsc::channel();
         let (samples, observed_samples) = mpsc::channel();
         let host_origin = Instant::now();
+        let clock = ClockInput::Stepped(Duration::ZERO);
         let task = SteppedWorld {
             world: World::new(Game(0), ClockConfig::default(), Duration::ZERO).expect("world"),
-            now: Duration::ZERO,
+            clock,
             samples,
         };
-        let (lane, controls) = WorldLane::start(task, Duration::ZERO, host_origin, move || {
+        let (lane, controls) = WorldLane::start(task, clock, host_origin, move || {
             // The wake comes after the lane stores the update. Keep the worker
             // off the mailbox until the observation has polled it.
             let (release, parked) = mpsc::channel();
@@ -191,12 +220,16 @@ impl LaneRun {
     }
 
     fn step(&self, at: Duration) -> Sender<()> {
-        self.controls.set(at).expect("step world clock");
+        self.controls
+            .set(ClockInput::Stepped(at))
+            .expect("step world clock");
         self.committed_update()
     }
 
     fn step_without_publication(&self, now: Duration) {
-        self.controls.set(now).expect("step held clock");
+        self.controls
+            .set(ClockInput::Stepped(now))
+            .expect("step held clock");
         loop {
             let sample = self
                 .samples
@@ -219,7 +252,6 @@ impl LaneRun {
     }
 
     fn request(&self, request: WorldLifecycle) -> (WorldLifecycleReply, Sender<()>) {
-        let host_asked = self.host_origin.elapsed();
         self.controls.request_lifecycle(request).expect("request");
         let release = self.committed_update();
         let reply = self
@@ -227,24 +259,36 @@ impl LaneRun {
             .poll_lifecycle_reply()
             .expect("reply")
             .expect("acknowledged");
-        let host_answered = self.host_origin.elapsed();
         assert_eq!(reply.request, request);
-        if request == WorldLifecycle::Resume {
-            loop {
-                if let WorldSample::Resume(at) = self
-                    .samples
-                    .recv_timeout(WORKER_TIMEOUT)
-                    .expect("resume sample")
-                {
-                    assert!(
-                        (host_asked..=host_answered).contains(&at),
-                        "worker read {at:?} outside {host_asked:?}..{host_answered:?}"
-                    );
-                    break;
-                }
+        (reply, release)
+    }
+
+    fn resume(
+        &self,
+        stepped_start: Duration,
+    ) -> (
+        WorldLifecycleReply,
+        Sender<()>,
+        Duration,
+        std::ops::RangeInclusive<Duration>,
+    ) {
+        let clock = ClockInput::ResumeBracket {
+            host_start: self.host_origin.elapsed(),
+            stepped_start,
+        };
+        self.controls.set(clock).expect("set resume clock mapping");
+        let asked = clock.sample(self.host_origin.elapsed());
+        let (reply, release) = self.request(WorldLifecycle::Resume);
+        let answered = clock.sample(self.host_origin.elapsed());
+        loop {
+            if let WorldSample::Resume(at) = self
+                .samples
+                .recv_timeout(WORKER_TIMEOUT)
+                .expect("resume sample")
+            {
+                return (reply, release, at, asked..=answered);
             }
         }
-        (reply, release)
     }
 
     fn frame(&mut self, observation: Duration, tick: u64, interpolates: bool) -> Option<f64> {
@@ -264,6 +308,8 @@ impl LaneRun {
             }
         }
         if !interpolates {
+            assert_eq!(report.completed_ticks, 0, "held lane did not commit");
+            assert!(!report.recovered_publication, "held lane did not publish");
             assert_eq!(self.lane.tick_due_time(), None);
             return None;
         }
@@ -313,20 +359,13 @@ fn a_resumed_lane_keeps_one_origin_inside_the_resume_bracket() {
         assert_eq!(run.frame(before_pause, paused_tick, false), None);
         drop(release);
 
-        let asked = before_pause + Duration::from_millis(pause_ms);
-        run.step_without_publication(asked);
-        assert_eq!(run.frame(asked, paused_tick, false), None);
+        let pause_end = before_pause + Duration::from_millis(pause_ms);
+        run.step_without_publication(pause_end);
+        assert_eq!(run.frame(pause_end, paused_tick, false), None);
 
-        let resume_sample = asked + Duration::from_millis(1);
-        let answered = resume_sample + Duration::from_millis(1);
-        // Queue the sampled time before the lifecycle request. Either the time
-        // is installed first or the worker picks up both in the same iteration.
-        run.controls
-            .set(resume_sample)
-            .expect("resume clock sample");
-        let (resumed, release) = run.request(WorldLifecycle::Resume);
+        let (resumed, release, resume_sample, bracket) = run.resume(pause_end);
         assert_eq!(resumed.id, paused.id, "nothing commits while paused");
-        assert_eq!(run.frame(answered, paused_tick, false), None);
+        assert_eq!(run.frame(resume_sample, paused_tick, false), None);
         drop(release);
 
         let first_due = resume_sample + FIRST_TICK;
@@ -353,6 +392,7 @@ fn a_resumed_lane_keeps_one_origin_inside_the_resume_bracket() {
             "one origin for the span: {low} {high}"
         );
         let anchor = low + paused_tick as f64 * TICK_SECONDS;
+        let (asked, answered) = bracket.into_inner();
         assert!(
             anchor >= asked.as_secs_f64() - TOLERANCE_SECONDS
                 && anchor <= answered.as_secs_f64() + TOLERANCE_SECONDS,
