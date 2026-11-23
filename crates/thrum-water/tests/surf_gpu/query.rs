@@ -162,6 +162,10 @@ fn surf_tick_and_repeat_queries_match_the_model() {
                     .expect("next tick")
                     .submitted
             );
+            device
+                .poll(wgpu::PollType::wait_indefinitely())
+                .expect("complete the tick frame before the repeat");
+            while host.poll_completed().expect("tick completion").is_some() {}
         }
         let use_tick = tick + 1;
         let points: Vec<_> = (0_u16..2048)
