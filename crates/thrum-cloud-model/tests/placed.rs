@@ -104,3 +104,41 @@ fn hashed_cells_use_the_same_camera_independent_footprints() {
     }
     assert!(count >= 5);
 }
+
+#[test]
+fn library_condensate_fades_without_crossing_an_erosion_cutoff() {
+    use std::sync::Arc;
+    use thrum_cloud_model::{PlacedLibrary, PlacedSlab, Shape, ShapeSource};
+    let shape = Shape::new([4; 3], 20.0, vec![0.75; 64]).expect("cube");
+    let slab = PlacedSlab {
+        extent: 80.0,
+        floor: 0.0,
+        heading: 0.0,
+        footprint: Arc::new(shape.footprint().clone()),
+    };
+    let library = Arc::new(PlacedLibrary::new(vec![slab], Vec::new()).expect("library"));
+    let field = field(7, 0.61);
+    let mut state = support::state(0.0, 0.0);
+    state.set_library(library).expect("attach library");
+    state
+        .add_from_library(
+            support::directed(&shape, 1, [0.0; 2]),
+            ShapeSource::Library(0),
+        )
+        .expect("admit cube");
+    state.step(1, 10.0).expect("form");
+    let read = |state: &_, weight, fidelity| {
+        field.density([0.0, 740.0, 0.0], state, fidelity, |_| Some(&shape), weight)
+    };
+    let mut fading = state.clone();
+    fading.direct(1, 0.125, 0.0).expect("fade");
+    fading.step(2, 10.0).expect("fade settled");
+    state.step(2, 10.0).expect("same weather time");
+    for weight in [0.0, 0.5, 1.0] {
+        for fidelity in [Density::Coarse, Density::Full] {
+            let full = read(&state, weight, fidelity);
+            assert!(full > 0.0);
+            close(read(&fading, weight, fidelity), 0.125 * full, 1e-12);
+        }
+    }
+}

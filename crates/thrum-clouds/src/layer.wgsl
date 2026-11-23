@@ -55,17 +55,17 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
 }
 fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
     let placed = cloud_placed(point, footprint);
-    return cloud_detail(cloud_column(point).x,point,footprint) + cloud_detail(placed.x, point, footprint);
+    return cloud_detail(cloud_column(point).x,point,footprint,cloud.physical.x) + placed.x;
 }
 fn cloud_billow(point:vec3<f32>,footprint:f32)->f32 {
     let uv=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
     return textureSampleLevel(shape_noise,noise_sampler,uv,erosion_mip(footprint,50.0)).r;
 }
-fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32)->f32 {
-    if sigma<=0.0 || cloud.physical.x<=0.0 || cloud.physical.y==0.0 {return sigma;}
+fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32)->f32 {
+    if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
     let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
-    return cloud_erode(sigma,cloud.physical.x,cloud.physical.y,cloud_billow(point,footprint),detail);
+    return cloud_erode(sigma,extinction,cloud.physical.y,cloud_billow(point,footprint),detail);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
@@ -212,7 +212,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let placed = cloud_placed(point, footprint);
         var column=cloud_column(point);
         if column.x+placed.x>0.0 {
-            let sigma=cloud_detail(column.x,point,footprint)+cloud_detail(placed.x,point,footprint);
+            let sigma=cloud_detail(column.x,point,footprint,cloud.physical.x)+placed.x;
             column.y += placed.y;
             column.z += placed.z;
             if sigma>0.0 {

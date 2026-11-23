@@ -409,7 +409,7 @@ impl Field {
             };
             (shape, detail)
         });
-        let erode = |sigma| {
+        let erode = |sigma, extinction| {
             if sigma <= 0.0
                 || extinction <= 0.0
                 || self.profile.erosion == 0.0
@@ -421,7 +421,7 @@ impl Field {
             }
         };
         let column = self.column(air, state.time(), p);
-        let mut sigma = erode(column_density(column, point[1]));
+        let mut sigma = erode(column_density(column, point[1]), extinction);
         let hashed = self.hashed_at(air, state);
         for (shape, selection) in state
             .shapes()
@@ -445,8 +445,9 @@ impl Field {
                 ]) * shape.envelope
                     * self.kind(p.kind).extinction()
             });
-            sigma += erode(volume_sigma) * weight.clamp(0.0, 1.0)
-                + erode(column_sigma) * (1.0 - weight.clamp(0.0, 1.0));
+            let reference_extinction = extinction * selection.map_or(1.0, |_| shape.envelope);
+            sigma += erode(volume_sigma, reference_extinction) * weight.clamp(0.0, 1.0)
+                + erode(column_sigma, reference_extinction) * (1.0 - weight.clamp(0.0, 1.0));
         }
         sigma
     }

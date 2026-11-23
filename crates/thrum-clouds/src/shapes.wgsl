@@ -93,10 +93,17 @@ fn placed_uv(point: vec2<f32>, shape: PlacedInstance) -> vec2<f32> {
     return local / (shape.geometry.x * shape.form.x) + vec2(0.5);
 }
 
-// The single coarse source read made by both routes. Returns un-eroded
-// extinction, vertical optical depth and the two footprint height bounds.
-fn placed_sample(point: vec3<f32>, footprint: f32) -> vec4<f32> {
-    if !placed_inside_bounds(point.xz) { return vec4(0.0); }
+struct PlacedSample {
+    column: vec4<f32>,
+    envelope: f32,
+}
+
+// The common source returns extinction, vertical optical depth, both height
+// bounds and the life envelope. Erosion is relative to the body's extinction
+// at its current envelope, so condensate can fade without crossing a cutoff.
+fn placed_sample(point: vec3<f32>, footprint: f32) -> PlacedSample {
+    let clear = PlacedSample(vec4(0.0), 0.0);
+    if !placed_inside_bounds(point.xz) { return clear; }
     let optical = placed_instances.optical;
     let candidates = placed_candidates(point.xz);
     for (var index = candidates.x; index < candidates.y; index++) {
@@ -126,7 +133,7 @@ fn placed_sample(point: vec3<f32>, footprint: f32) -> vec4<f32> {
             density += weights.y * placed_volume(shape, vec3(uv.x, slab_y, uv.y), level)
                 * shape.form.y * optical.x;
         }
-        return vec4(density, integral, bottom, top);
+        return PlacedSample(vec4(density, integral, bottom, top), shape.form.y);
     }
-    return vec4(0.0);
+    return clear;
 }
