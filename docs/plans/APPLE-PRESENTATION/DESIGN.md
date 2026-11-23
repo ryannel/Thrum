@@ -406,11 +406,12 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 
 ## M4 to M12, settled 14 November 2026
 
-The milestones run in this order: M4, M5, M6, M7, M8, M9, M10, M12, M11. They are the drafted M4 to M11 with one
-change: the drafted M10 was two sessions of work, so it is now M10 (libraries cooked ahead of time, and parallel
-preparation) and M12 (the archive). M11, the paired proof, stays last and keeps its number, because other modules
-name it. The drafts' numbers below are carried as written unless a line says otherwise: none is a performance
-gate.
+See the [plan](PLAN.md) for the build order. M10 cooks libraries ahead of time and prepares pipelines in
+parallel. M12 adds the archive. M11 remains the final paired proof. The parameters below carry forward the
+drafted values unless specified.
+
+Put new native proof arms in `scripts/apple_presentation.py` and browser cases in
+`scripts/check_v1_browser.mjs`. Keep window, Chrome and simulator proofs in milestone or main-branch checks.
 
 ### Extent on three targets (M4)
 
@@ -562,8 +563,8 @@ host's marking of held frames, and the policy that obeys it.
 
 The SDR curve is the engine's `neutral_highlights`: with x the largest channel of the exposed colour, it is the
 identity up to the knee k = 0.76, and above it the peak is `1 − d²/(x + d − k)` with d = 1 − k, with the
-colour drawn toward white by `g = 1/(0.15 (x − peak) + 1)`. The EDR transform is the same function with the
-display's current headroom H in place of 1:
+colour drawn toward white by `g = 1/(0.15 (x − peak) + 1)`. The EDR transform uses the display's current
+headroom H in place of 1 in the shoulder.
 
 ```
 d    = H − k
@@ -572,16 +573,18 @@ out  = mix(peak, colour/x · peak, 1 / (0.15 (x − peak) + 1))
 ```
 
 It passes through the knee with slope 1 for every H, so nothing below the knee changes with headroom. It tends
-to H and never passes it. At H = 1 it is the SDR curve term for term, so one function with H as an argument
-serves both, and the identity is a property of the arithmetic and not a tuned match. Output 1.0 is SDR white.
-The float drawable is written without dither. Against the 8-bit path at H = 1 the only difference is the float
-target's rounding, which is under a tenth of an 8-bit code everywhere, so a frame encoded from the float target
-is within one code of the undithered 8-bit frame: that bound is M6's test.
+to H and never passes it. At H = 1 the EDR curve reduces algebraically to the SDR curve. The ordinary SDR
+path uses the pre-M6 shoulder arithmetic in `crates/thrum-render/src/synthetic/display/neutral_highlights.wgsl`
+and retains its dithered 8-bit encode. The float EDR path uses the headroom-dependent expression. Algebraic
+equivalence at H = 1 permits rounding differences that can change a quantized SDR byte. Output 1.0 is SDR white.
+The float drawable is written without dither. D6.3 checks that at H = 1 a frame encoded from the float
+target is within one code of the undithered 8-bit frame at every pixel.
 
 H is the display record's current headroom, read by the platform and published through an atomic. The present
-pass takes it as a uniform, so a change of H creates nothing. Engine capture's tap reads the float target in
-this mode, so that a capture is the frame the surface was given; what it records in the 8-bit mode is unchanged
-([ruling for seam 6](../ARCHITECTURE.md#interfaces)). The game can read the resolved display mode and H.
+pass takes it as a uniform, so a change of H creates nothing. Both display paths take scene-linear colour
+and exposure from `PreToneInput` in `synthetic/display.rs`. Under seam 6, T2-CAPTURE's engine tap records
+the written float target in EDR and the existing 8-bit stage in SDR. The game can read the resolved display
+mode and H. [Seam 6 ruling](../ARCHITECTURE.md#interfaces)
 
 ### The governor's knobs and state (M7)
 
@@ -644,6 +647,9 @@ second:
    already has. Bytes with no record section behave as in the release. The WGSL path translates and runs as in
    the release: the patch may expose what its translation call already returns, and changes nothing it does.
 2. *The archive (M12)*, below.
+
+The library cook belongs beside CONTENT-LOOP's cooker in `thrum-cook`. Shipping packages exclude it, as
+`scripts/g5_shipping_links.py` checks.
 
 Three techniques, each behind the registry, each kept only if M9's and M12's launch records show it wins:
 
@@ -949,9 +955,8 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | M12 local archive | M10 (the pinned backend) | none |
 | M11 paired proof | M1–M10 and M12, G3t M12 | none |
 
-Under the loop a module's milestones run one at a time, in the order M4, M5, M6, M7, M8, M9, M10, M12, M11, so
-the middle column's waits inside this module are already met when a milestone starts. The only waits on another
-module are `APPLE-TILE:M11` for M8 and `APPLE-TILE:M12` for M11, and both are in the done-when file.
+The loop runs this module's milestones one at a time in [plan order](PLAN.md). The done-when file records
+the outside waits for M8 and M11 on `APPLE-TILE:M11` and `APPLE-TILE:M12`, respectively.
 
 **Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*

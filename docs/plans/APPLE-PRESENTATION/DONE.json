@@ -514,6 +514,23 @@
       "quality_bar": "Dynamic resolution as in a shipped game that hides it well, such as Spider-Man 2 or Forza Horizon 5: the picture softens a little at lower scale and never pops, flashes, shimmers at the step or loses its history. Judged in motion from the running game on the Mac and in Chrome."
     },
     {
+      "id": "M15",
+      "name": "Chrome's SDR valley matches the retained frames again",
+      "status": "not_started",
+      "quality_bar": "Match the registered APPLE-TILE records byte for byte. Meet M6's float headroom and undithered H = 1 identity bounds on Metal.",
+      "items": [
+        {
+          "id": "M15.1",
+          "statement": "Chrome's fixed day SDR route matches all 481 retained record identities and decoded RGBA8 digests, including ordinal 61. The full exact-images matrix passes on main against the registered references.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "ask": "Do the matched Chrome control and corrected captures isolate the SDR shader change and recover all 481 records? Does the landing keep the reference files, registry, capture settings and comparator intact? Do the Metal D6.2 and D6.3 receipts on the corrected shader still meet the float headroom and H = 1 identity bounds?",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M6",
       "name": "Highlights go brighter than SDR white on the built-in XDR display",
       "items": [
