@@ -223,6 +223,7 @@ fn assert_routing(list: &SceneContributions, routed: bool) {
         view_proj: [[0.0; 4]; 4],
         view_uniform_offset: 0,
         camera: [0.0; 3],
+        render_extent: [1, 1],
         generation: 1,
         history_reset: false,
     };
@@ -265,7 +266,10 @@ fn scene_and_list_commit_only_after_the_complete_attempt() {
                     .passes
                     .push(candidate.graph.passes[0].clone());
             }
-            candidate.graph.validate().map_err(FrameError::Scene)?;
+            candidate
+                .graph
+                .validate()
+                .map_err(FrameError::EffectGraph)?;
             Ok((attempt, candidate))
         }));
         assert_eq!(accepted_scene, 9);
