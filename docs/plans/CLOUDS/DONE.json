@@ -761,7 +761,7 @@
     {
       "id": "M18",
       "name": "Small cloud products check Metal and portable limits with headroom",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -773,8 +773,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M18/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M18-review.md"
         }
       ],
       "failed_reviews": 0,

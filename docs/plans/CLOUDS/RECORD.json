@@ -866,7 +866,32 @@
     },
     "M18": {
       "definitions": "de7abd13b3edfa81b85415625170ec7c9266a486889e633683510b489dec9fb7",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "132a4a96c254bcfebb13ade3bdfdfbce9af81cca",
+          "review": ".orchestrate/evidence/CLOUDS/M18-review.md",
+          "items": {
+            "M18.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 61944,
+            "cached": 499968,
+            "output": 2776,
+            "turns": 1
+          },
+          "at": "2026-11-23T16:44:10Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findin",
@@ -900,6 +925,13 @@
           "output": 51435,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "132a4a96c254bcfebb13ade3bdfdfbce9af81cca",
+        "review": ".orchestrate/evidence/CLOUDS/M18-review.md",
+        "checked": "29272be51e08154569aa94c6f9a570461d6c536e",
+        "at": "2026-11-23T16:44:10Z"
       }
     }
   },
