@@ -303,7 +303,7 @@ before. The two rules for how a test is written need nothing built: they bind a 
 
 ## Rules
 - **Exclusive resources:** simulator (the one booted iPhone simulator; an `ios-sim` check takes it)
-- **Shared resources:** gpu: 2, chrome: 1  *(owner, 15 Nov 2026; a Mac GPU run takes `gpu` and a run that starts Chrome takes `chrome`)*
+- **Shared resources:** gpu: 4, chrome: 2  *(lead, 23 Nov 2026, trial for throughput: GPU held 100% and Chrome 82% with 12.7 h and 5.6 h queued over 24 h; owner delegated lock tuning to the lead)*
 - **Lock hold limit:** 30 minutes
 - **Main-branch check exact-images:** `python3 scripts/exact_baselines.py verify --full`; every 4h; lock gpu, chrome; timeout 45m  *(owner, 15 Nov 2026; every 4h from 21 Nov, owner: main-branch checks held the GPU 12.7 h a day and builders waited 6.9 h for it. Accepted risk: a broken exact image is found up to about 4 h after its merge, and bisected. The lead runs `main-check --due` each hour)*
 - **Main-branch check long-tests:** `./dev long-tests`; every 4h; lock gpu; timeout 90m  *(owner, 20 Nov 2026: long tests stay off every merge check; every 4h from 21 Nov, owner, for the same GPU starvation and accepted risk as exact-images)*
