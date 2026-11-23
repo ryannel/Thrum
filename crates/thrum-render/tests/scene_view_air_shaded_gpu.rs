@@ -127,13 +127,13 @@ impl PanelFixture<'_> {
     async fn observe(
         &self,
         scene: SyntheticScene,
-        request: Option<SecondaryViewRequest>,
+        request: Option<&SecondaryViewRequest>,
     ) -> (Host, Arc<Mutex<Control>>) {
         let lighting = light(scene.view.camera_position()[1], self.sun);
         let mut host = host_with_extent(self.cap, self.queue, scene, lighting, self.extent).await;
         let control = if let Some(request) = request {
             let (observer, control) = Observer::new(1);
-            control.lock().expect("control").requests[0] = Some(request);
+            control.lock().expect("control").requests[0] = Some(*request);
             host.set_scene_contribution(Box::new(observer))
                 .expect("view observer");
             control
@@ -358,8 +358,9 @@ async fn check_panels(
 ) -> ([f32; 4], [f32; 4]) {
     let mut scene = crossing.scene();
     crossing.add_caster(&mut scene, fixture.sun, caster);
-    let (mut view_host, view_control) =
-        fixture.observe(scene.clone(), Some(crossing.request)).await;
+    let (mut view_host, view_control) = fixture
+        .observe(scene.clone(), Some(&crossing.request))
+        .await;
     scene.view = crossing.reference;
     let (mut main_host, main_control) = fixture.observe(scene, None).await;
 
