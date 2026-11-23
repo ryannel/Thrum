@@ -35,11 +35,11 @@
         "scripts/compare_v1_pixels.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-valley-fix",
-        "module": "SHOWCASE",
-        "milestone": "M9"
+        "anchor": "ruling-on-native-mip-bias",
+        "module": "APPLE-PRESENTATION",
+        "milestone": "M14"
       },
-      "pin": "da21cbcf64477126e4861df9eb6ffbaab6339b085f4a408087e2f7bb77867ec7"
+      "pin": "5e6bba56479036d5d12f258702fa1172ed3d3d938ff819347d9dc65c55e0c8d9"
     },
     {
       "id": "chrome-day-sdr",

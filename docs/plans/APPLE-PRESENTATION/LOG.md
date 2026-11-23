@@ -281,3 +281,72 @@
 | Seconds | Test |
 |---:|---|
 | 6.131 | `thrum-render synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky` |
+
+- 2026-11-23 APPLE-PRESENTATION M14 refreshed the affected `apple-tile-native` images under the
+  [native mip-bias ruling](../ARCHITECTURE.md#ruling-on-native-mip-bias). Commit `32dfd3c14` restored
+  a −1 material mip bias for native spatial rendering. On Mac Metal, zero bias recovered the old
+  pixels and −1 reproduced the replacement pixels on both recipes for all 30 files below.
+  [Matched captures and qualification](../../../.orchestrate/evidence/APPLE-PRESENTATION/M14/README.md).
+  Paths are relative to `examples/v1-game/tests/fixtures/exact-images/native/`. The SHA-256 values
+  are for the retained files, old → new.
+
+  - `letterbox-bgra8-1/mirror-light-present.png`
+    `9418a8a0b8d942d17670a291b52d0563dbc447bccfb8cc9d699c545c56b531ca` → `08b0b381e68cce570a833a9992eea0c05178db243589b3666aacb8840d427e83`
+  - `letterbox-bgra8-1/mirror-light.surface-bgra8.gz`
+    `1b7849615dd22c2a16782df833a689e6dbc954728950c8a3df04170c7855256a` → `b887390b59751882b5d790c6c0b93e8a67b09c875bf2bfd02a37cc72a1cc9c45`
+  - `letterbox-bgra8-srgb-1/mirror-light-present.png`
+    `9418a8a0b8d942d17670a291b52d0563dbc447bccfb8cc9d699c545c56b531ca` → `08b0b381e68cce570a833a9992eea0c05178db243589b3666aacb8840d427e83`
+  - `letterbox-bgra8-srgb-1/mirror-light.surface-bgra8.gz`
+    `1b7849615dd22c2a16782df833a689e6dbc954728950c8a3df04170c7855256a` → `b887390b59751882b5d790c6c0b93e8a67b09c875bf2bfd02a37cc72a1cc9c45`
+  - `night-linear-off/checkpoint-0.rgba16f.gz`
+    `9f25daa08b386cb7307e35143d8ff87dfbb2f121bd2ca7b92f28f58424858dfb` → `b6f96a68d0e50416efcdd7e3cef6371065751128e3dd3ed32e1770f1122bd29c`
+  - `night-linear/checkpoint-0.rgba16f.gz`
+    `c170503a4e75f023373f0d3747807703015301ba2a4e6a8bd7ccd8a68549f64d` → `04cee25b73b1572fab5923e64911f98b5c794868c554586c1a9fc4b9663b4307`
+  - `night-sdr-off/checkpoint-0.png`
+    `310d19d3d7f228722f78634b0803ee5cadd095eeefa33f13774e63ab6cb65b71` → `7661c2462a5226491caf5575d08f39cde7d0290f66d44ed55cba50477490cae9`
+  - `night-sdr/checkpoint-0.png`
+    `c918b1ce46739396c676484e89ba846276d391d063bf9d6ff6714bc7978ef63c` → `16fcaaca8141bb5ac48bc63e9450e5ec9c54a972066a75eb3359da1b9fa1cfa9`
+  - `scene-linear-1/approach.rgba16f.gz`
+    `ed1453aefb0aace9e0ca0b026455ce8377db9c63dea0e803c774f830dfe133fd` → `e6457ff07fab60120d441e0fae3a7e60d98205c267c28487f6cf5359f4db6db5`
+  - `scene-linear-1/approach.surface-bgra8.gz`
+    `0946edc7a5c34c3c38330c546b0438dec699cdc199748f96b2a1f788b98d9a9d` → `2cd35faec952bdba77acdc888c28aede78898a1a96853652e3710ad1c55e0807`
+  - `scene-linear-1/mirror-light.rgba16f.gz`
+    `fe6e2e48d8ecbe6e9d03c3dc2cd51ea2823721aff798f962e9272c9a6f51427f` → `51f01a26fd9a10f7c656b3f4cfa451abf783a03bcbc55e18ba5dccb847d8f89b`
+  - `scene-linear-1/mirror-light.surface-bgra8.gz`
+    `2a2bef0deb3be8bdcd41b7248b3534e037bb19377b8b89d0ef49e35892b0feb6` → `934a6bdbd6e9c09126ccaf6bad03c13ba91d9483fb5e782b490d2981ce46eef5`
+  - `scene-linear-1/near-plane.rgba16f.gz`
+    `6e8c044b54fc3c254122f56ebf22203559e330c85ff530a8e5cd765df08911a9` → `fbbcdd4378c841f20183e986147e15090bfd712c62fc7821817768ed5597bcc5`
+  - `scene-linear-1/near-plane.surface-bgra8.gz`
+    `f451a7e8e8b9db7f54c21cae8c6f52861ac3841b9c9a3469e44dcd91176facb8` → `0b2eb247720fccedea511a8ac8418f7f05b56f7f3e71388459b248285abc7857`
+  - `scene-linear-1/post-cut.rgba16f.gz`
+    `f0caf5013bd2ca2e22b292cab16040171feea1465561245da308f4dce6fee43d` → `b448b7f6efe8b0c793c97d07022ab28f04f077ab2c5ba1e4d11018fd03e2d942`
+  - `scene-linear-1/post-cut.surface-bgra8.gz`
+    `6d2992b56f96ac0a188da80c446f2bcf37f9d9cad4a6dafe7e53919a8d61159f` → `cd59002d914d1eff1b724dd56658ef6de7409cd15a51cdbacffae73019cd2642`
+  - `scene-linear-1/pre-cut.rgba16f.gz`
+    `29f987dec401a89254cb6233c85db2b0c2eb427f239a91ee7e47cfb6514615d6` → `5bb15f54aabe4d76cbe0554836a63a8ae9fbcf464e7031071772f625390e0577`
+  - `scene-linear-1/pre-cut.surface-bgra8.gz`
+    `59eb99f2d3e91fbc9fabfed2e0c404632b4896e9dfc01e5053ff0147e2229278` → `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244`
+  - `sdr-1/approach.png`
+    `1946ee6a2ac3a879850c92c0a439fbf830dd18bfdf3f2ba56c5859aef2aa9506` → `809ba76fc94bb1a2b46293c5643e4d860336d44638d182af7dcbbbca989411a1`
+  - `sdr-1/approach.surface-bgra8.gz`
+    `0946edc7a5c34c3c38330c546b0438dec699cdc199748f96b2a1f788b98d9a9d` → `2cd35faec952bdba77acdc888c28aede78898a1a96853652e3710ad1c55e0807`
+  - `sdr-1/mirror-light.png`
+    `9a3f08d8fc169349b1f320f22ea4fff8ee388e2ae1acc205ec5ed2ebffd89199` → `74215dfbe907701675d76a0a9fd78bcc62867a5cc558420ba9863ac25163b9eb`
+  - `sdr-1/mirror-light.surface-bgra8.gz`
+    `2a2bef0deb3be8bdcd41b7248b3534e037bb19377b8b89d0ef49e35892b0feb6` → `934a6bdbd6e9c09126ccaf6bad03c13ba91d9483fb5e782b490d2981ce46eef5`
+  - `sdr-1/near-plane.png`
+    `488266a2532964b67d7d1bf469876d20c49bba7345ec46a1fb7a251f4e57e8ed` → `0393da6c4ee20e9cfb9921a174712689284620c803a09f0ccbf621db5a0ebfc1`
+  - `sdr-1/near-plane.surface-bgra8.gz`
+    `f451a7e8e8b9db7f54c21cae8c6f52861ac3841b9c9a3469e44dcd91176facb8` → `0b2eb247720fccedea511a8ac8418f7f05b56f7f3e71388459b248285abc7857`
+  - `sdr-1/post-cut.png`
+    `956a46f9808acb3a458c11a17c795860047d0fe9f794ff43d06edfc7341d7062` → `8b4b7ae010bec957b64079f98ca5afbfe8a3e02b952a581e2d5d908574a28bca`
+  - `sdr-1/post-cut.surface-bgra8.gz`
+    `6d2992b56f96ac0a188da80c446f2bcf37f9d9cad4a6dafe7e53919a8d61159f` → `cd59002d914d1eff1b724dd56658ef6de7409cd15a51cdbacffae73019cd2642`
+  - `sdr-1/pre-cut.png`
+    `8d591edd6eda944dd32b45ce4669200de77b51a3491b2afc2686ad78f79d82fc` → `2b5c8522e79a38c663bcfe3a6da0bbadbe3575d9179ee6e6111c558b808b14c2`
+  - `sdr-1/pre-cut.surface-bgra8.gz`
+    `59eb99f2d3e91fbc9fabfed2e0c404632b4896e9dfc01e5053ff0147e2229278` → `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244`
+  - `sun-linear/checkpoint-0.rgba16f.gz`
+    `7e4d9e816d32e4c19221235e491222477817e69a70f451278a477f0adfdbb31b` → `073c6ac95ed8952597cc97a483e399ed2898b68357dd65782ef6d0e0430e1254`
+  - `sun-sdr/checkpoint-0.png`
+    `37951182b40582a636fba0db65d1b0a81ac169c38a4cfd91d73331b0153c6d75` → `3a69a89679180afe8d8045b917cbf5408a1c41d9d2b7667bbfd494b263f9e005`
