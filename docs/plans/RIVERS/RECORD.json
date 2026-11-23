@@ -513,9 +513,9 @@
         "at": "2026-11-23T12:27:05Z"
       },
       "ready_for_review": {
-        "commit": "18c620eaa3a90d20a842319ce5abe16056f31ddf",
-        "checked": "18c620eaa3a90d20a842319ce5abe16056f31ddf",
-        "at": "2026-11-23T12:48:00Z",
+        "commit": "758b8e06ec205dc67e8a1f875b8ebb7d35120f8f",
+        "checked": "758b8e06ec205dc67e8a1f875b8ebb7d35120f8f",
+        "at": "2026-11-23T12:56:49Z",
         "reused": [
           "Test command",
           "M8.1"
@@ -530,16 +530,16 @@
         "cli": "codex-cli 0.171.0-alpha.13",
         "path": "headless",
         "usage": {
-          "input": 181190,
-          "cached": 12197376,
-          "output": 29730,
+          "input": 124669,
+          "cached": 4765056,
+          "output": 8504,
           "turns": 1
         },
         "session_usage": {
-          "input": 181190,
-          "cached": 12197376,
-          "output": 29730,
-          "turns": 1
+          "input": 305859,
+          "cached": 16962432,
+          "output": 38234,
+          "turns": 2
         }
       }
     }
