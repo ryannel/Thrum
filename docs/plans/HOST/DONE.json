@@ -213,9 +213,9 @@
     {
       "id": "M4",
       "name": "A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "A host API in the manner of winit's `ApplicationHandler` or Bevy's plugins: a game says what it is once, every platform adapter runs it, and nothing platform-shaped leaks into what the game writes.",
@@ -226,8 +226,8 @@
           "check": "cargo test --locked --offline -p thrum-app --test game_contract",
           "ask": "Does any type from winit, AppKit or web-sys appear in what a game implements? Does the sky kit still have a second construction path for the browser? Can the same game value run offscreen and in the window?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/review-fixes/README.md#m41-game-contract-and-offscreen-frame-hooks",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
@@ -238,7 +238,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/review-fixes/README.md#m42-engine-owned-browser-controls",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
@@ -257,8 +257,8 @@
           "statement": "A second game would copy nothing from the first: what is left in `examples/v1-game` is its scenes, rules, controls declaration, camera policy, content and entry points.",
           "ask": "Read the game's library. What would a 2D game with other rules have to copy from it unchanged to run in the window, on the page and in the offscreen driver? Name each item, or say there is none.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/review-fixes/README.md#m44-second-game-through-the-shared-page",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
@@ -298,27 +298,15 @@
       ],
       "findings": [
         {
-          "name": "Offscreen frames skip the hosted game\u2019s frame edits and readback",
-          "item": "M4.1",
-          "repeat": false
-        },
-        {
-          "name": "Window input requires winit\u2019s macOS-only key re-export",
-          "item": "M4.1",
-          "repeat": false
-        },
-        {
-          "name": "Games must export the browser control binding themselves",
-          "item": "M4.2",
-          "repeat": false
-        },
-        {
-          "name": "A second game must rebuild the browser frame and visibility bridge",
+          "name": "Browser recovery controls depend on an optional afterFrame callback",
           "item": "M4.4",
+          "different": "The shared frame and visibility bridge now exists. Its recovery button stays hidden when a page omits the optional afterFrame callback.",
           "repeat": false
         },
         {
-          "name": "A standalone iOS lifecycle check bypasses the simulator lock",
+          "name": "Offscreen and browser device replacement skip the game\u2019s recovery replay",
+          "item": "M4.1",
+          "different": "Normal offscreen frames now apply frame edits and deliver readback, and the shell owns its key type. This defect occurs on publication of a replacement device, when the promised replay is skipped.",
           "repeat": false
         }
       ]

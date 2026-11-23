@@ -460,7 +460,7 @@
         {
           "verdict": "fail",
           "commit": "d63512e26838742cb5a81667bb94052d6ad05862",
-          "review": ".orchestrate/evidence/HOST/M4-review.md",
+          "review": ".orchestrate/evidence/HOST/M4-review-1.md",
           "items": {
             "M4.1": "fail",
             "M4.2": "fail",
@@ -512,6 +512,50 @@
             "turns": 1
           },
           "at": "2026-11-23T15:43:14Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "4b53f13ea44207a5ecbb74b79ce24bbfa792ba06",
+          "review": ".orchestrate/evidence/HOST/M4-review.md",
+          "items": {
+            "M4.1": "fail",
+            "M4.2": "pass",
+            "M4.3": "pass",
+            "M4.4": "fail",
+            "M4.5": "pass",
+            "M4.6": "pass",
+            "M4.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Browser recovery controls depend on an optional afterFrame callback",
+              "item": "M4.4",
+              "different": "The shared frame and visibility bridge now exists. Its recovery button stays hidden when a page omits the optional afterFrame callback.",
+              "repeat": false
+            },
+            {
+              "name": "Offscreen and browser device replacement skip the game\u2019s recovery replay",
+              "item": "M4.1",
+              "different": "Normal offscreen frames now apply frame edits and deliver readback, and the shell owns its key type. This defect occurs on publication of a replacement device, when the promised replay is skipped.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 102349,
+            "cached": 2154624,
+            "output": 7735,
+            "turns": 1
+          },
+          "at": "2026-11-23T17:10:52Z"
         }
       ],
       "authorised": {
