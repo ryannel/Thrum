@@ -594,3 +594,10 @@
   passed in the release long tier on the branch.
   [Fast-tier evidence](../../../.orchestrate/evidence/WATERS/M17/M17.1-2-fast-tier.md).
   [Portable sweep evidence](../../../.orchestrate/evidence/WATERS/M17/M17.3-long-tier.md).
+
+- 2026-11-23 M17's run started with the worktree still carrying M13's local `in_progress` status and evidence
+  from `576a7a69c`. The switch to `build/waters-m17` restored M13's entry from main, so the run's guard reported
+  a change outside M17. M13 on main is `not_started` with open items, as authorized in `896ab42c9` and present
+  at the M17 design review in `1adcbf197`. M13 has no recorded milestone review. Its unmerged progress remains
+  on `build/waters` at `2eda168cb`. Start a new M17 run from `build/waters-m17` so it takes the authorized M13
+  entry as its starting point.
