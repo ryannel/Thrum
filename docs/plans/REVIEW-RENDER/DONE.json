@@ -208,7 +208,7 @@
     {
       "id": "M6",
       "name": "The atmosphere stage registry is checked on a small fixture",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -218,8 +218,8 @@
           "ask": "Does the M6.1 run include every case that replaces the listed regression, and do those cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Which remaining assertions, if any, require a device?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M6/README.md",
           "verdict": "",
           "review": ""
         }

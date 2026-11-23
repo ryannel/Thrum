@@ -74,3 +74,7 @@
   shared prefix and fails on an empty selection. The design names the CPU and prepared-capacity coverage, and
   the item asks the reviewer to confirm that every replacement case ran.
   [Design review](../../../.orchestrate/evidence/REVIEW-RENDER/design-review.md).
+- 2026-11-23 Built M6. The CPU checks all fourteen stage keys, and one prepared Metal scene verifies chart
+  reads, roles, timing buckets and timestamp capacity for SDR and scene-linear targets. Both cases passed
+  the focused run on the first attempt in 0.010 s and 0.354 s, down from the original test's 9.200 s.
+  They passed alone in 0.008 s and 0.039 s. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M6/README.md).
