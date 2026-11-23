@@ -104,7 +104,39 @@
     },
     "M6": {
       "definitions": "24114d314a633bda7faf7920e31d038bac5deb66b6dba88917a4d1cddfaae855",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "725feca84e582d7681a4b63a36614bb8c72bc7fd",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "pass",
+            "M6.4": "pass",
+            "M6.7": "pass",
+            "M6.8": "pass",
+            "M6.5": "pass",
+            "M6.6": "pass",
+            "M6.9": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 138289,
+            "cached": 4577152,
+            "output": 11635,
+            "turns": 1
+          },
+          "at": "2026-11-23T16:25:52Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "ATMOSPHERE M6 needs something no plan provides yet. The builder wrote: Assign the shipped valley fix and authorize the a",
@@ -122,6 +154,13 @@
         "effort": "medium",
         "observed": {},
         "cli": "codex-cli 0.171.0-alpha.13"
+      },
+      "done": {
+        "by": "review",
+        "commit": "725feca84e582d7681a4b63a36614bb8c72bc7fd",
+        "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+        "checked": "37a88e5ceabdca11eb2773a95a0c984d7655319a",
+        "at": "2026-11-23T16:25:52Z"
       }
     },
     "M7": {

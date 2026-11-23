@@ -311,8 +311,8 @@
           "inspect": "Capture the route stops as fixed-time stills and the scrub and pans, including the Ground E pan, with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the moving shadow edge on the authored spur between 17.40 and 17.80 h. The held 17.4 h stop is judged, and the Ground E terrain lip is judged as a brightness step.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/README.md#m61-and-m62-visual-inspection",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -321,8 +321,8 @@
           "inspect": "Capture the same stops and scrub with Chrome fixed-time and real-time capture, TAAU on. Judge the same list, and note any stop where Chrome and the Mac differ in more than texture profile.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/README.md#m61-and-m62-visual-inspection",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -333,8 +333,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/integrated/chrome/environment.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -345,8 +345,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/rebased-metal-stored-pass.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -357,8 +357,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/rebased-metal-stored-pass.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -368,8 +368,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "examples/v1-game/tests/fixtures/atmosphere-route-cost.json; .orchestrate/evidence/ATMOSPHERE/M6/integrated/route-cost-check.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -378,8 +378,8 @@
           "ask": "Do the ledger rows and the build plan's G3s line match the evidence, with the known defects listed and nothing claimed for a physical iPhone?",
           "target": "mac-metal",
           "evidence": "docs/design/maturity.json; docs/plans/BRIEF.md#the-gates; .orchestrate/evidence/ATMOSPHERE/M6/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -390,8 +390,8 @@
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md"
         }
       ],
       "depends_on": [
@@ -401,7 +401,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged."
     },
     {
