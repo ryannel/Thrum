@@ -14,8 +14,9 @@ use crate::{
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
     atmosphere::AtmosphereFrame,
+    error::RenderError,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{SceneFrame, SceneSource},
+    runtime::{FrameError, SceneFrame, SceneSource},
     synthetic::{
         DisplayOverlay, FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene,
         SyntheticView,
@@ -65,7 +66,7 @@ fn frame_view(
     camera_pitch: f32,
     camera_yaw: f32,
     camera: Option<SceneCamera>,
-) -> Result<SyntheticView, String> {
+) -> Result<SyntheticView, RenderError> {
     if let Some(camera) = camera {
         return camera
             .view(extent, camera_pitch, camera_yaw)
@@ -87,7 +88,6 @@ fn frame_view(
         20.0,
     )
     .map(|view| view.with_sdr_tone_map(SdrToneMap::NeutralHighlights))
-    .map_err(|error| format!("live camera: {error:?}"))
 }
 
 /// The flythrough camera with the player's pitch and yaw added to its heading.
@@ -97,7 +97,7 @@ fn field_view(
     extent: [u32; 2],
     camera_pitch: f32,
     camera_yaw: f32,
-) -> Result<SyntheticView, String> {
+) -> Result<SyntheticView, RenderError> {
     let sample = field::camera(tick, alpha);
     let heading = sample.heading + camera_yaw;
     let (pitch_sin, pitch_cos) = camera_pitch.sin_cos();
@@ -120,7 +120,6 @@ fn field_view(
         view.with_sdr_tone_map(SdrToneMap::NeutralHighlights)
             .with_history_epoch(sample.history_epoch)
     })
-    .map_err(|error| format!("field camera: {error:?}"))
 }
 
 /// Share of field instance centres strictly inside the flythrough frustum at
@@ -129,7 +128,9 @@ fn field_view(
 /// Returns an invalid camera.
 #[doc(hidden)]
 pub fn field_in_view_share(tick: u64, extent: [u32; 2]) -> Result<f64, String> {
-    let m = field_view(tick, 1.0, extent, 0.0, 0.0)?.view_proj_columns();
+    let m = field_view(tick, 1.0, extent, 0.0, 0.0)
+        .map_err(|error| error.to_string())?
+        .view_proj_columns();
     let inside = (0..field::ENTITY_COUNT)
         .filter(|index| {
             #[expect(
@@ -149,10 +150,10 @@ pub fn field_in_view_share(tick: u64, extent: [u32; 2]) -> Result<f64, String> {
 
 /// The field's prepared boxes, materials and Sun shadows; no local lights.
 /// With `meshes`, props draw the mixed meshes and every fifth is mirrored.
-fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, String> {
-    let count = u32::try_from(field::ENTITY_COUNT).map_err(|_| "field exceeds u32 slots")?;
-    let mut scene =
-        SyntheticScene::grid(count).map_err(|error| format!("field scene: {error:?}"))?;
+fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, FrameError> {
+    let count = u32::try_from(field::ENTITY_COUNT)
+        .map_err(|_| FrameError::InvalidState("field exceeds u32 slots"))?;
+    let mut scene = SyntheticScene::grid(count)?;
     scene.materials = field::materials()
         .into_iter()
         .map(|material| MaterialRecord {
@@ -178,7 +179,10 @@ fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, String>
         )]
         let position = entity.position.map(|value| value as f32);
         instance.current[3][..3].copy_from_slice(&position);
-        instance.set_material(u32::try_from(entity.material).map_err(|_| "field material row")?);
+        instance.set_material(
+            u32::try_from(entity.material)
+                .map_err(|_| FrameError::InvalidState("field material row"))?,
+        );
         instance.previous = instance.current;
     }
     scene.view = field_view(0, 0.0, extent, 0.0, 0.0)?;
@@ -476,7 +480,7 @@ impl GameScene {
             omit_mirror: omit_mirror(setup.route_overlay),
         }
     }
-    pub(super) fn scene(extent: [u32; 2], setup: GameSetup) -> Result<SyntheticScene, String> {
+    pub(super) fn scene(extent: [u32; 2], setup: GameSetup) -> Result<SyntheticScene, FrameError> {
         let mut scene = match setup.content {
             GameContent::Grid => {
                 let mut scene = Self::grid_scene(extent)?;
@@ -524,19 +528,18 @@ impl GameScene {
         scene.lamp_shadows = setup.lamp_shadows;
         scene.camera_culling = setup.camera_culling;
         if setup.clouds != crate::CloudSelection::Off {
-            scene.sun_optical_depth = Some(
-                thrum_render::atmosphere::SunOpticalDepth::gpu_target(
-                    [crate::clouds::GROUND_SIZE; 2],
-                    1,
-                )
-                .map_err(|e| format!("cloud target: {e:?}"))?,
-            );
+            scene.sun_optical_depth = Some(thrum_render::atmosphere::SunOpticalDepth::gpu_target(
+                [crate::clouds::GROUND_SIZE; 2],
+                1,
+            )?);
         } else if setup.diagnostic_clouds {
             scene.sun_optical_depth = Some(cloud::diagnostic()?);
         }
         if setup.route_overlay != scene::RouteOverlay::Off {
             if setup.content != GameContent::Grid {
-                return Err("the route overlay needs grid content".to_owned());
+                return Err(FrameError::InvalidState(
+                    "the route overlay needs grid content",
+                ));
             }
             apply_route_overlay(&mut scene, setup.route_overlay);
             if setup.route_scale_props {
@@ -544,16 +547,16 @@ impl GameScene {
             }
             #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
             if let Ok(control) = std::env::var("THRUM_G3T_OVERLAY_CONTROL") {
-                g3t_overlay_control(&mut scene, &control)?;
+                g3t_overlay_control(&mut scene, &control).map_err(FrameError::Scene)?;
             }
         }
         Ok(scene)
     }
 
-    fn grid_scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
-        let count = u32::try_from(scene::ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
-        let mut scene =
-            SyntheticScene::grid(count).map_err(|error| format!("synthetic scene: {error:?}"))?;
+    fn grid_scene(extent: [u32; 2]) -> Result<SyntheticScene, FrameError> {
+        let count = u32::try_from(scene::ENTITY_COUNT)
+            .map_err(|_| FrameError::InvalidState("fixture exceeds u32 slots"))?;
+        let mut scene = SyntheticScene::grid(count)?;
         scene.materials[0].base_rgba = [0.18, 0.18, 0.18, 1.0];
         scene.materials[0].surface = [1.0, 1.0, 0.0, 1.0];
         scene.materials.push(MaterialRecord {
@@ -615,8 +618,8 @@ impl SceneSource<PublishedPage> for GameScene {
         source: SourceTick,
         alpha: f32,
         extent: [u32; 2],
-    ) -> Result<thrum_render::sprite::SpriteFrame<'_>, String> {
-        let scale = self.sprite_scale.ok_or("sprite scene is not selected")?;
+    ) -> Result<thrum_render::sprite::SpriteFrame<'_>, FrameError> {
+        let scale = self.sprite_scale.ok_or(RenderError::MissingSpriteSource)?;
         Ok(if let Some(probe) = &self.sprite_probe {
             probe.frame(source, alpha, extent)
         } else if self.sprite_rows.is_some() {
@@ -674,7 +677,7 @@ impl SceneSource<PublishedPage> for GameScene {
         alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         let temporal_yaw = if self.temporal_inputs && source.tick >= self.temporal_pan.0 {
             self.temporal_pan.1
         } else {
@@ -685,7 +688,8 @@ impl SceneSource<PublishedPage> for GameScene {
         let view = if let Some((route, camera)) = routed {
             let pose = route.pose(source.tick, alpha);
             camera
-                .at(pose.eye)?
+                .at(pose.eye)
+                .map_err(FrameError::Scene)?
                 .view(extent, pose.pitch, pose.yaw)?
                 .with_sdr_tone_map(SdrToneMap::NeutralHighlights)
                 .with_history_epoch(pose.epoch)
@@ -734,8 +738,7 @@ impl SceneSource<PublishedPage> for GameScene {
             view.with_celestial_epoch(u64::from(
                 self.temporal_inputs && source.tick >= self.temporal_star_edit,
             ))
-            .with_celestial_basis(sun.equatorial_to_world)
-            .map_err(|error| format!("celestial view: {error:?}"))?
+            .with_celestial_basis(sun.equatorial_to_world)?
         } else {
             view
         };
@@ -746,8 +749,7 @@ impl SceneSource<PublishedPage> for GameScene {
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(1.0 / 16_000.0)
             }
-        }
-        .map_err(|error| format!("view exposure: {error:?}"))?;
+        }?;
         Ok(SceneFrame { view, lighting })
     }
 }
@@ -920,6 +922,36 @@ mod tests {
             format!("{:?}", on.local_lights[0]),
             format!("{:?}", super::ROUTE_OVERLAY_LIGHT)
         );
+    }
+
+    #[test]
+    fn rejected_camera_keeps_the_renderer_cause() {
+        use std::error::Error;
+        use thrum_render::{error::RenderError, runtime::FrameError};
+        let source = SourceTick {
+            epoch: 1,
+            tick: 0,
+            timeline: 0,
+        };
+        for content in [scene::GameContent::Grid, scene::GameContent::Field] {
+            let policy = GameScene::new(crate::GameSetup {
+                content,
+                ..Default::default()
+            });
+            let Err(error) = policy.frame(source, 0.0, [0, 480], None) else {
+                panic!("zero-width camera accepted");
+            };
+            assert!(matches!(
+                error,
+                FrameError::Render(RenderError::InvalidView)
+            ));
+            assert!(matches!(
+                error
+                    .source()
+                    .and_then(|cause| cause.downcast_ref::<RenderError>()),
+                Some(RenderError::InvalidView)
+            ));
+        }
     }
 
     #[test]

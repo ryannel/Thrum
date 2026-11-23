@@ -20,7 +20,7 @@ use thrum_render::{
         EffectGraph, EffectPass, SceneContribution, SceneDrawStage, SceneSurface,
         SpriteContributionSurface,
     },
-    runtime::{FrameHost, SceneKind, SpriteSceneRequests, SurfaceOutput},
+    runtime::{FrameError, FrameHost, SceneKind, SpriteSceneRequests, SurfaceOutput},
     sprite::{SpriteRect, SpriteRow, SpriteScene},
     synthetic::{CaptureSource, CullMode, Reconstruction},
 };
@@ -486,10 +486,10 @@ impl SceneContribution for Contribution {
     fn draw_stages(&self) -> Vec<SceneDrawStage> {
         self.stage.into_iter().collect()
     }
-    fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), FrameError> {
         panic!("called 3D rebuild")
     }
-    fn rebuild_2d(&mut self, surface: &SpriteContributionSurface<'_>) -> Result<(), String> {
+    fn rebuild_2d(&mut self, surface: &SpriteContributionSurface<'_>) -> Result<(), FrameError> {
         self.actions
             .lock()
             .expect("contribution log is not poisoned")

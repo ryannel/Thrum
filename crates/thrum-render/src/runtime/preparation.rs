@@ -59,7 +59,7 @@ pub(super) fn rebuild_3d_contribution(
         if attaching {
             contribution.rebuild_for_attachment(&surface)?;
         } else {
-            contribution.rebuild(&surface).map_err(FrameError::Scene)?;
+            contribution.rebuild(&surface)?;
         }
         let graph = contribution.effect_graph();
         graph.validate().map_err(FrameError::EffectGraph)?;

@@ -17,7 +17,10 @@ impl SceneContribution for Borrow {
             compute: false,
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         *self.0.lock().expect("observer") = surface.environment_products();
         Ok(())
     }

@@ -39,7 +39,7 @@ impl SceneCamera {
             near,
             far,
         )
-        .map_err(|error| format!("scene camera: {error:?}"))?;
+        .map_err(|error| error.to_string())?;
         let forward = std::array::from_fn::<_, 3, _>(|axis| target[axis] - eye[axis]);
         let horizontal = forward[0].hypot(forward[2]);
         let focus_distance = horizontal.hypot(forward[1]);
@@ -93,7 +93,7 @@ impl SceneCamera {
         extent: [u32; 2],
         pitch: f32,
         yaw: f32,
-    ) -> Result<SyntheticView, String> {
+    ) -> Result<SyntheticView, thrum_render::error::RenderError> {
         let (sin_pitch, cos_pitch) = pitch.sin_cos();
         let (sin_yaw, cos_yaw) = yaw.sin_cos();
         let direction = [cos_pitch * sin_yaw, sin_pitch, -cos_pitch * cos_yaw];
@@ -108,7 +108,6 @@ impl SceneCamera {
             self.near,
             self.far,
         )
-        .map_err(|error| format!("scene camera: {error:?}"))
     }
 }
 

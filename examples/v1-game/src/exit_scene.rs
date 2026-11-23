@@ -69,10 +69,9 @@ pub(crate) fn layout() -> &'static Layout {
     })
 }
 
-pub(crate) fn scene() -> Result<SyntheticScene, String> {
+pub(crate) fn scene() -> Result<SyntheticScene, thrum_render::error::RenderError> {
     let count = u32::try_from(ENTITY_COUNT).expect("exit scene slot count");
-    let mut scene =
-        SyntheticScene::grid(count).map_err(|error| format!("exit scene: {error:?}"))?;
+    let mut scene = SyntheticScene::grid(count)?;
     let palette = [
         [
             [0.26, 0.173, 0.106],

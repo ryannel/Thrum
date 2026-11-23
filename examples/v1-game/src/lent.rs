@@ -161,7 +161,10 @@ impl SceneContribution for LentDiagnostic {
         }
     }
 
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         self.device = Some(surface.device.clone());
         self.bindings.clear();
         self.committed.clear();

@@ -9,7 +9,7 @@ use thrum_render::{
     atmosphere::{AtmosphereFrame, SunOpticalDepth},
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource},
+    runtime::{FrameConfig, FrameError, FrameHost, FrameWorld, SceneFrame, SceneSource},
     synthetic::{FrameLighting, SyntheticScene, SyntheticView},
 };
 
@@ -33,7 +33,7 @@ impl FrameWorld for World {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, FrameError> {
         Ok(WorldAdvance {
             tick: 0,
             overload: None,
@@ -46,7 +46,7 @@ impl FrameWorld for World {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
@@ -85,7 +85,7 @@ impl SceneSource<SourceTick> for Source {
         _: f32,
         _: [u32; 2],
         light: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.view,
             lighting: light.unwrap_or(self.light),

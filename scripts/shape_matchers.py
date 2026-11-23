@@ -12,7 +12,7 @@ import tomllib
 RULES = {
     "test-crate-edges": (1, "tests", "use support only in dev-dependencies and fixtures normally only in the proving ground"),
     "evidence-size": (1, "evidence", "the merge refuses any new or changed file under the tracked evidence folder: write run records to the working folder, .orchestrate/evidence/<MODULE>/, keep bulk captures in tmp/<task>/, or keep the bytes in the local store with python3 scripts/evidence_store.py put SOURCE --path <logical path> and commit only .config/evidence-manifest.json; read docs/ASSET-LIFECYCLE.md (local store only, no remote backup)"),
-    "string-errors": (4, "errors", "return a boundary error enum implementing Display and Error"),
+    "string-errors": (5, "errors", "return a boundary error enum implementing Display and Error"),
     "package-reach": (1, "crossing-crate-boundaries", "use a public package API or registered shared fixture package"),
     "path-attribute": (1, "tests", "use the normal module tree (foo.rs and foo/)"),
     "library-env": (2, "configuration", "parse settings at the process edge and pass typed values to the library"),
@@ -170,14 +170,32 @@ def readback_sites(code, relative=""):
             yield match.start()
 
 
+def public_function_headers(code):
+    modifiers = r'(?:(?:async|unsafe|const|extern)\s+)*'
+    function = r'\b' + modifiers + r'fn\s+\w+'
+    yield from re.finditer(r'\bpub\s+' + modifiers + r'fn\s+\w+', code)
+    # Trait methods inherit the visibility of their public trait. Scan only
+    # top-level headers so local helpers in a default body stay private.
+    for trait in re.finditer(r'\bpub\s+(?:(?:unsafe|auto)\s+)*trait\s+\w+[^{};]*\{', code):
+        depth = 1
+        for token in re.compile(r'[{}]|' + function).finditer(code, trait.end()):
+            if token[0] == "{":
+                depth += 1
+            elif token[0] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            elif depth == 1:
+                yield token
+
+
 def public_returns(code):
     """Find the return arrow outside a public function's parameters/generics.
 
     Semicolons in arrays and braces in const generics are part of the type,
     while a body or declaration without a return arrow ends the search.
     """
-    prefix = r'\bpub\s+(?:(?:async|unsafe|const|extern)\s+)*fn\s+\w+'
-    for function in re.finditer(prefix, code):
+    for function in public_function_headers(code):
         angle = paren = bracket = brace = 0
         index = function.end()
         while index < len(code):

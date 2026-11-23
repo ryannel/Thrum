@@ -140,7 +140,7 @@ impl FrameWorld for StaticWorld {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, crate::runtime::FrameError> {
         Ok(WorldAdvance {
             tick: self.authority.tick,
             overload: None,
@@ -153,7 +153,7 @@ impl FrameWorld for StaticWorld {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, crate::runtime::FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(self.publication.epoch),
@@ -198,10 +198,12 @@ impl SceneSource<SourceTick> for StaticScene {
         _alpha: f32,
         _extent: [u32; 2],
         _lighting: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, crate::runtime::FrameError> {
         self.frames.set(self.frames.get() + 1);
         if self.fail_next.replace(false) {
-            return Err("presentation policy refused this sample".to_owned());
+            return Err(super::FrameError::Scene(
+                "presentation policy refused this sample".to_owned(),
+            ));
         }
         let mut light = SyntheticLight::default();
         if self.invalid_lighting.get() {

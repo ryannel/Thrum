@@ -238,11 +238,11 @@ fn admission_bounds_buckets_ranges_and_device_limits() {
     );
     assert_eq!(
         Buckets::new([ordinary], 1_000, tight(5_020, 4)).err(),
-        Some(BucketError::DeviceLimit)
+        Some(BucketError::StorageLimit)
     );
     assert_eq!(
         Buckets::new([ordinary], 1_000, tight(5_024, 3)).err(),
-        Some(BucketError::DeviceLimit)
+        Some(BucketError::DispatchLimit)
     );
 }
 

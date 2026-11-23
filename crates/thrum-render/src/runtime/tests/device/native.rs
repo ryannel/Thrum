@@ -449,6 +449,22 @@ fn metal_native_two_slots_select_submitted_history_before_completion() {
                 },
             )
             .await;
+            let held = host.slots[0]
+                .target
+                .three_d()
+                .unwrap()
+                .reserve_native(false)
+                .unwrap()
+                .expect("native witness reservation");
+            let Err(error) = host.advance(Duration::ZERO).unwrap().encode_scene() else {
+                panic!("encoded with an outstanding native reservation");
+            };
+            assert!(matches!(
+                error,
+                FrameError::Render(crate::error::RenderError::NativeCandidateReserved)
+            ));
+            drop(held);
+
             host.enable_submitted_capture_from(
                 1,
                 CaptureLimits::default(),

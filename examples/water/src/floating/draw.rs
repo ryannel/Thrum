@@ -63,13 +63,24 @@ impl SceneContribution for Draw {
         }
     }
 
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         let device = surface.device;
         let mut vertices = Vec::new();
         craft(&mut vertices);
-        let split = u32::try_from(vertices.len()).map_err(|e| e.to_string())?;
+        let split = u32::try_from(vertices.len()).map_err(|_| {
+            thrum_render::runtime::FrameError::InvalidState(
+                "floating mesh exceeds the vertex index range",
+            )
+        })?;
         float(&mut vertices);
-        let end = u32::try_from(vertices.len()).map_err(|e| e.to_string())?;
+        let end = u32::try_from(vertices.len()).map_err(|_| {
+            thrum_render::runtime::FrameError::InvalidState(
+                "floating mesh exceeds the vertex index range",
+            )
+        })?;
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("floating craft and buoys"),
             source: wgpu::ShaderSource::Wgsl(

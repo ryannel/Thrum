@@ -52,7 +52,10 @@ impl StarPrepared {
     ) -> Result<Self, RenderError> {
         let count = u32::try_from(records.len()).map_err(|_| RenderError::StarTableCapacity)?;
         let bytes = u64::from(count) * 16;
-        if count == 0 || bytes > max_storage_bytes {
+        if count == 0 {
+            return Err(RenderError::EmptyStarTable);
+        }
+        if bytes > max_storage_bytes {
             return Err(RenderError::StarTableCapacity);
         }
         for &[x, y, z, lux] in records {

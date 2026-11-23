@@ -160,15 +160,21 @@ impl SceneContribution for Effect {
             compute: false,
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         if self.generation == surface.generation {
             return Ok(());
         }
         self.generation = surface.generation;
-        let gpu = Gpu::new(surface, &self.effect_graph(), &self.handle)?;
+        let gpu = Gpu::new(surface, &self.effect_graph(), &self.handle)
+            .map_err(thrum_render::runtime::FrameError::Scene)?;
         self.handle
             .lock()
-            .map_err(error)?
+            .map_err(|_| {
+                thrum_render::runtime::FrameError::InvalidState("compute effect state unavailable")
+            })?
             .state
             .rebuild(surface.generation, 1);
         self.gpu = Some(gpu);

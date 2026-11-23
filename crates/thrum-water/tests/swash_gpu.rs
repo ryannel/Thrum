@@ -13,7 +13,9 @@ use thrum_render::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
-    runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource, SurfaceOutput},
+    runtime::{
+        FrameConfig, FrameError, FrameHost, FrameWorld, SceneFrame, SceneSource, SurfaceOutput,
+    },
     synthetic::{
         FrameLighting, OUTPUT_FORMAT, SyntheticMesh, SyntheticMeshChoice, SyntheticMeshes,
         SyntheticScene, SyntheticVertex, SyntheticView,
@@ -58,7 +60,7 @@ impl FrameWorld for Clock {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError> {
         self.now = now;
         let next =
             u64::try_from(now.as_nanos() / self.tick_duration().as_nanos()).expect("short test");
@@ -76,7 +78,7 @@ impl FrameWorld for Clock {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
@@ -122,7 +124,7 @@ impl SceneSource<SourceTick> for Source {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.view,
             lighting: self.lighting,

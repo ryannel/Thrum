@@ -1,7 +1,7 @@
 //! Analytic shade stand-in for qualifying the atmosphere handoff, opt-in only.
 use thrum_render::atmosphere::SunOpticalDepth;
 
-pub(super) fn diagnostic() -> Result<SunOpticalDepth, String> {
+pub(super) fn diagnostic() -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
     const SIZE: u32 = 1024;
     const HALF_WIDTH: f32 = 32_768.0;
     let mut tau = Vec::with_capacity((SIZE * SIZE) as usize);
@@ -23,5 +23,4 @@ pub(super) fn diagnostic() -> Result<SunOpticalDepth, String> {
         1,
     )
     .and_then(|field| field.with_drift([160.0, 40.0]))
-    .map_err(|error| format!("diagnostic cloud shade: {error:?}"))
 }

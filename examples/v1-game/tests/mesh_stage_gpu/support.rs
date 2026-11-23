@@ -23,8 +23,8 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
-        CaptureLimits, FrameConfig, FrameHost, FrameSample, FrameWorld, SceneFrame, SceneSource,
-        SurfaceOutput,
+        CaptureLimits, FrameConfig, FrameError, FrameHost, FrameSample, FrameWorld, SceneFrame,
+        SceneSource, SurfaceOutput,
     },
     synthetic::{
         CaptureSource, FrameLighting, PhotometricEnvironment, SyntheticScene, SyntheticView,
@@ -59,7 +59,7 @@ impl FrameWorld for World {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, FrameError> {
         Ok(WorldAdvance {
             tick: 0,
             overload: None,
@@ -72,7 +72,7 @@ impl FrameWorld for World {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
@@ -107,7 +107,7 @@ impl SceneSource<SourceTick> for Source {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: *self.0.lock().expect("view"),
             lighting: self.1,
@@ -462,7 +462,7 @@ impl SceneContribution for SelectionView {
         }
     }
 
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         self.slot = Some(surface.secondary_views[0].clone());
         Ok(())
     }

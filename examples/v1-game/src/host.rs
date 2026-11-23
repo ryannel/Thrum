@@ -340,7 +340,7 @@ impl GameSetup {
             .await?;
             return Ok(inner);
         }
-        let mut scene = GameScene::scene(config.render_extent, setup).map_err(FrameError::Scene)?;
+        let mut scene = GameScene::scene(config.render_extent, setup)?;
         #[cfg(not(target_arch = "wasm32"))]
         let rows = if rows.is_none() && setup.cooked_mesh_rows == MeshRowSource::Cooked {
             Some(
@@ -372,11 +372,7 @@ impl GameSetup {
         )));
         let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky)?;
         if let Some(shade) = &shade {
-            scene.sun_optical_depth = Some(
-                shade
-                    .provider()
-                    .map_err(|error| FrameError::Scene(format!("cloud provider: {error:?}")))?,
-            );
+            scene.sun_optical_depth = Some(shade.provider()?);
         }
         let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
         let mut source = GameScene::new(setup);

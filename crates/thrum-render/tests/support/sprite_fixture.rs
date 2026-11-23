@@ -10,7 +10,7 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
-        CaptureLimits, FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource,
+        CaptureLimits, FrameConfig, FrameError, FrameHost, FrameWorld, SceneFrame, SceneSource,
         SpriteSceneRequests, SubmittedImage, SurfaceOutput,
     },
     sprite::{
@@ -95,7 +95,7 @@ impl FrameWorld for World {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, FrameError> {
         self.tick += u64::from(self.running);
         Ok(WorldAdvance {
             tick: self.tick,
@@ -109,7 +109,7 @@ impl FrameWorld for World {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
@@ -169,7 +169,7 @@ impl SceneSource<SourceTick> for Scene {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.view,
             lighting: self.lighting.expect("2D host sampled the 3D camera"),
@@ -184,7 +184,12 @@ impl SceneSource<SourceTick> for Scene {
             }
         }
     }
-    fn sprites(&self, _: SourceTick, _: f32, extent: [u32; 2]) -> Result<SpriteFrame<'_>, String> {
+    fn sprites(
+        &self,
+        _: SourceTick,
+        _: f32,
+        extent: [u32; 2],
+    ) -> Result<SpriteFrame<'_>, FrameError> {
         let pixels_per_unit = self.scale;
         let [x, y] = extent.map(|side| f64::from(side % 2) / (2.0 * f64::from(pixels_per_unit)));
         Ok(SpriteFrame {

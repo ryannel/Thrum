@@ -28,12 +28,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             ));
         }
         graph.validate().map_err(FrameError::EffectGraph)?;
-        contribution
-            .rebuild_2d(&SpriteContributionSurface {
-                capabilities: &prepared.capabilities,
-                queue: &self.queue,
-            })
-            .map_err(FrameError::Scene)?;
+        contribution.rebuild_2d(&SpriteContributionSurface {
+            capabilities: &prepared.capabilities,
+            queue: &self.queue,
+        })?;
         check_stages(contribution)?;
         let graph = contribution.effect_graph();
         if !graph.after_opaque.is_empty() {
@@ -93,8 +91,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         let sprites = self
             .source
-            .sprites(frame.source, frame.presentation_alpha, target.extent)
-            .map_err(FrameError::Scene)?;
+            .sprites(frame.source, frame.presentation_alpha, target.extent)?;
         if let Some(entry) = self.contribution.as_mut() {
             entry.commit_quality_knobs();
         }
@@ -165,7 +162,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         readback: bool,
     ) -> Result<(Option<PixelReadback>, wgpu::SubmissionIndex), FrameError> {
         let source = self.world.source();
-        let snapshot = self.world.publication().map_err(FrameError::World)?;
+        let snapshot = self.world.publication()?;
         if super::publication_source(&snapshot) != source {
             return Err(FrameError::InvalidState(
                 "capture publication is not current",
@@ -181,10 +178,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let mut target =
             SpriteTarget::prepare(prepared, self.render_extent, CaptureSource::Sdr, None)
                 .map_err(|error| FrameError::gpu("capture sprite target", error))?;
-        let frame = self
-            .source
-            .sprites(source, 1.0, target.extent)
-            .map_err(FrameError::Scene)?;
+        let frame = self.source.sprites(source, 1.0, target.extent)?;
         let upload = prepared
             .upload(&self.queue, &mut target, frame, 1.0, false)
             .map_err(|error| FrameError::gpu("capture sprite update", error))?;

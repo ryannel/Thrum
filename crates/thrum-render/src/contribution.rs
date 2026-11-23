@@ -474,8 +474,13 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     /// Prepare generation-bound upload/simulate resources for a sprite scene.
     /// # Errors
     /// Refuses a contribution that cannot prepare with the supplied capabilities.
-    fn rebuild_2d(&mut self, _surface: &SpriteContributionSurface<'_>) -> Result<(), String> {
-        Err("contribution does not support 2D preparation".into())
+    fn rebuild_2d(
+        &mut self,
+        _surface: &SpriteContributionSurface<'_>,
+    ) -> Result<(), crate::runtime::FrameError> {
+        Err(crate::runtime::FrameError::Render(
+            crate::error::RenderError::UnsupportedSpriteContribution,
+        ))
     }
 
     /// Offer every opaque placement this contribution holds for this recording,
@@ -612,7 +617,7 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     /// # Errors
     /// A description of why this contribution cannot draw into the surface; the host then
     /// detaches it and leaves the scene unchanged.
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String>;
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), crate::runtime::FrameError>;
 
     /// Prepare resources during explicit host attachment, retaining a classified failure
     /// when the contribution can distinguish scene input from GPU preparation.
@@ -623,7 +628,6 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
         surface: &SceneSurface<'_>,
     ) -> Result<(), crate::runtime::FrameError> {
         self.rebuild(surface)
-            .map_err(crate::runtime::FrameError::Scene)
     }
 
     /// Record tentative bounded copies in the `contribution upload` pass.

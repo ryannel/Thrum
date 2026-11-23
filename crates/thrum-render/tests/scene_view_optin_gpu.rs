@@ -24,7 +24,10 @@ struct Calls {
 struct MainOnly(Arc<Calls>);
 
 impl SceneContribution for MainOnly {
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         assert!(surface.secondary_surfaces.is_empty());
         assert!(surface.secondary_views.is_empty());
         self.0.prepared.fetch_add(1, Ordering::Relaxed);

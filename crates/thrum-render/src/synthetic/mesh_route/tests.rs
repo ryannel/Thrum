@@ -436,3 +436,34 @@ fn frustum_buckets_follow_a_growing_member_list() {
     assert!(drawn.expect("counts") > 500);
     assert_eq!(differing(&reference, &culled), 0);
 }
+
+#[test]
+fn bucket_admission_preserves_storage_and_dispatch_refusals() {
+    use super::{BucketKey, Buckets, PipelineClass, RenderError, bucket_error};
+    use crate::synthetic::buckets::BucketLimits;
+
+    let key = BucketKey {
+        mesh: MeshId::CUBE,
+        class: PipelineClass::Ordinary,
+    };
+    let admit = |max_storage_binding, max_workgroups| {
+        Buckets::new(
+            [key],
+            1_000,
+            BucketLimits {
+                max_storage_binding,
+                max_workgroups,
+            },
+        )
+        .map_err(bucket_error)
+    };
+    assert!(admit(5_024, 4).is_ok());
+    assert!(matches!(
+        admit(5_020, 4),
+        Err(RenderError::BucketStorageLimit)
+    ));
+    assert!(matches!(
+        admit(5_024, 3),
+        Err(RenderError::BucketDispatchLimit)
+    ));
+}

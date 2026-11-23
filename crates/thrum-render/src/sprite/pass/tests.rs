@@ -69,3 +69,29 @@ fn sprite_abi_matches_wgsl_layout() {
         );
     }
 }
+
+#[test]
+fn sprite_row_admission_reports_the_actual_refusal() {
+    use super::{RenderError, row_storage};
+
+    let row_bytes = size_of::<GpuRow>() as u64;
+    assert_eq!(row_storage(0, 1, row_bytes).unwrap(), (1, row_bytes));
+
+    let empty = row_storage(0, 0, row_bytes).unwrap_err();
+    assert!(matches!(empty, RenderError::EmptySpriteRowCapacity));
+    assert_eq!(empty.to_string(), "Sprite scene requires at least one row");
+
+    let storage = row_storage(1, 1, row_bytes).unwrap_err();
+    assert!(matches!(storage, RenderError::SpriteRowStorageLimit));
+    assert_eq!(
+        storage.to_string(),
+        "Sprite rows exceed device storage capacity"
+    );
+
+    let count = row_storage(u32::MAX, 1, u64::MAX).unwrap_err();
+    assert!(matches!(count, RenderError::SpriteRowCapacity));
+    assert_eq!(
+        count.to_string(),
+        "Sprite row count exceeds the supported range"
+    );
+}

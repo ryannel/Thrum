@@ -366,14 +366,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         self.presentation_alpha(),
                         extent,
                         self.visual_lighting,
-                    )
-                    .map_err(FrameError::Scene)?
+                    )?
                     .view,
             )
         } else {
             self.source
-                .sprites(self.world.source(), self.presentation_alpha(), extent)
-                .map_err(FrameError::Scene)?
+                .sprites(self.world.source(), self.presentation_alpha(), extent)?
                 .view
                 .clip_scale(extent)
                 .map_err(FrameError::Render)?;

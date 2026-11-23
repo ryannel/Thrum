@@ -5,7 +5,7 @@ use thrum_render::{
     abi::InstanceRecord,
     atmosphere::AtmosphereFrame,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{SceneFrame, SceneSource},
+    runtime::{FrameError, SceneFrame, SceneSource},
     synthetic::{
         CullMode, FrameLighting, SyntheticMeshChoice, SyntheticMeshes, SyntheticScene,
         SyntheticView,
@@ -47,7 +47,7 @@ impl SceneSource<SourceTick> for Source {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.frame.view,
             lighting: self.frame.lighting,

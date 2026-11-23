@@ -552,7 +552,10 @@ impl SceneContribution for Veil {
     fn passes(&self) -> crate::contribution::ContributionPasses {
         crate::contribution::ContributionPasses::default()
     }
-    fn rebuild(&mut self, surface: &crate::contribution::SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &crate::contribution::SceneSurface<'_>,
+    ) -> Result<(), crate::runtime::FrameError> {
         let device = surface.device;
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("veil"),

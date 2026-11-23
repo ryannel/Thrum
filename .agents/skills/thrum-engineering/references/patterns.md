@@ -27,7 +27,7 @@ Contents: [Errors](#errors) Â· [Data shared with WGSL](#data-shared-with-wgsl) Â
 
 ## Errors
 
-Rule: `string-errors` refuses a public `pub fn` returning `Result<_, String>`, including multiline returns.
+Rule: `string-errors` refuses `Result<_, String>` on public functions and methods of public traits, including multiline returns.
 
 **Shape.** Each public boundary has one error enum. `crates/thrum-asset/src/error.rs` is the model:
 

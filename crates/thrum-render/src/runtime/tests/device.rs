@@ -23,7 +23,7 @@ impl SceneSource<SourceTick> for Policy {
         _: SourceTick,
         _: f32,
         _: [u32; 2],
-    ) -> Result<crate::sprite::SpriteFrame<'_>, String> {
+    ) -> Result<crate::sprite::SpriteFrame<'_>, FrameError> {
         const ROWS: [crate::sprite::SpriteRow; 1] = [crate::sprite::SpriteRow::new(0, [0.0; 2])];
         Ok(crate::sprite::SpriteFrame {
             view: crate::sprite::SpriteView {
@@ -48,7 +48,7 @@ impl SceneSource<SourceTick> for Policy {
         _alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         self.last_override.set(lighting.is_some());
         let view = SyntheticView::perspective(
             [self.camera, 0.0, 2.0],
@@ -58,8 +58,7 @@ impl SceneSource<SourceTick> for Policy {
             extent[0] as f32 / extent[1] as f32,
             0.1,
             20.0,
-        )
-        .map_err(|error| format!("test camera: {error:?}"))?;
+        )?;
         let lighting = lighting.unwrap_or_else(|| {
             if self.atmosphere {
                 FrameLighting::Atmosphere(
@@ -455,7 +454,7 @@ mod metal {
         fn passes(&self) -> crate::contribution::ContributionPasses {
             crate::contribution::ContributionPasses::default()
         }
-        fn rebuild(&mut self, _: &crate::contribution::SceneSurface<'_>) -> Result<(), String> {
+        fn rebuild(&mut self, _: &crate::contribution::SceneSurface<'_>) -> Result<(), FrameError> {
             Ok(())
         }
         fn encode_upload(
@@ -1388,9 +1387,14 @@ impl crate::contribution::SceneContribution for RecoveryContribution {
         self.passes
     }
 
-    fn rebuild(&mut self, surface: &crate::contribution::SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &crate::contribution::SceneSurface<'_>,
+    ) -> Result<(), FrameError> {
         if self.refused_generation == Some(surface.generation) {
-            return Err("fixture refuses the replacement device".to_owned());
+            return Err(FrameError::Scene(
+                "fixture refuses the replacement device".to_owned(),
+            ));
         }
         Ok(())
     }

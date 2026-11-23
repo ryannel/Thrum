@@ -104,7 +104,10 @@ impl SceneContribution for PoolWitness {
     fn passes(&self) -> ContributionPasses {
         self.pool.passes()
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         let slot = surface.secondary_views.first().expect("pool slot");
         assert_eq!(slot.maximum_extent(), self.extent);
         self.slot = Some(slot.clone());

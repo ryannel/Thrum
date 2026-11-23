@@ -309,11 +309,13 @@ impl SceneContribution for Water {
             compute: false,
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        let map = self
-            .map
-            .lock()
-            .map_err(|_| WaterError::UnavailableMap.to_string())?;
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        let map = self.map.lock().map_err(|_| {
+            thrum_render::runtime::FrameError::Scene(WaterError::UnavailableMap.to_string())
+        })?;
         let (interaction, foam, foam_pattern_invalidations) = {
             let report = self.report.lock().expect("water report");
             (
@@ -322,18 +324,21 @@ impl SceneContribution for Water {
                 report.foam_pattern_invalidations,
             )
         };
-        self.prepared = Some(prepare::new(
-            surface,
-            self.profile,
-            &map,
-            self.mapped,
-            self.query.clone(),
-            self.interaction.clone(),
-            interaction,
-            self.foam
-                .clone()
-                .map(|whitewater| (whitewater, foam.unwrap_or_default())),
-        )?);
+        self.prepared = Some(
+            prepare::new(
+                surface,
+                self.profile,
+                &map,
+                self.mapped,
+                self.query.clone(),
+                self.interaction.clone(),
+                interaction,
+                self.foam
+                    .clone()
+                    .map(|whitewater| (whitewater, foam.unwrap_or_default())),
+            )
+            .map_err(thrum_render::runtime::FrameError::Scene)?,
+        );
         *self.report.lock().expect("water report") = WaterReport {
             vertices: self.vertices(),
             bodies: self.prepared.as_ref().expect("prepared").bodies.clone(),

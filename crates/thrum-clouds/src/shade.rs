@@ -250,16 +250,7 @@ impl SceneContribution for Shade {
             compute: false,
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        self.rebuild_for_attachment(surface)
-            .map_err(|error| match error {
-                FrameError::Scene(message) | FrameError::ContributionDeviceLimit(message) => {
-                    message
-                }
-                other => other.to_string(),
-            })
-    }
-    fn rebuild_for_attachment(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         let target = surface.sun_path_target().ok_or(FrameError::InvalidState(
             "cloud Shade requires the scene's GPU Sun-path target",
         ))?;

@@ -42,8 +42,8 @@ impl SceneContribution for Legacy {
     fn passes(&self) -> ContributionPasses {
         ContributionPasses::default()
     }
-    fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), String> {
-        self.rebuild_state().map_err(|error| error.to_string())
+    fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), FrameError> {
+        self.rebuild_state()
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
 }
@@ -57,7 +57,7 @@ impl SceneContribution for Member {
     fn passes(&self) -> ContributionPasses {
         self.0.passes()
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         self.0.rebuild(surface)
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}

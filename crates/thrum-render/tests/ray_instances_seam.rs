@@ -104,7 +104,10 @@ mod metal {
             ))
         }
 
-        fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        fn rebuild(
+            &mut self,
+            surface: &SceneSurface<'_>,
+        ) -> Result<(), thrum_render::runtime::FrameError> {
             assert!(surface.ray_demand);
             self.mesh = Some(surface.device.create_blas(
                 &wgpu::CreateBlasDescriptor {

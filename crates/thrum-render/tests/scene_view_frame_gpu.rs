@@ -18,7 +18,7 @@ use thrum_render::{
         SecondaryViewRequest, ViewAir,
     },
     present::SurfaceProfile,
-    runtime::{FrameConfig, SurfaceOutput},
+    runtime::{FrameConfig, FrameError, SurfaceOutput},
     synthetic::{FrameLighting, SyntheticScene},
 };
 
@@ -50,7 +50,7 @@ impl SceneContribution for Tag {
             ..EffectGraph::default()
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         assert!(surface.secondary_surfaces.is_empty());
         let device = surface.device;
         let input = tag_pass().input_layout(device);

@@ -20,7 +20,7 @@ impl SceneContribution for Asks {
             compute: false,
         }
     }
-    fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), crate::runtime::FrameError> {
         Ok(())
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {

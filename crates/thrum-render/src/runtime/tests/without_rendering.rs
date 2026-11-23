@@ -113,10 +113,12 @@ impl FrameWorld for World {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
-        self.clock.advance(now).map_err(|error| error.to_string())
+    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError> {
+        self.clock
+            .advance(now)
+            .map_err(|error| FrameError::World(error.to_string()))
     }
-    fn publication(&mut self) -> Result<WorldPublication<SourceTick>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<SourceTick>, FrameError> {
         self.publication_calls += 1;
         let source = self.source();
         Ok(WorldPublication {

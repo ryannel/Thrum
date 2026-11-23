@@ -217,8 +217,13 @@ impl SceneContribution for Pool {
         }
     }
 
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        self.prepared = Some(Prepared::new(surface, self.plane)?);
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        self.prepared = Some(
+            Prepared::new(surface, self.plane).map_err(thrum_render::runtime::FrameError::Scene)?,
+        );
         Ok(())
     }
 

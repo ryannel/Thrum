@@ -5,8 +5,9 @@ use std::time::Duration;
 use thrum_core::sim::{WorldAdvance, WorldPublication};
 use thrum_render::{
     capabilities::DeviceCapabilities,
+    error::RenderError,
     extract::SourceTick,
-    runtime::{FrameConfig, FrameError, FrameHost, FrameWorld, SurfaceOutput},
+    runtime::{FrameConfig, FrameError, FrameHost, FrameWorld, SceneSource, SurfaceOutput},
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
 };
 
@@ -24,10 +25,10 @@ impl FrameWorld for RefusingWorld {
     fn is_threaded(&self) -> bool {
         self.0.is_threaded()
     }
-    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, String> {
-        Err("authoritative clock refused".into())
+    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, FrameError> {
+        Err(FrameError::World("authoritative clock refused".into()))
     }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         self.0.publication()
     }
     fn presentation_alpha_at(&self, lead: Duration) -> f32 {
@@ -42,6 +43,25 @@ impl FrameWorld for RefusingWorld {
     fn tick_due_time(&self) -> Option<Duration> {
         self.0.tick_due_time()
     }
+}
+
+#[test]
+fn the_default_sprite_callback_returns_a_matchable_render_failure() {
+    let source = support::Source {
+        view: SyntheticScene::grid(1).unwrap().view,
+        lighting: FrameLighting::Diagnostic(SyntheticLight::default()),
+        instances: Vec::new(),
+        lights: Vec::new(),
+    };
+    let tick = SourceTick {
+        epoch: 1,
+        tick: 0,
+        timeline: 0,
+    };
+    assert!(matches!(
+        source.sprites(tick, 0.0, [640, 480]),
+        Err(FrameError::Render(RenderError::MissingSpriteSource)),
+    ));
 }
 
 #[test]

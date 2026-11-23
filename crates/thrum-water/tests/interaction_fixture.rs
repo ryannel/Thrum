@@ -15,7 +15,9 @@ use thrum_render::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
-    runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource, SurfaceOutput},
+    runtime::{
+        FrameConfig, FrameError, FrameHost, FrameWorld, SceneFrame, SceneSource, SurfaceOutput,
+    },
     synthetic::{FrameLighting, OUTPUT_FORMAT, SyntheticScene, SyntheticView},
 };
 use thrum_sea_model::{Cascade, Spectrum};
@@ -143,7 +145,7 @@ impl FrameWorld for Clock {
         false
     }
 
-    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError> {
         let tick = u64::try_from(now.as_nanos() / Fixture::STEP.as_nanos()).expect("test tick");
         let completed_ticks =
             u32::try_from(tick.saturating_sub(self.tick)).expect("short test gap");
@@ -161,7 +163,7 @@ impl FrameWorld for Clock {
         })
     }
 
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
@@ -201,7 +203,7 @@ impl SceneSource<SourceTick> for Source {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.0.view,
             lighting: self.0.lighting,

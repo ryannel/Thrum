@@ -926,7 +926,10 @@ impl CookedAssets {
         }
     }
 
-    fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild_inner(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         let internal = surface.device.push_error_scope(wgpu::ErrorFilter::Internal);
         let memory = surface
             .device
@@ -948,7 +951,10 @@ impl CookedAssets {
             }
         });
         if let Some(error) = errors.into_iter().flatten().next() {
-            return Err(format!("cooked pipelines: {error}"));
+            return Err(thrum_render::runtime::FrameError::gpu(
+                "cooked pipelines",
+                error,
+            ));
         }
         let restart = !prepared.reuse_live;
         self.install_rebuild(prepared);
@@ -1169,7 +1175,10 @@ impl SceneContribution for CookedAssets {
         }
     }
 
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         self.rebuild_inner(surface)
     }
 

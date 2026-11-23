@@ -16,7 +16,7 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     graph::{AccessKind, ResourceDescriptor, ResourceScope},
     present::SurfaceProfile,
-    runtime::{FrameConfig, FrameHost, SceneFrame, SceneSource, SurfaceOutput},
+    runtime::{FrameConfig, FrameError, FrameHost, SceneFrame, SceneSource, SurfaceOutput},
     synthetic::{
         FrameLighting, OUTPUT_FORMAT, PhotometricEnvironment, SyntheticPointLight, SyntheticScene,
         SyntheticView,
@@ -55,7 +55,7 @@ impl SceneSource<SourceTick> for Source {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.view,
             lighting: self.lighting,
@@ -186,7 +186,7 @@ impl SceneContribution for Probe {
             ..EffectGraph::default()
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         self.slot = surface.secondary_views.first().cloned();
         let device = surface.device;
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {

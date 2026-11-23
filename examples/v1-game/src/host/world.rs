@@ -237,15 +237,21 @@ impl thrum_render::runtime::FrameWorld for GameWorld {
         self.0.is_threaded()
     }
 
-    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
-        self.0.advance(now)
+    fn advance(
+        &mut self,
+        now: Duration,
+    ) -> Result<WorldAdvance, thrum_render::runtime::FrameError> {
+        self.0
+            .advance(now)
+            .map_err(thrum_render::runtime::FrameError::World)
     }
 
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
-        let page = self
-            .0
-            .published_page()
-            .map_err(|error| format!("world page: {error:?}"))?;
+    fn publication(
+        &mut self,
+    ) -> Result<WorldPublication<Self::Page>, thrum_render::runtime::FrameError> {
+        let page = self.0.published_page().map_err(|error| {
+            thrum_render::runtime::FrameError::World(format!("world page: {error}"))
+        })?;
         Ok(WorldPublication {
             id: page.id(),
             timeline: page.timeline(),

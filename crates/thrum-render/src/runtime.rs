@@ -117,11 +117,11 @@ pub trait FrameWorld {
     /// Advance inline authority or observe resident authority at monotonic time.
     /// # Errors
     /// Returns an authoritative clock, game or lane failure.
-    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String>;
+    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError>;
     /// Lease a page with its actual committed identity.
     /// # Errors
     /// Returns a publication failure without changing authority.
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String>;
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError>;
     /// Sample a display target without advancing authority.
     fn presentation_alpha_at(&self, lead: Duration) -> f32;
     /// Phase at the same consumed target, taken directly from the world's clock.
@@ -145,7 +145,7 @@ pub trait SceneSource<P> {
         alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String>;
+    ) -> Result<SceneFrame, FrameError>;
     /// Map the committed publication to world sprite rows.
     fn extract_sprites(&self, _into: &mut crate::sprite::SpriteSink<'_>, _page: &P) {}
 
@@ -157,8 +157,8 @@ pub trait SceneSource<P> {
         _source: SourceTick,
         _alpha: f32,
         _extent: [u32; 2],
-    ) -> Result<crate::sprite::SpriteFrame<'_>, String> {
-        Err("scene source does not supply sprite rows".into())
+    ) -> Result<crate::sprite::SpriteFrame<'_>, FrameError> {
+        Err(FrameError::Render(RenderError::MissingSpriteSource))
     }
     /// Sample positions/intensities into the prepared local-light slice using
     /// the same committed endpoint and alpha as the view. Keep the prepared
@@ -313,6 +313,12 @@ impl FrameError {
             Self::Gpu { operation, error } => format!("{operation}: {error}"),
             _ => self.to_string(),
         }
+    }
+}
+
+impl From<RenderError> for FrameError {
+    fn from(error: RenderError) -> Self {
+        Self::Render(error)
     }
 }
 
@@ -1069,7 +1075,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         let capacity = scene.instances.len();
         let mut extractor = RenderExtractor::new(capacity, capacity);
-        let initial = world.publication().map_err(FrameError::World)?;
+        let initial = world.publication()?;
         let initial_source = publication_source(&initial);
         if initial_source != world.source() {
             return Err(FrameError::InvalidState(
@@ -1087,9 +1093,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let build = creations.region(CreationPhase::Build, "host");
         let mut changed_slots = Vec::with_capacity(capacity);
         let initial_scene_apply = scene.apply_render_columns(extractor.frame(), &mut changed_slots);
-        let initial_frame = source
-            .frame(world.source(), 0.0, config.render_extent, None)
-            .map_err(FrameError::Scene)?;
+        let initial_frame = source.frame(world.source(), 0.0, config.render_extent, None)?;
         scene.view = initial_frame.view;
         let (gpu, presenter) = preparation::prepare_3d_transition(
             scene.ray_admission(capabilities),
@@ -1177,7 +1181,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let extent = config
             .surface
             .map_or(config.render_extent, |profile| profile.extent);
-        let initial = world.publication().map_err(FrameError::World)?;
+        let initial = world.publication()?;
         let initial_source = publication_source(&initial);
         if initial_source != world.source() {
             return Err(FrameError::InvalidState(
@@ -1185,8 +1189,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             ));
         }
         source
-            .sprites(initial_source, 0.0, extent)
-            .map_err(FrameError::Scene)?
+            .sprites(initial_source, 0.0, extent)?
             .view
             .clip_scale(extent)
             .map_err(FrameError::Render)?;
@@ -1458,14 +1461,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, FrameError> {
-        self.source
-            .frame(
-                self.world.source(),
-                self.presentation_alpha(),
-                extent,
-                lighting,
-            )
-            .map_err(FrameError::Scene)
+        self.source.frame(
+            self.world.source(),
+            self.presentation_alpha(),
+            extent,
+            lighting,
+        )
     }
 
     fn refresh_replacement(
@@ -1862,7 +1863,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     fn admit_world(&mut self, now: Duration) -> Result<(DriveReport, WorldAdvance), FrameError> {
-        let advanced = self.world.advance(now).map_err(FrameError::World)?;
+        let advanced = self.world.advance(now)?;
         let report = DriveReport {
             tick: advanced.tick,
             overload: advanced.overload,
@@ -1956,7 +1957,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         queued_ticks: u32,
     ) -> Result<SubmitFrame, FrameError> {
         let extract_start = Instant::now();
-        let snapshot = self.world.publication().map_err(FrameError::World)?;
+        let snapshot = self.world.publication()?;
         let source = publication_source(&snapshot);
         let extractor = &mut self.extractor;
         let reused_source =
@@ -2028,15 +2029,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // particular, applying columns first could make a same-source retry
         // mistake the new CPU scene for already uploaded data.
         let upload_start = Instant::now();
-        let frame_scene = self
-            .source
-            .frame(
-                frame.source,
-                frame.presentation_alpha,
-                self.render_extent,
-                self.visual_lighting(),
-            )
-            .map_err(FrameError::Scene)?;
+        let frame_scene = self.source.frame(
+            frame.source,
+            frame.presentation_alpha,
+            self.render_extent,
+            self.visual_lighting(),
+        )?;
         self.source.sample_local_lights(
             frame.source,
             frame.presentation_alpha,
@@ -2228,7 +2226,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .three_d()
             .map(|target| target.reserve_native(self.scene.view.history_reset()))
             .transpose()
-            .map_err(|_| FrameError::InvalidState("native candidate already encoded"))?
+            .map_err(FrameError::Render)?
             .flatten();
         let mut segments = Vec::new();
         if let FrameTarget::ThreeD(target) = &mut slot.target {
@@ -2584,7 +2582,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 || source.tick != self.world.source().tick
         });
         let extracted = if needs_extract {
-            let snapshot = self.world.publication().map_err(FrameError::World)?;
+            let snapshot = self.world.publication()?;
             let source = publication_source(&snapshot);
             if source != self.world.source() {
                 return Err(FrameError::InvalidState(
@@ -2610,15 +2608,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             capture_alpha,
             &mut self.scene.local_lights,
         );
-        let frame_scene = self
-            .source
-            .frame(
-                self.world.source(),
-                capture_alpha,
-                self.render_extent,
-                self.visual_lighting(),
-            )
-            .map_err(FrameError::Scene)?;
+        let frame_scene = self.source.frame(
+            self.world.source(),
+            capture_alpha,
+            self.render_extent,
+            self.visual_lighting(),
+        )?;
         let lighting = frame_scene.lighting;
         self.history_reset_pending |= self
             .prepared

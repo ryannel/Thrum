@@ -74,8 +74,10 @@ pub(super) enum BucketError {
     BucketCount,
     /// A slot index, member offset or byte size does not fit.
     Capacity,
-    /// The worst-case member list, scratch or dispatch exceeds a device limit.
-    DeviceLimit,
+    /// The member list or scratch binding exceeds the storage limit.
+    StorageLimit,
+    /// The dispatch exceeds the workgroup limit.
+    DispatchLimit,
     /// The physical mapping does not match the slot count or names a row past it.
     Mapping,
 }
@@ -155,10 +157,11 @@ impl Buckets {
             .checked_mul(1 + WORDS)
             .and_then(|words| words.checked_mul(4))
             .ok_or(BucketError::Capacity)?;
-        if member_bytes.max(scratch_bytes) > limits.max_storage_binding
-            || groups > u64::from(limits.max_workgroups)
-        {
-            return Err(BucketError::DeviceLimit);
+        if member_bytes.max(scratch_bytes) > limits.max_storage_binding {
+            return Err(BucketError::StorageLimit);
+        }
+        if groups > u64::from(limits.max_workgroups) {
+            return Err(BucketError::DispatchLimit);
         }
         let index = keys.iter().enumerate().map(|(i, &key)| (key, i)).collect();
         let capacity = usize::try_from(members).map_err(|_| BucketError::Capacity)?;

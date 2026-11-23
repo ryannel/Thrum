@@ -10,7 +10,7 @@ use thrum_render::{
         ViewAir,
     },
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{FrameHost as EngineHost, SceneFrame, SceneSource},
+    runtime::{FrameError, FrameHost as EngineHost, SceneFrame, SceneSource},
     synthetic::{
         FrameLighting, SunShadowMethod, SyntheticLight, SyntheticPointLight, SyntheticScene,
         SyntheticView,
@@ -230,7 +230,7 @@ impl SceneContribution for ObserveView {
     fn prepare_candidate(
         &self,
         surface: &SceneSurface<'_>,
-    ) -> Result<ContributionCandidate, thrum_render::runtime::FrameError> {
+    ) -> Result<ContributionCandidate, FrameError> {
         let slot = self.prepared_slot(surface);
         Ok(ContributionCandidate::new(
             self.passes(),
@@ -240,7 +240,7 @@ impl SceneContribution for ObserveView {
             },
         ))
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         self.accept_slot(self.prepared_slot(surface));
         Ok(())
     }
@@ -285,7 +285,7 @@ impl SceneSource<SourceTick> for Camera {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.0,
             lighting: self.1,

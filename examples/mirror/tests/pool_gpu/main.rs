@@ -53,7 +53,10 @@ mod draw {
         capabilities::DeviceCapabilities,
         extract::{ExtractReport, RenderExtractor, SourceTick},
         present::SurfaceProfile,
-        runtime::{CaptureLimits, FrameConfig, FrameHost, SceneFrame, SceneSource, SurfaceOutput},
+        runtime::{
+            CaptureLimits, FrameConfig, FrameError, FrameHost, SceneFrame, SceneSource,
+            SurfaceOutput,
+        },
         synthetic::{CaptureSource, FrameLighting, OUTPUT_FORMAT, SyntheticScene, SyntheticView},
     };
 
@@ -81,7 +84,7 @@ mod draw {
             _: f32,
             _: [u32; 2],
             _: Option<FrameLighting>,
-        ) -> Result<SceneFrame, String> {
+        ) -> Result<SceneFrame, FrameError> {
             Ok(SceneFrame {
                 view: self.frame.view,
                 lighting: self.frame.lighting,

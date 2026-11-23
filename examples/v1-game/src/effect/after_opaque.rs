@@ -5,7 +5,7 @@ use std::time::Duration;
 use thrum_render::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{FrameConfig, FrameHost, SceneFrame, SceneSource},
+    runtime::{FrameConfig, FrameError, FrameHost, SceneFrame, SceneSource},
     synthetic::{
         DisplayOverlay, FrameLighting, Reconstruction, SyntheticLight, SyntheticScene,
         SyntheticView,
@@ -47,7 +47,7 @@ impl SceneSource<SourceTick> for Scene {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: SyntheticView::perspective(
                 [0., 2., 10.],
@@ -57,8 +57,7 @@ impl SceneSource<SourceTick> for Scene {
                 1.,
                 0.1,
                 100.,
-            )
-            .map_err(error)?
+            )?
             .with_temporal_inputs(self.temporal)
             .with_reconstruction(self.reconstruction)
             .with_display_overlay(if self.temporal {

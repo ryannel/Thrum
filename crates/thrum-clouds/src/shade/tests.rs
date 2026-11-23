@@ -15,7 +15,7 @@ impl SceneContribution for Observed {
     fn passes(&self) -> ContributionPasses {
         self.shade.passes()
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         self.shade.rebuild(surface)?;
         let gpu = self.shade.gpu.as_mut().expect("prepared clouds");
         let sky = gpu.sky.as_mut().expect("visible clouds");

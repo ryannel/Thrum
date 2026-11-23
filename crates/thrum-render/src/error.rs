@@ -58,8 +58,16 @@ pub enum RenderError {
     ClusterIndexBufferCapacity,
     /// Effect pass index exceeds the supported range.
     EffectPassCount,
-    /// Sprite rows exceed the supported count or storage capacity.
+    /// Sprite row count exceeds its supported index range.
     SpriteRowCapacity,
+    /// Sprite rows exceed the device storage binding limit.
+    SpriteRowStorageLimit,
+    /// A sprite scene has no capacity for world or frame rows.
+    EmptySpriteRowCapacity,
+    /// The scene source did not implement sprite sampling.
+    MissingSpriteSource,
+    /// The contribution did not implement preparation for a sprite scene.
+    UnsupportedSpriteContribution,
     /// Sprite frame table exceeds the supported count or storage capacity.
     SpriteFrameCapacity,
     /// An expected mesh arena row is missing.
@@ -82,8 +90,10 @@ pub enum RenderError {
     InvalidMeshSlot,
     /// The bucket table is empty or exceeds the shader's bucket count.
     BucketCount,
-    /// Mesh bucket member data or dispatch exceeds the device limits.
-    BucketDeviceLimits,
+    /// The member list or scratch binding exceeds the device storage limit.
+    BucketStorageLimit,
+    /// The worst-case bucket layout needs too many compute workgroups.
+    BucketDispatchLimit,
     /// Mesh bucket member storage exceeds its supported capacity.
     BucketMemberCapacity,
     /// Mesh draw indices exceed the supported range.
@@ -102,7 +112,9 @@ pub enum RenderError {
     RayInstanceLimit,
     /// Shadow caster table must supply one row per scene instance.
     ShadowCasterCount,
-    /// Star table is empty or exceeds the supported storage capacity.
+    /// A selected star catalogue has no records.
+    EmptyStarTable,
+    /// The star table exceeds the supported storage or index range.
     StarTableCapacity,
     /// Changed instance slots are out of bounds, duplicated or unordered.
     InvalidInstanceUpdate,
@@ -177,8 +189,14 @@ impl fmt::Display for RenderError {
                 f.write_str("Cluster indices exceed storage buffer capacity")
             }
             Self::EffectPassCount => f.write_str("Effect pass index exceeds the supported range"),
-            Self::SpriteRowCapacity => {
-                f.write_str("Sprite rows exceed the supported count or storage capacity")
+            Self::EmptySpriteRowCapacity => f.write_str("Sprite scene requires at least one row"),
+            Self::MissingSpriteSource => f.write_str("Scene source does not supply sprite rows"),
+            Self::UnsupportedSpriteContribution => {
+                f.write_str("Contribution does not support 2D preparation")
+            }
+            Self::SpriteRowCapacity => f.write_str("Sprite row count exceeds the supported range"),
+            Self::SpriteRowStorageLimit => {
+                f.write_str("Sprite rows exceed device storage capacity")
             }
             Self::SpriteFrameCapacity => {
                 f.write_str("Sprite frame table exceeds the supported count or storage capacity")
@@ -207,8 +225,11 @@ impl fmt::Display for RenderError {
             Self::BucketCount => {
                 f.write_str("Mesh bucket count is outside the shader's supported range")
             }
-            Self::BucketDeviceLimits => {
-                f.write_str("Mesh bucket storage or dispatch exceeds device limits")
+            Self::BucketStorageLimit => {
+                f.write_str("Bucket layout exceeds device storage capacity")
+            }
+            Self::BucketDispatchLimit => {
+                f.write_str("Bucket layout exceeds the device workgroup limit")
             }
             Self::BucketMemberCapacity => {
                 f.write_str("Mesh bucket member storage exceeds its supported capacity")
@@ -233,8 +254,9 @@ impl fmt::Display for RenderError {
             Self::ShadowCasterCount => {
                 f.write_str("Shadow caster table must supply one row per scene instance")
             }
+            Self::EmptyStarTable => f.write_str("Star table requires at least one record"),
             Self::StarTableCapacity => {
-                f.write_str("Star table is empty or exceeds the supported storage capacity")
+                f.write_str("Star table exceeds the supported storage or index range")
             }
             Self::InvalidInstanceUpdate => {
                 f.write_str("Changed instance slots are out of bounds, duplicated or unordered")

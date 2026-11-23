@@ -102,7 +102,10 @@ impl SceneContribution for PreviewReader {
         }
     }
 
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
         let device = surface.device.clone();
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("lent content preview"),

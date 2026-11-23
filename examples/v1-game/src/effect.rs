@@ -426,8 +426,13 @@ impl SceneContribution for DiagnosticEffect {
             compute: false,
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        let mut witness = self.witness.lock().map_err(|error| error.to_string())?;
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        let mut witness = self.witness.lock().map_err(|_| {
+            thrum_render::runtime::FrameError::InvalidState("effect witness unavailable")
+        })?;
         if witness.generation == surface.generation {
             return Ok(());
         }
@@ -536,7 +541,7 @@ impl SceneContribution for DiagnosticEffect {
                             4,
                             0,
                             wgpu::TextureViewDimension::D2Array,
-                            u32::try_from(index - 4).map_err(|error| error.to_string())?,
+                            u32::try_from(index - 4).expect("texture array layer is at most two"),
                         )),
                         _ => views.push(view(5, 0, wgpu::TextureViewDimension::D2Array, 0)),
                     }
@@ -566,7 +571,8 @@ impl SceneContribution for DiagnosticEffect {
         }
         let visual = visual::Visual::new(surface, &params, &textures[0], &textures[1]);
         if let Some(slab) = &mut self.slab {
-            slab.rebuild(surface, &textures)?;
+            slab.rebuild(surface, &textures)
+                .map_err(thrum_render::runtime::FrameError::Scene)?;
         }
         witness.generation = surface.generation;
         witness.textures = textures;

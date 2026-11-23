@@ -65,7 +65,7 @@ use thrum_render::{
     atmosphere::AtmosphereFrame,
     contribution::SceneContribution,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{FrameWorld, SceneFrame, SceneSource},
+    runtime::{FrameError, FrameWorld, SceneFrame, SceneSource},
     synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView},
 };
 
@@ -164,18 +164,18 @@ impl Camera {
         }
     }
 
-    fn view(&self, extent: [u32; 2]) -> Result<SyntheticView, String> {
+    fn view(&self, extent: [u32; 2]) -> Result<SyntheticView, FrameError> {
         if !(0.0..=100_000.0).contains(&self.position[1]) {
-            return Err(format!(
+            return Err(FrameError::Scene(format!(
                 "camera height {} m is outside 0–100 km; move Camera::position above sea level",
                 self.position[1]
-            ));
+            )));
         }
         if !(1.0..=170.0).contains(&self.vertical_fov_degrees) {
-            return Err(format!(
+            return Err(FrameError::Scene(format!(
                 "camera field of view {}° is outside 1–170°",
                 self.vertical_fov_degrees
-            ));
+            )));
         }
         SyntheticView::perspective(
             self.position,
@@ -187,10 +187,7 @@ impl Camera {
             FAR_M,
         )
         .map(|view| view.with_sdr_tone_map(SdrToneMap::NeutralHighlights))
-        .map_err(|_| {
-            "camera position and target must be finite, distinct and not vertically aligned"
-                .to_owned()
-        })
+        .map_err(FrameError::Render)
     }
 }
 
@@ -240,10 +237,10 @@ impl Sky {
         if !self.sun_azimuth_degrees.is_finite() {
             return Err("sun_azimuth_degrees must be finite".to_owned());
         }
-        self.camera.view([16, 9]).map(drop)
+        self.camera.view([16, 9]).map(drop).map_err(String::from)
     }
 
-    fn lighting(&self) -> Result<FrameLighting, String> {
+    fn lighting(&self) -> Result<FrameLighting, thrum_render::error::RenderError> {
         AtmosphereFrame::new(
             self.toward_sun(),
             SOLAR_LUX,
@@ -252,7 +249,6 @@ impl Sky {
             1,
         )
         .map(FrameLighting::Atmosphere)
-        .map_err(|error| format!("sky lighting: {error:?}"))
     }
 }
 
@@ -346,7 +342,7 @@ impl FrameWorld for StillWorld {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError> {
         let previous = self.tick;
         if let Some(step) = self.tick_duration {
             let wall_now = now.max(self.wall_now);
@@ -376,7 +372,7 @@ impl FrameWorld for StillWorld {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<SourceTick>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<SourceTick>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(STILL.epoch),
@@ -464,7 +460,7 @@ impl SceneSource<SourceTick> for SkyScene {
         alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         let camera = self
             .presentation_camera
             .as_ref()
@@ -490,8 +486,7 @@ impl SceneSource<SourceTick> for SkyScene {
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(FALLBACK_EXPOSURE)
             }
-        }
-        .map_err(|error| format!("view exposure: {error:?}"))?
+        }?
         .with_display_overlay(if self.sky.exposure_zones {
             DisplayOverlay::ExposureZones
         } else {

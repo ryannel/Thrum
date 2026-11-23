@@ -61,6 +61,18 @@ class Fixture(unittest.TestCase):
         self.write("crates/engine/src/lib.rs", 'pub fn run(game: impl FnOnce() -> Result<(), String>) { game(); }')
         self.assertEqual(self.sites("string-errors"), [])
 
+    def test_string_errors_on_public_traits(self):
+        self.pair("string-errors", "pub trait Scene { fn frame(&self) -> Result<(), String>; }",
+                  "pub trait Scene { fn frame(&self) -> Result<(), FrameError>; }")
+        self.pair("string-errors",
+                  "pub trait Scene<P> { fn frame(&self, page: P) -> Result<(), String> { todo!() } }",
+                  "pub trait Scene<P> { fn frame(&self, page: P) -> Result<(), FrameError> { todo!() } }")
+        self.write("crates/engine/src/lib.rs", """
+            pub(crate) trait Private { fn frame() -> Result<(), String>; }
+            pub trait Scene { fn frame() { fn helper() -> Result<(), String> { todo!() } } }
+        """)
+        self.assertEqual(self.sites("string-errors"), [])
+
     def test_include_reach_and_path_attribute(self):
         for macro in ("include", "include_str", "include_bytes"):
             with self.subTest(macro=macro):

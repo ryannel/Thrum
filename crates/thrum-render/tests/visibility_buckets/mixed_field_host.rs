@@ -13,7 +13,8 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
-        FrameConfig, FrameHost, FrameSample, FrameWorld, SceneFrame, SceneSource, SurfaceOutput,
+        FrameConfig, FrameError, FrameHost, FrameSample, FrameWorld, SceneFrame, SceneSource,
+        SurfaceOutput,
     },
     synthetic::{
         CullMode, FrameLighting, SyntheticMesh, SyntheticMeshChoice, SyntheticMeshes,
@@ -62,7 +63,7 @@ impl FrameWorld for World {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, FrameError> {
         Ok(WorldAdvance {
             tick: self.0.source.tick,
             overload: None,
@@ -75,7 +76,7 @@ impl FrameWorld for World {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Page>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(self.0.source.epoch),
@@ -121,7 +122,7 @@ impl SceneSource<Page> for FieldSource {
         alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         let camera = field::camera(source.tick, alpha);
         let target = [
             camera.eye[0] + camera.heading.cos() * 10.0,
@@ -136,8 +137,7 @@ impl SceneSource<Page> for FieldSource {
             extent[0] as f32 / extent[1] as f32,
             0.1,
             1200.0,
-        )
-        .map_err(|error| format!("field view: {error:?}"))?
+        )?
         .with_history_epoch(camera.history_epoch);
         let sun = DayCycle::sample(source.tick, alpha, 0.0);
         let atmosphere = AtmosphereFrame::new(
@@ -146,11 +146,9 @@ impl SceneSource<Page> for FieldSource {
             sun.colour,
             camera.eye[1],
             sun.profile_epoch,
-        )
-        .map_err(|error| format!("field atmosphere: {error:?}"))?
+        )?
         .with_nightglow()
-        .with_simulation_time(sun.simulation_time_seconds)
-        .map_err(|error| format!("field clock: {error:?}"))?;
+        .with_simulation_time(sun.simulation_time_seconds)?;
         let lighting = lighting.unwrap_or(FrameLighting::Atmosphere(atmosphere));
         let view = match lighting {
             FrameLighting::Atmosphere(_) => view
@@ -159,8 +157,7 @@ impl SceneSource<Page> for FieldSource {
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(1.0 / 16_000.0)
             }
-        }
-        .map_err(|error| format!("field exposure: {error:?}"))?;
+        }?;
         Ok(SceneFrame { view, lighting })
     }
 }

@@ -54,7 +54,7 @@ impl SceneContribution for PipelineFault {
         Ok(ContributionCandidate::new(self.passes(), self.effect_graph(), |_: &mut Self| {}))
     }
 
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         self.attempts.lock().expect("test record").push(surface.ray_demand);
         Ok(())
     }

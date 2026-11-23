@@ -24,6 +24,20 @@ use wgpu::util::DeviceExt;
 pub(crate) const PASS: &str = crate::pass_key::PassKey::Sprites.constant_name();
 const SHEET_SLOTS: usize = 8;
 
+fn row_storage(world: u32, frame: u32, max_binding: u64) -> Result<(u32, u64), RenderError> {
+    let total = world
+        .checked_add(frame)
+        .ok_or(RenderError::SpriteRowCapacity)?;
+    if total == 0 {
+        return Err(RenderError::EmptySpriteRowCapacity);
+    }
+    let bytes = u64::from(total) * size_of::<GpuRow>() as u64;
+    if bytes > max_binding {
+        return Err(RenderError::SpriteRowStorageLimit);
+    }
+    Ok((total, bytes))
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -95,14 +109,8 @@ impl SpritePass {
         let max_binding = limits
             .max_storage_buffer_binding_size
             .min(limits.max_buffer_size);
-        let total = scene
-            .world_capacity
-            .checked_add(scene.row_capacity)
-            .ok_or(RenderError::SpriteRowCapacity)?;
-        let rows_bytes = u64::from(total) * size_of::<GpuRow>() as u64;
-        if total == 0 || rows_bytes > max_binding {
-            return Err(RenderError::SpriteRowCapacity);
-        }
+        let (total, rows_bytes) =
+            row_storage(scene.world_capacity, scene.row_capacity, max_binding)?;
         if scene.sheets.is_empty() {
             return Err(RenderError::MissingSpriteSheets);
         }

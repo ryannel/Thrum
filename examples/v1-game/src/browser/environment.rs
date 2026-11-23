@@ -19,10 +19,13 @@ impl SceneContribution for EnvironmentContribution {
             compute: false,
         }
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        let products = surface
-            .environment_products()
-            .ok_or("scene has no atmosphere")?;
+    fn rebuild(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        let products = surface.environment_products().ok_or(
+            thrum_render::runtime::FrameError::InvalidState("scene has no atmosphere"),
+        )?;
         self.library
             .borrow_mut()
             .clone_from(&products.shader_source);

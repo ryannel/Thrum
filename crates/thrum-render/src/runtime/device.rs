@@ -214,15 +214,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn device_prepare_inputs(&self) -> Result<DevicePrepareInputs, FrameError> {
         let scene = match &self.prepared {
             PreparedRenderer::ThreeD(prepared) => {
-                let frame = self
-                    .source
-                    .frame(
-                        self.world.source(),
-                        self.presentation_alpha(),
-                        self.render_extent,
-                        self.visual_lighting,
-                    )
-                    .map_err(FrameError::Scene)?;
+                let frame = self.source.frame(
+                    self.world.source(),
+                    self.presentation_alpha(),
+                    self.render_extent,
+                    self.visual_lighting,
+                )?;
                 let mut scene = self.scene.clone();
                 scene.view = frame.view;
                 RetainedScene::ThreeD(Box::new(RetainedThreeD {
@@ -341,8 +338,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     self.world.source(),
                     self.presentation_alpha(),
                     candidate.render_extent,
-                )
-                .map_err(FrameError::Scene)?
+                )?
                 .view
                 .clip_scale(candidate.render_extent)
                 .map_err(FrameError::Render)?;

@@ -154,9 +154,10 @@
       }
     },
     "string-errors": {
-      "version": 4,
+      "version": 5,
       "files": {
         "crates/thrum-app/src/capture_writer.rs": 2,
+        "crates/thrum-app/src/game.rs": 5,
         "crates/thrum-app/src/offscreen.rs": 11,
         "crates/thrum-app/src/offscreen/clock.rs": 1,
         "crates/thrum-app/src/sky.rs": 1,
@@ -166,7 +167,7 @@
         "examples/v1-game/src/camera/route.rs": 3,
         "examples/v1-game/src/content.rs": 3,
         "examples/v1-game/src/effect/qualification.rs": 2,
-        "examples/v1-game/src/host.rs": 4,
+        "examples/v1-game/src/host.rs": 12,
         "examples/v1-game/src/host/scene_source.rs": 1,
         "examples/v1-game/src/host/world_thread.rs": 1,
         "examples/v1-game/src/scene.rs": 1,

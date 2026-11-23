@@ -24,12 +24,11 @@ impl SceneContributions {
         }
     }
 
-    fn rebuild_members<E>(
+    fn rebuild_members(
         &mut self,
         surface: &SceneSurface<'_>,
-        invalid_views: impl Fn(&str) -> E,
-        mut rebuild: impl FnMut(&mut dyn SceneContribution, &SceneSurface<'_>) -> Result<(), E>,
-    ) -> Result<(), E> {
+        mut rebuild: impl FnMut(&mut dyn SceneContribution, &SceneSurface<'_>) -> Result<(), FrameError>,
+    ) -> Result<(), FrameError> {
         let mut first = 0;
         self.rebuild_entries(|entry| {
             let end = first + entry.secondary_view_slots().len();
@@ -37,9 +36,13 @@ impl SceneContributions {
             if !entry.secondary_views_enabled() {
                 member.secondary_surfaces.clear();
             }
-            member.secondary_views = surface.secondary_views.get(first..end).ok_or_else(|| {
-                invalid_views("secondary view declaration changed during rebuild")
-            })?;
+            member.secondary_views =
+                surface
+                    .secondary_views
+                    .get(first..end)
+                    .ok_or(FrameError::InvalidState(
+                        "secondary view declaration changed during rebuild",
+                    ))?;
             rebuild(entry, &member)?;
             first = end;
             Ok(())
@@ -393,7 +396,10 @@ impl SceneContribution for SceneContributions {
             .collect()
     }
 
-    fn rebuild_2d(&mut self, surface: &super::SpriteContributionSurface<'_>) -> Result<(), String> {
+    fn rebuild_2d(
+        &mut self,
+        surface: &super::SpriteContributionSurface<'_>,
+    ) -> Result<(), FrameError> {
         self.pass_counts.clear();
         self.after_counts.clear();
         for entry in &mut self.entries {
@@ -403,17 +409,13 @@ impl SceneContribution for SceneContributions {
         }
         Ok(())
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        self.rebuild_members(surface, str::to_owned, |entry, member| {
-            entry.rebuild(member)
-        })
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+        self.rebuild_members(surface, |entry, member| entry.rebuild(member))
     }
     fn rebuild_for_attachment(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
-        self.rebuild_members(
-            surface,
-            |message| FrameError::Scene(message.to_owned()),
-            SceneContribution::rebuild_for_attachment,
-        )
+        self.rebuild_members(surface, |entry, member| {
+            entry.rebuild_for_attachment(member)
+        })
     }
     fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         for entry in &mut self.entries {
@@ -483,7 +485,7 @@ mod tests {
                 compute: true,
             }
         }
-        fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), String> {
+        fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), FrameError> {
             self.saw("rebuild");
             Ok(())
         }

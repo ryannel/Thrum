@@ -11,7 +11,7 @@ use thrum_core::{
 use thrum_render::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource},
+    runtime::{FrameConfig, FrameError, FrameHost, FrameWorld, SceneFrame, SceneSource},
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
 };
 
@@ -90,7 +90,7 @@ impl FrameWorld for World {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, _: Duration) -> Result<WorldAdvance, FrameError> {
         self.tick += 1;
         Ok(WorldAdvance {
             tick: self.tick,
@@ -104,7 +104,7 @@ impl FrameWorld for World {
             tick_cpu: Duration::ZERO,
         })
     }
-    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
@@ -142,7 +142,7 @@ impl SceneSource<SourceTick> for Scene {
         _: f32,
         extent: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         let angle = self.time * 0.2;
         Ok(SceneFrame {
             view: SyntheticView::perspective(
@@ -153,8 +153,7 @@ impl SceneSource<SourceTick> for Scene {
                 extent[0] as f32 / extent[1] as f32,
                 0.05,
                 100.0,
-            )
-            .map_err(|e| format!("{e:?}"))?,
+            )?,
             lighting: FrameLighting::Diagnostic(SyntheticLight {
                 direction_to_light: [0.4, 0.8, 0.3],
                 irradiance: [4.0; 3],

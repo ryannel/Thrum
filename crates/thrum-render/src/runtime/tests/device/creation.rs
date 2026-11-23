@@ -594,7 +594,10 @@ impl crate::contribution::SceneContribution for Compiling {
     fn passes(&self) -> crate::contribution::ContributionPasses {
         crate::contribution::ContributionPasses::default()
     }
-    fn rebuild(&mut self, surface: &crate::contribution::SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(
+        &mut self,
+        surface: &crate::contribution::SceneSurface<'_>,
+    ) -> Result<(), crate::runtime::FrameError> {
         self.rebuilds += 1;
         self.built.push(lazy_pipeline(surface.device));
         if self.rebuilds > 1 {

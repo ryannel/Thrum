@@ -3,7 +3,7 @@ use thrum_render::{
     capabilities::RayStructureSelection,
     contribution::{RayInstances, ShadowBounds},
     present::SurfaceProfile,
-    runtime::{FrameSample, SurfaceOutput},
+    runtime::{FrameError, FrameSample, SurfaceOutput},
     synthetic::ShadowSelection,
 };
 
@@ -348,12 +348,12 @@ impl SceneContribution for Fault {
     fn prepare_candidate(
         &self,
         surface: &SceneSurface<'_>,
-    ) -> Result<ContributionCandidate, thrum_render::runtime::FrameError> {
+    ) -> Result<ContributionCandidate, FrameError> {
         self.cooked
             .prepare_candidate(&self.attempted_surface(surface))
             .map(|candidate| candidate.map_owner(|owner: &mut Self| &mut owner.cooked))
     }
-    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
         let surface = self.attempted_surface(surface);
         self.cooked.rebuild(&surface)
     }

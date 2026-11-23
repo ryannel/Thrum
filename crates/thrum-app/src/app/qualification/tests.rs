@@ -28,7 +28,7 @@ impl SceneSource<SourceTick> for NativeScene {
         _: f32,
         _: [u32; 2],
         _: Option<FrameLighting>,
-    ) -> Result<SceneFrame, String> {
+    ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: SyntheticView::default().with_native_witness(NativeWitness::Metal),
             lighting: FrameLighting::Diagnostic(SyntheticLight::default()),

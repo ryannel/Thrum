@@ -563,7 +563,8 @@ fn bucket_error(error: BucketError) -> RenderError {
         BucketError::UnknownBucket | BucketError::Mapping => RenderError::InvalidInstanceUpdate,
         BucketError::BucketCount => RenderError::BucketCount,
         BucketError::Capacity => RenderError::BucketMemberCapacity,
-        BucketError::DeviceLimit => RenderError::BucketDeviceLimits,
+        BucketError::StorageLimit => RenderError::BucketStorageLimit,
+        BucketError::DispatchLimit => RenderError::BucketDispatchLimit,
     }
 }
 
