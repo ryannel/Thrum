@@ -761,7 +761,7 @@
     {
       "id": "M18",
       "name": "Small cloud products check Metal and portable limits with headroom",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -771,8 +771,8 @@
           "ask": "Do both profiles retain the original assertions and tolerances for weather columns, addressing, row age, repeated-tick cell identity, Sun-path optical depth, rebuild and device replacement? Does the focused run record both named cases passing within 9 seconds each in one invocation with the default workspace scheduling, timeout and retry settings? Does the record include the separate isolated times for comparison?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M18/README.md",
           "verdict": "",
           "review": ""
         }

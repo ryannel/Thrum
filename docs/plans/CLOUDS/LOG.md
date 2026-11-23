@@ -586,3 +586,8 @@
   builder load, leaving 1 second before the 10-second limit. Isolated times are recorded for comparison.
 - 2026-11-23 Design review suggestions: corrected the provenance and historical Git paths so builders can find
   both records, and scoped the Chrome runner instruction to the V1 game so M11.5 uses the water scene's runner.
+
+- 2026-11-23 M18.1 uses a 96-square weather map and 16-square Sun-path grids. The original assertions and
+  tolerances pass on both Metal profiles. With the default workspace scheduling the first focused run took
+  2.139 s native and 2.145 s portable. The isolated runs took 2.309 s and 2.083 s respectively.
+  [Mac Metal evidence](../../../.orchestrate/evidence/CLOUDS/M18/README.md).
