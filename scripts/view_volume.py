@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Run the view volume's paired target checks, or capture its inspection takes."""
 import argparse
+import ast
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import re
 import shutil
 import statistics
 import subprocess
@@ -186,6 +188,46 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
     return read(output / 'runtime.json'), read(output / 'manifest.json')
 
 
+def redundant_surface_edges(before, after):
+    """Return removed late-surface edges that add no ordering constraint."""
+    if before == after:
+        return []
+
+    # APPLE-PRESENTATION M6 makes the late surface depend on the scene's sinks
+    # and its input producers. Keep the rest of the recorded graph byte-exact.
+    dependency_pattern = r'(?<=, dependencies: )\[[^\]]*\](?=, hazards: )'
+    old = re.search(dependency_pattern, before)
+    new = re.search(dependency_pattern, after)
+    if not old or not new or (before[:old.start()], before[old.end():]) != (
+            after[:new.start()], after[new.end():]):
+        raise ValueError('prepared graph changed outside its dependency list')
+
+    boundary = re.search(r', pre_acquire_passes: Some\((\d+)\), surface_resource: Some\(', after)
+    order = re.search(r', pass_order: (\[[^\]]+\]), culled_passes: ', after)
+    if not boundary or not order:
+        raise ValueError('prepared graph has no late surface boundary')
+    passes = ast.literal_eval(order[1])
+    pre_acquire = int(boundary[1])
+    if pre_acquire != len(passes) - 1:
+        raise ValueError('prepared graph does not end in a single late surface pass')
+    surface = passes[-1]
+
+    old_edges = ast.literal_eval(old[0])
+    new_edges = ast.literal_eval(new[0])
+    removed = set(old_edges) - set(new_edges)
+    if not removed or [edge for edge in old_edges if edge not in removed] != new_edges:
+        raise ValueError('prepared graph dependencies changed beyond edge removal')
+
+    # Close the reachability set backwards in the recorded execution order.
+    reaches_surface = {surface}
+    for node in reversed(passes[:pre_acquire]):
+        if any(src == node and dst in reaches_surface for src, dst in new_edges):
+            reaches_surface.add(node)
+    if any(dst != surface or src not in reaches_surface for src, dst in removed):
+        raise ValueError('prepared graph lost a dependency into its scene or late surface')
+    return sorted(removed)
+
+
 def off_parity(output, targets, builds):
     native, cook, _, store = builds
     base = read(BASE_FIXTURE)['commit']
@@ -214,15 +256,24 @@ def off_parity(output, targets, builds):
                                       signature=True, assets_source=assets)
         current, result = checkpoint(output / f'{target}-current', target, builds, pose, signature=True)
         before, after = prior['renderer_signature'], current['renderer_signature']
-        if not before['shader'] or not before['graph'] or before != after:
-            raise ValueError(f'{target}: composed shader or graph changed with the view volume omitted')
+        if not before['shader'] or before['shader'] != after['shader']:
+            raise ValueError(f'{target}: composed shader changed with the view volume omitted')
+        if not before['graph'] or not after['graph']:
+            raise ValueError(f'{target}: missing prepared graph with the view volume omitted')
+        try:
+            removed = redundant_surface_edges(before['graph'], after['graph'])
+        except ValueError as error:
+            raise ValueError(f'{target}: {error} with the view volume omitted') from error
         first = [row['rgba_sha256'] for row in reference['records']]
         second = [row['rgba_sha256'] for row in result['records']]
         if not first or first != second:
             raise ValueError(f'{target}: submitted output changed with the view volume omitted')
         report['targets'][target] = {
             'frame_hashes': first,
-            **{f'{key}_sha256': hashlib.sha256(value.encode()).hexdigest() for key, value in before.items()},
+            'shader_sha256': hashlib.sha256(before['shader'].encode()).hexdigest(),
+            'base_graph_sha256': hashlib.sha256(before['graph'].encode()).hexdigest(),
+            'graph_sha256': hashlib.sha256(after['graph'].encode()).hexdigest(),
+            'removed_redundant_surface_edges': removed,
         }
         save(output / 'off-parity.json', report)
     print(json.dumps(report))

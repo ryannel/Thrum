@@ -700,3 +700,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   and first post-cut shaft on Metal and Chrome. The capture-off aerial pass medians were 0.321 ms on
   Metal and 0.328 ms on Chrome. A small crescent remains on the Metal Sun disc for the first post-cut
   submission. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/README.md)
+
+- 2026-11-23 M7.1's clean-checkout failure had identical forward WGSL and submitted SDR bytes.
+  APPLE-PRESENTATION M6 (`d9c810be3`) removed 25 direct edges into the late surface pass on each target.
+  The parity check verifies that each removed edge still has an indirect path in the current graph,
+  compares the rest of the graph byte for byte, and records both graph hashes against the original
+  M7 starting commit. [Target parity receipt](../../../.orchestrate/evidence/ATMOSPHERE/M7/parity/comparison.json)
