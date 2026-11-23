@@ -429,7 +429,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Pixel stability as in Celeste: a texel never changes size, swims or sparkles as the view moves, at any window size. Edges as clean as the painted sprites of Hades or Hollow Knight: no fringe, no halo, no bleed from a neighbouring frame, no seam between ground tiles."
     },
     {
