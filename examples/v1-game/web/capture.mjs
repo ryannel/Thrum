@@ -275,8 +275,9 @@ async function runCapture() {
       const progress = Math.max(0, Math.min(1, (timestamp-base-1000)/(scrub ? 8000 : 5000)));
       const solar = scrub ? 5+19*progress : 17.4+0.4*progress;
       const yaw = scrub ? -45+22.5*Math.sin(2*Math.PI*progress) : -110+40*progress;
-      applyCaptureParameters(JSON.stringify({'sky.solar_time':solar,'camera.yaw':yaw}), timestamp);
-      record.actions.push({kind:atmosphere,frame_ms:timestamp,solar_hours:solar,yaw_degrees:yaw});
+      game.set_time_of_day(solar / 24);
+      game.set_camera_yaw(yaw * Math.PI / 180);
+      record.actions.push({kind:atmosphere,frame_ms:timestamp,solar_hours:game.time_of_day()*24,yaw_degrees:yaw});
     }
     if (atmosphere === 'off' && !released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
       // Resume clears the clock fraction. Put the fixed exit route's origin

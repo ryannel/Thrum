@@ -4,8 +4,8 @@ mod admission;
 mod native_recovery;
 pub(super) mod scene;
 
-use super::RuntimeCaptureOutput;
-use crate::GameHost;
+use super::{RuntimeCaptureOutput, WindowGame};
+use crate::{GameHost, hosted::HostedGame};
 
 fn shadow_selection(selection: thrum_render::synthetic::ShadowSelection) -> Value {
     json!({
@@ -850,7 +850,7 @@ fn capture_game(
     output: &Path,
     scenario: &str,
     capture_output: RuntimeCaptureOutput,
-) -> Result<(impl Game, Option<super::ContentPreviewCapture>), String> {
+) -> Result<(HostedGame<WindowGame>, Option<super::ContentPreviewCapture>), String> {
     let mut cooked = super::CaptureCooked::new(output, capture_output);
     let preview = (scenario == "content-edits").then(super::ContentPreviewCapture::default);
     cooked.preview.clone_from(&preview);
@@ -981,33 +981,37 @@ fn metal_instance() -> wgpu::Instance {
     wgpu::Instance::new(descriptor)
 }
 
-fn lighting_edits<G: Game>(
-    driver: &mut Offscreen<G>,
+fn lighting_edits(
+    driver: &mut Offscreen<HostedGame<WindowGame>>,
     scenario: &str,
     scenario_time: Duration,
     night_variant: &mut bool,
     trace: &mut Trace,
     origin: Instant,
 ) -> Result<(), String> {
-    let t = scenario_time.as_secs_f64();
     if matches!(scenario, "atmosphere-scrub" | "atmosphere-ground-pan") {
+        let t = scenario_time.as_secs_f32();
         let (solar, yaw) = if scenario == "atmosphere-scrub" {
             let progress = ((t - 1.0) / 8.0).clamp(0.0, 1.0);
             (
                 5.0 + 19.0 * progress,
-                -45.0 + 22.5 * (std::f64::consts::TAU * progress).sin(),
+                -45.0 + 22.5 * (std::f32::consts::TAU * progress).sin(),
             )
         } else {
             let progress = ((t - 1.0) / 5.0).clamp(0.0, 1.0);
             (17.4 + 0.4 * progress, -110.0 + 40.0 * progress)
         };
-        driver.parameters(&json!({"sky.solar_time":solar,"camera.yaw":yaw}).to_string())?;
+        let host = driver.host_mut();
+        host.set_time_of_day(solar / 24.0)?;
+        host.set_camera_yaw(yaw.to_radians())?;
         trace.controls.push(
             json!({"kind":scenario,"scenario_ns":scenario_time.as_nanos(),
-            "accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar,"yaw_degrees":yaw}),
+            "accepted_ns":origin.elapsed().as_nanos(),"solar_hours":host.time_of_day()*24.0,
+            "yaw_degrees":host.camera_orientation()[1].to_degrees()}),
         );
         return Ok(());
     }
+    let t = scenario_time.as_secs_f64();
     let night = (1.0..3.0).contains(&t);
     let solar = if scenario == "variants" && night != *night_variant {
         *night_variant = night;

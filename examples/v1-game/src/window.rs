@@ -234,7 +234,7 @@ pub fn capture_game() -> Result<impl Game + GameInput<KeyCode>, String> {
 fn capture_game_with_route_limit(
     cloud_capture: bool,
     capture_cooked: Option<CaptureCooked>,
-) -> Result<impl Game + GameInput<KeyCode>, String> {
+) -> Result<HostedGame<WindowGame>, String> {
     Ok(HostedGame(WindowGame {
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
