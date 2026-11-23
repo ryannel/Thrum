@@ -62,7 +62,29 @@ struct VertexOut {
     @location(3) current:vec4<f32>, @location(4) previous:vec4<f32>,
     @location(5) @interpolate(flat) body:u32,
     @location(6) surf_weight:f32,
+    @location(7) surf_normal:vec3<f32>,
 }
+
+fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
+    // Neighbours stay inside this ring's full grid. Its inner hole skips
+    // indices only, so the cache also holds the nodes either side of the seam.
+    let row = 2u*SURF_GRID_RADIUS+1u;
+    let radius = f32(SURF_GRID_RADIUS);
+    let left = select(1u, 0u, local.x <= -radius);
+    let right = select(1u, 0u, local.x >= radius);
+    let below = select(1u, 0u, local.y <= -radius);
+    let above = select(1u, 0u, local.y >= radius);
+    let x0 = surf_current(index-left);
+    let x1 = surf_current(index+right);
+    let z0 = surf_current(index-row*below);
+    let z1 = surf_current(index+row*above);
+    if min(min(x0.w, x1.w), min(z0.w, z1.w)) < 0.5 { return vec3(0.0); }
+    let u = x1.xyz-x0.xyz+vec3(spacing*f32(left+right), 0.0, 0.0);
+    let v = z1.xyz-z0.xyz+vec3(0.0, 0.0, spacing*f32(below+above));
+    let normal = cross(v, u);
+    return normal/max(length(normal), 1e-20);
+}
+
 @vertex fn water_vertex(@location(0) vertex:vec4<f32>, @builtin(vertex_index) index:u32)->VertexOut {
     let sea=vertex.w==0.0;
     let body=u32(vertex.w);
@@ -72,6 +94,7 @@ struct VertexOut {
     var f=field_at(rest,vertex.z,row.gains);
     var surf_weight = 0.0;
     var surf_motion = vec3(0.0);
+    var surf_normal = vec3(0.0);
     let transformed = surf_current(index);
     let local=vertex.xy/vertex.z;
     if sea && max(abs(local.x),abs(local.y))>=32.0 {
@@ -94,6 +117,7 @@ struct VertexOut {
         surf_weight = transformed.w;
         f.displacement += vec4(transformed.xyz, 0.0);
         surf_motion = transformed.xyz - surf_previous(index);
+        if sea { surf_normal = sea_surf_normal(index, local, vertex.z); }
     }
     let wake=wake_at(rest,0.0);
     f.displacement.y+=wake.x;
@@ -104,7 +128,7 @@ struct VertexOut {
     var clip=view.view_proj*vec4(world,1.0);clip.z=max(clip.z,0.0000001);
     let current=view.unjittered_view_proj*vec4(world,1.0);
     let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-surf_motion-vec3(0.0,row.level-row.previous_level,0.0),1.0);
-    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body,surf_weight);
+    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body,surf_weight,surf_normal);
 }
 struct Output { @location(0) colour:vec4<f32>,@location(1) motion:vec2<f32>,@location(2) reactive:f32, }
 struct FilteredLayer { slope:vec2<f32>, second:vec3<f32>, differential:vec3<f32>, }
@@ -137,7 +161,6 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
 }
 @fragment fn water_fragment(input:VertexOut)->Output {
     let dx=dpdx(input.rest);let dy=dpdy(input.rest);
-    let sheet = cross(dpdx(input.world), dpdy(input.world));
     let wake_slope=wake_at(input.rest,0.0).yz;
     let wake_dx=dpdx(wake_slope);let wake_dy=dpdy(wake_slope);
     let row=surface_pixel(input.rest,input.body);
@@ -186,11 +209,11 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         a*a*covariance.x+2.0*a*b*covariance.y+b*b*covariance.z,
         a*b*covariance.x+(a*c+b*b)*covariance.y+b*c*covariance.z,
         b*b*covariance.x+2.0*b*c*covariance.y+c*c*covariance.z)/(determinant*determinant);
-    if SURF_CACHE_ENABLED && input.surf_weight >= 0.999 {
-        // The depth test selects the nearest branch of the folded sheet.
-        // Its screen derivatives give that branch's tangent plane.
-        let up = select(-sheet, sheet, sheet.y >= 0.0);
-        slope = -up.xz / max(up.y, length(up) * 0.03 + 1e-20);
+    if SURF_CACHE_ENABLED && input.surf_weight >= 0.999 && dot(input.surf_normal,input.surf_normal)>1e-8 {
+        // Interpolate normals of the displaced rest sheet before adding the
+        // fine ripple slopes. The depth test still selects the nearest branch.
+        let up = select(-input.surf_normal, input.surf_normal, input.surf_normal.y >= 0.0);
+        slope += -up.xz / max(up.y, length(up) * 0.03 + 1e-20) - row.gains.x*fade*long_mean;
     }
     var whitewater=vec4(0.0);
     if FOAM_ENABLED {

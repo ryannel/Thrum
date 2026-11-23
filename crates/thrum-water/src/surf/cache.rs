@@ -239,13 +239,15 @@ impl Cache {
     }
 
     pub(crate) fn source(enabled: bool) -> String {
-        format!("const SURF_CACHE_ENABLED: bool = {enabled};\n")
-            + if enabled {
-                include_str!("render.wgsl")
-            } else {
-                "fn surf_current(_index: u32) -> vec4<f32> { return vec4(0.0); }
+        let radius = crate::prepare::SEA_RING_HALF_WIDTH;
+        format!(
+            "const SURF_CACHE_ENABLED: bool = {enabled};\nconst SURF_GRID_RADIUS = {radius}u;\n"
+        ) + if enabled {
+            include_str!("render.wgsl")
+        } else {
+            "fn surf_current(_index: u32) -> vec4<f32> { return vec4(0.0); }
                  fn surf_previous(_index: u32) -> vec3<f32> { return vec3(0.0); }"
-            }
+        }
     }
 
     pub(crate) fn surface_binding(&self) -> wgpu::BindGroupLayoutEntry {

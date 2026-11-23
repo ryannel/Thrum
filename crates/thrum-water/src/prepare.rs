@@ -16,6 +16,8 @@ use thrum_render::{
 };
 use wgpu::util::DeviceExt;
 
+pub(crate) const SEA_RING_HALF_WIDTH: i32 = 32;
+
 pub(super) struct Prepared {
     pub(super) ambient: thrum_sea::Ambient,
     pub(super) ambient_passes: usize,
@@ -604,8 +606,8 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
         if matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
             for level in 0..17 {
                 geometry.grid(
-                    [-32; 2],
-                    [32; 2],
+                    [-SEA_RING_HALF_WIDTH; 2],
+                    [SEA_RING_HALF_WIDTH; 2],
                     0.25 * 2.0_f32.powi(level),
                     0.0,
                     level > 0,
