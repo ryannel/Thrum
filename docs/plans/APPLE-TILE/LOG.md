@@ -544,3 +544,19 @@
     `7e4d9e816d32e4c19221235e491222477817e69a70f451278a477f0adfdbb31b` → `073c6ac95ed8952597cc97a483e399ed2898b68357dd65782ef6d0e0430e1254`
   - `sun-sdr/checkpoint-0.png`
     `37951182b40582a636fba0db65d1b0a81ac169c38a4cfd91d73331b0153c6d75` → `3a69a89679180afe8d8045b917cbf5408a1c41d9d2b7667bbfd494b263f9e005`
+
+- 2026-11-23 The lead extended the [mip-bias ruling](../ARCHITECTURE.md#ruling-on-native-mip-bias)
+  for APPLE-PRESENTATION M14 to all four Chrome WebGPU baselines. In matched captures, the designed −1 bias
+  at native width changed every decoded frame. The zero-bias spatial control recovered all
+  1,924 retained frames and both arms matched every registered frame identity.
+  The SHA-256 pairs below give the old and new compressed manifest bytes.
+  [Chrome control and capture record](../../../.orchestrate/evidence/APPLE-PRESENTATION/M14/chrome-bias-diagnostics.json).
+
+  - `chrome-day-sdr`
+    `19ea9419d8ebf692647702a3d76f4cbe928edbc65446ff8b1d9fc414578aaccc` → `19f75ffb486246f29554120f8ce8fa5b5abaa4132ff32139d114e8757b2fcbe9`
+  - `chrome-day-scene-linear`
+    `e14c7756bc41b6108485ea3e3d05337eb3c14a9d5b59711326e4ad94e55cd8b7` → `3d01ea3580e614c5deb4ea0bf3a2cc13e792e7c1b674c5029ad93dae9002d7f0`
+  - `chrome-night-sdr`
+    `ed49185b614138d97531a4d103fd4a7a3aee05087c56b3744c706c17c4100557` → `3b1acc0b7cd40e190f0df280c24d2a0dc26be84ca628101505f8df8c74959dcb`
+  - `chrome-night-scene-linear`
+    `94f57fabf1be209376074776ca1cfe9db1254109ae0761382aa484c275c01c0a` → `c71bee067d8607eb65319358f3babf6dff9cd66be6ca73118e40c82354ea3b9b`

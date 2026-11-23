@@ -841,15 +841,18 @@ ends `BLOCKED` and `APPLE-TILE` refreshes it under rule 1.
 
 <a id="ruling-on-native-mip-bias"></a>
 
-**Ruling on the native material mip bias (with `APPLE-TILE`).** `APPLE-PRESENTATION` M5 deliberately restored
+**Ruling on the material mip bias (with `APPLE-TILE`).** `APPLE-PRESENTATION` M5 deliberately restored
 the [designed mip bias](APPLE-PRESENTATION/DESIGN.md#techniques-and-evidence) of −1 at native width in
 `32dfd3c14`, including with temporal reconstruction off. That changes `apple-tile-native` starting at
-`portable-sdr-approach`. `APPLE-PRESENTATION` M14 regenerates the native references attributable to this
-correction with `APPLE-TILE`'s capture scripts. Both modules' logs record the cause and each replaced file's
-old and new SHA-256. The refresh follows rule 2, including `verify --full` on the candidate before landing.
-The registry changes only `apple-tile-native`'s `pin` and `refresh`, with the refresh naming
+`portable-sdr-approach`. The formula applies on every target. The lead extended the ruling after a matched
+Chrome WebGPU control recovered all 1,924 retained frames by restoring zero bias in the spatial branch.
+`APPLE-PRESENTATION` M14 regenerates the affected native references and all four registered Chrome manifests
+with `APPLE-TILE`'s capture scripts. Both modules' logs record the cause and each replaced file's old and new
+SHA-256. The refresh follows rule 2, including `verify --full` on the candidate before landing.
+The registry changes the five refreshed baselines' pins and refresh records. Each refresh names
 `ruling-on-native-mip-bias`, `APPLE-PRESENTATION` and `M14`. The comparison files and their sampling stay as
 they are. Report any other baseline mismatch to the lead with its capture record.
+
 
 <a id="ruling-on-atmosphere-m9"></a>
 

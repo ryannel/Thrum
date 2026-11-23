@@ -55,11 +55,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-valley-fix",
-        "module": "SHOWCASE",
-        "milestone": "M9"
+        "anchor": "ruling-on-native-mip-bias",
+        "module": "APPLE-PRESENTATION",
+        "milestone": "M14"
       },
-      "pin": "beccc039562319da1224b687eea801043e87bcbab9ecb2c6fa638f691315769a"
+      "pin": "3ec79439a936e6309cced5a4a369773436bf159fbc95af9fd08977d9b6ca1b2f"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -75,11 +75,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-valley-fix",
-        "module": "SHOWCASE",
-        "milestone": "M9"
+        "anchor": "ruling-on-native-mip-bias",
+        "module": "APPLE-PRESENTATION",
+        "milestone": "M14"
       },
-      "pin": "0bce4b2929d1aeb77ef0ffadc23f3a913c6adc20f9fe8c7772cf97c618986a80"
+      "pin": "cd9517c7a3af477ca1a481f81109fbba17fadab8196709590b1e429d46d3ac1a"
     },
     {
       "id": "chrome-night-sdr",
@@ -95,11 +95,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-valley-fix",
-        "module": "SHOWCASE",
-        "milestone": "M9"
+        "anchor": "ruling-on-native-mip-bias",
+        "module": "APPLE-PRESENTATION",
+        "milestone": "M14"
       },
-      "pin": "61b122e28722b5af5971c47d397698102f2c9039344d67ced7e2069258c106ec"
+      "pin": "5cd4760cd3a62a30977c5d7701d968803d1b53940e94992f4b2e42e94e22e8bd"
     },
     {
       "id": "chrome-night-scene-linear",
@@ -115,11 +115,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-valley-fix",
-        "module": "SHOWCASE",
-        "milestone": "M9"
+        "anchor": "ruling-on-native-mip-bias",
+        "module": "APPLE-PRESENTATION",
+        "milestone": "M14"
       },
-      "pin": "c89adab026974675aeefeb8c5c65858c005d3e71c7f676013353b6ad0173edca"
+      "pin": "f52532e905cd612637a84b8888ebfc712cdec87e058b7157f534e34fe03cfaf7"
     }
   ],
   "retired": []
