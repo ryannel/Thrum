@@ -1,27 +1,14 @@
 {
   "module": "RENDER-2D",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/RENDER-2D/design-review.md",
-    "commit": "5ae114a511f41bfce83c346a20688b2a3b671558",
-    "hash": "5f74fa78678aa747b55d7112a7c9e9237d9ff4898f1830bbce7aeaad75720baf",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13",
-    "path": "headless",
-    "usage": {
-      "input": 80529,
-      "cached": 1514752,
-      "output": 7785,
-      "turns": 1
-    },
-    "at": "2026-11-23T22:11:07Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "67059e97c163fac0a5b2bc75df51f082f0f82686bcae6b0031907f8479a8dfce",
+    "after": [
+      ".orchestrate/evidence/RENDER-2D/design-review-4.md",
+      ".orchestrate/evidence/RENDER-2D/design-review.md"
+    ],
+    "at": "2026-11-23T22:16:34Z"
   },
   "milestones": {
     "M1": {
@@ -393,7 +380,7 @@
       }
     },
     "M3": {
-      "definitions": "ba83c9834261fed20b58846f9c85ea9a3b8df59eac2f832e0123f02a66948ac7",
+      "definitions": "320898a9af95b747e7ef99dd1e6f7089e311514dd3670da29119f706691c956f",
       "reviews": [
         {
           "verdict": "fail",
@@ -457,7 +444,7 @@
       "authorised": {
         "by": "plan",
         "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its Must Fix ",
-        "at": "2026-11-23T22:00:07Z"
+        "at": "2026-11-23T22:16:34Z"
       }
     },
     "M4": {
@@ -518,11 +505,15 @@
     {
       "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its Must Fix findings. Also, urgent: main's long-tests fails on RENDER-2D's own test crates/thrum-render/tests/scene_2d.rs (creation-counters feature), which still expects a 1x1 atlas and 16-byte frame table after M3 commits 67abaa0ab and 909111165 changed packing to 12x12 with gutters and an eight-field SpriteFrameRecord; WATERS M17 and RAY-TRACING M3 are blocked on it. Make updating that test the first item of the current milestone so the builder lands it before anything else.",
       "at": "2026-11-23T22:00:07Z"
+    },
+    {
+      "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-23T22:16:34Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T22:00:07Z"
+    "at": "2026-11-23T22:16:34Z"
   },
   "design_history": [
     {
@@ -616,6 +607,29 @@
         "turns": 1
       },
       "at": "2026-11-23T21:41:07Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/RENDER-2D/design-review.md",
+      "commit": "5ae114a511f41bfce83c346a20688b2a3b671558",
+      "hash": "5f74fa78678aa747b55d7112a7c9e9237d9ff4898f1830bbce7aeaad75720baf",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 80529,
+        "cached": 1514752,
+        "output": 7785,
+        "turns": 1
+      },
+      "at": "2026-11-23T22:11:07Z"
     }
   ]
 }
