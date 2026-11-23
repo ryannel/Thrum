@@ -282,7 +282,7 @@
     {
       "id": "M11",
       "name": "Small Metal probes keep the atmospheric lookup checks fast",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
