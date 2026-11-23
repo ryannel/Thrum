@@ -495,7 +495,63 @@
     },
     "M4": {
       "definitions": "5c573ede36d9cb5606695532a7c60d20c2d60985444ff52a6cec5f28bf7173fa",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "0575578582905065fc635918d829ec35bb226099",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md",
+          "items": {
+            "M4.1": "fail",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "fail",
+            "M4.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Public renderer trait methods return String errors",
+              "item": "M4.1",
+              "repeat": false
+            },
+            {
+              "name": "V1 converts renderer failures to Debug text before returning FrameError",
+              "item": "M4.4",
+              "repeat": false
+            },
+            {
+              "name": "The frame host discards the native reservation error",
+              "item": "M4.4",
+              "repeat": false
+            },
+            {
+              "name": "Bucket admission merges storage and dispatch limits",
+              "item": "M4.2",
+              "repeat": false
+            },
+            {
+              "name": "A zero sprite row count reports that capacity was exceeded",
+              "item": "M4.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 104956,
+            "cached": 2383872,
+            "output": 8628,
+            "turns": 1
+          },
+          "at": "2026-11-23T17:06:48Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",

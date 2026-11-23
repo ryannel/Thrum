@@ -230,8 +230,8 @@
     {
       "id": "M4",
       "name": "A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -244,8 +244,10 @@
           "statement": "No public function in `thrum-render` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-render",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/string-errors.log"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -253,10 +255,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test error_types",
           "ask": "Does the test's list hold every error type the crate exports? Does a degenerate instance transform still come back as a lighting error? How many causes does each capacity variant now cover?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/README.md#m42-public-error-contract",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -265,8 +267,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/code-review.md#m43-shared-renderer-definitions-and-typed-effect-graph-refusal",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -275,10 +277,10 @@
           "lock": "gpu",
           "ask": "Is any error still turned into text with `{:?}` on its way up through the runtime?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/README.md#m44-frame-error-propagation",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -286,7 +288,36 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images"
+          "evidence": "main-branch check exact-images",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Public renderer trait methods return String errors",
+          "item": "M4.1",
+          "repeat": false
+        },
+        {
+          "name": "V1 converts renderer failures to Debug text before returning FrameError",
+          "item": "M4.4",
+          "repeat": false
+        },
+        {
+          "name": "The frame host discards the native reservation error",
+          "item": "M4.4",
+          "repeat": false
+        },
+        {
+          "name": "Bucket admission merges storage and dispatch limits",
+          "item": "M4.2",
+          "repeat": false
+        },
+        {
+          "name": "A zero sprite row count reports that capacity was exceeded",
+          "item": "M4.2",
+          "repeat": false
         }
       ]
     },
