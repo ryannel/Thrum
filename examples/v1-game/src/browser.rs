@@ -30,7 +30,11 @@ use web_sys::HtmlCanvasElement;
 
 use thrum_render::runtime::FrameSample;
 
-use crate::{controls::GameControls, host::web as game, hosted::HostedGame};
+use crate::{
+    controls::GameControls,
+    host::{haze_capture::HazeTake, web as game},
+    hosted::HostedGame,
+};
 
 /// The cooked valley's dev-server client and the feed of generations it has fetched.
 #[wasm_bindgen]
@@ -91,6 +95,7 @@ pub struct BrowserGame {
     temporal_inputs: bool,
     page: PageGame<HostedGame<game::PageGame>>,
     cloud_sky: Option<thrum_clouds::SkyProfile>,
+    haze_take: Option<HazeTake>,
     cloud_observation: Option<Rc<RefCell<cloud_observation::PreviousSun>>>,
     cooked: Option<Arc<Mutex<CookedStats>>>,
     content_preview: Option<crate::content_preview::PreviewRecord>,
@@ -339,6 +344,7 @@ async fn create_game_with_shapes(
             == thrum_render::synthetic::DisplayOverlay::TemporalInputs,
         page,
         cloud_sky,
+        haze_take: None,
         cloud_observation: None,
         cooked: None,
         content_preview: None,
@@ -818,27 +824,32 @@ impl BrowserGame {
         game::set_capture_eye(&mut self.page.shell, [x, y, z]).map_err(js_error)
     }
 
-    /// Move the camera and Sun for the opt-in haze inspection.
+    /// Load the camera and Sun trajectory for the opt-in haze inspection.
     ///
     /// # Errors
-    /// Refuses a malformed take, missing valley camera or invalid elapsed time.
-    pub fn sample_haze_take(
-        &mut self,
-        take: String,
-        elapsed_seconds: f32,
-    ) -> Result<String, JsValue> {
-        use crate::host::haze_capture::HazeTake;
+    /// Refuses a malformed take.
+    pub fn configure_haze_take(&mut self, take: &str) -> Result<(), JsValue> {
+        self.haze_take = Some(HazeTake::parse(take).map_err(js_error)?);
+        Ok(())
+    }
+
+    /// Move the camera and Sun for the configured elapsed-time sample.
+    ///
+    /// # Errors
+    /// Refuses a missing take, missing valley camera or invalid elapsed time.
+    pub fn sample_haze_take(&mut self, elapsed_seconds: f32) -> Result<String, JsValue> {
         if !elapsed_seconds.is_finite() || elapsed_seconds < 0.0 {
             return Err(js_error("invalid haze take time"));
         }
-        let pose = HazeTake::parse(&take)
-            .map_err(js_error)?
+        let pose = self
+            .haze_take
+            .ok_or_else(|| js_error("haze take is not configured"))?
             .at(elapsed_seconds);
         game::set_haze_eye(&mut self.page.shell, pose.eye, pose.cut).map_err(js_error)?;
         game::scrub_haze_sun(&mut self.page.shell, pose.solar_hours / 24.0).map_err(js_error)?;
         game::set_camera_yaw(&mut self.page.shell, pose.yaw_degrees.to_radians())
             .map_err(js_error)?;
-        serde_json::to_string(&pose).map_err(|error| js_error(&error.to_string()))
+        serde_json::to_string(&pose).map_err(js_error)
     }
 
     /// Prepared 3D shader and graph identity for fixed submitted-frame comparisons.

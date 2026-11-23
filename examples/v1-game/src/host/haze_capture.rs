@@ -15,7 +15,7 @@ enum Motion {
 #[derive(Clone, Copy, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct HazeTake {
-    pub(crate) eye: [f32; 3],
+    eye: [f32; 3],
     solar_hours: f32,
     yaw_degrees: f32,
     motion: Option<Motion>,

@@ -584,6 +584,7 @@ fn prepare_parameters(
     driver: &mut Offscreen<HostedGame<WindowGame>>,
     scenario: &str,
     mode: &str,
+    haze_take: Option<HazeTake>,
 ) -> Result<(Instant, Instant), String> {
     let preset_requested = Instant::now();
     let parameters = std::env::var_os("THRUM_CAPTURE_RUNTIME_PARAMS")
@@ -598,6 +599,13 @@ fn prepare_parameters(
                 .as_deref()
                 .unwrap_or(include_str!("../../params/showcase-noon.params.json")),
         )?;
+    }
+    if let Some(take) = haze_take {
+        let pose = take.at(0.0);
+        let host = driver.host_mut();
+        crate::host::set_haze_eye(host, pose.eye, true)?;
+        crate::host::scrub_haze_sun(host, pose.solar_hours / 24.0)?;
+        host.set_camera_yaw(pose.yaw_degrees.to_radians())?;
     }
     let preset_accepted = Instant::now();
     warmup(driver)?;
@@ -688,16 +696,14 @@ async fn record(
         .ok()
         .map(|text| HazeTake::parse(&text))
         .transpose()?;
-    if let Some(take) = haze_take {
-        crate::host::set_haze_eye(driver.host_mut(), take.eye, true)?;
-    }
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let motion_capture = mode == "realtime" && is_motion_capture(scenario);
     let elapsed_observation = motion_capture || sprite_motion(scenario);
     if elapsed_observation {
         driver.set_timing_requested(false);
     }
-    let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario, &mode)?;
+    let (preset_requested, preset_accepted) =
+        prepare_parameters(&mut driver, scenario, &mode, haze_take)?;
     reset_native_capture(&mut driver);
     let sprite_cost = scenario == "sprites-field-cost";
     let observer_only = sprite_cost || capture_output == RuntimeCaptureOutput::ObserverOnly;

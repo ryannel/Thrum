@@ -147,7 +147,8 @@ async function runCapture() {
   if (query.has('haze-take')) {
     hazeTake = await (await fetch('/haze-take.json')).text();
     record.haze_take = JSON.parse(hazeTake);
-    game.sample_haze_take(hazeTake, 0);
+    game.configure_haze_take(hazeTake);
+    game.sample_haze_take(0);
   }
   if (atmosphere === 'cost') game.enable_haze_timings();
   if (heldSetup) {
@@ -281,7 +282,7 @@ async function runCapture() {
       record.actions.push({kind:'solar-scrub',frame_ms:timestamp,solar_hours:solar});
     }
     if (atmosphereMotion && hazeTake) {
-      const pose = JSON.parse(game.sample_haze_take(hazeTake, (timestamp - base) / 1000));
+      const pose = JSON.parse(game.sample_haze_take((timestamp - base) / 1000));
       record.actions.push({kind:'haze', frame_ms:timestamp, pose});
     } else if (atmosphereMotion) {
       const scrub = atmosphere === 'scrub';
