@@ -237,3 +237,8 @@
   22 omitted delayed opportunities and validate 24 submitted frames per threaded arm; capture records
   include a stop, resume and origin change. [Proof and identities](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-proof.md).
   Numerical Mac correctness is separate from visuals, device speed, consumer prediction and panel cadence.
+- 2026-11-23 M5.1 steps the original three gap and pause cases through the resident world lane on simulated
+  time. The Mac nextest run verified the original 2 µs origin checks, the hold before the first resumed tick
+  and the delayed observation in both spans. The test took 0.053 s alone and 0.058 s in the first focused batch
+  (11 passes), against 6.213 s in the plan's workspace run.
+  [Timing and coverage](../../../.orchestrate/evidence/EFFECT-GRAPH/M5/M5.1.md).

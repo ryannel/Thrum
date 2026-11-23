@@ -418,7 +418,7 @@
     {
       "id": "M5",
       "name": "The world lane\u2019s resume origin is proved without real-time pacing",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -427,8 +427,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-core --test it -E 'test(=clock_spans::lane::a_resumed_lane_keeps_one_origin_inside_the_resume_bracket)' --no-tests=fail",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M5/M5.1.md"
         }
       ],
       "failed_reviews": 0,

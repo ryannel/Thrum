@@ -193,7 +193,6 @@
         "crates/thrum-core/src/sim/clocked_world/tests.rs": 1,
         "crates/thrum-core/src/sim/world_lane/tests.rs": 2,
         "crates/thrum-core/src/sim/world_lane/tests/lifecycle.rs": 1,
-        "crates/thrum-core/tests/clock_spans/lane.rs": 1,
         "crates/thrum-core/tests/display_phase/world.rs": 4,
         "crates/thrum-core/tests/error_types/lane.rs": 1,
         "crates/thrum-render/src/runtime/tests/device.rs": 1,
