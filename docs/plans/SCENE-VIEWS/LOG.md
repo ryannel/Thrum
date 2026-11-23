@@ -322,3 +322,9 @@
   GPU and fails on an empty selection, so a renamed or split test still runs in full. The design names the
   retained crossing controls and the plan asks for a mapping from their original assertions to the cases run.
   [Design review](../../../.orchestrate/evidence/SCENE-VIEWS/design-review.md)
+
+- 2026-11-23 M4.1 split the shaded secondary-view regression into five crossing cases. The
+  test observes a single column, reuses surface preparation across radiances and keeps both Sun
+  directions, the stored-step allowances and every negative control. All five passed on their
+  first attempt in the focused Metal batch under builder load, with a 0.862 s maximum.
+  [Coverage and timing record](../../../.orchestrate/evidence/SCENE-VIEWS/M4/README.md)

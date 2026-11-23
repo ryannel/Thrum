@@ -358,7 +358,7 @@
     {
       "id": "M4",
       "name": "A small scene catches wrong secondary-view air and shade",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -368,8 +368,8 @@
           "ask": "Does the evidence map the original panel test's assertions, boundary cases and tolerances to the cases that ran in the focused batch? Does it record the baseline and the revised per-test times, including solo and focused runs of the revised cases, and show that each revised case passed within ten seconds on its first attempt in the batch?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M4/README.md",
           "verdict": "",
           "review": ""
         }
