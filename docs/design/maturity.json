@@ -268,6 +268,11 @@
         "unqualified": "The moving west-lookout shadow crossing, exact finite-disk match, all-orders solar sky and solar aerial accuracy, Moon, weather, calibrated night colour, physical display cadence and physical iPhone are outside the qualification.",
         "evidence": ["../../.orchestrate/evidence/ATMOSPHERE/M6/README.md"]
       },
+      "lookup_regressions": {
+        "correctness": "The H4 referee compares the production Metal decode with an independent f64 blend of the stored aerial cell. It exercises the live and known fields, fixed texels, depth interpolation, the far clamp, exposure independence and three wrong lookups. The diffuse referee checks the production projection and evaluator against the seven analytic sky cases.",
+        "device": "M11 records fast-tier test durations on Apple M3 Max Metal under shared builder load.",
+        "evidence": ["../../.orchestrate/evidence/ATMOSPHERE/M11/README.md"]
+      },
       "aloft_casters": {
         "implementation": "The exit balloon row is marked aloft. Its buckets draw in both Sun cascades. Only grounded buckets draw in the terrain horizon; contribution casters and Sun fits retain their existing inputs.",
         "correctness": "M10.1 reads the three Metal depth layers. Both cascades equal the unmarked run, and the terrain horizon equals the run with the airborne caster absent, in Direct, Frustum and Occlusion.",
