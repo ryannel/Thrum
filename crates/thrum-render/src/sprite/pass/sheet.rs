@@ -2,11 +2,11 @@
 
 use super::GpuRect;
 use crate::{
+    error::RenderError,
     shader_constants::{
         SRGB_ENCODED_KNEE, SRGB_GAMMA_F32, SRGB_OFFSET, SRGB_SCALE, SRGB_SLOPE_F32,
     },
     sprite::{EmbeddedSheet, NamedSheet, SHEET_GUTTER as GUTTER, SHEET_MAX_MIP},
-    error::RenderError,
 };
 
 const MIP_LEVELS: u32 = SHEET_MAX_MIP + 1;
