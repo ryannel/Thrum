@@ -85,12 +85,8 @@ pub(super) fn upload(
     sheet: &NamedSheet,
     table: &mut Vec<GpuRect>,
 ) -> Result<(wgpu::Texture, wgpu::TextureView), RenderError> {
-    let (placements, [width, height, pages]) = pack(sheet, &device.limits()).ok_or_else(|| {
-        RenderError::Validation(format!(
-            "embedded sprite sheet '{}' cannot pack its frames or tiles",
-            sheet.name
-        ))
-    })?;
+    let (placements, [width, height, pages]) = pack(sheet, &device.limits())
+        .ok_or_else(|| RenderError::InvalidSpriteSheet(sheet.name.clone()))?;
     let texture = texture(device, width, height, pages, MIP_LEVELS);
     for (rect, placement) in sheet.sheet.frames.iter().zip(placements) {
         write_frame(queue, &texture, &sheet.sheet, *rect, placement);
