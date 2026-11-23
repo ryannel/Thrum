@@ -1077,8 +1077,8 @@
           "statement": "The two portable forward-cache cases, light and high wind, move from the default selection to the long tier with their early and day-in production-size sweeps intact. Guard: both sweeps compare every base texel and every filtered mip, including high/low carry against direct base-block averages through the mip hierarchy.",
           "ask": "Do both portable cases retain their original dimensions, two time checkpoints, base-texel comparisons and direct base-block averages through the final mip with the original high/low carry tolerances? Does the default runner skip both and does the long-tier list register their binary once, for release with overflow checks, with the production-size fault recorded?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M17/M17.3-long-tier.md",
           "verdict": "",
           "review": ""
         },
