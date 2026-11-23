@@ -25,11 +25,11 @@ pub(super) fn diagnostic() -> Result<SunOpticalDepth, thrum_render::error::Rende
     .and_then(|field| field.with_drift([160.0, 40.0]))
 }
 
-/// Two soft-edged banks with an open gap over the valley. The field is a
-/// stand-in for directional optical depth, with no condensate of its own.
+/// Directional optical depth of a broken cloud deck, with two clearings.
+/// The field supplies direct sunlight visibility without condensate.
 pub(super) fn haze_banks() -> Result<SunOpticalDepth, String> {
-    const EXTENT: u32 = 256;
-    const REGION: [f32; 4] = [-13_500.0, -4_500.0, 2_000.0, 2_000.0];
+    const EXTENT: u32 = 1024;
+    const REGION: [f32; 4] = [-28_000.0, -10_500.0, 1_000.0, 5_500.0];
     let mut tau = Vec::with_capacity((EXTENT * EXTENT) as usize);
     let bank = |distance: f32| {
         let edge = ((1.0 - distance) / 0.30).clamp(0.0, 1.0);
@@ -39,15 +39,14 @@ pub(super) fn haze_banks() -> Result<SunOpticalDepth, String> {
         let z = REGION[1] + (row as f32 + 0.5) / EXTENT as f32 * (REGION[3] - REGION[1]);
         for column in 0..EXTENT {
             let x = REGION[0] + (column as f32 + 0.5) / EXTENT as f32 * (REGION[2] - REGION[0]);
-            let along = x + 7_060.0;
-            // The low Sun's horizontal bearing runs along the gap. Its
-            // incoming rays stay in the gap from the ridge to the valley.
-            let across = z + 1_105.0 - 0.179 * along;
-            let west = ((along + 500.0) / 4_300.0).powi(2) + ((across + 400.0) / 300.0).powi(2);
-            let east = ((along - 550.0) / 3_950.0).powi(2) + ((across - 380.0) / 270.0).powi(2);
-            tau.push(3.8 * bank(west).max(bank(east)));
+            let deck = ((x + 15_900.0) / 12_000.0).powi(2) + ((z + 2_550.0) / 6_800.0).powi(2);
+            // At a 10° Sun the first opening illuminates the plain east of
+            // the lookout. The other opening falls farther up the valley.
+            let near = ((x + 14_860.0) / 230.0).powi(2) + ((z + 2_480.0) / 140.0).powi(2);
+            let far = ((x + 17_010.0) / 520.0).powi(2) + ((z + 2_930.0) / 240.0).powi(2);
+            tau.push(4.6 * bank(deck) * (1.0 - bank(near).max(bank(far))));
         }
     }
-    SunOpticalDepth::new([EXTENT; 2], &tau, 1_450.0, REGION, 0.001, 1)
+    SunOpticalDepth::new([EXTENT; 2], &tau, 2_800.0, REGION, 0.001, 1)
         .map_err(|error| format!("diagnostic cloud banks: {error:?}"))
 }
