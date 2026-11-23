@@ -1,5 +1,13 @@
 # CLOUDS log
 
+- 2026-11-23 M6 cooks the accepted twelve library volumes and eleven growth keys into
+  two leased stacks, with model-derived footprints and a continuous column fallback.
+  The example uses the same world state and density for the visible cloud and its
+  Sun path. Metal and Chrome WebGPU checks cover the published products, drawn cloud,
+  headless queries and shade-only profile. The paired 1440p record includes the
+  refresh tripwires and the resource bytes for both Metal device profiles.
+  [Builder evidence](../../../.orchestrate/evidence/CLOUDS/M6/README.md)
+
 - 2026-11-15 Resumed M13 at `2b14b2b00` with all ten builder items passed.
   Stopped inherited job `20261115-205432-68753`, still waiting for the GPU, because
   its old integration helper holds a device lock across merges. Current integration

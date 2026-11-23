@@ -4507,6 +4507,46 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M6/directed-motion-1x.tar",
+      "size": 317942784,
+      "sha256": "8a856d0ea1045228233f0ebb909eeda28cc35d9ff307c03216a07710b94740c8",
+      "date": "2026-11-23T10:37:59.666078+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M6/directed-motion-30x.tar",
+      "size": 404201472,
+      "sha256": "5406c6911f2a9c6cfd2bcf41126b521706f31b5b9ffbadbd1f35fa8ef3b436e2",
+      "date": "2026-11-23T10:22:19.589743+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M6/directed-motion-8x.tar",
+      "size": 290689024,
+      "sha256": "6b5074e1f0348108d356a5b153d40713da10cf5ff485b1bb6863c3ebd99c03ae",
+      "date": "2026-11-23T10:32:21.853907+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M6/placed-motion-1x.tar",
+      "size": 190943744,
+      "sha256": "473c9e839069eb5243fa060644402d136a5dd54f08a8097164839452e8799751",
+      "date": "2026-11-23T10:22:10.707640+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M6/placed-motion-60x.tar",
+      "size": 241983488,
+      "sha256": "1953d4751cac7bf2bf511108d10a55054d5ce793dd07be8624069d6c7044329e",
+      "date": "2026-11-23T10:22:15.049730+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CONTENT-LOOP/M2/realtime/frames.zst",
       "size": 476272219,
       "sha256": "c5a4e429f941846c02aa8576fd2178d7d10bd52e542cd978c5cae282c40db686",

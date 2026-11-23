@@ -7,17 +7,27 @@ mod scene_fixture;
 
 thrum_test_support::macos_gpu_test! {
     fn a_twenty_degree_sun_sees_the_leaning_volume() {
-        run(20.0);
+        run(20.0, &[(1.0, [25.0, 40.0]), (0.0, [0.0, 10.0])]);
     }
 }
 thrum_test_support::macos_gpu_test! {
     fn a_sixty_degree_sun_sees_the_leaning_volume() {
-        run(60.0);
+        run(60.0, &[(1.0, [25.0, 40.0]), (0.0, [0.0, 10.0])]);
+    }
+}
+thrum_test_support::macos_gpu_test! {
+    fn a_twenty_degree_sun_and_trace_read_the_same_blend() {
+        run(20.0, &[(0.5, [0.0, 40.0])]);
+    }
+}
+thrum_test_support::macos_gpu_test! {
+    fn a_sixty_degree_sun_and_trace_read_the_same_blend() {
+        run(60.0, &[(0.5, [0.0, 40.0])]);
     }
 }
 
 #[cfg(target_os = "macos")]
-fn run(elevation: f32) {
+fn run(elevation: f32, arms: &[(f64, [f64; 2])]) {
     use placed_fixture::Fixture;
     let Some(gpu) = thrum_test_support::open(
         "placed Sun and trace",
@@ -36,22 +46,20 @@ fn run(elevation: f32) {
     .expect("model");
     let radians = elevation.to_radians();
     let sun = [radians.cos(), radians.sin(), 0.0];
-    let arms = [(1.0, [25.0, 40.0]), (0.5, [0.0, 40.0]), (0.0, [0.0, 10.0])];
     let mut controls = Vec::new();
     pollster::block_on(async {
-        for (weight, range) in arms {
+        for &(weight, range) in arms {
             let (_host, input) = fixture.submit(&gpu, range, true, true, sun).await;
             controls.push(compare_sun(&gpu, &input, &fixture, &field, sun, weight));
             compare_trace(&gpu, &input, &field, &fixture, weight);
         }
     });
-    assert!(
-        controls[0]
-            .iter()
-            .zip(&controls[2])
-            .any(|(a, b)| (a - b).abs() > 0.03),
-        "a footprint substitution must fail on the oblique probes"
-    );
+    if let [volume, column] = controls.as_slice() {
+        assert!(
+            volume.iter().zip(column).any(|(a, b)| (a - b).abs() > 0.03),
+            "a footprint substitution must fail on the oblique probes"
+        );
+    }
 }
 
 #[cfg(target_os = "macos")]

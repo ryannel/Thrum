@@ -779,7 +779,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/slab-metal.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-targets-final.log",
           "verdict": "",
           "review": ""
         },
@@ -791,7 +791,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/shade-tests.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-shade-final.log",
           "verdict": "",
           "review": ""
         },
@@ -802,7 +802,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/game-second.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-targets-final.log",
           "verdict": "",
           "review": ""
         },
@@ -811,8 +811,8 @@
           "statement": "At noon and at a 10\u00b0 Sun, a placed cloud among procedural ones has the same light and the same base level, edges that break as its neighbours' do, and no seam or box outline. Where a procedural cloud is partly in front of it and partly behind, each hides the other correctly. The shade on the ground has the placed cloud's outline.",
           "inspect": "Capture `fixed` stills of a placed library cloud among procedural clouds at noon and at a 10\u00b0 Sun, from 2 m and from 40 m, and one looking down its shade. Judge each whole and in native-size crops of the placed cloud's edge, its base and the overlap with a neighbour.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/README.md",
           "verdict": "",
           "review": ""
         },
@@ -821,8 +821,8 @@
           "statement": "At 1x and at 60x a placed cloud drifts with its neighbours and forms and thins with its cell, with no pop. A growth-track instance rises through its keys with no step between keys. A cloud that crosses the edge of the placed range does not pop.",
           "inspect": "Capture `realtime` sequences of 30 seconds at 1x and at 60x that hold a placed cloud, a growth-track instance and the edge of the placed range in view. Judge consecutive frames.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/README.md",
           "verdict": "",
           "review": ""
         },
@@ -833,7 +833,7 @@
           "ask": "Does the provenance record match the files added, and is anything in the repository from Broadsides that it does not list? Do the hashes in the test come from the Broadsides records the design names, and not from the cooked products?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/library-mac.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-targets-final.log",
           "verdict": "",
           "review": ""
         },
@@ -854,8 +854,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene placed",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/paired-cost-final.json",
           "verdict": "",
           "review": ""
         },
@@ -867,7 +867,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/game-second.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-targets-final.log",
           "verdict": "",
           "review": ""
         },
@@ -876,8 +876,8 @@
           "statement": "A composed sky: at a 10\u00b0 Sun with coverage at 0, a library tower the game placed beside the Sun stands there alone, forms with no pop when it is added, rises through its growth track as the game moves its growth, drifts with the wind, and thins away when the game lets it go.",
           "inspect": "Capture a `fixed` still of the tower beside the Sun, and `realtime` sequences of its forming, its growth at 30x and its thinning. Judge the still whole and in native-size crops, and consecutive frames of each sequence.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/README.md",
           "verdict": "",
           "review": ""
         },
@@ -899,7 +899,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/shade-tests.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-targets-final.log",
           "verdict": "",
           "review": ""
         }
