@@ -1023,15 +1023,15 @@
         "scope": "Scripted scale inside a prepared 3D generation with Portable TAAU."
       },
       "M6": {
-        "implementation": "Mac float EDR surface in extended linear sRGB, retained AppKit layer configuration, prepared display shoulder with atomic headroom updates, and a submitted drawable tap. UIKit polls screen headroom beside the existing surface lease.",
-        "functional_validation": "All seven target commands passed. The H=1 float capture stayed within one sRGB code of undithered SDR in 12 stills across Portable and Apple Tile. The Mac retained its float surface at H=1, promoted SDR through one generation transition, and captured all 40 actual drawables in the forced headroom arm. The iPhone 18 Pro simulator held its BGRA8 lease during headroom polling.",
+        "implementation": "Mac float EDR surface in extended linear sRGB, retained AppKit layer configuration, prepared display shoulder with atomic headroom updates, and a submitted drawable tap. SDR and EDR share configured extent validation and a letterboxed viewport. The tap enforces one staging and pixel budget across display generations. UIKit polls screen headroom beside the existing surface lease.",
+        "functional_validation": "All seven target commands passed. The H=1 float capture stayed within one sRGB code of undithered SDR in 12 stills across Portable and Apple Tile. The Mac retained its float surface at H=1, promoted SDR through one generation transition, and captured all 40 actual drawables in the forced headroom arm. Metal verified capture omissions and resumption under the session's staging, lease and byte limits. The iPhone 18 Pro simulator held its BGRA8 lease during headroom polling. Chrome hardware WebGPU matched all 481 retained fixed-day SDR frames.",
         "experienced_quality": "Builder and an independent reader judged both headrooms at whole-frame and native-crop size. The Sun reads as a round disk in graded sky and the four lamp points retain separate colours. The independent reader noted slight disk-edge stepping and a ground transition below the ridge.",
         "platform_performance": {
           "mac": "The forced headroom update appeared on display tick 12 under shared load, with the same creation record as the constant-headroom control. The physical panel observation belongs to M11.",
           "browser": "Workspace Web compilation and SDR regression coverage.",
           "ios": "Simulator function only."
         },
-        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M6/README.md",
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/README.md",
         "scope": "Mac layer configuration and submitted float output, with simulator SDR polling."
       }
     }

@@ -350,3 +350,8 @@
   continuing and capture resuming in the same session. All seven named target checks passed. The fresh Metal route's
   raw pixels and previews match the previous route byte for byte and pass the visual inspection.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/review-fix-3/README.md).
+
+- 2026-11-24 M6. Integrated the extent and capture-budget fixes after M15. The renderer rejects stale drawable
+  extents on both display paths and bounds staging and writer leases across promotion. All seven target checks
+  and the Mac visual inspection passed. Chrome hardware WebGPU matched all 481 retained fixed-day SDR frames.
+  [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/README.md).
