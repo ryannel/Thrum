@@ -9,6 +9,7 @@ fn forward_fields_and_full_lean_pyramids_match_the_model_native_light_wind() {
 }
 
 #[test]
+#[ignore = "long: the portable production-size forward cache and complete mip sweep"]
 fn forward_fields_and_full_lean_pyramids_match_the_model_portable_light_wind() {
     forward_fields_and_full_lean_pyramids(true, 8.0);
 }
@@ -19,6 +20,7 @@ fn forward_fields_and_full_lean_pyramids_match_the_model_native_high_wind() {
 }
 
 #[test]
+#[ignore = "long: the portable production-size forward cache and complete mip sweep"]
 fn forward_fields_and_full_lean_pyramids_match_the_model_portable_high_wind() {
     forward_fields_and_full_lean_pyramids(true, 20.0);
 }

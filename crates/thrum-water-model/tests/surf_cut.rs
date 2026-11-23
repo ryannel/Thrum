@@ -26,9 +26,9 @@ fn reference(
     origin: [f64; 2],
     side: usize,
     spacing: f64,
+    margin: f64,
 ) -> (Vec<f64>, Vec<usize>) {
     let cell = 0.03125;
-    let margin = 20.0;
     let start = origin.map(|p| p - margin);
     let width = spacing * (side - 1) as f64 + margin * 2.0;
     #[expect(
@@ -125,7 +125,7 @@ fn highest_cut_on_straight_crossing_and_shoaling_sheets() {
         let origin = if case == 2 { [-34.0, 10.0] } else { [-4.0; 2] };
         let side = 65;
         let spacing = 0.125;
-        let (reference, hits) = reference(&sheet, origin, side, spacing);
+        let (reference, hits) = reference(&sheet, origin, side, spacing, 20.0);
         let mut triples = 0;
         let mut max_nodes = 0;
         let mut converged = 0;
@@ -226,9 +226,10 @@ fn production_sheets_and_their_own_reach_match_forward_reference() {
             }
         }
         let fold = fold.expect("each production sheet must actually overhang");
-        let origin = fold.map(|v| v - 1.0);
-        let side = 17;
-        let (fine, hits) = reference(&sheet, origin, side, 0.125);
+        let origin = fold.map(|v| v - 0.5);
+        let side = 9;
+        // A fixed rest-domain margin covers the local deformation without consulting reach.
+        let (fine, hits) = reference(&sheet, origin, side, 0.125, 8.0);
         let mut triples = 0;
         for z in 2..side - 2 {
             for x in 2..side - 2 {

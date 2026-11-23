@@ -287,27 +287,25 @@ fn lake_beach_births_follow_its_share_of_lost_power() {
     let _serial = DEVICE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    support::island::with_cooked_island("lake_beach_births_follow_its_share_of_lost_power", || {
-        let Some(gpu) = thrum_test_support::gpu("lake shore power", Some(wgpu::Backend::Metal)) else {
-            return;
-        };
-        let means = [0, 1].map(|body| shore_power(&gpu, Wind::Trade, body));
-        let lake_foam_share = means[1][0] / means[0][0];
-        let lake_power_share = means[1][1] / means[0][1];
-        assert!(
-            lake_foam_share > 0.0 && lake_power_share > 0.0 && lake_foam_share < 0.32,
-            "{means:?}"
-        );
-        // Exposure of wet cells and the bounded cover cap affect the accumulated
-        // ratio. The lake must stay in the same order of magnitude as its power share.
-        assert!(
-            (0.1..8.0).contains(&(lake_foam_share / lake_power_share)),
-            "{means:?}"
-        );
-        eprintln!(
-            "Lake vs beach share of film {lake_foam_share:.5}, of depth-limited power {lake_power_share:.5}"
-        );
-    });
+    let Some(gpu) = thrum_test_support::gpu("lake shore power", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let means = [0, 1].map(|body| compact_shore_power(&gpu, body));
+    let lake_foam_share = means[1][0] / means[0][0];
+    let lake_power_share = means[1][1] / means[0][1];
+    assert!(
+        lake_foam_share > 0.0 && lake_power_share > 0.0 && lake_foam_share < 0.32,
+        "{means:?}"
+    );
+    // Exposure of wet cells and the bounded cover cap affect the accumulated
+    // ratio. The lake must stay in the same order of magnitude as its power share.
+    assert!(
+        (0.1..8.0).contains(&(lake_foam_share / lake_power_share)),
+        "{means:?}"
+    );
+    eprintln!(
+        "Lake vs beach share of film {lake_foam_share:.5}, of depth-limited power {lake_power_share:.5}"
+    );
 }
 }
 
@@ -325,147 +323,254 @@ fn the_film_leaves_ground_depth() {
 }
 }
 
+#[cfg(target_os = "macos")]
+fn compact_shore_power(gpu: &thrum_test_support::Gpu, body: usize) -> [f64; 2] {
+    use std::{
+        sync::{Arc, Mutex},
+        time::Duration,
+    };
+    use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
+    use thrum_water_model::{Bed, Body, BodyKind, Map, Profile, Stage};
+
+    const LAKE_CENTRE: f64 = 49.0;
+    const LAKE_LEVEL: f64 = 8.0;
+    let origin = [-32.0, -32.0];
+    let size = [117_u32, 65];
+    let heights = (0..size[1])
+        .flat_map(|z| {
+            (0..size[0]).map(move |x| {
+                let x = origin[0] + f64::from(x);
+                let z = origin[1] + f64::from(z);
+                let beach = (0.14 * x).clamp(-8.0, LAKE_LEVEL + 3.0);
+                if x < 20.0 {
+                    beach
+                } else {
+                    LAKE_LEVEL + 0.22 * ((x - LAKE_CENTRE).hypot(z) - 23.0)
+                }
+            })
+        })
+        .collect();
+    let bed = Bed::new(origin, 1.0, size.map(|n| n as usize), heights).expect("shore bed");
+    let wind = Wind::Trade;
+    let forcing = wind.forcing();
+    let stage = Stage {
+        min: 0.0,
+        max: 0.0,
+        value: 0.0,
+    };
+    let mut map = Map::prepare(
+        bed,
+        vec![
+            Body {
+                name: "Beach".into(),
+                kind: BodyKind::Sea,
+                level: 0.0,
+                stage,
+                fetch: forcing.fetch,
+                gains: [1.0; 4],
+            },
+            Body {
+                name: "Lake".into(),
+                kind: BodyKind::Basin {
+                    seed: [LAKE_CENTRE, 0.0],
+                },
+                level: LAKE_LEVEL,
+                stage,
+                fetch: 1_000.0,
+                gains: [0.0; 4],
+            },
+        ],
+        Profile {
+            margin_height: 3.5,
+            swash_ratio: 0.7,
+        },
+    )
+    .expect("beach and enclosed basin");
+    map.set_forcing(&forcing).expect("sheltered gains");
+    let map = Arc::new(Mutex::new(map));
+    let spectrum = thrum_sea_model::Spectrum::build(&forcing).expect("wind forcing");
+    let mut profile = water_scene::profile(&spectrum);
+    profile.query = Some(thrum_water::query::QueryLimits {
+        points: 512,
+        max_age: 8,
+    });
+    let mut water =
+        thrum_water::Water::mapped(Arc::clone(&map), spectrum, profile).expect("mapped shoreline");
+    water.enable_foam([8.0, 0.0]).expect("shore film");
+    let probes = water_scene::island::FoamProbes {
+        foam: water.tap_foam(),
+        query: water.query_mailbox().expect("shore queries"),
+    };
+    let report = water.report();
+    let camera = if body == 0 {
+        Camera::look_at([1.0, 2.0, 3.0], [-6.0, -0.5, 0.0], 65.0)
+    } else {
+        Camera::look_at([70.0, 10.0, 3.0], [63.0, 7.5, 0.0], 65.0)
+    };
+    let game = SkyGame::new(Controls::new(), camera, |_, sky| sky.temporal_inputs = true)
+        .with_ground(None)
+        .with_tick_duration(Duration::from_nanos(16_666_667))
+        .expect("supported tick")
+        .with_contribution(Box::new(water), || ContentStatus::Drawn(1));
+    let mut fixture = Fixture::from_game(gpu, [64, 48], game, report);
+    measure_shore_power(&mut fixture, &map, &probes, wind, body, 120..=360)
+}
+
+#[cfg(target_os = "macos")]
+fn shore_power(gpu: &thrum_test_support::Gpu, wind: Wind, body: usize) -> [f64; 2] {
+    let (game, report, map, probes) = build_foam(wind, true, true).expect("island whitewater");
+    let mut fixture = Fixture::from_game(gpu, [128, 96], game, report);
+    fixture.parameters(if body == 0 {
+        r#"{"camera.island":0}"#
+    } else {
+        r#"{"camera.island":1}"#
+    });
+    measure_shore_power(
+        &mut fixture,
+        &map,
+        &probes.expect("shore probes"),
+        wind,
+        body,
+        240..=720,
+    )
+}
+
 #[expect(
     clippy::print_stderr,
     reason = "keep shoreline power and stock measurements in target evidence"
 )]
 #[cfg(target_os = "macos")]
-/// The beach's mean film cover and mean depth-limited power loss over its shoreline cells, for
-/// one wind on the sea's beach (body 0) or the lake's (body 1), with the per-cell assertions.
-fn shore_power(gpu: &thrum_test_support::Gpu, wind: Wind, body: usize) -> [f64; 2] {
-    {
-        let (game, report, map, probes) = build_foam(wind, true, true).expect("island whitewater");
-        let probes = probes.expect("shore probes");
-        let tap = probes.foam;
-        let mut fixture = Fixture::from_game(gpu, [128, 96], game, report);
-        fixture.parameters(if body == 0 {
-            r#"{"camera.island":0}"#
+fn measure_shore_power(
+    fixture: &mut Fixture,
+    map: &water_scene::SharedMap,
+    probes: &water_scene::island::FoamProbes,
+    wind: Wind,
+    body: usize,
+    samples: std::ops::RangeInclusive<u32>,
+) -> [f64; 2] {
+    let tap = &probes.foam;
+    let spectrum = thrum_sea_model::Spectrum::build(&wind.forcing()).expect("wind forcing");
+    let significant_variance = [
+        spectrum
+            .long
+            .iter()
+            .map(|wave| 0.5 * wave.amplitude.powi(2))
+            .sum(),
+        spectrum.cascades[0].variance(),
+        spectrum.cascades[1].variance(),
+        spectrum.cascades[2].variance(),
+    ];
+    let mut deposited = 0.0;
+    let mut expected_loss = 0.0;
+    let mut reported_loss = 0.0;
+    let mut wet_loss = 0.0;
+    let mut shoreline_cells = 0_u32;
+    let mut swash_cells = 0_u32;
+    let mut newly_dry_stocks = 0;
+    for tick in (0..=*samples.end()).step_by(6) {
+        let sampled = samples.contains(&tick) && tick % 30 == 0;
+        let columns = if sampled && body == 0 && !matches!(wind, Wind::Calm) {
+            let previous = tap.latest().expect("previous foam endpoint");
+            let columns =
+                shore_queries(&previous, &map.lock().expect("shore map"), u64::from(tick));
+            assert!(!columns.is_empty());
+            probes.query.post(
+                u64::from(tick - 4),
+                vec![BodyQuery {
+                    id: 33,
+                    generation: 1,
+                    points: columns.iter().map(|(_, point)| *point).collect(),
+                }],
+            );
+            columns
         } else {
-            r#"{"camera.island":1}"#
-        });
-        let spectrum = thrum_sea_model::Spectrum::build(&wind.forcing()).expect("wind forcing");
-        let significant_variance = [
-            spectrum
-                .long
-                .iter()
-                .map(|wave| 0.5 * wave.amplitude.powi(2))
-                .sum(),
-            spectrum.cascades[0].variance(),
-            spectrum.cascades[1].variance(),
-            spectrum.cascades[2].variance(),
-        ];
-        let mut deposited = 0.0;
-        let mut expected_loss = 0.0;
-        let mut reported_loss = 0.0;
-        let mut wet_loss = 0.0;
-        let mut shoreline_cells = 0_u32;
-        let mut swash_cells = 0_u32;
-        let mut newly_dry_stocks = 0;
-        for tick in (0_u32..=720).step_by(6) {
-            let sampled = tick >= 240 && tick % 30 == 0;
-            let columns = if sampled && body == 0 && !matches!(wind, Wind::Calm) {
-                let previous = tap.latest().expect("previous foam endpoint");
-                let columns =
-                    shore_queries(&previous, &map.lock().expect("island map"), u64::from(tick));
-                assert!(!columns.is_empty());
-                probes.query.post(
-                    u64::from(tick - 4),
-                    vec![BodyQuery {
-                        id: 33,
-                        generation: 1,
-                        points: columns.iter().map(|(_, point)| *point).collect(),
-                    }],
+            Vec::new()
+        };
+        fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+        if sampled {
+            let witness = tap.latest().expect("submitted shore");
+            let stocks = support::foam_stocks(fixture, &witness);
+            let parcels: Vec<[[f32; 4]; 2]> = support::foam_buffer(fixture, &witness.parcels);
+            if !columns.is_empty() {
+                let answers = probes.query.drain(
+                    u64::from(tick - 3),
+                    std::time::Duration::from_nanos(16_666_667),
                 );
-                columns
-            } else {
-                Vec::new()
-            };
-            fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
-            if sampled {
-                let witness = tap.latest().expect("submitted shore");
-                let stocks = support::foam_stocks(&fixture, &witness);
-                let parcels: Vec<[[f32; 4]; 2]> = support::foam_buffer(&fixture, &witness.parcels);
-                if !columns.is_empty() {
-                    let answers = probes.query.drain(
-                        u64::from(tick - 3),
-                        std::time::Duration::from_nanos(16_666_667),
-                    );
-                    assert_eq!(answers.len(), 1, "submitted midpoint query");
-                    assert_eq!(answers[0].points.len(), columns.len());
-                    let source = witness.banks[0] * 2 * (witness.side * witness.side) as usize;
-                    for ((index, _), query) in columns.into_iter().zip(&answers[0].points) {
-                        if !query.surface.wet
-                            && query.bed.is_some_and(|bed| {
-                                f64::from(bed) - query.surface.sample.height > 0.000_1
-                            })
-                        {
-                            assert_eq!(
-                                parcels[index][1], [0.0; 4],
-                                "{wind:?} tick {tick}: dry column {:?} must neither move nor create foam",
-                                query.point.position
-                            );
-                            let old = stocks[source + index];
-                            let aged = parcels[index][0];
-                            if old[1] + old[2] > 0.001 && old[0] > 0.001 {
-                                assert!(aged[0] < old[0]);
-                                newly_dry_stocks += 1;
-                            }
+                assert_eq!(answers.len(), 1, "submitted midpoint query");
+                assert_eq!(answers[0].points.len(), columns.len());
+                let source = witness.banks[0] * 2 * (witness.side * witness.side) as usize;
+                for ((index, _), query) in columns.into_iter().zip(&answers[0].points) {
+                    if !query.surface.wet
+                        && query.bed.is_some_and(|bed| {
+                            f64::from(bed) - query.surface.sample.height > 0.000_1
+                        })
+                    {
+                        assert_eq!(
+                            parcels[index][1], [0.0; 4],
+                            "{wind:?} tick {tick}: dry column {:?} must neither move nor create foam",
+                            query.point.position
+                        );
+                        let old = stocks[source + index];
+                        let aged = parcels[index][0];
+                        if old[1] + old[2] > 0.001 && old[0] > 0.001 {
+                            assert!(aged[0] < old[0]);
+                            newly_dry_stocks += 1;
                         }
                     }
                 }
-                assert_eq!(
-                    witness.origins[0], witness.origins[1],
-                    "fixed-view source alignment"
+            }
+            assert_eq!(
+                witness.origins[0], witness.origins[1],
+                "fixed-view source alignment"
+            );
+            let map = map.lock().expect("shore map");
+            for ((point, stock), parcel) in current(&witness, &stocks, 0).zip(parcels) {
+                let Some(row) = map
+                    .sample(point)
+                    .filter(|p| p.body == body && (-0.45..=3.0).contains(&p.depth))
+                else {
+                    continue;
+                };
+                let limited = thrum_water_model::limit(
+                    row.row,
+                    row.depth,
+                    significant_variance,
+                    map.profile(),
                 );
-                let map = map.lock().expect("island map");
-                for ((point, stock), parcel) in current(&witness, &stocks, 0).zip(parcels) {
-                    let Some(row) = map
-                        .sample(point)
-                        .filter(|p| p.body == body && (-0.45..=3.0).contains(&p.depth))
-                    else {
-                        continue;
-                    };
-                    let limited = thrum_water_model::limit(
-                        row.row,
-                        row.depth,
-                        significant_variance,
-                        map.profile(),
-                    );
-                    let lost = limited.lost_power.into_iter().sum::<f64>();
-                    let rate = f64::from(parcel[1][3]);
-                    if row.depth + limited.swash_depth < 0.0 {
-                        assert!(rate == 0.0, "birth at {point:?} beyond wave support");
-                    }
-                    if rate > 0.0 {
-                        reported_loss += rate / 0.39;
-                        wet_loss += lost;
-                    }
-                    deposited += f64::from(stock[1] + stock[2]);
-                    expected_loss += lost;
-                    shoreline_cells += 1;
-                    swash_cells += u32::from(row.depth < 0.0 && stock[1] > 1e-6);
+                let lost = limited.lost_power.into_iter().sum::<f64>();
+                let rate = f64::from(parcel[1][3]);
+                if row.depth + limited.swash_depth < 0.0 {
+                    assert!(rate == 0.0, "birth at {point:?} beyond wave support");
                 }
+                if rate > 0.0 {
+                    reported_loss += rate / 0.39;
+                    wet_loss += lost;
+                }
+                deposited += f64::from(stock[1] + stock[2]);
+                expected_loss += lost;
+                shoreline_cells += 1;
+                swash_cells += u32::from(row.depth < 0.0 && stock[1] > 1e-6);
             }
         }
-        assert!(shoreline_cells > 0);
-        let divisor = f64::from(shoreline_cells);
-        let means_for_view = [deposited / divisor, expected_loss / divisor];
-        assert!((reported_loss - wet_loss).abs() <= 0.002 * wet_loss + 0.000_01);
-        eprintln!(
-            "Metal {wind:?}, body {body}: cover and mean depth loss {means_for_view:?}, above-level stocked samples {swash_cells}, sampled birth-rate loss {reported_loss:.6} vs map {wet_loss:.6}"
-        );
-        if body == 0 && !matches!(wind, Wind::Calm) {
-            assert!(swash_cells > 0);
-            assert!(
-                newly_dry_stocks > 0,
-                "previously stocked cells must be checked after drainage"
-            );
-            eprintln!(
-                "Metal {wind:?}: {newly_dry_stocks} stocked dry midpoint columns aged without movement or birth"
-            );
-        }
-        means_for_view
     }
+    assert!(shoreline_cells > 0);
+    let divisor = f64::from(shoreline_cells);
+    let means_for_view = [deposited / divisor, expected_loss / divisor];
+    assert!((reported_loss - wet_loss).abs() <= 0.002 * wet_loss + 0.000_01);
+    eprintln!(
+        "Metal {wind:?}, body {body}: cover and mean depth loss {means_for_view:?}, above-level stocked samples {swash_cells}, sampled birth-rate loss {reported_loss:.6} vs map {wet_loss:.6}"
+    );
+    if body == 0 && !matches!(wind, Wind::Calm) {
+        assert!(swash_cells > 0);
+        assert!(
+            newly_dry_stocks > 0,
+            "previously stocked cells must be checked after drainage"
+        );
+        eprintln!(
+            "Metal {wind:?}: {newly_dry_stocks} stocked dry midpoint columns aged without movement or birth"
+        );
+    }
+    means_for_view
 }
 
 #[expect(

@@ -23,12 +23,11 @@ impl Lake {
         cells: 221,
         origin: -880.0,
     };
-    /// Half the size on the same cells and depth: a quarter of the cells, and each lag and
-    /// exposure behaviour the full lake shows.
-    const HALF: Self = Self {
-        radius: 350.0,
-        cells: 111,
-        origin: -440.0,
+    /// A compact basin on the same cells and depth, with dry ground around its coast.
+    const COMPACT: Self = Self {
+        radius: 250.0,
+        cells: 81,
+        origin: -320.0,
     };
 
     fn ground(&self, x: f64, z: f64) -> f64 {
@@ -63,10 +62,10 @@ impl Lake {
 
 /// Lags are finite in enclosed water at every stage and absent where no edge source reaches,
 /// deep water does not turn, waves turn towards the shore, and exposure follows the analytic
-/// circle. The half lake shows each of these.
+/// circle. The compact lake shows each of these.
 #[test]
 fn enclosed_water_has_finite_lags_turning_and_exposure() {
-    let lake = Lake::HALF;
+    let lake = Lake::COMPACT;
     let (b, c) = lake.prepare();
     let mut edge = c;
     edge.source = Source::EdgeOnly;

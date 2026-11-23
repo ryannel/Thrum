@@ -19,20 +19,19 @@ use thrum_water::{
     query::{BodyQuery, QueryLimits, QueryPoint},
 };
 
-const EXTENT: [u32; 2] = [96, 64];
-
 fn query_host(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     caps: &DeviceCapabilities,
     clock: Clock,
+    extent: [u32; 2],
 ) -> (FrameHost<Clock, Source>, wgpu::TextureView) {
     let target = device
         .create_texture(&wgpu::TextureDescriptor {
             label: Some("query scene output"),
             size: wgpu::Extent3d {
-                width: EXTENT[0],
-                height: EXTENT[1],
+                width: extent[0],
+                height: extent[1],
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -61,10 +60,10 @@ fn query_host(
         caps,
         queue,
         FrameConfig {
-            render_extent: EXTENT,
+            render_extent: extent,
             surface: Some(SurfaceProfile {
                 format: OUTPUT_FORMAT,
-                extent: EXTENT,
+                extent,
             }),
         },
         clock,
@@ -92,10 +91,11 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     else {
         return;
     };
-    let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(false));
+    let extent = [96, 64];
+    let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(false), extent);
     let surface = SurfaceOutput {
         view: &target,
-        extent: EXTENT,
+        extent,
     };
     let map = Arc::new(Mutex::new(swash_gpu::beach(0.7, 3.0)));
     let mut spectrum = Spectrum::build(&Forcing {
@@ -276,10 +276,12 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     else {
         return;
     };
-    let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(true));
+    let extent = [48, 32];
+    let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(true), extent);
+    host.set_timing_requested(false);
     let output = SurfaceOutput {
         view: &target,
-        extent: EXTENT,
+        extent,
     };
     let step = Duration::from_nanos(16_666_667);
     let footprint: Vec<_> = (0..25)

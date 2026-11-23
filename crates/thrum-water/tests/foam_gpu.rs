@@ -1,7 +1,7 @@
 //! Whitewater transport and endpoint transitions on the submitted Metal field.
 use crate::interaction_fixture;
 
-use interaction_fixture::{Fixture, current, terrain};
+use interaction_fixture::{Fixture, current, plane_beach, terrain};
 use thrum_sea_model::Component;
 
 #[derive(Debug)]
@@ -138,13 +138,14 @@ fn a_regular_wave_carries_foam_up_a_plane_beach() {
         amplitude: 0.8,
         phase: 1.1,
     };
-    let Some(mut fixture) = Fixture::new_foam(terrain(|x| x * 0.10), Some(wave), [0.0; 2]) else {
+    let Some(mut fixture) = Fixture::new_foam(plane_beach(), Some(wave), [0.0; 2]) else {
         return;
     };
     fixture.draw(0);
     seed(&fixture, [-0.25, 0.0], 3);
     let before = patch(&fixture, 3);
-    for tick in 1..=40 {
+    // No per-frame observation is needed between seeding and the final stock readback.
+    for tick in (4..=40).step_by(4) {
         fixture.draw(tick);
     }
     let after = patch(&fixture, 3);

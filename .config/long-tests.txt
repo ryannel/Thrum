@@ -17,6 +17,7 @@ water-scene it release # wake_scene_gpu::moored_craft_keeps_*: a moored craft wh
 v1-game exit_scene release
 v1-game field_occlusion_gpu release
 thrum-water-model shore_blend release
+thrum-sea it release # forward_cache_gpu portable light and high wind: base-texel addressing, edge-block averaging and high/low carry faults in production-size filtered fields through the last mip, early and a day in
 
 # Tests behind a Cargo feature. `./dev check` builds and lints the tests of each package named here
 # with these features on; `./dev long-tests` runs its tests that are not ignored, in the debug build,

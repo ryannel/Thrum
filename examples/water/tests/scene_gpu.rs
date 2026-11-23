@@ -10,8 +10,8 @@ fn scene_ticks_and_declares_one_water_contribution() {
     ) else {
         return;
     };
-    let mut fixture = support::Fixture::new(&test_gpu, [384, 216]);
-    let sample = fixture.frame(0.1);
+    let mut fixture = support::Fixture::new(&test_gpu, [64, 36]);
+    let sample = fixture.frame_without_timings(0.1);
     assert_eq!(fixture.host.world().source().tick, 5);
     assert_eq!(sample.tick, 5);
     let graph = fixture.host.scene_graph().expect("graph");

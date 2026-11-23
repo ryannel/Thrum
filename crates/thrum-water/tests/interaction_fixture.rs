@@ -37,11 +37,11 @@ const SURFACE: SurfaceProfile = SurfaceProfile {
 static INTERACTION_DEVICE: Mutex<()> = Mutex::new(());
 
 pub(super) fn terrain(height: impl Fn(f64) -> f64) -> Map {
-    strip(16, height, BodyKind::Sea)
+    strip(16, 268, height, BodyKind::Sea)
 }
 
 pub(super) fn shore() -> Map {
-    strip(72, |x| (0.2 * x).max(-5.0), BodyKind::Sea)
+    strip(72, 268, |x| (0.2 * x).max(-5.0), BodyKind::Sea)
 }
 
 pub(super) fn current(speed: f64) -> Map {
@@ -73,14 +73,21 @@ pub(super) fn current(speed: f64) -> Map {
     )
 }
 
-fn strip(half_width: i32, height: impl Fn(f64) -> f64, kind: BodyKind) -> Map {
+pub(super) fn plane_beach() -> Map {
+    strip(16, 8, |x| x * 0.10, BodyKind::Sea)
+}
+
+fn strip(half_width: i32, half_length: i32, height: impl Fn(f64) -> f64, kind: BodyKind) -> Map {
     let row: Vec<_> = (-half_width..=half_width)
         .map(|x| height(f64::from(x)))
         .collect();
-    let dimensions = [row.len(), 537];
+    let dimensions = [
+        row.len(),
+        usize::try_from(2 * half_length + 1).expect("strip length"),
+    ];
     map(
         Bed::new(
-            [-f64::from(half_width), -268.0],
+            [-f64::from(half_width), -f64::from(half_length)],
             1.0,
             dimensions,
             row.repeat(dimensions[1]),

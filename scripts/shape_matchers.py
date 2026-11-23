@@ -28,7 +28,7 @@ RULES = {
     "limit-exempt": (1, "the-smallest-world", "make the test fast, on the smallest world that shows its behaviour; no landing adds a test to the overrides of .config/nextest.toml that exempt it from the limit on one test, and an override that changes the limit names its tests one by one, as (binary_id(=<package>::<binary>) & test(=<test>))"),
     # Raise the version only in a landing that a done-when item asks for: a new version starts its count again.
     # Version 2: GATE-TIME M3.1 and M3.4 mark the water scene's moored foam run, moored wake tests and float off track.
-    "main-tier": (2, "a-main-tier-test", "make the test fast; an entry in .config/long-tests.txt or a test marked #[ignore = \"long: ...\"] needs a done-when item that asks for it, and that item's landing raises this rule's version in scripts/shape_matchers.py; a builder with no such item writes the proposal, with the fault it would catch, in its module's LOG.md for a planner"),
+    "main-tier": (3, "a-main-tier-test", "make the test fast; an entry in .config/long-tests.txt or a test marked #[ignore = \"long: ...\"] needs a done-when item that asks for it, and that item's landing raises this rule's version in scripts/shape_matchers.py; a builder with no such item writes the proposal, with the fault it would catch, in its module's LOG.md for a planner"),
     # Version 2: a check names a target only in the packages its command selects.
     "test-binary": (2, "an-existing-test-binary", "add the test to a test file that exists, or to the unit tests of the module it tests; a new test target needs a done-when item whose check runs it with --test, and .config/unplanned-test-binaries.txt only shrinks"),
 }
