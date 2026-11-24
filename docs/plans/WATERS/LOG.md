@@ -617,3 +617,8 @@
   The unchanged cover, width and peak bounds passed on the first attempt in default Nextest, in 2.532 s
   alone and 3.405 s within the foam binary under builder load.
   [Target evidence](../../../.orchestrate/evidence/WATERS/M18/README.md).
+
+- 2026-11-24 M13 design review, Must Fix 1. The 1 km camera's coarse foam window ends before the prepared bed.
+  The whitewater design and M13.7 keep that view for distant surf and use a separate view of a breaking front
+  crossing the coarse window's outer edge to judge the handoff. M13.11 requires both views at matching
+  trade-wind settings on Chrome and portable Metal and retains the submitted-time receipt.

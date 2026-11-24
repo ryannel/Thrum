@@ -1223,6 +1223,14 @@ whitecaps continue to the vista without state. A distant beach takes the cover t
 birth would hold in steady state, including long-wave loss below breaking index 1. The estimator uses the
 distributed source and hands over across the window blend, so a distant beach keeps its surf line.
 
+**M13 surf inspection.** Use the island's 1 km offshore view to judge whether the exposed beach still shows
+a line of surf entirely beyond the foam windows. For the handoff, choose a separate fixed camera position
+and aim it so the same active breaking front is visible both where simulated foam contributes in the coarse
+window's outer blend and beyond the outer edge, where the distant estimator supplies the foam. Record where
+the grid edge falls relative to the front so the reviewer can look for a seam or a sudden change in cover
+at that location through the sequence. Match both views and their trade-wind settings on Chrome and portable
+Metal.
+
 **The swash carries foam.** Between the line the waterline draws back to and the line it runs up to, the water
 is a sheet whose thickness, the surface less the ground, rises and falls at each place with each wave. While
 it rises at a place, a line of equal thickness travels over the sand toward thinner water, at the rate of rise

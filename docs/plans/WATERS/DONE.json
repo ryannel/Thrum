@@ -1199,8 +1199,8 @@
         },
         {
           "id": "M13.7",
-          "statement": "Whitewater forms on the breaking lip and face, follows the bore as it lowers and fans out, and thins into foam carried up the sand by the swash. The retreat leaves fading lace. Surf remains visible beyond the foam windows and shore foam is absent in a calm.",
-          "inspect": "Use `fixed` stills and `realtime` sequences in trade wind and gale at 2 m on the sand and 40 m above, with a 1 km view crossing a foam-window boundary and a calm control of the same beach. 1. At 2 m and 40 m the white front follows the wet breaking face into the lower bore, with no second white ribbon separated from it by dry sand. 2. Foam spreads and thins as the connected sheet runs up. A trace stays on bared sand and fades as the sheet recedes. 3. At 1 km the surf line extends across the foam-window boundary without a visible seam. 4. The calm shoreline makes no surf foam.",
+          "statement": "Whitewater follows the breaking lip and face into the spreading bore and thins as the swash carries it up the sand. The retreat leaves fading lace. Surf remains visible at the exposed beach from 1 km offshore. A breaking front crosses the coarse foam window's outer edge without a visible seam. The calm shoreline makes no surf foam.",
+          "inspect": "Use `fixed` stills and `realtime` sequences in trade wind and gale at 2 m on the sand, at 40 m above, at 1 km offshore and at the separate handoff view described in the design. Include a calm control of the same beach. 1. From 2 m and 40 m, whitewater follows the lip and wet breaking face into the lowering bore, with no detached ribbon across dry sand. 2. Foam spreads and thins as the connected swash runs up. Lace stays on the bared sand and fades during retreat. 3. From 1 km offshore, the exposed beach still shows a line of surf beyond the foam windows. 4. In the handoff view, follow one breaking front visible on both sides of the recorded outer edge of the coarse window, through the blend into the distant estimate. There is no seam or abrupt change in foam cover fixed to the grid. 5. The calm shoreline makes no surf foam.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1241,8 +1241,8 @@
         },
         {
           "id": "M13.11",
-          "statement": "In Chrome the trade-wind shore passes the same crest, bore, connected swash and whitewater inspections as the Mac portable recipe at matching views. Record any visible difference.",
-          "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind views of M13.4, M13.5 and M13.7, matched to the Mac portable recipe. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The trade-wind views pass M13.4's approach checks and M13.5's pitch, bore and swash checks, including the connected sheet during uprush and retreat. 3. The trade-wind views pass M13.7's lip, white front, foam carriage and distant handoff checks. Record differences at the matching views.",
+          "statement": "In Chrome, submitted engine time advances during the trade-wind surf inspection. The crests, bore, swash and whitewater pass the same visual checks at matching views on Chrome and portable Metal, including the line of surf at 1 km and the handoff across the coarse foam window's edge.",
+          "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind settings and views of M13.4, M13.5 and M13.7, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The matched views pass M13.4's approach checks and M13.5's crest, bore and connected swash checks. 3. Both targets pass points 1–4 of M13.7, including the surf line from 1 km offshore and the separate handoff view across the coarse window's outer edge. Record any visible differences at the matched views.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
