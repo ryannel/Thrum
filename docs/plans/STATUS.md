@@ -313,7 +313,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS M6): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M6-review.md)
-- Chart gauges and solver determinism run within the fast-suite limit (RIVERS M9): Ready for Review · [plan](RIVERS/PLAN.md)
 - Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): Not Started · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/M3-review.md)
 - Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss (SESSION M5): In Progress · [plan](SESSION/PLAN.md)
 - REVIEW-ENGINE M6 Corrected replay stays fast and the 100,000-entity run stays covered: Blocked: Needs Dependency: The shared `long-tests` run covering `d13125a25275` must pass before M6.2 can be recorded and merged. A planner adds it to the module that owns it
@@ -324,6 +323,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Chart gauges and solver determinism run within the fast-suite limit (RIVERS M9), 24 Nov · [review](../../.orchestrate/evidence/RIVERS/M9-review.md)
 - Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6), 24 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
 - The world lane’s resume origin is proved without real-time pacing (EFFECT-GRAPH M5), 24 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M5-review.md)
 - A small in-memory match catches reliable-lane recovery regressions (SESSION M8), 24 Nov · [review](../../.orchestrate/evidence/SESSION/M8-review.md)
@@ -441,7 +441,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Ready for Review |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | Done 23 Nov |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes, and DEAD-TOOLS M5 for the record of the library it copies; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | M6 of 18 · In Progress |
-| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M9 of 9 · Ready for Review |
+| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Waiting: On Dependency, WATERS:M9 |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
