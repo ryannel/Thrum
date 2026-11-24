@@ -10,12 +10,14 @@ use v1_game::GameHost as _;
 
 fn main() -> Result<(), String> {
     let mut low_sun = false;
+    let mut noon = false;
     let mut profile = DeviceProfile::Native;
     let mut store = None;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--low-sun" => low_sun = true,
+            "--noon" => noon = true,
             "--device-profile" => {
                 profile = match args.next().as_deref() {
                     Some("portable") => DeviceProfile::Portable,
@@ -29,7 +31,10 @@ fn main() -> Result<(), String> {
             _ => return Err(format!("unrecognised cloud cost option {arg}")),
         }
     }
-    pollster::block_on(measure(low_sun, profile, store))
+    if low_sun && noon {
+        return Err("choose either the low Sun or noon view".into());
+    }
+    pollster::block_on(measure(low_sun, noon, profile, store))
 }
 
 #[expect(
@@ -38,6 +43,7 @@ fn main() -> Result<(), String> {
 )]
 async fn measure(
     low_sun: bool,
+    noon: bool,
     profile: DeviceProfile,
     store: Option<std::path::PathBuf>,
 ) -> Result<(), String> {
@@ -90,6 +96,15 @@ async fn measure(
             "start_sun_elevation_degrees": sun[1].asin().to_degrees(),
             "yaw_degrees": yaw.to_degrees(),
             "pitch_degrees": elevation.to_degrees()
+        }))
+    } else if noon {
+        host.set_time_of_day(0.5)?;
+        host.set_camera_yaw(-51.0_f32.to_radians())?;
+        host.set_camera_pitch(24.0_f32.to_radians())?;
+        Some(serde_json::json!({
+            "start_solar_hours": 12,
+            "yaw_degrees": -51,
+            "pitch_degrees": 24,
         }))
     } else {
         None

@@ -78,6 +78,8 @@ pub struct GameSetup {
     pub clouds: crate::CloudSelection,
     /// Initial authoritative weather controls; ignored when clouds are off.
     pub cloud_weather: thrum_cloud_model::Parameters,
+    /// Optional tick-driven sequence for the selected weather.
+    pub cloud_sequence: crate::clouds::WeatherSequence,
     /// Admit portable temporal reconstruction at native scale.
     pub reconstruction: thrum_render::synthetic::Reconstruction,
     /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
@@ -122,6 +124,7 @@ impl Default for GameSetup {
             cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
+            cloud_sequence: crate::clouds::WeatherSequence::Held,
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             display_overlay: DisplayOverlay::Off,
             sun_shadow_method: SunShadowMethod::Maps,
@@ -464,16 +467,17 @@ fn clouded_weather(
     if setup.clouds == crate::CloudSelection::Off {
         return Ok(None);
     }
+    let initial = setup.cloud_sequence.target(setup.cloud_weather, 0.0);
     let state = shapes.map_or_else(
-        || thrum_cloud_model::State::new(setup.cloud_weather, 5.0, 0),
-        |placed| placed.state(setup.cloud_weather),
+        || thrum_cloud_model::State::new(initial, 5.0, 0),
+        |placed| placed.state(initial),
     );
     state
         .map(|state| {
-            Some(crate::simulation::Weather::new(
-                state,
-                shapes.and_then(crate::PlacedSky::demo),
-            ))
+            Some(
+                crate::simulation::Weather::new(state, shapes.and_then(crate::PlacedSky::demo))
+                    .with_sequence(setup.cloud_sequence, initial),
+            )
         })
         .map_err(|error| runtime::FrameError::World(error.to_string()))
 }
@@ -743,6 +747,12 @@ pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<()
         runtime.invalidate_history();
     }
     Ok(())
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn hold_capture_sun(runtime: &mut Runtime) {
+    let tick = runtime.world().tick();
+    runtime.continuous_source_mut().capture_solar_tick = Some(tick);
 }
 
 #[cfg(target_os = "macos")]

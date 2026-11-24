@@ -477,6 +477,7 @@ pub async fn create_route_game(
     exit: Option<bool>,
     clouds: Option<String>,
     haze: Option<String>,
+    capture_weather: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
@@ -486,6 +487,11 @@ pub async fn create_route_game(
     let valley_stars = overlay != crate::RouteOverlay::StarsOff;
     canvas.set_width(extent[0]);
     canvas.set_height(extent[1]);
+    let cloud_weather = capture_weather
+        .as_deref()
+        .map(capture_weather_parameters)
+        .transpose()?
+        .unwrap_or_else(|| crate::clouds::WeatherPreset::Fair.parameters());
     create_game(
         canvas,
         crate::GameSetup {
@@ -503,6 +509,7 @@ pub async fn create_route_game(
             route_overlay: overlay,
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
+            cloud_weather,
             haze: crate::host::haze_selection(haze.as_deref()).map_err(js_error)?,
             camera_culling: valley_culling(culling.as_deref(), true)?,
             field_meshes: meshes.unwrap_or(false),
@@ -511,6 +518,28 @@ pub async fn create_route_game(
         },
     )
     .await
+}
+
+fn capture_weather_parameters(text: &str) -> Result<thrum_cloud_model::Parameters, JsValue> {
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct CaptureWeather {
+        preset: Option<String>,
+        rate: Option<f64>,
+        wind: Option<f64>,
+    }
+    let weather: CaptureWeather = serde_json::from_str(text).map_err(js_error)?;
+    let preset = match weather.preset.as_deref() {
+        None => crate::clouds::WeatherPreset::Fair,
+        Some(name) => crate::clouds::WeatherPreset::named(name)
+            .ok_or_else(|| js_error("weather preset must be clear, fair, broken or overcast"))?,
+    };
+    let mut parameters = preset.parameters();
+    parameters.time_scale = weather.rate.unwrap_or(parameters.time_scale);
+    if let Some(wind) = weather.wind {
+        parameters.wind = [wind, 0.0];
+    }
+    Ok(parameters)
 }
 
 fn cloud_selection(
@@ -824,6 +853,11 @@ impl BrowserGame {
             return Err(js_error("cloud capture requires Shade or Sky"));
         }
         game::set_capture_eye(&mut self.page.shell, [x, y, z]).map_err(js_error)
+    }
+
+    /// Hold solar lighting at the current tick while weather continues to evolve.
+    pub fn hold_cloud_capture_sun(&mut self) {
+        game::hold_capture_sun(&mut self.page.shell);
     }
 
     /// Load the camera and Sun trajectory for the opt-in haze inspection.

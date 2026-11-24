@@ -3,7 +3,7 @@ use std::{io, sync::mpsc};
 
 #[test]
 fn explicit_session_record_limit_is_validated_and_enforced() {
-    for limit in [0, 4097] {
+    for limit in [0, MAX_SESSION_RECORDS + 1] {
         assert!(
             ImageWriter::<Vec<u8>>::start_with_frame_limit(
                 Vec::new(),

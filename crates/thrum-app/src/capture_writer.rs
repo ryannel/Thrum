@@ -13,6 +13,8 @@ use thrum_render::runtime::SubmittedImage;
 mod io_worker;
 mod spool;
 
+const MAX_SESSION_RECORDS: u64 = 16_384;
+
 /// Live spool representation; both preserve the complete original byte stream.
 #[derive(Clone, Copy, Debug)]
 pub enum SpoolEncoding {
@@ -55,7 +57,7 @@ pub struct ImageWriter<I = SubmittedImage> {
 /// A capture writer refused its limits or could not finish the spool.
 #[derive(Debug)]
 pub enum WriterError {
-    /// The frame limit is outside 1..=4096.
+    /// The frame limit is outside 1..=16,384.
     FrameLimit,
     /// The queue capacity is outside 1..=256.
     Capacity,
@@ -74,7 +76,10 @@ pub enum WriterError {
 impl fmt::Display for WriterError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::FrameLimit => formatter.write_str("writer frame limit must be in 1..=4096"),
+            Self::FrameLimit => write!(
+                formatter,
+                "writer frame limit must be in 1..={MAX_SESSION_RECORDS}"
+            ),
             Self::Capacity => formatter.write_str("writer capacity must be in 1..=256"),
             Self::Record => formatter.write_str("capture record limit or empty record"),
             Self::Start(error) | Self::Io(error) => error.fmt(formatter),
@@ -148,7 +153,7 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
     /// Start a longer bounded session without changing its pixel or encoded queues.
     /// Only the retained per-frame hashes grow with the admitted record count.
     /// # Errors
-    /// Rejects capacities outside 1..=256, record limits outside 1..=4096, or a thread failure.
+    /// Rejects capacities outside 1..=256, record limits outside 1..=16,384, or a thread failure.
     pub fn start_with_frame_limit(
         output: impl Write + Send + 'static,
         capacity: usize,
@@ -166,7 +171,7 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
         encoding: SpoolEncoding,
         frame_limit: u64,
     ) -> Result<Self, WriterError> {
-        if !(1..=4096).contains(&frame_limit) {
+        if !(1..=MAX_SESSION_RECORDS).contains(&frame_limit) {
             return Err(WriterError::FrameLimit);
         }
         if !(1..=256).contains(&capacity) {

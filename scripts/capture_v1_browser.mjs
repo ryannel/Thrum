@@ -48,7 +48,7 @@ if (spriteField && (args.mode !== 'realtime' || args.control !== 'ordinary' || a
 if (!['route','off'].includes(args.overlay)) throw new Error('Invalid overlay option');
 if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid diagnostic-clouds option');
 if (!['off','shade','sky'].includes(args.clouds) || (args.clouds !== 'off' && args['diagnostic-clouds'] === 'on')) throw new Error('Invalid cloud selection');
-if (args['cloud-view'] && (args.clouds === 'off' || args.mode !== 'fixed' || args.control !== 'ordinary' || args.source !== 'sdr')) throw new Error('A cloud view requires a fixed, ordinary SDR cloud capture');
+if (args['cloud-view'] && (args.clouds === 'off' || args.control !== 'ordinary' || args.source !== 'sdr')) throw new Error('A cloud view requires an ordinary SDR cloud capture');
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');
 if (!['off','pan','reveal','spawn','stars','scrub'].includes(args.witness) || (args.witness !== 'off' && args.mode !== 'realtime')) throw new Error('Invalid reconstruction witness/mode');
 if (!['off','slab','depth-only'].includes(args.effect)) throw new Error('Invalid effect diagnostic');
@@ -84,6 +84,7 @@ if (args['route-file']) {
   files.set('/capture-route.json', { bytes: captureRoute, type: 'application/json', sha256: sha(captureRoute) });
 }
 const cloudView = args['cloud-view'] ? await fs.readFile(path.resolve(args['cloud-view'])) : undefined;
+const cloudMotion = cloudView && args.mode === 'realtime';
 if (cloudView) files.set('/capture-view.json', { bytes: cloudView, type: 'application/json', sha256: sha(cloudView) });
 for (const [name, type] of [['capture.html', 'text/html'], ['capture.mjs', 'text/javascript'], ['capture_upload.mjs', 'text/javascript']]) {
   const bytes = await fs.readFile(path.join(args['web-root'], name));
@@ -107,7 +108,7 @@ const manifest = { complete: false, target: 'chrome-webgpu', source: args.source
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 if (spriteField || args.scene === 'exit' || spoolRaw) {
-  manifest.record_limit = spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : args.atmosphere !== 'off' ? 1024 : 270;
+  manifest.record_limit = cloudMotion ? 4096 : spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : args.atmosphere !== 'off' ? 1024 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
   manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4

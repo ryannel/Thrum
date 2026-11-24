@@ -66,10 +66,16 @@ fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
         Err(std::env::VarError::NotPresent) => Ok(fallback),
         Err(error) => Err(error.to_string()),
     };
+    let preset = match launch_value("THRUM_CLOUD_PRESET") {
+        Ok(value) => crate::clouds::WeatherPreset::named(&value)
+            .ok_or("THRUM_CLOUD_PRESET must be clear, fair, broken or overcast")?,
+        Err(std::env::VarError::NotPresent) => crate::clouds::WeatherPreset::Fair,
+        Err(error) => return Err(error.to_string()),
+    };
     let parameters = thrum_cloud_model::Parameters {
         wind: [number("THRUM_CLOUD_WIND", 10.0)?, 0.0],
         time_scale: number("THRUM_CLOUD_TIME_SCALE", 1.0)?,
-        ..crate::clouds::initial_state().parameters()
+        ..preset.parameters()
     };
     thrum_cloud_model::State::new(parameters, 5.0, 0).map_err(|e| e.to_string())?;
     Ok(parameters)
@@ -191,6 +197,12 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         Ok("sky") => crate::CloudSelection::Sky,
         _ => return Err("THRUM_CLOUDS must be off, shade or sky".to_owned()),
     };
+    let cloud_sequence = match launch_value("THRUM_CLOUD_SEQUENCE").as_deref() {
+        Err(std::env::VarError::NotPresent) => crate::clouds::WeatherSequence::Held,
+        Ok("presets") => crate::clouds::WeatherSequence::Presets,
+        Ok("wind-turn") => crate::clouds::WeatherSequence::WindTurn,
+        _ => return Err("THRUM_CLOUD_SEQUENCE must be presets or wind-turn".into()),
+    };
     Ok(crate::GameSetup {
         sprite_scale,
         route_scale_props: false,
@@ -221,6 +233,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         } else {
             cloud_weather()?
         },
+        cloud_sequence,
         clouds,
         reconstruction: match launch_value("THRUM_RECONSTRUCTION").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => {
