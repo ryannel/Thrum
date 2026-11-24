@@ -22,7 +22,10 @@
       "output": 7021,
       "turns": 1
     },
-    "at": "2026-11-16T17:26:52Z"
+    "at": "2026-11-16T17:26:52Z",
+    "items_owed": [
+      "M4"
+    ]
   },
   "milestones": {
     "M0": {
@@ -163,17 +166,31 @@
         "checked": "2a72aa897d56cf2a02e53daf462bba0f98044d07",
         "at": "2026-11-16T23:46:32Z"
       }
+    },
+    "M4": {
+      "definitions": "64df948c85ff412e20bcea09aede58571d90dbea5e70145fbd24ac807ca9c8bd",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check exact-images (python3 scripts/exact_baselines.py verify --full) failed on 7236c735c9f6 without any",
+        "at": "2026-11-24T01:18:42Z"
+      },
+      "ends_stretch": true
     }
   },
   "briefs": [
     {
       "task": "The shared exact-images main-branch check fails at random under GPU load in the apple-tile-native motion capture: apple_tile_m2/portable-route-motion/runtime.json reports Metal, complete:false, 129 ring omissions and 0 writer omissions, and examples/v1-game/src/window/capture.rs rightly refuses it. The same commit fails at different motion arms on reruns, and every baseline passed on d31a94173. So merged milestones can't prove on main, and REVIEW-ENGINE M3 is blocked. An exact-image check must not depend on machine load. Plan work so the motion capture keeps every frame on a loaded machine: backpressure when the ring is full, so the renderer waits rather than drops, assuming the capture steps on a fixed clock (confirm that). Also have the capture exit 75 when runtime.json is incomplete: from orchestrate 2.3.6, exit 75 means the run couldn't judge the commit, not that it failed. A lock is not the fix, because the competing GPU tests run inside ./dev check without one. Assign it to whichever module owns the capture (APPLE-TILE owns the apple-tile-native stage). It must be buildable now, without waiting for APPLE-TILE M10's attended items, which need the owner at the Mac. Evidence: docs/evidence/REVIEW-ENGINE/M3-handoff.md, and in the shared git dir orchestrate/main-checks/exact-images/checkout/tmp/baseline-guard/verify-20261116T131758.209497Z/. The other APPLE-TILE flake, docs/evidence/APPLE-TILE/M10/window-proof.py failing with 'CUA app selection timed out', may fit the same work; your call.",
       "at": "2026-11-16T15:36:07Z"
+    },
+    {
+      "task": "The main-branch check exact-images (python3 scripts/exact_baselines.py verify --full) failed on 7236c735c9f6 without any image mismatch: every comparison up to chrome-night-sdr passed, then capture_v1_browser.mjs threw from check_v1_browser.mjs:2090 \"Cleanup failed ... Timed out: owned Chrome graceful exit; Chrome did not exit cleanly: code=null signal=SIGTERM\". Machine load was about 280 on 14 cores at the time. Logs: .git/orchestrate/main-checks/exact-images/logs/20261124-020954-7236c735c9f6-86665-279.{stdout,stderr}. Find why owned-Chrome shutdown fails the capture after a good capture, and plan a fix (in the module that owns the browser capture harness) so that a slow graceful exit under load neither fails a capture that succeeded nor leaks the Chrome process or profile.",
+      "at": "2026-11-24T01:18:42Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-16T15:36:07Z"
+    "host": "codex",
+    "at": "2026-11-24T01:18:42Z"
   },
   "design_history": [
     {
