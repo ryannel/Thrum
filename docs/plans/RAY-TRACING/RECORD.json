@@ -489,7 +489,7 @@
         {
           "verdict": "fail",
           "commit": "9d56b7e29f5d39d2d4b31552ced59ab27bb15096",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-6.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "fail",
@@ -537,6 +537,52 @@
             "turns": 1
           },
           "at": "2026-11-24T03:41:31Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "b3fbbbaf3f6002eb870012db4ee0d8b02d7de49c",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass",
+            "M3.13": "fail",
+            "M3.14": "pass",
+            "M3.15": "pass",
+            "M3.16": "pass"
+          },
+          "findings": [
+            {
+              "name": "The terminator check has no sheet beyond the widened passage reach",
+              "item": "M3.13",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 162933,
+            "cached": 12891264,
+            "output": 22723,
+            "turns": 1
+          },
+          "at": "2026-11-24T06:25:58Z"
         }
       ],
       "authorised": {

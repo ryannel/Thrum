@@ -197,8 +197,8 @@
     {
       "id": "M3",
       "name": "The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "ATMOSPHERE:M5",
@@ -226,7 +226,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/reopened/sun-stills.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
@@ -346,9 +346,9 @@
           "ask": "Is the value the operation the forward pass compiles, and does the test hold both a joined sheet facing away from the ray and a lit band point with no sheet, so that a rule which skips hits by instance and facing fails the first and a rule with no exception fails the second?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/reopened/metal-final-reach.log",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
@@ -359,7 +359,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/reopened/publication.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
@@ -386,14 +386,8 @@
       ],
       "findings": [
         {
-          "name": "A dark facet interrupts the noon rock\u2019s lit surface",
-          "item": "M3.2",
-          "different": "The verified receiver is the cooked rock at noon. The previously named low-Sun balloon edges have distinct distant casters.",
-          "repeat": false
-        },
-        {
-          "name": "The CPU guard passes when host publication discards the prepared list",
-          "item": "M3.14",
+          "name": "The terminator check has no sheet beyond the widened passage reach",
+          "item": "M3.13",
           "repeat": false
         }
       ]
