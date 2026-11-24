@@ -406,7 +406,32 @@
     },
     "WP4": {
       "definitions": "db5ee823f34b1722a2d37526383632b14b1d9fca5f44bd6653f635550e814fed",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "2a1aeb8bd05437bbe3e802a2427eb7d34ccea9eb",
+          "review": ".orchestrate/evidence/CREATOR/WP4-review.md",
+          "items": {
+            "WP4.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 72400,
+            "cached": 769280,
+            "output": 3658,
+            "turns": 1
+          },
+          "at": "2026-11-24T21:54:59Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CREATOR at .orchestrate/evidence/CREATOR/design-review.md asked for changes, with its 2 Must Fix fi",
@@ -438,6 +463,13 @@
           "output": 52357,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "2a1aeb8bd05437bbe3e802a2427eb7d34ccea9eb",
+        "review": ".orchestrate/evidence/CREATOR/WP4-review.md",
+        "checked": "a091dcdec0d0f4a0d9bc49ead16833b07b138bf6",
+        "at": "2026-11-24T21:54:59Z"
       }
     }
   },
