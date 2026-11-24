@@ -239,3 +239,15 @@
   an inspection of a covering shared-run receipt would preserve the proof without invoking the
   refused item command.
   [Orchestrate refusal](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.13-orchestrate-3.0.7-refusal.json)
+- 2026-11-24 The authorized replan removed WP3.11 and WP3.13 as item gates. Restored the remaining
+  11 builder results against their target evidence. The Metal inventory, sweep and edge tests passed.
+  The real Retina window returned all three exact card sizes and the first resized submission. Chrome
+  passed both DPR sweeps and exited cleanly after the check awaited WebGPU page unload.
+  [Metal tests](../../../.orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/metal-submitted-tests.log) ·
+  [Window receipt](../../../.orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/WP3.6-window.json) ·
+  [Chrome receipt](../../../.orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/chrome-after-fix/sprites-crisp.json)
+- A fresh Metal T2 still capture exposed a 2D panic in the shared quality controls query. The frame host
+  now queries and stages 3D controls only on the 3D renderer and retains the contribution path for either
+  scene kind. The 2D regression test passed. Fresh stills matched the prior reviewed frames byte for byte.
+  [2D regression and inventory](../../../.orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/scene-2d-quality-and-inventory.log) ·
+  [Still review](../../../.orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/WP3.9-still-review.md)

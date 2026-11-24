@@ -310,8 +310,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --test scene_2d generation_prepares_only_the_sprite_and_output_resources -- --exact",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/scene-2d-quality-and-inventory.log",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -320,10 +320,10 @@
           "statement": "On both Metal recipes and Chrome WebGPU, the existing sprite draw at the output extent applies the widened pixel filter near 1.5\u00d7 and a frame-local spatial reconstruction through the off-grid 2\u00d7 edge crossings. At aligned 2\u00d7 it selects the authored texels. Record the before-and-after sprite-pass timings for the 1920\u00d71080 1.5\u00d7 scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
           "ask": "At 1.5\u00d7 does the shader combine premultiplied scene-linear RGBA with normalized, nonnegative weights within mechanism 6's support? At 2\u00d7 does it use continuous projected texel coordinates through single-axis and two-axis texel-edge crossings and converge to the authored sample at alignment? Do the standalone quad margin and transparent gutter cover the chosen footprint, and do tiles use their own extruded edges with unchanged shared-edge ownership?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/review-fixes/M3.1-merged-filter-review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.2",
@@ -332,10 +332,10 @@
           "ask": "Does each sweep hold the row fixed and advance the ordinary sprite view through distinct submissions? Does the proof read the marker positions from those images and reject the same pixels replayed at different expected poses?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/metal-submitted-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.3",
@@ -343,10 +343,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/metal-submitted-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.4",
@@ -355,10 +355,10 @@
           "ask": "From the actual uploaded frame placements, do contrasting frames face all four sides of the bleed witness on the same atlas page with only the intended gutter and padding between them, at each of the three uploaded mip levels? Does the submitted pixel test check the whole witness at the tested scales and reject the third colour at the shared tile edge?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/WP3.4-atlas-and-edges.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.5",
@@ -366,10 +366,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/metal-submitted-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.6",
@@ -378,10 +378,10 @@
           "ask": "Does the unattended check verify shell geometry at the three sizes and after resize, record console state, and distinguish a presented sample from geometry alone using observed surface occlusion and no drawable? Does a complete real-window record covering the landed path link each presented submission, including the first after resize, to the matching engine pixels and exact card comparison by submission ID? A geometry-only result leaves the presentation proof open.",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/WP3.6-window.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.7",
@@ -390,46 +390,46 @@
           "ask": "Is the camera centre advanced through successive submissions of the same retained scene at each scale, and does the pixel-based check reject a frozen camera even when the requested centres advance?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/chrome-after-fix/sprites-crisp.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.8",
           "statement": "On Metal through a slow diagonal pan and a fast scroll at 1.5\u00d7, 2\u00d7 and 2.37\u00d7, the test card's original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the existing 1920\u00d71080 card, ground and rotating field with T2 engine capture in realtime mode, at 0.05 and 3 output pixels per simulation tick in X with the 0.53 diagonal Y component at each scale. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's 1.5\u00d7 take to locate the offending patches.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/review-fixes/M3.8-merged-motion-review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.9",
           "statement": "On Metal, pixel sprites retain distinct fine marks and clean outlines at their still scales. Smooth sprites look clean over light and dark backgrounds, including at 0.25\u00d7.",
           "inspect": "Capture fixed stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234. Inspect the existing pixel sprites at 1\u00d7, 1.5\u00d7, 2.37\u00d7, 4\u00d7 and 6\u00d7, the original stripe and checker patches at 1.5\u00d7, and smooth sprites at 0.25\u00d7, 0.5\u00d7, 1\u00d7 and 2\u00d7 over light and dark backgrounds. Judge full frames and native-size crops. Check that (1) pixel art keeps distinct one-texel marks, square structure and clean outlines, and (2) smooth art has no fringe, halo, bleed or visible aliasing at quarter size.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/WP3.9-still-review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.10",
           "statement": "In Chrome WebGPU at DPR 1 and 2, the original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed in slow and fast scrolls at 1.5\u00d7 and 2.37\u00d7. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the WP3.8 sprite route in T2 realtime mode at 1.5\u00d7 and 2.37\u00d7, both speeds and both DPRs, holding the backing extent at 1920\u00d71080. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's Chrome takes to locate the offending patches.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.10-chrome-motion.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Pixel stability as in Celeste. At normal viewing size and recorded speed, fine lines and checks stay distinct and their contrast holds during the pan. Edges as clean as in Hades and Hollow Knight, with no fringe, halo, neighbouring sheet colour or gap between ground tiles. Judge the running output by eye.",
       "diagnosed_for_planner_finding": true
     },
