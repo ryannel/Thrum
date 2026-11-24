@@ -66,11 +66,11 @@ def build(output, targets, cost=False):
         run('cargo', 'build', '--release', '--locked', '--offline',
             '-p', 'v1-game', '--example', 'atmosphere_cost', log=output / 'cost-build.log')
     if 'chrome-webgpu' in targets:
-        run('sh', 'examples/v1-game/web/build.sh', log=output / 'chrome-build.log')
+        run('sh', 'examples/v1-game/web/build.sh', '--proving', log=output / 'chrome-build.log')
     store = output / 'store'
     run(release / 'thrum-cook', 'cook', ROOT / 'examples/v1-game/assets/showcase', store,
         log=output / 'cook.log')
-    return release / 'v1-game', release / 'thrum-cook', ROOT / 'target/v1-game-web', store
+    return release / 'v1-game', release / 'thrum-cook', ROOT / 'target/v1-game-web-proving', store
 
 
 def witness_baseline_archive(base, output):

@@ -15,12 +15,13 @@ use thrum_render::{
     synthetic::{CullMode, DisplayOverlay, SunShadowMethod},
 };
 
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
 pub(crate) mod haze_capture;
 
 pub(crate) mod scene_source;
 mod world;
 pub use scene_source::GameScene;
+#[cfg(feature = "proving")]
 pub use scene_source::field_in_view_share;
 pub use world::GameWorld;
 use world::{WorldDriver, WorldPort};
@@ -67,10 +68,13 @@ pub enum ExitEntities {
 )]
 pub struct GameSetup {
     /// Select the sprite test card at this integer output scale.
+    #[cfg(feature = "proving")]
     pub sprite_scale: Option<u16>,
     /// If selected with sprites, map this many simulated entities instead of the card.
+    #[cfg(feature = "proving")]
     pub sprite_rows: Option<u32>,
     /// Use a sprite scene authored for sampling inspection.
+    #[cfg(feature = "proving")]
     pub sprite_probe: Option<crate::SpriteProbe>,
     /// Valley entity meshes follow cooked publications instead of code-authored props.
     pub cooked_mesh_rows: MeshRowSource,
@@ -89,6 +93,7 @@ pub struct GameSetup {
     /// Prepare soft visibility for the traced Sun.
     pub sun_penumbra: bool,
     /// Opt-in geometry for Sun shadow captures in the exit scene.
+    #[cfg(feature = "proving")]
     pub sun_proof_geometry: crate::SunProofGeometry,
     /// Trace hard shadows from the main view's local lights.
     pub lamp_shadows: bool,
@@ -97,6 +102,7 @@ pub struct GameSetup {
     /// The diagnostic view volume's clear-air aerosol. Absent in ordinary scenes.
     pub haze: Option<thrum_render::atmosphere::Aerosol>,
     /// Opt-in analytic test bank stand-in for weather-provided fog.
+    #[cfg(feature = "proving")]
     pub test_bank: bool,
     /// The grid or the dense flythrough field.
     pub content: GameContent,
@@ -120,8 +126,11 @@ pub struct GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            #[cfg(feature = "proving")]
             sprite_scale: None,
+            #[cfg(feature = "proving")]
             sprite_rows: None,
+            #[cfg(feature = "proving")]
             sprite_probe: None,
             cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
@@ -131,10 +140,12 @@ impl Default for GameSetup {
             display_overlay: DisplayOverlay::Off,
             sun_shadow_method: SunShadowMethod::Maps,
             sun_penumbra: false,
+            #[cfg(feature = "proving")]
             sun_proof_geometry: crate::SunProofGeometry::Off,
             lamp_shadows: false,
             diagnostic_clouds: false,
             haze: None,
+            #[cfg(feature = "proving")]
             test_bank: false,
             content: GameContent::Grid,
             exit_entities: ExitEntities::Draw,
@@ -154,7 +165,11 @@ pub(crate) fn haze_selection(
     let Some(value) = value else {
         return Ok(None);
     };
-    if matches!(value, "default" | scene_source::test_bank::SELECTION) {
+    #[cfg(feature = "proving")]
+    if value == scene_source::test_bank::SELECTION {
+        return Ok(Some(Aerosol::default()));
+    }
+    if value == "default" {
         return Ok(Some(Aerosol::default()));
     }
     let (range, kind) = value
@@ -186,6 +201,7 @@ impl GameSetup {
 
     /// Two paired 1080p runs favour Occlusion on mixed meshes in cover and open
     /// views (CULLING's M2 record, .orchestrate/evidence/CULLING/M2.md). The cube field retains Frustum.
+    #[cfg(feature = "proving")]
     pub(crate) fn field_default_culling(meshes: bool) -> CullMode {
         if meshes {
             CullMode::Occlusion
@@ -273,10 +289,14 @@ impl GameSetup {
     ) -> Result<Runtime, runtime::FrameError> {
         use runtime::FrameError;
         let setup = self;
+        #[cfg(feature = "proving")]
+        let sprites = setup.sprite_scale.is_some();
+        #[cfg(not(feature = "proving"))]
+        let sprites = false;
         if shapes.is_some()
             && (setup.clouds == crate::CloudSelection::Off
                 || setup.content == GameContent::Exit
-                || setup.sprite_scale.is_some())
+                || sprites)
         {
             return Err(FrameError::InvalidState(
                 "placed skies require an opt-in 3D cloud selection",
@@ -288,6 +308,7 @@ impl GameSetup {
                 "capability record does not match the host device",
             ));
         }
+        #[cfg(feature = "proving")]
         if let Some(scale) = setup.sprite_scale {
             if setup.sprite_probe.is_some() && setup.sprite_rows.is_some() {
                 return Err(FrameError::InvalidState(
@@ -412,19 +433,14 @@ impl GameSetup {
                 .clone();
             scene.meshes = Some(rows.selection(slots));
         }
+        #[cfg(feature = "proving")]
         if setup.content == GameContent::Exit {
             setup.sun_proof_geometry.prepare(&mut scene);
         }
         let cloud_sky = setup.clouds.sky_profile(config.render_extent);
         let weather = clouded_weather(setup, shapes.as_ref())?;
         let world = GameWorld(WorldPort::Inline(Box::new(
-            WorldDriver::selected_with_sun_proof(
-                setup.content,
-                setup.route_overlay,
-                weather,
-                setup.sun_proof_geometry,
-            )
-            .map_err(FrameError::World)?,
+            WorldDriver::for_setup(setup, weather).map_err(FrameError::World)?,
         )));
         let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky)?;
         if let Some(shade) = &shade {
@@ -446,6 +462,7 @@ impl GameSetup {
             1.0 / 16_000.0,
         )
         .await?;
+        #[cfg(feature = "proving")]
         if setup.test_bank {
             inner.attach_scene_contribution(Box::new(
                 scene_source::test_bank::TestBank::default(),
@@ -578,8 +595,10 @@ pub trait GameHost {
     /// Cooked entity rows selected at preparation, shared with residency.
     fn cooked_rows(&self) -> Option<thrum_asset_gpu::rows::CookedRows>;
     /// Optional submitted cloud transport and lighting products for inspection.
+    #[cfg(feature = "proving")]
     fn cloud_sky_products(&self) -> Option<thrum_clouds::SkyProducts>;
     /// Current Weather and Shade product, for optional GPU inspection.
+    #[cfg(feature = "proving")]
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)>;
     /// Submitted cloud products and their placement reports for a placed sky.
     fn cloud_placed_input(&self) -> Option<&thrum_clouds::WeatherInput>;
@@ -655,6 +674,7 @@ impl GameHost for Runtime {
             source.cloud_sky,
             source.cloud_shapes.as_ref(),
         )?;
+        #[cfg(feature = "proving")]
         let contribution = if source.medium_epoch.is_some() {
             scene_source::test_bank::alongside(contribution)
         } else {
@@ -682,9 +702,11 @@ impl GameHost for Runtime {
     fn cooked_rows(&self) -> Option<thrum_asset_gpu::rows::CookedRows> {
         self.source().cooked_rows.clone()
     }
+    #[cfg(feature = "proving")]
     fn cloud_sky_products(&self) -> Option<thrum_clouds::SkyProducts> {
         self.source().cloud_input.as_ref()?.sky_products()
     }
+    #[cfg(feature = "proving")]
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
         self.source().cloud_input.as_ref()?.ground_product()
     }
@@ -723,7 +745,7 @@ impl GameWorld {
     pub fn tick(&self) -> u64 {
         self.0.tick()
     }
-    #[cfg(target_os = "macos")]
+    #[cfg(all(target_os = "macos", feature = "proving"))]
     pub(crate) fn inline_authority_hash(&self) -> Option<u64> {
         self.0.inline_authority_hash()
     }
@@ -762,13 +784,13 @@ pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<()
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 pub(crate) fn hold_capture_sun(runtime: &mut Runtime) {
     let tick = runtime.world().tick();
     runtime.continuous_source_mut().capture_solar_tick = Some(tick);
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 pub(crate) fn scrub_haze_sun(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
     if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
         runtime.continuous_source_mut().day_phase_offset = offset;
@@ -806,7 +828,7 @@ pub(crate) fn set_camera_yaw(runtime: &mut Runtime, radians: f32) -> Result<(), 
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 pub(crate) fn set_haze_eye(runtime: &mut Runtime, eye: [f32; 3], cut: bool) -> Result<(), String> {
     if runtime
         .source()

@@ -1,7 +1,9 @@
 //! Authored scene data consumed once by the native game, through G5's existing residency path.
 
 use serde::Deserialize;
-use thrum_asset_gpu::{CookedAssets, CookedMaterial, CookedSource, MeshPlacement, VolumePlacement};
+use thrum_asset_gpu::{
+    CookedAssets, CookedConfig, CookedMaterial, CookedSource, MeshPlacement, VolumePlacement,
+};
 
 use crate::SceneCamera;
 
@@ -71,7 +73,7 @@ pub(crate) fn prepare_showcase_with_path(
     prepare_showcase_with_volume(source, None, path)
 }
 
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
 pub(crate) fn prepare_content_preview(
     source: CookedSource,
 ) -> Result<(SceneCamera, CookedAssets), String> {
@@ -105,7 +107,7 @@ pub fn prepare_cooked_valley(
 }
 
 /// Opt-in M2 fixture; the ordinary authored valley keeps no volume.
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "proving"))]
 pub(crate) fn prepare_temporal_showcase(
     source: CookedSource,
 ) -> Result<(SceneCamera, CookedAssets), String> {
@@ -161,7 +163,7 @@ fn prepare_showcase_with_volume(
 #[doc(hidden)]
 pub(crate) fn valley_config(
     source: CookedSource,
-) -> Result<(SceneCamera, thrum_asset_gpu::CookedConfig), CookedValleyError> {
+) -> Result<(SceneCamera, CookedConfig), CookedValleyError> {
     let recipe: Recipe = serde_json::from_str(include_str!("../assets/showcase/scene.json"))
         .map_err(|error| CookedValleyError(format!("showcase recipe: {error}")))?;
     let camera = SceneCamera::perspective(
@@ -172,14 +174,14 @@ pub(crate) fn valley_config(
         recipe.camera.far_m,
     )
     .map_err(CookedValleyError)?;
-    let mut config = crate::cooked::cooked_config(source);
-    config.volume = None;
-    config.meshes = recipe
+    let meshes = recipe
         .placements
         .into_iter()
         .map(Placement::checked)
         .collect::<Result<_, _>>()
         .map_err(CookedValleyError)?;
+    let mut config = CookedConfig::new(source, meshes);
+    config.poll_interval = std::time::Duration::from_millis(2);
     Ok((camera, config))
 }
 

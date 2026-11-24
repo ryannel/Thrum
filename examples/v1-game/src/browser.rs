@@ -3,14 +3,19 @@
 //! The shell owns the canvas surface, the device, loss and replacement, and the frame step; this
 //! facade keeps the game's controls, cooked valley, material reloads, capture slot and report.
 
+#[cfg(feature = "proving")]
 mod cloud_observation;
+#[cfg(feature = "proving")]
 mod environment;
+#[cfg(feature = "proving")]
 mod governor;
+#[cfg(feature = "proving")]
 pub use governor::{GovernorBrowser, create_governor_game};
 #[cfg(feature = "draw-probe")]
 mod light_probe;
 #[cfg(feature = "draw-probe")]
 pub use light_probe::{BrowserLightProbe, create_light_list_probe};
+#[cfg(feature = "proving")]
 mod sprites;
 mod submitted_capture;
 
@@ -26,17 +31,17 @@ use thrum_asset::{BrowserFetch, DevClient};
 use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
 #[cfg(feature = "dev-material")]
 use thrum_asset_gpu::{MaterialHook, MaterialOutcome, MaterialReload};
+#[cfg(feature = "proving")]
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
 use thrum_render::runtime::FrameSample;
 
-use crate::{
-    controls::GameControls,
-    host::{haze_capture::HazeTake, web as game},
-    hosted::HostedGame,
-};
+use crate::{controls::GameControls, host::web as game, hosted::HostedGame};
+
+#[cfg(feature = "proving")]
+use crate::host::haze_capture::HazeTake;
 
 /// The cooked valley's dev-server client and the feed of generations it has fetched.
 #[wasm_bindgen]
@@ -94,12 +99,16 @@ impl CookedValley {
 #[wasm_bindgen]
 pub struct BrowserGame {
     content: crate::GameContent,
+    #[cfg(feature = "proving")]
     temporal_inputs: bool,
     page: PageGame<HostedGame<game::PageGame>>,
     cloud_sky: Option<thrum_clouds::SkyProfile>,
+    #[cfg(feature = "proving")]
     haze_take: Option<HazeTake>,
+    #[cfg(feature = "proving")]
     cloud_observation: Option<Rc<RefCell<cloud_observation::PreviousSun>>>,
     cooked: Option<Arc<Mutex<CookedStats>>>,
+    #[cfg(feature = "proving")]
     content_preview: Option<crate::content_preview::PreviewRecord>,
     /// Explicit material reloads of the attached cooked valley (development builds only).
     #[cfg(feature = "dev-material")]
@@ -144,6 +153,10 @@ pub async fn create_browser_game(
     clouds: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
+    #[cfg(not(feature = "proving"))]
+    if diagnostic_clouds == Some(true) || temporal_inputs == Some(true) {
+        return Err(js_error("diagnostic scenes require the proving build"));
+    }
     create_game(
         canvas,
         crate::GameSetup {
@@ -157,6 +170,7 @@ pub async fn create_browser_game(
             } else {
                 thrum_render::synthetic::Reconstruction::Off
             },
+            #[cfg(feature = "proving")]
             display_overlay: if temporal_inputs.unwrap_or(false) {
                 thrum_render::synthetic::DisplayOverlay::TemporalInputs
             } else {
@@ -182,6 +196,7 @@ pub async fn create_browser_game(
 ///
 /// # Errors
 /// Returns an unknown culling mode, or the same failures as [`create_browser_game`].
+#[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn create_field_game(
     canvas: HtmlCanvasElement,
@@ -225,6 +240,7 @@ pub async fn create_field_game(
 /// Prepare the sprite test card on the same WebGPU canvas and game clock.
 /// # Errors
 /// Refuses an unsupported scale or 3D-only launch setting.
+#[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn create_sprite_game(
     canvas: HtmlCanvasElement,
@@ -265,6 +281,7 @@ pub async fn create_sprite_game(
 ///
 /// # Errors
 /// Reports a failed fetch, invalid content, or any browser preparation failure.
+#[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn create_placed_browser_game(
     canvas: HtmlCanvasElement,
@@ -293,6 +310,7 @@ pub async fn create_placed_browser_game(
 ///
 /// # Errors
 /// Refuses an unknown probe or a graphics startup error.
+#[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn create_sprite_probe(
     canvas: HtmlCanvasElement,
@@ -342,13 +360,17 @@ async fn create_game_with_shapes(
     .map_err(js_error)?;
     Ok(BrowserGame {
         content: setup.content,
+        #[cfg(feature = "proving")]
         temporal_inputs: setup.display_overlay
             == thrum_render::synthetic::DisplayOverlay::TemporalInputs,
         page,
         cloud_sky,
+        #[cfg(feature = "proving")]
         haze_take: None,
+        #[cfg(feature = "proving")]
         cloud_observation: None,
         cooked: None,
+        #[cfg(feature = "proving")]
         content_preview: None,
         #[cfg(feature = "dev-material")]
         material: None,
@@ -480,6 +502,10 @@ pub async fn create_route_game(
     capture_weather: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
+    #[cfg(not(feature = "proving"))]
+    if diagnostic_clouds == Some(true) || haze.is_some() {
+        return Err(js_error("diagnostic scenes require the proving build"));
+    }
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
     #[cfg(not(feature = "draw-probe"))]
     let valley_stars = true;
@@ -511,6 +537,7 @@ pub async fn create_route_game(
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
             cloud_weather,
             haze: crate::host::haze_selection(haze.as_deref()).map_err(js_error)?,
+            #[cfg(feature = "proving")]
             test_bank: haze.as_deref() == Some(crate::host::scene_source::test_bank::SELECTION),
             camera_culling: valley_culling(culling.as_deref(), true)?,
             field_meshes: meshes.unwrap_or(false),
@@ -650,6 +677,7 @@ impl BrowserGame {
     }
 
     /// Latest submitted Shapes report as JSON for the browser proof.
+    #[cfg(feature = "proving")]
     pub fn placed_cloud_report(&self) -> Option<String> {
         let report = game::cloud_input(&self.page.shell)?.shapes_report()?;
         Some(
@@ -678,12 +706,21 @@ impl BrowserGame {
         content_preview: Option<bool>,
     ) -> Result<(), JsValue> {
         let source = CookedSource::Remote(valley.feed.clone());
+        #[cfg(not(feature = "proving"))]
+        if effect_slab.is_some() || content_preview == Some(true) {
+            return Err(js_error(
+                "qualification contributions require the proving build",
+            ));
+        }
+        #[cfg(feature = "proving")]
         let preview = content_preview.unwrap_or(false);
+        #[cfg(feature = "proving")]
         if preview && (effect_slab.is_some() || self.temporal_inputs) {
             return Err(js_error(
                 "content preview needs the ordinary valley forward pass",
             ));
         }
+        #[cfg(feature = "proving")]
         let (camera, assets) = if preview {
             crate::showcase::prepare_content_preview(source)
         } else if self.temporal_inputs {
@@ -692,6 +729,8 @@ impl BrowserGame {
             crate::showcase::prepare_showcase(source)
         }
         .map_err(js_error)?;
+        #[cfg(not(feature = "proving"))]
+        let (camera, assets) = crate::showcase::prepare_showcase(source).map_err(js_error)?;
         let assets = if let Some(reader) = self.page.shell.host().mesh_rows() {
             let generation = valley
                 .feed
@@ -711,7 +750,9 @@ impl BrowserGame {
         let stats = assets.stats();
         #[cfg(feature = "dev-material")]
         let material = assets.material();
+        #[cfg(feature = "proving")]
         let mut observation = None;
+        #[cfg(feature = "proving")]
         let contribution: Box<dyn thrum_render::contribution::SceneContribution> = if preview {
             let rows = self
                 .page
@@ -736,6 +777,8 @@ impl BrowserGame {
         } else {
             Box::new(assets)
         };
+        #[cfg(not(feature = "proving"))]
+        let contribution: Box<dyn thrum_render::contribution::SceneContribution> = Box::new(assets);
         let contribution = crate::clouds::with_shade(
             contribution,
             game::cloud_input(&self.page.shell),
@@ -743,6 +786,7 @@ impl BrowserGame {
             game::cloud_shapes(&self.page.shell),
         )
         .map_err(js_error)?;
+        #[cfg(feature = "proving")]
         let contribution = if game::test_bank(&self.page.shell) {
             crate::host::scene_source::test_bank::alongside(contribution)
         } else {
@@ -767,7 +811,10 @@ impl BrowserGame {
             }
         });
         self.cooked = Some(stats);
-        self.content_preview = observation;
+        #[cfg(feature = "proving")]
+        {
+            self.content_preview = observation;
+        }
         #[cfg(feature = "dev-material")]
         {
             self.material = Some(material);
@@ -778,6 +825,7 @@ impl BrowserGame {
 
     /// Submitted placement, mesh-row and lease generations for the opt-in valley preview.
     #[must_use]
+    #[cfg(feature = "proving")]
     pub fn content_preview_frame(&self) -> Option<String> {
         let mut row = self.content_preview.as_ref()?.frame()?;
         row["submissionId"] = serde_json::json!(self.page.shell.host().last_submission());
@@ -854,6 +902,7 @@ impl BrowserGame {
     ///
     /// # Errors
     /// Refuses an invalid eye, missing cooked camera or active route.
+    #[cfg(feature = "proving")]
     pub fn set_cloud_capture_eye(&mut self, x: f32, y: f32, z: f32) -> Result<(), JsValue> {
         if game::cloud_input(&self.page.shell).is_none() {
             return Err(js_error("cloud capture requires Shade or Sky"));
@@ -862,6 +911,7 @@ impl BrowserGame {
     }
 
     /// Hold solar lighting at the current tick while weather continues to evolve.
+    #[cfg(feature = "proving")]
     pub fn hold_cloud_capture_sun(&mut self) {
         game::hold_capture_sun(&mut self.page.shell);
     }
@@ -870,6 +920,7 @@ impl BrowserGame {
     ///
     /// # Errors
     /// Refuses a malformed take.
+    #[cfg(feature = "proving")]
     pub fn configure_haze_take(&mut self, take: &str) -> Result<(), JsValue> {
         self.haze_take = Some(HazeTake::parse(take).map_err(js_error)?);
         Ok(())
@@ -879,6 +930,7 @@ impl BrowserGame {
     ///
     /// # Errors
     /// Refuses a missing take, missing valley camera or invalid elapsed time.
+    #[cfg(feature = "proving")]
     pub fn sample_haze_take(&mut self, elapsed_seconds: f32) -> Result<String, JsValue> {
         if !elapsed_seconds.is_finite() || elapsed_seconds < 0.0 {
             return Err(js_error("invalid haze take time"));
@@ -895,6 +947,7 @@ impl BrowserGame {
     }
 
     /// Prepared 3D shader and graph identity for fixed submitted-frame comparisons.
+    #[cfg(feature = "proving")]
     #[must_use]
     pub fn renderer_signature(&self) -> String {
         let host = self.page.shell.host();
@@ -906,6 +959,7 @@ impl BrowserGame {
     }
 
     /// Request named GPU pass timestamps for the held haze cost capture.
+    #[cfg(feature = "proving")]
     pub fn enable_haze_timings(&mut self) {
         use thrum_app::Game as _;
         self.page
@@ -915,6 +969,7 @@ impl BrowserGame {
 
     /// Capture-off browser timing samples and the selected volume allocation.
     #[must_use]
+    #[cfg(feature = "proving")]
     pub fn haze_cost(&self) -> String {
         let shell = &self.page.shell;
         let samples = shell
@@ -1229,6 +1284,7 @@ fn js_error(value: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&value.to_string())
 }
 
+#[cfg(feature = "proving")]
 async fn effect_diagnostic_device() -> Result<
     (
         wgpu::Instance,
@@ -1261,6 +1317,7 @@ async fn effect_diagnostic_device() -> Result<
 /// Run the external diagnostic's exact state script on Chrome's WebGPU device.
 /// # Errors
 /// Returns a target preparation, state mismatch or recovery failure.
+#[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn qualify_effect_state() -> Result<String, JsValue> {
     let (instance, device, queue, caps) = effect_diagnostic_device().await?;
@@ -1274,6 +1331,7 @@ pub async fn qualify_effect_state() -> Result<String, JsValue> {
 /// Run the late slab's submitted-input script on Chrome's hardware WebGPU device.
 /// # Errors
 /// Returns a graph, depth, refraction or motion mismatch from the target.
+#[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn qualify_effect_after_opaque() -> Result<String, JsValue> {
     let (instance, device, queue, caps) = effect_diagnostic_device().await?;
@@ -1287,6 +1345,7 @@ pub async fn qualify_effect_after_opaque() -> Result<String, JsValue> {
 /// Qualify cooked leases on the browser's real fetched feed and replacement device.
 /// # Errors
 /// Returns a fetch, GPU, texel or publication mismatch.
+#[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn qualify_lent_products(origin: String) -> Result<String, JsValue> {
     Box::pin(crate::lent::browser::run(origin))

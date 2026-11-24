@@ -60,11 +60,13 @@ enum ShellEvent {
     DeviceLost(u64),
     /// Qualification only: the render owner is holding a recovery.
     RecoverHeld,
+    #[cfg(feature = "proving")]
     Command(Command),
 }
 
 /// Qualification commands from Darwin notifications, honoured only when the
 /// app was launched with `THRUM_V1_ROUTE=1`.
+#[cfg(feature = "proving")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Command {
     ReplaceSurface,
@@ -105,6 +107,7 @@ extern "C" fn thrum_v1_display_target(target_media_seconds: f64, headroom: f64) 
     }
 }
 
+#[cfg(feature = "proving")]
 #[expect(
     unsafe_code,
     reason = "Swift forwards qualification notifications through this C ABI"
@@ -293,7 +296,7 @@ impl Shell {
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
         Self {
-            route: std::env::var("THRUM_V1_ROUTE").is_ok_and(|value| value == "1"),
+            route: route_enabled(),
             instance: wgpu::Instance::new(descriptor),
             lease: Arc::new(Lease::new()),
             signals: Arc::new(Signals::default()),
@@ -514,6 +517,7 @@ impl Shell {
         Ok(())
     }
 
+    #[cfg(feature = "proving")]
     fn replace_surface(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
         if self.state != State::Active {
             return Ok(());
@@ -572,6 +576,7 @@ impl Shell {
         Ok(())
     }
 
+    #[cfg(feature = "proving")]
     fn command(&mut self, event_loop: &ActiveEventLoop, command: Command) -> Result<(), String> {
         self.witness.commands += 1;
         if !self.route {
@@ -966,6 +971,7 @@ impl ApplicationHandler<ShellEvent> for Shell {
             ShellEvent::Stalling => "stalling",
             ShellEvent::DeviceLost(_) => "device-lost",
             ShellEvent::RecoverHeld => "recover-held",
+            #[cfg(feature = "proving")]
             ShellEvent::Command(_) => "command",
         };
         self.timed(event_loop, kind, |shell, event_loop| match event {
@@ -998,6 +1004,7 @@ impl ApplicationHandler<ShellEvent> for Shell {
                 shell.write();
                 Ok(())
             }
+            #[cfg(feature = "proving")]
             ShellEvent::Command(command) => shell.command(event_loop, command),
         });
     }
@@ -1083,5 +1090,16 @@ pub(super) fn run() {
     }
     if let Some(error) = shell.error {
         witness::write_fault(&error);
+    }
+}
+
+fn route_enabled() -> bool {
+    #[cfg(feature = "proving")]
+    {
+        std::env::var("THRUM_V1_ROUTE").as_deref() == Ok("1")
+    }
+    #[cfg(not(feature = "proving"))]
+    {
+        false
     }
 }

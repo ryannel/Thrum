@@ -1,5 +1,11 @@
 //! The view volume’s terminal-pair composition on Metal.
+#![cfg(feature = "proving")]
+
 mod far_terminal;
+#[expect(
+    dead_code,
+    reason = "sky composition reads the image and terminal pair"
+)]
 mod fixture;
 mod medium_fixture;
 

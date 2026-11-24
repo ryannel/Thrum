@@ -1,5 +1,6 @@
 //! G5 in the game: cooked mesh, texture and volume drawn in the V1 scene with its selected G3s
 //! lighting, uploaded under a per-frame budget, and replaced live as sources are edited.
+#![cfg(feature = "proving")]
 #![cfg(not(target_arch = "wasm32"))]
 
 mod support {

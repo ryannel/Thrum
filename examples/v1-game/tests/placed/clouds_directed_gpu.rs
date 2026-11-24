@@ -1,4 +1,5 @@
 //! Check game-directed placement against the submitted GPU map.
+#![cfg(feature = "proving")]
 
 #[cfg(target_os = "macos")]
 mod fixture;

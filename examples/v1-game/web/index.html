@@ -47,7 +47,8 @@
       <output id="status">Starting WebGPU…</output>
     </main>
     <script type="module">
-      import init, { create_browser_game, create_placed_browser_game, create_field_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } from "./v1_game.js";
+      import init, * as bindings from "./v1_game.js";
+      const { create_browser_game, create_placed_browser_game, create_field_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } = bindings;
       import { bindControls } from "./thrum-controls.js";
       import { mountPage } from "./host-page.js";
 

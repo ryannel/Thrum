@@ -3160,6 +3160,7 @@ dependencies = [
  "half",
  "pollster",
  "thrum-asset",
+ "thrum-cook",
  "thrum-core",
  "thrum-render",
  "thrum-test-support",

@@ -54,7 +54,7 @@ impl WorldPort {
         }
     }
 
-    #[cfg(target_os = "macos")]
+    #[cfg(all(target_os = "macos", feature = "proving"))]
     pub(super) fn inline_authority_hash(&self) -> Option<u64> {
         match self {
             Self::Inline(driver) => Some(driver.world.game().sim.authority_hash()),
@@ -301,6 +301,7 @@ impl WorldDriver {
         self.world.game().controlled_id()
     }
 
+    #[cfg(any(feature = "proving", test))]
     pub(super) fn new(
         content: GameContent,
         route_overlay: scene::RouteOverlay,
@@ -308,6 +309,7 @@ impl WorldDriver {
         Self::selected(content, route_overlay, None)
     }
 
+    #[cfg(feature = "proving")]
     pub(super) fn sprite_field(count: u32) -> Result<Self, String> {
         Self::with_simulation(
             scene::RouteOverlay::Off,
@@ -321,27 +323,29 @@ impl WorldDriver {
         route_overlay: scene::RouteOverlay,
         clouds: Option<crate::simulation::Weather>,
     ) -> Result<Self, String> {
-        Self::selected_with_sun_proof(content, route_overlay, clouds, crate::SunProofGeometry::Off)
-    }
-
-    pub(super) fn selected_with_sun_proof(
-        content: GameContent,
-        route_overlay: scene::RouteOverlay,
-        clouds: Option<crate::simulation::Weather>,
-        proof: crate::SunProofGeometry,
-    ) -> Result<Self, String> {
-        let sim = if proof == crate::SunProofGeometry::Off {
-            if clouds.is_some() {
-                scene::weather_simulation(content, route_overlay, clouds)?
-            } else {
-                scene::simulation(content, route_overlay)?
-            }
-        } else if content == GameContent::Exit && route_overlay == scene::RouteOverlay::Off {
-            scene::exit_simulation(clouds, proof).map_err(|error| error.to_string())?
+        let sim = if clouds.is_some() {
+            scene::weather_simulation(content, route_overlay, clouds)?
         } else {
-            return Err("Sun shadow proof geometry needs the populated exit scene".to_owned());
+            scene::simulation(content, route_overlay)?
         };
         Self::with_simulation(route_overlay, sim, content.entity_count())
+    }
+
+    pub(super) fn for_setup(
+        setup: &super::GameSetup,
+        clouds: Option<crate::simulation::Weather>,
+    ) -> Result<Self, String> {
+        #[cfg(feature = "proving")]
+        if setup.sun_proof_geometry != crate::SunProofGeometry::Off {
+            if setup.content != GameContent::Exit || setup.route_overlay != scene::RouteOverlay::Off
+            {
+                return Err("Sun shadow proof geometry needs the populated exit scene".to_owned());
+            }
+            let sim = scene::exit_simulation(clouds, setup.sun_proof_geometry)
+                .map_err(|error| error.to_string())?;
+            return Self::with_simulation(setup.route_overlay, sim, setup.content.entity_count());
+        }
+        Self::selected(setup.content, setup.route_overlay, clouds)
     }
 
     fn with_simulation(

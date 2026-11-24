@@ -39,6 +39,7 @@ private final class DisplayTarget: NSObject {
 @_silgen_name("thrum_v1_display_target")
 private func thrumV1DisplayTarget(_ targetMediaSeconds: Double, _ headroom: Double)
 
+#if THRUM_PROVING
 @_silgen_name("thrum_v1_shell_command")
 private func thrumV1ShellCommand(_ code: Int32)
 
@@ -110,6 +111,8 @@ private func observeShellCommands() {
     commandDirectorySource = source
 }
 
+#endif
+
 @_cdecl("thrum_v1_start_display_link")
 func thrumV1StartDisplayLink() -> Int32 {
     guard SceneBridge.connectedScene != nil else { return 0 }
@@ -140,7 +143,9 @@ final class ThrumV1SceneDelegate: UIResponder, UIWindowSceneDelegate {
         SceneBridge.connectedScene = connected
         SceneBridge.delegate = self
         SceneBridge.attachIfReady()
+        #if THRUM_PROVING
         observeShellCommands()
+        #endif
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

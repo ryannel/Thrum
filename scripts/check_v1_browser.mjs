@@ -2313,7 +2313,10 @@ async function main() {
   // Default checks must work in a clean verifier checkout and use the current sources.
   // Explicit web roots remain caller-owned (including the development page).
   if (args['web-root'] === 'target/v1-game-web') {
-    execFileSync('sh', ['examples/v1-game/web/build.sh'], { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
+    const proving = args.case !== 'material-disabled';
+    execFileSync('sh', ['examples/v1-game/web/build.sh', ...(proving ? ['--proving'] : [])],
+      { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
+    if (proving) args['web-root'] = 'target/v1-game-web-proving';
   }
   if (['exit-scene', 'scale'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
     execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });

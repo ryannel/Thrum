@@ -1,4 +1,5 @@
 //! The real game selects Weather and Shade through public engine interfaces.
+#![cfg(feature = "proving")]
 /// Shared native diagnostic device policy.
 #[expect(
     dead_code,

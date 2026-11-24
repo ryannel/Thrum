@@ -15,23 +15,18 @@ crate-type = ["rlib", "cdylib"]
 workspace = true
 
 [features]
+default = ["proving"]
+proving = []
 creation-counters = ["thrum-app/creation-counters"]
-draw-probe = ["thrum-asset-gpu/draw-probe", "thrum-render/creation-counters"]
+draw-probe = ["proving", "thrum-asset-gpu/draw-probe", "thrum-render/creation-counters"]
 # The browser page's material hook reload (`?material=`), a development control that compiles
 # shaders synchronously; only `web/build.sh --dev` enables it.
-dev-material = []
-
-# A target of its own: its check is named by open item GAME-SPLIT M3.2; the main-tier list names it
-# for its tests behind a feature.
-[[test]]
-name = "cooked_fault_gpu"
-required-features = ["thrum-asset-gpu/fault-probe"]
+dev-material = ["proving"]
 
 # A target of its own: the main-tier list names it for its tests behind a feature; run by name from
 # scripts/ray_tracing_proof.py.
 [[test]]
 name = "ray_tracing_gpu"
-required-features = ["draw-probe"]
 
 # A target of its own: the main-tier list names it for its long tests.
 [[test]]
@@ -82,6 +77,7 @@ thrum-cook = { path = "../../crates/thrum-cook", features = ["fault-probe"] }
 [[bench]]
 name = "cooked_edit"
 harness = false
+required-features = ["proving"]
 
 [[bench]]
 name = "valley_culling"
@@ -102,27 +98,31 @@ test = false
 # Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
 # target of its own below only while something names its binary or it has to run apart.
 [[test]]
+name = "game_alone"
+
+[[test]]
 name = "it"
 path = "tests/it.rs"
 
 [[test]]
 name = "view_volume_shadow_gpu"
 path = "tests/view_volume/view_volume_shadow_gpu.rs"
-required-features = ["thrum-render/creation-counters"]
 
 [[test]]
 name = "view_volume_sky_gpu"
 path = "tests/view_volume/view_volume_sky_gpu.rs"
-required-features = ["thrum-render/creation-counters"]
 
 [[test]]
 name = "view_volume_history_gpu"
 path = "tests/view_volume/view_volume_history_gpu.rs"
-required-features = ["thrum-render/creation-counters"]
 
 [[test]]
 name = "clouds_library"
 path = "examples/cloud_library/proof.rs"
+
+[[example]]
+name = "cloud_cost"
+required-features = ["proving"]
 
 [[example]]
 name = "cook_cloud_library"
@@ -138,11 +138,6 @@ path = "tests/clouds_selection_gpu.rs"
 [[test]]
 name = "cooked_assets_gpu"
 path = "tests/cooked_assets_gpu.rs"
-
-# A target of its own: its check is named by open item GAME-SPLIT M3.2.
-[[test]]
-name = "cooked_texture_quality"
-path = "tests/cooked_texture_quality.rs"
 
 # A target of its own: the main-tier list names it for its long tests.
 [[test]]
@@ -181,6 +176,7 @@ test = false
 # The binary holds no test, so the test runner neither builds nor starts it as one.
 [[bin]]
 name = "apple_tile_residency"
+required-features = ["proving"]
 path = "src/bin/apple_tile_residency.rs"
 test = false
 

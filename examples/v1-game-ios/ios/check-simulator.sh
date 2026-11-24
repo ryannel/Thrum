@@ -36,9 +36,9 @@ if [[ "$1" == "--prepare" ]]; then
     thrum_rustc="$(rustup which --toolchain stable rustc)"
     PATH="$(dirname -- "$thrum_rustc"):$PATH" RUSTC="$thrum_rustc" RUSTC_WRAPPER= \
     IPHONEOS_DEPLOYMENT_TARGET="$(plutil -extract MinimumOSVersion raw -expect string examples/v1-game-ios/ios/Info.plist)" \
-        rustup run stable cargo clippy --locked --offline --package v1-game-ios \
+        rustup run stable cargo clippy --locked --offline --package v1-game-ios --features proving \
         --target aarch64-apple-ios-sim --all-targets -- -D warnings
-    RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh
+    RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh --proving
     examples/v1-game-ios/ios/build-uitest.sh >/dev/null
     exit 0
 fi

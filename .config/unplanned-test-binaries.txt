@@ -10,8 +10,6 @@
 # `python3 scripts/shape_rules.py tighten`.
 #
 # <package> <test target>
-# v1-game cooked_texture_quality: GAME-SPLIT M3.2 runs `-p thrum-asset-gpu --test cooked_texture_quality`,
-# the target that package gains when the file moves; that landing removes this line.
 thrum-asset dev_server_browser
 thrum-asset dev_server_wasm
 thrum-core v1_workload
@@ -24,6 +22,5 @@ thrum-render scene_view_admission
 thrum-render upload_gpu
 thrum-render visibility
 thrum-sim2d allocations
-v1-game cooked_texture_quality
 v1-game valley_culling_gpu
 water-scene proof_gpu

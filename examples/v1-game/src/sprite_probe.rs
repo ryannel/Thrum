@@ -69,7 +69,7 @@ impl Scene {
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "proving"))]
     pub(crate) fn set_sweep_step(&mut self, step: u32) -> Result<(), String> {
         if !matches!(self.probe, SpriteProbe::Sweep(_)) || step >= 256 {
             return Err("sprite camera sweep requires a pose in 0..256".into());
@@ -289,6 +289,7 @@ fn still_rows() -> Vec<SpriteRow> {
     rows
 }
 
+#[cfg(feature = "proving")]
 pub(crate) fn parse(selection: &str) -> Result<SpriteProbe, String> {
     let number = |text: &str, bounds: std::ops::RangeInclusive<f32>| {
         let number = text.parse::<f32>().map_err(|error| error.to_string())?;

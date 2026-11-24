@@ -59,7 +59,7 @@ def main():
     os.chdir(ROOT)
     if not args.simulator_worker:
         simulator.admission()
-        subprocess.run(['examples/v1-game-ios/ios/build-simulator.sh'],
+        subprocess.run(['examples/v1-game-ios/ios/build-simulator.sh', '--proving'],
                        env=dict(os.environ, RUSTC_WRAPPER=''), check=True, timeout=900)
         simulator.exec_with_admission([sys.executable, simulator.__file__, 'fresh', '--',
                                         sys.executable, __file__, *sys.argv[1:], '--simulator-worker'])

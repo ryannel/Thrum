@@ -445,7 +445,7 @@ impl Simulation {
     pub fn handle(&self, id: StableId) -> Option<Handle> {
         self.runtime.handle(id)
     }
-    #[cfg(target_os = "macos")]
+    #[cfg(all(target_os = "macos", feature = "proving"))]
     pub(crate) fn authority_hash(&self) -> u64 {
         use std::hash::{Hash, Hasher};
 

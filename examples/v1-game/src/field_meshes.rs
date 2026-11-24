@@ -2,16 +2,17 @@
 
 use std::sync::Arc;
 
-use thrum_fixtures::mixed_field::{
-    ENTITY_COUNT,
-    meshes::{self, PropMesh},
-};
+#[cfg(feature = "proving")]
+use thrum_fixtures::mixed_field::ENTITY_COUNT;
+use thrum_fixtures::mixed_field::meshes::{self, PropMesh};
 use thrum_render::synthetic::{
     SyntheticMesh, SyntheticMeshChoice, SyntheticMeshes, SyntheticVertex,
 };
 
+#[cfg(feature = "proving")]
 pub(crate) use meshes::mirrored;
 
+#[cfg(feature = "proving")]
 pub(crate) fn selection() -> Arc<SyntheticMeshes> {
     selection_for(ENTITY_COUNT, true)
 }

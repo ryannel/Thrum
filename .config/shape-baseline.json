@@ -23,6 +23,11 @@
       "files": {
       }
     },
+    "game-names": {
+      "version": 1,
+      "files": {
+      }
+    },
     "history-names": {
       "version": 3,
       "files": {
@@ -72,9 +77,9 @@
         "crates/thrum-render/src/capabilities.rs": 1,
         "crates/thrum-render/src/synthetic/display.rs": 1,
         "examples/v1-game-ios/src/ios.rs": 1,
-        "examples/v1-game-ios/src/ios/cooked_view.rs": 3,
+        "examples/v1-game-ios/src/ios/cooked_view.rs": 2,
         "examples/v1-game-ios/src/ios/culling.rs": 1,
-        "examples/v1-game-ios/src/ios/render.rs": 2,
+        "examples/v1-game-ios/src/ios/render.rs": 1,
         "examples/v1-game/src/content.rs": 2,
         "examples/v1-game/src/host/scene_source.rs": 3,
         "examples/v1-game/src/window.rs": 1,
@@ -171,7 +176,7 @@
     "test-binary": {
       "version": 2,
       "files": {
-        ".config/unplanned-test-binaries.txt": 15
+        ".config/unplanned-test-binaries.txt": 14
       }
     },
     "test-crate-edges": {
@@ -202,7 +207,6 @@
         "examples/v1-game/tests/clouds_frame_contract_gpu.rs": 2,
         "examples/v1-game/tests/clouds_selection_gpu.rs": 1,
         "examples/v1-game/tests/cooked_assets_gpu.rs": 12,
-        "examples/v1-game/tests/cooked_fault_gpu.rs": 1,
         "examples/v1-game/tests/cooked_material_gpu.rs": 5,
         "examples/v1-game/tests/cooked_rows_gpu.rs": 7,
         "examples/v1-game/tests/effect_display_phase_gpu.rs": 3,
@@ -224,11 +228,11 @@
     "test-readback": {
       "version": 1,
       "files": {
+        "crates/thrum-asset-gpu/tests/cooked_texture_quality.rs": 1,
         "examples/v1-game/src/host/tests/gpu_support.rs": 1,
         "examples/v1-game/src/host/tests/reconstruction_gpu.rs": 1,
         "examples/v1-game/tests/clouds_display_phase_gpu.rs": 1,
         "examples/v1-game/tests/clouds_frame_contract_gpu.rs": 1,
-        "examples/v1-game/tests/cooked_texture_quality.rs": 1,
         "examples/v1-game/tests/lent_products_gpu.rs": 1,
         "examples/v1-game/tests/mesh_stage_gpu/support.rs": 1,
         "examples/v1-game/tests/ray_tracing/proof.rs": 1,

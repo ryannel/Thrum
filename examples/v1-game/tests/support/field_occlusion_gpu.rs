@@ -6,7 +6,7 @@
 //! `THRUM_FIELD_SEQUENCE=<dir>` to write each culled mode's frames within 40
 //! ticks of each event, under `<dir>/<mode>/`, for motion review.
 //! Run it with `--release` to reach the cut; debug builds cover the first turn.
-#![cfg(not(target_arch = "wasm32"))]
+#![cfg(all(feature = "proving", not(target_arch = "wasm32")))]
 
 mod field_fly;
 

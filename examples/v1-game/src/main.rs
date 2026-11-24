@@ -7,9 +7,11 @@ fn main() {
         Err(std::env::VarError::NotPresent) => String::new(),
         Err(error) => report_capture_failure(&format!("THRUM_HARDWARE: {error}")),
     };
-    let mut hardware = thrum_render::capabilities::HardwareRequest::parse(&names)
+    let hardware = thrum_render::capabilities::HardwareRequest::parse(&names)
         .unwrap_or_else(|error| report_capture_failure(&error.to_string()));
+    #[cfg(feature = "proving")]
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
+        let mut hardware = hardware;
         for request in &mut hardware {
             request.required = true;
         }
@@ -68,7 +70,9 @@ fn main() {
         }
         return;
     }
+    #[cfg(feature = "proving")]
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_SCENE") {
+        let mut hardware = hardware;
         for request in &mut hardware {
             request.required = true;
         }
@@ -81,16 +85,21 @@ fn main() {
         }
         return;
     }
+    #[cfg(feature = "proving")]
     let window_capture =
         window_extent_capture().unwrap_or_else(|error| report_capture_failure(&error));
+    #[cfg(feature = "proving")]
     let transition =
         window_transition_proof().unwrap_or_else(|error| report_capture_failure(&error));
+    #[cfg(feature = "proving")]
     let qualification =
         window_qualification().unwrap_or_else(|error| report_capture_failure(&error));
+    #[cfg(feature = "proving")]
     let display =
         window_display_options().unwrap_or_else(|error| report_capture_failure(&error.to_string()));
     let governor = v1_game::WindowGovernor {
         enabled: governor_enabled().unwrap_or_else(|error| report_capture_failure(&error)),
+        #[cfg(feature = "proving")]
         route: std::env::var_os("THRUM_GOVERNOR_ROUTE")
             .map(std::fs::read_to_string)
             .transpose()
@@ -98,15 +107,19 @@ fn main() {
     };
     v1_game::run_window(
         hardware,
+        #[cfg(feature = "proving")]
         window_capture,
+        #[cfg(feature = "proving")]
         transition,
+        #[cfg(feature = "proving")]
         qualification,
+        #[cfg(feature = "proving")]
         display,
         governor,
     );
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn window_display_options()
 -> Result<Option<thrum_app::WindowDisplayOptions>, thrum_app::DisplayOverrideError> {
     let Ok(forced) = std::env::var("THRUM_MAC_EDR") else {
@@ -119,7 +132,7 @@ fn window_display_options()
     }))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, String> {
     let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") else {
         return Ok(None);
@@ -142,7 +155,7 @@ fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, Stri
     }))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn window_extent_capture() -> Result<Option<thrum_app::WindowExtentCapture>, String> {
     use thrum_app::{ExtentWindow, WindowExtentCapture};
 
@@ -167,7 +180,7 @@ fn window_extent_capture() -> Result<Option<thrum_app::WindowExtentCapture>, Str
     }))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>, String> {
     use thrum_app::{TransitionArm, WindowTransitionProof};
     let Some(output) = std::env::var_os("THRUM_MAC_TRANSITION") else {
@@ -197,7 +210,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
     }))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn capture_admission() -> Result<(bool, std::time::Duration, v1_game::NativeRecovery), String> {
     let wait = match std::env::var("THRUM_CAPTURE_ADMISSION").as_deref() {
         Ok("omit") | Err(_) => false,
@@ -240,7 +253,7 @@ fn main() {
 }
 
 /// The scene capture's launch settings, read here so the library reads no environment.
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
     fn text(name: &str) -> Result<Option<String>, String> {
         match std::env::var(name) {
@@ -290,7 +303,7 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
     })
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn render_scale_trace() -> Result<Option<v1_game::RenderScaleTrace>, String> {
     use v1_game::RenderScaleTrace;
     match std::env::var("THRUM_ROUTE_RENDER_SCALE").as_deref() {

@@ -21,7 +21,7 @@ STARTING = "4392b652fb63994e6ca9090e9b5d20602777337d"
 TARGETS = ("mac-metal", "chrome-webgpu")
 BUILDS = {
     "mac-metal": "cargo build --locked --offline --release -p v1-game --bin v1-game",
-    "chrome-webgpu": "sh examples/v1-game/web/build.sh (locked offline release)",
+    "chrome-webgpu": "sh examples/v1-game/web/build.sh --proving (locked offline release)",
 }
 VALLEY_BUILD = "cargo build --locked --offline --release -p v1-game --bench valley_culling"
 EXTENTS = ((1920, 1080), (3456, 2234))
@@ -435,7 +435,8 @@ def prove_field(args, scratch):
         identity = digest(binary)
     else:
         if web == ROOT / "target/v1-game-web":
-            run(["sh", "examples/v1-game/web/build.sh"], stdout=sys.stderr,
+            web = ROOT / "target/v1-game-web-proving"
+            run(["sh", "examples/v1-game/web/build.sh", "--proving"], stdout=sys.stderr,
                 env={**os.environ, "CARGO_TARGET_DIR": "target", "RUSTC_WRAPPER": ""})
         else:
             build = f"{build}, prebuilt page at {web.relative_to(ROOT)}"

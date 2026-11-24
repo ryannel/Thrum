@@ -1,7 +1,7 @@
 //! Typed demo controls: one model of sliders, toggles, text fields, readouts and tables that native
 //! and browser views present identically, so a demo can expose its mechanism.
 //!
-//! A game declares controls once, with a stable dotted key (`sky.solar_time`), a display label,
+//! A game declares controls once, with a stable dotted key (`time.hour`), a display label,
 //! a canonical engine value and a [`Display`] mapping. It gets back typed handles
 //! ([`Slider`], [`Toggle`], [`Text`], [`Readout`], [`Table`]) and reads values through them. Views and
 //! files edit the same model, and the game applies what changed since its last look:
@@ -10,7 +10,7 @@
 //! use thrum_controls::{Controls, Display};
 //! let mut controls = Controls::new();
 //! let time = controls
-//!     .slider("sky.solar_time", "Solar time", 0.0..=1.0)
+//!     .slider("time.hour", "Solar time", 0.0..=1.0)
 //!     .default(0.5)
 //!     .display(Display::clock())
 //!     .add()
@@ -136,7 +136,7 @@ pub struct Spec {
 }
 
 impl Spec {
-    /// Stable dotted key, such as `sky.solar_time`; the part before the first dot is its group.
+    /// Stable dotted key, such as `time.hour`; the part before the first dot is its group.
     #[must_use]
     pub fn key(&self) -> &str {
         &self.key
@@ -198,7 +198,7 @@ impl fmt::Display for ControlError {
             Self::InvalidKey(key) => write!(
                 f,
                 "control key {key:?} is invalid; use 1–{MAX_KEY_BYTES} lowercase letters, digits, \
-                 '_' and '.', such as \"sky.solar_time\""
+                 '_' and '.', such as \"time.hour\""
             ),
             Self::DuplicateKey(key) => {
                 write!(
@@ -228,7 +228,7 @@ impl fmt::Display for ControlError {
             Self::InvalidFile(cause) => write!(
                 f,
                 "parameter file is not a JSON object ({cause}); write one JSON object of control keys to display values, \
-                 such as {{\"sky.solar_time\": 18.5}}"
+                 such as {{\"time.hour\": 18.5}}"
             ),
             Self::UnknownId(index) => write!(
                 f,

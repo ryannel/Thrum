@@ -368,6 +368,7 @@ fn running_world_advances_while_its_destroyed_gpu_is_replaced() {
 /// The mixed field keeps its authored meshes through device loss: the
 /// replacement prepares the same per-slot selection from the retained scene
 /// and redraws the paused frame unchanged, then the world resumes on it.
+#[cfg(feature = "proving")]
 #[test]
 fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
     let Some(test_gpu) = thrum_test_support::gpu(

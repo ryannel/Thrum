@@ -5,7 +5,9 @@ use std::time::Instant;
 use thrum_render::capabilities::HardwareRequest;
 use thrum_render::synthetic::CullMode;
 
-use thrum_app::{Config, Game, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
+#[cfg(feature = "proving")]
+use thrum_app::Game;
+use thrum_app::{Config, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
 use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
 
 use thrum_render::runtime::FrameConfig;
@@ -17,11 +19,14 @@ use crate::{
     hosted::{HostedGame, RuntimeSetup},
 };
 
+#[cfg(feature = "proving")]
 mod capture;
+#[cfg(feature = "proving")]
 pub use capture::scene::{RenderScaleTrace, SceneCaptureRequest};
 
 /// Process-edge selection for the labelled native recovery capture fixture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(feature = "proving")]
 pub enum NativeRecovery {
     /// Ordinary capture, with no failure injection.
     Disabled,
@@ -32,13 +37,16 @@ pub enum NativeRecovery {
 }
 
 /// Environment setting parsed by the binary before starting the capture adapter.
+#[cfg(feature = "proving")]
 pub const NATIVE_RECOVERY_VARIABLE: &str = "THRUM_CAPTURE_NATIVE_RECOVERY";
 
 /// Process-edge selection for the capture observer comparison.
+#[cfg(feature = "proving")]
 pub const CAPTURE_OBSERVER_VARIABLE: &str = "THRUM_CAPTURE_OBSERVER_ONLY";
 
 /// Whether a runtime capture records pixels or observes submission cadence alone.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(feature = "proving")]
 pub enum RuntimeCaptureOutput {
     /// Keep every submitted image.
     Images,
@@ -56,6 +64,7 @@ pub enum RuntimeCaptureOutput {
     ObserverOnly,
 }
 
+#[cfg(feature = "proving")]
 impl RuntimeCaptureOutput {
     fn cooked_path(self) -> thrum_asset_gpu::CookedDrawPath {
         match self {
@@ -69,6 +78,7 @@ impl RuntimeCaptureOutput {
 /// Run a declared unattended capture scenario through the ordinary game.
 /// # Errors
 /// Returns GPU, control, readback or output failure.
+#[cfg(feature = "proving")]
 pub fn run_runtime_capture(
     output: &std::path::Path,
     scenario: &str,
@@ -103,6 +113,7 @@ const KEY_DOWN: u8 = 128;
 /// as `request` selects. `output` must be a new directory.
 /// # Errors
 /// Returns GPU, control, readback or output failure.
+#[cfg(feature = "proving")]
 pub fn run_scene_capture(
     output: &std::path::Path,
     request: &SceneCaptureRequest,
@@ -117,6 +128,7 @@ pub struct WindowGovernor {
     /// Enable the governor for a prepared TAAU scene.
     pub enabled: bool,
     /// A validated route is prepared from this authored route text before the window starts.
+    #[cfg(feature = "proving")]
     pub route: Option<String>,
 }
 
@@ -125,16 +137,17 @@ pub struct WindowGovernor {
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
 pub fn run_window(
     hardware: Vec<HardwareRequest>,
-    capture: Option<thrum_app::WindowExtentCapture>,
-    transition: Option<thrum_app::WindowTransitionProof>,
-    qualification: Option<thrum_app::WindowQualification>,
-    display: Option<thrum_app::WindowDisplayOptions>,
+    #[cfg(feature = "proving")] capture: Option<thrum_app::WindowExtentCapture>,
+    #[cfg(feature = "proving")] transition: Option<thrum_app::WindowTransitionProof>,
+    #[cfg(feature = "proving")] qualification: Option<thrum_app::WindowQualification>,
+    #[cfg(feature = "proving")] display: Option<thrum_app::WindowDisplayOptions>,
     governor: WindowGovernor,
 ) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
     // are reported when the host is prepared.
     let setup = crate::selected_setup();
+    #[cfg(feature = "proving")]
     let sprite_card = matches!(
         &setup,
         Ok(crate::GameSetup {
@@ -145,20 +158,24 @@ pub fn run_window(
         })
     );
     let (window_title, title) = match setup {
+        #[cfg(feature = "proving")]
         Ok(crate::GameSetup {
             sprite_scale: Some(_),
             ..
         }) => ("Thrum V1 — sprites", "Thrum V1 sprites"),
+        #[cfg(feature = "proving")]
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling: CullMode::Frustum,
             ..
         }) => ("Thrum V1 — field / Frustum culling", "Thrum V1 field"),
+        #[cfg(feature = "proving")]
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling: CullMode::Occlusion,
             ..
         }) => ("Thrum V1 — field / Occlusion culling", "Thrum V1 field"),
+        #[cfg(feature = "proving")]
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             ..
@@ -180,6 +197,7 @@ pub fn run_window(
         title,
         render_thread: "thrum-v1-render",
         panel_title: "Thrum demo",
+        #[cfg(feature = "proving")]
         window_size: if transition
             .as_ref()
             .is_some_and(|proof| proof.governor.is_some())
@@ -197,6 +215,8 @@ pub fn run_window(
         } else {
             [1920, 1080]
         },
+        #[cfg(not(feature = "proving"))]
+        window_size: [1920, 1080],
     };
     let game = || -> Result<_, thrum_controls::ControlError> {
         Ok(HostedGame(WindowGame {
@@ -204,15 +224,21 @@ pub fn run_window(
             world: None,
             held_keys: 0,
             replay_controls: true,
+            #[cfg(feature = "proving")]
             capture_route: governor.route,
             governor_enabled: governor.enabled,
+            #[cfg(feature = "proving")]
             capture_eye: None,
+            #[cfg(feature = "proving")]
             capture_cooked: None,
+            #[cfg(feature = "proving")]
             cloud_capture: false,
+            #[cfg(feature = "proving")]
             scene: None,
             hardware,
         }))
     };
+    #[cfg(feature = "proving")]
     if let Some(capture) = capture {
         if sprite_card {
             write_card_texels(&capture.output);
@@ -230,8 +256,11 @@ pub fn run_window(
     } else {
         thrum_app::run(config, game);
     }
+    #[cfg(not(feature = "proving"))]
+    thrum_app::run(config, game);
 }
 
+#[cfg(feature = "proving")]
 fn write_card_texels(output: &std::path::Path) {
     let _source_receipt = std::fs::write(
         output.join("card-source.rgba"),
@@ -245,17 +274,23 @@ struct WindowGame {
     world: Option<WorldControls>,
     held_keys: u8,
     replay_controls: bool,
+    #[cfg(feature = "proving")]
     capture_route: Option<String>,
     governor_enabled: bool,
+    #[cfg(feature = "proving")]
     capture_eye: Option<[f32; 3]>,
+    #[cfg(feature = "proving")]
     capture_cooked: Option<CaptureCooked>,
+    #[cfg(feature = "proving")]
     cloud_capture: bool,
+    #[cfg(feature = "proving")]
     scene: Option<SceneCapture>,
     hardware: Vec<HardwareRequest>,
 }
 
 /// A scene capture's own preparation: its render extent, which may differ from the engine
 /// texture standing in for the surface, and an inline world it steps itself.
+#[cfg(feature = "proving")]
 struct SceneCapture {
     setup: crate::GameSetup,
     render_extent: [u32; 2],
@@ -264,6 +299,7 @@ struct SceneCapture {
     content: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
 }
 
+#[cfg(feature = "proving")]
 struct CaptureCooked {
     folder: std::path::PathBuf,
     path: thrum_asset_gpu::CookedDrawPath,
@@ -271,9 +307,11 @@ struct CaptureCooked {
     scale_props: bool,
 }
 
+#[cfg(feature = "proving")]
 type ContentPreviewCapture =
     std::sync::Arc<std::sync::Mutex<Option<crate::content_preview::PreviewRecord>>>;
 
+#[cfg(feature = "proving")]
 impl CaptureCooked {
     fn new(folder: &std::path::Path, capture: RuntimeCaptureOutput) -> Self {
         Self {
@@ -288,10 +326,12 @@ impl CaptureCooked {
 /// Construct the ordinary game for the engine's headless presenter adapter.
 /// # Errors
 /// Returns a demo-control declaration failure.
+#[cfg(feature = "proving")]
 pub fn capture_game() -> Result<impl Game, String> {
     capture_game_with_route_limit(false, None)
 }
 
+#[cfg(feature = "proving")]
 fn capture_game_with_route_limit(
     cloud_capture: bool,
     capture_cooked: Option<CaptureCooked>,
@@ -351,9 +391,11 @@ impl RuntimeSetup for WindowGame {
     fn supports_edr(&self) -> bool {
         !thrum_render::synthetic::mac_backing_grid_requested()
             && crate::selected_setup().is_ok_and(|setup| {
-                setup.sprite_scale.is_none()
-                    && setup.display_overlay
-                        != thrum_render::synthetic::DisplayOverlay::TracedGeometry
+                #[cfg(feature = "proving")]
+                if setup.sprite_scale.is_some() {
+                    return false;
+                }
+                setup.display_overlay != thrum_render::synthetic::DisplayOverlay::TracedGeometry
             })
     }
 
@@ -376,6 +418,7 @@ impl RuntimeSetup for WindowGame {
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<GameWorld, GameScene>, String> {
+        #[cfg(feature = "proving")]
         if let Some(scene) = &mut self.scene {
             let mut host = scene
                 .setup
@@ -408,12 +451,15 @@ impl RuntimeSetup for WindowGame {
             });
         }
         let render_extent = gpu.surface.extent;
-        let mut setup = crate::selected_setup()?;
-        setup.route_scale_props = self
-            .capture_cooked
-            .as_ref()
-            .is_some_and(|capture| capture.scale_props);
-        let exit = setup.content == crate::GameContent::Exit;
+        let setup = crate::selected_setup()?;
+        #[cfg(feature = "proving")]
+        let setup = crate::GameSetup {
+            route_scale_props: self
+                .capture_cooked
+                .as_ref()
+                .is_some_and(|capture| capture.scale_props),
+            ..setup
+        };
         let config = FrameConfig {
             render_extent,
             surface: Some(gpu.surface),
@@ -428,17 +474,20 @@ impl RuntimeSetup for WindowGame {
                 .prepare(gpu.device, gpu.queue, gpu.capabilities, config)
                 .await?
         };
+        #[cfg(feature = "proving")]
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
+        #[cfg(feature = "proving")]
         let preview = self
             .capture_cooked
             .as_ref()
             .and_then(|cooked| cooked.preview.as_ref());
+        #[cfg(feature = "proving")]
         let content = if let Some(preview) = preview {
             *preview.lock().map_err(|error| error.to_string())? =
                 Some(crate::content::attach_content_preview(&mut host)?);
             None
         } else if let Some(cooked) = &self.capture_cooked {
-            if exit {
+            if setup.content == crate::GameContent::Exit {
                 let selection = host.culling_selection();
                 let report = serde_json::json!({
                     "requested": format!("{:?}", selection.requested),
@@ -452,6 +501,9 @@ impl RuntimeSetup for WindowGame {
         } else {
             crate::attach_cooked_scene(&mut host)?
         };
+        #[cfg(not(feature = "proving"))]
+        crate::attach_cooked_scene(&mut host)?;
+        #[cfg(feature = "proving")]
         if let Some(eye) = self.capture_eye {
             if self.capture_route.is_some() {
                 return Err("a fixed capture eye cannot override an active route".to_owned());
@@ -462,6 +514,7 @@ impl RuntimeSetup for WindowGame {
             host.set_scene_camera(camera.at(eye)?)?;
         }
         self.demo.observe_camera(host.camera_orientation());
+        #[cfg(feature = "proving")]
         let offset = if let Some(route) = &self.capture_route {
             capture::prepare_route(
                 &mut host,
@@ -488,9 +541,13 @@ impl RuntimeSetup for WindowGame {
         {
             return Err("governor requires a prepared TAAU scene".to_owned());
         }
+        #[cfg(feature = "proving")]
         if self.capture_route.is_some() && self.replay_controls {
             host.world_mut().resume(offset)?;
         }
+        #[cfg(not(feature = "proving"))]
+        let origin = Instant::now();
+        #[cfg(feature = "proving")]
         let origin = Instant::now()
             .checked_sub(offset)
             .ok_or("capture route origin underflow")?;

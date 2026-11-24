@@ -1,6 +1,8 @@
 //! Authored transforms and closed paths shared by the native and browser game.
 
+#[cfg(feature = "proving")]
 mod shadow_proof;
+#[cfg(feature = "proving")]
 pub use shadow_proof::SunProofGeometry;
 
 use std::sync::{Arc, OnceLock};

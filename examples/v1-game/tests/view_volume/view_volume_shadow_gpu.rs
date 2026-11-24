@@ -1,4 +1,5 @@
 //! The view volume’s direct-sun shadow and forward decoder on Metal.
+#![cfg(feature = "proving")]
 mod fixture;
 
 use fixture::{SCATTER_GAIN, STORAGE_EXPOSURE, SUN_LUX, Witness};

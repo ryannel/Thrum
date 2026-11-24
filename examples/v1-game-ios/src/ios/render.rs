@@ -264,7 +264,7 @@ pub(super) fn start(
         instance: None,
         signals,
         gpu: None,
-        diagnostics: std::env::var("THRUM_V1_ROUTE").is_ok_and(|value| value == "1"),
+        diagnostics: super::route_enabled(),
         origin: Instant::now(),
         next_generation: FIRST_DEVICE_GENERATION + 1,
         lost_wake: lost,

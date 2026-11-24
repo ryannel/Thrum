@@ -62,7 +62,7 @@ def off_parity(target, output):
         run([ROOT / 'target/debug/thrum-cook', 'cook', ROOT / 'examples/v1-game/assets/showcase', store])
     if target == 'chrome-webgpu':
         run(['sh', 'examples/v1-game/web/build.sh'], base, env)
-        run(['sh', 'examples/v1-game/web/build.sh'], env=env)
+        run(['sh', 'examples/v1-game/web/build.sh', '--proving'], env=env)
         env['THRUM_ENVIRONMENT_BASE_WEB'] = str(base / 'target/v1-game-web')
         run(['node', 'scripts/check_v1_browser.mjs', '--case', 'environment-off-parity', '--output', output / 'browser'], env=env)
         return
@@ -104,7 +104,7 @@ def off_parity(target, output):
 
 def cost(target, output):
     if target == 'chrome-webgpu':
-        run(['sh', 'examples/v1-game/web/build.sh'], env=dict(os.environ, RUSTC_WRAPPER=''))
+        run(['sh', 'examples/v1-game/web/build.sh', '--proving'], env=dict(os.environ, RUSTC_WRAPPER=''))
         run(['node', 'scripts/check_v1_browser.mjs', '--case', 'environment-cost', '--output', output / 'browser'])
         return
     run(['rustup', 'run', 'stable', 'cargo', 'build', '--locked', '--offline', '--release', '-p', 'v1-game', '-p', 'thrum-cook'], env=dict(os.environ, RUSTC_WRAPPER=''))

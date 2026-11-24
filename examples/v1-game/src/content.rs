@@ -84,6 +84,7 @@ fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
 /// Apply optional launch quality settings through the prepared cloud controls.
 /// # Errors
 /// Refuses unsupported values or a scene without the requested cloud capability.
+#[cfg(feature = "proving")]
 pub fn apply_cloud_quality(host: &mut Host) -> Result<(), CloudQualityError> {
     for (variable, suffix) in [
         ("THRUM_CLOUD_REFRESH_STRIDE", "cloud refresh exponent"),
@@ -121,6 +122,7 @@ pub fn apply_cloud_quality(host: &mut Host) -> Result<(), CloudQualityError> {
 
 /// A refused native cloud quality launch setting.
 #[derive(Debug)]
+#[cfg(feature = "proving")]
 pub enum CloudQualityError {
     /// A setting is not an admitted unsigned quality value.
     Value {
@@ -132,6 +134,7 @@ pub enum CloudQualityError {
     /// The prepared scene refused the requested control.
     Control(thrum_render::contribution::QualityError),
 }
+#[cfg(feature = "proving")]
 impl std::fmt::Display for CloudQualityError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -140,6 +143,7 @@ impl std::fmt::Display for CloudQualityError {
         }
     }
 }
+#[cfg(feature = "proving")]
 impl std::error::Error for CloudQualityError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -152,8 +156,16 @@ impl std::error::Error for CloudQualityError {
 /// Select the native game's authored scene and optional capabilities.
 /// # Errors
 /// Refuses unsupported launch settings.
+#[cfg_attr(
+    feature = "proving",
+    expect(
+        clippy::needless_update,
+        reason = "the shipping build takes defaults for proving-only selections"
+    )
+)]
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let scene = launch_value("THRUM_SCENE");
+    #[cfg(feature = "proving")]
     let sprite_scale = if scene.as_deref() == Ok("sprites") {
         validate_sprite_launch()?;
         Some(match launch_value("THRUM_SPRITE_SCALE") {
@@ -166,16 +178,24 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     } else {
         None
     };
+    #[cfg(not(feature = "proving"))]
+    if matches!(scene.as_deref(), Ok("field" | "sprites" | "diagnostic")) {
+        return Err("the selected scene requires the proving build".into());
+    }
     let content = match scene.as_deref() {
+        #[cfg(feature = "proving")]
         Ok("field") => crate::GameContent::Field,
         Ok("exit") => crate::GameContent::Exit,
         _ => crate::GameContent::Grid,
     };
-    let field_meshes = (content == crate::GameContent::Field
-        && launch_value("THRUM_FIELD_MESHES").as_deref() == Ok("on"))
-        || (scene.as_deref() == Ok("valley")
-            && launch_value("THRUM_VALLEY_MESHES").as_deref() == Ok("on"));
+    let field_meshes = scene.as_deref() == Ok("valley")
+        && launch_value("THRUM_VALLEY_MESHES").as_deref() == Ok("on");
+    #[cfg(feature = "proving")]
+    let field_meshes = field_meshes
+        || (content == crate::GameContent::Field
+            && launch_value("THRUM_FIELD_MESHES").as_deref() == Ok("on"));
     let camera_culling = match launch_value("THRUM_CULLING").as_deref() {
+        #[cfg(feature = "proving")]
         Err(std::env::VarError::NotPresent) if content == crate::GameContent::Field => {
             crate::GameSetup::field_default_culling(field_meshes)
         }
@@ -204,8 +224,10 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         _ => return Err("THRUM_CLOUD_SEQUENCE must be presets or wind-turn".into()),
     };
     Ok(crate::GameSetup {
+        #[cfg(feature = "proving")]
         sprite_scale,
         route_scale_props: false,
+        #[cfg(feature = "proving")]
         sprite_probe: if sprite_scale.is_some() {
             match launch_value("THRUM_SPRITE_PROBE") {
                 Ok(value) => Some(crate::sprite_probe::parse(&value)?),
@@ -215,6 +237,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         } else {
             None
         },
+        #[cfg(feature = "proving")]
         sprite_rows: if sprite_scale.is_some() {
             match launch_value("THRUM_SPRITE_ROWS") {
                 Ok(count) => Some(
@@ -243,6 +266,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             Ok("reference") => thrum_render::synthetic::Reconstruction::Reference,
             _ => return Err("THRUM_RECONSTRUCTION must be off, taau or reference".to_owned()),
         },
+        #[cfg(feature = "proving")]
         display_overlay: match launch_value("THRUM_TRACED_VIEW").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => {
                 thrum_render::synthetic::DisplayOverlay::Off
@@ -250,6 +274,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             Ok("on") => thrum_render::synthetic::DisplayOverlay::TracedGeometry,
             _ => return Err("THRUM_TRACED_VIEW must be off or on".to_owned()),
         },
+        #[cfg(feature = "proving")]
         sun_shadow_method: match launch_value("THRUM_SUN_SHADOW_METHOD").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("maps") => {
                 thrum_render::synthetic::SunShadowMethod::Maps
@@ -257,11 +282,13 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             Ok("traced") => thrum_render::synthetic::SunShadowMethod::Traced,
             _ => return Err("THRUM_SUN_SHADOW_METHOD must be maps or traced".to_owned()),
         },
+        #[cfg(feature = "proving")]
         sun_penumbra: match launch_value("THRUM_SUN_PENUMBRA").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => false,
             Ok("on") => true,
             _ => return Err("THRUM_SUN_PENUMBRA must be off or on".to_owned()),
         },
+        #[cfg(feature = "proving")]
         sun_proof_geometry: match launch_value("THRUM_SUN_PROOF_GEOMETRY").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => crate::SunProofGeometry::Off,
             Ok("fast") if content == crate::GameContent::Exit => crate::SunProofGeometry::Fast,
@@ -269,16 +296,20 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             Ok("separate") if content == crate::GameContent::Exit => crate::SunProofGeometry::Separate,
             _ => return Err("THRUM_SUN_PROOF_GEOMETRY requires off or an exit scene selection: fast, joined or separate".to_owned()),
         },
+        #[cfg(feature = "proving")]
         lamp_shadows: match launch_value("THRUM_LAMP_SHADOWS").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => false,
             Ok("on") => true,
             _ => return Err("THRUM_LAMP_SHADOWS must be off or on".to_owned()),
         },
+        #[cfg(feature = "proving")]
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         haze: crate::host::haze_selection(launch_value("THRUM_HAZE").ok().as_deref())?,
+        #[cfg(feature = "proving")]
         test_bank: launch_value("THRUM_HAZE").as_deref()
             == Ok(crate::host::scene_source::test_bank::SELECTION),
         content,
+        #[cfg(feature = "proving")]
         exit_entities: if content == crate::GameContent::Exit
             && launch_value("THRUM_EXIT_NO_ENTITIES").as_deref() == Ok("1")
         {
@@ -289,6 +320,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         camera_culling,
         valley_stars: matches!(scene.as_deref(), Ok("valley" | "exit"))
             && launch_value("THRUM_STARS").as_deref() != Ok("off"),
+        #[cfg(feature = "proving")]
         route_overlay: match (
             scene.as_deref(),
             launch_value("THRUM_ROUTE_OVERLAY").as_deref(),
@@ -312,9 +344,11 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         cooked_mesh_rows: (content == crate::GameContent::Exit
             || (field_meshes && scene.as_deref() == Ok("valley")))
         .into(),
+        ..crate::GameSetup::default()
     })
 }
 
+#[cfg(feature = "proving")]
 fn validate_sprite_launch() -> Result<(), String> {
     if !matches!(
         launch_value("THRUM_ASSET_STORE"),
@@ -364,7 +398,7 @@ pub(crate) fn attach_cooked_scene_with_path(
     attach_selected(host, path, Ok)
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", feature = "proving"))]
 pub(crate) fn attach_content_preview(
     host: &mut Host,
 ) -> Result<crate::content_preview::PreviewRecord, String> {
@@ -435,17 +469,16 @@ fn attach_selected(
             )?;
             (Some(camera), assets)
         }
-        Err(std::env::VarError::NotPresent) | Ok("diagnostic") => (
-            None,
-            thrum_asset_gpu::CookedAssets::new(
-                if launch_value("THRUM_COOKED_DRAW_DIAGNOSTIC").as_deref() == Ok("1") {
-                    crate::cooked::qualification_config(std::path::PathBuf::from(store))
-                } else {
-                    crate::cooked::cooked_config(std::path::PathBuf::from(store))
-                },
-            )
-            .map_err(|error| error.to_string())?,
-        ),
+        #[cfg(feature = "proving")]
+        Err(std::env::VarError::NotPresent) | Ok("diagnostic") => (None, {
+            let store = std::path::PathBuf::from(store);
+            let config = if launch_value("THRUM_COOKED_DRAW_DIAGNOSTIC").as_deref() == Ok("1") {
+                crate::cooked::qualification_config(store)
+            } else {
+                crate::cooked::cooked_config(store)
+            };
+            thrum_asset_gpu::CookedAssets::new(config).map_err(|error| error.to_string())?
+        }),
         _ => {
             return Err(
                 "THRUM_SCENE must be valley, exit, diagnostic, field or sprites".to_owned(),
@@ -459,6 +492,7 @@ fn attach_selected(
     };
     let assets = configure(assets)?;
     let stats = assets.stats();
+    #[cfg(feature = "proving")]
     if let Ok(selection) = launch_value("THRUM_EFFECT_GRAPH") {
         if !matches!(
             selection.as_str(),
@@ -513,6 +547,8 @@ fn attach_selected(
         };
         host.set_game_contribution(contribution)?;
     }
+    #[cfg(not(feature = "proving"))]
+    host.set_game_contribution(Box::new(assets))?;
     let camera = if let (Some(camera), Ok(height)) = (camera, launch_value("THRUM_CAMERA_HEIGHT")) {
         let mut eye = camera.eye();
         eye[1] = height

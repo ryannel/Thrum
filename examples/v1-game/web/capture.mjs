@@ -1,5 +1,6 @@
 // A separate capture driver. The deterministic route page keeps its original refusals.
-import init, { create_route_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } from './v1_game.js';
+import init, * as bindings from './v1_game.js';
+const { create_route_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } = bindings;
 import { startCaptureUploadWorker, uploadCapture } from './capture_upload.mjs';
 const record = { done: false, complete: false, opportunities: [], images: [], actions: [], export_peak: 0 };
 window.thrumCapture = record;

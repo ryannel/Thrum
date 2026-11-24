@@ -9,8 +9,8 @@
 //   });
 //   // each frame: view.refresh();
 //
-// Element ids default to the key with dots and underscores as dashes (`sky.solar_time` ->
-// `sky-solar-time`); `ids` overrides them, for pages whose ids predate the model. Slider
+// Element ids default to the key with dots and underscores as dashes (`time.hour` ->
+// `time-hour`); `ids` overrides them, for pages whose ids predate the model. Slider
 // values have an <output> with id `<id>-value`. Every id a control would emit is reserved:
 // a control whose id or value id is empty, is already used by another control (`sky.a_b` and
 // `sky_a.b`, or the slider `sky.a`'s `sky-a-value` and `sky.a_value`) or by an element

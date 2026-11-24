@@ -1,15 +1,21 @@
 //! Real staging failure, whole-publication refusal, and recovery with bounded slots.
 
-use std::time::{Duration, Instant};
+#![cfg(feature = "fault-probe")]
+
+mod static_scene;
+
+use static_scene::{Source, World};
+use std::time::Duration;
 use thrum_asset::Profile;
 use thrum_asset_gpu::{
-    COPY_UNIT, CookedAssets, Drawn, FaultProbe, LeaseRequest, STAGING_CHUNKS, await_drawn,
+    COPY_UNIT, CookedAssets, CookedConfig, Drawn, FaultProbe, LeaseRequest, MeshPlacement,
+    STAGING_CHUNKS, await_drawn,
 };
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::runtime::{FrameConfig, FrameHost};
-use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+use thrum_render::synthetic::{SyntheticScene, SyntheticView};
 
-type Host = FrameHost<GameWorld, GameScene>;
+type Host = FrameHost<World, Source>;
 
 fn drive(
     host: &mut Host,
@@ -17,9 +23,10 @@ fn drive(
     clock: &mut Duration,
     predicate: impl Fn() -> bool,
 ) {
-    let deadline = Instant::now() + Duration::from_secs(30);
-    while !predicate() {
-        assert!(Instant::now() < deadline, "no progress");
+    thrum_test_support::wait::until("staging result", Duration::from_secs(30), || {
+        if predicate() {
+            return Some(());
+        }
         *clock += Duration::from_millis(16);
         host.drive(*clock, None).expect("frame");
         device
@@ -35,7 +42,8 @@ fn drive(
                 timeout: Some(Duration::from_secs(10)),
             })
             .expect("endpoint frame completes");
-    }
+        None
+    });
 }
 
 #[test]
@@ -77,7 +85,12 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         .expect("placement texture")
         .product;
     pollster::block_on(async {
-        let OpenedDevice { device, queue, .. } = DeviceRecipe {
+        let OpenedDevice {
+            device,
+            queue,
+            capabilities,
+            ..
+        } = DeviceRecipe {
             profile: DeviceProfile::Portable,
             restriction: Some(&DeviceRestriction {
                 limits: Some(wgpu::Limits {
@@ -92,12 +105,34 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         .open_admitted(&gpu.instance, &gpu.adapter)
         .await
         .expect("restricted Metal device");
-        let mut host = GameSetup::default()
-            .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
-            .await
-            .expect("host");
-        let mut assets = v1_game::cooked::cooked_config(config.store.clone());
-        assets.volume = None;
+        let view = SyntheticView::perspective(
+            [0.0, 2.0, 3.0],
+            [0.0; 3],
+            [0.0, 1.0, 0.0],
+            0.92,
+            1.0,
+            0.1,
+            30.0,
+        )
+        .expect("camera");
+        let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.view = view;
+        scene.instances[0].deactivate();
+        let mut host = FrameHost::new(
+            &capabilities,
+            &queue,
+            FrameConfig::offscreen([64; 2]),
+            World,
+            Source(view),
+            scene,
+            1.0,
+        )
+        .await
+        .expect("host");
+        let mut assets = CookedConfig::new(
+            config.store.clone(),
+            vec![MeshPlacement::new("meshes/terrain", "textures/checker")],
+        );
         assets.upload_budget = COPY_UNIT;
         assets.poll_interval = Duration::from_millis(1);
         assets.leased.push(LeaseRequest {
@@ -109,7 +144,7 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         let assets = CookedAssets::new(assets).expect("assets");
         let lease = assets.lease();
         let stats = assets.stats();
-        host.set_game_contribution(Box::new(assets))
+        host.set_scene_contribution(Box::new(assets))
             .expect("attach");
         let mut clock = Duration::ZERO;
         await_drawn(&mut host, &stats, Drawn::Generation(1))
@@ -131,7 +166,6 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         assert_eq!(cooker.cook_all().expect("recovery cook").failed, []);
         await_drawn(&mut host, &stats, Drawn::Generation(3))
             .unwrap_or_else(|error| panic!("generation 3: {error}"));
-        host.world_mut().pause().expect("pause comparisons");
         let previous_pixels = host.capture_pixels().expect("last good pixels");
         let previous_lease = lease.offered().expect("last good lease");
         for generation in 4..=6 {

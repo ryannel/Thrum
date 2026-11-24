@@ -13,6 +13,7 @@ RULES = {
     "test-crate-edges": (1, "tests", "use support only in dev-dependencies and fixtures normally only in the proving ground"),
     "evidence-size": (1, "evidence", "the merge refuses any new or changed file under the tracked evidence folder: write run records to the working folder, .orchestrate/evidence/<MODULE>/, keep bulk captures in tmp/<task>/, or keep the bytes in the local store with python3 scripts/evidence_store.py put SOURCE --path <logical path> and commit only .config/evidence-manifest.json; read docs/ASSET-LIFECYCLE.md (local store only, no remote backup)"),
     "string-errors": (5, "errors", "return a boundary error enum implementing Display and Error"),
+    "game-names": (1, "crossing-crate-boundaries", "keep game package names, crate names and control keys at the game boundary"),
     "package-reach": (1, "crossing-crate-boundaries", "use a public package API or registered shared fixture package"),
     "path-attribute": (1, "tests", "use the normal module tree (foo.rs and foo/)"),
     "library-env": (2, "configuration", "parse settings at the process edge and pass typed values to the library"),
@@ -466,6 +467,21 @@ def read(root, relative):
         return (root / relative).read_text(errors="ignore")
     except OSError:
         return ""
+
+
+def game_names(root, registry, manifests):
+    """Match names from the registered game's manifest and literal control declarations."""
+    boundary = registry.get("boundaries", {})
+    folder = Path(boundary.get("game_manifest", "")).parent
+    manifest = manifests.get(folder, {})
+    package = manifest.get("package", {}).get("name", boundary.get("external_game"))
+    if not package:
+        return None
+    names = {package, manifest.get("lib", {}).get("name", package.replace("-", "_"))}
+    controls = mask(read(root, folder / "src/controls.rs"))
+    names.update(re.findall(r'\.\s*(?:slider|toggle|readout|text|table)\s*\(\s*"([\w.]+)"', controls))
+    names = "|".join(re.escape(name) for name in sorted(names, key=lambda name: (-len(name), name)))
+    return re.compile(rf"(?<![\w-])(?:{names})(?![\w-])")
 
 
 def done_when_checks(root):

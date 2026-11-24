@@ -3,16 +3,16 @@ use super::*;
 fn demo() -> (Controls, Slider, Toggle, Text, Readout) {
     let mut controls = Controls::new();
     let time = controls
-        .slider("sky.solar_time", "Solar time", 0.0..=1.0)
+        .slider("time.hour", "Solar time", 0.0..=1.0)
         .default(0.5)
         .step(1.0 / 1440.0)
         .display(Display::clock())
         .add()
         .unwrap();
-    let paused = controls.toggle("world.paused", "Pause", false).unwrap();
+    let paused = controls.toggle("playback.hold", "Pause", false).unwrap();
     let title = controls.text("demo.title", "Title", "Valley").unwrap();
     let sun = controls
-        .readout("sky.sun_elevation", "Sun elevation", Display::degrees())
+        .readout("time.sun_angle", "Sun elevation", Display::degrees())
         .unwrap();
     (controls, time, paused, title, sun)
 }
@@ -33,7 +33,7 @@ fn declarations_refuse_bad_keys_labels_ranges_and_duplicates() {
         Err(ControlError::InvalidLabel(_))
     ));
     assert!(matches!(
-        controls.toggle("world.paused", "Again", true),
+        controls.toggle("playback.hold", "Again", true),
         Err(ControlError::DuplicateKey(_))
     ));
     assert!(matches!(
@@ -95,12 +95,12 @@ fn people_edits_of_the_wrong_kind_are_explained() {
     for (result, key) in [
         (
             controls.edit_value(time.id(), Value::Flag(true)),
-            "sky.solar_time",
+            "time.hour",
         ),
-        (controls.edit_display(paused.id(), 1.0), "world.paused"),
+        (controls.edit_display(paused.id(), 1.0), "playback.hold"),
         (
             controls.edit_value(sun.id(), Value::Text("x".into())),
-            "sky.sun_elevation",
+            "time.sun_angle",
         ),
         (
             controls.edit_value(title.id(), Value::Text("a\nb".into())),
@@ -162,8 +162,8 @@ fn parameter_files_apply_valid_entries_and_explain_the_rest() {
     let (mut controls, time, paused, title, _) = demo();
     let report = controls
         .apply_file(
-            r#"{"sky.solar_time": 18.5, "world.paused": true, "demo.title": "Dusk",
-                "sky.solar_tim": 3, "sky.sun_elevation": 10, "world.paused2": 1}"#,
+            r#"{"time.hour": 18.5, "playback.hold": true, "demo.title": "Dusk",
+                "time.hou": 3, "time.sun_angle": 10, "playback.hold2": 1}"#,
         )
         .unwrap();
     assert_eq!(report.changed, 3);
@@ -174,19 +174,19 @@ fn parameter_files_apply_valid_entries_and_explain_the_rest() {
     assert_eq!(report.problems.len(), 3);
     assert!(matches!(&report.problems[0],
         ControlError::UnknownKey { key, suggestion: Some(suggestion) }
-        if key == "sky.solar_tim" && suggestion == "sky.solar_time"));
+        if key == "time.hou" && suggestion == "time.hour"));
     assert!(matches!(&report.problems[1],
-        ControlError::InvalidValue { key, .. } if key == "sky.sun_elevation"));
+        ControlError::InvalidValue { key, .. } if key == "time.sun_angle"));
     assert!(matches!(&report.problems[2],
         ControlError::UnknownKey { key, suggestion: Some(suggestion) }
-        if key == "world.paused2" && suggestion == "world.paused"));
-    let again = controls.apply_file(r#"{"sky.solar_time": 18.5}"#).unwrap();
+        if key == "playback.hold2" && suggestion == "playback.hold"));
+    let again = controls.apply_file(r#"{"time.hour": 18.5}"#).unwrap();
     assert_eq!((again.changed, again.unchanged), (0, 1));
     assert!(matches!(
         controls.apply_file("[1]"),
         Err(ControlError::InvalidFile(_))
     ));
-    let out_of_range = controls.apply_file(r#"{"sky.solar_time": 40}"#).unwrap();
+    let out_of_range = controls.apply_file(r#"{"time.hour": 40}"#).unwrap();
     assert!(
         out_of_range.problems[0]
             .to_string()
@@ -208,7 +208,7 @@ fn views_get_display_units_and_formatted_text() {
     let seen = controls.revision();
     controls.set(time, 0.75).unwrap();
     let changes: serde_json::Value = serde_json::from_str(&controls.changes_json(seen)).unwrap();
-    assert_eq!(changes["changed"][0]["key"], "sky.solar_time");
+    assert_eq!(changes["changed"][0]["key"], "time.hour");
     assert_eq!(changes["changed"][0]["text"], "18:00");
     assert_eq!(changes["changed"][0]["value"], 18.0);
 }
@@ -218,11 +218,7 @@ fn views_get_authored_numbers_not_f32_noise() {
     let mut controls = Controls::new();
     let one_degree = 1.0_f32.to_radians();
     controls
-        .slider(
-            "camera.pitch",
-            "Pitch",
-            -34.0 * one_degree..=34.0 * one_degree,
-        )
+        .slider("view.tilt", "Pitch", -34.0 * one_degree..=34.0 * one_degree)
         .default(0.0)
         .step(one_degree)
         .display(Display::degrees())
@@ -241,8 +237,8 @@ fn views_group_controls_by_first_declared_prefix() {
     let (controls, time, paused, title, sun) = demo();
     let groups = controls.groups();
     let keys: Vec<(&str, Vec<ControlId>)> = vec![
-        ("sky", vec![time.id(), sun.id()]),
-        ("world", vec![paused.id()]),
+        ("time", vec![time.id(), sun.id()]),
+        ("playback", vec![paused.id()]),
         ("demo", vec![title.id()]),
     ];
     assert_eq!(groups, keys);

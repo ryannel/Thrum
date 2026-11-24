@@ -52,7 +52,7 @@ pub fn cooked_config(source: impl Into<CookedSource>) -> CookedConfig {
 /// Qualification fixture with a plain/mirrored pair beside the edge-straddling terrain.
 /// The command's cooker supplies `meshes/mirror`, whose source node has negative X scale.
 #[must_use]
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "proving", not(target_arch = "wasm32")))]
 pub(crate) fn qualification_config(source: impl Into<CookedSource>) -> CookedConfig {
     let mut config = cooked_config(source);
     config.meshes[0].transform =

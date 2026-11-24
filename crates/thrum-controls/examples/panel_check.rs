@@ -15,7 +15,7 @@ fn main() -> Result<(), String> {
     let mut controls = Controls::new();
     let error = |error: thrum_controls::ControlError| error.to_string();
     let time = controls
-        .slider("sky.solar_time", "Solar time", 0.0..=1.0)
+        .slider("time.hour", "Solar time", 0.0..=1.0)
         .default(0.5)
         .step(1.0 / 2400.0)
         .display(Display::clock())
@@ -34,10 +34,10 @@ fn main() -> Result<(), String> {
         .add()
         .map_err(error)?;
     let paused = controls
-        .toggle("world.paused", "Pause world", false)
+        .toggle("playback.hold", "Pause world", false)
         .map_err(error)?;
     let sun = controls
-        .readout("sky.sun_elevation", "Sun elevation", Display::degrees())
+        .readout("lighting.sun_angle", "Sun elevation", Display::degrees())
         .map_err(error)?;
     controls.show(sun, 45.0_f32.to_radians());
     let caption = controls

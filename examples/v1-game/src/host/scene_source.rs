@@ -2,12 +2,12 @@
 
 mod cloud;
 mod star_catalogue;
+#[cfg(feature = "proving")]
 pub(crate) mod test_bank;
 
 use crate::{
     camera::{CameraRoute, SceneCamera},
     environment::DayCycle,
-    field,
     host::GameSetup,
     scene::{self, GameContent},
     simulation::PublishedPage,
@@ -28,7 +28,7 @@ fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
     haze: Option<Aerosol>,
-    medium_epoch: Option<u64>,
+    #[cfg(feature = "proving")] medium_epoch: Option<u64>,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
@@ -44,9 +44,9 @@ fn atmosphere_lighting(
     let frame = haze.map_or(frame, |aerosol| {
         frame.with_aerosol(aerosol).with_view_volume()
     });
-    FrameLighting::Atmosphere(
-        medium_epoch.map_or(frame, |epoch| frame.with_view_volume_medium(epoch)),
-    )
+    #[cfg(feature = "proving")]
+    let frame = medium_epoch.map_or(frame, |epoch| frame.with_view_volume_medium(epoch));
+    FrameLighting::Atmosphere(frame)
 }
 
 /// `(tick + 1 + φ)·P` in milliseconds at the game's 60 Hz clock.
@@ -99,6 +99,7 @@ fn frame_view(
 }
 
 /// The flythrough camera with the player's pitch and yaw added to its heading.
+#[cfg(feature = "proving")]
 fn field_view(
     tick: u64,
     alpha: f32,
@@ -106,7 +107,7 @@ fn field_view(
     camera_pitch: f32,
     camera_yaw: f32,
 ) -> Result<SyntheticView, RenderError> {
-    let sample = field::camera(tick, alpha);
+    let sample = crate::field::camera(tick, alpha);
     let heading = sample.heading + camera_yaw;
     let (pitch_sin, pitch_cos) = camera_pitch.sin_cos();
     let forward = [
@@ -135,17 +136,20 @@ fn field_view(
 /// # Errors
 /// Returns an invalid camera.
 #[doc(hidden)]
+#[cfg(feature = "proving")]
 pub fn field_in_view_share(tick: u64, extent: [u32; 2]) -> Result<f64, String> {
     let m = field_view(tick, 1.0, extent, 0.0, 0.0)
         .map_err(|error| error.to_string())?
         .view_proj_columns();
-    let inside = (0..field::ENTITY_COUNT)
+    let inside = (0..crate::field::ENTITY_COUNT)
         .filter(|index| {
             #[expect(
                 clippy::cast_possible_truncation,
                 reason = "field coordinates round once into the f32 GPU domain"
             )]
-            let p = field::entity(*index).position.map(|value| value as f32);
+            let p = crate::field::entity(*index)
+                .position
+                .map(|value| value as f32);
             let c: [f32; 4] = std::array::from_fn(|row| {
                 m[0][row] * p[0] + m[1][row] * p[1] + m[2][row] * p[2] + m[3][row]
             });
@@ -153,16 +157,17 @@ pub fn field_in_view_share(tick: u64, extent: [u32; 2]) -> Result<f64, String> {
         })
         .count();
     #[expect(clippy::cast_precision_loss, reason = "counts below 2^24")]
-    Ok(inside as f64 / field::ENTITY_COUNT as f64)
+    Ok(inside as f64 / crate::field::ENTITY_COUNT as f64)
 }
 
 /// The field's prepared boxes, materials and Sun shadows; no local lights.
 /// With `meshes`, props draw the mixed meshes and every fifth is mirrored.
+#[cfg(feature = "proving")]
 fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, FrameError> {
-    let count = u32::try_from(field::ENTITY_COUNT)
+    let count = u32::try_from(crate::field::ENTITY_COUNT)
         .map_err(|_| FrameError::InvalidState("field exceeds u32 slots"))?;
     let mut scene = SyntheticScene::grid(count)?;
-    scene.materials = field::materials()
+    scene.materials = crate::field::materials()
         .into_iter()
         .map(|material| MaterialRecord {
             base_rgba: material.base_rgba,
@@ -171,8 +176,8 @@ fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, FrameEr
         })
         .collect();
     for (index, instance) in scene.instances.iter_mut().enumerate() {
-        let entity = field::entity(index);
-        let (mut basis, mut normal) = field::basis(&entity);
+        let entity = crate::field::entity(index);
+        let (mut basis, mut normal) = crate::field::basis(&entity);
         if meshes && crate::field_meshes::mirrored(index) {
             basis[0] = basis[0].map(|value| -value);
             normal[0] = normal[0].map(|value| -value);
@@ -320,7 +325,7 @@ fn g3t_overlay_control(scene: &mut SyntheticScene, control: &str) -> Result<(), 
 
 fn native_witness_selection() -> thrum_render::synthetic::NativeWitness {
     use thrum_render::synthetic::NativeWitness;
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(feature = "proving", not(target_arch = "wasm32")))]
     {
         match std::env::var("THRUM_NATIVE_WITNESS").as_deref() {
             Ok("metal") => NativeWitness::Metal,
@@ -334,7 +339,7 @@ fn native_witness_selection() -> thrum_render::synthetic::NativeWitness {
             _ => NativeWitness::Off,
         }
     }
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(not(feature = "proving"), target_arch = "wasm32"))]
     {
         NativeWitness::Off
     }
@@ -352,13 +357,17 @@ fn omit_mirror(overlay: scene::RouteOverlay) -> bool {
 /// The game's scene: its content, camera, solar day and display choices, which
 /// the engine's frame host samples for each frame.
 pub struct GameScene {
+    #[cfg(feature = "proving")]
     sprite_scale: Option<u16>,
+    #[cfg(feature = "proving")]
     sprite_probe: Option<crate::sprite_probe::Scene>,
+    #[cfg(feature = "proving")]
     sprite_rows: Option<u32>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
     haze: Option<Aerosol>,
+    #[cfg(feature = "proving")]
     pub(super) medium_epoch: Option<u64>,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     native_witness: thrum_render::synthetic::NativeWitness,
@@ -366,6 +375,7 @@ pub struct GameScene {
     exit_entities: crate::ExitEntities,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
+    #[cfg(feature = "proving")]
     pub(super) capture_solar_tick: Option<u64>,
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
@@ -381,7 +391,7 @@ pub struct GameScene {
     omit_mirror: bool,
 }
 impl GameScene {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "proving"))]
     pub(super) fn set_sprite_sweep_step(&mut self, step: u32) -> Result<(), String> {
         self.sprite_probe
             .as_mut()
@@ -408,7 +418,7 @@ impl GameScene {
         self.camera
     }
 
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
     pub(super) fn move_capture_eye(&mut self, eye: [f32; 3]) -> Result<(), String> {
         self.route_guard()?;
         let camera = self
@@ -463,12 +473,14 @@ impl GameScene {
     }
 
     pub(super) fn held_solar_tick(&self) -> Option<u64> {
-        self.capture_solar_tick.or_else(|| {
-            self.route
-                .as_ref()
-                .filter(|route| route.hold_solar)
-                .map(|route| route.origin_tick)
-        })
+        #[cfg(feature = "proving")]
+        if let Some(tick) = self.capture_solar_tick {
+            return Some(tick);
+        }
+        self.route
+            .as_ref()
+            .filter(|route| route.hold_solar)
+            .map(|route| route.origin_tick)
     }
 
     pub(super) fn new(setup: GameSetup) -> Self {
@@ -478,19 +490,24 @@ impl GameScene {
                     .expect("checked-in temporal fixture")
             });
         Self {
+            #[cfg(feature = "proving")]
             sprite_scale: setup.sprite_scale,
+            #[cfg(feature = "proving")]
             sprite_probe: setup.sprite_probe.map(crate::sprite_probe::Scene::new),
+            #[cfg(feature = "proving")]
             sprite_rows: setup.sprite_rows,
             cloud_input: None,
             cloud_sky: None,
             cloud_shapes: None,
             haze: setup.haze,
+            #[cfg(feature = "proving")]
             medium_epoch: setup.test_bank.then_some(1),
             cooked_rows: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
-            valley_stars: setup.content != GameContent::Field && setup.valley_stars,
+            valley_stars: !setup.content.is_field() && setup.valley_stars,
             day_phase_offset: 0.0,
+            #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
@@ -529,6 +546,7 @@ impl GameScene {
                 }
                 scene
             }
+            #[cfg(feature = "proving")]
             GameContent::Field => field_scene(extent, setup.field_meshes)?,
             GameContent::Exit => {
                 let mut scene = crate::exit_scene::scene()?;
@@ -562,6 +580,7 @@ impl GameScene {
         scene.sun_penumbra = setup.sun_penumbra;
         scene.lamp_shadows = setup.lamp_shadows;
         scene.camera_culling = setup.camera_culling;
+        #[cfg(feature = "proving")]
         if setup.test_bank {
             if setup.clouds != crate::CloudSelection::Off || setup.diagnostic_clouds {
                 return Err(FrameError::InvalidState(
@@ -569,7 +588,8 @@ impl GameScene {
                 ));
             }
             scene.sun_optical_depth = Some(test_bank::sun_path()?);
-        } else if setup.clouds != crate::CloudSelection::Off {
+        }
+        if setup.clouds != crate::CloudSelection::Off {
             scene.sun_optical_depth = Some(thrum_render::atmosphere::SunOpticalDepth::gpu_target(
                 [crate::clouds::GROUND_SIZE; 2],
                 1,
@@ -640,6 +660,7 @@ impl GameScene {
 }
 
 impl SceneSource<PublishedPage> for GameScene {
+    #[cfg(feature = "proving")]
     fn extract_sprites(
         &self,
         into: &mut thrum_render::sprite::SpriteSink<'_>,
@@ -659,6 +680,7 @@ impl SceneSource<PublishedPage> for GameScene {
         }
     }
 
+    #[cfg(feature = "proving")]
     fn sprites(
         &self,
         source: SourceTick,
@@ -729,27 +751,30 @@ impl SceneSource<PublishedPage> for GameScene {
         } else {
             self.camera_yaw
         };
-        let field = self.content == GameContent::Field && self.camera.is_none();
+        let field = self.content.is_field() && self.camera.is_none();
         let routed = self.route.as_ref().zip(self.camera);
-        let view = if let Some((route, camera)) = routed {
-            let pose = route.pose(source.tick, alpha);
-            camera
-                .at(pose.eye)
-                .map_err(FrameError::Scene)?
-                .view(extent, pose.pitch, pose.yaw)?
-                .with_sdr_tone_map(SdrToneMap::NeutralHighlights)
-                .with_history_epoch(pose.epoch)
-        } else if field {
-            field_view(source.tick, alpha, extent, self.camera_pitch, temporal_yaw)?
-        } else {
-            frame_view(
+        let view = match routed {
+            Some((route, camera)) => {
+                let pose = route.pose(source.tick, alpha);
+                camera
+                    .at(pose.eye)
+                    .map_err(FrameError::Scene)?
+                    .view(extent, pose.pitch, pose.yaw)?
+                    .with_sdr_tone_map(SdrToneMap::NeutralHighlights)
+                    .with_history_epoch(pose.epoch)
+            }
+            #[cfg(feature = "proving")]
+            None if field => {
+                field_view(source.tick, alpha, extent, self.camera_pitch, temporal_yaw)?
+            }
+            None => frame_view(
                 source.tick,
                 alpha,
                 extent,
                 self.camera_pitch,
                 temporal_yaw,
                 self.camera,
-            )?
+            )?,
         }
         .with_temporal_inputs(self.temporal_inputs)
         .with_native_witness(self.native_witness)
@@ -777,7 +802,13 @@ impl SceneSource<PublishedPage> for GameScene {
             sun
         };
         let lighting = lighting.unwrap_or_else(|| {
-            atmosphere_lighting(sun, camera_altitude_m, self.haze, self.medium_epoch)
+            atmosphere_lighting(
+                sun,
+                camera_altitude_m,
+                self.haze,
+                #[cfg(feature = "proving")]
+                self.medium_epoch,
+            )
         });
         let view = if self.valley_stars
             && self.camera.is_some()
@@ -981,7 +1012,11 @@ mod tests {
             tick: 0,
             timeline: 0,
         };
-        for content in [scene::GameContent::Grid, scene::GameContent::Field] {
+        for content in [
+            scene::GameContent::Grid,
+            #[cfg(feature = "proving")]
+            scene::GameContent::Field,
+        ] {
             let policy = GameScene::new(crate::GameSetup {
                 content,
                 ..Default::default()
@@ -1038,9 +1073,13 @@ mod tests {
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
             haze: None,
+            #[cfg(feature = "proving")]
             medium_epoch: None,
+            #[cfg(feature = "proving")]
             sprite_scale: None,
+            #[cfg(feature = "proving")]
             sprite_probe: None,
+            #[cfg(feature = "proving")]
             sprite_rows: None,
             cloud_input: None,
             cloud_sky: None,
@@ -1051,6 +1090,7 @@ mod tests {
             exit_entities: crate::ExitEntities::Draw,
             valley_stars: true,
             day_phase_offset: 0.1,
+            #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch,
             camera_yaw,

@@ -112,7 +112,7 @@ allowed_workspace_dependencies = []
 [packages.thrum-asset-gpu]
 manifest = "crates/thrum-asset-gpu/Cargo.toml"
 # Shipping GPU residency for cooked products, drawn through thrum-render's scene-contribution seam.
-allowed_workspace_dependencies = ["thrum-asset", "thrum-core", "thrum-render", "thrum-test-support"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-cook", "thrum-core", "thrum-render", "thrum-test-support"]
 
 [packages.thrum-cook]
 manifest = "crates/thrum-cook/Cargo.toml"

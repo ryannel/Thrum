@@ -3,6 +3,7 @@ use thrum_cloud_model::{Parameters, Profile, State, Type};
 use thrum_clouds::{ShadeConfig, SunLevel, SunProfile, WeatherProfile};
 
 /// Checks for the weather map produced at the game's authored scale.
+#[cfg(feature = "proving")]
 pub mod qualification;
 
 mod library;

@@ -1,4 +1,5 @@
 //! Submission-owned view-volume history on Metal.
+#![cfg(feature = "proving")]
 #[expect(dead_code, reason = "history reads raw volume and image bytes")]
 mod fixture;
 

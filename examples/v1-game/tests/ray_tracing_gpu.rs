@@ -1,5 +1,6 @@
 //! Cooked publications through the game, with ray answers and raster bytes
 //! from the same recorded scene.
+#![cfg(feature = "draw-probe")]
 
 mod ray_tracing {
     #[cfg(target_os = "macos")]

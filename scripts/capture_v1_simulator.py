@@ -126,7 +126,7 @@ def main():
         rustc = run(['rustup', 'which', '--toolchain', 'stable', 'rustc'])
         env.update(RUSTC=rustc, PATH=str(Path(rustc).parent) + os.pathsep + env['PATH'])
         if not args.no_build:
-            run(['examples/v1-game-ios/ios/build-simulator.sh'], env, 600)
+            run(['examples/v1-game-ios/ios/build-simulator.sh', '--proving'], env, 600)
             run(['cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook'], env, 600)
             if args.case == 'host-lifecycle':
                 run(['examples/v1-game-ios/ios/build-uitest.sh'], env, 300)

@@ -79,7 +79,7 @@ impl SceneCamera {
 
     // Route parsing has already checked the angles and eye. Keep the exact
     // opening angles so check_start sees the same authored pose as playback.
-    #[cfg(any(test, target_os = "macos"))]
+    #[cfg(any(test, all(feature = "proving", target_os = "macos")))]
     pub(crate) fn at_route_key(self, key: RouteKey) -> Result<Self, String> {
         Ok(Self {
             pitch: key.pitch,
@@ -113,7 +113,7 @@ impl SceneCamera {
 
 /// Descend and return through adjacent scales during the moving route. The authored
 /// camera cut at routed tick 200 deliberately falls between scale changes.
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(target_arch = "wasm32", all(feature = "proving", target_os = "macos")))]
 pub(crate) fn route_render_scale(routed_tick: u64) -> thrum_render::synthetic::RenderScale {
     use thrum_render::synthetic::RenderScale::{Half, Native, Percent67, Percent75, Percent85};
     match routed_tick {

@@ -13,9 +13,12 @@ crate-type = ["staticlib", "rlib"]
 [lints]
 workspace = true
 
+[features]
+proving = ["v1-game/proving"]
+
 [dependencies]
 thrum-core = { path = "../../crates/thrum-core" }
-v1-game = { path = "../v1-game" }
+v1-game = { path = "../v1-game", default-features = false }
 pollster = "=1.0.1"
 thrum-render = { path = "../../crates/thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal", "wgsl"] }

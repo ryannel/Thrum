@@ -79,7 +79,7 @@ def main():
             raise RuntimeError('missing denied preflight from the actual harness launcher')
         console('before')
         env = dict(os.environ, RUSTC_WRAPPER='')
-        run(['examples/v1-game-ios/ios/build-simulator.sh'], env, 300)
+        run(['examples/v1-game-ios/ios/build-simulator.sh', '--proving'], env, 300)
         store = out / 'store'
         rustc = run(['rustup', 'which', '--toolchain', 'stable', 'rustc'])
         env.update(RUSTC=rustc, PATH=str(Path(rustc).parent) + os.pathsep + env['PATH'])

@@ -15,8 +15,7 @@ pub(super) struct View {
 
 impl View {
     pub(super) fn prepare(host: &mut Host) -> Result<Option<Self>, String> {
-        if std::env::var("THRUM_V1_ROUTE").as_deref() != Ok("1")
-            || std::env::var("THRUM_COOKED_DRAW_HELD").as_deref() != Ok("1")
+        if !super::route_enabled() || std::env::var("THRUM_COOKED_DRAW_HELD").as_deref() != Ok("1")
         {
             return Ok(None);
         }

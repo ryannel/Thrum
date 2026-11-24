@@ -14,7 +14,7 @@ import sys
 import tomllib
 import evidence_store
 
-from shape_matchers import (CODE, RULES, dependency_sites, evidence_path_lines, limit_exempt, main_tier_lines, mask,
+from shape_matchers import (CODE, RULES, SOURCE_SUFFIXES, dependency_sites, evidence_path_lines, game_names, limit_exempt, main_tier_lines, mask,
                             package_for, path_attributes, rust_sites, test_binary, test_edge_sites, uncalled_scripts,
                             unrun_benches, LONG_TESTS)
 
@@ -76,6 +76,7 @@ def inventory(root, honor_pins=False):
     workspace_path = root / "Cargo.toml"
     workspace = tomllib.loads(workspace_path.read_text()).get("workspace", {}).get("dependencies", {}) if workspace_path.exists() else {}
     pins = pinned_names(root, paths)
+    game_pattern = game_names(root, registry, manifests)
     sites = {name: [] for name in RULES}
     evidence_paths = evidence_store.tracked(root) if owns_history(root) else paths
     sites["evidence-size"] = [(p, 1) for p in evidence_store.oversized(root, evidence_paths)]
@@ -90,6 +91,12 @@ def inventory(root, honor_pins=False):
         path = Path(relative)
         if not path.parts or path.parts[0] not in {"crates", "examples", "tools", "scripts"}:
             continue
+        if path.parts[0] == "crates" and game_pattern is not None:
+            source = (root / path).read_text(errors="replace") if path.suffix in SOURCE_SUFFIXES | {".toml", ".md", ".json"} else ""
+            for line, body in enumerate(source.splitlines(), 1):
+                if match := game_pattern.search(body):
+                    sites["game-names"].append((relative, line))
+                    refusals.append((relative, line, "game-names", f"game name {match[0]!r}"))
         if path.suffix != ".rs":
             sites["evidence-path"] += [(relative, line) for line in evidence_path_lines(relative, (root / path).read_text(errors="ignore"))]
         package = package_for(path, manifests)

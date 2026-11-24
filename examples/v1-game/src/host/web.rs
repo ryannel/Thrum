@@ -23,6 +23,7 @@ pub(crate) type Shell = thrum_app::web::WebShell<GameWorld, GameScene>;
 /// The first device's generation; replacements count up from it.
 pub(crate) const DEVICE_GENERATION: u64 = thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 
+#[cfg(feature = "proving")]
 pub(crate) fn test_bank(shell: &Shell) -> bool {
     shell.host().source().medium_epoch.is_some()
 }
@@ -35,10 +36,12 @@ pub(crate) fn cloud_shapes(shell: &Shell) -> Option<&crate::PlacedSky> {
     shell.host().source().cloud_shapes.as_ref()
 }
 
+#[cfg(feature = "proving")]
 pub(crate) fn set_sprite_sweep_step(shell: &mut Shell, step: u32) -> Result<(), String> {
     shell.continuous_source_mut().set_sprite_sweep_step(step)
 }
 
+#[cfg(feature = "proving")]
 pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), String> {
     let camera = shell
         .host()
@@ -48,11 +51,13 @@ pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), St
     set_scene_camera(shell, camera.at(eye)?)
 }
 
+#[cfg(feature = "proving")]
 pub(crate) fn hold_capture_sun(shell: &mut Shell) {
     let tick = shell.host().world().tick();
     shell.continuous_source_mut().capture_solar_tick = Some(tick);
 }
 
+#[cfg(feature = "proving")]
 pub(crate) fn set_haze_eye(shell: &mut Shell, eye: [f32; 3], cut: bool) -> Result<(), String> {
     if shell
         .host()
@@ -135,6 +140,7 @@ pub(crate) fn time_of_day(shell: &Shell) -> f32 {
     super::time_of_day(shell.host())
 }
 
+#[cfg(feature = "proving")]
 pub(crate) fn scrub_haze_sun(shell: &mut Shell, fraction: f32) -> Result<(), String> {
     let host = shell.host();
     if let Some(offset) = day_phase_edit(host.world().tick(), host.source(), fraction)? {

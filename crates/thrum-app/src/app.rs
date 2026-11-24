@@ -1868,17 +1868,17 @@ mod tests {
 
     #[test]
     fn frame_count_for_present_qualification_is_bounded() {
-        let run_frames = |value| run_frames("THRUM_V1_FRAMES", value);
+        let run_frames = |value| run_frames("DEMO_FRAME_LIMIT", value);
         assert_eq!(run_frames(None).expect("default"), 600);
         assert_eq!(run_frames(Some("75000")).expect("ten minute run"), 75_000);
         assert_eq!(
             run_frames(Some("0")),
-            Err("THRUM_V1_FRAMES must be between 1 and 100000".to_owned())
+            Err("DEMO_FRAME_LIMIT must be between 1 and 100000".to_owned())
         );
         assert!(run_frames(Some("100001")).is_err());
         assert_eq!(
             run_frames(Some("nan")),
-            Err("THRUM_V1_FRAMES must be a positive integer".to_owned())
+            Err("DEMO_FRAME_LIMIT must be a positive integer".to_owned())
         );
     }
 
@@ -1897,6 +1897,6 @@ mod tests {
             Ok(Some(90))
         );
         assert!(frame_limit("THRUM_STARTER_FRAMES", Some("0"), true).is_err());
-        assert_eq!(frame_limit("THRUM_V1_FRAMES", None, false), Ok(Some(600)));
+        assert_eq!(frame_limit("DEMO_FRAME_LIMIT", None, false), Ok(Some(600)));
     }
 }

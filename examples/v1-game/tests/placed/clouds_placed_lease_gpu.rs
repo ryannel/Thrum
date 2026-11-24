@@ -1,4 +1,5 @@
 //! Follow a replacement publication through the real game and layer history.
+#![cfg(feature = "proving")]
 
 #[cfg(target_os = "macos")]
 mod fixture;

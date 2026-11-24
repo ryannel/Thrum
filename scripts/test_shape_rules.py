@@ -85,6 +85,27 @@ class Fixture(unittest.TestCase):
         self.pair("path-attribute", 'mod support { include!("local.rs"); }', 'mod support;',
                   "crates/engine/tests/render.rs")
 
+    def test_game_names(self):
+        self.write('.config/architecture.toml', '''
+[boundaries]
+game_manifest = "examples/example-game/Cargo.toml"
+''')
+        self.write('examples/example-game/Cargo.toml', '''
+[package]
+name = "example-game"
+[lib]
+name = "game_api"
+''')
+        self.write('examples/example-game/src/controls.rs', '''
+model.slider("garden.water", "Water", 0.0..=1.0);
+model.text("garden.label", "Label", "");
+// model.toggle("garden.unused", "Unused", false);
+''')
+        for name in ("example-game", "game_api", "garden.water", "garden.label"):
+            with self.subTest(name=name):
+                self.pair("game-names", f'// {name}\n',
+                          '// other_game_api, garden.water_level, garden.unused\n')
+
     def test_manifest_reach_all_kinds(self):
         for table in ("dependencies", "dev-dependencies", "build-dependencies", 'target.\'cfg(unix)\'.dev-dependencies'):
             self.write("crates/engine/Cargo.toml", '[package]\nname="engine"\n[' + table + ']\nrenamed = { package="game", path="../../examples/game" }\n')
