@@ -26,6 +26,7 @@ pub enum WeatherPreset {
 }
 
 impl WeatherPreset {
+    #[cfg(any(not(target_arch = "wasm32"), feature = "proving"))]
     pub(crate) fn named(name: &str) -> Option<Self> {
         match name {
             "clear" => Some(Self::Clear),

@@ -503,7 +503,7 @@ pub async fn create_route_game(
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
     #[cfg(not(feature = "proving"))]
-    if diagnostic_clouds == Some(true) || haze.is_some() {
+    if diagnostic_clouds == Some(true) || haze.is_some() || capture_weather.is_some() {
         return Err(js_error("diagnostic scenes require the proving build"));
     }
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
@@ -513,6 +513,7 @@ pub async fn create_route_game(
     let valley_stars = overlay != crate::RouteOverlay::StarsOff;
     canvas.set_width(extent[0]);
     canvas.set_height(extent[1]);
+    #[cfg(feature = "proving")]
     let cloud_weather = capture_weather
         .as_deref()
         .map(capture_weather_parameters)
@@ -535,6 +536,7 @@ pub async fn create_route_game(
             route_overlay: overlay,
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
+            #[cfg(feature = "proving")]
             cloud_weather,
             haze: crate::host::haze_selection(haze.as_deref()).map_err(js_error)?,
             #[cfg(feature = "proving")]
@@ -548,6 +550,7 @@ pub async fn create_route_game(
     .await
 }
 
+#[cfg(feature = "proving")]
 fn capture_weather_parameters(text: &str) -> Result<thrum_cloud_model::Parameters, JsValue> {
     #[derive(serde::Deserialize)]
     #[serde(deny_unknown_fields)]
