@@ -817,6 +817,35 @@
         "by": "plan",
         "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix fi",
         "at": "2026-11-23T23:33:41Z"
+      },
+      "ready_for_review": {
+        "commit": "d9240d8339844e8c3d674ab607f99efdb3fb269a",
+        "checked": "d9240d8339844e8c3d674ab607f99efdb3fb269a",
+        "at": "2026-11-24T00:00:56Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 281706,
+          "cached": 40376192,
+          "output": 54297,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 281706,
+          "cached": 40376192,
+          "output": 54297,
+          "turns": 1
+        }
       }
     },
     "M7": {
