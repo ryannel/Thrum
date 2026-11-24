@@ -14,6 +14,20 @@ fn objects(device: &wgpu::Device) -> [isize; 5] {
     ]
 }
 
+fn assert_cold_frame(transition: &str, expected: &fixture::Witness, actual: &fixture::Witness) {
+    assert!(
+        expected.scatter == actual.scatter,
+        "{transition}: cold scatter, terminal {:?}, expected {:?}",
+        actual.terminal(),
+        expected.terminal()
+    );
+    assert!(
+        expected.transmission == actual.transmission,
+        "{transition}: cold transmission"
+    );
+    assert!(expected.image == actual.image, "{transition}: cold image");
+}
+
 #[test]
 fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
     let Some(gpu) = fixture::Gpu::open(7, "view volume history") else {
@@ -57,20 +71,9 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
             .1,
         1
     );
-    let equal = |transition, expected: &fixture::Witness, actual: &fixture::Witness| {
-        assert!(
-            expected.scatter == actual.scatter,
-            "{transition}: cold scatter"
-        );
-        assert!(
-            expected.transmission == actual.transmission,
-            "{transition}: cold transmission"
-        );
-        assert!(expected.image == actual.image, "{transition}: cold image");
-    };
     let original_view = scene.view;
     scene.view = original_view.with_history_reset(true);
-    equal(
+    assert_cold_frame(
         "camera cut",
         &fresh,
         &fixture::render(&gpu, &mut prepared, &mut target, &scene, light),
@@ -84,7 +87,7 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
     );
     scene.view = original_view;
     let next_epoch = fixture::daylight(true, 2);
-    equal(
+    assert_cold_frame(
         "profile epoch",
         &fresh,
         &fixture::render(&gpu, &mut prepared, &mut target, &scene, next_epoch),
@@ -119,7 +122,7 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
         .0
         .epoch;
     assert_ne!(night, day);
-    equal("nightglow enabled", &cold_night, &lit_night);
+    assert_cold_frame("nightglow enabled", &cold_night, &lit_night);
     let lit_day = fixture::render(&gpu, &mut prepared, &mut target, &scene, next_epoch);
     assert_eq!(
         prepared
@@ -129,7 +132,7 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
             .epoch,
         day
     );
-    equal("nightglow disabled", &fresh, &lit_day);
+    assert_cold_frame("nightglow disabled", &fresh, &lit_day);
     assert_eq!(
         objects(&gpu.device),
         before,
@@ -147,5 +150,49 @@ fn metal_view_history_advances_with_submission_and_reseeds_on_reset() {
         0
     );
     let replaced = fixture::render(&replacement, &mut prepared, &mut target, &scene, next_epoch);
-    equal("replacement device", &fresh, &replaced);
+    assert_cold_frame("replacement device", &fresh, &replaced);
+}
+
+#[test]
+fn metal_view_history_resets_only_on_sun_path_source_epoch_change() {
+    let Some(gpu) = fixture::Gpu::open(9, "view volume Sun-path history") else {
+        return;
+    };
+    let mut scene = fixture::scene(false, true, false);
+    let light = fixture::daylight(true, 1);
+    let (mut prepared, mut target) = gpu.prepare(&scene, light);
+    let mut replacement = scene.clone();
+    replacement.sun_optical_depth = Some(fixture::sun_path(0.0, -660.0, 2));
+    let cold = {
+        let (mut cold, mut cold_target) = gpu.prepare(&replacement, light);
+        fixture::render(&gpu, &mut cold, &mut cold_target, &replacement, light)
+    };
+    let before = objects(&gpu.device);
+    let shadowed = fixture::render(&gpu, &mut prepared, &mut target, &scene, light);
+    assert!(shadowed.terminal()[0] < -0.1, "initial cloud shadow");
+    assert_eq!(cold.terminal(), [0.0, 0.0, 0.0, 1.0]);
+
+    // Advection clears the centre ray but preserves the provider's source epoch.
+    scene.sun_optical_depth = Some(
+        scene
+            .sun_optical_depth
+            .take()
+            .expect("Sun path")
+            .with_displacement([0.0, 1000.0])
+            .expect("finite advection"),
+    );
+    let advected = fixture::render(&gpu, &mut prepared, &mut target, &scene, light);
+    let residual = advected.terminal()[0];
+    assert!(
+        shadowed.terminal()[0] < residual && residual < -0.01,
+        "advection keeps reprojected history, terminal scatter {residual}"
+    );
+
+    let live = fixture::render(&gpu, &mut prepared, &mut target, &replacement, light);
+    assert_cold_frame("Sun-path provider replacement", &cold, &live);
+    assert_eq!(
+        objects(&gpu.device),
+        before,
+        "provider replacement reuses prepared GPU objects"
+    );
 }

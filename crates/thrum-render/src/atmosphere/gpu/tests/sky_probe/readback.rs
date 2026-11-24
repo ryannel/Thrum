@@ -82,6 +82,7 @@ impl Probe {
             frame(sun_degrees, height),
             &SyntheticView::default(),
             [1, 1],
+            None,
         );
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         if !self.transport_ready {
@@ -133,7 +134,7 @@ impl Probe {
         let day = frame(45.0, height);
         let frame = if enabled { day.with_nightglow() } else { day };
         self.atmosphere
-            .update(queue, frame, &SyntheticView::default(), [1, 1]);
+            .update(queue, frame, &SyntheticView::default(), [1, 1], None);
         let texture = &self.atmosphere.textures.sky_view;
         let snapshot = Snapshot::new(device, &self.reader, texture);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());

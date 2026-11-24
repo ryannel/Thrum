@@ -462,10 +462,10 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_history_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/provider-reset/metal-history.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.6",

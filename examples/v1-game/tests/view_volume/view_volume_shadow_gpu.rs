@@ -51,7 +51,7 @@ fn metal_shadow_and_cloud_dim_only_the_solar_source_and_forward_reads_it_once() 
     let cloud = render(false, true);
     let opaque = {
         let mut scene = fixture::scene(false, true, true);
-        scene.sun_optical_depth = Some(fixture::sun_path(64.0, -55.0));
+        scene.sun_optical_depth = Some(fixture::sun_path(64.0, -55.0, 1));
         let (mut prepared, mut target) = gpu.prepare(&scene, light);
         fixture::render(&gpu, &mut prepared, &mut target, &scene, light)
     };

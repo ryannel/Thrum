@@ -667,6 +667,7 @@ fn shipping_sky_projection_separates_sampling_from_sh_truncation() {
                 frame(degrees, azimuth),
                 &SyntheticView::default(),
                 [1, 1],
+                None,
             );
             let mut encoder = gpu
                 .device

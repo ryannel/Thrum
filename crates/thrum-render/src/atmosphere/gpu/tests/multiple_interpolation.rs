@@ -325,7 +325,7 @@ fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
         report.push_str("height_m\tsun_deg\tcolumns\tquantity\tr\tg\tb\ty\tr_over_1024\tg_over_1024\tb_over_1024\ty_over_1024\n");
         for height in HEIGHTS {
             for sun in sun_degrees() {
-                atmosphere.update(&queue, frame(sun, height), &view, [1, 1]);
+                atmosphere.update(&queue, frame(sun, height), &view, [1, 1], None);
                 let mut encoder =
                     device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
                 let readbacks = variants

@@ -713,3 +713,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   first low-Sun cut submission shows a complete shaft and solar rim on Metal and Chrome. The ledger
   names the tested reset cases and records 1920 × 1080 Metal and 1280 × 720 Chrome timings.
   [Review-fix evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/review-fix/README.md)
+
+- 2026-11-24 M7.5 compares the Sun-path source epoch with the epoch of the last submitted view-volume
+  frame. On Metal, same-epoch advection retains reprojected scatter. After a same-size provider
+  replacement, the first submitted scatter, transmission and image match a cold render byte for
+  byte, and the prepared GPU object counts match. The regression reproduced the stale shadow on
+  the reviewed code. [Provider reset evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/provider-reset/README.md)

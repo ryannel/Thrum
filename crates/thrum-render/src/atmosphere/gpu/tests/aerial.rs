@@ -528,7 +528,7 @@ fn finite_night_radiance_survives_the_aerial_composite() {
             &super::sky_samples(&device),
         );
         let [off, on] = [frame, frame.with_nightglow()].map(|frame| {
-            atmosphere.update(&queue, frame, &view, [1, 1]);
+            atmosphere.update(&queue, frame, &view, [1, 1], None);
             let mut encoder =
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             {

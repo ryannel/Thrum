@@ -36,6 +36,13 @@ pub(crate) fn aerial_source() -> String {
 const MOTION_BYTES: u64 = size_of::<VolumeHistory>() as u64;
 
 #[derive(Clone)]
+struct HistoryFrame {
+    view: SyntheticView,
+    environment_epoch: EnvironmentEpoch,
+    sun_path_source_epoch: Option<u64>,
+}
+
+#[derive(Clone)]
 pub(crate) struct ViewVolume {
     pipeline: wgpu::ComputePipeline,
     scene_layout: wgpu::BindGroupLayout,
@@ -43,8 +50,8 @@ pub(crate) struct ViewVolume {
     compare: Option<wgpu::Sampler>,
     histories: [[wgpu::Texture; 2]; 2],
     motion: wgpu::Buffer,
-    submitted: Option<(SyntheticView, EnvironmentEpoch)>,
-    pending: Option<(SyntheticView, EnvironmentEpoch)>,
+    submitted: Option<HistoryFrame>,
+    pending: Option<HistoryFrame>,
     phase: u16,
 }
 
@@ -370,15 +377,17 @@ impl ViewVolume {
     pub(super) fn update(
         &mut self,
         queue: &wgpu::Queue,
-        epoch: EnvironmentEpoch,
+        environment_epoch: EnvironmentEpoch,
+        sun_path_source_epoch: Option<u64>,
         view: &SyntheticView,
     ) {
-        let previous = self.submitted.filter(|(previous, submitted_epoch)| {
-            *submitted_epoch == epoch
-                && previous.history_epoch() == view.history_epoch()
+        let previous = self.submitted.as_ref().filter(|frame| {
+            frame.environment_epoch == environment_epoch
+                && frame.sun_path_source_epoch == sun_path_source_epoch
+                && frame.view.history_epoch() == view.history_epoch()
                 && !view.history_reset()
         });
-        let previous_view = previous.map_or(*view, |(view, _)| view);
+        let previous_view = previous.map_or(view, |frame| &frame.view);
         let eye = glam::Vec3::from_array(view.camera_position());
         let world = Mat4::from_cols_array_2d(&view.inverse_view_proj_columns())
             * Vec4::new(0.0, 0.0, 0.0, 1.0);
@@ -392,12 +401,16 @@ impl ViewVolume {
             current_view_forward_phase: forward.extend(f32::from(phase)).to_array(),
         };
         queue.write_buffer(&self.motion, 0, bytemuck::bytes_of(&record));
-        self.pending = Some((*view, epoch));
+        self.pending = Some(HistoryFrame {
+            view: *view,
+            environment_epoch,
+            sun_path_source_epoch,
+        });
     }
 
     pub(super) fn submitted(&mut self) {
-        if let Some(view) = self.pending.take() {
-            self.submitted = Some(view);
+        if let Some(frame) = self.pending.take() {
+            self.submitted = Some(frame);
             self.phase = self.phase.wrapping_add(1);
         }
     }

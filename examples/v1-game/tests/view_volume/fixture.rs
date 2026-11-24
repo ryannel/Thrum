@@ -133,14 +133,21 @@ pub(crate) fn scene(caster: bool, cloud: bool, receiver: bool) -> SyntheticScene
     if cloud {
         // The field intercept is about (17 m, z) at the centre of the volume.
         // It shadows the central samples, with a clear region beyond 55 m.
-        scene.sun_optical_depth = Some(sun_path(1.0, if receiver { -55.0 } else { -660.0 }));
+        scene.sun_optical_depth = Some(sun_path(1.0, if receiver { -55.0 } else { -660.0 }, 1));
     }
     scene
 }
 
-pub(crate) fn sun_path(depth: f32, end_z: f32) -> SunOpticalDepth {
-    SunOpticalDepth::new([2, 2], &[depth; 4], 5.0, [-20.0, end_z, 55.0, 4.0], 0.01, 1)
-        .expect("sampled Sun path")
+pub(crate) fn sun_path(depth: f32, end_z: f32, source_epoch: u64) -> SunOpticalDepth {
+    SunOpticalDepth::new(
+        [2, 2],
+        &[depth; 4],
+        5.0,
+        [-20.0, end_z, 55.0, 4.0],
+        0.01,
+        source_epoch,
+    )
+    .expect("sampled Sun path")
 }
 
 pub(crate) struct Witness {

@@ -504,12 +504,30 @@ fn cache_lifecycle(fixture: &Fixture) {
     // profile update without commit must remain invalid across cancellation.
     prepared.commit();
     let rotated = frame([0.6, -0.8, 0.0], 0.0, [1.0 / 0.2126, 0.0, 0.0], 2000.0, 1);
-    prepared.update(&fixture.queue, rotated, &SyntheticView::default(), [20, 10]);
+    prepared.update(
+        &fixture.queue,
+        rotated,
+        &SyntheticView::default(),
+        [20, 10],
+        None,
+    );
     assert_ne!(prepared.validity & GROUND_VALID, 0);
     let changed = frame([0.0, 1.0, 0.0], 100.0, [1.0; 3], 2.0, 2);
-    prepared.update(&fixture.queue, changed, &SyntheticView::default(), [10, 20]);
+    prepared.update(
+        &fixture.queue,
+        changed,
+        &SyntheticView::default(),
+        [10, 20],
+        None,
+    );
     assert_eq!(prepared.validity & GROUND_VALID, 0);
-    prepared.update(&fixture.queue, changed, &SyntheticView::default(), [10, 20]);
+    prepared.update(
+        &fixture.queue,
+        changed,
+        &SyntheticView::default(),
+        [10, 20],
+        None,
+    );
     assert_eq!(
         prepared.validity & GROUND_VALID,
         0,

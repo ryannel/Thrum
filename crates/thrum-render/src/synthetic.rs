@@ -1340,7 +1340,16 @@ impl PreparedSynthetic {
         if let (Some(atmosphere), FrameLighting::Atmosphere(frame)) =
             (&mut self.atmosphere, lighting)
         {
-            atmosphere.update(queue, frame, &view, drawn);
+            atmosphere.update(
+                queue,
+                frame,
+                &view,
+                drawn,
+                scene
+                    .sun_optical_depth
+                    .as_ref()
+                    .map(SunOpticalDepth::source_epoch),
+            );
         }
         self.exposure.update(
             queue,

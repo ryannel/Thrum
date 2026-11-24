@@ -302,7 +302,7 @@ impl AtmospherePrepared {
             diffuse_dependencies: [0; 4],
             aerial_dependencies: [[0; 4]; 5],
         };
-        result.update(queue, frame, view, [1, 1]);
+        result.update(queue, frame, view, [1, 1], None);
         result
     }
 
@@ -316,7 +316,12 @@ impl AtmospherePrepared {
     ) {
         if self.frame.view_volume() {
             let mut volume = view_volume::ViewVolume::new(device, self, cascades, cloud);
-            volume.update(queue, self.environment.epoch(), view);
+            volume.update(
+                queue,
+                self.environment.epoch(),
+                cloud.map(|(field, _)| field.source_epoch()),
+                view,
+            );
             self.view_volume = Some(Box::new(volume));
         }
     }
@@ -327,6 +332,7 @@ impl AtmospherePrepared {
         frame: AtmosphereFrame,
         view: &SyntheticView,
         extent: [u32; 2],
+        sun_path_source_epoch: Option<u64>,
     ) {
         if let Some(aerosol) = &self.aerosol
             && frame.aerosol.unwrap_or_default() != self.frame.aerosol.unwrap_or_default()
@@ -337,7 +343,7 @@ impl AtmospherePrepared {
         self.frame = frame;
         self.environment.update(frame);
         if let Some(volume) = &mut self.view_volume {
-            volume.update(queue, self.environment.epoch(), view);
+            volume.update(queue, self.environment.epoch(), sun_path_source_epoch, view);
         }
         if frame.profile_epoch != self.epoch {
             self.validity &= DFG_VALID;
