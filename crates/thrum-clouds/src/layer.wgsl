@@ -222,11 +222,15 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     let ahead=cloud_density(point+mapping.path_border.xyz*max(170.0,2.0*footprint),footprint);
     let relative=(sigma-ahead)/max(sigma,0.08*cloud.physical.x);
     let exposed=smoothstep(-0.18,0.78,relative);
-    let beam=exp(-0.28*sun_depth);
+    let high_sun=smoothstep(0.32,0.66,mapping.path_border.y);
+    let beam=exp(-mix(0.28,0.14,high_sun)*sun_depth);
     let interior=exp(-0.085*sun_depth);
     let billow=smoothstep(0.20,0.79,cloud_bank_billow(point,footprint));
     let shade=(0.29+0.36*interior+0.38*exposed)*mix(0.61,1.18,billow);
-    let rim=0.095*beam*exposed*exposed;
+    // At noon the Sun lights the inward wall of a gap from above. Keep
+    // the wider transmission lobe on exposed walls, with a narrower falloff
+    // into the bank so the same light does not wash out its whole underside.
+    let rim=beam*exposed*exposed*(0.095+0.16*high_sun*exposed);
     let glare=1.0-0.70*smoothstep(0.72,0.96,sun_alignment);
     return mix(source,source*shade*glare+solar*rim,bank);
 }
