@@ -3986,6 +3986,22 @@
       "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/ATMOSPHERE/WP8/lossless-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/WP8-review-fix-chrome-submitted-frames.tar",
+      "size": 1701348864,
+      "sha256": "730f8d6cbbc9f44c689a63472d15466c97d3d2d68f4cd0c2f0f3056d5e35c6f4",
+      "date": "2026-11-24T23:10:53.995351+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/ATMOSPHERE/WP8/lossless-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/WP8-review-fix-metal-submitted-frames.tar",
+      "size": 1766874112,
+      "sha256": "cbc05498b27295d36176d7e7df72fe6b7f3f043ae297cf5a32a50a53480a664a",
+      "date": "2026-11-24T23:12:03.283255+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/ATMOSPHERE/WP8/lossless-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-off-realtime-09-1.25.png",
       "size": 3010188,

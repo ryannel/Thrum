@@ -583,7 +583,7 @@
           "lock": "gpu",
           "ask": "Does the test use a ground band that differs between two heights over one point, so a read at the wrong height fails? Does a factor that adds the 2D field's value to the band's fail the ln 2 case?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/checks/WP8.3.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/checks/ground-band-review-fix.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
           "builder_result": "pass"
@@ -604,7 +604,7 @@
           "statement": "With the labelled test bank in the valley at noon and at a 10\u00b0 Sun: the land, props and movers fade into the fog with depth along clean edges; a prop's shadow inside the fog weakens with the fog over it; the Sun's disc dims through it; toward the low Sun the fog is bright and away from it grey. There is no tile, slice or banding pattern on the fog or where it meets terrain.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from outside the bank, at its edge and inside it, toward and away from the Sun. Judge each whole and in native-size crops of the fog against a ridge, a prop and the ground.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/README.md#fixed-stills",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/review-fixes/README.md#metal-fixed",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
           "builder_result": "pass"
@@ -624,7 +624,7 @@
           "statement": "In Chrome the test bank passes WP8.5's and WP8.6's lists.",
           "inspect": "Capture the same stills, the walk, the pan and the mover in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/README.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/review-fixes/README.md#chrome-fixed-and-realtime",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
           "builder_result": "pass"

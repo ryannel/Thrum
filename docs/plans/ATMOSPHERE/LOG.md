@@ -771,3 +771,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   4. WP3.3 checks the offline boundary against the five registered sets and their comparisons. A later default change needs the `APPLE-TILE` ownership ruling before implementation.
   The current review gives no new suggestion. It accepts the removal of WP8.11, whose scheduled verifier still runs.
   [Recovery audit and rerun](../../../.orchestrate/evidence/ATMOSPHERE/shadow-final-design-audit/README.md)
+
+- 2026-11-25 WP8 review corrections share Sun-path support across the plane, the ground band and view-volume
+  projection. The Metal receiver fixture now checks a disabled provider and a Sun below its elevation floor, including
+  the incident meter. The opt-in test bank's denser upper part makes the low solar disc visibly dim in SDR on Metal
+  and Chrome while the near layer still fades terrain and movers. Retook the fixed and realtime views on both targets.
+  [Review correction evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP8/review-fixes/README.md)
