@@ -832,7 +832,61 @@
     },
     "WP7": {
       "definitions": "28c1968b8be0d2571530d829340e68d0134532075c0c5f559ebd82dc4a48f8ca",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "4f96559dae78388ab77e1453140b22fa9c4725ba",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md",
+          "items": {
+            "WP7.1": "fail",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "fail",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "fail",
+            "WP7.8": "fail"
+          },
+          "findings": [
+            {
+              "name": "Wind drift skips refresh targets at a normal game extent",
+              "item": "WP7.4",
+              "repeat": false
+            },
+            {
+              "name": "Broken banks lose their relief and bright gap edges on Metal",
+              "item": "WP7.1",
+              "repeat": false
+            },
+            {
+              "name": "Broken banks lose their relief and bright gap edges in Chrome",
+              "item": "WP7.7",
+              "repeat": false
+            },
+            {
+              "name": "Fresh cost report carries a different run\u2019s investigation",
+              "item": "WP7.8",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 181464,
+            "cached": 15529856,
+            "output": 31400,
+            "turns": 1
+          },
+          "at": "2026-11-24T22:58:03Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
