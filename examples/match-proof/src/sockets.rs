@@ -264,7 +264,8 @@ impl Player {
         if now >= self.next_sample {
             self.next_sample = now + 250_000;
             rows.push(timestamp(json!({
-                "event": "sample", "tick": self.client.world().tick(),
+                "event": "sample", "clock_us": now, "tick": self.client.world().tick(),
+                "state": format!("{state:?}"),
                 "playout": self.client.playout(now).map(|view| view.position),
                 "prediction": self.client.controller(now).map(|view| json!({
                     "tick": view.tick, "interpolation": view.interpolation,

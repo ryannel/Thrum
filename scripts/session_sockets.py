@@ -637,16 +637,31 @@ def byte_window(start_bytes, end_bytes, start_us, end_us):
             "bits_per_second": (end_bytes - start_bytes) * 8_000_000 / (end_us - start_us)}
 
 
-def cost_rows(run, peer):
-    playing = peer.playing()[0]
+def live_cost_join(run, peer, baseline):
+    """Find the first playing sample that has replayed the sets committed during transfer."""
+    wall = [row["wall_us"] for row in run.host.events("commit")]
+    if not wall or wall[-1] < baseline["wall_us"]:
+        return None
+    restore_host_tick = bisect_right(wall, baseline["wall_us"])
+    for sample in peer.log.events("sample"):
+        if sample["wall_us"] > wall[-1]:
+            break  # The next host log flush supplies the authority tick for this sample.
+        if (sample["state"] == "Playing" and sample["tick"] >= restore_host_tick > baseline["tick"]
+                and bisect_right(wall, sample["wall_us"]) - sample["tick"] <= run.config["behind"]):
+            return sample, restore_host_tick
+    return None
+
+
+def cost_rows(run, peer, joined, restore_host_tick):
+    first_playing = peer.playing()[0]
     baseline, = peer.log.events("baseline")
     commit = run.host.events("commit")
     wall = [row["wall_us"] for row in commit]
     end = next(row for row in peer.log.events("state") if row["state"].startswith("Ended("))
     samples = [row for row in peer.log.events("sample")
-               if playing["wall_us"] <= row["wall_us"] < end["wall_us"]
+               if joined["wall_us"] <= row["wall_us"] < end["wall_us"]
                and row["playout"] is not None and row["lead"] is not None]
-    assert samples and baseline["hello_to_restore_us"] is not None and playing["hello_to_playing_us"] is not None
+    assert samples and baseline["hello_to_restore_us"] is not None and first_playing["hello_to_playing_us"] is not None
     delays = [(bisect_right(wall, row["wall_us"]) - row["playout"]) * run.config["tick_us"] for row in samples]
     controller_samples = [row for row in samples if row["prediction"] is not None]
     assert controller_samples
@@ -661,20 +676,22 @@ def cost_rows(run, peer):
         assert view["predicted"] or view["tick"] == sample["tick"], sample
         hero_leads.append(hero_position - crowd_position)
     stalls = peer.log.events("stall")
-    authority_link = run.host_peer(playing)["link"]
+    authority_link = run.host_peer(first_playing)["link"]
     authority_end = next(row for row in run.host.events("disconnect") if row["link"] == authority_link)
     authority_start = next(row for row in run.host.events("stream")
-                           if row["link"] == authority_link and row["wall_us"] >= playing["wall_us"])
+                           if row["link"] == authority_link and row["wall_us"] >= joined["wall_us"])
     authority = authority_end["counters"]
     client = end["counters"]
     relay = relay_record(peer)
-    duration = (end["clock_us"] - playing["clock_us"]) / 1_000_000
+    duration = (end["clock_us"] - joined["clock_us"]) / 1_000_000
     assert duration > 0
-    corrections = end["corrections"] - playing["corrections"]
-    restore_host_tick = bisect_right(wall, baseline["wall_us"])
+    corrections = end["corrections"] - joined["corrections"]
     hello, = [row for row in peer.log.events("state") if row["state"] == "Negotiating"]
-    assert 0 < bisect_right(wall, hello["wall_us"]) <= baseline["tick"] < restore_host_tick
-    held = commit[-1]["held"][playing["slot"]]
+    hello_host_tick = bisect_right(wall, hello["wall_us"])
+    assert 0 < hello_host_tick <= baseline["tick"] < restore_host_tick <= joined["tick"]
+    join_total_us = joined["clock_us"] - hello["clock_us"]
+    assert join_total_us >= first_playing["hello_to_playing_us"] >= baseline["hello_to_restore_us"]
+    held = commit[-1]["held"][first_playing["slot"]]
     wire = [row["seen_bytes"] for row in relay["directions"]]
     images = run.host.events("image")
     image_tick_us = max(row["advance_us"] for row in images)
@@ -688,13 +705,17 @@ def cost_rows(run, peer):
         "browser_wire_bytes_absent": peer.target == CHROME and client["wire_sent"] is None,
         "baseline_bytes": baseline["bytes"],
         "baseline_tick": baseline["tick"],
-        "host_tick_at_hello": bisect_right(wall, hello["wall_us"]),
+        "host_tick_at_hello": hello_host_tick,
         "host_tick_at_restore": restore_host_tick,
-        "first_playing_tick": playing["tick"],
-        "join_total_us": playing["hello_to_playing_us"],
+        "first_playing_tick": first_playing["tick"],
+        "host_tick_at_first_playing": bisect_right(wall, first_playing["wall_us"]),
+        "hello_to_first_playing_us": first_playing["hello_to_playing_us"],
+        "joined_tick": joined["tick"],
+        "host_tick_at_join": bisect_right(wall, joined["wall_us"]),
+        "join_total_us": join_total_us,
         "join_hello_to_welcome_us": baseline["hello_to_restore_us"] - baseline["welcome_to_restore_us"],
         "join_transfer_us": baseline["welcome_to_restore_us"],
-        "join_catch_up_us": playing["hello_to_playing_us"] - baseline["hello_to_restore_us"],
+        "join_catch_up_us": join_total_us - baseline["hello_to_restore_us"],
         "confirmed_delay_median_us": statistics.median(delays),
         "confirmed_delay_max_us": max(delays),
         "lead_median_ticks": statistics.median(sample["lead"] for sample in samples),
@@ -716,7 +737,7 @@ def cost_rows(run, peer):
     row["bandwidth_windows"] = {}
     for direction, relay_direction, (first, last) in zip(
             ("to_host", "from_host"), relay["directions"],
-            ((playing, end), (authority_start, authority_end)), strict=True):
+            ((joined, end), (authority_start, authority_end)), strict=True):
         window = row["bandwidth_windows"][direction] = {
             "relay_wire_bytes": byte_window(0, relay_direction["seen_bytes"],
                                             relay_direction["first_packet_us"], relay_direction["last_packet_us"]),
@@ -735,9 +756,11 @@ def cost_rows(run, peer):
 
 def inspect_costs(result, previous):
     if previous:
-        for key in ("baseline_bytes", "join_total_us", "join_transfer_us", "join_catch_up_us",
-                    "confirmed_delay_median_us", "confirmed_delay_max_us", "playout_stall_count",
-                    "playout_stall_total_us", "corrections_per_minute", "ticks_held",
+        for key in ("baseline_bytes", "join_total_us", "join_hello_to_welcome_us",
+                    "join_transfer_us", "join_catch_up_us", "confirmed_delay_median_us",
+                    "confirmed_delay_max_us", "lead_median_ticks", "playout_stall_count",
+                    "playout_stall_total_us", "corrections_per_minute",
+                    "hero_lead_over_crowd_median_ticks", "ticks_held",
                     "longest_host_commit_gap_us", "image_tick_us"):
             value = result[key]
             if value > previous[key] * 1.25:
@@ -769,11 +792,13 @@ def cost_match(directory, programs, target, controller, bodies, chrome_admitted)
             return value()
 
         deadline = run.join_ms / 1000 + 20
-        run.wait(f"{target} cost join outcome", lambda: live(peer.playing), deadline)
+        baseline = run.wait(f"{target} cost baseline", lambda: live(lambda: peer.log.events("baseline")), deadline)[0]
+        joined, restore_host_tick = run.wait(f"{target} to catch up to the running match",
+                                               lambda: live(lambda: live_cost_join(run, peer, baseline)), deadline)
         run.end_after(900)
         run.finish([peer])
         results = [(peer, compare(run, peer))]
-    measurement = cost_rows(run, peer)
+    measurement = cost_rows(run, peer, joined, restore_host_tick)
     measurement["join_context"] = "running match"
     return measurement, report(run, results)
 
