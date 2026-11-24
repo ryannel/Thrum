@@ -415,7 +415,58 @@
     },
     "WP8": {
       "definitions": "3f44029ddf252357e025e0cebf87d57eea3504454eb8a91026f690ae39adad0d",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "c3a3e004d687befbce7f63c27d2ebe16f9fc6c47",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "fail",
+            "WP8.4": "pass",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "fail",
+            "WP8.8": "pass",
+            "WP8.9": "pass",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "An invalid Sun-path provider still shades receivers inside the ground band",
+              "item": "WP8.3",
+              "repeat": false
+            },
+            {
+              "name": "The solar disc stays visibly clipped through the Metal test bank",
+              "item": "WP8.5",
+              "repeat": false
+            },
+            {
+              "name": "The solar disc stays visibly clipped through the Chrome test bank",
+              "item": "WP8.7",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 182263,
+            "cached": 12956032,
+            "output": 23940,
+            "turns": 1
+          },
+          "at": "2026-11-24T22:53:18Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
