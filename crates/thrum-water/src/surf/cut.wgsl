@@ -221,10 +221,11 @@ fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocati
                 let depth = point.level_current_bed.x - point.level_current_bed.w;
                 let swash = min(settings.swash_margin.x * length(settings.heights * point.gains),
                     settings.swash_margin.y);
-                if swash > 0.0 && depth < 1.3 * swash {
+                if swash > 0.0 && depth < 4.0 * map.origin_spacing_margin.w {
                     let stages = surf_stages(surf.bodies[point.body], point.surf_stage.x);
                     let contour = shore_contour(map_cell(point.position), stages);
-                    gains = vec4(gains.x, gains.yzw * contour_short_weight(depth, swash, contour.z));
+                    gains = vec4(gains.x, gains.yzw * contour_short_weight(
+                        depth, swash, contour.z, depth + result.wave.displacement.y));
                 }
             }
         }

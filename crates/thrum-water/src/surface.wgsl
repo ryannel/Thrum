@@ -102,7 +102,7 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
     let transformed = surf_current(index);
     let local=vertex.xy/vertex.z;
     if sea && max(abs(local.x),abs(local.y))>=f32(sea_grid_radius(vertex.z)) {
-        let transition = sea_grid_transition(vertex.z);
+        let transition = 2.0;
         let coarse = local / transition;
         let spacing = vertex.z * transition;
         let p = anchor + floor(coarse) * spacing;

@@ -68,6 +68,9 @@ impl Wind {
             let period = 10.0_f64;
             swell.wavelength = 9.81 * period.powi(2) / std::f64::consts::TAU;
             swell.direction = std::f64::consts::FRAC_PI_4;
+            if matches!(self, Self::Trade) {
+                swell.significant_height = 1.5;
+            }
         }
         forcing
     }

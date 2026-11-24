@@ -268,7 +268,12 @@ fn measure_cache(
             continue;
         }
         let point = if body == 0 {
-            let half_width = if spacing <= 0.5 { 64.0 } else { 32.0 };
+            let half_width = match spacing {
+                ..=0.5 => 64.0,
+                1.0 => 80.0,
+                2.0 => 48.0,
+                _ => 32.0,
+            };
             if (x.abs().max(z.abs()) / spacing) >= half_width {
                 continue;
             }

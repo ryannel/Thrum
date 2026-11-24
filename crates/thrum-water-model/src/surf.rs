@@ -287,7 +287,12 @@ impl Surf {
                 .contour(map, row.body, point, row.depth, limited.swash_depth)
                 .map_or(1.0, |(_, coverage)| {
                     1.0 - smooth(coverage)
-                        * (1.0 - short_geometry_weight(row.depth, limited.swash_depth))
+                        * (1.0
+                            - short_geometry_weight(
+                                row.depth,
+                                limited.swash_depth,
+                                row.depth + height,
+                            ))
                 });
             for gain in &mut gains[1..] {
                 *gain *= weight;
@@ -327,7 +332,7 @@ impl Surf {
     ) -> Option<([f64; 2], f64)> {
         self.transforms[body]
             .as_ref()
-            .filter(|_| swash > 0.0 && depth < 4.0 * swash)
+            .filter(|_| swash > 0.0 && depth < 4.0 * map.profile.margin_height)
             .and_then(|transform| transform.contour(map.bodies[body].stage.value, point))
     }
 
@@ -377,16 +382,17 @@ fn smooth(x: f64) -> f64 {
     t * t * (3.0 - 2.0 * t)
 }
 
-fn short_geometry_weight(depth: f64, swash: f64) -> f64 {
+fn short_geometry_weight(depth: f64, swash: f64, thickness: f64) -> f64 {
     if swash > 0.0 {
         smooth((depth / swash - 0.85) / (1.3 - 0.85))
+            * smooth((thickness / swash - 0.12) / (0.4 - 0.12))
     } else {
         1.0
     }
 }
 
 fn wet_floor(thickness: f64, swash: f64) -> f64 {
-    let floor = 0.02 * swash;
+    let floor = 0.08 * swash;
     let knee = 0.15 * swash;
     if thickness >= floor + knee {
         return thickness;
@@ -544,7 +550,7 @@ impl SurfSheet<'_> {
             }
         }
         if let Some((reference, coverage)) = contour {
-            let support = smooth(coverage) * (1.0 - smooth(depth / swash - 3.0));
+            let support = smooth(coverage);
             let ordinary = smooth((depth / swash - 0.35) / (0.85 - 0.35));
             let inner = support * (1.0 - ordinary);
             for distance in &mut displacement {

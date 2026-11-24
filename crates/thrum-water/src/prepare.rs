@@ -18,6 +18,8 @@ use wgpu::util::DeviceExt;
 
 pub(crate) const SEA_RING_HALF_WIDTH: i32 = 32;
 pub(crate) const SURF_FINE_RING_HALF_WIDTH: i32 = 64;
+pub(crate) const SURF_METRE_RING_HALF_WIDTH: i32 = 80;
+pub(crate) const SURF_TWO_METRE_RING_HALF_WIDTH: i32 = 48;
 
 pub(super) struct Prepared {
     pub(super) ambient: thrum_sea::Ambient,
@@ -608,24 +610,23 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
         let first = geometry.vertices.len() as u32;
         let first_index = geometry.indices.len() as u32;
         if matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
+            let mut previous_half_width = 0;
             for level in 0..17 {
-                if surf && level == 2 {
-                    continue;
-                }
-                // Keep the two finest spacings across the near breakers.
-                let half_width = if surf && level <= 1 {
-                    SURF_FINE_RING_HALF_WIDTH
-                } else {
-                    SEA_RING_HALF_WIDTH
+                let half_width = match (surf, level) {
+                    (true, 0 | 1) => SURF_FINE_RING_HALF_WIDTH,
+                    (true, 2) => SURF_METRE_RING_HALF_WIDTH,
+                    (true, 3) => SURF_TWO_METRE_RING_HALF_WIDTH,
+                    _ => SEA_RING_HALF_WIDTH,
                 };
                 geometry.grid(
                     [-half_width; 2],
                     [half_width; 2],
                     0.25 * 2.0_f32.powi(level),
                     0.0,
-                    level > 0,
+                    previous_half_width / 2,
                     surf,
                 );
+                previous_half_width = half_width;
             }
         } else if let Some([min, max]) = map.surface_bounds(body) {
             // Tile fine enough for geometry in the near view; shading filters
@@ -634,7 +635,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             let spacing = 0.5_f32.max((span / 1024.0) as f32);
             let start = min.map(|x| (x / f64::from(spacing)).floor() as i32);
             let end = max.map(|x| (x / f64::from(spacing)).ceil() as i32);
-            geometry.grid(start, end, spacing, (body + 1) as f32, false, surf);
+            geometry.grid(start, end, spacing, (body + 1) as f32, 0, surf);
         }
         geometry.bodies.push((
             declaration.name.clone(),
@@ -687,18 +688,17 @@ impl Geometry {
         end: [i32; 2],
         spacing: f32,
         body: f32,
-        ring: bool,
+        inner_half_width: i32,
         surf: bool,
     ) {
         let base = u32::try_from(self.vertices.len()).expect("bounded mesh");
         let width = u32::try_from(end[0] - start[0] + 1).expect("grid width");
-        let inner_half_width = (end[0] - start[0]) / 4;
         for (row, z) in (0..).zip(start[1]..=end[1]) {
             for (column, x) in (0..).zip(start[0]..=end[0]) {
                 self.vertices
                     .push([x as f32 * spacing, z as f32 * spacing, spacing, body]);
                 let inner = -inner_half_width..inner_half_width;
-                let centre = ring && inner.contains(&x) && inner.contains(&z);
+                let centre = inner.contains(&x) && inner.contains(&z);
                 if x < end[0] && z < end[1] && !centre {
                     let a = base + row * width + column;
                     if surf {

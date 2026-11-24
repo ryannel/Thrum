@@ -49,7 +49,7 @@ fn fill_surf_cache(@builtin(global_invocation_id) id: vec3<u32>) {
         var before = cache_sample(point, body, -dt, true);
         var face = breaking_face(now);
         if sea && max(abs(local.x), abs(local.y)) >= f32(sea_grid_radius(vertex.z)) {
-            let transition = sea_grid_transition(vertex.z);
+            let transition = 2.0;
             let coarse = local / transition;
             let spacing = transition * vertex.z;
             let a = anchor + floor(coarse) * spacing;

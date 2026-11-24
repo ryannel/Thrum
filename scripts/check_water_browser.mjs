@@ -327,7 +327,7 @@ async function inspectSurf(evaluate,result,frame) {
     const nodes=[],samples=[];
     for(let i=0;i<mesh.length/4;i++){
       const [x,z,spacing,body]=mesh.subarray(i*4,i*4+4);
-      const halfWidth=spacing<=0.5?64:32;
+      const halfWidth=spacing<=0.5?64:spacing===1?80:spacing===2?48:32;
       const cacheOffset=i*12;
       if(cache[cacheOffset+3]===0 || (body===0&&Math.max(Math.abs(x),Math.abs(z))>=halfWidth*spacing))continue;
       if(i%6!==0)continue;
