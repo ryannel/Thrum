@@ -393,7 +393,7 @@
       }
     },
     "WP3": {
-      "definitions": "326acae4cf9c7ae4f55610c91846f711058f03ef8f0b2d92039c49a5e5f7df5a",
+      "definitions": "46dfcd7ff694472a532c2f506b83e283edf97ade3f448048e70cdf785015c734",
       "reviews": [
         {
           "verdict": "fail",
@@ -516,71 +516,27 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its Must Fix ",
-        "at": "2026-11-23T22:16:34Z"
-      },
-      "ready_for_review": {
-        "commit": "2a741386418e43042c5a1c1d8a06e1068ddb80d7",
-        "checked": "2a741386418e43042c5a1c1d8a06e1068ddb80d7",
-        "at": "2026-11-24T08:51:12Z",
-        "reused": [
-          "Test command",
-          "WP3.5"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13",
-        "path": "headless",
-        "usage": {
-          "input": 872586,
-          "cached": 92350848,
-          "output": 153728,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 2538780,
-          "cached": 365538176,
-          "output": 532092,
-          "turns": 7
-        }
+        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fi",
+        "at": "2026-11-24T16:15:36Z"
       }
     },
     "WP4": {
-      "definitions": "3577d402ee24aad148241fc8cd2f191212793c940e651faebdbd3283e11f93af",
+      "definitions": "66ce361ceaad83cb4dc02180ad5cfdb882f5afa7e0a69f20cc880531c5c20c36",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fi",
+        "at": "2026-11-24T16:15:36Z"
+      }
     },
     "WP5": {
-      "definitions": "3f41a7703f9c9b051e28db73fe062392912828ceba6933f25b60576b5f68efc5",
+      "definitions": "10e75a90ef0d0141d0f9d6617f210bf231975a803c8b62db405db5414d378021",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix fin",
-        "at": "2026-11-13T18:07:46Z"
+        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fi",
+        "at": "2026-11-24T16:15:36Z"
       },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ],
       "ends_stretch": true
     }
   },
@@ -612,11 +568,15 @@
     {
       "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-23T22:16:34Z"
+    },
+    {
+      "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fix findings.",
+      "at": "2026-11-24T16:15:36Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T22:16:34Z"
+    "at": "2026-11-24T16:15:36Z"
   },
   "design_history": [
     {
