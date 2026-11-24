@@ -267,7 +267,7 @@ from a long chat. Failed, skipped or outdated evidence cannot promote maturity a
 
 ## Delivery order and behavioral qualification
 
-The [build plan](../plans/BRIEF.md) owns current sequencing; G6 delivers the first game-authoring loop. The stages below
+The [build plan](../plans/VISION.md) owns current sequencing; G6 delivers the first game-authoring loop. The stages below
 describe what the tooling needs, not an order of work.
 
 | Stage | Deliver the smallest useful part | Completion boundary |

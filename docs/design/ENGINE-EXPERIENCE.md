@@ -8,7 +8,7 @@ Today a scene is a package in the engine workspace. Those steps show both root c
 one run command per target; they require no engine source. The starter README also covers assets, controls,
 parameter files, material hooks and the profiler. The wider SDK discussion below is optional.
 
-Creator guide, updated 17 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
+Creator guide, updated 17 November 2026. [G6](../plans/VISION.md#the-milestones) built and tested its
 first slice; [What G6 built](#what-g6-built) and [Live cooked assets](#live-cooked-assets) describe working paths.
 The remaining sections describe the SDK design. The
 [scenario](SCENARIO-WALKTHROUGHS.md), [first-use](FIRST-USE-WALKTHROUGHS.md) and [from-scratch](FROM-SCRATCH-WALKTHROUGHS.md)

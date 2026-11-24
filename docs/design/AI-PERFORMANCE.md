@@ -334,7 +334,7 @@ whole protocol in every agent's mandatory context. Mechanical rules cannot prove
 
 ## Delivery order and evidence
 
-The [build plan](../plans/BRIEF.md) owns current sequencing; these stages describe how campaign tooling grows.
+The [build plan](../plans/VISION.md) owns current sequencing; these stages describe how campaign tooling grows.
 
 - **D0:** select first representative workload/device and the cost-versus-quality objective; identify honest budgets.
 - **D1/I1:** specify campaign/result records and trusted evaluation boundary; implement one local CPU/headless path,

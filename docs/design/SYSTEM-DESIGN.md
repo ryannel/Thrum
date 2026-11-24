@@ -4,7 +4,7 @@
 Custom host and the platform ambition are user decisions. Mechanisms below are reasoned design recommendations;
 detailed commissions and empirical qualification remain explicitly tracked in [maturity](MATURITY.md).
 The [shared contracts](CONTRACTS.md) own cross-module semantics and override a contradictory local description until
-both documents are reconciled. The engine serves interactive teaching demos first and games later ([purpose](../plans/BRIEF.md#purpose)), not a water or forest engine.
+both documents are reconciled. The engine serves interactive teaching demos first and games later ([purpose](../plans/VISION.md#why)), not a water or forest engine.
 
 **Selected revision, 1 November:** [architecture decisions](ARCHITECTURE-DECISIONS.md) resolve the five audit boundaries
 and whole-plan findings at architectural scope. C4 retains first-class networking and reconciles file-first source, restart-first play and explicit action/state publication.
@@ -126,7 +126,7 @@ interior may exclude weather while retaining window light. Mobile may use simple
 and fewer resident assets without changing game authority. Browser demos run the portable recipe at showcase quality
 with explicit download/startup limits and never cap native. A showcase can select advanced providers without making them universal dependencies.
 
-V1 targets the [build plan](../plans/BRIEF.md#goal-and-exit-rule)'s 120 Hz M3 Max and 60 Hz Chrome rows; other
+V1 targets the [build plan](../plans/VISION.md#how-it-will-be-judged)'s 120 Hz M3 Max and 60 Hz Chrome rows; other
 profiles set targets after V1. The [runtime budget table](modules/PLATFORM-RUNTIME.md#whole-scene-budget-proposal--all-unmeasured)
 is the post-V1 numeric envelope source. It covers the whole scene, not each module independently. For CPU work, the
 critical path and work/parallel-capacity lower bounds both matter. GPU time is bounded below by dependent work and

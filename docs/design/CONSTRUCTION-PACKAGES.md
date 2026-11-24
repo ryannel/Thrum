@@ -1,7 +1,7 @@
 # Detailed design and construction packages
 
 1 November 2026. Longer-range package map and detailed-design commissions for the [integrated design](SYSTEM-DESIGN.md).
-**[The brief](../plans/BRIEF.md) owns the V1 exit and its gates, and [the module list](../plans/ARCHITECTURE.md) the
+**[The brief](../plans/VISION.md) owns the V1 exit and its gates, and [the module list](../plans/ARCHITECTURE.md) the
 build order**; packages below map onto those gates or follow V1. This page is design reference, not a plan the
 orchestrate loop builds from. It was `CONSTRUCTION-PLAN.md` until 11 November 2026. Derive mechanisms analytically first; qualification checks stated predictions and empirical limits. An
 unresolved producer, representation or coupling remains a design task, never a disguised test.
