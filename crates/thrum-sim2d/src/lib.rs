@@ -43,10 +43,9 @@ struct Cell {
 pub struct CircleIndex {
     size: Number,
     cells: Vec<Cell>,
-    rows: Vec<Circle>,
-    sorted: Vec<usize>,
-    oversize: Vec<usize>,
-    ordered: Vec<(u64, usize)>,
+    sorted: Vec<Circle>,
+    oversize: Vec<Circle>,
+    ordered_cells: Vec<(u64, usize)>,
     ordering_scratch: Vec<(u64, usize)>,
     maximum_radius: Number,
 }
@@ -73,10 +72,9 @@ impl CircleIndex {
         Ok(Self {
             size,
             cells: vec![Cell::default()],
-            rows: Vec::new(),
             sorted: Vec::new(),
             oversize: Vec::new(),
-            ordered: Vec::new(),
+            ordered_cells: Vec::new(),
             ordering_scratch: Vec::new(),
             maximum_radius: Number::ZERO,
         })
@@ -112,59 +110,58 @@ impl CircleIndex {
                 return Err(QueryError::Body(circle.slot));
             }
         }
-        self.rows.clear();
-        self.rows.extend_from_slice(circles);
         self.cells.resize(
             (circles.len() * 2).max(1).next_power_of_two(),
             Cell::default(),
         );
         self.cells.fill(Cell::default());
         self.oversize.clear();
+        self.ordered_cells.clear();
         self.maximum_radius = Number::ZERO;
-        for (index, circle) in circles.iter().enumerate() {
+        for &circle in circles {
             if circle.radius > self.size {
-                self.oversize.push(index);
+                self.oversize.push(circle);
                 continue;
             }
             self.maximum_radius = self.maximum_radius.max(circle.radius);
             let key = self.coordinates(circle.centre);
             let bucket = self.bucket(key);
-            self.cells[bucket].key = Some(key);
-            self.cells[bucket].count += 1;
+            let cell = &mut self.cells[bucket];
+            if cell.key.is_none() {
+                cell.key = Some(key);
+                let x = u32::from_le_bytes(key.0.to_le_bytes()) ^ 0x8000_0000;
+                let y = u32::from_le_bytes(key.1.to_le_bytes()) ^ 0x8000_0000;
+                self.ordered_cells
+                    .push(((u64::from(y) << 32) | u64::from(x), bucket));
+            }
+            cell.count += 1;
         }
         let mut start = 0;
         for cell in &mut self.cells {
             cell.start = start;
             start += cell.count;
         }
-        self.sorted.resize(start, 0);
-        for (index, circle) in circles.iter().enumerate() {
+        self.sorted.resize_with(start, || Circle {
+            slot: 0,
+            centre: Vector::default(),
+            radius: Number::ZERO,
+        });
+        for &circle in circles {
             if circle.radius > self.size {
                 continue;
             }
             let bucket = self.bucket(self.coordinates(circle.centre));
             let cell = &mut self.cells[bucket];
-            self.sorted[cell.start + cell.written] = index;
+            self.sorted[cell.start + cell.written] = circle;
             cell.written += 1;
         }
-        self.ordered.clear();
-        for (index, circle) in circles
-            .iter()
-            .enumerate()
-            .filter(|(_, circle)| circle.radius <= self.size)
-        {
-            let (x, y) = self.coordinates(circle.centre);
-            let x = u32::from_le_bytes(x.to_le_bytes()) ^ 0x8000_0000;
-            let y = u32::from_le_bytes(y.to_le_bytes()) ^ 0x8000_0000;
-            self.ordered
-                .push(((u64::from(y) << 32) | u64::from(x), index));
-        }
-        self.ordering_scratch.resize(self.ordered.len(), (0, 0));
-        // Stable byte counting passes preserve ascending slots in a cell and
-        // keep build work linear, including the wide-query fallback ordering.
+        self.ordering_scratch
+            .resize(self.ordered_cells.len(), (0, 0));
+        // Wide queries traverse cells in row and column order. Sort each
+        // occupied cell once. The scatter above already preserves slot order.
         for shift in (0..64).step_by(8) {
             let mut counts = [0; 256];
-            for &(key, _) in &self.ordered {
+            for &(key, _) in &self.ordered_cells {
                 counts[((key >> shift) & 255) as usize] += 1;
             }
             let mut start = 0;
@@ -173,12 +170,12 @@ impl CircleIndex {
                 *count = start;
                 start = next;
             }
-            for &entry in &self.ordered {
+            for &entry in &self.ordered_cells {
                 let bucket = ((entry.0 >> shift) & 255) as usize;
                 self.ordering_scratch[counts[bucket]] = entry;
                 counts[bucket] += 1;
             }
-            std::mem::swap(&mut self.ordered, &mut self.ordering_scratch);
+            std::mem::swap(&mut self.ordered_cells, &mut self.ordering_scratch);
         }
         Ok(())
     }
@@ -212,8 +209,7 @@ impl CircleIndex {
             return Err(QueryError::Query);
         }
         let accepts = |circle: &Circle| shape.intersects(circle);
-        for &index in &self.oversize {
-            let circle = &self.rows[index];
+        for circle in &self.oversize {
             if accepts(circle) {
                 visit(circle);
             }
@@ -240,11 +236,14 @@ impl CircleIndex {
             y: maximum.y + self.maximum_radius + slack,
         });
         let area = i64::from(high.0 - low.0 + 1) * i64::from(high.1 - low.1 + 1);
-        if area > i64::try_from(self.rows.len()).expect("body count fits") {
-            for &(_, index) in &self.ordered {
-                let circle = &self.rows[index];
-                if accepts(circle) {
-                    visit(circle);
+        let count = self.sorted.len() + self.oversize.len();
+        if area > i64::try_from(count).expect("body count fits") {
+            for &(_, bucket) in &self.ordered_cells {
+                let cell = &self.cells[bucket];
+                for circle in &self.sorted[cell.start..cell.start + cell.count] {
+                    if accepts(circle) {
+                        visit(circle);
+                    }
                 }
             }
         } else {
@@ -254,8 +253,7 @@ impl CircleIndex {
                     if cell.key != Some((x, y)) {
                         continue;
                     }
-                    for &index in &self.sorted[cell.start..cell.start + cell.count] {
-                        let circle = &self.rows[index];
+                    for circle in &self.sorted[cell.start..cell.start + cell.count] {
                         if accepts(circle) {
                             visit(circle);
                         }
