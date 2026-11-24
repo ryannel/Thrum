@@ -278,7 +278,12 @@ impl Lead {
         let due = (now - self.next) / period + 1;
         let ticks = 1 + due.saturating_sub(u64::from(settings.catch_up));
         self.next += ticks * period;
-        self.target += ticks;
+        let staging = u64::from(settings.staging);
+        // At the previous staging limit, elapsed wall periods can outnumber
+        // newly opened target ticks. Drop the excess time debt without skipping
+        // those future targets, as long as the previous target is still ahead.
+        let staging_limited = self.target == self.credit_tick + staging && self.target > held;
+        self.target += if staging_limited { 1 } else { ticks };
         if self.pinned.is_none() && self.target <= held && self.floor < 0 {
             // The newest received set already proves this target has passed.
             // A long authority catch-up burst can overtake many of our frame
@@ -312,7 +317,7 @@ impl Lead {
         // a busy tick. Stop advancing at the staging limit until more sets
         // arrive. A target that advanced past the limit could never produce
         // the next margin needed to bring itself back.
-        let cap = held + u64::from(settings.staging);
+        let cap = held + staging;
         self.target = self.target.min(cap);
         // Pace new input against observed authority progress. Use only half the
         // host's burst allowance so delivery jitter and outstanding datagrams
@@ -362,6 +367,25 @@ mod tests {
         assert_eq!(lead.author(300 * period, held, settings), Some(cap));
         assert_eq!(lead.author(301 * period, held, settings), None);
         assert_eq!(lead.author(302 * period, held + 1, settings), Some(cap + 1));
+    }
+
+    #[test]
+    fn a_delayed_poll_fills_consecutive_targets_after_reaching_the_staging_limit() {
+        let settings = Settings::default();
+        let period = u64::from(settings.tick_us);
+        let held = 50;
+        let mut lead = Lead::new(0, held, 6 * period, settings, None);
+        let cap = held + u64::from(settings.staging);
+        assert_eq!(lead.author(300 * period, held, settings), Some(cap));
+        // Wall time advanced much further than the busy authority. Four
+        // still-future slots opened, all of which can be sampled in this poll.
+        for offset in 1..=4 {
+            assert_eq!(
+                lead.author(320 * period, held + 4, settings),
+                Some(cap + offset)
+            );
+        }
+        assert_eq!(lead.author(320 * period, held + 4, settings), None);
     }
 
     #[test]
