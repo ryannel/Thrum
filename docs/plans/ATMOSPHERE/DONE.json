@@ -415,7 +415,7 @@
           "lock": "gpu",
           "ask": "Is the base the commit this milestone started from, recorded before any change, and does the Chrome arm run the same comparison?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/parity/comparison.json",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/post-merge-parity/comparison.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
           "builder_result": "pass"

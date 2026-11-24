@@ -457,6 +457,24 @@ fn start_writer(
     .map_err(|e| e.to_string())
 }
 
+pub(super) fn prepare_parity_content(
+    host: &mut crate::host::Runtime,
+    content: Option<&std::sync::Mutex<thrum_asset_gpu::CookedStats>>,
+) -> Result<(), String> {
+    if !renderer_parity_requested() {
+        return Ok(());
+    }
+    // Submit endpoint draws until the valley is resident. These draws do not
+    // commit view history or consume any of the held reconstruction warmup.
+    let stats = content.ok_or("renderer parity needs cooked content")?;
+    thrum_asset_gpu::await_drawn(host, stats, thrum_asset_gpu::Drawn::Any)?;
+    Ok(())
+}
+
+fn renderer_parity_requested() -> bool {
+    crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1")
+}
+
 fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
     warmup_checkpoint(driver, false)
 }
@@ -705,8 +723,7 @@ async fn record(
     let mut admission = admission::Admission::new(wait, hold_full, &mode)?;
     let (source, extent) = (capture_source()?, capture_extent()?);
     let (qos, encoding, disk_limit) = capture_settings()?;
-    let parity_checkpoint =
-        crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1");
+    let parity_checkpoint = renderer_parity_requested();
     let active_pacing = active_pacing()?;
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) =

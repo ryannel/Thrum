@@ -447,6 +447,9 @@ impl RuntimeSetup for WindowGame {
                     .map(|cooked| cooked.folder.as_path()),
             )?
         } else {
+            if self.capture_cooked.is_some() {
+                capture::prepare_parity_content(&mut host, content.as_deref())?;
+            }
             std::time::Duration::ZERO
         };
         let origin = Instant::now()

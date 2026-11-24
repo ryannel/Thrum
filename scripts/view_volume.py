@@ -72,8 +72,8 @@ def build(output, targets, cost=False):
 
 
 def witness_baseline_archive(base, output):
-    # This probe adds a read-only observation after preparation. The base's
-    # rendering code, assets, scene defaults and shaders come from the archive.
+    # Both arms use the same cooked-residency barrier and held warmup. The
+    # baseline renderer, assets, scene defaults and shaders come from the archive.
     def insert(relative, marker, text):
         path = output / relative
         source = path.read_text()
@@ -122,15 +122,20 @@ def witness_baseline_archive(base, output):
     begin = 'fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {'
     end = '\nfn capture_settings()'
     current = (ROOT / baseline_capture.relative_to(output)).read_text()
-    warmup = current.split(begin, 1)[1].split(end, 1)[0]
+    parity_setup = 'pub(super) fn prepare_parity_content('
+    setup = parity_setup + current.split(parity_setup, 1)[1].split(end, 1)[0]
     start, original = before.split(begin, 1)
-    baseline_capture.write_text(start + begin + warmup + end + original.split(end, 1)[1])
+    baseline_capture.write_text(start + setup + end + original.split(end, 1)[1])
     before = baseline_capture.read_text()
     call = '    warmup(driver)?;'
     if before.count(call) != 1:
         raise ValueError('archive warmup marker moved')
-    baseline_capture.write_text(before.replace(call, '''    warmup_checkpoint(driver,
-        crate::content::launch_value("THRUM_CAPTURE_RENDERER_SIGNATURE").as_deref() == Ok("1"))?;'''))
+    baseline_capture.write_text(before.replace(
+        call, '    warmup_checkpoint(driver, renderer_parity_requested())?;'))
+    insert('examples/v1-game/src/window.rs', '            std::time::Duration::ZERO\n        };\n        let origin',
+           '            if self.capture_cooked.is_some() {\n'
+           '                capture::prepare_parity_content(&mut host, content.as_deref())?;\n'
+           '            }')
 
 
 def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=False, motion=None,

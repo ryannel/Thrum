@@ -719,3 +719,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   replacement, the first submitted scatter, transmission and image match a cold render byte for
   byte, and the prepared GPU object counts match. The regression reproduced the stale shadow on
   the reviewed code. [Provider reset evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/provider-reset/README.md)
+
+- 2026-11-24 M7.1 starts the held Metal warmup after the cooked valley has drawn. Endpoint
+  preparation leaves ordinary submission and reconstruction history for the held warmup.
+  The archived starting renderer uses the same preparation. Metal and Chrome match their original
+  submitted frame hashes and forward shader text, with the existing graph comparison.
+  [Post-merge parity evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/post-merge-parity/README.md)
