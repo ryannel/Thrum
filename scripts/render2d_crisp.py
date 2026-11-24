@@ -93,14 +93,14 @@ def card_capture(binary, env, output, points, *, allow_occluded):
 
 def occluded_transition(result, arm, frames):
     observation = require_occluded(result, arm, 90)
-    if any(row["presented"] or row["drawable"] is not None or row["transition_error"] for row in frames):
+    if any(row["presented"] or row["drawable"] is not None or row["transition_error"]
+           or row["status"] == "DrawableTimeout" for row in frames):
         raise ValueError(f"Resize run acquired a drawable, presented or reported an error in {arm}")
-    initial = next((row for row in frames if row["status"] == "Occluded" and row["window"] == [1920, 1080]), None)
-    resized = next((row for row in frames if row["status"] == "Occluded" and row["window"] == [1552, 896]), None)
+    retina = [row for row in frames if row["status"] == "Occluded" and row["scale"] == 2]
+    initial = next((row for row in retina if row["window"] == [1920, 1080]), None)
+    resized = next((row for row in retina if row["window"] == [1552, 896]), None)
     if initial is None or resized is None or initial["sequence"] >= resized["sequence"]:
         raise ValueError(f"Missing occluded AppKit observations before and after resize in {arm}")
-    if initial["scale"] != 2 or resized["scale"] not in (2, 1.5):
-        raise ValueError(f"Expected Retina backing during resize in {arm}")
     return dict(result="geometry_only", surface=observation, initial=initial, resized=resized)
 
 

@@ -215,3 +215,10 @@
   checkpoints checked out. The item dry runs reached the unimplemented window option, sheet test and Chrome
   case, and crowd cost action. WP5.14 stopped in the GPU queue. The repository guard reproduced existing
   diagnostics in a clean checkout. Three stale links in this design were corrected.
+- 2026-11-24 WP3.6 now distinguishes an occluded window geometry receipt from a presented card.
+  The real Metal window matched the authored card at all three Retina sizes. The first resized submission
+  matched the new viewport, sprite target and drawable by submission ID.
+  [Window receipt](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.6-window.json)
+- Restored target evidence cleared by the plan revision, including the merged separable renderer's
+  Metal motion and exact images. Verified new Metal stills at all three backing sizes.
+  [Still review](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.9-fixed-stills.md)
