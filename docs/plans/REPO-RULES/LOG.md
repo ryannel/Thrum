@@ -82,3 +82,18 @@
 - 2026-11-24 Added WP5 before WP3 and WP4. The 3.0 migration (`e9a3923fa`) renamed `milestones` to `work_packages`
   in the done-when files. The stale reader lost script callers and test target names, breaking `workspace-tests`
   on main. WP5 updates both readers and checks the production reader against a checked-in done-when file.
+- 2026-11-24 Design review, Must Fix 1. Migration `77c70eaac` cleared the renamed headings and brief links
+  apart from the legacy G7 record. WP5 removes the three remaining tracked evidence records, retains their
+  bytes in Git history and proves the full repository guard. The lead routes the remaining ATMOSPHERE anchor
+  to a plan-only correction before WP5 merges. This can land on a red gate. WP5 stays ahead of WP3 and WP4,
+  and ATMOSPHERE's subsequent design review belongs to that module.
+- 2026-11-24 Design review, Must Fix 2. WP3.2 preserves APPLE-TILE's registered comparison and the two exact
+  environment keys its V1 capture consumers read. The zero check reports the comparison as the pin source
+  and keeps counting unrelated uses. The owner has no comparison refresh to make.
+- 2026-11-24 Design review, Must Fix 3. WP3.2 extends `history-names` to standalone `WP<n>` codes, with
+  fixtures on the naming surfaces and a new rule version. WP5 keeps the existing matcher, versions and baseline.
+- 2026-11-24 Design review, Must Fix 4. Mechanism 4 and the interface table point to the tracked
+  `.config/evidence-manifest.json` delivered by DEAD-TOOLS WP3. The original WP2 paths describe its recorded
+  proof, which still stands.
+- 2026-11-24 Review suggestion. Mechanism 1 now describes per-file counts and the repository-wide bound.
+  The shared track 4 wording remains for a project-wide edit.

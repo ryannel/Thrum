@@ -45,21 +45,35 @@ about the manifest so that nothing needs editing. `.gitignore` already ignores a
 `.orchestrate/evidence/`. A check must leave the loop's clean checkout unchanged, so tests work in scratch. `docs/ASSET-LIFECYCLE.md` and `CONTRIBUTING.md` gain the rule for
 new captures. Measure the tree before and after.
 
-## WP5 The repository check recognizes migrated done-when files
+## WP5 The repository gate passes with migrated plans
 
-Build this before WP3 and WP4 to restore the `workspace-tests` main-branch check. The orchestrate 3.0 migration
-(`e9a3923fa`) renamed the top-level key in `docs/plans/*/DONE.json` to `work_packages`. Read it in
-`done_when_checks()` in `scripts/shape_matchers.py` and `pinned_names()` in `scripts/shape_rules.py`, and update
-the fixtures in `scripts/test_shape_rules.py`. `script-caller` and `test-binary` count checks in open and Done
-work packages. History-name pins expire when a work package is Done. Keep the existing rule versions and ratchet
-baseline. Add the regression to the existing suite so it runs through `./dev check`.
+Build WP5 first, independently of WP3 and WP4. The orchestrate migration at `77c70eaac` already fixed the
+renamed-heading and brief links it could resolve. Before WP5 merges, the lead routes the one remaining plan
+link to an ATMOSPHERE planner: in [its design](../ATMOSPHERE/DESIGN.md), repoint “Apple tile M0.4” to
+[APPLE-TILE WP0](../APPLE-TILE/PLAN.md#wp0-a-repeatable-offscreen-valley-proves-the-comparison-path-done).
+The plan-only change can land while the gate is red. ATMOSPHERE owes a design review for its changed design.
+WP5 needs the link correction on main and can merge while that review is pending.
 
-## WP3 Names say what things do: the scene renderer is called the scene renderer, work package codes are out of file names, and the renderer's layers point one way
+Read `work_packages` in `done_when_checks()` and `pinned_names()` and exercise both readers in the existing
+shape-rule suite. Keep the rule versions and baseline. In the same landing, remove these three tracked paths
+from the checkout and record their original bytes as history entries in `.config/evidence-manifest.json`:
+
+- `docs/evidence/CULLING/M2.md`
+- `docs/evidence/render/cooked-draw/BASE`
+- `docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md`
+
+Keep a working-folder copy of each record, preserving any copy already there. The history entries keep existing
+links and Done proof references recoverable. Removing the G7 record from the checkout stops the link check
+from reading its stale brief link. WP5 lands through the normal `./dev check` gate. The shared
+`exact-images` proof follows the merge.
+
+## WP3 Names describe their jobs and the renderer's layers point one way
 
 This lands as one change so other builders rebase once. Take the list of names that open checks use from every
 `docs/plans/*/DONE.json` at the commit you start from, and again before you land, because other modules' plans move
 while you work. The showcase game's files are `SHOWCASE`'s and the proving ground's selections are their modules':
-rename inside them only what the renames above force. WP3.4's check names `src/graph.rs`, `src/graph/`,
+rename inside them only what the renames above force. Preserve the pinned APPLE-TILE comparison and its two
+environment keys as specified in [mechanism 5](DESIGN.md#mechanisms). WP3.4's check names `src/graph.rs`, `src/graph/`,
 `src/timing.rs` and `src/timing/` in `thrum-render`: the split keeps the graph and timing under those paths.
 `runtime.rs` imports the scene renderer in about fifteen places today and `present.rs` in one; they stay.
 

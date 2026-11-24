@@ -153,10 +153,10 @@
     },
     {
       "id": "WP5",
-      "name": "The repository check recognizes migrated done-when files",
+      "name": "The repository gate passes with migrated plans",
       "status": "not_started",
       "depends_on": [],
-      "quality_bar": "The shape-rule suite catches a mismatch with checked-in done-when files, and the shape rules pass with their existing ratchet.",
+      "quality_bar": "The merge gate passes with the existing rule versions and ratchet, and legacy evidence is recoverable from a full clone.",
       "items": [
         {
           "id": "WP5.1",
@@ -168,8 +168,24 @@
         },
         {
           "id": "WP5.2",
-          "statement": "The shape-rule check used by `./dev check-all` passes on the migrated plans with the existing rule versions and baseline.",
-          "check": "python3 scripts/shape_rules.py check",
+          "statement": "The repository guard shared by `./dev check` and `./dev check-all` passes on the migrated plans with the existing rule versions and baseline.",
+          "check": "./dev check-docs",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP5.3",
+          "statement": "Git tracks no files under `docs/evidence/`. The three legacy records listed in the WP5 plan are history entries in the live manifest and recover byte for byte from the blobs at their original paths in `77c70eaac`.",
+          "check": "PYTHONPATH=scripts python3 -c 'from evidence_store import ROOT, content, entries, git, tracked; paths = (\"docs/evidence/CULLING/M2.md\", \"docs/evidence/render/cooked-draw/BASE\", \"docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md\"); manifest = {entry[\"path\"]: entry for entry in entries(ROOT)}; assert not any(path.startswith(\"docs/evidence/\") for path in tracked(ROOT)); assert all(manifest[path][\"kind\"] == \"history\" and content(ROOT, manifest[path]) == git(ROOT, \"show\", \"77c70eaac:\" + path) for path in paths)'",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP5.4",
+          "statement": "The shared exact-images run covers the WP5 landing with every registered Mac and Chrome baseline passing.",
+          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -180,7 +196,7 @@
     },
     {
       "id": "WP3",
-      "name": "Names say what things do: the scene renderer is called the scene renderer, work package codes are out of file names, and the renderer's layers point one way",
+      "name": "Names describe their jobs and the renderer's layers point one way",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -195,7 +211,7 @@
         "DEAD-TOOLS:WP4",
         "DEAD-CODE:WP6"
       ],
-      "quality_bar": "A reorganisation as clean as rust-lang's or Bevy's crate renames: one landing, no change of behaviour, history follows each file, nothing is left with two names, and an agent landing cold can guess where a thing lives.",
+      "quality_bar": "One landing preserves behaviour and file history. Names describe their jobs and the pinned callers still work.",
       "items": [
         {
           "id": "WP3.1",
@@ -209,9 +225,9 @@
         },
         {
           "id": "WP3.2",
-          "statement": "No file, bench, script, environment variable or Cargo description under `crates/`, `examples/`, `tools/` or `scripts/` is named for a work package or gate: `history-names` is at zero over file names, environment variable names in source, Cargo target names and Cargo descriptions. The only names left are those an open item's check, `./dev` or the baseline registry uses, which the rule finds itself and lists with what pins each.",
-          "check": "python3 scripts/shape_rules.py check --rule history-names --zero .",
-          "ask": "Run the rule's list of pinned names: is each really named by an open item's check, by `./dev` or by the registry, and is any exception written by hand? Is `THRUM_G5_CAPTURE_DIR`, or any other environment variable with a gate code, still read anywhere? Pick five renamed test files: does each new name say what the test covers?",
+          "statement": "The new `history-names` version reaches zero across paths, environment names in source, Cargo target names and Cargo descriptions after applying the pins in mechanism 5. Fixtures refuse standalone work package IDs on those four surfaces, including `wp5_probe.py` and `THRUM_WP5_CAPTURE_DIR`, and pass their descriptive replacements. The two APPLE-TILE environment keys pass at the registered comparison and its V1 capture readers, are reported with that source, and fail at unrelated sites or without the comparison registration.",
+          "check": "python3 scripts/test_shape_rules.py Fixture.test_history_names_all_surfaces Fixture.test_exact_comparison_environment_pins && python3 scripts/shape_rules.py check --rule history-names --zero .",
+          "ask": "Does the pin output attribute each retained name to an open item, xtask or the exact-baseline registry? Are the bytes of `scripts/apple_tile_m0.py` unchanged, and does the V1 capture configuration still read the two keys it sets with their original meanings? Are other code-bearing names in those files still subject to the rule? For five renamed test files, does each name describe what it tests?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
