@@ -313,7 +313,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): Ready for Review · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
 - Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome (WATERS M13): Not Started · [plan](WATERS/PLAN.md)
 - The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin (CLOUDS M7): Not Started · [plan](CLOUDS/PLAN.md)
-- Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): In Progress · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/M3-review.md)
+- Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): Ready for Review · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/M3-review.md)
 - Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss (SESSION M5): In Progress · [plan](SESSION/PLAN.md)
 - A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph (REVIEW-RENDER M5): In Progress · [plan](REVIEW-RENDER/PLAN.md) · [latest review](../../.orchestrate/evidence/REVIEW-RENDER/M5-review.md)
 - A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first (HOST M4): In Progress · [plan](HOST/PLAN.md) · [latest review](../../.orchestrate/evidence/HOST/M4-review.md)
@@ -420,7 +420,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one (EFFECT-GRAPH M4), 17 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M4-review.md)
 - On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale (RIVERS M3), 17 Nov · [review](../../.orchestrate/evidence/RIVERS/M3-review.md)
 - The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome (CULLING M3), 17 Nov · [review](../../.orchestrate/evidence/CULLING/M3-review.md)
-- Native providers survive replacement and expose truthful timing (APPLE-TILE M11), 17 Nov · [review](../../.orchestrate/evidence/APPLE-TILE/M11-review.md)
 
 ## All modules
 
@@ -447,7 +446,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M3 of 5 · In Progress |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M3 of 5 · Ready for Review |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M5 of 8 · In Progress |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
