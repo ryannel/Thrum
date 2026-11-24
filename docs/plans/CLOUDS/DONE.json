@@ -783,8 +783,8 @@
     {
       "id": "M6",
       "name": "A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
+      "status": "in_progress",
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -812,9 +812,9 @@
           "ask": "Is the shape asymmetric, so that a dome of the same mean column would fail? At a weight of 1, would a Sun path filled from the footprint alone fail? Is the drawn column summed from the density the trace marches, and compared with the public query's column?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-shade-final.log",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },
         {
@@ -825,7 +825,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M6/map-refresh/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },
         {
@@ -928,8 +928,8 @@
       ],
       "findings": [
         {
-          "name": "Unchanged placed-weather windows are uploaded and redrawn every frame",
-          "item": "M6.3",
+          "name": "Paused camera movement leaves placed-cloud shade stale",
+          "item": "M6.2",
           "repeat": false
         }
       ]

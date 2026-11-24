@@ -663,7 +663,7 @@
         {
           "verdict": "fail",
           "commit": "bd9ab578d2374fa22480611611d6db0de3fbb3ee",
-          "review": ".orchestrate/evidence/CLOUDS/M6-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/M6-review-2.md",
           "items": {
             "M6.1": "pass",
             "M6.2": "pass",
@@ -701,6 +701,48 @@
             "turns": 1
           },
           "at": "2026-11-23T22:58:25Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "1ee6c8f4eb43256cdf28661e7f39ceeb7503af3d",
+          "review": ".orchestrate/evidence/CLOUDS/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "fail",
+            "M6.3": "pass",
+            "M6.4": "pass",
+            "M6.5": "pass",
+            "M6.6": "pass",
+            "M6.7": "pass",
+            "M6.8": "pass",
+            "M6.9": "pass",
+            "M6.10": "pass",
+            "M6.11": "pass",
+            "M6.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Paused camera movement leaves placed-cloud shade stale",
+              "item": "M6.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-sol",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-sol",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 289509,
+            "cached": 16199168,
+            "output": 33268,
+            "turns": 1
+          },
+          "at": "2026-11-24T00:18:38Z"
         }
       ],
       "authorised": {
