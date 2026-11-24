@@ -268,7 +268,7 @@
         {
           "verdict": "fail",
           "commit": "79bac692ffdeba3d6e5bf051bf1feb17e81993e1",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review-3.md",
           "items": {
             "M7.1": "pass",
             "M7.2": "pass",
@@ -306,6 +306,47 @@
             "turns": 1
           },
           "at": "2026-11-24T04:22:15Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "b0a5b8d19950c9337ac56352811298ebadbba1fb",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "items": {
+            "M7.1": "pass",
+            "M7.2": "pass",
+            "M7.4": "pass",
+            "M7.13": "pass",
+            "M7.5": "pass",
+            "M7.6": "pass",
+            "M7.7": "pass",
+            "M7.8": "pass",
+            "M7.9": "pass",
+            "M7.10": "pass",
+            "M7.11": "pass",
+            "M7.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "View volume omits GPU Sun-path producer dependencies",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 502371,
+            "cached": 18049920,
+            "output": 30878,
+            "turns": 1
+          },
+          "at": "2026-11-24T06:18:52Z"
         }
       ],
       "authorised": {
