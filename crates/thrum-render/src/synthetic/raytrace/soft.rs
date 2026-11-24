@@ -95,7 +95,7 @@ pub(in crate::synthetic) struct SoftSun {
 }
 
 struct SoftSample {
-    target: Arc<SoftHistory>,
+    target: Arc<()>,
     drawn: [u32; 2],
 }
 
@@ -105,7 +105,7 @@ pub(in crate::synthetic) struct SoftResources {
 }
 
 pub(in crate::synthetic) struct SoftTarget {
-    history: Arc<SoftHistory>,
+    history: SoftHistory,
     uniform: wgpu::Buffer,
     rays: wgpu::TextureView,
     tiles: wgpu::TextureView,
@@ -113,7 +113,9 @@ pub(in crate::synthetic) struct SoftTarget {
     lights: Mutex<Option<(wgpu::Tlas, [[wgpu::BindGroup; 2]; 2])>>,
 }
 
+#[derive(Clone)]
 struct SoftHistory {
+    identity: Arc<()>,
     values: [wgpu::TextureView; 2],
     samples: [wgpu::TextureView; 2],
 }
@@ -381,17 +383,16 @@ impl SoftSun {
         transform_valid: bool,
     ) {
         let valid = transform_valid
-            && self
-                .submitted
-                .as_ref()
-                .is_some_and(|old| old.drawn == drawn && Arc::ptr_eq(&old.target, &target.history));
+            && self.submitted.as_ref().is_some_and(|old| {
+                old.drawn == drawn && Arc::ptr_eq(&old.target, &target.history.identity)
+            });
         queue.write_buffer(
             &target.uniform,
             0,
             bytemuck::bytes_of(&self.frame(view, previous, drawn, valid)),
         );
         self.pending = self.enabled().then(|| SoftSample {
-            target: Arc::clone(&target.history),
+            target: Arc::clone(&target.history.identity),
             drawn,
         });
     }
@@ -510,10 +511,11 @@ impl SyntheticTargetInputs {
         };
         let rays = view(&ids.rays)?;
         let tiles = view(&ids.tiles)?;
-        let history = Arc::new(SoftHistory {
+        let history = SoftHistory {
+            identity: Arc::new(()),
             values: history_views(device, "submitted Sun visibility", extent, VALUE_FORMAT),
             samples: history_views(device, "submitted Sun samples", extent, SAMPLE_FORMAT),
-        });
+        };
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("traced Sun visibility frame"),
             size: FRAME_BYTES,
