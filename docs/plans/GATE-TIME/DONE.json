@@ -808,7 +808,7 @@
     {
       "id": "M14",
       "name": "The full workspace check passes when a fast test needs more time on a busy Mac",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "The fast-test guard holds at ten seconds on every merge. On the busy Mac, the workspace check accepts a slow but successful rerun within its bounded window and reports the time it cost.",
       "items": [
         {
@@ -817,8 +817,8 @@
           "check": "sh -c 'out=$(cargo test --locked --offline -p xtask workspace_rerun 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\" || { echo \"$out\"; exit 1; }' && python3 scripts/shape_rules.py check --rule limit-exempt",
           "ask": "Trace the normal workspace and draw-probe paths for both commands. Do only timed-out cases enter the serial pass after the initial process exits, using exact test identities and the same features? Can check-all recover a passing result above 10 seconds only on its rerun, which the runner still stops at 30 seconds? Do any other first-pass failures or retry process errors still fail the command?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M14/runner-inspection.md",
           "verdict": "",
           "review": ""
         },
@@ -828,8 +828,8 @@
           "check": "python3 .orchestrate/evidence/GATE-TIME/M14/check_loaded.py",
           "ask": "Do the raw records show a passing full check-all, each of the six named cases passing either on a serial rerun in that check or during focused replay, and CPU and Metal contention comparable to the incident? Does the checker accept a first-attempt timeout and a reported passing serial retry in more than 10 and at most 30 seconds from either source on the fixed revision? If replay supplies the recovery, trace the command to the production workspace runner and confirm it executes the first-attempt stop, exact-case serial retry and final verdict. Does the checker reject the evidence when the full check fails, a named case lacks a passing result, load evidence is missing, or neither source has a qualifying production recovery?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M14/record.md",
           "verdict": "",
           "review": ""
         }
