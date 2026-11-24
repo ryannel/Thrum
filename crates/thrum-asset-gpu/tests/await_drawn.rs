@@ -1,7 +1,7 @@
 //! Waiting for cooked content renders without reading frames back, with one deadline and
 //! error policy.
 
-use std::{path::Path, time::Duration};
+use std::path::Path;
 
 use super::static_scene::{Source, World};
 use thrum_asset_gpu::{
