@@ -15,6 +15,8 @@ use thrum_render::{
     synthetic::CaptureSource,
 };
 
+const TILE_TOP: u32 = 154;
+
 const SCALES: [f32; 10] = [0.25, 0.375, 0.5, 0.75, 1.0, 1.25, 1.5, 2.37, 4.0, 6.0];
 
 fn row(frame: u32, [x, y]: [f64; 2], scale: f32, rotation: f32, order: i32) -> SpriteRow {
@@ -35,21 +37,39 @@ fn witness_rows(offset: u32, extent: [u32; 2]) -> Vec<SpriteRow> {
         .zip(0_u32..)
         .flat_map(|(scale, i)| {
             let x = f64::from(i % 5 * 106) - half_w;
-            let y = f64::from(i / 5 * 156) - half_h;
+            let y = f64::from(i / 5 * 204) - half_h;
             let length = f64::from(scale) * 8.0;
+            let angle = 0.17 + offset as f32 * 0.079;
+            let (sin, cos) = f64::from(angle).sin_cos();
+            let half = length * 0.5;
             [
-                row(9, [x, y], 6.0, 0.0, 0),
+                row(9, [x, y], 12.0, 0.0, 0),
                 row(
                     8,
-                    [x + 14.0 + dx, y + 2.0 + dy],
-                    scale * 0.75,
-                    0.17 + offset as f32 * 0.079,
+                    [
+                        x + 48.0 + dx - half * (cos + sin),
+                        y + 48.0 + dy - half * (cos - sin),
+                    ],
+                    scale,
+                    angle,
                     1,
                 ),
-                row(5, [x + 5.0 + dx, y + 52.0 + dy], scale, 0.0, 1),
-                row(0, [x, y + 104.0], 12.0, 0.0, 0),
-                row(10, [x + 2.0 + dx, y + 106.0 + dy], scale, 0.0, 1),
-                row(11, [x + 2.0 + dx + length, y + 106.0 + dy], scale, 0.0, 1),
+                row(5, [x + 5.0 + dx, y + 100.0 + dy], scale, 0.0, 1),
+                row(0, [x, y + 152.0], 12.0, 0.0, 0),
+                row(
+                    10,
+                    [x + 2.0 + dx, y + f64::from(TILE_TOP) + dy],
+                    scale,
+                    0.0,
+                    1,
+                ),
+                row(
+                    11,
+                    [x + 2.0 + dx + length, y + f64::from(TILE_TOP) + dy],
+                    scale,
+                    0.0,
+                    1,
+                ),
             ]
         })
         .collect()
@@ -66,9 +86,9 @@ fn check_frame(
     let pixel = |x: usize, y: usize| image.rgba.as_chunks::<4>().0[y * w + x];
     for (i, scale) in SCALES.into_iter().enumerate() {
         let x = i % 5 * 106;
-        let y = i / 5 * 156;
-        for py in y..y + 48 {
-            for px in x..x + 48 {
+        let y = i / 5 * 204;
+        for py in y..y + 96 {
+            for px in x..x + 96 {
                 assert_eq!(
                     pixel(px, py),
                     WHITE,
@@ -77,7 +97,7 @@ fn check_frame(
             }
         }
         let mut visible = false;
-        for py in y + 50..y + 102 {
+        for py in y + 98..y + 150 {
             for px in x + 3..x + 56 {
                 let [r, g, b, _] = pixel(px, py);
                 assert_eq!(
@@ -92,10 +112,10 @@ fn check_frame(
             visible,
             "{sampling:?} central frame never appeared at {scale}"
         );
-        let start = [x as f64 + 2.0 + dx, y as f64 + 106.0 + dy];
+        let start = [x as f64 + 2.0 + dx, y as f64 + f64::from(TILE_TOP) + dy];
         let span = f64::from(scale) * 8.0;
         let mut shared = 0;
-        for py in y + 105..y + 155 {
+        for py in y + 153..y + 203 {
             for px in x + 1..x + 100 {
                 let u = px as f64 + 0.5 - start[0];
                 let v = py as f64 + 0.5 - start[1];
@@ -115,7 +135,7 @@ fn check_frame(
 
 #[test]
 fn outlines_mips_and_tiles_remain_clean_on_metal() {
-    let extent = [530, 312];
+    let extent = [530, 408];
     let (rgba, origins) = sprite_edges::art();
     let art = EmbeddedSheet {
         extent: sprite_edges::EXTENT,

@@ -66,7 +66,7 @@ fn relative(position: vec4<f32>) -> vec2<f32> {
     let footprint = 1.0 / max(vec2(0.000001), abs(scale * view.pixels_per_unit));
     // A standalone sprite can reach across its outline. Tiles must retain
     // their original vertices so the rasterizer assigns their shared edge once.
-    let filter_margin = select(1.0, 1.25, frame.kind == SPRITE_PIXEL);
+    let filter_margin = select(1.0, SPRITE_PIXEL_FILTER_RADIUS, frame.kind == SPRITE_PIXEL);
     let margin = select(clamp(max(footprint.x, footprint.y), filter_margin, SPRITE_GUTTER), 0.0, frame.tile != 0u);
     let texel = corner * (size + 2.0 * margin) - margin;
     let local = texel * scale * vec2(1.0, -1.0);
@@ -129,7 +129,7 @@ struct AxisSamples {
 
 fn widened_axis(point: f32, width: f32, strength: f32) -> AxisSamples {
     let scale = 1.0 / width;
-    let radius = min(1.25, (0.5 + strength * 20.0 *
+    let radius = min(SPRITE_PIXEL_FILTER_RADIUS, (0.5 + strength * 20.0 *
         pow(clamp((scale - 1.0) * (2.0 - scale), 0.0, 0.25), 2.0)) * width) - 0.5 * width;
     if radius < 0.0001 {
         let linear = coverage_coordinate(vec2(point), vec2(width)).x;
@@ -157,52 +157,55 @@ fn widened_sample(sheet: u32, texel: vec2<f32>, footprint: vec2<f32>, page: i32,
     return mix(first, second, y.tail);
 }
 
+fn perceptual_weight(root_luma: f32, neighbours: vec4<f32>, masses: vec4<f32>) -> f32 {
+    return 1.0 + dot(masses, (neighbours - root_luma) / (neighbours + root_luma));
+}
+
 fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec2<f32>,
     coverage: vec4<f32>) -> vec4<f32> {
-    // Keep transparent or partially covered outlines on the coverage kernel.
-    if coverage.a < 1.0 {
-        return coverage;
-    }
     let page = i32(frame.page);
     let origin = vec2<i32>(frame.origin);
     let cell = vec2<i32>(floor(texel - vec2(0.5)));
     let phase = texel - (vec2<f32>(cell) + vec2(1.0));
-    // Advance both boundaries of a projected texel by the same subpixel
-    // amount. The flat parts keep their width as the sample grid crosses
-    // an edge, and the continuous shoulder still covers the crossing.
-    let shoulder = 0.012 * footprint;
-    let crossing = phase + 0.11 * footprint;
-    let weight = smoothstep(-shoulder, shoulder, crossing);
+    // Blend on either side of the projected edge. The transition ends
+    // before the two aligned sample centres at a quarter texel either side.
+    let shoulder = 0.20 * footprint;
+    let weight = smoothstep(-shoulder, shoulder, phase);
     if all(weight == round(weight)) {
-        return nearest(sheet, origin + cell + vec2<i32>(weight), page);
+        let sample = nearest(sheet, origin + cell + vec2<i32>(weight), page);
+        return vec4(coverage.rgb * (1.0 - sample.a) + coverage.a * sample.rgb, coverage.a);
     }
     let a = nearest(sheet, origin + cell, page);
     let b = nearest(sheet, origin + cell + vec2(1, 0), page);
     let c = nearest(sheet, origin + cell + vec2(0, 1), page);
     let d = nearest(sheet, origin + cell + vec2(1, 1), page);
-    // Interior fine marks lose the dark part of the signal when two or four
-    // opaque texels straddle a sample. Interpolate along the same local axes
-    // with a bias towards the darker contributors in the crossing interval.
-    // Keep alpha and its premultiplied edge coverage on the ordinary kernel.
-    if min(min(a.a, b.a), min(c.a, d.a)) < 1.0 {
-        return coverage;
-    }
-    let luminance = vec3(0.2126, 0.7152, 0.0722);
     let separable = vec4((1.0 - weight.x) * (1.0 - weight.y), weight.x * (1.0 - weight.y),
         (1.0 - weight.x) * weight.y, weight.x * weight.y);
-    let luma = vec4(dot(a.rgb, luminance), dot(b.rgb, luminance),
-        dot(c.rgb, luminance), dot(d.rgb, luminance));
-    let diagonals = abs(0.5 * (luma.x + luma.w - luma.y - luma.z));
-    let diagonal_strength = smoothstep(0.05, 0.55, diagonals);
-    // On a checker, the equal diagonal colours are a continuous route
-    // through a double-axis crossing. Barycentric weights agree with the
-    // one-dimensional interpolation on each outer edge of this cell.
+    // Triangles preserve a diagonal through a checker corner. They reduce
+    // to the same one-dimensional weights along the edges of the cell.
     let triangle = vec4(1.0 - max(weight.x, weight.y), max(0.0, weight.x - weight.y),
         max(0.0, weight.y - weight.x), min(weight.x, weight.y));
-    let weights = mix(separable, triangle, diagonal_strength);
-    let dark_weights = weights / (vec4(mix(0.12, 0.02, diagonal_strength)) + luma);
-    return (a * dark_weights.x + b * dark_weights.y + c * dark_weights.z + d * dark_weights.w) /
-        dot(dark_weights, vec4(1.0));
+    let luminance = vec3(0.2126, 0.7152, 0.0722);
+    let diagonal = dot(a.rgb + d.rgb - b.rgb - c.rgb, luminance);
+    let opacity = vec4(a.a, b.a, c.a, d.a);
+    let weights = mix(separable, triangle, smoothstep(0.05, 0.55, abs(diagonal)));
+    let masses = weights * opacity;
+    let mass = dot(masses, vec4(1.0));
+    // Transfer equal weight between each pair, using straight luminance
+    // to make a complementary crossing near-linear in perceived light.
+    // The signed ratios are bounded, so weights stay nonnegative. Apply
+    // them to premultiplied scene-linear colour and retain box alpha.
+    let luma = vec4(dot(a.rgb, luminance), dot(b.rgb, luminance),
+        dot(c.rgb, luminance), dot(d.rgb, luminance));
+    let root_luma = sqrt(luma / max(opacity, vec4(0.000001)) + 0.000001);
+    let normalised = masses / max(mass, 0.000001);
+    let adjusted = weights * vec4(
+        perceptual_weight(root_luma.x, root_luma, normalised),
+        perceptual_weight(root_luma.y, root_luma, normalised),
+        perceptual_weight(root_luma.z, root_luma, normalised),
+        perceptual_weight(root_luma.w, root_luma, normalised));
+    let colour = a.rgb * adjusted.x + b.rgb * adjusted.y + c.rgb * adjusted.z + d.rgb * adjusted.w;
+    return vec4(coverage.rgb * (1.0 - mass) + coverage.a * colour, coverage.a);
 }
 
 fn source(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec2<f32>) -> vec4<f32> {

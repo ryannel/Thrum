@@ -1,7 +1,7 @@
 //! Camera-relative admission and projected coverage accounting.
 
 use super::{GpuRow, SpriteRect, SpriteScene};
-use crate::sprite::{SHEET_GUTTER, SpriteView};
+use crate::sprite::{PIXEL_FILTER_RADIUS, SHEET_GUTTER, SpriteSampling, SpriteView};
 
 pub(super) fn coverage_at(
     scene: &SpriteScene,
@@ -47,7 +47,11 @@ pub(super) fn coverage_at(
     let margin = if sheet.tiles.contains(&frame) {
         0.0
     } else {
-        sx.abs().min(sy.abs()).recip().clamp(1.0, gutter)
+        let filter_margin = match sheet.sampling {
+            SpriteSampling::Pixel => f64::from(PIXEL_FILTER_RADIUS),
+            SpriteSampling::Smooth => 1.0,
+        };
+        sx.abs().min(sy.abs()).recip().clamp(filter_margin, gutter)
     };
     let (sin, cos) = f64::from(angle).sin_cos();
     pivot[0] -= margin * (sx * cos + sy * sin);

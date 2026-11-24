@@ -10,6 +10,7 @@ pub use world::{SpritePose, SpriteSink};
 
 pub(crate) const SHEET_MAX_MIP: u32 = 2;
 pub(crate) const SHEET_GUTTER: u32 = 1 << SHEET_MAX_MIP;
+pub(crate) const PIXEL_FILTER_RADIUS: f32 = 1.25;
 
 /// One frame's 2D camera. The host supplies the drawable's physical extent.
 #[derive(Clone, Copy, Debug)]

@@ -172,3 +172,9 @@
   through 256 submitted poses and reject replays of its first frame. The Metal atlas upload and
   edge tests share the same four-neighbour fixture. The 1920×1080 timing record covers both Metal
   recipes and Chrome WebGPU. [Filter and timings](../../../.orchestrate/evidence/RENDER-2D/M3/M3.1-filter-review.md)
+- 2026-11-24 M3 responds to the second review with a symmetric 2× crossing, luminance-guided
+  weight transfers and retained coverage alpha. The submitted two-colour edge test exercises the
+  former discontinuity beside transparency on both Metal recipes. The shared pixel-filter radius
+  fixes the clipped coverage estimate, and the rotated outline witness now runs at all ten named
+  scales over a white panel that contains its footprint.
+  [Metal edge suite](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/sprite-edges.log)

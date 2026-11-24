@@ -95,3 +95,45 @@ fn sprite_row_admission_reports_the_actual_refusal() {
         "Sprite row count exceeds the supported range"
     );
 }
+
+#[test]
+fn covered_pixels_include_the_pixel_filter_margin() {
+    use super::{coverage_at, pack};
+    use crate::sprite::{
+        EmbeddedSheet, SpriteRect, SpriteRow, SpriteSampling, SpriteScene, SpriteView,
+    };
+
+    let mut scene = SpriteScene::new(
+        EmbeddedSheet {
+            extent: [32; 2],
+            rgba: vec![255; 32 * 32 * 4].into(),
+            frames: [SpriteRect {
+                origin: [0; 2],
+                size: [32; 2],
+            }]
+            .into(),
+            texels_per_unit: 1.0,
+        },
+        1,
+    );
+    let row = SpriteRow::new(0, [0.0; 2]);
+    let gpu = pack(&scene, &[0], row, row.into());
+    let view = SpriteView {
+        centre: [0.0; 2],
+        pixels_per_unit: 1.5,
+    };
+    assert_eq!(
+        coverage_at(&scene, &gpu, 0, view, [128; 2], 1.0, true),
+        Some(52.0 * 52.0)
+    );
+    scene.sheets[0].sampling = SpriteSampling::Smooth;
+    assert_eq!(
+        coverage_at(&scene, &gpu, 0, view, [128; 2], 1.0, true),
+        Some(51.0 * 51.0)
+    );
+    scene.sheets[0].tiles.push(0);
+    assert_eq!(
+        coverage_at(&scene, &gpu, 0, view, [128; 2], 1.0, true),
+        Some(48.0 * 48.0)
+    );
+}

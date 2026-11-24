@@ -355,10 +355,10 @@
           "ask": "From the actual uploaded frame placements, do contrasting frames face all four sides of the bleed witness on the same atlas page with only the intended gutter and padding between them, at each of the three uploaded mip levels? Does the submitted pixel test check the whole witness at the tested scales and reject the third colour at the shared tile edge?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/review-fixes/sprite-edges.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",

@@ -332,10 +332,11 @@ macro_rules! shader_catalog {
 shader_catalog! {
     Present => wgsl!("present.wgsl");
     Sprite => format!(
-        "const SPRITE_MAX_MIP: f32 = {}.0;\nconst SPRITE_GUTTER: f32 = {}.0;\nconst SPRITE_PIXEL: u32 = {}u;\n{}",
+        "const SPRITE_MAX_MIP: f32 = {}.0;\nconst SPRITE_GUTTER: f32 = {}.0;\nconst SPRITE_PIXEL: u32 = {}u;\nconst SPRITE_PIXEL_FILTER_RADIUS: f32 = {:?};\n{}",
         crate::sprite::SHEET_MAX_MIP,
         crate::sprite::SHEET_GUTTER,
         crate::sprite::SpriteSampling::Pixel as u32,
+        crate::sprite::PIXEL_FILTER_RADIUS,
         wgsl!("sprite/pass.wgsl")
     );
     Exposure => crate::synthetic::exposure::SHADER;

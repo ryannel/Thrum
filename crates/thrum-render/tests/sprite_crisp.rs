@@ -265,3 +265,51 @@ fn quarter_size_smooth_checker_preserves_its_linear_mean() {
         }
     }
 }
+
+#[test]
+fn two_x_colour_crossing_beside_transparency_is_continuous() {
+    let extent = [16; 2];
+    let size = [2; 2];
+    let art = fixture::sheet(
+        size,
+        &[255, 0, 0, 255, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0],
+        &[SpriteRect {
+            origin: [0; 2],
+            size,
+        }],
+    );
+    for recipe in fixture::RECIPES {
+        let Some(gpu) = fixture::open("2× colour crossing", recipe) else {
+            return;
+        };
+        let mut host = fixture::host(
+            &gpu.capabilities,
+            &gpu.queue,
+            extent,
+            fixture::Scene::new(vec![SpriteRow::new(0, [0.0; 2])], 2),
+            art.clone(),
+        );
+        let samples = [0.75, 0.938, 0.9389, 0.95, 0.9995, 1.0, 1.0005, 1.25].map(|u| {
+            host.continuous_source_mut().centre = [u - 0.75, 0.0];
+            let image = fixture::capture(&mut host, &gpu.device, extent, CaptureSource::Sdr);
+            image.rgba.as_chunks::<4>().0[9 * 16 + 9]
+        });
+        assert_eq!(samples[0], [255, 0, 0, 255]);
+        assert_eq!(samples[7], [0, 0, 255, 255]);
+        for (a, b) in [(1, 2), (4, 5), (5, 6)] {
+            for channel in [0, 2] {
+                assert!(
+                    samples[a][channel].abs_diff(samples[b][channel]) <= 4,
+                    "{recipe}: adjacent samples jumped: {samples:?}"
+                );
+            }
+        }
+        for pair in samples.windows(2) {
+            assert!(
+                pair[0][0] >= pair[1][0] && pair[0][2] <= pair[1][2],
+                "{recipe}: the crossing reversed: {samples:?}"
+            );
+        }
+        println!("{recipe}: submitted 2× colour crossing {samples:?}");
+    }
+}
