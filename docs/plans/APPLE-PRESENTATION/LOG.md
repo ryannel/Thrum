@@ -372,3 +372,10 @@
   `edfe096ac1c674bf`. The unlocked 60 Hz window presented on all three arms of the shared-GPU run. Its loaded
   governor returned to the unloaded miss rate in the comparison window but did not recover its starting scale
   during the run. [Resumed target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/README.md)
+
+- 2026-11-24 M7 now budgets overlapping GPU work from the timed output interval and the longest measured
+  pass. The native path adds the render owner's pre-submission CPU work. At `3e7324156` Mac D7.2 met its
+  settled 60 Hz comparison with 0 governed misses, 1 unloaded and 16 with the governor off under the same load.
+  Scale fell at tick 236 and recovered to 100% at tick 336. D7.3 changed scale zero times. Chrome passed both
+  timestamp paths. T2 proved both scale transitions visually and recorded three isolated pacing gaps away from
+  the transitions. [Target records](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/README.md)

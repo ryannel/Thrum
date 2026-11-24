@@ -1058,13 +1058,13 @@
       "M7": {
         "implementation": "The frame host commits prepared scale and effect tier values between frames. The governor uses delayed GPU work, Mac display-link opportunities and thermal state, and an animation-frame fallback in Chrome. Registered cadence retains history and marks its age. Detached extent preparation excludes held frames and the first submitted frame of a new generation.",
         "functional_validation": "Metal verified virtual-time policy, external knobs with isolated history effects, failed and cancelled builds, identical route authority, and thermal tier and cadence recovery with zero added pipelines. Hardware Chrome WebGPU lowered and recovered scale with each timing source.",
-        "experienced_quality": "Three real-time Metal T2 captures verified every submitted image. Consecutive native-size crops show no flash, pop or oscillation at the scale steps. The elapsed-time traces contain long intervals near forced-load onset, leaving D7.8 pacing open.",
+        "experienced_quality": "The latest real-time Metal T2 take verified all 597 submitted images. Consecutive native-size crops show no flash, pop or oscillation at either scale step. Three other opportunities produced submission gaps above a display interval, leaving whole-route pacing open.",
         "platform_performance": {
-          "mac": "The earlier live 60 Hz pilot counted zero misses in both the governed and unloaded comparison windows and four with the governor off. The unlocked M3 Max presented 520 frames in each shared-GPU arm. The governed arm missed 1 opportunity in the comparison window, the unloaded arm missed 0 and the governor-off arm missed 24. The governed arm did not recover to its starting scale under shared GPU contention. The T2 capture observer cost is paired separately.",
+          "mac": "Real 60 Hz Metal window: scale fell to 85% six route ticks after the debug load began and returned to 100% after it ended. The governed arm missed 0 of 58 display-link opportunities after settling, the unloaded arm missed 1 of 59 and the governor-off arm missed 16 of 59 under the same load. The independent unloaded route changed scale zero times. T2 capture cost is paired separately.",
           "browser": "Hardware Chrome passed with GPU timestamps and with timestamp queries removed from the device recipe. Each arm reports the timing source it consumed."
         },
-        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M7/README.md",
-        "scope": "Portable TAAU governor on Mac Metal and Chrome WebGPU. Live Mac cadence and smooth pacing under forced load are open."
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/README.md",
+        "scope": "Portable TAAU governor on Mac Metal and Chrome WebGPU. The real-time capture still has open whole-route pacing evidence."
       }
     }
   },
