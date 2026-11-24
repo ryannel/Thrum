@@ -2,30 +2,27 @@
   "module": "T2-CAPTURE",
   "adopted": true,
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/T2-CAPTURE/design-review.md",
-    "commit": "45c4aeef54049961b1449ba309af87fe7177b7e1",
-    "hash": "ae54d73cb282b72d99f536b859684865ae80d87c76b1e8e6f12254fde5b9c5f1",
+    "commit": "a0af1c9d8a0ba1e0bfaba2cfc1b249ea32b3e21f",
+    "hash": "595c1c4affbd317cfccb84877e3d270810c824727d55fdb99d83be5237b24be9",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6-astra",
+    "model": "gpt-6.2-astra",
     "effort": "high",
     "observed": {
-      "model": "gpt-6-astra",
+      "model": "gpt-6.2-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 106313,
-      "cached": 1263872,
-      "output": 7021,
+      "input": 68276,
+      "cached": 737152,
+      "output": 5034,
       "turns": 1
     },
-    "at": "2026-11-16T17:26:52Z",
-    "items_owed": [
-      "M4"
-    ]
+    "at": "2026-11-24T01:21:53Z"
   },
   "milestones": {
     "M0": {
@@ -209,6 +206,32 @@
       "cli": "codex-cli 0.167.0-alpha.3.2",
       "path": "visible",
       "at": "2026-11-09T20:05:01Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/T2-CAPTURE/design-review-4.md",
+      "commit": "45c4aeef54049961b1449ba309af87fe7177b7e1",
+      "hash": "ae54d73cb282b72d99f536b859684865ae80d87c76b1e8e6f12254fde5b9c5f1",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 106313,
+        "cached": 1263872,
+        "output": 7021,
+        "turns": 1
+      },
+      "at": "2026-11-16T17:26:52Z",
+      "items_owed": [
+        "M4"
+      ]
     }
   ]
 }
