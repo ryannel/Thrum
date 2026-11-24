@@ -4,6 +4,7 @@ use std::sync::mpsc::{self, Receiver, TryRecvError};
 
 use super::{OffscreenTarget, RenderError};
 mod copy_timing;
+pub(crate) use copy_timing::CopyTiming;
 
 /// Prepared engine texture copied by the submitted-image tap.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -42,7 +43,7 @@ pub struct PixelReadback {
     pub(super) generation: u64,
     pub(super) extent: [u32; 2],
     pub(super) row_bytes: u32,
-    pub(super) copy_timing: Option<copy_timing::CopyTiming>,
+    pub(crate) copy_timing: Option<CopyTiming>,
     pub(super) resolving_copy_timing: bool,
     pub(super) pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
 }
@@ -109,7 +110,7 @@ impl PixelReadback {
         exposure: Option<&wgpu::Buffer>,
     ) -> Result<(), RenderError> {
         if let Some(timer) = &mut self.copy_timing {
-            timer.marker(self.generation, encoder, false)?;
+            timer.marker(self.generation, encoder, &self.buffer, false)?;
         }
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
@@ -150,7 +151,7 @@ impl PixelReadback {
             );
         }
         if let Some(timer) = &mut self.copy_timing {
-            timer.marker(self.generation, encoder, true)?;
+            timer.marker(self.generation, encoder, &self.buffer, true)?;
         }
         let (send, receive) = mpsc::channel();
         encoder.map_buffer_on_submit(&self.buffer, wgpu::MapMode::Read, .., move |result| {
@@ -181,7 +182,7 @@ impl PixelReadback {
                         .features()
                         .contains(wgpu::Features::MAPPABLE_PRIMARY_BUFFERS)
                     {
-                        wgpu::BufferUsages::STORAGE
+                        wgpu::BufferUsages::COPY_SRC
                     } else {
                         wgpu::BufferUsages::empty()
                     },
@@ -194,14 +195,6 @@ impl PixelReadback {
             copy_timing: None,
             resolving_copy_timing: false,
         }
-    }
-    pub(crate) fn enable_copy_timing(
-        &mut self,
-        capabilities: &crate::capabilities::DeviceCapabilities,
-        queue: &wgpu::Queue,
-    ) -> Result<(), RenderError> {
-        self.copy_timing = copy_timing::CopyTiming::new(capabilities, queue, &self.buffer)?;
-        Ok(())
     }
     pub(crate) fn finish_copy_timing(
         &mut self,

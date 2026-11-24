@@ -303,6 +303,12 @@ def capture_promotion(output, binary, env):
 
     env = dict(env, THRUM_PARAMS=str(PARAMS / "showcase-sunset-clear-sun.params.json"))
     arm = window_arm(output, binary, env, "capture-promotion", "promote:12", frames=40, tap=True)
+    creation = arm["rows"][-1]
+    if creation["render_owner"] != "thrum-v1-render" or any(
+        creation[f"render_owner_capture_{kind}"] != 0
+        for kind in ("pipelines", "bind_groups", "query_sets")
+    ):
+        raise ValueError("capture promotion allocated copy timing resources on the render owner")
     images = [row for row in arm["rows"] if row.get("presented") and "capture_submission" in row]
     present = {row["submission"]: row for row in arm["presented"]}
     if list(present) != [row["capture_submission"] for row in images]:

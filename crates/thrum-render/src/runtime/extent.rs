@@ -346,6 +346,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.slots = scene.slots;
             self.presenter = Some(presenter);
             self.render_extent = extent;
+            self.resize_drawable_capture();
             self.scene.view = view;
             self.presenter_generation += 1;
             self.visual_owner = Arc::new(());
@@ -387,6 +388,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.slots = slots;
         self.presenter = Some(presenter);
         self.render_extent = extent;
+        self.resize_drawable_capture();
         if let Some(view) = view {
             self.scene.view = view;
         }

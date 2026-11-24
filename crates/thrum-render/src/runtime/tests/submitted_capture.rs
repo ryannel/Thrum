@@ -335,6 +335,76 @@ fn surface_resize_admits_only_the_configured_drawable_in_sdr_and_edr() {
 }
 
 #[test]
+fn capture_matches_resized_drawable_in_edr_and_scene_grid_in_sdr() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "capture_matches_resized_drawable_in_edr_and_scene_grid_in_sdr",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        for (format, source) in [
+            (wgpu::TextureFormat::Bgra8Unorm, CaptureSource::Sdr),
+            (wgpu::TextureFormat::Rgba16Float, CaptureSource::Edr),
+        ] {
+            for capture_before_resize in [false, true] {
+                let (mut host, original) = Box::pin(host_and_output(&test_gpu, format)).await;
+                let render_extent = host.render_extent;
+                let drawable_extent = [103, 43];
+                let output = output_at_extent(&host, format, drawable_extent);
+                let earlier = capture_before_resize.then(|| {
+                    host.enable_submitted_capture(1).unwrap();
+                    submit(&mut host, &original)
+                });
+                host.resize_surface(drawable_extent).unwrap();
+                if !capture_before_resize {
+                    host.enable_submitted_capture(1).unwrap();
+                }
+                let frame = submit(&mut host, &output);
+                assert!(frame.surface_presented);
+                if let Some(earlier) = earlier {
+                    let first = image(&mut host);
+                    assert_eq!(first.sample.submission_order, earlier.submission_order);
+                    assert_eq!(first.extent, render_extent);
+                    host.recycle_submitted_image(first);
+                }
+                let captured = image(&mut host);
+                assert_eq!(captured.sample.submission_order, frame.submission_order);
+                assert_eq!(captured.session, 1);
+                assert_eq!(captured.pixel_source, source);
+                assert!(captured.copy_gpu_ns.is_some_and(|time| time > 0.0));
+                assert_eq!(host.submitted_capture_omissions(), 0);
+                if source == CaptureSource::Edr {
+                    let actual = thrum_test_support::readback::texture(
+                        &host.device,
+                        &host.queue,
+                        &output,
+                        thrum_test_support::readback::Mip::level(0),
+                        ..,
+                    );
+                    assert_eq!(captured.extent, drawable_extent);
+                    assert_eq!(captured.rgba, actual);
+                    let black = [0, 0, 0, 0, 0, 0, 0, 60];
+                    let row_bytes = drawable_extent[0] as usize * black.len();
+                    for row in captured.rgba.chunks_exact(row_bytes) {
+                        assert_eq!(row[..8], black);
+                        assert_eq!(row[row_bytes - 8..], black);
+                    }
+                    let centre = (drawable_extent[1] as usize / 2) * row_bytes + row_bytes / 2 - 4;
+                    assert_ne!(captured.rgba[centre..centre + 8], black);
+                } else {
+                    assert_eq!(captured.extent, render_extent);
+                    assert_eq!(
+                        captured.rgba.len(),
+                        (render_extent[0] * render_extent[1] * 4) as usize
+                    );
+                }
+            }
+        }
+    });
+}
+
+#[test]
 fn promotion_preserves_session_limits_until_writer_releases_its_image() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "promotion_preserves_session_limits_until_writer_releases_its_image",
@@ -354,6 +424,8 @@ fn promotion_preserves_session_limits_until_writer_releases_its_image() {
             };
             host.enable_submitted_capture_with_limits(42, limits)
                 .unwrap();
+            #[cfg(feature = "creation-counters")]
+            let before = capture_timing_creations(&host);
             let first = submit(&mut host, &sdr);
             let float = wgpu::TextureFormat::Rgba16Float;
             let edr = output_texture(&host, float);
@@ -387,9 +459,34 @@ fn promotion_preserves_session_limits_until_writer_releases_its_image() {
             assert_eq!(image.session, 42);
             assert_eq!(image.sample.submission_order, resumed.submission_order);
             assert_eq!(image.pixel_source, CaptureSource::Edr);
+            assert!(image.copy_gpu_ns.is_some_and(|time| time > 0.0));
             assert_eq!(host.submitted_capture_usage(), Some((0, 1)));
+            #[cfg(feature = "creation-counters")]
+            assert_eq!(capture_timing_creations(&host), before);
         }
     });
+}
+
+#[cfg(feature = "creation-counters")]
+fn capture_timing_creations(host: &FrameHost<StaticWorld, StaticScene>) -> (u64, i64, i64) {
+    let report = host.creation_report();
+    let pipelines = report
+        .pipelines
+        .iter()
+        .filter(|row| row.label == "capture-copy-timing")
+        .map(|row| row.compute)
+        .sum();
+    let (groups, queries) = report
+        .rows
+        .iter()
+        .filter(|row| row.label == "capture-copy-timing")
+        .fold((0, 0), |(groups, queries), row| {
+            (
+                groups + row.counts.bind_groups,
+                queries + row.counts.query_sets,
+            )
+        });
+    (pipelines, groups, queries)
 }
 
 #[test]

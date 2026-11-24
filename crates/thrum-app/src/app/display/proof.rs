@@ -121,6 +121,24 @@ impl DisplayProof {
             .iter()
             .map(|p| p.render + p.compute + p.mesh)
             .sum();
+        let owner = std::thread::current();
+        let owner = owner.name().unwrap_or_default();
+        let capture_pipelines: u64 = report
+            .pipelines
+            .iter()
+            .filter(|row| row.thread == owner && row.label == "capture-copy-timing")
+            .map(|row| row.render + row.compute + row.mesh)
+            .sum();
+        let (capture_groups, capture_queries) = report
+            .rows
+            .iter()
+            .filter(|row| row.thread == owner && row.label == "capture-copy-timing")
+            .fold((0, 0), |(groups, queries), row| {
+                (
+                    groups + row.counts.bind_groups.max(0),
+                    queries + row.counts.query_sets.max(0),
+                )
+            });
         writeln!(
             self.log,
             "{}",
@@ -128,6 +146,9 @@ impl DisplayProof {
                 "created_pipelines": pipelines, "violations": report.violations,
                 "creation_report": format!("{report:?}"), "collected": self.collected,
                 "submitted": self.submitted,
+                "render_owner": owner, "render_owner_capture_pipelines": capture_pipelines,
+                "render_owner_capture_bind_groups": capture_groups,
+                "render_owner_capture_query_sets": capture_queries,
             })
         )
         .map_err(|error| error.to_string())

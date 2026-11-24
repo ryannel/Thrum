@@ -3,7 +3,8 @@
 use super::Instant;
 use super::{FrameError, FrameHost, FrameSample, FrameWorld, SceneSource};
 use crate::extract::SourceTick;
-use crate::synthetic::{CaptureSource, PixelReadback};
+use crate::present::SurfacePresenter;
+use crate::synthetic::{CaptureSource, PixelReadback, readback::CopyTiming};
 
 /// Operational capture working-set policy, validated before allocation.
 #[derive(Clone, Copy, Debug)]
@@ -33,7 +34,7 @@ pub struct SubmittedImage {
     pub sample: FrameSample,
     /// Actual source grid of this submitted image.
     pub extent: [u32; 2],
-    /// Tightly packed stored channel bytes, with the host's render extent.
+    /// Tightly packed channel bytes at the captured source extent.
     /// SDR is RGBA8. Scene-linear and EDR use little-endian RGBA16Float.
     pub rgba: Vec<u8>,
     /// Engine stage and stored pixel format of `rgba`.
@@ -135,7 +136,6 @@ impl TapSpec {
 
 pub(super) struct Tap {
     limits: CaptureLimits,
-    #[cfg(not(target_arch = "wasm32"))]
     spec: TapSpec,
     pub(super) source: CaptureSource,
     #[cfg(not(target_arch = "wasm32"))]
@@ -150,6 +150,7 @@ pub(super) struct Tap {
     omitted: u64,
     free_cpu: Vec<Vec<u8>>,
     cpu_capacity: usize,
+    spare_timers: Vec<CopyTiming>,
 }
 
 pub(super) fn reserve(
@@ -219,19 +220,26 @@ impl Tap {
         extent: [u32; 2],
     ) -> Result<Self, FrameError> {
         let source = spec.source_for_format(Some(format));
+        let budget = validate_capture_budget(extent, source, spec.limits);
+        if budget.is_err() && spec.source.is_some() {
+            budget?;
+        }
+        Ok(Self::replacement(spec, source, generation, extent))
+    }
+
+    fn replacement(
+        spec: TapSpec,
+        source: CaptureSource,
+        generation: u64,
+        extent: [u32; 2],
+    ) -> Self {
         let mut limits = spec.limits;
-        if let Err(error) = validate_capture_budget(extent, source, limits) {
-            if spec.source.is_some() {
-                return Err(error);
-            }
-            // The automatic tap follows the display even when its configured pool
-            // doesn't fit the new grid. It counts omissions until the grid fits again.
+        // Leave presentation eligible even when the new grid cannot fit the tap.
+        if validate_capture_budget(extent, source, limits).is_err() {
             limits.staging_slots = 0;
             limits.cpu_buffers = 0;
         }
-        // A detached candidate has no share of the session's budget. Only the
-        // render owner can grant it capacity after retiring the previous tap.
-        Ok(Self::empty(spec, source, limits, generation, extent))
+        Self::empty(spec, source, limits, generation, extent)
     }
 
     fn empty(
@@ -256,8 +264,8 @@ impl Tap {
             omitted: 0,
             cpu_capacity: 0,
             free_cpu: Vec::new(),
-            #[cfg(not(target_arch = "wasm32"))]
             spec,
+            spare_timers: Vec::new(),
         }
     }
 
@@ -266,15 +274,14 @@ impl Tap {
         staging_slots: usize,
         cpu_buffers: usize,
         target: &super::preparation::FrameTarget,
-        capabilities: &crate::capabilities::DeviceCapabilities,
-        queue: &wgpu::Queue,
-    ) -> Result<(), FrameError> {
+        device: &wgpu::Device,
+    ) {
         for _ in self.slots.len()..staging_slots {
             let mut readback = if self.source == CaptureSource::Edr {
                 let row = (self.extent[0] * self.source.bytes_per_pixel())
                     .next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
                 PixelReadback::new(
-                    capabilities.device(),
+                    device,
                     self.generation,
                     self.extent,
                     self.source,
@@ -282,11 +289,9 @@ impl Tap {
                     "EDR drawable readback",
                 )
             } else {
-                target.readback(capabilities.device())
+                target.readback(device)
             };
-            readback
-                .enable_copy_timing(capabilities, queue)
-                .map_err(|error| FrameError::gpu("copy timing prepare", error))?;
+            readback.copy_timing = self.spare_timers.pop();
             self.slots.push(Slot {
                 readback,
                 reserved: false,
@@ -300,15 +305,19 @@ impl Tap {
             (self.cpu_capacity..cpu_buffers).map(|_| Self::cpu_buffer(self.extent, self.source)),
         );
         self.cpu_capacity = cpu_buffers;
-        Ok(())
     }
 
     fn outstanding(&self) -> usize {
         std::sync::Arc::strong_count(&self.leases) - 1
     }
 
-    fn trim_retired(&mut self) {
-        self.slots.retain(|slot| slot.reserved);
+    fn trim_retired(&mut self, spare_timers: &mut Vec<CopyTiming>) {
+        self.slots.retain_mut(|slot| {
+            if !slot.reserved && !slot.retired {
+                spare_timers.extend(slot.readback.copy_timing.take());
+            }
+            slot.reserved
+        });
         let outstanding = self.outstanding();
         // Preserve enough capacity to drain pending slots, even if those
         // buffers are currently held by the writer and need to be returned first.
@@ -316,7 +325,6 @@ impl Tap {
         self.free_cpu.truncate(self.cpu_capacity - outstanding);
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     fn allocation_bytes(&self) -> u64 {
         let (staging, cpu) = capture_buffer_bytes(self.extent, self.source);
         staging * self.slots.len() as u64 + cpu * self.cpu_capacity as u64
@@ -387,6 +395,19 @@ impl Tap {
     }
 }
 
+fn capture_extent(
+    source: CaptureSource,
+    render_extent: [u32; 2],
+    presenter: Option<&SurfacePresenter>,
+) -> [u32; 2] {
+    if source == CaptureSource::Edr
+        && let Some(presenter) = presenter
+    {
+        return presenter.extent();
+    }
+    render_extent
+}
+
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Enable a three-slot submitted-image tap that follows the output mode.
     /// This never renders or submits.
@@ -443,7 +464,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             limits,
         };
         let source = spec.source_for_format(self.presenter.as_ref().map(|p| p.profile().format));
-        validate_capture_budget(self.render_extent, source, spec.limits)?;
+        let extent = capture_extent(source, self.render_extent, self.presenter.as_ref());
+        validate_capture_budget(extent, source, spec.limits)?;
         let _region = self
             .creations
             .region(super::CreationPhase::Transition, "capture-stage");
@@ -451,12 +473,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             && (self.prepared.three_d().is_none()
                 || self.presenter.as_ref().is_none_or(|presenter| {
                     presenter.profile().format != wgpu::TextureFormat::Rgba16Float
-                        || presenter.extent() != self.render_extent
                 }))
         {
-            return Err(FrameError::InvalidState(
-                "capture requires an EDR drawable at render extent",
-            ));
+            return Err(FrameError::InvalidState("capture requires an EDR drawable"));
         }
         let replacement =
             if source == CaptureSource::Edr || self.slots[0].target.capture_source() == source {
@@ -472,9 +491,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     &self.queue,
                     self.render_extent,
                     self.presenter.is_some(),
-                    self.presenter
-                        .as_ref()
-                        .map(crate::present::SurfacePresenter::profile),
+                    self.presenter.as_ref().map(SurfacePresenter::profile),
                     source,
                 )?;
                 super::preparation::bind_presenter(
@@ -492,14 +509,24 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 Some(slots)
             };
         let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
-        let mut tap = Tap::empty(spec, source, limits, self.generation, self.render_extent);
+        let mut tap = Tap::empty(spec, source, limits, self.generation, extent);
+        tap.spare_timers = CopyTiming::prepare(
+            self.prepared.capabilities(),
+            &self.queue,
+            limits.staging_slots,
+        )
+        .map_err(|error| {
+            FrameError::gpu(
+                "copy timing prepare",
+                crate::error::RenderError::from(error),
+            )
+        })?;
         tap.grow(
             tap.limits.staging_slots,
             tap.limits.cpu_buffers,
             target,
-            self.prepared.capabilities(),
-            &self.queue,
-        )?;
+            &self.device,
+        );
         if let Some(slots) = replacement {
             self.slots = slots;
             self.presenter_generation += 1;
@@ -522,14 +549,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             let result = tap.try_image(&self.device, &self.queue, self.generation);
             if let Some(active) = &mut self.submitted_capture {
                 active.omitted += tap.omitted - before;
+                tap.trim_retired(&mut active.spare_timers);
             }
-            tap.trim_retired();
             return result;
         }
         let Some(tap) = self.submitted_capture.as_mut() else {
             return Err(FrameError::InvalidState("no capture session"));
         };
-        if tap.generation != self.generation || tap.extent != self.render_extent {
+        if tap.generation != self.generation
+            || tap.extent != capture_extent(tap.source, self.render_extent, self.presenter.as_ref())
+        {
             return Err(FrameError::InvalidState("retired capture generation"));
         }
         tap.try_image(&self.device, &self.queue, self.generation)
@@ -552,7 +581,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn switch_capture_extent(&mut self, capture: Option<Tap>) {
         // An invalidated device session remains visible to its caller until closed.
         // An extent publication cannot reactivate or retire that old-device tap.
@@ -560,9 +588,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return;
         };
         if let Some(mut previous) = self.submitted_capture.take() {
+            if previous.source == next.source && previous.extent == next.extent {
+                self.submitted_capture = Some(previous);
+                return;
+            }
             next.accepting = previous.accepting;
             next.omitted = previous.omitted;
-            previous.trim_retired();
+            next.spare_timers = std::mem::take(&mut previous.spare_timers);
+            previous.trim_retired(&mut next.spare_timers);
             if previous.pending() || previous.outstanding() != 0 {
                 self.retired_capture.push_back(previous);
             }
@@ -570,14 +603,25 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.submitted_capture = Some(next);
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    pub(super) fn refresh_capture_capacity(&mut self) -> Result<(), FrameError> {
+    pub(super) fn resize_drawable_capture(&mut self) {
+        let replacement = self.submitted_capture.as_ref().and_then(|tap| {
+            let extent = capture_extent(tap.source, self.render_extent, self.presenter.as_ref());
+            (tap.source == CaptureSource::Edr
+                && tap.generation == self.generation
+                && tap.extent != extent)
+                .then(|| Tap::replacement(tap.spec, tap.source, tap.generation, extent))
+        });
+        self.switch_capture_extent(replacement);
+    }
+
+    pub(super) fn refresh_capture_capacity(&mut self) {
         let Some(tap) = self.submitted_capture.as_mut() else {
-            return Ok(());
+            return;
         };
+        let extent = capture_extent(tap.source, self.render_extent, self.presenter.as_ref());
         let mut available = tap.limits;
         self.retired_capture.retain_mut(|retired| {
-            retired.trim_retired();
+            retired.trim_retired(&mut tap.spare_timers);
             if tap.limits.staging_slots != 0 {
                 available.staging_slots -= retired.slots.len();
                 available.cpu_buffers -= retired.cpu_capacity;
@@ -587,16 +631,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         });
         if !tap.accepting
             || tap.generation != self.generation
-            || tap.extent != self.render_extent
+            || tap.extent != extent
             || tap.limits.staging_slots == 0
             || (tap.slots.len() == tap.limits.staging_slots
                 && tap.cpu_capacity == tap.limits.cpu_buffers)
         {
-            return Ok(());
+            return;
         }
         let target = &self.slots[0].target;
         if tap.source != CaptureSource::Edr && target.capture_source() != tap.source {
-            return Ok(());
+            return;
         }
         let (staging_bytes, cpu_bytes) = capture_buffer_bytes(tap.extent, tap.source);
         // Keep every active allocation and find room for one CPU buffer before
@@ -606,7 +650,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             || available.staging_slots == 0
             || available.byte_allowance < staging_bytes + cpu_bytes * min_cpu as u64
         {
-            return Ok(());
+            return;
         }
         let staging_slots = available.staging_slots.min(
             ((available.byte_allowance - cpu_bytes * min_cpu as u64) / staging_bytes)
@@ -618,13 +662,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .try_into()
                 .unwrap_or(usize::MAX),
         );
-        tap.grow(
-            staging_slots,
-            cpu_buffers,
-            target,
-            self.prepared.capabilities(),
-            &self.queue,
-        )
+        tap.grow(staging_slots, cpu_buffers, target, &self.device);
     }
 
     pub(super) fn invalidate_submitted_capture(&mut self) {
@@ -634,7 +672,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .chain(&mut self.retired_capture)
         {
             tap.slots.clear();
-            tap.trim_retired();
+            tap.spare_timers.clear();
+            tap.cpu_capacity = tap.outstanding();
+            tap.free_cpu.clear();
         }
     }
 

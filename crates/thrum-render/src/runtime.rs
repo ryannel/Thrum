@@ -1777,6 +1777,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 error => FrameError::gpu("surface resize", error),
             })?;
         preparation::bind_presenter(&self.prepared, &mut self.slots, self.presenter.as_ref())?;
+        self.resize_drawable_capture();
         self.presenter_generation += 1;
         if self.native_witness_report().is_some() {
             self.invalidate_history();
@@ -2246,8 +2247,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         slot_index: usize,
         mut prepared: PreparedSample,
     ) -> Result<RecordedScene, FrameError> {
-        #[cfg(not(target_arch = "wasm32"))]
-        self.refresh_capture_capacity()?;
+        self.refresh_capture_capacity();
         let start = Instant::now();
         let mut encoder = self
             .device
