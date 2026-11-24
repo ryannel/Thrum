@@ -1,14 +1,27 @@
 {
   "module": "RENDER-2D",
   "design": {
-    "verdict": "ok",
-    "by": "review_limit",
-    "hash": "67059e97c163fac0a5b2bc75df51f082f0f82686bcae6b0031907f8479a8dfce",
-    "after": [
-      ".orchestrate/evidence/RENDER-2D/design-review-4.md",
-      ".orchestrate/evidence/RENDER-2D/design-review.md"
-    ],
-    "at": "2026-11-23T22:16:34Z"
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/RENDER-2D/design-review.md",
+    "commit": "edd94361b7cb5d604feb3a2b11c928c64fbf19c0",
+    "hash": "5695f1dd79c219cdc63b4e608a50ba71d86742e8f9fb6f699eb162d0b6fb150b",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.171.0-alpha.13",
+    "path": "headless",
+    "usage": {
+      "input": 122074,
+      "cached": 1956480,
+      "output": 7837,
+      "turns": 1
+    },
+    "at": "2026-11-24T16:06:27Z"
   },
   "work_packages": {
     "WP1": {
@@ -700,7 +713,7 @@
     },
     {
       "verdict": "changes",
-      "review": ".orchestrate/evidence/RENDER-2D/design-review.md",
+      "review": ".orchestrate/evidence/RENDER-2D/design-review-5.md",
       "commit": "5ae114a511f41bfce83c346a20688b2a3b671558",
       "hash": "5f74fa78678aa747b55d7112a7c9e9237d9ff4898f1830bbce7aeaad75720baf",
       "by": "review",
@@ -720,6 +733,16 @@
         "turns": 1
       },
       "at": "2026-11-23T22:11:07Z"
+    },
+    {
+      "verdict": "ok",
+      "by": "review_limit",
+      "hash": "67059e97c163fac0a5b2bc75df51f082f0f82686bcae6b0031907f8479a8dfce",
+      "after": [
+        ".orchestrate/evidence/RENDER-2D/design-review-4.md",
+        ".orchestrate/evidence/RENDER-2D/design-review.md"
+      ],
+      "at": "2026-11-23T22:16:34Z"
     }
   ]
 }
