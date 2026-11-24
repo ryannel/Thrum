@@ -17,8 +17,8 @@ use std::time::Duration;
 use thrum_render::{
     contribution::{
         AfterOpaqueKind, AfterOpaquePass, ContributionFrame, ContributionPasses, EffectCadence,
-        EffectGraph, EffectPass, SceneContribution, SceneDrawStage, SceneSurface,
-        SpriteContributionSurface,
+        EffectGraph, EffectPass, QualityError, QualityKnob, SceneContribution, SceneDrawStage,
+        SceneSurface, SpriteContributionSurface,
     },
     runtime::{FrameError, FrameHost, SceneKind, SpriteSceneRequests, SurfaceOutput},
     sprite::{SpriteRect, SpriteRow, SpriteScene},
@@ -294,10 +294,10 @@ fn rejects_each_3d_request_without_changing_the_sprite_scene() {
         source.clone(),
         sprites.sheets[0].sheet.clone(),
     );
-    assert!(host.quality_knobs().is_empty());
+    assert_eq!(host.quality_knobs(), Vec::<QualityKnob>::new());
     assert!(matches!(
         host.set_quality_knob("Sun penumbra", 1),
-        Err(thrum_render::contribution::QualityError::NoContribution)
+        Err(QualityError::NoContribution)
     ));
     let reference = fixture::capture(&mut host, &device, EXTENT, CaptureSource::Sdr).rgba;
     for (label, requests) in [
