@@ -1,5 +1,5 @@
 //! Submitted soft Sun visibility for the opaque forward pass.
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
 use super::super::{
@@ -76,11 +76,14 @@ pub(in crate::synthetic) struct SoftSun {
     submitted: Option<SoftSample>,
     pending: Option<SoftSample>,
     phase: u32,
+    directions: VecDeque<glam::Vec3>,
 }
 
 struct SoftSample {
     target: Arc<()>,
     drawn: [u32; 2],
+    direction: glam::Vec3,
+    valid: bool,
 }
 
 pub(in crate::synthetic) struct SoftResources {
@@ -280,6 +283,7 @@ pub(crate) fn shader_source() -> String {
 }
 
 impl SoftSun {
+    const MAX_SETTLE: usize = 31;
     pub(in crate::synthetic) const PENUMBRA: &str = "Sun penumbra";
     const SETTLE: &str = "Sun penumbra settle length";
     const DIVE: &str = "Sun penumbra dive limit";
@@ -300,7 +304,7 @@ impl SoftSun {
                 Self::SETTLE,
                 "Lifetime of a Sun disc sample in submitted frames",
                 16,
-                1..=31,
+                1..=Self::MAX_SETTLE as u32,
             ),
             knob(
                 Self::DIVE,
@@ -322,6 +326,7 @@ impl SoftSun {
             submitted: None,
             pending: None,
             phase: 0,
+            directions: VecDeque::with_capacity(Self::MAX_SETTLE),
         }
     }
 
@@ -335,6 +340,7 @@ impl SoftSun {
         previous: &SyntheticView,
         drawn: [u32; 2],
         valid: bool,
+        direction: glam::Vec3,
     ) -> SoftSunFrame {
         let now_jitter = if view.raster_jitter_enabled() {
             view.raster_jitter_pixels()
@@ -348,6 +354,14 @@ impl SoftSun {
         };
         let camera = glam::Vec3::from_array(view.camera_position());
         let relative = (view.raster_projection() * glam::Mat4::from_translation(camera)).inverse();
+        let settle = self.settings.knobs()[1].value;
+        let radius = crate::shader_constants::SUN_ANGULAR_RADIUS;
+        let oldest = self
+            .directions
+            .get(self.directions.len().min(settle as usize).saturating_sub(1))
+            .copied()
+            .unwrap_or(direction);
+        let moved = valid && oldest.distance_squared(direction) > (radius / 16.0).powi(2);
         SoftSunFrame {
             inverse: relative.to_cols_array_2d(),
             previous: previous.view_proj_columns(),
@@ -357,11 +371,12 @@ impl SoftSun {
             enabled: u32::from(self.enabled()),
             valid: u32::from(valid),
             phase: self.phase,
-            settle: self.settings.knobs()[1].value,
+            settle,
             dive_cosine: (self.settings.knobs()[2].value as f32).to_radians().sin(),
-            radius: crate::shader_constants::SUN_ANGULAR_RADIUS,
+            radius,
             rim_rays: self.settings.knobs()[3].value,
             padding: 0,
+            oldest_sun: oldest.extend(if moved { 1.0 } else { 0.0 }).to_array(),
         }
     }
 
@@ -369,10 +384,10 @@ impl SoftSun {
         &mut self,
         queue: &wgpu::Queue,
         target: &SoftTarget,
-        view: &SyntheticView,
-        previous: &SyntheticView,
+        (view, previous): (&SyntheticView, &SyntheticView),
         drawn: [u32; 2],
         transform_valid: bool,
+        direction: glam::Vec3,
     ) {
         let valid = transform_valid
             && self.submitted.as_ref().is_some_and(|old| {
@@ -381,11 +396,13 @@ impl SoftSun {
         queue.write_buffer(
             &target.uniform,
             0,
-            bytemuck::bytes_of(&self.frame(view, previous, drawn, valid)),
+            bytemuck::bytes_of(&self.frame(view, previous, drawn, valid, direction)),
         );
         self.pending = self.enabled().then(|| SoftSample {
             target: Arc::clone(&target.history.identity),
             drawn,
+            direction,
+            valid,
         });
     }
 
@@ -399,6 +416,15 @@ impl SoftSun {
 
     pub(in crate::synthetic) fn submitted(&mut self) {
         self.submitted = self.pending.take();
+        if self.submitted.as_ref().is_none_or(|sample| !sample.valid) {
+            self.directions.clear();
+        }
+        if let Some(sample) = &self.submitted {
+            if self.directions.len() == Self::MAX_SETTLE {
+                self.directions.pop_back();
+            }
+            self.directions.push_front(sample.direction);
+        }
         self.phase = self.phase.wrapping_add(1);
     }
 }

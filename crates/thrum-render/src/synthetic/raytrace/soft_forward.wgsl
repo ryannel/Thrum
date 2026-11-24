@@ -74,7 +74,7 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     if soft_frame.valid == 0u || input.history_valid == 0u || previous.w <= 0.0 {
         return centre;
     }
-    let pixel = vec2<i32>(floor(input.position.xy - motion_vector(input) + soft_frame.jitter_delta));
+    let pixel = soft_previous_pixel(input.position.xy, motion_vector(input), soft_frame.jitter_delta);
     if !soft_within(pixel, soft_frame.extent) { return centre; }
     let samples = textureLoad(soft_samples, pixel, 0);
     if !soft_depth_matches(bitcast<f32>(samples.z), previous.z / previous.w) {
@@ -90,7 +90,13 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     // so an edge that moved away cannot stay attached to the old silhouette.
     if soft_frame.rim_rays > 0u && soft > 0.0 && soft < 1.0 &&
         verify_sun_rim(origin, inside, receiver.normal, outward, direction, centre, granted) {
-        return centre;
+        // Shadow motion alone clears the old edge immediately. If the Sun
+        // moved, check the oldest retained disc on today's geometry: a
+        // disagreement there can still be leaving the temporal window.
+        if soft_frame.oldest_sun.w == 0.0 || verify_sun_rim(origin, inside, receiver.normal,
+            outward, soft_frame.oldest_sun.xyz, centre, granted) {
+            return centre;
+        }
     }
     return soft;
 }

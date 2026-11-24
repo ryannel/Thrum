@@ -704,6 +704,9 @@ fn prepare_parameters(
         crate::host::scrub_haze_sun(host, pose.solar_hours / 24.0)?;
         host.set_camera_yaw(pose.yaw_degrees.to_radians())?;
     }
+    if scenario == "sun-set" {
+        crate::host::scrub_haze_sun(driver.host_mut(), SUNSET_START_HOURS / 24.0)?;
+    }
     if weather_motion(scenario) {
         crate::host::hold_capture_sun(driver.host_mut());
     }
@@ -1277,6 +1280,8 @@ fn metal_instance() -> wgpu::Instance {
     wgpu::Instance::new(descriptor)
 }
 
+const SUNSET_START_HOURS: f32 = 17.45;
+
 fn lighting_edits(
     driver: &mut Offscreen<HostedGame<WindowGame>>,
     scenario: &str,
@@ -1311,14 +1316,13 @@ fn lighting_edits(
         return Ok(());
     }
     if scenario == "sun-set" {
-        let progress = (scenario_time.as_secs_f64() / 4.0).clamp(0.0, 1.0);
-        let solar = 17.45 + 0.65 * progress;
-        driver
-            .parameters(&json!({"sky.solar_time":solar}).to_string())
-            .map_err(|error| error.to_string())?;
+        let progress = (scenario_time.as_secs_f32() / 4.0).clamp(0.0, 1.0);
+        let solar = SUNSET_START_HOURS + 0.65 * progress;
+        let host = driver.host_mut();
+        crate::host::scrub_haze_sun(host, solar / 24.0)?;
         trace.controls.push(
             json!({"kind":"sun-set","scenario_ns":scenario_time.as_nanos(),
-            "accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar}),
+            "accepted_ns":origin.elapsed().as_nanos(),"solar_hours":crate::host::time_of_day(host) * 24.0}),
         );
         return Ok(());
     }

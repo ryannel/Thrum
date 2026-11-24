@@ -44,20 +44,22 @@ fn sun_disc(pixel: vec2<u32>) -> vec3<f32> {
     let bitangent = cross(direction, tangent);
     let seed = hash(pixel.y) ^ hash(pixel.x + 0x9e3779b9u);
     let offset = vec2<f32>(vec2(hash(seed) >> 8u, hash(seed ^ 0xa511e9b3u) >> 8u)) / 16777216.0;
-    let uv = fract(offset + f32(frame.phase % 4096u) * vec2(0.754877666, 0.569840296));
+    // Repeat one disc sequence over the same length as the retained window.
+    // On a held receiver a new vote then replaces the same disc location.
+    let uv = fract(offset + f32(frame.phase % frame.settle) * vec2(0.754877666, 0.569840296));
     let theta = 6.2831853 * uv.y;
     let radius = tan(frame.radius) * sqrt(uv.x);
     return normalize(direction + radius * (cos(theta) * tangent + sin(theta) * bitangent));
 }
 
-// Depth interpolation loses submillimetre correspondence against the TLAS
-// on distant, shallow terrain. Locate the surface inside the depth footprint
-// before applying the shared lift, without increasing the caster separation.
-fn align_depth(point: vec3<f32>, normal: vec3<f32>, footprint: f32) -> vec3<f32> {
-    let high = point + normal * footprint;
-    let hit = closest_shadow_hit(high, -normal, 2.0 * footprint);
-    if hit.kind == RAY_QUERY_INTERSECTION_NONE { return point; }
-    return high - normal * hit.t;
+// Recover the raster receiver along its viewing ray. A normal-line search
+// can instead encounter a caster that the camera sees underneath.
+fn align_depth(point: vec3<f32>, distance: f32, footprint: f32) -> vec3<f32> {
+    let direction = point / distance;
+    let hit = closest_shadow_hit_from(frame.camera.xyz, direction,
+        distance - footprint, distance + footprint);
+    if hit.kind == RAY_QUERY_INTERSECTION_NONE { return frame.camera.xyz + point; }
+    return frame.camera.xyz + direction * hit.t;
 }
 
 @compute @workgroup_size(SOFT_SUN_TILE, SOFT_SUN_TILE)
@@ -90,7 +92,7 @@ fn trace_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     let footprint = distance * 0.00016;
     let align = footprint > 0.001;
     var world = point + frame.camera.xyz;
-    if align { world = align_depth(world, outward, footprint); }
+    if align { world = align_depth(point, distance, footprint); }
     let origin = shadow_ray_origin_at_distance(world, outward, distance);
     var visible: vec2<u32>;
     if cosine >= 0.0 {
@@ -154,7 +156,7 @@ fn accumulate_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     if frame.valid != 0u {
         let shift = textureLoad(motion, pixel, 0).xy;
         if all(abs(shift) < vec2<f32>(frame.extent)) {
-            let old_pixel = vec2<i32>(floor(vec2<f32>(pixel) + 0.5 - shift + frame.jitter_delta));
+            let old_pixel = soft_previous_pixel(vec2<f32>(pixel) + 0.5, shift, frame.jitter_delta);
             if soft_within(old_pixel, frame.extent) {
                 let old = textureLoad(previous, old_pixel, 0);
                 let clip = frame.previous * vec4(world_at(pixel, z) + frame.camera.xyz, 1.0);

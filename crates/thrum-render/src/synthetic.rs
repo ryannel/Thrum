@@ -1405,10 +1405,10 @@ impl PreparedSynthetic {
             soft.update(
                 queue,
                 target,
-                &view,
-                &self.view_sample,
+                (&view, &self.view_sample),
                 drawn,
                 self.history.candidate_identity(view.history_reset())[1] != 0,
+                packed_light_direction(&light_data),
             );
         }
         let next_revision = self.frame_revision.wrapping_add(1);

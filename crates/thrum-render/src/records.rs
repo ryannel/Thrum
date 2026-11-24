@@ -166,6 +166,7 @@ records! {
         radius: f32,
         rim_rays: u32,
         padding: u32,
+        oldest_sun: [f32; 4],
     }
     MeshRecord {
         first_index: u32,

@@ -202,3 +202,113 @@ fn terminator_uses_the_planted_passage_value_and_settled_mark() {
     }
 }
 }
+
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
+fn displaced_receiver_consumes_only_its_predecessor() {
+    use glam::{Mat4, Vec2, Vec3};
+    use ray_shadow_support::{self as fixture, EXTENT};
+    use ray_support::support;
+    use thrum_render::synthetic::{SunShadowMethod, SyntheticView};
+
+    let Some(gpu) = support::gate("moving soft Sun history") else { return };
+    let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
+    let caster = fixture::box_at(1, Vec3::new(0.12, 0.3, 0.0), Vec3::new(0.05, 0.1, 0.16));
+    let mut scene = fixture::scene(Vec3::ZERO, &[caster]);
+    scene.view = fixture::view(Vec3::X * 0.25, 0.0);
+    scene.sun_shadows = true;
+    scene.sun_shadow_method = SunShadowMethod::Traced;
+    scene.sun_penumbra = true;
+    let light = fixture::sun(Vec3::new(0.0, 1.0, 0.2), 8000.0);
+    let (mut prepared, mut target) = fixture::prepare(&device, &caps, &queue, &scene, light);
+    let project = |view: &SyntheticView| {
+        let clip = Mat4::from_cols_array_2d(&view.view_proj_columns()) * Vec3::ZERO.extend(1.0);
+        let ndc = clip.truncate() / clip.w;
+        ((ndc.truncate() * Vec2::new(0.5, -0.5) + 0.5) * EXTENT as f32, ndc.z.to_bits())
+    };
+    let (previous, depth) = project(&scene.view);
+    prepared.update_frame(&queue, &mut target, &scene, light, 1.0).expect("first submission");
+    drop(support::submit_bytes(&device, &queue, &prepared, &target));
+    prepared.commit_frame();
+
+    scene.view = fixture::view(Vec3::ZERO, 0.0);
+    let (current, _) = project(&scene.view);
+    assert!((current.x - previous.x).abs() > 10.0);
+    let reversed = 2.0 * current - previous;
+    let read = prepared.sun_penumbra_side_for_probe();
+    let [values, samples] = target.sun_penumbra_textures_for_probe(read).expect("submitted history");
+    replace_colour(&queue, values, [0x3c00, 0x3c00, 0, 0]);
+    replace_depth(&queue, samples, 0);
+
+    let plant = |texture: &wgpu::Texture, bytes: &[u8], pixel_bytes: u32, centre: Vec2| {
+        #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss,
+            reason = "fixture projects both planted patches well within the target")]
+        let origin = wgpu::Origin3d { x: centre.x as u32 - 2, y: centre.y as u32 - 2, z: 0 };
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo { origin, ..texture.as_image_copy() },
+            &bytes.repeat(25),
+            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(5 * pixel_bytes), rows_per_image: Some(5) },
+            wgpu::Extent3d { width: 5, height: 5, depth_or_array_layers: 1 },
+        );
+    };
+    let counts = 2 | (2 << 5);
+    plant(samples, bytemuck::bytes_of(&[2, 2, depth, counts]), 16, previous);
+    plant(samples, bytemuck::bytes_of(&[1, 1, depth, counts]), 16, reversed);
+    plant(values, bytemuck::bytes_of(&[0_u16; 4]), 8, previous);
+
+    prepared.update_frame(&queue, &mut target, &scene, light, 1.0).expect("displaced submission");
+    let rendered = support::submit_bytes(&device, &queue, &prepared, &target);
+    assert!(fixture::sample(&scene.view, &rendered, Vec3::ZERO)[0] < 8,
+        "forward must read the dark predecessor, not the lit equal-depth patch on the other side");
+
+    let [_, written] = target.sun_penumbra_textures_for_probe(1 - read).expect("written history");
+    let result = thrum_test_support::readback::texture(&device, &queue, written,
+        thrum_test_support::readback::Mip::level(0), ..);
+    let index = (EXTENT as usize / 2) * (EXTENT as usize + 1);
+    let pixel = &result.as_chunks::<16>().0[index];
+    let passed = u32::from_le_bytes(pixel[..4].try_into().expect("passed bits"));
+    assert_eq!(passed & 6, 4, "accumulation must append to the actual predecessor's two bits");
+}
+}
+
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
+fn disc_alignment_follows_the_view_under_a_close_caster() {
+    use glam::Vec3;
+    use ray_shadow_support as fixture;
+    use ray_support::support;
+    use thrum_render::synthetic::{OffscreenTarget, SunShadowMethod, SyntheticView};
+
+    let Some(gpu) = support::gate("soft Sun receiver below a close caster") else { return };
+    let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
+    // A camera 100 m away sees the floor under a strip 8 mm above it.
+    // The receiver's normal crosses the strip before the floor, while the
+    // viewing ray passes to its side. The strip covers the Sun's disc from
+    // the floor, but would cover none of it from above the strip.
+    let strip = fixture::box_at(1, Vec3::Y * 0.0085, Vec3::new(0.008, 0.0005, 0.1));
+    let mut scene = fixture::scene(Vec3::ZERO, &[strip]);
+    scene.view = SyntheticView::perspective(
+        [94.868_33, 31.622_776, 0.0], [0.0; 3], Vec3::Y.to_array(),
+        0.8, 1.0, 0.05, 200.0,
+    ).expect("oblique camera");
+    scene.sun_shadows = true;
+    scene.sun_shadow_method = SunShadowMethod::Traced;
+    scene.sun_penumbra = true;
+    let light = fixture::sun(Vec3::new(0.618, 1.0, 0.0), 8000.0);
+    let (mut prepared, _) = fixture::prepare(&device, &caps, &queue, &scene, light);
+    let mut target = OffscreenTarget::new(&device, &prepared, 33, 33).expect("odd target");
+    let mut votes = 0;
+    for _ in 0..16 {
+        prepared.update_frame(&queue, &mut target, &scene, light, 1.0).expect("frame");
+        drop(support::submit_bytes(&device, &queue, &prepared, &target));
+        let rays = target.sun_disc_witness().expect("raw disc rays");
+        let bytes = thrum_test_support::readback::texture(&device, &queue, rays,
+            thrum_test_support::readback::Mip::level(0), ..);
+        let [passed, stopped, valid, alignment] = bytes.as_chunks::<4>().0[16 * 33 + 16];
+        assert_eq!((stopped, valid, alignment), (passed, 1, 4), "aligned floor receiver");
+        votes |= 1 << passed;
+        prepared.commit_frame();
+    }
+    assert_eq!(votes, 1, "the nearby strip must keep blocking the traced disc");
+}
+}

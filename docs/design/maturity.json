@@ -157,7 +157,7 @@
       "functional_validation": "Metal tests verified planted history reads, submitted publication, cut and extent resets, device replacement, byte parity with hard tracing, and allocation-free toggling. Native and Wasm Clippy passed. The shared exact-image gate awaits integration.",
       "experienced_quality": "Builder inspected contact widening, held penumbrae, camera edits, ridge sunset, the rounded receiver, the open rim, and fast-caster and moving-balloon sequences on Metal. The numbered sequences follow marked receiver patches into shadow and full Sun.",
       "platform_performance": {
-        "mac_apple_tile": "Contended paired 1080p release timing recorded per-pass GPU and frame CPU costs. The four history textures occupy 44,236,800 bytes. The timing study records host-load differences and outliers.",
+        "mac_apple_tile": "Contended paired 1280 by 720 release timing recorded per-pass GPU and frame CPU costs. The four history textures occupy 44,236,800 bytes. The timing study records host-load differences and outliers.",
         "browser": "Portable compilation verified. The exact-image verifier runs on main.",
         "ios": "No physical device measurement."
       },
