@@ -271,3 +271,8 @@
   submissions and CPU checks for request ordering. The default nextest batch passed eight first attempts under
   builder load, with individual times of 0.015–2.372 seconds. The longest one-at-a-time result was 1.140 seconds.
   [Disposition, tolerances and timings](../../../.orchestrate/evidence/CREATOR/WP4/README.md).
+
+- 2026-11-24 WP4's first post-merge batch timed out in three cases. The fixture now identifies the early hook by its blue
+  pixels with one reload, and prepares the spare device before the old device's outstanding request. The first
+  revised workspace batch passed all eight cases, with a maximum of 0.651 seconds under concurrent load.
+  [Revised assertion map and timings](../../../.orchestrate/evidence/CREATOR/WP4/timeout-fix/README.md).
