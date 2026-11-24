@@ -378,7 +378,7 @@
           "ask": "Does the unattended check verify shell geometry at the three sizes and after resize, record console state, and distinguish a presented sample from geometry alone using observed surface occlusion and no drawable? Does a complete real-window record covering the landed path link each presented submission, including the first after resize, to the matching engine pixels and exact card comparison by submission ID? A geometry-only result leaves the presentation proof open.",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/WP3.6-window.json",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.6-unattended/README.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

@@ -251,3 +251,8 @@
   scene kind. The 2D regression test passed. Fresh stills matched the prior reviewed frames byte for byte.
   [2D regression and inventory](../../../.orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/scene-2d-quality-and-inventory.log) ·
   [Still review](../../../.orchestrate/evidence/RENDER-2D/WP3/continuation-2b2a2dc10/WP3.9-still-review.md)
+- 2026-11-25 WP3.6's deadline receipt now identifies stale surface epochs skipped before acquisition
+  and counts actual drawable acquisition attempts. Geometry-only evidence requires every acquisition
+  to report occlusion. Device loss, configuration errors, timeouts and any other acquire result still
+  fail the check. The unattended run passed all three sizes and resize on Metal.
+  [Window evidence](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.6-unattended/README.md)
