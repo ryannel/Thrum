@@ -439,10 +439,10 @@
           "lock": "gpu",
           "ask": "Does the test show that the forward decoder's own split of solar in-scatter by a surface's shadow is not applied on top of the volume's, by comparing a shadowed surface's aerial term with the volume's value at its depth?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/finer-grid-metal-contracts.log",
-          "verdict": "pass",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M7.13",
@@ -463,7 +463,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/provider-reset/metal-history.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
           "builder_result": "pass"
         },
@@ -539,16 +539,15 @@
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 2,
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Haze and light shafts as in Red Dead Redemption 2: distance that fades into the sky's own colour over a range the weather sets, and sunlight that stands in the air as soft shafts lined up with the shadows on the ground, steady as the camera moves.",
       "findings": [
         {
-          "name": "Sun-path provider epoch change retains old shadow history",
-          "item": "M7.5",
-          "different": "The earlier failure involved a nightglow change in the atmosphere environment epoch. Nightglow now reseeds correctly. This failure changes the registered Sun-path provider\u2019s separate source epoch while the environment epoch stays fixed.",
+          "name": "GPU Sun-path shadow disappears at the geometric horizon",
+          "item": "M7.4",
           "repeat": false
         }
       ]
