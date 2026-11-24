@@ -221,7 +221,8 @@ impl SunOpticalDepth {
         Ok(self)
     }
 
-    /// Mark this provider's current sample supported or unsupported.
+    /// Mark the current CPU-fed sample supported or unsupported.
+    /// GPU-fed providers publish their validity in the mapping instead.
     #[must_use]
     pub fn with_validity(mut self, valid: bool) -> Self {
         self.valid = valid;

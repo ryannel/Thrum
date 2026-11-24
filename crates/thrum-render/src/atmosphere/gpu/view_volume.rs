@@ -116,18 +116,18 @@ pub(crate) fn source(cascades: bool, cloud: CloudVariant, medium: bool, near: u3
     };
     let cloud = if cloud.present() {
         let source = cloud.sampling_source();
-        let path = if cloud.gpu() {
-            "if cloud_field.plane_drift.w == 0.0 { return vec3(0.0); }
-                 return cloud_field.path_border.xyz;"
+        let direction = if cloud.gpu() {
+            "cloud_field.path_border.xyz"
         } else {
-            "let sun = aerial_frame.sun_lux.xyz;
-                 if cloud_field.validity.x == 0.0 || sun.y < cloud_field.plane_drift.w { return vec3(0.0); }
-                 return sun;"
+            "aerial_frame.sun_lux.xyz"
         };
         format!(
             "@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n\
              @group(1) @binding(4) var aerial_sampler: sampler;\n{source}\n\
-             fn volume_cloud_path() -> vec3<f32> {{ {path} }}\n{}",
+             fn volume_cloud_path() -> vec3<f32> {{\n\
+                 if !cloud_path_supported() {{ return vec3(0.0); }}\n\
+                 return {direction};\n\
+             }}\n{}",
             wgsl!("atmosphere/volume_cloud_segment.wgsl")
         )
     } else {

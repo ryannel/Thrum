@@ -9,6 +9,10 @@ struct GpuSunMapping {
 @group(1) @binding(13) var cloud_optical_depth: texture_2d<f32>;
 @group(1) @binding(14) var<uniform> cloud_field: GpuSunMapping;
 
+fn cloud_path_supported() -> bool {
+    return cloud_field.plane_drift.w != 0.0;
+}
+
 fn atlas_tau(point:vec2<f32>,region:vec4<f32>,tile:vec2<f32>)->f32 {
     let size=vec2<f32>(textureDimensions(cloud_optical_depth));
     let uv=clamp((point-region.xy)/region.z,1.0/size,vec2<f32>(1.0)-1.0/size);
@@ -20,7 +24,7 @@ fn atlas_weight(point:vec2<f32>,region:vec4<f32>)->f32 {
 }
 
 fn cloud_plane_factor(world_point:vec3<f32>)->f32 {
-    if cloud_field.plane_drift.w==0.0 || world_point.y>=cloud_field.plane_drift.x {return 1.0;}
+    if !cloud_path_supported() || world_point.y>=cloud_field.plane_drift.x {return 1.0;}
     let direction=cloud_field.path_border.xyz;
     let distance=(cloud_field.plane_drift.x-world_point.y)/direction.y;
     let point=world_point.xz+direction.xz*distance-cloud_field.plane_drift.yz;

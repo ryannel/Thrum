@@ -142,13 +142,13 @@ fn metal_selects_one_whole_sun_path_at_the_receivers_height() {
     let Some(gpu) = fixture::Gpu::open(10, "ground-band receivers") else {
         return;
     };
-    let plane = |tau| {
+    let plane = |tau, minimum_sun_sine| {
         SunOpticalDepth::new(
             [2, 2],
             &[tau; 4],
             40.0,
             [-1000.0, -1000.0, 1000.0, 1000.0],
-            0.001,
+            minimum_sun_sine,
             1,
         )
         .expect("upper cloud")
@@ -178,7 +178,8 @@ fn metal_selects_one_whole_sun_path_at_the_receivers_height() {
         .expect("incident exposure");
     let (absent, _) = gpu.prepare(&scene, light);
     assert!(!absent.forward_light_witness().0.contains("fn cloud_factor"));
-    scene.sun_optical_depth = Some(plane(LN_2).with_ground_band(band(LN_2, LN_2 * 2.0, LN_2)));
+    let distinct_band = band(LN_2, LN_2 * 2.0, LN_2);
+    scene.sun_optical_depth = Some(plane(LN_2, 0.001).with_ground_band(distinct_band.clone()));
     let (prepared, target) = gpu.prepare(&scene, light);
     let result = factors(&gpu, &prepared);
     let expects = [0.5, 0.25, 0.5, 0.5, 0.5, 0.5, 0.375, 0.5];
@@ -194,14 +195,26 @@ fn metal_selects_one_whole_sun_path_at_the_receivers_height() {
         "wrong height survived"
     );
     let quarter = incident_lux(&gpu, &prepared, &target);
-    scene.sun_optical_depth = Some(plane(LN_2).with_ground_band(band(LN_2, LN_2, LN_2)));
+    scene.sun_optical_depth = Some(plane(LN_2, 0.001).with_ground_band(band(LN_2, LN_2, LN_2)));
     let (half_scene, half_target) = gpu.prepare(&scene, light);
     let half = incident_lux(&gpu, &half_scene, &half_target);
-    scene.sun_optical_depth = Some(plane(0.0).with_ground_band(band(0.0, 0.0, 0.0)));
+    scene.sun_optical_depth = Some(plane(0.0, 0.001).with_ground_band(band(0.0, 0.0, 0.0)));
     let (clear_scene, clear_target) = gpu.prepare(&scene, light);
     let clear = incident_lux(&gpu, &clear_scene, &clear_target);
     assert!(half > quarter && clear > half, "{quarter} {half} {clear}");
     assert!(((clear - half) / (half - quarter) - 2.0).abs() < 0.01);
+    for (case, provider) in [
+        ("invalid provider", plane(LN_2, 0.001).with_validity(false)),
+        ("Sun below minimum elevation", plane(LN_2, 0.5)),
+    ] {
+        scene.sun_optical_depth = Some(provider.with_ground_band(distinct_band.clone()));
+        let (unsupported, target) = gpu.prepare(&scene, light);
+        let unsupported_factors = factors(&gpu, &unsupported);
+        let unsupported_lux = incident_lux(&gpu, &unsupported, &target);
+        println!("{case}: factors={unsupported_factors:?}, incident lux={unsupported_lux}");
+        assert_eq!(unsupported_factors, vec![1.0; 8], "{case}");
+        assert_eq!(unsupported_lux.to_bits(), clear.to_bits(), "{case}");
+    }
     println!(
         "receiver factors={result:?}, incident lux quarter={quarter} half={half} clear={clear}, Metal sampled texture limit={}",
         gpu.caps.limits().max_sampled_textures_per_shader_stage

@@ -10,6 +10,7 @@ struct GroundBandMapping {
 // Return the optical-depth factor, the surface visibility, and the band's
 // weight. Ground and height endpoints are at texel centres.
 fn ground_band_sample(point: vec3<f32>) -> vec3<f32> {
+    if !cloud_path_supported() { return vec3(1.0, 1.0, 0.0); }
     let region = ground_band_mapping.region;
     let edge = min(point.xz - region.xy, region.zw - point.xz);
     let border = min(edge.x, edge.y);
