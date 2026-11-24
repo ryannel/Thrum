@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-15 of 36 modules done · 19 in progress · 2 to come
+16 of 36 modules done · 18 in progress · 2 to come
 
 ### Needs you now
 
@@ -310,7 +310,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Small hot-reload checks prove which material the device draws (CREATOR M4): Not Started · [plan](CREATOR/PLAN.md)
 - Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6): In Progress · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): Ready for Review · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
-- The world lane’s resume origin is proved without real-time pacing (EFFECT-GRAPH M5): Ready for Review · [plan](EFFECT-GRAPH/PLAN.md) · [latest review](../../.orchestrate/evidence/EFFECT-GRAPH/M5-review.md)
 - Small water checks leave the full sea grids to the long tier (WATERS M17): In Progress · [plan](WATERS/PLAN.md)
 - A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS M6): Ready for Review · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M6-review.md)
 - Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): Not Started · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/M3-review.md)
@@ -323,6 +322,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- The world lane’s resume origin is proved without real-time pacing (EFFECT-GRAPH M5), 24 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M5-review.md)
 - A small in-memory match catches reliable-lane recovery regressions (SESSION M8), 24 Nov · [review](../../.orchestrate/evidence/SESSION/M8-review.md)
 - A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer (REVIEW-RENDER M4), 23 Nov · [review](../../.orchestrate/evidence/REVIEW-RENDER/M4-review.md)
 - A small scene catches wrong secondary-view air and shade (SCENE-VIEWS M4), 23 Nov · [review](../../.orchestrate/evidence/SCENE-VIEWS/M4-review.md)
@@ -431,7 +431,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M5 of 5 · Ready for Review |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Done 24 Nov |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Done 23 Nov |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; ATMOSPHERE M10 for the populated valley's motion review; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | Waiting: On Dependency, APPLE-PRESENTATION:M11 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Done 14 Nov |
