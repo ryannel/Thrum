@@ -23,6 +23,10 @@ pub(crate) type Shell = thrum_app::web::WebShell<GameWorld, GameScene>;
 /// The first device's generation; replacements count up from it.
 pub(crate) const DEVICE_GENERATION: u64 = thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 
+pub(crate) fn test_bank(shell: &Shell) -> bool {
+    shell.host().source().test_bank
+}
+
 pub(crate) fn cloud_input(shell: &Shell) -> Option<&thrum_clouds::WeatherInput> {
     shell.host().source().cloud_input.as_ref()
 }

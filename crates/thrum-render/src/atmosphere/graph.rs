@@ -198,6 +198,8 @@ impl AtmospherePrepared {
         shadow: Option<(&ResourceId, u32, u64)>,
         cloud: Option<&super::CloudPrepared>,
         sun_path_reads: Option<&[Access; 2]>,
+        medium_read: Option<Access>,
+        ground_band_read: Option<&Access>,
     ) -> Result<(), crate::error::RenderError> {
         use crate::error::RenderError;
         let Some(volume) = &self.view_volume else {
@@ -224,6 +226,7 @@ impl AtmospherePrepared {
             AccessKind::UniformRead,
         ));
         accesses.extend(volume.graph_reads_and_writes(graph)?);
+        accesses.extend(volume.medium_read(graph, medium_read)?);
         for (index, texture) in self.aerial_textures.iter().enumerate() {
             let resource = graph
                 .persistent(AERIAL_OWNER_BASE + index as u64)
@@ -250,7 +253,7 @@ impl AtmospherePrepared {
             ));
         }
         if let Some(cloud) = cloud {
-            cloud.append_reads(graph, &mut accesses, sun_path_reads)?;
+            cloud.append_reads(graph, &mut accesses, sun_path_reads, ground_band_read)?;
         }
         self.declare_stage(graph, keys, stage, accesses);
         Ok(())

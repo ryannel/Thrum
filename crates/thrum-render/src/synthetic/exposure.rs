@@ -105,6 +105,7 @@ pub(super) struct ExposureResolve {
     pub(super) samples: [wgpu::Buffer; 2],
     groups: [wgpu::BindGroup; 2],
     pipeline: wgpu::ComputePipeline,
+    sun_path: Option<wgpu::BindGroup>,
 }
 
 impl ExposureResolve {
@@ -129,6 +130,10 @@ impl ExposureResolve {
         environment_light: &wgpu::Buffer,
         serials: &wgpu::Buffer,
         samples: [wgpu::Buffer; 2],
+        ground: Option<(
+            &crate::atmosphere::CloudPrepared,
+            &crate::atmosphere::AtmospherePrepared,
+        )>,
     ) -> Self {
         let policy = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("camera exposure policy"),
@@ -174,10 +179,73 @@ impl ExposureResolve {
                 ],
             })
         });
-        let shader = crate::shaders::Shader::Exposure.compile(device, "incident camera exposure");
+        let sun_path = ground.and_then(|(cloud, air)| {
+            let band = cloud.band.as_ref()?;
+            let (_, sampler, observer) = air.aerial_sampled();
+            let stages = wgpu::ShaderStages::COMPUTE;
+            let mut entries = vec![
+                binding::uniform(3, stages, observer.size()),
+                binding::sampler(4, stages, wgpu::SamplerBindingType::Filtering),
+                binding::texture(
+                    13,
+                    stages,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D2,
+                ),
+                binding::uniform(14, stages, cloud.uniform.size()),
+            ];
+            entries.extend(crate::atmosphere::ground_band::GroundBandPrepared::layout(
+                stages,
+            ));
+            let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("incident ground band"),
+                entries: &entries,
+            });
+            let mut entries = vec![
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: observer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::Sampler(sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 13,
+                    resource: wgpu::BindingResource::TextureView(&cloud.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 14,
+                    resource: cloud.uniform.as_entire_binding(),
+                },
+            ];
+            entries.extend(band.entries());
+            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("incident ground band"),
+                layout: &layout,
+                entries: &entries,
+            });
+            Some((layout, group, cloud.variant()))
+        });
+        let shader = if let Some((_, _, variant)) = &sun_path {
+            let source = format!("{}\n{}\n{}",
+                SHADER.replace("max(directional.direction_to_light.y, 0.0);",
+                    "max(directional.direction_to_light.y, 0.0) * cloud_factor(aerial_frame.camera_altitude.xyz);"),
+                crate::shaders::wgsl!("records/observer.wgsl"),
+                variant.sampling_source(),
+            );
+            device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("incident camera exposure with ground band"),
+                source: wgpu::ShaderSource::Wgsl(format!("{source}\n@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n@group(1) @binding(4) var aerial_sampler: sampler;").into()),
+            })
+        } else {
+            crate::shaders::Shader::Exposure.compile(device, "incident camera exposure")
+        };
+        let layouts = [Some(&layout), sun_path.as_ref().map(|(layout, ..)| layout)];
+        let layouts = &layouts[..1 + usize::from(sun_path.is_some())];
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("camera exposure resolve"),
-            bind_group_layouts: &[Some(&layout)],
+            bind_group_layouts: layouts,
             immediate_size: 0,
         });
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
@@ -193,6 +261,7 @@ impl ExposureResolve {
             samples,
             groups,
             pipeline,
+            sun_path: sun_path.map(|(_, group, _)| group),
         }
     }
 
@@ -208,8 +277,9 @@ impl ExposureResolve {
         graph: &mut FrameGraph,
         key: PipelineKey,
         [directional, environment_light]: [ResourceId; 2],
+        sun_path: Vec<Access>,
     ) -> Result<ResourceId, GraphError> {
-        let mut accesses = Vec::with_capacity(5);
+        let mut accesses = sun_path;
         for bytes in [POLICY_BYTES, history_gpu::SERIAL_BYTES] {
             let resource = graph.resource(
                 ResourceDescriptor::Buffer {
@@ -269,6 +339,9 @@ impl ExposureResolve {
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.groups[write_side], &[]);
+        if let Some(group) = &self.sun_path {
+            pass.set_bind_group(1, group, &[]);
+        }
         pass.dispatch_workgroups(1, 1, 1);
         Ok(())
     }

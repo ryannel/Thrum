@@ -389,6 +389,8 @@ impl super::SyntheticTargetInputs {
                     .map(|maps| (maps, 2, shadow::SAMPLE_BYTES as u64)),
                 self.cloud.as_ref(),
                 effect_resources.sun_path_reads.as_ref(),
+                effect_resources.medium_read.clone(),
+                effect_resources.ground_band_read.as_ref(),
             )?;
         }
         let air_shadow = self.append_air_shadow(
@@ -413,8 +415,24 @@ impl super::SyntheticTargetInputs {
             &mut accesses,
             &mut prepared_keys,
         )?;
+        let mut incident_sun = Vec::new();
+        if let (Some(cloud), Some((_, observer))) = (&self.cloud, &atmosphere_inputs)
+            && cloud.band.is_some()
+        {
+            cloud.append_reads(
+                &mut graph,
+                &mut incident_sun,
+                effect_resources.sun_path_reads.as_ref(),
+                effect_resources.ground_band_read.as_ref(),
+            )?;
+            incident_sun.push(Access::new(
+                observer.clone(),
+                0..size_of::<crate::records::Atmosphere>() as u64,
+                AccessKind::UniformRead,
+            ));
+        }
         let exposure_sample =
-            ExposureResolve::append_graph(&mut graph, self.exposure_key(), light.clone())?;
+            ExposureResolve::append_graph(&mut graph, self.exposure_key(), light.clone(), incident_sun)?;
         accesses.push(Access::new(
             exposure_sample.clone(),
             0..exposure::SAMPLE_BYTES,
@@ -1194,7 +1212,7 @@ impl super::SyntheticTargetInputs {
         environment_light: &ResourceId,
     ) -> Result<Option<(ResourceId, ResourceId)>, RenderError> {
         if let Some(cloud) = &self.cloud {
-            cloud.append_reads(graph, accesses, None)?;
+            cloud.append_reads(graph, accesses, None, None)?;
         }
         Ok(self
             .atmosphere

@@ -10,6 +10,7 @@ mod cloud;
 mod environment;
 pub(crate) mod gpu;
 pub(crate) mod graph;
+pub(crate) mod ground_band;
 mod model;
 mod night;
 pub(crate) mod products;
@@ -20,7 +21,9 @@ pub(crate) mod stage;
 pub(crate) use cloud::CloudPrepared;
 pub use cloud::{GpuSunMapping, SunOpticalDepth};
 pub use environment::{EnvironmentEpoch, EnvironmentFrame, SurfaceSun, TrueSun};
+pub use gpu::medium::ViewVolumeMediumTarget;
 pub(crate) use gpu::{AtmospherePrepared, SecondaryAerial};
+pub use ground_band::{GroundBand, GroundBandMapping};
 pub use products::EnvironmentProducts;
 
 /// Resident storage of the opted-in view volume, for renderer diagnostics.
@@ -101,6 +104,8 @@ pub struct AtmosphereFrame {
     simulation_time_seconds: f64,
     aerosol: Option<Aerosol>,
     view_volume: bool,
+    medium_epoch: Option<u64>,
+    volume_depth_factor: u8,
     // One prepared CPU result serves the packed light and the lent identity.
     surface_irradiance_lux: [f32; 3],
 }
@@ -145,6 +150,8 @@ impl AtmosphereFrame {
             simulation_time_seconds: 0.0,
             aerosol: None,
             view_volume: false,
+            medium_epoch: None,
+            volume_depth_factor: 1,
             surface_irradiance_lux: std::array::from_fn(|i| {
                 solar_colour[i] * solar_illuminance_lux * transmission[i]
             }),
@@ -177,6 +184,24 @@ impl AtmosphereFrame {
     pub fn with_view_volume(mut self) -> Self {
         self.view_volume = true;
         self.aerosol = Some(self.aerosol.unwrap_or_default());
+        self
+    }
+
+    /// Declare a provider of the view volume's near medium coefficients.
+    /// Change the epoch when a provider reset invalidates the previous samples.
+    #[must_use]
+    pub fn with_view_volume_medium(mut self, source_epoch: u64) -> Self {
+        self = self.with_view_volume();
+        self.medium_epoch = Some(source_epoch);
+        self
+    }
+
+    /// Double the view volume's depth resolution for convergence measurements.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn with_double_view_volume_slices(mut self) -> Self {
+        self = self.with_view_volume();
+        self.volume_depth_factor = 2;
         self
     }
 

@@ -18,7 +18,7 @@ use thrum_render::{
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 pub(crate) mod haze_capture;
 
-mod scene_source;
+pub(crate) mod scene_source;
 mod world;
 pub use scene_source::GameScene;
 pub use scene_source::field_in_view_share;
@@ -96,6 +96,8 @@ pub struct GameSetup {
     pub diagnostic_clouds: bool,
     /// The diagnostic view volume's clear-air aerosol. Absent in ordinary scenes.
     pub haze: Option<thrum_render::atmosphere::Aerosol>,
+    /// Opt-in analytic test bank stand-in for weather-provided fog.
+    pub test_bank: bool,
     /// The grid or the dense flythrough field.
     pub content: GameContent,
     /// Draw the exit terrain and sample objects with its entity population suppressed.
@@ -133,6 +135,7 @@ impl Default for GameSetup {
             lamp_shadows: false,
             diagnostic_clouds: false,
             haze: None,
+            test_bank: false,
             content: GameContent::Grid,
             exit_entities: ExitEntities::Draw,
             camera_culling: CullMode::Direct,
@@ -151,7 +154,7 @@ pub(crate) fn haze_selection(
     let Some(value) = value else {
         return Ok(None);
     };
-    if value == "default" {
+    if matches!(value, "default" | scene_source::test_bank::SELECTION) {
         return Ok(Some(Aerosol::default()));
     }
     let (range, kind) = value
@@ -443,6 +446,11 @@ impl GameSetup {
             1.0 / 16_000.0,
         )
         .await?;
+        if setup.test_bank {
+            inner.attach_scene_contribution(Box::new(
+                scene_source::test_bank::TestBank::default(),
+            ))?;
+        }
         if let Some(shade) = shade {
             let contribution: Box<dyn thrum_render::contribution::SceneContribution> =
                 if let Some(shapes) = shapes {
@@ -647,6 +655,11 @@ impl GameHost for Runtime {
             source.cloud_sky,
             source.cloud_shapes.as_ref(),
         )?;
+        let contribution = if source.test_bank {
+            scene_source::test_bank::alongside(contribution)
+        } else {
+            contribution
+        };
         self.set_scene_contribution(contribution)
             .map_err(String::from)
     }

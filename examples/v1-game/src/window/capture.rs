@@ -915,11 +915,16 @@ async fn record(
             break;
         }
         let work = WorkClock::start().map_err(|e| e.to_string())?;
-        let active_world = world_moves(scenario);
-        if active_world && t >= 1.0 && (is_route(scenario) || t < world_end) && !running {
+        let bank_mover = haze_take.is_some_and(HazeTake::runs_world);
+        let active_world = world_moves(scenario) || bank_mover;
+        if active_world
+            && t >= 1.0
+            && (bank_mover || is_route(scenario) || t < world_end)
+            && !running
+        {
             trace.world_state(&mut driver, false, origin)?;
             running = true;
-        } else if active_world && !is_route(scenario) && t >= world_end && running {
+        } else if active_world && !bank_mover && !is_route(scenario) && t >= world_end && running {
             trace.world_state(&mut driver, true, origin)?;
             running = false;
         }

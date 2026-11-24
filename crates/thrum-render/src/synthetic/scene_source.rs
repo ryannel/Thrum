@@ -123,11 +123,11 @@ fn traced(
 }
 
 /// Both main and secondary views consume the provider's selected mapping layout.
-pub(super) fn cloud_variant(source: String, gpu_written: bool) -> String {
-    if gpu_written {
+pub(super) fn cloud_variant(source: String, variant: crate::shaders::CloudVariant) -> String {
+    if variant.gpu() || variant.ground() {
         source.replace(
             crate::atmosphere::CLOUD_SHADER_SOURCE,
-            wgsl!("atmosphere/cloud_gpu.wgsl"),
+            &variant.sampling_source(),
         )
     } else {
         source
@@ -266,7 +266,7 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             variant.shadows,
         )
     };
-    let source = cloud_variant(source, variant.cloud.gpu());
+    let source = cloud_variant(source, variant.cloud);
     traced(
         source,
         variant.shadows,

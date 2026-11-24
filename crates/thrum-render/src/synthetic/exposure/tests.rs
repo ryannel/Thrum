@@ -127,8 +127,13 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
         revision: 11,
         role: 6,
     };
-    let sample =
-        ExposureResolve::append_graph(&mut graph, key, [directional, environment_light]).unwrap();
+    let sample = ExposureResolve::append_graph(
+        &mut graph,
+        key,
+        [directional, environment_light],
+        Vec::new(),
+    )
+    .unwrap();
     graph.pass(Pass {
         name: "tone".into(),
         scope: PassScope::View(1),

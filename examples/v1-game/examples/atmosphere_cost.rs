@@ -110,6 +110,9 @@ async fn measure() -> Result<(), String> {
                     .filter(|pass| {
                         pass.name.starts_with("atmosphere ")
                             || pass.name.as_ref() == "synthetic Sun air shadow heights"
+                            || pass
+                                .name
+                                .ends_with("test bank medium coefficients and ground band")
                     })
                     .map(|pass| (pass.name.as_ref(), pass.nanoseconds))
                     .collect();

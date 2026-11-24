@@ -251,6 +251,7 @@ pub(super) fn passes() -> Vec<PassSpec> {
 pub(super) fn declaration(sizes: &[u64]) -> EffectGraph {
     let resources = resources();
     EffectGraph {
+        view_volume_media: Vec::new(),
         sun_paths: Vec::new(),
         passes: passes()
             .iter()

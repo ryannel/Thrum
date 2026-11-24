@@ -56,7 +56,9 @@ mod state;
 mod views;
 pub use after_opaque::{AfterOpaqueKind, AfterOpaquePass};
 pub(crate) use graph::EffectResources;
-pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources};
+pub use graph::{
+    EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources, ViewVolumeResources,
+};
 pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
@@ -279,6 +281,19 @@ impl SceneSurface<'_> {
         self.cloud
             .and_then(crate::atmosphere::CloudPrepared::gpu_target)
     }
+    /// Borrow the scene-allocated ground band target and its mapping uniform.
+    /// Available only when the provider declares GPU-filled optical depth.
+    pub fn ground_band_target(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
+        self.cloud?.band.as_ref()?.target()
+    }
+
+    /// Scene-owned storage and camera records for this frame's medium coefficients.
+    /// A contribution fills this target before the view volume integrates it.
+    pub fn view_volume_medium_target(&self) -> Option<crate::atmosphere::ViewVolumeMediumTarget> {
+        self.environment
+            .and_then(crate::atmosphere::AtmospherePrepared::medium_target)
+    }
+
     /// Borrow the atmosphere's physical lighting operations for an independent
     /// contribution pipeline. Creates read-only bindings on request, sharing
     /// the existing products. Scenes with authored or diagnostic light return

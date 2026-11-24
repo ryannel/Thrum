@@ -2,6 +2,7 @@
 
 mod cloud;
 mod star_catalogue;
+pub(crate) mod test_bank;
 
 use crate::{
     camera::{CameraRoute, SceneCamera},
@@ -27,6 +28,7 @@ fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
     haze: Option<Aerosol>,
+    test_bank: bool,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
@@ -39,9 +41,14 @@ fn atmosphere_lighting(
     .with_nightglow()
     .with_simulation_time(sun.simulation_time_seconds)
     .expect("the sampled game clock is finite");
-    FrameLighting::Atmosphere(haze.map_or(frame, |aerosol| {
+    let frame = haze.map_or(frame, |aerosol| {
         frame.with_aerosol(aerosol).with_view_volume()
-    }))
+    });
+    FrameLighting::Atmosphere(if test_bank {
+        frame.with_view_volume_medium(1)
+    } else {
+        frame
+    })
 }
 
 /// `(tick + 1 + φ)·P` in milliseconds at the game's 60 Hz clock.
@@ -354,6 +361,7 @@ pub struct GameScene {
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
     haze: Option<Aerosol>,
+    pub(super) test_bank: bool,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
@@ -479,6 +487,7 @@ impl GameScene {
             cloud_sky: None,
             cloud_shapes: None,
             haze: setup.haze,
+            test_bank: setup.test_bank,
             cooked_rows: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
@@ -555,7 +564,14 @@ impl GameScene {
         scene.sun_penumbra = setup.sun_penumbra;
         scene.lamp_shadows = setup.lamp_shadows;
         scene.camera_culling = setup.camera_culling;
-        if setup.clouds != crate::CloudSelection::Off {
+        if setup.test_bank {
+            if setup.clouds != crate::CloudSelection::Off || setup.diagnostic_clouds {
+                return Err(FrameError::InvalidState(
+                    "the test bank replaces other Sun-path providers",
+                ));
+            }
+            scene.sun_optical_depth = Some(test_bank::sun_path()?);
+        } else if setup.clouds != crate::CloudSelection::Off {
             scene.sun_optical_depth = Some(thrum_render::atmosphere::SunOpticalDepth::gpu_target(
                 [crate::clouds::GROUND_SIZE; 2],
                 1,
@@ -762,8 +778,9 @@ impl SceneSource<PublishedPage> for GameScene {
         } else {
             sun
         };
-        let lighting =
-            lighting.unwrap_or_else(|| atmosphere_lighting(sun, camera_altitude_m, self.haze));
+        let lighting = lighting.unwrap_or_else(|| {
+            atmosphere_lighting(sun, camera_altitude_m, self.haze, self.test_bank)
+        });
         let view = if self.valley_stars
             && self.camera.is_some()
             && matches!(lighting, FrameLighting::Atmosphere(_))
@@ -1023,6 +1040,7 @@ mod tests {
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
             haze: None,
+            test_bank: false,
             sprite_scale: None,
             sprite_probe: None,
             sprite_rows: None,

@@ -112,6 +112,12 @@ impl PreparedSynthetic {
                 && (limits.max_sampled_textures_per_shader_stage
                     < 9 + 2 * u32::from(shadow_enabled)
                         + u32::from(scene.sun_optical_depth.is_some())
+                        + u32::from(
+                            scene
+                                .sun_optical_depth
+                                .as_ref()
+                                .is_some_and(SunOpticalDepth::has_ground_band),
+                        )
                     || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled))
         {
             return Err(AbiError::DeviceLimits.into());
@@ -325,6 +331,11 @@ impl PreparedSynthetic {
                 } else {
                     size_of::<CloudField>() as u64
                 },
+            ));
+        }
+        if cloud.as_ref().is_some_and(|cloud| cloud.band.is_some()) {
+            light_entries.extend(crate::atmosphere::ground_band::GroundBandPrepared::layout(
+                wgpu::ShaderStages::FRAGMENT,
             ));
         }
         let map_light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -812,6 +823,7 @@ impl PreparedSynthetic {
             &environment_light,
             history.serial_buffer(),
             exposure_samples,
+            cloud.as_ref().zip(atmosphere.as_ref()),
         );
         exposure_resolve.update(
             queue,

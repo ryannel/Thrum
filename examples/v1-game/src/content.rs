@@ -276,6 +276,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         },
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         haze: crate::host::haze_selection(launch_value("THRUM_HAZE").ok().as_deref())?,
+        test_bank: launch_value("THRUM_HAZE").as_deref()
+            == Ok(crate::host::scene_source::test_bank::SELECTION),
         content,
         exit_entities: if content == crate::GameContent::Exit
             && launch_value("THRUM_EXIT_NO_ENTITIES").as_deref() == Ok("1")

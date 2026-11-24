@@ -24,6 +24,7 @@ use uniform::AtmosphereUniform;
 mod aerial_view;
 pub(crate) mod aerosol;
 pub(crate) use aerial_view::SecondaryAerial;
+pub(crate) mod medium;
 pub(crate) mod view_volume;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
@@ -187,7 +188,7 @@ impl AtmospherePrepared {
             ..Default::default()
         });
         let extent = if frame.view_volume() {
-            view_volume::EXTENT
+            view_volume::extent(frame.volume_depth_factor)
         } else {
             AERIAL_EXTENT
         };
@@ -355,7 +356,10 @@ impl AtmospherePrepared {
             volume.update(
                 queue,
                 self.environment.epoch(),
-                cloud.map(|(field, _)| field.source_epoch()),
+                [
+                    cloud.map(|(field, _)| field.source_epoch()),
+                    self.frame.medium_epoch,
+                ],
                 view,
             );
             self.view_volume = Some(Box::new(volume));
@@ -379,7 +383,12 @@ impl AtmospherePrepared {
         self.frame = frame;
         self.environment.update(frame);
         if let Some(volume) = &mut self.view_volume {
-            volume.update(queue, self.environment.epoch(), sun_path_source_epoch, view);
+            volume.update(
+                queue,
+                self.environment.epoch(),
+                [sun_path_source_epoch, frame.medium_epoch],
+                view,
+            );
         }
         if frame.profile_epoch != self.epoch {
             self.validity &= DFG_VALID;
@@ -470,6 +479,8 @@ impl AtmospherePrepared {
 
     pub(crate) fn accepts(&self, frame: AtmosphereFrame) -> bool {
         self.view_volume.is_some() == frame.view_volume()
+            && self.frame.volume_depth_factor == frame.volume_depth_factor
+            && self.frame.medium_epoch.is_some() == frame.medium_epoch.is_some()
             && (!frame.variable_aerosol() || self.aerosol.is_some())
     }
 
@@ -482,6 +493,10 @@ impl AtmospherePrepared {
             &charts.sky_view,
             &charts.ground,
         ]
+    }
+
+    pub(crate) fn medium_target(&self) -> Option<super::ViewVolumeMediumTarget> {
+        self.view_volume.as_ref()?.medium_target(&self.uniform)
     }
 
     pub(crate) fn reflection_sampled(

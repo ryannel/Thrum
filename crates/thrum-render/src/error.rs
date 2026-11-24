@@ -401,6 +401,8 @@ pub enum EffectGraphError {
     DuplicateSunPath,
     /// The Sun-path target must have its complete texture and mapping reads declared.
     InvalidSunPathReads,
+    /// View-volume medium declared without one complete producer.
+    InvalidViewVolumeMedium,
     /// History write requires the next binding.
     HistoryWriteRequiresNext,
     /// Multiple passes produce the same effect history.
@@ -450,6 +452,9 @@ impl fmt::Display for EffectGraphError {
             }
             Self::DuplicateSunPath => {
                 f.write_str("Multiple effects declare the GPU Sun-path target")
+            }
+            Self::InvalidViewVolumeMedium => {
+                write!(f, "expected one complete view-volume medium writer")
             }
             Self::InvalidSunPathReads => {
                 f.write_str("GPU Sun-path target is missing a complete opaque read")

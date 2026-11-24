@@ -511,6 +511,7 @@ pub async fn create_route_game(
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
             cloud_weather,
             haze: crate::host::haze_selection(haze.as_deref()).map_err(js_error)?,
+            test_bank: haze.as_deref() == Some(crate::host::scene_source::test_bank::SELECTION),
             camera_culling: valley_culling(culling.as_deref(), true)?,
             field_meshes: meshes.unwrap_or(false),
             cooked_mesh_rows: (exit || meshes.unwrap_or(false)).into(),
@@ -742,6 +743,11 @@ impl BrowserGame {
             game::cloud_shapes(&self.page.shell),
         )
         .map_err(js_error)?;
+        let contribution = if game::test_bank(&self.page.shell) {
+            crate::host::scene_source::test_bank::alongside(contribution)
+        } else {
+            contribution
+        };
         self.page
             .shell
             .set_scene_contribution(contribution)

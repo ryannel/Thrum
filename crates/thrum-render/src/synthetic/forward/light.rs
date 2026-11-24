@@ -101,6 +101,9 @@ impl LightBindings<'_> {
                 },
             ]);
         }
+        if let Some(band) = self.cloud.and_then(|cloud| cloud.band.as_ref()) {
+            entries.extend(band.entries());
+        }
         if let Some(structure) = structure {
             entries.push(wgpu::BindGroupEntry {
                 binding: 15,

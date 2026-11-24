@@ -57,6 +57,15 @@ pub struct SunPathResources {
     pub mapping: usize,
 }
 
+/// Effect resource indices for the medium target and optional ground band.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ViewVolumeResources {
+    /// The provider's medium coefficients sampled during integration.
+    pub coefficients: usize,
+    /// A ground band texture filled alongside those coefficients.
+    pub ground_band: Option<usize>,
+}
+
 /// Resources and simulate passes declared once during preparation.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct EffectGraph {
@@ -69,6 +78,8 @@ pub struct EffectGraph {
     /// The provider's Sun-path target, if an effect writes it. At most one pair
     /// is allowed. Both resources must also have their full opaque read declared.
     pub sun_paths: Vec<SunPathResources>,
+    /// The scene-owned medium coefficient array filled by an effect.
+    pub view_volume_media: Vec<ViewVolumeResources>,
     /// Render passes after the sky and stars, in contribution order.
     pub after_opaque: Vec<super::AfterOpaquePass>,
 }
@@ -76,6 +87,8 @@ pub struct EffectGraph {
 pub(crate) struct EffectResources {
     pub(crate) opaque_reads: Vec<Access>,
     pub(crate) sun_path_reads: Option<[Access; 2]>,
+    pub(crate) medium_read: Option<Access>,
+    pub(crate) ground_band_read: Option<Access>,
     pub(crate) simulate: Vec<usize>,
     pairs: Vec<(ResourceId, ResourceId)>,
 }
@@ -128,6 +141,57 @@ impl EffectGraph {
         ]))
     }
 
+    fn medium_read(&self) -> Result<Option<EffectAccess>, crate::error::EffectGraphError> {
+        use crate::error::EffectGraphError as Error;
+        let resource = match self.view_volume_media.as_slice() {
+            [] => return Ok(None),
+            [provider] => provider.coefficients,
+            _ => return Err(Error::InvalidViewVolumeMedium),
+        };
+        let Some((ResourceDescriptor::Texture { layers, .. }, _)) = self.resources.get(resource)
+        else {
+            return Err(Error::InvalidViewVolumeMedium);
+        };
+        let range = 0..u64::from(*layers);
+        if !self.passes.iter().any(|pass| {
+            pass.accesses.iter().any(|access| {
+                access.resource == resource
+                    && access.range == range
+                    && access.kind == AccessKind::StorageWrite
+                    && access.history.is_none()
+            })
+        }) {
+            return Err(Error::InvalidViewVolumeMedium);
+        }
+        Ok(Some(EffectAccess {
+            resource,
+            range,
+            view: Some(wgpu::TextureViewDimension::D2Array),
+            kind: AccessKind::SampledRead,
+            history: None,
+        }))
+    }
+
+    fn ground_band_read_index(&self) -> Result<Option<usize>, crate::error::EffectGraphError> {
+        let [provider] = self.view_volume_media.as_slice() else {
+            return Ok(None);
+        };
+        let Some(resource) = provider.ground_band else {
+            return Ok(None);
+        };
+        let read = self
+            .opaque_reads
+            .iter()
+            .position(|access| {
+                access.resource == resource
+                    && access.range == (0..1)
+                    && access.kind == AccessKind::SampledRead
+                    && access.history.is_none()
+            })
+            .ok_or(crate::error::EffectGraphError::InvalidViewVolumeMedium)?;
+        Ok(Some(read))
+    }
+
     fn declarations(
         &self,
     ) -> impl Iterator<Item = (Option<&str>, EffectCadence, bool, &[EffectAccess])> {
@@ -163,6 +227,8 @@ impl EffectGraph {
         use crate::error::EffectGraphError as Error;
 
         self.sun_path_read_indices()?;
+        self.medium_read()?;
+        self.ground_band_read_index()?;
         let mut owners = BTreeSet::new();
         for (_, scope) in &self.resources {
             if let ResourceScope::Persistent { owner, .. } | ResourceScope::History { owner, .. } =
@@ -328,6 +394,8 @@ impl EffectGraph {
             pairs,
             opaque_reads: Vec::new(),
             sun_path_reads: None,
+            medium_read: None,
+            ground_band_read: None,
             simulate: Vec::new(),
         };
         for (index, pass) in self.passes.iter().enumerate() {
@@ -355,6 +423,12 @@ impl EffectGraph {
         resources.sun_path_reads = self
             .sun_path_read_indices()?
             .map(|indices| indices.map(|index| resources.opaque_reads[index].clone()));
+        if let Some(read) = self.medium_read()? {
+            resources.medium_read = resources.accesses(&[read]).pop();
+        }
+        resources.ground_band_read = self
+            .ground_band_read_index()?
+            .map(|index| resources.opaque_reads[index].clone());
         Ok(resources)
     }
 }

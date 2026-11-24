@@ -9,14 +9,24 @@ use crate::{
 use glam::{Mat4, Vec4};
 
 const INTERVALS: u32 = 80;
-const NEAR_INTERVALS: u32 = 40;
+pub(crate) const NEAR_INTERVALS: u32 = 40;
 const NEAR_DISTANCE: f32 = 500.0;
 const HISTORY_GAIN: f32 = 262_144.0;
-pub(crate) const EXTENT: [u32; 3] = [160, 90, INTERVALS + 2];
+const WIDTH: u32 = 160;
+const HEIGHT: u32 = 90;
+
+pub(super) fn extent(depth_factor: u8) -> [u32; 3] {
+    [WIDTH, HEIGHT, INTERVALS * u32::from(depth_factor) + 2]
+}
 
 pub(crate) fn grid_source() -> String {
+    grid_source_with_near(NEAR_INTERVALS)
+}
+
+pub(super) fn grid_source_with_near(near: u32) -> String {
+    let layers = near * 2;
     format!(
-        "const VOLUME_INTERVALS = {INTERVALS}u;\nconst VOLUME_NEAR_LAYERS = {NEAR_INTERVALS}u;\n\
+        "const VOLUME_INTERVALS = {layers}u;\nconst VOLUME_NEAR_LAYERS = {near}u;\n\
          const VOLUME_NEAR_DISTANCE = {NEAR_DISTANCE:?};\nconst VOLUME_HISTORY_GAIN = {HISTORY_GAIN:?};\n{}",
         wgsl!("atmosphere/volume_grid.wgsl")
     )
@@ -39,7 +49,7 @@ const MOTION_BYTES: u64 = size_of::<VolumeHistory>() as u64;
 struct HistoryFrame {
     view: SyntheticView,
     environment_epoch: EnvironmentEpoch,
-    sun_path_source_epoch: Option<u64>,
+    provider_epochs: [Option<u64>; 2],
 }
 
 #[derive(Clone)]
@@ -50,26 +60,31 @@ pub(crate) struct ViewVolume {
     compare: Option<wgpu::Sampler>,
     histories: [[wgpu::Texture; 2]; 2],
     motion: wgpu::Buffer,
+    medium: Option<wgpu::Texture>,
+    intervals: u32,
     submitted: Option<HistoryFrame>,
     pending: Option<HistoryFrame>,
     phase: u16,
 }
 
-fn texture_entry(binding: u32, view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
+pub(super) fn texture_entry(binding: u32, view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
     wgpu::BindGroupEntry {
         binding,
         resource: wgpu::BindingResource::TextureView(view),
     }
 }
 
-fn buffer_entry(binding: u32, buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
+pub(super) fn buffer_entry(binding: u32, buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
     wgpu::BindGroupEntry {
         binding,
         resource: buffer.as_entire_binding(),
     }
 }
 
-fn read_texture(binding: u32, dimension: wgpu::TextureViewDimension) -> wgpu::BindGroupLayoutEntry {
+pub(super) fn read_texture(
+    binding: u32,
+    dimension: wgpu::TextureViewDimension,
+) -> wgpu::BindGroupLayoutEntry {
     binding::texture(
         binding,
         wgpu::ShaderStages::COMPUTE,
@@ -88,29 +103,26 @@ fn write_volume(binding: u32) -> wgpu::BindGroupLayoutEntry {
     )
 }
 
-pub(crate) fn source(cascades: bool, cloud: CloudVariant) -> String {
+pub(crate) fn source(cascades: bool, cloud: CloudVariant, medium: bool, near: u32) -> String {
+    let ground = cloud.ground();
     let cascade = if cascades {
         concat!(
             wgsl!("records/shadow_cascades.wgsl"),
             wgsl!("atmosphere/volume_cascade.wgsl")
         )
     } else {
-        "fn volume_terrain_visibility(point: vec3<f32>, depth: f32) -> f32 { return 1.0; }"
+        "fn volume_terrain_visibility(point: vec3<f32>, depth: f32) -> f32 { return 1.0; }
+         fn volume_cascade_fade(depth: f32) -> f32 { return 1.0; }"
     };
     let cloud = if cloud.present() {
-        let (source, path) = if cloud.gpu() {
-            (
-                wgsl!("atmosphere/cloud_gpu.wgsl"),
-                "if cloud_field.plane_drift.w == 0.0 { return vec3(0.0); }
-                 return cloud_field.path_border.xyz;",
-            )
+        let source = cloud.sampling_source();
+        let path = if cloud.gpu() {
+            "if cloud_field.plane_drift.w == 0.0 { return vec3(0.0); }
+                 return cloud_field.path_border.xyz;"
         } else {
-            (
-                wgsl!("atmosphere/cloud.wgsl"),
-                "let sun = aerial_frame.sun_lux.xyz;
+            "let sun = aerial_frame.sun_lux.xyz;
                  if cloud_field.validity.x == 0.0 || sun.y < cloud_field.plane_drift.w { return vec3(0.0); }
-                 return sun;",
-            )
+                 return sun;"
         };
         format!(
             "@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n\
@@ -124,14 +136,97 @@ pub(crate) fn source(cascades: bool, cloud: CloudVariant) -> String {
              projection: f32, start: f32, end: f32) -> f32 { return 1.0; }"
             .to_owned()
     };
+    let (integration, medium_code) = if medium {
+        (
+            medium_integration(ground),
+            wgsl!("atmosphere/volume_medium.wgsl"),
+        )
+    } else {
+        (wgsl!("atmosphere/view_volume.wgsl").to_owned(), "")
+    };
     format!(
-        "{}\n{}\n{cascade}\n{cloud}",
-        super::aerosol::aerial_source(wgsl!("atmosphere/view_volume.wgsl")),
-        grid_source(),
+        "{}\n{}{}\n{cascade}\n{cloud}\n{medium_code}",
+        super::aerosol::aerial_source(&integration),
+        wgsl!("atmosphere/volume_history.wgsl"),
+        grid_source_with_near(near),
     )
 }
 
+fn medium_integration(ground: bool) -> String {
+    let sun_visibility = if ground {
+        "terrain * mix(1.0, ground_band_sample(world).y, volume_cascade_fade(sample_distance * forward_cos))"
+    } else {
+        "terrain"
+    };
+    wgsl!("atmosphere/view_volume.wgsl")
+        .replace("var baseline = empty_ray();", "var baseline = empty_ray();
+    var joint_medium = empty_ray();
+    var relative = 1.0;
+    var has_medium = false;")
+        .replace("let visibility = volume_terrain_visibility(world, sample_distance * forward_cos)", "let terrain = volume_terrain_visibility(world, sample_distance * forward_cos);
+            let visibility = terrain")
+        .replace("            baseline.lo = extend_ray", &format!(
+            "            let medium = medium_cell(xy, layer, eye + direction * middle);
+            if !has_medium && any(medium != vec3(0.0)) {{
+                has_medium = true;
+                joint_medium.lo = Segment(baseline.lo.radiance + correction.lo.radiance, baseline.lo.transmission);
+                joint_medium.hi = Segment(baseline.hi.radiance + correction.hi.radiance, baseline.hi.transmission);
+            }}
+            if has_medium {{
+                let shadow = {sun_visibility};
+                joint_medium.lo = extend_ray(joint_medium.lo, joint_step(single_lo + multi_lo + source[0] / VOLUME_HISTORY_GAIN, sigma_lo, direct[0], medium, shadow, delta));
+                joint_medium.hi = extend_ray(joint_medium.hi, joint_step(single_hi + multi_hi + source[1] / VOLUME_HISTORY_GAIN, sigma_hi, direct[1], medium, shadow, delta));
+            }}
+            relative *= exp(-medium.x * delta);
+            baseline.lo = extend_ray"))
+        .replace("0.5 * sigma_hi.x * delta", "0.5 * (sigma_hi.x + medium.x) * delta")
+        .replace("let joint = project_spectrum", "var joint = project_spectrum")
+        .replace("        textureStore(scatter_out, xy, i32(layer + 1u)", "        if has_medium { joint = project_spectrum(joint_medium.lo.radiance, joint_medium.hi.radiance); }
+        textureStore(scatter_out, xy, i32(layer + 1u)")
+        .replace("vec4(throughput, night));
+    }", "vec4(throughput * relative, night));
+    }")
+        .replace("let joint_rgb = project_spectrum", "var joint_rgb = project_spectrum")
+        .replace("    let terminal = vec4((joint_rgb - baseline_rgb) * SKY_LUT_GAIN, 1.0);", "    if has_medium { joint_rgb = project_spectrum(joint_medium.lo.radiance, joint_medium.hi.radiance); }
+    let terminal = vec4((joint_rgb - relative * baseline_rgb) * SKY_LUT_GAIN, relative);")
+}
+
 impl ViewVolume {
+    pub(in crate::atmosphere) fn medium_read(
+        &self,
+        graph: &mut FrameGraph,
+        produced: Option<Access>,
+    ) -> Result<Option<Access>, crate::error::RenderError> {
+        match (&self.medium, produced) {
+            (Some(_), Some(access)) => Ok(Some(access)),
+            (None, None) => Ok(None),
+            (None, Some(_)) => Err(crate::error::EffectGraphError::InvalidViewVolumeMedium.into()),
+            (Some(medium), None) => {
+                let resource = graph.resource(
+                    ResourceDescriptor::of_texture(medium),
+                    ResourceScope::Imported { initialized: true },
+                )?;
+                Ok(Some(Access::new(
+                    resource,
+                    0..u64::from(medium.depth_or_array_layers()),
+                    AccessKind::SampledRead,
+                )))
+            }
+        }
+    }
+
+    pub(super) fn medium_target(
+        &self,
+        observer: &wgpu::Buffer,
+    ) -> Option<super::medium::ViewVolumeMediumTarget> {
+        let medium = self.medium.as_ref()?;
+        Some(super::medium::ViewVolumeMediumTarget {
+            coefficients: medium.clone(),
+            observer: observer.clone(),
+            history: self.motion.clone(),
+        })
+    }
+
     pub(super) fn storage(
         &self,
         air: &super::AtmospherePrepared,
@@ -148,7 +243,7 @@ impl ViewVolume {
                         .expect("uncompressed view volume"),
                 )
         };
-        let resources = [
+        let mut resources = [
             (
                 "view volume in-scatter and terminal pair",
                 bytes(&air.aerial_textures[0]),
@@ -180,8 +275,11 @@ impl ViewVolume {
             ),
         ]
         .to_vec();
+        if let Some(medium) = &self.medium {
+            resources.push(("view volume medium coefficients", bytes(medium)));
+        }
         crate::atmosphere::ViewVolumeStorage {
-            grid: [EXTENT[0], EXTENT[1], INTERVALS],
+            grid: [WIDTH, HEIGHT, self.intervals],
             resources,
         }
     }
@@ -204,14 +302,24 @@ impl ViewVolume {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        let intervals = air.aerial_textures[0].depth_or_array_layers() - 2;
+        let medium = air
+            .frame
+            .medium_epoch
+            .map(|_| super::medium::coefficients(device, WIDTH, HEIGHT, intervals / 2));
         let histories = std::array::from_fn(|_| {
-            std::array::from_fn(|_| {
+            std::array::from_fn(|band| {
                 device.create_texture(&wgpu::TextureDescriptor {
                     label: Some("view volume history source density"),
                     size: wgpu::Extent3d {
-                        width: EXTENT[0],
-                        height: EXTENT[1],
-                        depth_or_array_layers: INTERVALS,
+                        width: WIDTH,
+                        height: HEIGHT,
+                        depth_or_array_layers: intervals
+                            + if band == 0 && medium.is_some() {
+                                intervals / 2
+                            } else {
+                                0
+                            },
                     },
                     mip_level_count: 1,
                     sample_count: 1,
@@ -246,6 +354,9 @@ impl ViewVolume {
             binding::uniform(15, Stages::COMPUTE, MOTION_BYTES),
         ];
         entries.extend(super::night::layout_entries());
+        if medium.is_some() {
+            entries.push(read_texture(16, Dim::D2Array));
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("view volume air and history"),
             entries: &entries,
@@ -282,6 +393,11 @@ impl ViewVolume {
                 binding::uniform(14, Stages::COMPUTE, cloud.uniform.size()),
             ]);
         }
+        if cloud.is_some_and(|(_, cloud)| cloud.band.is_some()) {
+            scene_entries.extend(crate::atmosphere::ground_band::GroundBandPrepared::layout(
+                Stages::COMPUTE,
+            ));
+        }
         let scene_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("view volume shadow providers"),
             entries: &scene_entries,
@@ -294,6 +410,8 @@ impl ViewVolume {
         let module = Shader::ViewVolume(
             cascades,
             CloudVariant::from_provider(cloud.map(|(field, _)| field)),
+            medium.is_some(),
+            intervals / 2,
         )
         .compile(device, "view volume integration");
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
@@ -310,7 +428,7 @@ impl ViewVolume {
             .create_view(&wgpu::TextureViewDescriptor::default());
         let groups = std::array::from_fn(|previous| {
             let next = 1 - previous;
-            let entries = [
+            let mut entries = [
                 buffer_entry(0, &air.uniform),
                 texture_entry(1, &air.transmittance_view),
                 texture_entry(2, &multiple),
@@ -330,6 +448,10 @@ impl ViewVolume {
             .into_iter()
             .chain(air.night.bindings())
             .collect::<Vec<_>>();
+            let medium_view = medium.as_ref().map(super::medium::array_view);
+            if let Some(view) = &medium_view {
+                entries.push(texture_entry(16, view));
+            }
             device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("view volume integration inputs"),
                 layout: &layout,
@@ -343,6 +465,8 @@ impl ViewVolume {
             compare,
             groups,
             motion,
+            medium,
+            intervals,
             submitted: None,
             pending: None,
             phase: 0,
@@ -378,6 +502,9 @@ impl ViewVolume {
                 buffer_entry(14, &cloud.uniform),
             ]);
         }
+        if let Some(band) = cloud.and_then(|cloud| cloud.band.as_ref()) {
+            entries.extend(band.entries());
+        }
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("view volume shadow provider inputs"),
             layout: &self.scene_layout,
@@ -389,12 +516,12 @@ impl ViewVolume {
         &mut self,
         queue: &wgpu::Queue,
         environment_epoch: EnvironmentEpoch,
-        sun_path_source_epoch: Option<u64>,
+        provider_epochs: [Option<u64>; 2],
         view: &SyntheticView,
     ) {
         let previous = self.submitted.as_ref().filter(|frame| {
             frame.environment_epoch == environment_epoch
-                && frame.sun_path_source_epoch == sun_path_source_epoch
+                && frame.provider_epochs == provider_epochs
                 && frame.view.history_epoch() == view.history_epoch()
                 && !view.history_reset()
         });
@@ -415,7 +542,7 @@ impl ViewVolume {
         self.pending = Some(HistoryFrame {
             view: *view,
             environment_epoch,
-            sun_path_source_epoch,
+            provider_epochs,
         });
     }
 
@@ -457,7 +584,11 @@ impl ViewVolume {
                         initialized: side == 0,
                     },
                 )?;
-                accesses.push(Access::new(resource, 0..u64::from(INTERVALS), kind));
+                accesses.push(Access::new(
+                    resource,
+                    0..u64::from(texture.depth_or_array_layers()),
+                    kind,
+                ));
             }
         }
         Ok(accesses)
@@ -469,7 +600,7 @@ impl ViewVolume {
         compute.set_pipeline(&self.pipeline);
         compute.set_bind_group(0, &self.groups[previous], &[]);
         compute.set_bind_group(1, scene, &[]);
-        compute.dispatch_workgroups(EXTENT[0].div_ceil(edge), EXTENT[1].div_ceil(edge), 1);
+        compute.dispatch_workgroups(WIDTH.div_ceil(edge), HEIGHT.div_ceil(edge), 1);
     }
 }
 
@@ -480,9 +611,13 @@ mod tests {
     #[test]
     fn volume_history_layout_and_portable_sources_validate() {
         for cascades in [false, true] {
-            let module =
-                wgpu::naga::front::wgsl::parse_str(&source(cascades, CloudVariant::Absent))
-                    .expect("view volume WGSL");
+            let module = wgpu::naga::front::wgsl::parse_str(&source(
+                cascades,
+                CloudVariant::Absent,
+                false,
+                NEAR_INTERVALS,
+            ))
+            .expect("view volume WGSL");
             wgpu::naga::valid::Validator::new(
                 wgpu::naga::valid::ValidationFlags::all(),
                 wgpu::naga::valid::Capabilities::empty(),

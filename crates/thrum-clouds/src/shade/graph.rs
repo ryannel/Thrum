@@ -148,6 +148,7 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> (EffectGraph, usize) {
                 access(6, 0..1, A::SampledRead),
                 access(7, 0..gpu.sun.mapping().size(), A::UniformRead),
             ],
+            view_volume_media: Vec::new(),
             sun_paths: vec![SunPathResources {
                 optical_depth: 6,
                 mapping: 7,

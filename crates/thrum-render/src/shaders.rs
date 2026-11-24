@@ -246,11 +246,20 @@ pub(crate) enum CloudVariant {
     Absent,
     Sampled,
     Gpu,
+    SampledGround,
+    GpuGround,
 }
 
 impl CloudVariant {
     pub(crate) fn from_provider(provider: Option<&crate::atmosphere::SunOpticalDepth>) -> Self {
         match provider {
+            Some(field) if field.has_ground_band() => {
+                if field.gpu_written() {
+                    Self::GpuGround
+                } else {
+                    Self::SampledGround
+                }
+            }
             Some(field) if field.gpu_written() => Self::Gpu,
             Some(_) => Self::Sampled,
             None => Self::Absent,
@@ -262,7 +271,27 @@ impl CloudVariant {
     }
 
     pub(crate) fn gpu(self) -> bool {
-        matches!(self, Self::Gpu)
+        matches!(self, Self::Gpu | Self::GpuGround)
+    }
+    pub(crate) fn ground(self) -> bool {
+        matches!(self, Self::SampledGround | Self::GpuGround)
+    }
+
+    pub(crate) fn sampling_source(self) -> String {
+        let plane = if self.gpu() {
+            wgsl!("atmosphere/cloud_gpu.wgsl")
+        } else {
+            crate::atmosphere::CLOUD_SHADER_SOURCE
+        };
+        if self.ground() {
+            format!(
+                "{}{}",
+                plane.replace("fn cloud_factor(", "fn cloud_plane_factor("),
+                wgsl!("atmosphere/ground_band.wgsl")
+            )
+        } else {
+            plane.to_owned()
+        }
     }
 }
 
@@ -309,7 +338,7 @@ macro_rules! shader_catalog {
             $($name,)*
             Scene(SceneVariant),
             SecondaryScene(SceneVariant),
-            ViewVolume(bool, CloudVariant),
+            ViewVolume(bool, CloudVariant, bool, u32),
         }
 
         impl Shader {
@@ -317,7 +346,7 @@ macro_rules! shader_catalog {
                 match self {
                     $(Self::$name => ($source).into(),)*
                     Self::Scene(variant) => crate::synthetic::scene_source::main_source(variant).into(),
-                    Self::ViewVolume(cascades, cloud) => crate::atmosphere::gpu::view_volume::source(cascades, cloud).into(),
+                    Self::ViewVolume(cascades, cloud, medium, near) => crate::atmosphere::gpu::view_volume::source(cascades, cloud, medium, near).into(),
                     Self::SecondaryScene(variant) => crate::synthetic::secondary::composed_source(variant).into(),
                 }
             }
@@ -517,8 +546,21 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
             CloudVariant::Absent,
             CloudVariant::Sampled,
             CloudVariant::Gpu,
+            CloudVariant::SampledGround,
+            CloudVariant::GpuGround,
         ] {
-            sources.push(("ViewVolume", Shader::ViewVolume(cascades, cloud).source()));
+            for medium in [false, true] {
+                sources.push((
+                    "ViewVolume",
+                    Shader::ViewVolume(
+                        cascades,
+                        cloud,
+                        medium,
+                        crate::atmosphere::gpu::view_volume::NEAR_INTERVALS,
+                    )
+                    .source(),
+                ));
+            }
         }
     }
     for atmosphere in [
@@ -531,6 +573,8 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
             CloudVariant::Absent,
             CloudVariant::Sampled,
             CloudVariant::Gpu,
+            CloudVariant::SampledGround,
+            CloudVariant::GpuGround,
         ] {
             if !atmosphere.present() && cloud.present() {
                 continue;

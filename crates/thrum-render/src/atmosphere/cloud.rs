@@ -1,6 +1,7 @@
 //! Optional Sun-path optical depth. The provider owns its immutable contents.
 use std::sync::Arc;
 
+use super::ground_band::{GroundBand, GroundBandPrepared};
 use crate::error::RenderError;
 use crate::records::CloudField;
 
@@ -38,6 +39,7 @@ pub struct GpuSunMapping {
 /// Values are stored as filtered fp16 optical depth, independently of exposure.
 #[derive(Clone, Debug)]
 pub struct SunOpticalDepth {
+    band: Option<GroundBand>,
     gpu: Option<(wgpu::Texture, wgpu::Buffer)>,
     allocate_gpu: bool,
     width: u32,
@@ -65,6 +67,7 @@ impl SunOpticalDepth {
             return Err(RenderError::InvalidLighting);
         }
         Ok(Self {
+            band: None,
             gpu: None,
             allocate_gpu: true,
             width: extent[0],
@@ -120,9 +123,21 @@ impl SunOpticalDepth {
             minimum_sun_sine: 0.0,
             source_epoch,
             valid: true,
+            band: None,
             gpu: Some((texture, mapping)),
             allocate_gpu: false,
         })
+    }
+
+    /// Attach the ground band's whole-path optical depth to this Sun-path field.
+    #[must_use]
+    pub fn with_ground_band(mut self, band: GroundBand) -> Self {
+        self.band = Some(band);
+        self
+    }
+
+    pub(crate) fn has_ground_band(&self) -> bool {
+        self.band.is_some()
     }
 
     pub(crate) fn gpu_written(&self) -> bool {
@@ -163,6 +178,7 @@ impl SunOpticalDepth {
             return Err(RenderError::InvalidLighting);
         }
         Ok(Self {
+            band: None,
             gpu: None,
             allocate_gpu: false,
             width,
@@ -243,10 +259,15 @@ pub(crate) struct CloudPrepared {
     field: SunOpticalDepth,
     texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,
+    pub(crate) band: Option<GroundBandPrepared>,
     pub(crate) uniform: wgpu::Buffer,
 }
 
 impl CloudPrepared {
+    pub(crate) fn variant(&self) -> crate::shaders::CloudVariant {
+        crate::shaders::CloudVariant::from_provider(Some(&self.field))
+    }
+
     pub(crate) fn gpu_target(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
         self.field
             .gpu_written()
@@ -257,8 +278,12 @@ impl CloudPrepared {
         graph: &mut crate::graph::FrameGraph,
         accesses: &mut Vec<crate::graph::Access>,
         produced: Option<&[crate::graph::Access; 2]>,
+        ground_band_read: Option<&crate::graph::Access>,
     ) -> Result<(), crate::graph::GraphError> {
         use crate::graph::{Access, AccessKind, ResourceDescriptor, ResourceScope};
+        if let Some(band) = &self.band {
+            band.append_reads(graph, accesses, ground_band_read)?;
+        }
         if let Some(produced) = produced.filter(|_| self.field.gpu_written()) {
             accesses.extend_from_slice(produced);
             return Ok(());
@@ -290,6 +315,11 @@ impl CloudPrepared {
         if field.width.max(field.height) > device.limits().max_texture_dimension_2d {
             return Err(RenderError::CloudTextureExtent);
         }
+        let band = field
+            .band
+            .as_ref()
+            .map(|band| GroundBandPrepared::new(device, queue, band))
+            .transpose()?;
         if field.allocate_gpu {
             let texture = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("provider Sun-path optical depth"),
@@ -317,6 +347,7 @@ impl CloudPrepared {
                 mapped_at_creation: false,
             });
             return Ok(Self {
+                band,
                 packed: [0; CLOUD_FIELD_BYTES],
                 field: field.clone(),
                 view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
@@ -326,6 +357,7 @@ impl CloudPrepared {
         }
         if let Some((texture, uniform)) = &field.gpu {
             return Ok(Self {
+                band,
                 packed: [0; CLOUD_FIELD_BYTES],
                 field: field.clone(),
                 texture: texture.clone(),
@@ -358,6 +390,7 @@ impl CloudPrepared {
             mapped_at_creation: false,
         });
         let result = Self {
+            band,
             packed: field.pack(seconds),
             field: field.clone(),
             texture,
@@ -373,6 +406,11 @@ impl CloudPrepared {
         self.field.width == field.width
             && self.field.height == field.height
             && self.field.gpu_written() == field.gpu_written()
+            && match (&self.field.band, &field.band) {
+                (Some(a), Some(b)) => a.accepts(b),
+                (None, None) => true,
+                _ => false,
+            }
             && match (&self.field.gpu, &field.gpu) {
                 (Some((a, u)), Some((b, v))) => a == b && u == v,
                 (None, None) => true,
@@ -381,7 +419,11 @@ impl CloudPrepared {
     }
 
     pub(crate) fn update(&mut self, queue: &wgpu::Queue, field: &SunOpticalDepth, seconds: f64) {
+        if let (Some(prepared), Some(band)) = (&self.band, &field.band) {
+            prepared.update(queue, band, self.field.band.as_ref());
+        }
         if field.gpu_written() {
+            self.field = field.clone();
             return;
         }
         if !Arc::ptr_eq(&self.field.pixels, &field.pixels) {

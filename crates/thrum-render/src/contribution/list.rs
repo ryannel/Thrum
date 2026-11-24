@@ -145,6 +145,14 @@ impl SceneContributions {
                             mapping: path.mapping + offset,
                         }),
                 );
+            graph
+                .view_volume_media
+                .extend(declaration.view_volume_media.into_iter().map(|input| {
+                    super::ViewVolumeResources {
+                        coefficients: input.coefficients + offset,
+                        ground_band: input.ground_band.map(|index| index + offset),
+                    }
+                }));
             graph.passes.extend(declaration.passes);
             for pass in &mut declaration.after_opaque {
                 pass.name = format!("effect {member}: {}", pass.name);
@@ -531,6 +539,7 @@ mod tests {
                 read(0, AccessKind::SampledRead, 0..1),
                 read(1, AccessKind::UniformRead, 0..mapping_bytes),
             ],
+            view_volume_media: Vec::new(),
             sun_paths: vec![SunPathResources {
                 optical_depth: 0,
                 mapping: 1,

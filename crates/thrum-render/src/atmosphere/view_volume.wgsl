@@ -1,8 +1,3 @@
-struct VolumeHistory {
-    previous_view_projection: mat4x4<f32>,
-    previous_eye_valid: vec4<f32>,
-    current_view_forward_phase: vec4<f32>,
-}
 @group(0) @binding(9) var history_lo_out: texture_storage_2d_array<rgba16float, write>;
 @group(0) @binding(10) var history_hi_out: texture_storage_2d_array<rgba16float, write>;
 @group(0) @binding(11) var history_lo: texture_2d_array<f32>;
@@ -32,13 +27,6 @@ fn volume_source_history(point: vec3<f32>, lo: vec4<f32>, hi: vec4<f32>) -> arra
     // A majority of the current measurement keeps history responsive at cuts
     // and disocclusions, while filtering the per-frame shadow sample.
     return array(mix(lo, old_lo, 0.40), mix(hi, old_hi, 0.40));
-}
-
-fn volume_shadow_jitter(id: vec2<u32>, layer: u32, phase: f32) -> f32 {
-    let bits = (id.x * 1973u) ^ (id.y * 9277u) ^ (layer * 26699u);
-    let seed = f32((bits * 747796405u) >> 16u) / 65536.0;
-    // Keep the point away from the cell faces on the first populated frame.
-    return 0.125 + 0.75 * fract(seed + phase * 0.61803398875);
 }
 
 @compute @workgroup_size(AERIAL_WORKGROUP_EDGE, AERIAL_WORKGROUP_EDGE)

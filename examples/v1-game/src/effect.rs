@@ -400,6 +400,7 @@ impl SceneContribution for DiagnosticEffect {
             ));
         }
         EffectGraph {
+            view_volume_media: Vec::new(),
             sun_paths: Vec::new(),
             resources,
             passes,

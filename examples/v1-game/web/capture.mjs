@@ -293,7 +293,8 @@ async function runCapture() {
       game.set_camera_yaw(yaw * Math.PI / 180);
       record.actions.push({kind:atmosphere,frame_ms:timestamp,solar_hours:game.time_of_day()*24,yaw_degrees:yaw});
     }
-    if (atmosphere === 'off' && !released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
+    const bankMover = atmosphereMotion && record.haze_take?.motion === 'mover';
+    if ((atmosphere === 'off' || bankMover) && !released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
       // Resume clears the clock fraction. Put the fixed exit route's origin
       // between the last held callback and this sample to restore its phase.
       game.set_paused(false, timestamp - fixedExitPhaseMs);

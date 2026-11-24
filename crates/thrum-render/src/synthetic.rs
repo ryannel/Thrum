@@ -1097,6 +1097,41 @@ impl PreparedSynthetic {
             atmosphere.view_volume.as_ref()?.submitted_phase(),
         ))
     }
+    /// Borrow the coefficient target for a GPU test provider.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn view_volume_medium_witness(&self) -> Option<crate::atmosphere::ViewVolumeMediumTarget> {
+        self.atmosphere.as_ref()?.medium_target()
+    }
+
+    /// The shared forward lighting ABI, for receiver probes.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn forward_light_witness(&self) -> (&str, &wgpu::BindGroupLayout, &wgpu::BindGroup) {
+        (
+            &self.surface.shader_source,
+            &self.surface.light_layout,
+            &self.light[0],
+        )
+    }
+
+    /// The incident meter output for the frame about to be submitted.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn incident_meter_witness(&self) -> &wgpu::Buffer {
+        self.pending_exposure_sample()
+    }
+
+    /// The atmosphere operation lent to forward effects, for transport probes.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn environment_products_witness(
+        &self,
+        queue: &wgpu::Queue,
+    ) -> Option<crate::atmosphere::EnvironmentProducts> {
+        self.scene_surface(queue).environment_products()
+    }
+
     /// Camera opaque draw mode; Frustum adds one timed compute pass and
     /// Occlusion four timed passes.
     pub fn camera_culling(&self) -> CullMode {

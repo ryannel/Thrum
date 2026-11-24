@@ -28,6 +28,8 @@ NEAR_EYE = [0, 241.92517205618816, 16]
 SHAFT_EYE = [500, 145, 425]
 EXTENT = [1280, 720]
 AERIAL = 'atmosphere aerial perspective'
+MEDIUM = 'test bank medium coefficients and ground band'
+BANK = 'test-bank' 
 
 
 def run(*command, cwd=ROOT, env=None, log=None):
@@ -139,7 +141,7 @@ def witness_baseline_archive(base, output):
 
 
 def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=False, motion=None,
-               cost=False, assets_source=None, route_file=None):
+               cost=False, assets_source=None, route_file=None, extent=EXTENT):
     native, cook, web, store = builds
     mode = 'realtime' if motion else 'fixed'
     scenario = 'ground-pan' if motion else 'checkpoint'
@@ -165,7 +167,7 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
             env['THRUM_CAPTURE_RENDERER_SIGNATURE'] = '1'
         run(sys.executable, 'scripts/capture_v1_runtime.py', '--binary', native,
             '--store', store, '--case', f'atmosphere-{scenario}' if motion else scenario,
-            '--extent', *map(str, EXTENT), *common, env=env, log=output.with_suffix('.log'))
+            '--extent', *map(str, extent), *common, env=env, log=output.with_suffix('.log'))
     else:
         extra = []
         if haze:
@@ -286,16 +288,18 @@ def off_parity(output, targets, builds):
     shutil.rmtree(source)
 
 
-def cost(output, targets, builds):
+def cost(output, targets, builds, scene):
     _, _, _, store = builds
     pose = {'eye': LOOKOUT_EYE, 'solar_hours': LOW_SUN, 'yaw_degrees': -65, 'motion': None}
     params = output / 'cost.params.json'
     save(params, {'world.paused': True, 'sky.solar_time': round(LOW_SUN, 2),
                   'camera.yaw': -65, 'camera.pitch': 0})
-    report = {'commit': git_commit(), 'load_class': 'shared builder load', 'targets': {}}
+    arms_order = [('off', None), ('on', '20,0')] if scene == 'haze' else [('off', 'default'), ('on', BANK)]
+    report = {'commit': git_commit(), 'load_class': 'shared builder load', 'scene': scene,
+              'arm_order': [name for name, _ in arms_order], 'targets': {}}
     for target in targets:
         arms = {}
-        for label, haze in [('off', None), ('on', '20,0')]:
+        for label, haze in arms_order:
             name = output / f'{target}-{label}'
             load_before = os.getloadavg()
             if target == 'mac-metal':
@@ -317,7 +321,7 @@ def cost(output, targets, builds):
             spans = [row['frame_gpu_ns'] for row in arm['frames']]
             if len(spans) < 24 or any(not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0 for v in spans):
                 raise ValueError(f'{target} {label}: missing whole-frame timestamps')
-            if label == 'on':
+            if label == 'on' or scene == 'medium':
                 if not arm['view_volume'] or any(AERIAL not in row['pass_gpu_ns'] for row in arm['frames']):
                     raise ValueError(f'{target}: the live view volume has no named timestamps or allocation')
                 stats = [row['pass_gpu_ns'][AERIAL] for row in arm['frames']]
@@ -325,6 +329,16 @@ def cost(output, targets, builds):
                 arm['view_volume_pass_p95_ns'] = statistics.quantiles(stats, n=20)[18]
             elif arm['view_volume']:
                 raise ValueError(f'{target}: baseline allocated the view volume')
+            if scene == 'medium':
+                producer = [next((value for name, value in row['pass_gpu_ns'].items()
+                                  if name.endswith(MEDIUM)), None) for row in arm['frames']]
+                if label == 'on':
+                    if any(value is None or value <= 0 for value in producer):
+                        raise ValueError(f'{target}: missing test-bank producer timestamps')
+                    arm['medium_pass_median_ns'] = statistics.median(producer)
+                    arm['medium_pass_p95_ns'] = statistics.quantiles(producer, n=20)[18]
+                elif any(value is not None for value in producer):
+                    raise ValueError(f'{target}: baseline ran the test-bank producer')
             arm['frame_median_ns'] = statistics.median(spans)
             arm['frame_p95_ns'] = statistics.quantiles(spans, n=20)[18]
             arms[label] = arm
@@ -382,12 +396,52 @@ def inspection(output, targets, builds, group):
                 checkpoint(target_root / motion, target, builds, pose, haze='20,0', cloud=True, motion=motion)
 
 
+
+def bank_inspection(output, targets, builds, group):
+    still_extent = (2560, 1440)
+    route = read(ROOT / 'examples/v1-game/routes/moving-v1.json')
+    route['render_extent'] = list(still_extent)
+    route_file = output / 'route-1440p.json'
+    save(route_file, route)
+    # Each pair looks across the same stand-in as the observer changes side.
+    noon = {
+        'toward': (0, [[0, 243, 37], [0, 243, 21], [-10, 244, 6]]),
+        'away': (118, [[-49, 243, -17], [-42, 243, -17], [-22, 244, -14]]),
+    }
+    low = {
+        'toward': (-79.8, [[33, 243, 4], [19, 243, 4], [0, 244, 4]]),
+        'away': (100, [[-57, 243, 1], [-47, 243, 1], [-22, 244, 1]]),
+    }
+    motions = {
+        'bankwalk': ([-60, 242.8, 5], -30),
+        'bankpan': ([-13, 244.0, 2], -80),
+        'mover': ([-6, 243.3, 20], -32),
+    }
+    for target in targets:
+        folder = output / target
+        folder.mkdir()
+        if group in ('all', 'stills'):
+            for time, hour, views in [('noon', 12, noon), ('low', LOW_SUN, low)]:
+                for direction, (yaw, eyes) in views.items():
+                    for position, eye in zip(['outside', 'edge', 'inside'], eyes):
+                        pose = {'eye': eye, 'solar_hours': hour, 'yaw_degrees': yaw, 'motion': None}
+                        checkpoint(folder / f'{time}-{direction}-{position}', target, builds,
+                                   pose, haze=BANK, extent=still_extent, route_file=route_file)
+                        if (time, direction, position) in [('low', 'toward', 'inside'),
+                                                            ('noon', 'toward', 'edge')]:
+                            checkpoint(folder / f'{time}-{direction}-{position}-clear', target, builds,
+                                       pose, haze='default', extent=still_extent, route_file=route_file)
+        if group in ('all', 'motion'):
+            for motion, (eye, yaw) in motions.items():
+                pose = {'eye': eye, 'solar_hours': LOW_SUN, 'yaw_degrees': yaw, 'motion': motion}
+                checkpoint(folder / motion, target, builds, pose, haze=BANK, motion=motion)
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('operation', choices=['off-parity', 'cost', 'inspect'])
-    parser.add_argument('--scene', choices=['haze'], default='haze')
+    parser.add_argument('--scene', choices=['haze', 'medium'], default='haze')
     parser.add_argument('--target', choices=TARGETS, action='append')
-    parser.add_argument('--group', choices=['all', 'haze', 'shafts', 'ridge', 'motion'], default='all')
+    parser.add_argument('--group', choices=['all', 'haze', 'shafts', 'ridge', 'motion', 'stills'], default='all')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     parent = ROOT / 'tmp/atmosphere-view-volume'
@@ -405,7 +459,9 @@ def main():
     if args.operation == 'off-parity':
         off_parity(output, targets, builds)
     elif args.operation == 'cost':
-        cost(output, targets, builds)
+        cost(output, targets, builds, args.scene)
+    elif args.scene == "medium":
+        bank_inspection(output, targets, builds, args.group)
     else:
         inspection(output, targets, builds, args.group)
 

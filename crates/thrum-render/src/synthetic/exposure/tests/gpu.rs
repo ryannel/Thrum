@@ -159,6 +159,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &environment_light,
             &serials,
             ExposureResolve::allocate_samples(&device),
+            None,
         );
         for gain in [1.0 / 16_000.0, 0.25, 1.234_567, 10.0] {
             let inverse: f32 = 1.0 / gain;

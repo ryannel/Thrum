@@ -33,3 +33,9 @@ fn volume_terrain_visibility(point: vec3<f32>, depth: f32) -> f32 {
     let near = min(volume_cascade(0u, point), far);
     return mix(near, far, smoothstep(split - overlap, split + overlap, depth));
 }
+
+fn volume_cascade_fade(depth: f32) -> f32 {
+    let reach = volume_shadows.split_overlap.z;
+    let fade_start = volume_shadows.split_overlap.w;
+    return select(0.0, smoothstep(fade_start, reach, depth), reach > fade_start);
+}

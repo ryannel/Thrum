@@ -167,13 +167,28 @@ pub(crate) fn library(far_aerial: bool) -> String {
 }
 
 fn library_with_volume(far_aerial: bool, view_volume: bool) -> String {
+    let far = wgsl!("atmosphere/products_aerial_far.wgsl");
+    let far = if view_volume && far_aerial {
+        far.replace(
+            "environment_sky_radiance(direction),weight",
+            "terminal_sky(direction, uv),weight",
+        ) + r"
+fn terminal_sky(direction: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
+    let terminal = textureSampleLevel(aerial_scatter, aerial_sampler, clamp(uv, vec2(0.0), vec2(1.0)),
+        i32(textureNumLayers(aerial_scatter)) - 1, 0.0);
+    return terminal.a * environment_sky_radiance(direction) + aerial_radiance(terminal.rgb);
+}
+"
+    } else {
+        far.to_owned()
+    };
     let products = format!(
         "{}\n{}\n{}{}{}",
         wgsl!("directional_light.wgsl"),
         wgsl!("environment_light.wgsl"),
         wgsl!("atmosphere/products.wgsl"),
         if far_aerial {
-            wgsl!("atmosphere/products_aerial_far.wgsl")
+            &far
         } else {
             wgsl!("atmosphere/products_aerial.wgsl")
         },

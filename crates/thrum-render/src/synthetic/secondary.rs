@@ -29,10 +29,10 @@ const RECORD_BYTES: u64 = size_of::<SecondaryViewRecord>() as u64;
 mod lighting;
 mod sun;
 
-fn shader_input_counts(atmosphere: bool, shadows: bool, cloud: bool) -> [u32; 2] {
+fn shader_input_counts(atmosphere: bool, shadows: bool, cloud: bool, ground: bool) -> [u32; 2] {
     let atmosphere = u32::from(atmosphere);
     let shadows = u32::from(shadows);
-    let cloud = u32::from(cloud);
+    let cloud = u32::from(cloud) + u32::from(ground);
     [
         6 + shadows + atmosphere + cloud,
         4 + 5 * atmosphere + shadows * (2 + atmosphere) + cloud,
@@ -185,6 +185,9 @@ impl PreparedSynthetic {
             self.atmosphere.is_some(),
             self.shadow.is_some(),
             self.cloud.is_some(),
+            self.cloud
+                .as_ref()
+                .is_some_and(|cloud| cloud.band.is_some()),
         );
         if !slots.is_empty()
             && self
@@ -381,11 +384,10 @@ impl SecondaryPrepared {
                 prepared.atmosphere.is_some(),
                 prepared.air_shadow.is_some(),
             ),
-            cloud: match prepared.cloud.as_ref() {
-                Some(field) if field.gpu_target().is_some() => crate::shaders::CloudVariant::Gpu,
-                Some(_) => crate::shaders::CloudVariant::Sampled,
-                None => crate::shaders::CloudVariant::Absent,
-            },
+            cloud: prepared.cloud.as_ref().map_or(
+                crate::shaders::CloudVariant::Absent,
+                crate::atmosphere::CloudPrepared::variant,
+            ),
             shadows: prepared.shadow.is_some().into(),
             sun: crate::capabilities::SunShadowMethod::Maps,
             traced_lamps: false,
@@ -989,7 +991,7 @@ pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
             variant.cloud.present(),
             variant.shadows,
         )),
-        variant.cloud.gpu(),
+        variant.cloud,
     )
 }
 
