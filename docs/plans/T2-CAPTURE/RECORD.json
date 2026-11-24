@@ -172,7 +172,36 @@
         "task": "The design review of T2-CAPTURE at .orchestrate/evidence/T2-CAPTURE/design-review.md asked for changes, with its 1 Must ",
         "at": "2026-11-24T01:25:42Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "f59f0a120beed8f3c91548d3e7167bf48122e168",
+        "checked": "0a041479fd7a87c1d799856bcf66adb9cd20ac26",
+        "at": "2026-11-24T03:26:25Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 159116,
+          "cached": 12722176,
+          "output": 35607,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 159116,
+          "cached": 12722176,
+          "output": 35607,
+          "turns": 1
+        }
+      }
     }
   },
   "briefs": [
