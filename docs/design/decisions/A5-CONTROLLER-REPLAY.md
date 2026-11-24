@@ -1,5 +1,17 @@
 # A5 decision: shared controller replay for the V1 conditioned game
 
+## Deterministic matches
+
+[SESSION](../../plans/SESSION/DESIGN.md#11-the-predicted-controller) uses the same deterministic
+controller rule on authority and predictor, a 64-tick history of wire-canonical input, and separate
+confirmed and predicted state. It compares exact bits at the confirmed tick. The input lead adapts
+from reported margin and replay is bounded by the history length. The fixed five-tick lead, nine-step
+cap and shared 1 ms work budget belong to the fixture documented below. Confirmed samples and input
+results come from stepped admitted sets. Remote worlds and external interactions stay on the confirmed
+timeline.
+
+## Original decision
+
 4 November 2026. **Selected for the first four-peer prediction slice. Parked with the network track until after V1.** This narrows [the input-timing decision](A5-INPUT-TIMING-RECONCILIATION.md) to the current 10k world, whose controlled actors have no collision or external resolve commands. [C02/C13](../CONTRACTS.md) still give W1 the only gameplay authority. Confirmed state and speculative controller state have separate owners. A future collision provider, authoritative teleport or game rule change must expand the captured closure or disable this predictor; a position-only rollback would be incomplete.
 
 ## Rule and history

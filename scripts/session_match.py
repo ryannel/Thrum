@@ -61,9 +61,11 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def dependency_closure(package, *features, edges="normal,build"):
+def dependency_closure(package, *features, edges="normal,build", no_defaults=False):
     command = ["cargo", "tree", "--locked", "--offline", "-p", package, "--target", "all",
-               "--no-default-features", "-e", edges, "--prefix", "none"]
+               "-e", edges, "--prefix", "none"]
+    if no_defaults:
+        command.append("--no-default-features")
     if features:
         command += ["--features", ",".join(features)]
     tree = subprocess.check_output(command, cwd=ROOT, text=True)
@@ -84,8 +86,8 @@ def closure():
 
     before = {tuple(pair) for pair in
               json.loads((ROOT / "tests/fixtures/transport/lock-before.json").read_text())}
-    transport = dependency_closure("thrum-transport")
-    adapters = dependency_closure("thrum-transport", "native", "browser") - transport - before
+    transport = dependency_closure("thrum-transport", no_defaults=True)
+    adapters = dependency_closure("thrum-transport", "native", "browser", no_defaults=True) - transport - before
     assert adapters, "the socket adapters must add crates relative to the pre-TRANSPORT lockfile"
     memory = dependency_closure(PACKAGE)
     assert network <= {name for name, _ in memory}, "the rehearsal must use the session and the message link"

@@ -1,5 +1,17 @@
 # A5 decision: timed input staging and controlled prediction
 
+## Deterministic matches
+
+[SESSION](../../plans/SESSION/DESIGN.md) uses staged future frames, exact redundant samples, held axes
+and results sent after the authority commits the tick. Its adaptive lead comes from reported arrival
+margin and replaces the fixture's fixed five ticks. The host retains results in the bounded admitted-set
+ring until the client acknowledges the sets. Every replica steps the admitted set, and the client reads
+its own confirmed controller there. Prediction compares exact bits and replays within the 64-tick
+history, which replaces the old nine-step or shared 1 ms fixture cap. The complete projected-state
+return lane and its tolerance-based correction belong to the earlier fixture.
+
+## Original decision
+
 4 November 2026. **Selected for the four-peer fixture, parked with the network track until after V1; preallocated staging and an encoded no-socket 600-tick input run pass, while state deltas, client prediction/reconciliation and device qualification remain open.** This refines [the N1 transport/codec decision](A0-N1-TRANSPORT-CODEC.md), [the input packet](A5-INPUT-WIRE.md) and [C02/C13](../CONTRACTS.md). The existing W1 `Simulation::admit_frame` accepts only the next authoritative tick and must remain the sole gameplay admission gate. N1 may hold future input bytes and frames, but a transport receipt neither commits gameplay nor changes a world component.
 
 ## Timing and ownership

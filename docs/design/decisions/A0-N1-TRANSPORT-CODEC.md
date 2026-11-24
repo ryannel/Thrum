@@ -1,5 +1,17 @@
 # A0 decision: N1 transport and replicated codec
 
+## Deterministic matches
+
+[SESSION](../../plans/SESSION/DESIGN.md) uses A0's native Quinn and Chrome WebTransport adapters, A0's
+conditioner, the envelope and repeated input batches. It sends admitted sets and world digests over the
+datagram lane with reliable set recovery, and full world baselines for join and repair. The host's bounded
+set ring retains results until the client acknowledges the sets. The client-first protocol and rule-set
+identity handshake replaces the state-projection handshake for this profile. Acknowledged state deltas,
+priority and interest projections, and the WebSocket fallback remain outside the deterministic match.
+The proposed downstream rate and no-snap criteria above belong to the original snapshot and delta profile.
+
+## Original decision
+
 3 November 2026. **Status: selected for the post-V1 network track, unimplemented; V1 proves multiplayer fitness headless in G2S.** N1 transports W1's committed state and input outcomes; it never owns gameplay truth. One shared rules path serves local, listen-host and dedicated play. Stable IDs, sequence and tick semantics, schema compatibility and validate-before-apply admission remain C4 guarantees. The existing full-record R4 payload and fixed 8-input window are transitional evidence, not the selected wire format.
 
 Native uses [Quinn QUIC](https://quinn-rs.github.io/quinn/quinn.html); browsers use [WebTransport](https://www.w3.org/TR/webtransport/) where qualified. State deltas use datagrams against an **acked** baseline, with explicit baseline identity and recovery after loss. A reliable ordered stream carries results, events, lifecycle and schema/session control. A WebSocket fallback uses deltas against the last sent state on that ordered transport; it does not pretend to have datagram semantics. Browser/WebTransport availability and interoperability remain device/browser gates, not assumed support. Input batches carry recent `InputFrame` history for loss recovery; per-peer window size derives from RTT, jitter and tick rate rather than a fixed eight slots.

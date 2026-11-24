@@ -1,32 +1,45 @@
 # Network sessions and replication — N1
 
-**Sequencing (5 November 2026):** V1 proves multiplayer fitness headless in [G2S](../../plans/VISION.md#the-milestones)
-(authority, admission validation, rollback and replay); all transport work is parked until the post-V1 network track.
-For that track, [the A0 transport/codec decision](../decisions/A0-N1-TRANSPORT-CODEC.md)
-selects QUIC/WebTransport and acknowledged state deltas, and [the A5 timing decision](../decisions/A5-INPUT-TIMING-RECONCILIATION.md)
-selects the first conditioned input fixture. [NETWORK-SPEC.md](../NETWORK-SPEC.md) is retained as
-the historical I2n authority/result analysis; its WebSocket and full-record recipe is superseded.
-The [input packet](../decisions/A5-INPUT-WIRE.md) and
-[state-delta/session model](../decisions/A5-STATE-DELTA-SESSION.md) are selected;
-state codec, session runtime and device qualification remain open.
+## Deterministic matches
 
-**Historical design closure:** the [initial protocol](../NETWORK-SPEC.md) resolves the
-[SR01–SR03/SR07 review](../SIMPLIFICATION-REVIEW.md) with committed per-action results, atomic full groups,
-one gameplay semantic identity and an analytical R4 workload. The
-[reviewed provisional cadence study](../research/N1-OUTBOUND-CADENCE-2026-11-03.md)
-reopens the 60-to-20 Hz outbound burst and same-tick multi-group replica
-consumer before a production queue/codec can qualify. Transport, runtime,
-latency and device proof remain unrun. The authority model and early I2n
-milestone stand.
-The [first R4 payload codec](../../../.orchestrate/evidence/integration/N1-R4-PAYLOAD-CODEC-2026-11-03.md)
-now checks fixed framing and local result shape in a registered crate; it
-does not validate the envelope or admit a semantic group to a replica.
+A game can opt into the deterministic [SESSION profile](../../plans/SESSION/DESIGN.md). Its gameplay
+semantic manifest identifies the rule set and its build. A Mac authority runs every committed tick and
+shares the admitted sets with the replicas. Each peer runs the same rules and compares world digests at
+configured ticks. The authority supplies a full baseline for join, reconnect and repair. The
+[game-maker guide](../../SESSION.md) walks through the public interfaces and the headless proof commands.
 
-Selected architectural direction, 1 November 2026. The user requires future multiplayer as a first-class citizen to
-avoid rebuilding the engine around it later. N1 is an optional runtime responsibility with contracts designed now;
-the first runnable slice remains local. No network implementation, service, device qualification or latency claim is
-made. This module extends the custom engine's existing world/time/content owners; it does not introduce another game
-state authority or require an online service for single-player games.
+The built session includes adaptive input lead, redundant timed frames, ordered commands, bounded
+retention of input results in the admitted-set ring, match and roster lifecycle, and confirmed playout.
+The optional predicted controller replays local input in a 64-tick history. The client sends a hello with
+the session protocol version, rule-set identity and optional return token. The host answers with a new
+connection epoch, slot, token, seed and settings, or a refusal. The message link and ticket are provided
+by [TRANSPORT](#transport-and-overload).
+
+The reference match ran over in-memory A0 and harsh profiles and over A0-conditioned sockets on this Mac's
+loopback. Socket replicas ran on the Mac, in Chrome and on the iPhone simulator. The simulator qualifies
+function. Windowed presentation is the next SESSION work package. A physical iPhone, Safari, Firefox,
+another machine, a non-loopback path and a public host are unqualified. Host migration, whole-world
+rollback, access accounts and matchmaking are outside the built profile.
+
+The snapshot-and-delta profile below preserves the wider N1 design and its historical evidence.
+Deterministic matches use A5's input batch bytes and the stable envelope. Their hello/welcome, set ring
+and full-world baselines take the place of the A5 StateGroup handshake, result ledger and partition
+streams. Interest filtering, acknowledged state deltas, selective image ACKs and StateGroup modes 0–2
+remain outside the deterministic match. Its lead is adaptive and the earlier fixed five-tick lead is a
+proof control. The 64-tick controller history supplies the replay bound in place of the earlier nine-step
+cap. The [N1 maturity ledger](../maturity.json) records the scope of each result.
+
+## Snapshot and delta design
+
+The [A0 transport and codec decision](../decisions/A0-N1-TRANSPORT-CODEC.md) selected a general
+snapshot-and-delta direction. [NETWORK-SPEC](../NETWORK-SPEC.md) preserves the historical I2n
+authority and result analysis. The [initial protocol review](../SIMPLIFICATION-REVIEW.md) resolved
+SR01–SR03/SR07 with committed results, atomic groups, one gameplay semantic identity and the
+analytical R4 workload. The [cadence study](../research/N1-OUTBOUND-CADENCE-2026-11-03.md)
+reopened the 60-to-20 Hz burst and same-tick multi-group consumption for that profile. The
+[first R4 payload codec](../../../.orchestrate/evidence/integration/N1-R4-PAYLOAD-CODEC-2026-11-03.md)
+checks framing and local result shape. Transport and deterministic-session results apply to their
+own profiles. The snapshot-and-delta runtime still requires its own integrated proof.
 
 ## Model and alternatives
 
@@ -208,7 +221,7 @@ that games without multiplayer contain none of it.
 Safari and Firefox now ship WebTransport, so TRANSPORT left it out; it stays A0's fallback if a browser target
 lacks WebTransport. Also not built or run: a public host or a certificate from a public authority, NAT traversal and
 matchmaking, a browser that hosts, Safari and Firefox, a physical iPhone, a second machine or any path that is not
-loopback. What a message means, the envelope, epochs, acknowledgement, clock sync and admission, stays `SESSION`'s.
+loopback. What a message means, the envelope, epochs, acknowledgement, clock sync and admission are owned by the session.
 
 Use maintained transport/cryptographic libraries and platform integration; do not write custom cryptography. Treat
 incoming data as untrusted regardless of transport. Authentication/service integration stays behind explicit adapters;
@@ -245,6 +258,6 @@ Primary sources inspected 1 November 2026:
   selective rollback and interacting partial snapshots illustrate why prediction needs complete dependencies and bounded
   history. This is a cited versioned precedent, not the selection of Unity's algorithm or a current version claim.
 
-The selected N1 architecture and bounded failure behavior are our synthesis. NETWORK-SPEC now fixes the wire encoding, initial access/transport adapters, bounded prediction state and workload
-limits. Implementation and actual platform/latency/resource proof remain unrun. Future adapters cannot weaken the
-authority/identity/readiness rules above.
+NETWORK-SPEC fixes the historical I2n wire encoding, initial access and transport choices, prediction
+bounds and workload limits. An integrated snapshot-and-delta runtime and its platform, latency and resource
+qualification remain open. Future adapters must preserve the authority, identity and readiness contracts.

@@ -1,5 +1,17 @@
 # A5 decision: acknowledged state deltas and session admission
 
+## Deterministic matches
+
+[SESSION](../../plans/SESSION/DESIGN.md) keeps the envelope and A5 input batches. It replaces the
+state-projection handshake for this profile with a client hello containing the protocol version,
+rule-set identity and optional return token. The host welcomes with the match, epoch, slot, token,
+seed and settings, or refuses. Join and repair take a complete world baseline. Admitted sets supply
+gameplay results after commit and their host-owned ring retains them until set acknowledgement.
+StateGroup modes 0–2, StateAck and image history remain available as codecs or earlier designs
+outside this match. The open items in the original record below refer to the state-delta profile.
+
+## Original decision
+
 4 November 2026. **Selected design; four-partition mode-0 visual slice and conditioned mode-1 full-image repair running. Parked with the network track until after V1.** The [fixed-base diagnostic](../../../.orchestrate/evidence/v1-workload/A5-VISUAL-DELTA-2026-11-04.md), [selective ACK run](../../../.orchestrate/evidence/v1-workload/A5-SELECTIVE-ACK-2026-11-04.md), [128-interest follow-up](../../../.orchestrate/evidence/v1-workload/A5-FOUR-PARTITION-2026-11-04.md), [local full-image admission](../../../.orchestrate/evidence/v1-workload/A5-FULL-IMAGE-ADMISSION-2026-11-04.md) and [conditioned retrying repair](../../../.orchestrate/evidence/v1-workload/A5-CONDITIONED-FULL-REPAIR-2026-11-04.md) exercise the game-declared visual schema. Four full images now stage across the no-socket link and publish together after checked admission; missing image or ACK retries the retained transfer. Lifecycle, exact controller closure, real transport and session authentication remain open. This closes [A0 N1](A0-N1-TRANSPORT-CODEC.md)'s wire/session choices under [C13](../CONTRACTS.md). R4's full actor record is migration evidence. Game-declared schemas span native, browser and phone; local play pays no N1 projection, history or socket cost.
 
 ## Operating model and exact identities

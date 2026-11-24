@@ -1,5 +1,14 @@
 # A5 decision: share image history across one connection
 
+## Deterministic matches
+
+[SESSION](../../plans/SESSION/DESIGN.md) shares admitted sets and checks world digests. It takes
+a whole-world baseline for join and repair. This partition image pool, its state delta candidates
+and selective image ACKs remain outside that profile. The measurements below apply to the earlier
+local visual slice.
+
+## Original decision
+
 4 November 2026. **Selected and running in the local 128-interest slice.** The [four-partition result](../../../.orchestrate/evidence/v1-workload/A5-FOUR-PARTITION-2026-11-04.md) qualifies this specific fixture, not full-image repair or real transport. This refines the [A5 wire/session decision](A5-STATE-DELTA-SESSION.md) under [C13](../CONTRACTS.md). Multiplying the earlier 16-candidate/16-client ring by four partitions would reserve about 128 KiB of image history per peer before bases, scratch and packets, even if three partitions never change.
 
 One connection owns four partition states and one sender candidate ring plus one client admitted-image ring, each with 16 slots. A record carries connection-wide image ID, partition/generation, tick and its complete 32-actor quantized image. Each partition keeps its own immutable confirmed sender base, initial client base, current client base and scratch. The one client datagram sequence owner is shared by `InputBatch` and `StateAck`; a separate server datagram sequence covers all four partitions. Baseline image IDs 1–4 are unique within each epoch; later samples use one checked monotonic allocator for the connection. An ACK can promote only a matching retained candidate with both newer image ID and tick for that partition. The client protects its currently referenced base outside the ring. Expired unknown ACKs are counted and ignored without mutation. Missing bases or exhausted required history request reliable full-image repair or disconnect; that recovery remains a separate gate.

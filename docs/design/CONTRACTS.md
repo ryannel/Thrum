@@ -721,6 +721,12 @@ visual schemas. Each role names exact product provenance and compatible mappings
 use declared query projections without downloading the server's solver. Visual builds may differ. Source edits cannot
 mutate a running match without an explicitly designed migration or restart.
 
+A game may declare a deterministic rule set under the rules profile. Its gameplay semantic manifest then names
+the rule set and its build, and a peer whose identity differs is refused at negotiation. Such a match shares
+state by the input the host admitted for each tick it committed, compares peers by world digest at the ticks
+the match sets, and repairs a peer with a full baseline. Bit identity across platforms is that rule package's claim, proved by its conformance run; the
+engine makes no such claim for any other game.
+
 N1 checks sender, size, epochs, ordering and action timing policy; P6 checks legality and owns committed outcomes.
 Transport receipt does not imply gameplay execution. Each admitted input reaches a bounded committed/rejected result,
 identified by connection/input origin and authority tick; result delivery, retention and overload behavior are specified

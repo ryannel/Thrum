@@ -337,7 +337,7 @@
         ]
       },
       "view_volume": {
-        "implementation": "The opt-in frustum volume integrates air with a provider’s near medium coefficients and shades it through Sun cascades and Sun-path optical depth. A ground band gives the whole Sun path to each direct receiver and the incident meter. The sky and lent far transport take the terminal pair and stars take its transmittance. The selected analytic test bank is a stand-in that CLOUDS WP14 replaces.",
+        "implementation": "The opt-in frustum volume integrates air with a provider\u2019s near medium coefficients and shades it through Sun cascades and Sun-path optical depth. A ground band gives the whole Sun path to each direct receiver and the incident meter. The sky and lent far transport take the terminal pair and stars take its transmittance. The selected analytic test bank is a stand-in that CLOUDS WP14 replaces.",
         "correctness": "Metal probes exercise the independent solar, transmittance and night terms and terminal correction exactly once. A GPU-written Sun-path field shadows the air across the geometric horizon. A CPU-fed field remains clear below its own minimum Sun elevation. With Sun cascades disabled, the compiled Metal graph orders the live Sun-path texture and mapping writes before the volume reads them. First submitted scatter, transmission and image bytes match a cold frame after a camera cut, numeric profile change, nightglow enable and disable, a Sun-path source epoch change, and device replacement. Same-epoch Sun-path advection retains history. Metal also verifies joint slab integration at 80 and 160 slices, clear continuation after the ramp, the height-resolved ground band and the terminal correction through the lent lookup to 200 km.",
         "visuals": "Native crops on Metal and Chrome WebGPU show soft shafts aligned with the lit ground under the diagnostic cloud gaps and through the diagnostic ridge opening. Submitted-frame inspection covers the pan, 40 m walk and sunset scrub on both targets. The low-Sun cut shows a whole shaft and a continuous solar rim in the first new submission. Builder inspection on both targets covers the noon and low-Sun test bank, the walk through both edges, the inside pan and a world-driven mover crossing the bank.",
         "device": "Held valley GPU timestamps and nominal resource bytes are recorded with and without the 160 \u00d7 90 \u00d7 80 view volume under shared load. Apple M3 Max Metal renders at 1920 \u00d7 1080 and hardware Chrome WebGPU renders at 1280 \u00d7 720. A paired capture-off cost record measures the same devices with the test bank and records the medium producer separately.",
@@ -3549,15 +3549,15 @@
         "C13"
       ],
       "next_design_package": null,
-      "next_construction_package": "A5 after A1/A2; prior I2n credit/ledger extension parked",
-      "remaining_detailed_design": "Initial SR01-SR03/SR07 mechanisms specify per-action outcomes, atomic lifecycle/state, compatibility and reconnect/suspend. Stable partition identity, envelope sequence, baseline supersession and sent-frame ledger bounds are selected. A bounded multi-group replica and event-free atomic result progress exist; event identity/dedup, authenticated session/ACK admission, 60-to-20 Hz mandatory cadence and revised simultaneous R4 burst remain open before runtime promotion. New genres, streamed servers, richer prediction and online services require separate recipes.",
-      "qualification": "I1 in-memory authority/replica fixture passed locally. I2n still requires native/browser real-transport join/content/baseline/interest/reconnect/overload and whole-game frame/state-age/resource evidence.",
+      "next_construction_package": "SESSION WP7 driven world and windowed reference match. The broader I2n snapshot and delta profile remains parked.",
+      "remaining_detailed_design": "For the broader snapshot and delta profile, event identity and deduplication, authenticated admission, 60-to-20 Hz mandatory cadence and simultaneous R4 burst remain open. Streamed servers, richer prediction and online services require separate recipes.",
+      "qualification": "The deterministic profile has headless match correctness evidence on this Mac, with separate Mac, Chrome and iPhone simulator replicas over loopback. The integrated snapshot and delta profile remains unqualified.",
       "existing_candidate": {
         "status": "not_inventoried"
       },
-      "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review, exact R4 application-byte and failure traces. Protocol/runtime/device conformance remains unrun.",
-      "current_design_sha256": "34ec14259efc82699152692fdcf22427fcec3684fd237339066c542b477238b4",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress, structural envelope framing, finite pre-submission payload queue and ordinary sent ledger are implemented; the ordinary peer now preflights joint queued-plus-sent 256-result/128-event identity credit. Event-bearing replica groups still refuse. A test-only complete-partition W1 capture drives four peer-owned queues through nine changed ticks with one slow ACK. Production projection, unified baseline/session ownership and transport remain unbuilt. Prior reviewed hashes retained; no runtime promotion. 16 Nov: the transport section records what TRANSPORT built (message link, ticket, in-memory link, native and Chrome adapters) and that A0's WebSocket fallback was not built; see transport_message_link.",
+      "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review and exact R4 application-byte and failure traces apply to the snapshot and delta design. The deterministic session and message link rows record their own functional and target evidence.",
+      "current_design_sha256": "cdbd00e4fb53625ac08a0143a01b7349824bbedb4f3fc8120d289df316b2ddba",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress, structural envelope framing, finite pre-submission payload queue and ordinary sent ledger are implemented; the ordinary peer now preflights joint queued-plus-sent 256-result/128-event identity credit. Event-bearing replica groups still refuse. A test-only complete-partition W1 capture drives four peer-owned queues through nine changed ticks with one slow ACK. Production projection, unified baseline/session ownership and transport remain unbuilt. Prior reviewed hashes retained; no runtime promotion. 16 Nov: the transport section records what TRANSPORT built (message link, ticket, in-memory link, native and Chrome adapters) and that A0's WebSocket fallback was not built; see transport_message_link. SESSION adds the deterministic C13 profile, a game-maker guide and the current headless proof scope. Earlier I2n and R4 entries describe the original snapshot and delta profile.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -3713,14 +3713,30 @@
         "scope": "Physical storage oracle only. External sequence numbers are model inputs, not one production allocator; no integration with the outstanding ordinary/rejected ledger, BaselineAck mandatory-identity coverage, supersession, transport or replica. The immutable 256 KiB image and sync closure remain separate simultaneous owners.",
         "evidence": "../../.orchestrate/evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md"
       },
-      "current_priority": "parked until its active gate",
+      "current_priority": "The deterministic session is built headless. The snapshot and delta profile remains parked.",
       "deterministic_session": {
-        "implementation": "Caller-clocked host and client over the link interface. Baseline restore, post-commit set delivery, redundant timed input and ordered commands, adaptive lead, input results, bounded playout, listen-host admission and authority termination.",
-        "correctness": "The SESSION M2 tests cover independent reference-crowd worlds, conditioned delivery, negotiation, commands and result acknowledgement, authority failure and the playout position. Release matches compare all 1,200 digest checkpoints per client for both A0 and the harsh profile.",
-        "visuals": "Headless work package. Windowed session presentation belongs to SESSION WP7.",
-        "device": "Native M3 Max Mac with the in-memory link and virtual time.",
-        "performance": "Initial Mac release measurements taken under load. The cost record includes per-peer wire traffic, tick and send timing, warmed allocations and tripwires.",
-        "evidence": "../../.orchestrate/evidence/SESSION/M2.md"
+        "implementation": "Caller-clocked host and client over the message link. Includes full-world baseline restore, post-commit set delivery, redundant timed frames, ordered commands, adaptive lead, bounded result retention, roster and match lifecycle, confirmed playout and optional local-controller prediction.",
+        "correctness": "On A0 and harsh in-memory profiles, four 10,000-body replicas each matched the authority at all 1,200 digest ticks over 36,000 ticks. The A0 socket match also matched all 1,200 on each of four independent clients. Other proofs cover late join, disconnect and rejoin, repair, slow or frozen peers, and an independent integer rule set with timed actions, ordered commands and roster events. The dependency closure check covers the V1 game, starter, creator scenes and the in-memory proof package.",
+        "visuals": "Headless proof. Windowed presentation belongs to SESSION WP7.",
+        "device": {
+          "mac-metal": "Apple M3 Max: headless authority and two independently running native clients over conditioned loopback, plus the virtual-clock rehearsal.",
+          "chrome-webgpu": "Headless Chrome Wasm client over WebTransport to the same Mac's loopback relay. The proof does not open a GPU device.",
+          "ios-sim": "iPhone 18 Pro simulator client over native QUIC on the Mac. Function only. No simulator speed claimed."
+        },
+        "performance": "See the separate SESSION M4 and M5 headless records for Mac and Chrome cost observations under load.",
+        "not_run": [
+          "a second machine or any path that is not loopback",
+          "a physical iPhone",
+          "Safari or Firefox",
+          "a public host",
+          "host migration",
+          "whole-world rollback"
+        ],
+        "evidence": [
+          "../../.orchestrate/evidence/SESSION/M2.md",
+          "../../.orchestrate/evidence/SESSION/M5/README.md",
+          "../../.orchestrate/evidence/SESSION/WP6/README.md"
+        ]
       },
       "transport_message_link": {
         "design": "../plans/TRANSPORT/DESIGN.md",
@@ -3744,7 +3760,7 @@
           "a public host or a certificate from a public authority",
           "A0's WebSocket fallback, which was not built"
         ],
-        "scope": "Proved on one Mac over loopback. SESSION builds the match on this link; no game uses it yet."
+        "scope": "Proved on one Mac over loopback. The headless deterministic match uses this link through SESSION."
       }
     }
   ],
@@ -3759,7 +3775,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "2b62a8d540a0c6f29799d849ca0dcb2ba238b21ba28b2d7ca096a4cb17e03db1",
+  "contract_sha256": "f5cbc245b2529e1486a968ac886d82d3397529c6f24ec895fe86be77b28935fa",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -4504,7 +4520,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "b15f571e7944f45115340dca0f90036c44a620d813f80792cf891198973de4d8",
     "contract_revision": "C4",
-    "contract_sha256": "2b62a8d540a0c6f29799d849ca0dcb2ba238b21ba28b2d7ca096a4cb17e03db1",
+    "contract_sha256": "f5cbc245b2529e1486a968ac886d82d3397529c6f24ec895fe86be77b28935fa",
     "specifications": {
       "BASELINE-SPEC.md": "d82f1745dc225b359f8be967e54255f772735f80e74ffc8a28bfc43ae653df64",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4885,7 +4901,7 @@
       "CAPABILITY-SURVEY.md": "6f76e6083d791c08ab2039ab1106132a2bcdc18f3f766effef3d7e888c2eb951",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PACKAGES.md": "76881c954b2c929849f52a27eb999faa0c2aa9638df1ab7c0ef28f133c8fc59d",
-      "CONTRACTS.md": "2b62a8d540a0c6f29799d849ca0dcb2ba238b21ba28b2d7ca096a4cb17e03db1",
+      "CONTRACTS.md": "f5cbc245b2529e1486a968ac886d82d3397529c6f24ec895fe86be77b28935fa",
       "DESIGN-PROGRAMME.md": "6394461315309427c702aa26a13d8caa9367e7886e8cb283180e899e9918d5ba",
       "ENGINE-EXPERIENCE.md": "060831492c4fa86cac1e99acffce8f2203fc8a5458bdc95d03750186af3439d2",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",
@@ -4912,7 +4928,7 @@
       "WHOLE-ENGINE-REVIEW.md": "c3705368bbc941ee64a6ea1c5bbb533854189cbad4c22469208d03aa0ae713e0",
       "modules/AUDIO-UI.md": "60373209c2d3d573f909f92575c75252ac1526a9d730ac8e1c68dc14f99392c0",
       "modules/ENVIRONMENT.md": "7be3e7766badf2fa7d799ea561433f8f9ea945bfc415df9be1cec123b294e00c",
-      "modules/NETWORKING.md": "34ec14259efc82699152692fdcf22427fcec3684fd237339066c542b477238b4",
+      "modules/NETWORKING.md": "cdbd00e4fb53625ac08a0143a01b7349824bbedb4f3fc8120d289df316b2ddba",
       "modules/PLATFORM-RUNTIME.md": "3cfd08165509dac1f0964fdb0d3f92215faf1a820a36a8e5c04ff05146171df1",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "70ed4608d576e6b8b1913341d0e170f7ad356989d88204d5144500c6474a1480",

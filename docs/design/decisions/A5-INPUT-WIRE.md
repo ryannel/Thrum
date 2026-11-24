@@ -1,5 +1,16 @@
 # A5 decision: V1 input batch bytes
 
+## Deterministic matches
+
+[SESSION](../../plans/SESSION/DESIGN.md) uses these input batch bytes unchanged for timed frames.
+The session negotiates its own protocol version and a build-derived deterministic rule-set identity,
+which covers the game's action wire. Ordered commands have a separate reliable message. Timed frame
+and command results come from the committed set and are retained in the host's set ring until the
+sets are acknowledged. A5's no-socket run below is historical. The session has since exercised the
+reference match on native Mac, Chrome and iPhone simulator replicas over loopback.
+
+## Original decision
+
 4 November 2026. **Selected for the conditioned input path; the first encoded no-socket run passes, while session and device proof remain open. Parked with the network track until after V1.** This specializes [A0 N1](A0-N1-TRANSPORT-CODEC.md), [A5 timing](A5-INPUT-TIMING-RECONCILIATION.md) and [C13](../CONTRACTS.md). The old fixed-record InputBatch in [NETWORK-SPEC](../NETWORK-SPEC.md) is historical. The protocol schema/version and game action table are pinned by the session handshake; a datagram receipt is never a gameplay result. W1 remains the sole authority.
 
 ## Packet and admission
