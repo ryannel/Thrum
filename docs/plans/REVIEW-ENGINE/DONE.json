@@ -326,7 +326,7 @@
     {
       "id": "M6",
       "name": "Corrected replay stays fast and the 100,000-entity run stays covered",
-      "status": "blocked",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -353,17 +353,7 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0,
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "The shared `long-tests` run covering `d13125a25275` must pass before M6.2 can be recorded and merged.",
-        "work": {
-          "commit": "d13125a25275e102335311771759d794df6b4ee2",
-          "branch": "build/REVIEW-ENGINE",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/REVIEW-ENGINE/M6-handoff.md"
-      }
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
