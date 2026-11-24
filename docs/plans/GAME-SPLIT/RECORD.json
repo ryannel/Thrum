@@ -189,7 +189,58 @@
     },
     "WP3": {
       "definitions": "44c5a71ef912212b65b0fe6c7e971fb31dc6b4feae060b239ce2d8664fee50c8",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "39fa9fef7dad6041f58482c21dca8c64af9a944e",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "items": {
+            "WP3.1": "fail",
+            "WP3.2": "pass",
+            "WP3.3": "fail",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "The ordinary web bundle exposes qualification hooks",
+              "item": "WP3.3",
+              "repeat": false
+            },
+            {
+              "name": "Engine qualification selections remain in the game-only library",
+              "item": "WP3.1",
+              "repeat": false
+            },
+            {
+              "name": "Three game test targets still declare required-features",
+              "item": "WP3.1",
+              "repeat": false
+            },
+            {
+              "name": "The game-only package test run fails to compile the clear-sky rig",
+              "item": "WP3.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 115258,
+            "cached": 4651776,
+            "output": 12406,
+            "turns": 1
+          },
+          "at": "2026-11-24T23:17:23Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
