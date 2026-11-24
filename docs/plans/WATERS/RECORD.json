@@ -21,7 +21,10 @@
       "output": 1968,
       "turns": 1
     },
-    "at": "2026-11-23T13:16:59Z"
+    "at": "2026-11-23T13:16:59Z",
+    "items_owed": [
+      "M18"
+    ]
   },
   "milestones": {
     "M1": {
@@ -1456,6 +1459,15 @@
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
         "at": "2026-11-23T13:14:54Z"
       }
+    },
+    "M18": {
+      "definitions": "ccdf2f11f46522a654e8d009834a4b9c63303173c201cef72770f92b2bfb7207",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check workspace-tests fails on 299376222cb1 at normal machine load. Three tests hit nextest's 10 s limit",
+        "at": "2026-11-24T01:13:58Z"
+      }
     }
   },
   "briefs": [
@@ -1534,11 +1546,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-23T13:14:54Z"
+    },
+    {
+      "task": "The main-branch check workspace-tests fails on 299376222cb1 at normal machine load. Three tests hit nextest's 10 s limit both side by side and when retried alone: thrum-river-model::it gauge::a_river_whose_source_is_another_river_s_chart_follows_that_chart_s_level, thrum-river-model::it report::the_same_input_gives_the_same_bytes_on_one_thread_and_on_eight, and water-scene::foam_scene_gpu craft_trail_outlives_removed_source_and_spreads. The log is .git/orchestrate/main-checks/workspace-tests/logs/20261124-015732-299376222cb1-1090-423.stderr. Find why each is too slow for the fast suite (a regression, an oversized world, or a test that belongs in the long tier), and plan the fix in the module whose code it is, in its plan or as its next milestone.",
+      "at": "2026-11-24T01:13:58Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T13:14:54Z"
+    "at": "2026-11-24T01:13:58Z"
   },
   "design_history": [
     {
