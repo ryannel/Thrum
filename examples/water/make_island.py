@@ -9,12 +9,23 @@ POND_PATCH = (84, 124, 77, 109)
 POND_SUBDIVISIONS = 4
 
 
+def smoothstep(value):
+    t = min(max(value, 0), 1)
+    return t * t * (3 - 2 * t)
+
+
 def height(x, z):
     # Trade wind blows towards the west beach. Its headland extends into
     # the sea to the north, with a sheltered side around the tip.
     headland = 36 * exp(-((z + 95) / 34) ** 2)
     radius = hypot((x - 124 + headland) / 230, z / 176)
     coast = 22 * (1 - radius)
+    # Give swell room to refract on the exposed shelf before the depth limit.
+    # Keep the existing beach slope at the waterline and blend into deep water.
+    depth = max(-coast, 0)
+    shelf = smoothstep((depth - 2) / 5) * (1 - smoothstep((depth - 13) / 11))
+    exposed = smoothstep((-x - 100) / 45) * smoothstep((95 - abs(z)) / 55)
+    coast += 0.44 * depth * shelf * exposed
     hills = (17 + 5 * sin(x / 57) * cos(z / 43)
              + 17 * exp(-((x - 257) / 65) ** 2 - ((z + 77) / 48) ** 2)
              + 15 * exp(-((x - 282) / 39) ** 2 - ((z - 11) / 62) ** 2)
@@ -70,7 +81,7 @@ def append_grid(points, normals, uvs, indices, xs, zs, pond=False):
 def main():
     # Keep the denser triangles local to the pond. The wider island uses the
     # original one-metre inland grid and larger seabed triangles.
-    xs = sorted(set(range(-200, 401, 4)) | set(range(82, 281)))
+    xs = sorted(set(range(-320, 401, 4)) | set(range(82, 281)))
     zs = sorted(set(range(-225, 226, 3)) | set(range(-34, 118)))
     points, normals, uvs, indices = [], [], [], []
     append_grid(points, normals, uvs, indices, xs, zs)

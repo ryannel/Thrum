@@ -89,9 +89,9 @@ impl Wind {
     }
 }
 
-const SIZE: [usize; 2] = [241, 181];
+const SIZE: [usize; 2] = [289, 181];
 // The first two glTF buffer views emitted by make_island.py.
-const COARSE_MESH: [usize; 2] = [300, 252];
+const COARSE_MESH: [usize; 2] = [330, 252];
 const POND_CELLS: [usize; 2] = [40, 32];
 const POND_SUBDIVISIONS: usize = 4;
 const POSITIONS_BYTES: usize = (COARSE_MESH[0] * COARSE_MESH[1]
@@ -182,7 +182,7 @@ fn island_map(forcing: &Forcing, surf: Option<bool>) -> Result<Map, Box<dyn Erro
             std::array::from_fn(|i| positions[u32::from_le_bytes(indices[i]) as usize])
         })
         .collect();
-    let bed = Bed::from_triangles([-200.0, -225.0], 2.5, SIZE, -12.0, &triangles)
+    let bed = Bed::from_triangles([-320.0, -225.0], 2.5, SIZE, -12.0, &triangles)
         .map_err(|e| format!("{e:?}"))?;
     let tide = if surf.is_some() { 0.5 } else { 0.0 };
     let mut map = Map::prepare(
@@ -430,7 +430,11 @@ fn build_island(
         .add()?;
     let sun = controls
         .slider("sun.elevation", "Sun elevation", 5.0..=80.0)
-        .default(60.0)
+        .default(if surf_route && wind == Wind::Trade {
+            28.0
+        } else {
+            60.0
+        })
         .add()?;
     let tide = surf_route
         .then(|| {
@@ -454,7 +458,11 @@ fn build_island(
             CAMERAS.get(index).copied().unwrap_or(BEACH_OVERHEAD)
         };
         sky.sun_elevation_degrees = c.get(sun);
-        sky.sun_azimuth_degrees = 228.0;
+        sky.sun_azimuth_degrees = if surf_route && wind == Wind::Trade {
+            300.0
+        } else {
+            228.0
+        };
         sky.exposure_compensation_ev = 0.3;
         sky.temporal_inputs = true;
         let mut map = display_map.lock().expect("island map");
