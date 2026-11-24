@@ -81,7 +81,12 @@ focused batch under normal builder load. The batch passes the existing ten-secon
 
 ## WP13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
-Resume `build/waters` from the handoff at `.claude/worktrees/waters/.orchestrate/evidence/WATERS/WP13-handoff.md` in the main checkout.
+Resume `build/waters` from the [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md).
+Substitute `WP13/` for `M13/` in its evidence links.
+Keep the shared analytic sheet and bounded swash. Tune a repeatable trade-wind set to shoal visibly, then
+resolve the pitching band on the same sheet. Use the [restart decision](LOG.md#wp13-restart-decision) to
+separate model, mesh and framing before the matched Metal and Chrome inspections. Keep the regular-wave
+run-up and draw-back and the highest-surface query.
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 

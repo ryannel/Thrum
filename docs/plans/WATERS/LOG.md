@@ -618,6 +618,38 @@
   alone and 3.405 s within the foam binary under builder load.
   [Target evidence](../../../.orchestrate/evidence/WATERS/M18/README.md).
 
+<a id="wp13-restart-decision"></a>
+
+- 2026-11-24 Keep the approved phase-lag transform, breaker section and bounded, contour-driven swash. On
+  `build/waters` the retained 16.0–17.8 s cut at `z = 0 m` shows two shoreward crests closing from 65.03 m
+  to 55.49 m while both lose height. The narrow-swell take hid the second ridge in glints and showed a
+  doubled lip. Diagnose the approach and the pitching lip separately.
+  [Retained profile](../../../.orchestrate/evidence/WATERS/WP13/review1440-retained-profile.log) ·
+  [Three takes](../../../.orchestrate/evidence/WATERS/WP13/bounded-swash-iteration.md)
+
+- Tune the incident spectrum and start time of the island's roughly 10 s, 45° trade-wind swell to show two
+  consecutive coherent ridges of unequal height. Track both across neighbouring shore-normal cuts. Read
+  turn, normal spacing and each crest's elevation and trough relief before it breaks. Compare the transformed
+  wave before the depth limit, after the limit and on the final sheet. Give refraction and shoaling room on
+  the exposed shelf before depth limiting dominates. If reshaping the shelf, prepare the bed from the same
+  terrain the scene draws. If more rise is needed, lift and sharpen the crest smoothly in the pre-throw rows
+  of the existing section. Keep the phase, exposure and envelope-driven break distance.
+
+- Compare a fine forward cut with submitted triangles at the same crest, time and stage, including a ring
+  transition. If the cut is intact and the draw splits or facets, refine the mesh locally in the pitching
+  band through the tested tide and sea states. Include the lip's reach, stitch in rest coordinates and sample
+  both presentations for motion. Reuse the portable field cache. If the cut itself doubles, ease competing
+  long-wave chop and smooth the throw ramp in the shared CPU and WGSL section. Keep a genuine overhang, the
+  highest-surface query, connected bore, wet edge, wet lost-power foam source and the plane-beach regular-wave
+  run-up and draw-back. [Guerrilla's wavefront tessellation](https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Water-Malan.pdf)
+
+- Start with submitted 2560 × 1440 trade-wind motion on portable Metal. Frame both ridges and the break zone
+  from 40 m, and read rise and pitch from 2 m. Use an oblique view and Sun angle that separate the face from
+  the trough. Judge the unmarked motion and use the cuts to diagnose it. Then complete the existing gale,
+  offshore, foam handoff, lee, tide and matched Chrome inspections. Refresh the affected query and frame
+  checks and paired cost record. If the controlled set and resolved mesh expose a remaining defect in the
+  shared sheet, return the matched cuts and captures under the three-look rule to reconsider the live window.
+
 - 2026-11-24 M13 design review, Must Fix 1. The 1 km camera's coarse foam window ends before the prepared bed.
   The whitewater design and M13.7 keep that view for distant surf and use a separate view of a breaking front
   crossing the coarse window's outer edge to judge the handoff. M13.11 requires both views at matching
