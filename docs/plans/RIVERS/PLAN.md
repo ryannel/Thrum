@@ -45,6 +45,13 @@ Record each case’s disposition, any replacement coverage and its before-and-af
 check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
 focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
 
+## M9 Chart gauges and solver determinism run within the fast-suite limit
+
+Land this repair before M4. Use the [compact fixtures](DESIGN.md#compact-chart-gauge-and-determinism-fixtures-m9)
+for the two tests that timed out on their isolated retry. Record the work each fixture does and the test
+times with the default Nextest profile, excluding compilation, alone and together under normal builder load.
+Both pass on the first attempt under the existing ten-second limit.
+
 ## M4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 
 The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/check_water_browser.mjs` are `WATERS`'; add the valley, cases and scenes behind the selection and change none of theirs. River files are generated beside the example's cooked content and are not committed. The fall is in the map from here and is drawn in M6.

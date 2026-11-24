@@ -601,3 +601,9 @@
   at the M17 design review in `1adcbf197`. M13 has no recorded milestone review. Its unmerged progress remains
   on `build/waters` at `2eda168cb`. Start a new M17 run from `build/waters-m17` so it takes the authorized M13
   entry as its starting point.
+
+- 2026-11-24 The craft-trail guard reached the ten-second limit both in the workspace batch and alone
+  at `299376222cb1`. It already timed out in the batch at `747909d1cd25` and retried in 5.112 s.
+  The cost is the number of full wake-scene submissions. The M13 branch's 50 ms test tick kept all
+  five submitted-stock reads through 60.1 s and passed in 1.827 s. M18 brings that fixture forward.
+  [Metal trail run](../../../.orchestrate/evidence/WATERS/M13/trail-tick.log).

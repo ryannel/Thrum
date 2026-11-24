@@ -335,6 +335,32 @@
       "failed_reviews_with_repeat": 0
     },
     {
+      "id": "M9",
+      "name": "Chart gauges and solver determinism run within the fast-suite limit",
+      "status": "not_started",
+      "quality_bar": "Preserve the chart-source and byte-determinism proofs on compact CPU fixtures in the default Nextest tier.",
+      "items": [
+        {
+          "id": "M9.1",
+          "statement": "The chained-gauge test passes in the fast tier. It still proves the chart-source refusals, the upper chart's interpolated level at the source place, downstream chart and fall response, and agreement with a fresh off-sample solve within 1 cm in depth and 25% in speed.",
+          "check": "CARGO_INCREMENTAL=0 rustup run stable cargo nextest run --locked --offline --profile default -p thrum-river-model --test it -E 'test(=gauge::a_river_whose_source_is_another_river_s_chart_follows_that_chart_s_level)' --no-tests=fail",
+          "ask": "Do the gauge place, sample intervals, wet unblended cells and nonzero fall discharge independently witness the original assertions and refusals on the smaller fixture? Do the isolated and focused batch results pass on the first attempt under normal builder load?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M9.2",
+          "statement": "The determinism test passes in the fast tier. Two independent one-thread solves and one eight-thread solve of the same compact reach produce identical serialized river-file, depth, discharge and loss bytes, with the eight-thread solve exercising the parallel stepper.",
+          "check": "CARGO_INCREMENTAL=0 rustup run stable cargo nextest run --locked --offline --profile default -p thrum-river-model --test it -E 'test(=report::the_same_input_gives_the_same_bytes_on_one_thread_and_on_eight)' --no-tests=fail",
+          "ask": "What shows that the eight-thread solve crosses the active span threshold and performs work in multiple row chunks? Do the isolated and focused batch results pass on the first attempt under normal builder load?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M4",
       "name": "On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea",
       "status": "not_started",

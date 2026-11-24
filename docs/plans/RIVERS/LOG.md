@@ -171,3 +171,9 @@
   Verified on the M3 Max. Both tests caught the review's regressions when reintroduced. All 19 cases
   passed again in isolation and in the focused batch.
   [Review fix evidence](../../../.orchestrate/evidence/RIVERS/M8/review-fix/M8.1.md)
+
+- 2026-11-24 The chart-source gauge and one-versus-eight-thread byte tests were outside M8's nineteen
+  cases. Both hit the ten-second limit in the workspace batch and alone at `299376222cb1`. Both
+  already hit it in the batch at `747909d1cd25` and retried in 5.362 s and 5.746 s respectively.
+  The failure revision changes capture code outside these tests. M9 removes the oversized setup
+  and keeps both guards in the fast tier.

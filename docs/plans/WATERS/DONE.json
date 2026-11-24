@@ -1044,6 +1044,24 @@
       ]
     },
     {
+      "id": "M18",
+      "name": "The submitted craft trail is checked through a minute of ageing in the fast suite",
+      "status": "not_started",
+      "quality_bar": "Keep the full elapsed-time trail witness and its original bounds in the default Nextest tier on Metal.",
+      "items": [
+        {
+          "id": "M18.1",
+          "statement": "The fast Metal trail test reads the submitted stocks at 0.1, 10.1, 20.1, 30.1 and 60.1 seconds after the 6 m/s craft is removed. Peak cover starts above 0.14, total cover at 20.1 seconds exceeds 0.1, width increases and peak falls at each reading, and the final peak is below 0.025.",
+          "check": "CARGO_INCREMENTAL=0 THRUM_REQUIRE_GPU=1 rustup run stable cargo nextest run --locked --offline --profile default -p water-scene --test foam_scene_gpu -E 'test(=craft_trail_outlives_removed_source_and_spreads)' --no-tests=fail",
+          "ask": "Do the five reads come from submitted Metal stocks with the same elapsed times and bounds, and do the isolated and foam-binary runs pass on the first attempt under normal builder load?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M17",
       "name": "Small water checks leave the full sea grids to the long tier",
       "status": "in_progress",

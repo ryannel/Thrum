@@ -2047,3 +2047,13 @@ with an ignore reason beginning with `long:`. List `thrum-sea::it` once in `.con
 Raise the `main-tier` rule version as the settings require. Run these cases in that build on the branch,
 then take the covering `long-tests` record on main. Verify that the normal runner skips the moved cases
 and the long runner executes each once.
+
+## Compact Metal craft trail (M18)
+
+The trail test drives the wake scene through 692 submissions at a 60 Hz simulation tick to read five
+samples of the submitted film stocks. Its witness is the stock left by the same 6 m/s craft on a real
+Metal device after the source is removed, through 60.1 seconds of simulated time. The 32 × 24
+target and 50 ms test-only tick on `build/waters` reduced the run to 182 submissions within the
+foam catch-up limit and measured 1.827 s alone. Keep the five elapsed checkpoints and the existing
+cover, width, peak and final fade bounds.
+Keep this guard in the fast tier.

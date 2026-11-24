@@ -12,7 +12,6 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: a river's flow is worked out once and stored. Floods, dam breaks and levels that travel downstream are not planned, which sets aside the water decision's rule that all water simulation runs on the GPU.
 - Assumption: "breaking waves" (14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel, and no current from surf.
 - Assumption: wet long-wave loss keeps M7.5's distributed foam wherever a breaking face is unavailable, including the swash. An eligible crest concentrates part of that birth on its face and under a resolved lip. Distant beaches use the same wet lost-power source for their steady cover.
-- Assumption: a smaller fixture or fewer submissions can keep the Metal craft-trail guard in the fast tier while preserving M7.6's coverage.
 - Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
 - Assumption: surf on a lake is proved against the model, not judged by eye: the example's lake raises no long waves.
 - Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
@@ -58,6 +57,14 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 ## M7 Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach
 
 [Review](../../../.orchestrate/evidence/WATERS/M7-review.md)
+
+## M18 The submitted craft trail is checked through a minute of ageing in the fast suite
+
+Land the [compact Metal trail fixture](DESIGN.md#compact-metal-craft-trail-m18) ahead of unfinished
+water work. Adapt the trail-test portion of `52345b514` from `build/waters` to the current main
+fixture. Record the default Nextest time on the Mac, excluding compilation, for the exact test alone
+and within the foam binary under normal builder load. Both runs pass on the first attempt under the
+existing ten-second limit. M13.14 continues to verify the guard when the surf work lands.
 
 ## M17 Small water checks leave the full sea grids to the long tier
 

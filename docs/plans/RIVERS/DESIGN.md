@@ -728,3 +728,23 @@ comparison must still double dry padding around the same wet reach. Where a test
 or fall record, use only the samples and geometry needed to exercise the interpolation, wetting and
 dry-reach cases. Use already-made charts for checks whose subject is sampling, with the solver-to-chart
 and river-file round trips still exercised by the tests that own those boundaries.
+
+## Compact chart gauge and determinism fixtures (M9)
+
+The chained-gauge test builds two 136 × 64 lake valleys at 0.25 m spacing, solves both across their
+gauge samples and solves the lower valley again at an interior gauge. Most of that work sets up a
+map test. Use compact charts for the lake → upper chart → lower river chain, with a gauge point
+between four cell centres and sample endpoints and intermediate levels that change the lower
+charts and falls. Keep refusals for a chart source without a place, a non-chart or out-of-footprint
+source, a self-source, insufficient gauge range, reusing a chart already in a river, and a
+manual gauge write to the dependent river. Compare the lower charts with the independent sample
+mix at wet points beyond join blends and check that fall discharge rises with the lake. Keep an
+independent fresh solve on a compact lower reach for the off-sample comparison, with the existing
+1 cm depth and 25% speed tolerances.
+
+The determinism test runs the 10,752-cell valley to convergence three times. Use the smallest
+quickly converging reach that still crosses the stepper's parallel threshold of 1,024 active span
+cells with work in multiple row chunks. Verify that the eight-thread solve actually exercises that
+branch. Keep two one-thread solves and one eight-thread solve and compare the same serialized river
+file and the raw depth, both discharge components and loss bytes. This guards the real serial and
+parallel solver paths, including their stable result ordering.
