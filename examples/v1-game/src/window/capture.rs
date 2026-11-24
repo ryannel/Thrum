@@ -967,15 +967,18 @@ async fn record(
         } else {
             None
         };
-        trace.opportunity(json!({"step_cpu_start":step.cpu_start,"step_cpu_end":step.cpu_end,"loop_cpu_start":work.cpu_start,"loop_cpu_end":work.cpu_end,"step_thread_cpu_ns":step.cpu.as_nanos(),"step_wall_ns":step.wall.as_nanos(),"loop_thread_cpu_ns":work.cpu.as_nanos(),"loop_work_wall_ns":work.wall.as_nanos(),"drain_wall_ns":drain.as_nanos(),"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
+        let mut record = json!({"step_cpu_start":step.cpu_start,"step_cpu_end":step.cpu_end,"loop_cpu_start":work.cpu_start,"loop_cpu_end":work.cpu_end,"step_thread_cpu_ns":step.cpu.as_nanos(),"step_wall_ns":step.wall.as_nanos(),"loop_thread_cpu_ns":work.cpu.as_nanos(),"loop_work_wall_ns":work.wall.as_nanos(),"drain_wall_ns":drain.as_nanos(),"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
             "scenario_ns":opportunity.scenario_time.as_nanos(),"accepted_ns":if control_dispatched {Some(accepted.as_nanos())} else {None},
             "control_dispatched":control_dispatched,
             "skipped_before":opportunity.skipped_before,"skip_reason":"driver busy or host oversleep",
             "returned_ns":returned.as_nanos(),"requested_yaw_degrees":yaw,"accepted_yaw_degrees":accepted_yaw,
             "submitted":report.submitted,"tick":report.tick,"dropped_view":report.dropped_view,
-            "idle_gpu_progress":idle_gpu_progress,
             "admission_usage":admission_usage,"ring_omissions":driver.omissions()-omissions_before,
-            "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()}), &report);
+            "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()});
+        if let Some(idle_gpu_progress) = idle_gpu_progress {
+            record["idle_gpu_progress"] = idle_gpu_progress;
+        }
+        trace.opportunity(record, &report);
         last_sample_time = opportunity.scenario_time;
         if mode == "fixed" {
             drain_fixed(&mut driver, &mut trace, writer.as_ref(), origin)?;

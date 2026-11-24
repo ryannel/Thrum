@@ -196,6 +196,8 @@ def mac_governor_capture(output, binary, env, route):
             step_thread_median_ms=median(row["step_thread_cpu_ns"] for row in timings) / 1e6,
             step_wall_median_ms=median(row["step_wall_ns"] for row in timings) / 1e6,
             drain_wall_median_ms=median(row["drain_wall_ns"] for row in timings) / 1e6,
+            idle_poll_thread_median_ms=median(
+                (row.get("idle_gpu_progress") or {}).get("cpu_ns", 0) for row in timings) / 1e6,
         )
     return dict(target="mac-metal", capture_mode="realtime", binary_sha256=digest(binary), arms=arms)
 
