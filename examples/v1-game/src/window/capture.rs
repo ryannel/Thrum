@@ -973,6 +973,25 @@ async fn record(
             host.set_render_scale(crate::camera::route_render_scale(tick))
                 .map_err(|error| error.to_string())?;
         }
+        // A frame can retire after this request becomes due and still leave
+        // time to encode before the same display target. Keep that bounded
+        // interval available for completions without changing the clock.
+        let slot_wait = if target_wind && !driver.host().has_free_slot() {
+            let started = Instant::now();
+            while !driver.host().has_free_slot()
+                && opportunity.target.saturating_duration_since(Instant::now())
+                    > Duration::from_millis(3)
+            {
+                let collect = admission.collect_images(&driver, origin);
+                trace.drain(&mut driver, writer.as_ref(), origin, collect)?;
+                if !driver.host().has_free_slot() {
+                    std::thread::sleep(Duration::from_micros(250));
+                }
+            }
+            Some(started.elapsed())
+        } else {
+            None
+        };
         let step = WorkClock::start().map_err(|e| e.to_string())?;
         let admission_usage = driver.capture_usage();
         let omissions_before = driver.omissions();
@@ -1038,6 +1057,9 @@ async fn record(
             "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()});
         if let Some(idle_gpu_progress) = idle_gpu_progress {
             record["idle_gpu_progress"] = idle_gpu_progress;
+        }
+        if let Some(wait) = slot_wait {
+            record["slot_wait_ns"] = json!(wait.as_nanos());
         }
         trace.opportunity(record, &report);
         last_sample_time = opportunity.scenario_time;
