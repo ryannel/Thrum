@@ -670,44 +670,38 @@
     },
     {
       "id": "WP3",
-      "name": "One surface filter is screened for the west-lookout shadow flash",
+      "name": "A renderer developer can reproduce the shadow sampling failure and assess one filter offline",
       "status": "not_started",
-      "depends_on": [
-        "T2-CAPTURE:WP1"
-      ],
-      "quality_bar": "For any in-game screen, use the low-Sun terrain shadows in Red Dead Redemption 2 for a continuous edge attached to the ground with readable terrain texture. Judge the authored spur and ordinary Ground E separately with Neutral Highlights and the existing incident meter and low-light key.",
       "items": [
         {
           "id": "WP3.1",
-          "statement": "The stock visibility loss is reproducible on the reduced depth crossing. The authored-spur result either includes matched fixed Metal and Chrome captures of the two identified submissions or records the missing inputs and leaves the in-game verdict open. Record: input identities, reduced stock outputs and fixed-frame visibility and shaded comparisons when available.",
-          "inspect": "If the authored-spur replay is available and the candidate reaches the in-game screen, compare the native-size fixed crops in both builds on each target. 1. Does stock reproduce the row-665 flash at 226\u2013227? 2. Does the candidate remove it across x=480\u20131200 without moving it to adjacent rows or frames? 3. Does the fixed 74\u201394 trajectory fade into shadow without a new visible step? If either archived state is absent, record the in-game comparison as unavailable.",
+          "statement": "The reduced two-state crossing can be regenerated from its recipe and pinned stock shader. Stock reaches zero visibility at the second state while the dense comparator still sees a limb. Record: the rerun command, the two states and outputs, and the recovery status of the authored spur, D32, uniforms and submitted inputs for both historical trajectories.",
+          "ask": "Does the rerun produce both named states with the stock comparison and reproduce the premature zero? Does the record identify the historical 1920 × 1080 submissions 226 and 227 at row 665, and leave the in-game verdict open for their matched fixed Metal and Chrome replay?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": "",
-          "ask": "Can you regenerate the two reduced samples from the design and observe stock falling to zero while dense same-field visibility stays positive? Does the result identify the authored spur and name any unavailable mesh, depth, uniforms or frame inputs? If the in-game screen ran, do both arms on both targets show the stock event and candidate at the 1920\u00d71080 submitted states 226 and 227, with matched camera, Sun, interpolation, jitter and reset history from the same cut? Do consecutive frames 223\u2013231 and the fixed 74\u201394 extinction sequence expose a flash moved in time or into an adjacent row?"
+          "review": ""
         },
         {
           "id": "WP3.2",
-          "statement": "One fixed-work trial reports stock, candidate and dense stored-depth visibility on the reduced crossing, the 21-sample extinction sweep, uniform clear and uniform occlusion, and on the original trajectories if the fields return. Record: per-sample values, adjacent steps, evaluated work and the keep-or-park verdict.",
+          "statement": "One CPU trial compares stock, candidate and dense visibility on the same stored-depth field for the two crossing states, 21 extinction states, uniform clear and uniform occlusion. Record: per-state visibility, signed residuals, adjacent steps, work and the retain-or-park verdict.",
+          "ask": "Does the candidate use 64 × 16 weighted chord samples and at most 4,096 filter loads per query throughout? Does the verdict park the candidate if it loses the limb at the crossing, extinguishes early, rebounds or stays positive at the end of the sweep, or changes either uniform control?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": "",
-          "ask": "Does the trial use the same 64\u00d716 normalized chord quadrature at every sample, at most 4,096 filter depth loads, with the same receiver comparison as stock? Do the results show whether it retains a visible limb after the stock drop, stays positive up to the last positive reduced dense sample, fades to zero without a rebound and preserves the two uniform controls? Does a failed control park the candidate and does a missing archived replay leave its in-game verdict open?"
+          "review": ""
         },
         {
           "id": "WP3.3",
-          "statement": "The trial lands as an offline diagnostic. Its record either closes the screen with the failed or unavailable witness, or includes the motion, surface controls, recovery and cost evidence for a later review. Record: the trial disposition, inspected production diff and, for each target screened in game, matched captures and capture-off timings.",
-          "ask": "Does the landing leave the production shader, scene, recipe and controls, all five registered baseline references, their comparisons and registry entries intact? If an in-game screen ran, does its scratch patch apply the correction once in the shared cooked and synthetic surface path, with the aerial evaluation separate? Do the post-discard and post-replacement submissions match the fresh renders by bytes? Does the timing record pair whole-frame and shadow costs at the same extent and settings, with load, run order and any project tripwire recorded?",
+          "statement": "The diagnostic is a standalone CPU invocation in the working folder. It leaves the production surface evaluator and all five registered exact sets intact. Record: the landing diff and baseline impact.",
+          "ask": "Does the work package diff leave the shaders, scenes, recipes, controls, five registered references, comparison files and registry entries identical to its base?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": "",
-          "inspect": "If the candidate reaches an in-game screen, compare 1\u00d7 T2 realtime on Metal and Chrome through the 17.40\u201317.80 h crossing and the separate slow \u00b120\u00b0 pan. Use fixed captures for the six stops. 1. Does the moving edge stay attached to the ground with readable texture and without flecks, ribbing or a detached bright band? 2. Do the ordinary Ground E pan and all six stops keep their reviewed appearance? 3. Do open Sun, full occlusion, broad edge, close terrain, distant crest, represented compact caster and overlap keep their expected visibility and placement across the near, last and far ranges? 4. Does the swapped cooked asset agree with the fresh run at the same pose and time? Record which control or cost tripwire parked the candidate if it fails the screen."
+          "review": ""
         }
       ],
       "failed_reviews": 0,
@@ -720,8 +714,8 @@
       "items": [
         {
           "id": "WP4.1",
-          "statement": "One bounded CPU trial compares the source-side reuse candidate with independent rays against original triangles of the reconstructed scenes. It reports blocked coverage, omission, overcoverage and refused work for open Sun, broad edge, moving narrow crest and its ablation, the close terrain at the 64 m partition, the 24 cm caster at 160 m, and their overlap, including the four reconstructed receiver/phase pairs. Restored original spur cases, if available, have their own results. Record: rerun command, input identities, reference convergence, signed differences and preparation, receiver and caster work.",
-          "ask": "Can you rerun the reconstructed geometry and phase comparison from its versioned inputs? Do open Sun, crest ablation, close umbra, compact-only and the nonzero terrain\u2013caster intersection expose missing or added occlusion and double counting? Was the limit fixed before the run, is rejected work charged, and does the record show why the candidate was kept or parked as a diagnostic?",
+          "statement": "One bounded CPU trial compares the source-side reuse candidate with independent rays against the reconstructed triangles. It covers open Sun, broad edge, narrow crest with four moving receiver and phase pairs and its ablation, close umbra with the 64 m partition control, compact caster only and terrain–caster overlap. Record: a reproducible input recipe, rerun command, reference convergence, blocked coverage, omission, overcoverage, spent work and unanswered queries.",
+          "ask": "Can you rerun all named cases from the recorded recipe? Do the centre controls show coverage from the straddling faces and a nonzero terrain–caster intersection counted once? Are omission and overcoverage reported separately at common samples? Does the record charge work spent on unanswered queries to the preset cap and give a retain-or-park verdict for the single candidate?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

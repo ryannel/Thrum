@@ -763,3 +763,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   4. WP3 lands an offline diagnostic. Scratch rendering stays outside the five registered sets. A default correction needs a later ownership ruling.
   Took the haze suggestion because the retained measurements document the retired reference. Both handoff mentions now use that record.
   [Reproduction and results](../../../.orchestrate/evidence/ATMOSPHERE/shadow-review-revision/README.md)
+
+- 2026-11-24 Final audit against the [four findings at `c5e5290ba96f`](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md).
+  1. Traced the spur input copy through a second historical stock reproduction. The copy, D32, uniforms and replay inputs remain unavailable. WP3.1 now requires regeneration of the reduced pair from a pinned shader. WP4.1 uses self-contained geometry with verified moving receiver and Sun phase pairs, a straddling close face and a detached caster with nonzero overlap.
+  2. Ran the full 64 × 16 fixed-work filter on the two crossing states, all 21 extinction states and both uniform fields. WP3.2 records the work and closes on one retain-or-park result.
+  3. WP3.1 records the missing historical submissions. Any later in-game verdict requires matched fixed Metal and Chrome submissions 226 and 227 and their history, plus the extinction sequence and the realtime crossing and pan.
+  4. WP3.3 checks the offline boundary against the five registered sets and their comparisons. A later default change needs the `APPLE-TILE` ownership ruling before implementation.
+  The current review gives no new suggestion. It accepts the removal of WP8.11, whose scheduled verifier still runs.
+  [Recovery audit and rerun](../../../.orchestrate/evidence/ATMOSPHERE/shadow-final-design-audit/README.md)

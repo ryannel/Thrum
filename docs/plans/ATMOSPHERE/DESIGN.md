@@ -132,13 +132,10 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### WP3 surface Sun visibility
 
-WP3 follows WP8 and screens one surface filter for the in-cascade flash on the authored west-lookout spur.
-The flash and the exact finite-disk match remain open in the [vision](../VISION.md#the-milestones). The
-player-visible bar for a later correction is WP6's Red Dead Redemption 2 shadow reference: a continuously
-moving edge attached to the ground, with readable terrain texture. Compare the 17.40–17.80 h crossing and
-the separate slow ±20° pan on Metal and Chrome. The shipped Ground E pan and six held route stops,
-including 17.4 h at sunset, are separate controls. Keep Neutral Highlights, the incident meter and the
-low-light key. [Exposure decision](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#exposure-audit-decision)
+WP3 follows WP8 and runs one CPU trial for the sampling failure behind the in-cascade flash on the authored
+west-lookout spur. The flash and the exact finite-disk match remain open in the [vision](../VISION.md#the-milestones).
+The trial leaves a rerunnable reproduction and a decision on one candidate. The required game replay and
+visual judgement belong to a separately reviewed correction.
 
 #### Which inputs survive
 
@@ -148,13 +145,14 @@ submissions 226 and 227. Blocker count stayed at six, the filter radius stayed n
 comparison still found 2.49–3.65% visibility after stock fell to zero. The separate 74–94 extinction
 trajectory exposed the contour query's whole-receiver work-limit switch: 243 of 280 receivers switched at
 77 and the largest step was 8.924 percentage points. The rotated-tap and spatial-resolve screens also left
-visible patterns. These results identify the two failures. The handoff's D32 fields, uniforms, spur source
-and rerun scripts are unavailable at their named paths and have no restore entry.
+visible patterns. The handoff's D32 fields, uniforms, spur source and rerun scripts are unavailable at
+their named paths and have no restore entry. The later stock rerun identified the exact spur input copy
+and reproduced the row-665 median and p95 steps of −50 and 72 red codes. That input copy is also missing.
 [Historical handoff](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
 [Archived D1–D3 criteria](../../../.orchestrate/evidence/ATMOSPHERE/WP1-M4-records.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-parked-spike)
 
-Use this reduced reconstruction to exercise the sampling fault even if the archive stays unavailable. Take
-the 16 odd-index taps and four-texel bilinear depth comparison from `crates/thrum-render/src/synthetic.wgsl`.
+Generate the reduced reproduction directly from the parameters below. Take the 16 odd-index taps and
+four-texel bilinear depth comparison from `crates/thrum-render/src/synthetic.wgsl` at `c5e5290ba96f`.
 Use a flat receiver at reverse depth 0.25, fixed 52.75-texel radius, and an interior footprint in a last
 cascade. Along its vertical axis (positive opposite to the shader's UV y), set texel-centre signed
 coordinates on half integers from the receiver. Centred at and below the edge are clear depth 0 and above
@@ -165,11 +163,11 @@ for `i = 0…20`. At each fractional offset use the same fixed depth step and tr
 the fractional part. This keeps the coordinate equivalent to the comparison formula above.
 Use uniform clear and uniform blocked fields as endpoint controls.
 
-The CPU reconstruction, using the production taps, gives 12.50% then zero on the crossing while dense
-integration gives 6.87% then 2.70%. On the 21-sample sweep the stock filter reaches zero before the limb
-extinguishes. This isolates the fault with a fixed radius and depth field. An actual replay of the authored
-spur still needs the original mesh or cook and both trajectories' frame inputs.
-[Reconstruction command and results](../../../.orchestrate/evidence/ATMOSPHERE/shadow-review-revision/README.md)
+The production taps give 12.50% then zero on the reduced crossing while dense integration gives 6.87%
+then 2.70%. On the 21-sample sweep the stock filter reaches zero before the limb extinguishes. Save the
+fixture recipe, stock shader identity and per-state values with the rerun command. The original spur replay
+needs its mesh or cook and the submitted inputs for both trajectories. Ground E remains a separate control.
+[Recovery audit and reconstruction](../../../.orchestrate/evidence/ATMOSPHERE/shadow-final-design-audit/README.md)
 
 #### One bounded filter trial
 
@@ -179,60 +177,65 @@ with a normalized quadrature of that same bilinear comparison. Use 64 angular mi
 with rows at `y = −cos θ`. Take the mean at 16 equally spaced midpoints along each row's chord. Weight
 the mean by `sin² θ`, which accounts for chord length and row spacing, then normalize by the sum
 of the weights. This is 1,024 bilinear evaluations
-and at most 4,096 depth loads per query, excluding the unchanged stock search. Run this fixed-cost trial
-on the CPU for both reduced trajectories. Run the same trial on original fields if recovered. A dense
-same-field integral is the comparator. Keep signed residuals against it and the separate historical
-triangle results. Whole-disk work and weights stay fixed even as only a sliver is visible. With a fixed
+and at most 4,096 depth loads per query, excluding the unchanged stock search. That is 64 times the
+stock filter's 64 depth loads and is a CPU trial limit. Use the same footprint origin, radius, compare
+predicate and depth field for stock, candidate and the dense same-field comparator on both trajectories.
+On the reduced field, each chord has constant visibility. The dense comparator can integrate it with
+32,768 uniformly spaced row midpoints, weighted by chord length. Record signed values and adjacent steps.
+Whole-disk work and weights stay fixed even as only a sliver is visible. With a fixed
 set of texel comparisons the bilinear field is continuous under translation and a varying radius; a
 normalized weighted sum preserves that property and tends to zero as its samples lose coverage.
 Re-fitting a map, changing a depth predicate or entering a stock exit can still change the inputs
 abruptly, which is why the fixed trajectories and adjoining frames matter.
 
-Report a single verdict. Park the candidate if it loses the remaining limb on the reduced crossing,
-reaches zero before the dense comparison, rebounds on the reduced extinction sweep, or fails either
-endpoint control. Even if
-it passes, missing original inputs leave the visual verdict open. If the original inputs return, reproduce
-stock there before judging the candidate and compare both original trajectories under the same settings.
-A failed visual or cost screen ends this trial. Record failed or unavailable rows and keep their observed
-scope. Any candidate for a default runtime change needs a later design review; the offline work limit
-establishes a finite trial, and timing still has to show that a proposed runtime evaluation is viable.
+Park the candidate if it loses the remaining limb on the reduced crossing, reaches zero before the dense
+comparison, rebounds on the reduced extinction sweep, is positive at its last state, or fails either uniform
+control. Otherwise retain it as a diagnostic candidate. Either result finishes the one trial. An in-game
+proposal needs the original replay and its own cost account.
 
 #### Fixed witness and motion
 
-For any in-game screen, capture stock and candidate from the same cooked spur and starting cut/reset,
+The bar for an in-game correction is WP6's Red Dead Redemption 2 shadow reference: a continuously moving
+edge attached to the ground, with readable terrain texture. Keep Neutral Highlights, the incident meter and
+the low-light key. [Exposure decision](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#exposure-audit-decision)
+
+Before judging a correction, capture stock and candidate from the same cooked spur and starting cut/reset,
 at 1920×1080 with TAAU on. Use T2 fixed submitted-frame sequences on Metal and Chrome for the
 run-up and consecutive states through 223–231, with 226 and 227 explicitly joined to the archived
 pose, Sun direction, simulation endpoints and alpha. Match jitter phase and the sequence of history
 resets and prior submitted inputs in both arms. Use the archived 74–94 extinction sequence in the
-same way. Retain raw visibility and shaded frames for the pair and adjoining frames. Check the full
-x=480–1200 span on row 665 and adjacent rows for a lost or displaced flash. A new scenario that cannot
-reproduce the stock defect, an endpoint redraw or a clip missing either state leaves that verdict open.
-Keep T2 realtime at 1× for the full crossing and ±20° pan, and fixed for the six held stops. Compare the
-Ground E pan separately. Review near, last and far ranges with open Sun, full occlusion, broad edge,
+same way. Retain raw visibility and shaded frames for the pair and adjoining frames. Require stock to show
+the row-665 drop in both targets at 226→227 before comparing the candidate across x=480–1200, adjacent
+rows and frames. The in-game verdict needs every fixed submission above and the realtime comparison below.
+Keep T2 realtime at 1× for the 17.40–17.80 h crossing and the separate slow ±20° pan, and fixed for the
+six held stops. Compare the Ground E pan separately. Review near, last and far ranges with open Sun, full occlusion, broad edge,
 close terrain, distant crest, represented compact caster and overlap. Compare the cooked swap to the
-fresh replacement. In any in-game candidate report the first submitted frame after discard and device
-replacement against a fresh render, and paired capture-off whole-frame and shadow timings at the same
-extent and settings.
+fresh replacement. The correction belongs in the shared cooked and synthetic surface evaluator, with
+aerial evaluation separate. Compare the first submitted image after discard and device replacement
+byte for byte with a fresh render. Record paired capture-off whole-frame and shadow timings at the
+same extent and settings, with run order, load and any tripped wire.
 
 #### Exact baselines
 
-WP3 lands as an offline diagnostic. Any in-game candidate is built only in scratch. The registered
+WP3 runs its diagnostic from the working folder. The registered
 `apple-tile-native`, `chrome-day-sdr`, `chrome-day-scene-linear`, `chrome-night-sdr` and
-`chrome-night-scene-linear` sets draw the ordinary production path, which receives no WP3 shader,
-scene, recipe or control change. The existing scheduled verifier continues to guard those bytes. This
-boundary also preserves the six-stop comparison. If a later proposal changes default surface light,
-all five sets are in its ownership review because they draw the shared evaluator. A ruling with
-`APPLE-TILE` must then name the affected sets and the refresh owner before that work is built.
+`chrome-night-scene-linear` sets launch the production valley through the shared surface evaluator.
+The WP3 diagnostic is a separate CPU invocation in the working folder with no runtime call site. The
+existing scheduled verifier continues to guard the registered bytes. If a later proposal changes default
+surface light, its design review covers all five sets and obtains a ruling with `APPLE-TILE` naming which
+sets move and who refreshes them before that work is built.
 [Registry](../../../.config/exact-baselines.json) · [Exact baseline ownership](../ARCHITECTURE.md#exact-baselines)
 
 ### WP4 finite-disk shadow diagnostic
 
 WP4 tests one source-side reuse candidate offline. Traverse source bounds against the bundle of Sun rays
 swept across a receiver patch and phase interval. Reuse overlapping nodes for each receiver in that
-domain, including undecided nodes. Refine to original terrain and detached-caster spans at each receiver,
-clip to the same solar chord and union before integrating. Keep terrain within 64 m, including faces
-straddling the partition, in the exact complement. Compare with independent direct ray intersections on
-the original triangles. The prior frozen packets agreed at finite samples while three conservative
+domain, including undecided nodes. For each receiver project the admitted terrain faces, the near
+complement and the detached caster along rays onto the plane one unit toward the Sun. The projected disk
+has radius `tan(0.266°)`. Clip to the disk and union intervals along each solar chord before integrating.
+Classify terrain as far only if every vertex is at least 64 m forward along −X from the patch's minimum X.
+Keep each other triangle whole in the near complement. Compare with independent direct ray intersections
+on the original triangles. The prior frozen packets agreed at finite samples while three conservative
 omission proofs left moving receivers unresolved. The project bar makes this a diagnostic with no
 continuous-accuracy or runtime claim.
 [Historical cases](../../../.orchestrate/evidence/ATMOSPHERE/WP1-M4-records.md#m4-exact-finite-disk-shadow-reference-match-deferred-bounded-spike)
@@ -249,26 +252,26 @@ each of the two resulting quads into triangles. Use the following source cases.
 | Open Sun | No blocker triangles |
 | Broad edge | Ridge at 256 m, crest height 0.512 m, half-width 8 m |
 | Distant narrow crest | Ridge at 1,024 m, crest height 3.072 m, half-width 1 m, with the ridge removed as its ablation |
-| Close umbra | Ridge at 63 m, crest height 1 m, half-width 8 m. Its far foot is at 64 m. |
+| Close umbra | Ridge at 66.5 m, crest height 1 m, half-width 8 m. On this patch the rising face straddles the plane at X=−66 m. |
 | Compact caster only | Triangulated 24 cm cube centred at (−160, 0.32, 0.35) |
 | Overlap | Broad ridge and the same cube, considered together and in isolation |
 
 Sample X and Z offsets −2, 0 and 2 on each 4 m receiver patch with Y=0, and also Y=0.15 for the raised
-overlap patch. For the four moving receiver/phase pairs use the broad edge, with X=Y=0 and Z at
-−1.5, −0.5, 0.5 and 1.5 m, each at the two adjacent elevations 0.001 and 0.002. These are reconstructed
-domains for the same comparisons. If the four archived row-665 receiver/phase domains are restored
-with their original triangles, include them in a separate result. The reduced reconstruction's centre
-rays show partial coverage for both the crest and compact caster and nonzero intersection for broad
-ridge plus cube, so the controls can distinguish omission, added cover and double-counting.
-[Independent ray probe](../../../.orchestrate/evidence/ATMOSPHERE/shadow-review-revision/README.md)
+overlap patch. For the four moving receiver/phase pairs use the narrow crest with X=Y=0. Start at
+Z=−1.5, −0.5, 0.5 and 1.5 m and elevation 0.001 rad. In each pair move Z by +0.5 m and elevation
+to 0.002 rad. At the close centre receiver count coverage from the faces straddling the patch's
+64 m plane alone as a control. Retain the fixture recipe, Sun phases and receiver positions with the
+rerun command. Report the reconstructed cases under their own identities.
+[Independent ray probe](../../../.orchestrate/evidence/ATMOSPHERE/shadow-final-design-audit/README.md)
 
-Fix ray density and the candidate's work limits before running. Use the historical ceiling of 20 million
-work units per witness as an upper cap for the candidate, counting bounds and triangle visits in
-preparation and receiver work, including detached casters. Report incomplete work as unsupported with
-the work spent to reach the cap. Integrate both arms over the same projected solar disk. State reference
-convergence by refining the independent ray grid at the centre of each case.
-Retain signed coverage errors and the keep-or-park decision for this candidate. A future production
-proposal requires its own review and cost record.
+Fix sample density and the candidate's work limits before running. Use the historical ceiling of 20 million
+work units per case as an upper cap for the candidate. Charge a unit for each bound test, triangle visit,
+chord intersection, interval comparison or merge, and coverage sample. Include preparation, receiver
+queries and detached casters. Stop at the cap and record unanswered queries and spent work. Measure
+both arms on the same projected disk. At common sample locations, count reference-only hits as omission
+and candidate-only hits as overcoverage. Refine the
+independent ray grid at the centre of each case to document convergence. The record gives the coverage,
+both kinds of error, the spent work and a retain-or-park decision for the single candidate.
 
 ## Frame and cost
 
@@ -972,7 +975,7 @@ as history and not called paired. The record is a tripwire and sets no budget
 starting commit, is investigated, and the finding is kept beside the record. WP6.5's check passes the record: it
 fails on an arm, a named pass or the load that is missing, on a run that did not complete, on a record that
 does not say whether a hitch was seen in the scrub, and on a tripped wire with no investigation, and on no
-figure. WP8.9 records the paired cost of the fog bank. WP3.3 records the separate shadow-screen disposition.
+figure. WP8.9 records the paired cost of the fog bank. WP3.2 records the separate CPU shadow trial.
 
 **Scope of the WP6 verdict.** WP6 records the west-lookout shadow crossing and finite-disk comparison as open.
 WP3 and WP4 follow WP8 independently of G3s. WP6's visual exclusion covers the
