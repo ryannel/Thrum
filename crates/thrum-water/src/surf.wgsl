@@ -93,7 +93,7 @@ fn shore_exposure(cell: Cell, stage: u32, sector: u32) -> f32 {
     return exposure;
 }
 
-fn shore_sample(cell: Cell, point: vec2<f32>, body: u32, stage: f32, direction: u32, wavelength: f32, needs_lag: bool) -> ShoreSample {
+fn shore_sample(cell: Cell, point: vec2<f32>, body: u32, stage: f32, direction: u32, wavelength: f32) -> ShoreSample {
     let record = surf.bodies[body];
     if record.count == 0u || !cell.inside || wavelength < 20.0 || wavelength > 640.0 {
         return ShoreSample(0.0, vec2(0.0), 1.0, cell.inside);
@@ -105,7 +105,6 @@ fn shore_sample(cell: Cell, point: vec2<f32>, body: u32, stage: f32, direction: 
     if stages.weight > 0.0 {
         exposure = mix(exposure, shore_exposure(cell, stages.high, sector), stages.weight);
     }
-    if !needs_lag { return ShoreSample(0.0, vec2(0.0), exposure, false); }
     let base = fitted_lag(cell, stages, sector, band);
     if !base.valid { return ShoreSample(0.0, vec2(0.0), exposure, false); }
     let step = map.origin_spacing_margin.z * 0.01;
@@ -171,6 +170,7 @@ struct SurfPoint {
     direction: vec2<f32>,
     section_weight: f32,
     lip: f32,
+    swash_rates: vec4<f32>, // slope xz, upward velocity, height change per metre of depth
 }
 
 fn breaking_strength(sample: SurfPoint) -> f32 {
@@ -208,6 +208,7 @@ fn surf_forward(
     var im_vector = vec2(0.0);
     var horizontal = vec2(0.0);
     var variance = 0.0;
+    var height_dt = 0.0;
     for (var i = 0u; i < count; i++) {
         let wave = surf_component(i);
         if wave.amplitude == 0.0 { continue; }
@@ -218,14 +219,16 @@ fn surf_forward(
         var lag = 0.0;
         var vector = k;
         if wavelength >= 20.0 && wavelength <= 640.0 && cell.inside {
-            let shore = shore_sample(cell, point, body, stage, wave.shore_sector, wavelength, fade > 0.0);
+            let shore = shore_sample(cell, point, body, stage, wave.shore_sector, wavelength);
             // The departure from the plain section fades in the swash.
             // An island's wave shadow also applies to the remnant there.
             gain = sqrt(max(0.0, shore.exposure));
             if shore.valid {
                 gain *= mix(1.0, surf_shoaling(k0, floor_depth), fade);
-                lag = k0 * shore.lag * fade;
-                vector += k0 * shore.gradient * fade;
+                // The uprush keeps the incoming crest's travel time. The
+                // section and shoaling taper independently of its phase.
+                lag = k0 * shore.lag;
+                vector += k0 * shore.gradient;
             }
         }
         let phase = dot(k, point - anchor) + wave.phase - wave.omega * dt + lag;
@@ -235,6 +238,7 @@ fn surf_forward(
         variance += 0.5 * amplitude * amplitude;
         re_vector += moment.x * vector;
         im_vector += moment.y * vector;
+        height_dt += moment.y * wave.omega;
         horizontal -= chop * moment.y * vector / max(length(vector), 1.0e-20);
     }
     let amplitude = length(field);
@@ -258,6 +262,10 @@ fn surf_forward(
             (fade * section.z - chop * cos(phase));
         lip = smoothstep(0.0, 0.35, -tangent) * f32(section.y > 0.0);
     }
+    // The swash is below the section's fade interval. Its leading-order
+    // slope comes from the arriving phase and the local depth limiter.
+    let height_per_depth = select(0.0, scale * height / max(depth + swash, 1e-20), scale < 1.0);
+    let swash_rates = vec4(-scale * im_vector, scale * height_dt, height_per_depth);
     return SurfPoint(scale * vec3(horizontal.x, height, horizontal.y), index, phase,
-        variance * (1.0 - scale * scale), variance, direction, fade, lip);
+        variance * (1.0 - scale * scale), variance, direction, fade, lip, swash_rates);
 }

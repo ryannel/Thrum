@@ -92,3 +92,81 @@ fn spectrum_sector_boundaries_have_the_same_tie_rule_at_every_wavelength() {
         }
     }
 }
+
+#[test]
+fn uprush_keeps_the_arriving_crests_phase_after_the_section_fades() {
+    use thrum_sea_model::{Component, LongWaves};
+    use thrum_water_model::{Body, BodyKind, Field, Map, Profile, Sheet, Stage, SurfProfile};
+
+    let bed = bed([-40.0, -16.0], 1.0, [45, 33], |x, _| x / 10.0);
+    let mut map = Map::prepare(
+        bed,
+        vec![Body {
+            name: "Plane beach".into(),
+            kind: BodyKind::Sea,
+            level: 0.0,
+            stage: Stage {
+                min: 0.0,
+                max: 0.0,
+                value: 0.0,
+            },
+            fetch: 1_000.0,
+            gains: [1.0, 0.0, 0.0, 0.0],
+        }],
+        Profile {
+            margin_height: 1.0,
+            swash_ratio: 0.7,
+        },
+    )
+    .expect("plane beach");
+    map.enable_surf(SurfProfile::default())
+        .expect("shore transform");
+    let rest = [0.25, 0.0];
+    let wavelength = 40.0;
+    let k = TAU / wavelength;
+    let amplitude = 0.4;
+    let shore = map.shore_transform(0).expect("prepared shore");
+    let (lag, _) = shore.sample(0, wavelength, 0.0, rest);
+    assert!(lag.is_finite() && (k * lag).cos() < 0.8, "{lag}");
+    let field = Field {
+        layers: [
+            vec![Component {
+                wave_vector: [k, 0.0],
+                amplitude,
+                phase: -k * (rest[0] + lag),
+            }],
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+        ]
+        .map(|components| LongWaves::new(components, 0.0).expect("wave")),
+    };
+    // The phase puts the incoming crest at this station. The section and
+    // shoaling have faded here, leaving only the depth-limited wave.
+    let significant_height = 2.0 * 2.0_f64.sqrt() * amplitude;
+    let swash = 0.7 * significant_height;
+    let depth = -rest[0] / 10.0;
+    let expected = 0.6 * (depth + swash) / (2.0 * 2.0_f64.sqrt());
+    let sample = map.surf_sheet(&field, 0, 0.0).expect("sheet").forward(rest);
+    assert!((sample.height - expected).abs() < 1e-9, "{sample:?}");
+}
+
+#[test]
+fn a_wave_shadow_joins_the_ambient_sea_at_the_bed_edge() {
+    let b = bed([-20.0; 2], 1.0, [81, 41], |x, z| {
+        if x.abs() <= 1.0 && z.abs() <= 17.0 {
+            5.0
+        } else {
+            -4.0
+        }
+    });
+    let mut sea = config();
+    sea.stage.max = 0.0;
+    let transform = ShoreTransform::prepare(b, sea).expect("open sea and island");
+    assert_eq!(transform.exposure(0, 0.0, [5.0, 0.0]), 0.0);
+    let near_edge = transform.exposure(0, 0.0, [59.0, 0.0]);
+    assert!((0.92..1.0).contains(&near_edge), "{near_edge}");
+    for x in [60.0, 61.0] {
+        assert_eq!(transform.exposure(0, 0.0, [x, 0.0]), 1.0);
+    }
+}

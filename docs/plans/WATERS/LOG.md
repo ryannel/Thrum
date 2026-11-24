@@ -755,3 +755,21 @@
   Native Metal returned all 48 gale stations at 1440p. The captured-off query took 12.39 s
   for 51.11 million cut nodes under shared load. The isolated Metal trail guard passed in
   6.022 s. [Recovered target records](../../../.orchestrate/evidence/WATERS/M13/recovered-device-checks.md).
+
+- 2026-11-24 Kept the incoming phase through the swash and drove foam uprush from the
+  transformed wave. A plane-beach test verifies that the section can fade while the
+  incoming crest stays in phase. Metal verified the field, capability, float, frame
+  and shore-birth checks. The sea shadow now recovers over the bed's border, with the
+  interior sector rays retained. The existing round-island reference and a compact
+  shadow-to-ambient transition both passed.
+  [Metal guards](../../../.orchestrate/evidence/WATERS/M13/continuous-metal-guards.log) ·
+  [Model checks](../../../.orchestrate/evidence/WATERS/M13/continuous-shadow-and-film-check.log).
+- 2026-11-24 An asymmetric island section produced a narrower fold in the f64
+  projection and in the elevated Metal view. Neither it nor the optical edge trial
+  removed the disconnected strip of water early in the sequence. The f64 long-wave
+  cut finds 30 alongshore rows in the sampled view where an exposed strip lies
+  between two wet regions. The change in edge appearance cannot repair that
+  geometry. A subsequent design decision should address the close-shore trough of a
+  coherent set while retaining the regular-wave draw-back rule.
+  [Long-wave cut](../../../.orchestrate/evidence/WATERS/M13/continuous-swash-cut.log) ·
+  [Metal frame](../../../.orchestrate/evidence/WATERS/M13/soft-edge-metal-0015.png).

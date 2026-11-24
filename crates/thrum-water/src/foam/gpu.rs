@@ -226,6 +226,7 @@ impl Foam {
             SurfGpu::source(0, SURF_FIRST) + include_str!("shore.wgsl")
         } else {
             "fn foam_wet(_level: u32, _local: vec2<i32>, plain: bool) -> bool { return plain; }
+             fn shore_uprush(_level: u32, _local: vec2<i32>, plain: vec2<f32>) -> vec2<f32> { return plain; }
              fn shore_rates(_level: u32, _local: vec2<i32>, loss: f32) -> vec2<f32> {
                  return vec2(loss, 0.22 * loss);
              }"

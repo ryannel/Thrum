@@ -433,14 +433,28 @@ fn ray(bed: &Bed, point: [f64; 2], angle: f64, level: f64, limit: f64) -> (f64, 
     (limit, true)
 }
 
+// The finite bed joins the ambient sea at its boundary. Relax the
+// shore transform over the same band for both travel time and energy.
+fn bed_border_weight(bed: &Bed, i: usize) -> f64 {
+    let border = bed.size[0].min(bed.size[1]) as f64 * bed.spacing / 8.0;
+    let (x, z) = (i % bed.size[0], i / bed.size[0]);
+    let distance = x.min(z).min(bed.size[0] - 1 - x).min(bed.size[1] - 1 - z) as f64 * bed.spacing;
+    let weight = (distance / border).min(1.0);
+    weight * weight * (3.0 - 2.0 * weight)
+}
+
 fn exposure(bed: &Bed, c: ShoreConfig, region: &Region, i: usize, angle: f64) -> f64 {
     let sea = region.edge[i];
+    let weight = if sea { bed_border_weight(bed, i) } else { 1.0 };
+    if weight == 0.0 {
+        return 1.0;
+    }
     let limit = if sea {
         bed.spacing * (bed.size[0] as f64).hypot(bed.size[1] as f64)
     } else {
         c.fetch
     };
-    (0..17)
+    let energy = (0..17)
         .map(|s| {
             let a = angle + FRAC_PI_4 * (f64::from(s) / 16.0 - 0.5);
             let ray_level = if sea {
@@ -456,7 +470,8 @@ fn exposure(bed: &Bed, c: ShoreConfig, region: &Region, i: usize, angle: f64) ->
             }
         })
         .sum::<f64>()
-        / 17.0
+        / 17.0;
+    (1.0 - weight) + weight * energy
 }
 
 fn solve(
@@ -471,20 +486,14 @@ fn solve(
     let mut phase = vec![f64::INFINITY; bed.heights.len()];
     let mut fixed = vec![false; phase.len()];
     let mut speed = vec![0.0; phase.len()];
-    let border = bed.size[0].min(bed.size[1]) as f64 * bed.spacing / 8.0;
     for i in 0..phase.len() {
         if !region.open[i] {
             continue;
         }
         let p = bed.point(i);
         let depth = (c.level + stage - bed.heights[i]).max(c.floor);
-        let (x, z) = (i % bed.size[0], i / bed.size[0]);
-        let edge_distance =
-            x.min(z).min(bed.size[0] - 1 - x).min(bed.size[1] - 1 - z) as f64 * bed.spacing;
-        let ramp = (edge_distance / border).clamp(0.0, 1.0);
-        let ramp = ramp * ramp * (3.0 - 2.0 * ramp);
         let seen = if region.edge[i] {
-            depth + (wavelength.max(depth) - depth) * (1.0 - ramp)
+            depth + (wavelength.max(depth) - depth) * (1.0 - bed_border_weight(bed, i))
         } else {
             depth
         };

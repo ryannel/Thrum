@@ -7,7 +7,9 @@ use std::{
 use thrum_app::sky::{Camera, ContentStatus, Controls, MeshPlacement, SkyGame};
 use thrum_sea_model::{Forcing, Spectrum};
 use thrum_water::Water;
-use thrum_water_model::{Bed, Body, BodyKind, Map, Profile, Stage, SurfProfile};
+use thrum_water_model::{
+    Bed, Body, BodyKind, BreakerSection, Map, Profile, SectionPoint, Stage, SurfProfile,
+};
 
 use crate::{SharedMap, SharedReport};
 
@@ -195,10 +197,47 @@ fn island_map(forcing: &Forcing, surf: Option<bool>) -> Result<Map, Box<dyn Erro
     .map_err(|e| format!("{e:?}"))?;
     map.set_forcing(forcing).map_err(|e| format!("{e:?}"))?;
     if surf == Some(true) {
-        map.enable_surf(SurfProfile::default())
-            .map_err(|e| format!("{e:?}"))?;
+        map.enable_surf(SurfProfile {
+            section: island_breaker_section()?,
+            ..SurfProfile::default()
+        })
+        .map_err(|e| format!("{e:?}"))?;
     }
     Ok(map)
+}
+
+/// The long island swell steepens on its shoreward face before it throws.
+/// Ramp the skew in before the throw so the pitching rows share one height
+/// curve and blend as a single monotone shear.
+fn island_breaker_section() -> Result<BreakerSection, Box<dyn Error>> {
+    const BORE: f64 = 2.0;
+    const SAMPLES: u32 = 256;
+    let indices = vec![
+        0.0, 0.2, 0.4, 0.65, 0.75, 0.85, 1.0, 1.15, 1.3, 1.5, 1.75, BORE, 8.0,
+    ];
+    let smooth = |u: f64| {
+        let t = u.clamp(0.0, 1.0);
+        t * t * (3.0 - 2.0 * t)
+    };
+    let rows = indices
+        .iter()
+        .map(|&index| {
+            let skew = smooth(index / 0.65);
+            let throw = 6.0 * smooth((index - 0.65) / 0.45) * smooth((BORE - index) / 0.85);
+            (0..SAMPLES)
+                .map(|i| {
+                    let phase = std::f64::consts::TAU * f64::from(i) / f64::from(SAMPLES);
+                    let angle = phase + 0.65 * skew * phase.sin();
+                    let height = (angle + 0.42 * skew * angle.sin().powi(2)).cos();
+                    SectionPoint {
+                        height,
+                        throw: throw * (1.0 + height) * 0.5,
+                    }
+                })
+                .collect()
+        })
+        .collect();
+    BreakerSection::new(indices, rows, BORE).map_err(|e| format!("{e:?}").into())
 }
 
 /// Island checkpoint cameras. The close views measure two metres from still water.

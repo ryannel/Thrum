@@ -80,6 +80,17 @@ fn hull_births(point: vec2<f32>, current: vec2<f32>, spacing: f32) -> vec4<f32> 
     return rates;
 }
 
+fn swash_bed_slope(cell: Cell) -> vec2<f32> {
+    let h = cell.heights;
+    return vec2(mix(h.y - h.x, h.w - h.z, cell.uv.y),
+        mix(h.z - h.x, h.w - h.y, cell.uv.x)) / map.origin_spacing_margin.z;
+}
+
+fn swash_drift(slope: vec2<f32>, upward: f32, depth: f32, swash: f32) -> vec2<f32> {
+    let speed = min(sqrt(9.81 * swash), max(0.0, upward) / max(0.001, length(slope)));
+    return -normalize(slope + vec2(1e-8)) * speed * (1.0 - smoothstep(0.0, 0.27 * swash, depth));
+}
+
 @compute @workgroup_size(8, 8)
 fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
     let level = id.z;
@@ -123,15 +134,9 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
             var drift = row.row.water.yz + 0.027 * wind;
             let swash = min(map.swash.x * length(energy_before), map.origin_spacing_margin.w);
             if level == 0u && row.has_bed && swash > 0.0 && depth < 0.27 * swash {
-                let cell = map_cell(point);
-                let h = cell.heights;
-                let bed_slope = vec2(mix(h.y - h.x, h.w - h.z, cell.uv.y),
-                    mix(h.z - h.x, h.w - h.y, cell.uv.x)) / map.origin_spacing_margin.z;
-                let thickness_slope = column.slope + wake.yz - bed_slope;
-                let speed = min(sqrt(9.81 * swash), max(0.0, column.velocity.y + wake.w) /
-                    max(0.001, length(thickness_slope)));
-                drift -= normalize(thickness_slope + vec2(1e-8)) * speed *
-                    (1.0 - smoothstep(0.0, 0.27 * swash, depth));
+                let thickness_slope = column.slope + wake.yz - swash_bed_slope(map_cell(point));
+                let plain = swash_drift(thickness_slope, column.velocity.y + wake.w, depth, swash);
+                drift += shore_uprush(level, local, plain);
             }
             let max_shift = select(0.999, 2.0, level == 0u && dt > 0.024);
             let shift = clamp(drift * dt / spacing, vec2(-max_shift), vec2(max_shift));

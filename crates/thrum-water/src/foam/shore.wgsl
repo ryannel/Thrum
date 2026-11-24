@@ -5,7 +5,7 @@ struct ShoreBirth {
     face: vec4<f32>,
     body: u32,
     wet: u32,
-    pad: vec2<u32>,
+    uprush: vec2<f32>,
 }
 @group(0) @binding(17) var<storage, read_write> shore_births: array<ShoreBirth>;
 
@@ -41,11 +41,19 @@ fn prepare_shore_births(@builtin(global_invocation_id) id: vec3<u32>) {
             let chop = foam_settings.camera.w;
             let sample = surf_forward(point, answer.body, answer.row, stage, foam_settings.camera.xy,
                 dt, chop, water.heights, foam_settings.banks.w);
-            let short_height = foam_column(point, vec4(0.0, gains.yzw), dt).displacement.y;
-            let thickness = depth + sample.displacement.y + short_height + wake_at(point, dt).x;
+            let short = foam_column(point, vec4(0.0, gains.yzw), dt);
+            let wake = wake_at(point, dt);
+            let thickness = depth + sample.displacement.y + short.displacement.y + wake.x;
             let wet = thickness > 0.0;
             birth.wet = select(1u, 2u, wet);
             if wet {
+                if level == 0u && swash > 0.0 && depth < 0.27 * swash {
+                    let bed_slope = swash_bed_slope(map_cell(point));
+                    let surface_slope = short.slope + wake.yz + sample.swash_rates.xy
+                        - sample.swash_rates.w * bed_slope;
+                    let upward = short.velocity.y + wake.w + sample.swash_rates.z;
+                    birth.uprush = swash_drift(surface_slope - bed_slope, upward, depth, swash);
+                }
                 let short_loss = lost_wave_power(vec4(0.0, answer.row.gains.yzw),
                     vec4(0.0, gains.yzw), water.heights);
                 let distributed = 0.39 * (short_loss + sample.loss);
@@ -99,4 +107,9 @@ fn shore_rates(level: u32, local: vec2<i32>, distributed: f32) -> vec2<f32> {
 fn foam_wet(level: u32, local: vec2<i32>, plain: bool) -> bool {
     let wet = shore_births[foam_index(0u, level, local)].wet;
     return select(wet == 2u, plain, wet == 0u);
+}
+
+fn shore_uprush(level: u32, local: vec2<i32>, plain: vec2<f32>) -> vec2<f32> {
+    let sample = shore_births[foam_index(0u, level, local)];
+    return select(sample.uprush, plain, sample.wet == 0u);
 }

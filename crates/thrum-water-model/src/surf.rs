@@ -403,8 +403,10 @@ impl SurfSheet<'_> {
             } else {
                 (0.0, [0.0; 2], 1.0)
             };
-            let eligible = transform && fade > 0.0 && lag.is_finite();
-            let lag = if eligible { lag * fade } else { 0.0 };
+            // The section and shoaling fade in the swash. Keep the accumulated
+            // travel time so the uprush stays on the incoming crest.
+            let eligible = transform && lag.is_finite();
+            let lag = if eligible { lag } else { 0.0 };
             let gain = if eligible {
                 1.0 + (shoaling(k0, depth.max(self.surf.profile.lag_floor)) - 1.0) * fade
             } else {
@@ -421,7 +423,7 @@ impl SurfSheet<'_> {
                     return component.wave_vector[axis];
                 }
                 if use_gradient[axis] {
-                    return component.wave_vector[axis] + k0 * gradient[axis] * fade;
+                    return component.wave_vector[axis] + k0 * gradient[axis];
                 }
                 let mut a = rest;
                 a[axis] -= step;
@@ -441,7 +443,7 @@ impl SurfSheet<'_> {
                     let lo = lag_at(a);
                     let hi = lag_at(b);
                     if lo.is_finite() && hi.is_finite() {
-                        (hi - lo) / (2.0 * step) * fade
+                        (hi - lo) / (2.0 * step)
                     } else {
                         0.0
                     }
