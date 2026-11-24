@@ -300,7 +300,7 @@
     {
       "id": "WP5",
       "name": "A failure in the shells can be matched and printed: `thrum-app`'s public functions return typed errors",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -312,8 +312,8 @@
           "statement": "No public function in `thrum-app` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-app",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/WP5/WP5.1-string-errors.log"
         },
         {
           "id": "WP5.2",
@@ -321,8 +321,8 @@
           "check": "cargo test --locked --offline -p thrum-app --test error_types",
           "ask": "Does the closure a creator passes to `run` still return a string error anywhere in the kit scenes or the creator docs? Does the test's list hold every error type the crate exports?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/WP5/README.md#wp52-public-error-types",
           "verdict": "",
           "review": ""
         },
