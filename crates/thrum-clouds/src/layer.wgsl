@@ -23,7 +23,7 @@ fn cloud_fade_integral(h:f32,width:f32)->f32 {
     let t=clamp(h/width,0.0,1.0);
     return width*t*t*t*(1.0-0.5*t)+max(0.0,h-width);
 }
-// Density, above optical depth, below optical depth, and column top.
+// Density, above optical depth, below optical depth, and height through the column.
 fn cloud_column(point:vec3<f32>)->vec4<f32> {
     var result=vec4(0.0);
     var remaining=1.0;
@@ -46,7 +46,7 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
             // profile as its neighbour thins continuously toward clear air.
             let peak=cloud.physical.x*c.z;
             let tau=peak*thickness*integral;
-            value=vec4(peak*vertical,tau*above,tau*(1.0-above),c.y-point.y);
+            value=vec4(peak*vertical,tau*above,tau*(1.0-above),h);
         }
         result+=value*(remaining*w);
         if w==1.0 {break;}
@@ -56,17 +56,29 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
 }
 fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
     let placed = cloud_placed(point, footprint);
-    return cloud_detail(cloud_column(point).x,point,footprint,cloud.physical.x) + placed.x;
+    let column=cloud_column(point);
+    return cloud_detail(column.x,point,footprint,cloud.physical.x,column.w) + placed.x;
 }
 fn cloud_billow(point:vec3<f32>,footprint:f32)->f32 {
     let uv=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
     return textureSampleLevel(shape_noise,noise_sampler,uv,erosion_mip(footprint,50.0)).r;
 }
-fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32)->f32 {
+fn cloud_bank_weight()->f32 {
+    return smoothstep(0.12,0.45,cloud.physical.z)*(1.0-smoothstep(0.73,0.98,cloud.physical.z));
+}
+fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f32)->f32 {
     if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
     let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
-    return cloud_erode(sigma,extinction,cloud.physical.y,cloud_billow(point,footprint),detail);
+    let shape=cloud_billow(point,footprint);
+    let eroded=cloud_erode(sigma,extinction,cloud.physical.y,shape,detail);
+    let bank=cloud_bank_weight();
+    if bank==0.0 {return eroded;}
+    // Erode the underside unevenly inside the mixed bank, where individual
+    // lobes have lifted bases. The cloud and the local Sun march see the same
+    // relief, and erosion never adds density outside the weather column.
+    let lift=0.34*smoothstep(0.14,0.76,shape);
+    return eroded*mix(1.0,smoothstep(0.60*lift,lift+0.08,height),bank);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
@@ -189,7 +201,7 @@ fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray
 }
 
 fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
-                    footprint:f32,sun_depth:f32,bank:f32)->vec3<f32> {
+                    footprint:f32,sun_depth:f32,sun_alignment:f32,bank:f32)->vec3<f32> {
     // A partly joined bank has side walls around each opening. Ahead of a
     // lit wall the density drops toward the Sun; inside a lobe it stays high.
     let ahead=cloud_density(point+mapping.path_border.xyz*max(170.0,2.0*footprint),footprint);
@@ -200,7 +212,8 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     let billow=smoothstep(0.22,0.77,cloud_billow(point,footprint));
     let shade=(0.29+0.36*interior+0.38*exposed)*mix(0.78,1.13,billow);
     let rim=0.095*beam*exposed*exposed;
-    return mix(source,source*shade+solar*rim,bank);
+    let glare=1.0-0.70*smoothstep(0.72,0.96,sun_alignment);
+    return mix(source,source*shade*glare+solar*rim,bank);
 }
 
 @compute @workgroup_size(8,8)
@@ -240,7 +253,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let transmission_floor = select(0.001, 1e-8, covers_disc);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
-    let bank=smoothstep(0.12,0.45,cloud.physical.z)*(1.0-smoothstep(0.73,0.98,cloud.physical.z));
+    let bank=cloud_bank_weight();
     var distance=begin;var samples=0u;
     for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>transmission_floor;i++) {
         samples+=1u;
@@ -250,7 +263,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let placed = cloud_placed(point, footprint);
         var column=cloud_column(point);
         if column.x+placed.x>0.0 {
-            let sigma=cloud_detail(column.x,point,footprint,cloud.physical.x)+placed.x;
+            let sigma=cloud_detail(column.x,point,footprint,cloud.physical.x,column.w)+placed.x;
             column.y += placed.y;
             column.z += placed.z;
             if sigma>0.0 {
@@ -260,7 +273,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0); }
                 var source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
                 if bank>0.0 && placed.x==0.0 && any(solar>vec3(0.0)) {
-                    source=cloud_bank_light(source,solar,point,sigma,footprint,sun_depths.x,bank);
+                    source=cloud_bank_light(source,solar,point,sigma,footprint,sun_depths.x,sun_alignment,bank);
                 }
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
