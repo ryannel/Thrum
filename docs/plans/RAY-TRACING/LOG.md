@@ -198,3 +198,10 @@
   arms of the toggle on the shared Mac. The exact-image check runs on main after integration.
   [Motion](../../../.orchestrate/evidence/RAY-TRACING/WP4/moving-casters/README.md) ·
   [Timing](../../../.orchestrate/evidence/RAY-TRACING/WP4/cost-notes.md).
+- 2026-11-24 WP4 replan verification. The nine remaining items keep their original criteria.
+  A new Metal run passed both history guards, the toggle guard and the paired cost check. I inspected
+  refreshed valley, cut, sunset, moving-caster and open-rim captures. The six fixed valley images
+  matched the original builder captures byte for byte.
+  [Visual proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md) ·
+  [Motion proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/replan/moving-casters/README.md) ·
+  [Checks](../../../.orchestrate/evidence/RAY-TRACING/WP4/replan-items.json).
