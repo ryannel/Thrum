@@ -350,9 +350,9 @@ impl Trace {
         let mut cpu = Duration::ZERO;
         let mut wall = Duration::ZERO;
         while driver.pending_frames() != 0
-            && next.saturating_duration_since(Instant::now()) > Duration::from_millis(2)
+            && next.saturating_duration_since(Instant::now()) > Duration::from_micros(750)
         {
-            std::thread::sleep(Duration::from_millis(1));
+            std::thread::sleep(Duration::from_micros(250));
             let work = WorkClock::start().map_err(|error| error.to_string())?;
             let collect = admission.collect_images(driver, origin);
             self.drain(driver, writer, origin, collect)?;
