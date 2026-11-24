@@ -146,21 +146,23 @@ func supervise(_ arguments: [String], log: FileHandle, control: LauncherControl)
         }
     }
     report["chrome_pid"] = pid
+    report["shutdown_requested"] = false
     control.publish()
     var disconnectedAt: TimeInterval?
     var requested = false
     var escalation = [String]()
     var termination = siginfo_t()
     while true {
-        var command = control.command()
+        let command = control.command()
+        var escalationPhase = command
         if !control.connected {
             // The owner may have crashed or run out of disk. Give Chrome a
             // short close window, then finish using the supervisor's clock.
             let now = ProcessInfo.processInfo.systemUptime
             if disconnectedAt == nil { disconnectedAt = now }
             let elapsed = now - (disconnectedAt ?? now)
-            if elapsed >= 4 { command = "kill" }
-            else if elapsed >= 1 { command = "term" }
+            if elapsed >= 4 { escalationPhase = "kill" }
+            else if elapsed >= 1 { escalationPhase = "term" }
         }
         if termination.si_pid == 0 {
             if waitid(P_PID, id_t(pid), &termination, WEXITED | WNOHANG | WNOWAIT) < 0 {
@@ -173,20 +175,20 @@ func supervise(_ arguments: [String], log: FileHandle, control: LauncherControl)
             }
         }
         if try termination.si_pid != 0 && !groupHasHelpers(pid) { break }
-        if let command {
-            if !requested && termination.si_pid == 0 {
-                requested = true
-                report["shutdown_requested"] = true
+        // Only the harness can request shutdown. EOF escalation can reap
+        // Chrome during validation without qualifying its exit as requested.
+        if command == "close", !requested, termination.si_pid == 0 {
+            requested = true
+            report["shutdown_requested"] = true
+            control.publish()
+        }
+        if let phase = escalationPhase, phase == "term" || phase == "kill", !escalation.contains(phase) {
+            if kill(-pid, phase == "term" ? SIGTERM : SIGKILL) == 0 {
+                escalation.append(phase)
+                report["shutdown_escalation"] = escalation
                 control.publish()
-            }
-            if command == "term" || command == "kill", !escalation.contains(command) {
-                if kill(-pid, command == "term" ? SIGTERM : SIGKILL) == 0 {
-                    escalation.append(command)
-                    report["shutdown_escalation"] = escalation
-                    control.publish()
-                } else if errno != ESRCH {
-                    throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
-                }
+            } else if errno != ESRCH {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
             }
         }
         Thread.sleep(forTimeInterval: 0.05)

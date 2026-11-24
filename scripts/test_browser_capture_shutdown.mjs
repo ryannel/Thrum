@@ -14,6 +14,7 @@ import { finalizeBrowserCapture, openLauncherControl } from './browser_capture_s
 const fixture = fileURLToPath(import.meta.url);
 const start = (role, output, mode, ...args) => spawn(process.execPath, [fixture, '--fixture', role, output, mode, ...args], { stdio: ['ignore', 'ignore', 'pipe'] });
 const readLauncherReceipt = async output => JSON.parse(await read(path.join(output, 'launcher.json')) ?? 'null');
+const disconnectCases = ['disconnected', 'disconnect-during-validation', 'disconnect-after-close'];
 
 async function read(file) {
   try { return await fs.readFile(file, 'utf8'); }
@@ -58,7 +59,7 @@ async function supervisorFixture(output, mode, port, token) {
   const helper = start('helper', output, mode);
   const browserExit = once(browser, 'exit');
   const helperExit = once(helper, 'exit');
-  const report = { chrome_pid: browser.pid, screen_recording_before: false };
+  const report = { chrome_pid: browser.pid, screen_recording_before: false, shutdown_requested: false };
   const save = async () => {
     const data = JSON.stringify(report);
     if (mode !== 'receipt-write') {
@@ -77,9 +78,10 @@ async function supervisorFixture(output, mode, port, token) {
     await save();
     const escalation = [];
     while (!exited) {
-      const phase = socket.destroyed && mode === 'disconnected' ? 'term' : phases.shift();
+      const command = phases.shift();
+      const phase = socket.destroyed && disconnectCases.includes(mode) ? 'term' : command;
       if (phase) {
-        report.shutdown_requested = true;
+        if (command === 'close') report.shutdown_requested = true;
         if (['term', 'kill'].includes(phase) && !escalation.includes(phase)) {
           escalation.push(phase);
           if (mode !== 'unconfirmed') {
@@ -145,11 +147,19 @@ async function commandFixture(output, mode) {
     : ['request-write', 'manifest-write', 'both-writes', 'disconnected'].includes(mode)
       ? new Error('capture sink failed during frame validation') : undefined;
   const frame = await fs.open(path.join(output, 'validated-frame'), 'wx');
-  try { await frame.writeFile('validated bytes'); await frame.sync(); }
-  finally { await frame.close(); }
+  try {
+    await frame.writeFile('validated bytes');
+    if (mode === 'disconnect-during-validation') {
+      control.close();
+      await until(async () => (await readLauncherReceipt(output))?.chrome_final);
+    }
+    assert.equal(await read(path.join(output, 'validated-frame')), 'validated bytes');
+    await frame.sync();
+  } finally { await frame.close(); }
   const cdp = beforeDevtools ? undefined : {
     call(method) {
       assert.equal(method, 'Browser.close');
+      if (mode === 'disconnect-after-close') control.close();
       void fs.writeFile(path.join(output, 'cdp-close'), 'yes');
       // Chrome can disconnect without a reply. Deliberately never settle.
       return new Promise(() => {});
@@ -164,6 +174,9 @@ async function commandFixture(output, mode) {
     return writeFile(file, ...args);
   };
   if (mode === 'disconnected') control.close();
+  const requests = [];
+  const request = control.request.bind(control);
+  control.request = phase => { requests.push(phase); request(phase); };
   try {
     await finalizeBrowserCapture({
       output, control, cdp, profile, manifest: { complete: !captureError },
@@ -181,6 +194,7 @@ async function commandFixture(output, mode) {
   } finally {
     fs.writeFile = writeFile;
     control.close();
+    await fs.writeFile(path.join(output, 'harness-requests'), JSON.stringify(requests));
   }
 }
 
@@ -212,6 +226,8 @@ if (flag === '--fixture') {
     { mode: 'both-writes', code: 0, error: /capture sink failed during frame validation/, noManifest: true },
     { mode: 'receipt-write', code: 0, escalation: [] },
     { mode: 'disconnected', signal: 15, error: /capture sink failed during frame validation/ },
+    { mode: 'disconnect-during-validation', signal: 15, error: /exited before requested shutdown/ },
+    { mode: 'disconnect-after-close', signal: 15, escalation: ['term'] },
   ];
   test('cancels admission and removes the profile when the launcher never connects', async t => {
     await fs.mkdir('tmp', { recursive: true });
@@ -303,6 +319,19 @@ if (flag === '--fixture') {
       }
       if (expected.mode === 'early-exit' || expected.mode.startsWith('capture-error') || expected.mode === 'before-devtools') {
         assert.equal(await read(path.join(output, 'cdp-close')), undefined);
+      }
+      if (expected.mode === 'disconnect-during-validation') {
+        assert.equal(receipt.shutdown_requested, false);
+        assert.equal(manifest.chrome_shutdown.requested, false);
+        assert.deepEqual(receipt.shutdown_escalation, ['term']);
+        assert.deepEqual(JSON.parse(await read(path.join(output, 'harness-requests'))), []);
+        assert.equal(await read(path.join(output, 'cdp-close')), undefined);
+        assert.equal(receipt.screen_recording_before, false);
+        assert.equal(receipt.screen_recording_after, false);
+      }
+      if (expected.mode === 'disconnect-after-close') {
+        assert.equal(receipt.shutdown_requested, true);
+        assert.equal(JSON.parse(await read(path.join(output, 'harness-requests')))[0], 'close');
       }
       if (expected.mode === 'capture-error-and-cleanup-error') {
         assert.deepEqual(manifest.cleanup_errors, ['Error: injected cleanup failure']);
