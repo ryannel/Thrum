@@ -187,8 +187,9 @@ with an `event` key and the fields below. Use the same digest encoding on both e
 | Both | `digest` | `tick`, `digest` at every positive multiple of the interval |
 | Client | `state` | Committed `tick` and `state`, formatted as `Ended(...)` at the final tick |
 
-The runner starts after each client has restored the lobby at tick zero. Continue advancing after the last
-commit so the host can deliver the end of the match. [Reference host and native client](../examples/match-proof/src/sockets/native.rs),
+Emit a client's baseline event as soon as `World::restore` succeeds. The runner waits for these events
+before it starts the tick-zero lobby, and the client's `Playing` state requires committed sets. Continue
+advancing after the last commit so the host can deliver the end of the match. [Reference host and native client](../examples/match-proof/src/sockets/native.rs),
 [reference client events](../examples/match-proof/src/sockets.rs)
 
 For Chrome, put your `socket_player.js` beside the `match_proof.js` and `match_proof_bg.wasm` generated from
