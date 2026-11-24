@@ -86,6 +86,26 @@ fn recovery_has_a_deadband_and_a_one_step_minimum_period() {
     assert_eq!(policy.state().reason, ChangeReason::Recovery);
 }
 
+#[test]
+fn scale_recovery_projects_work_at_the_thermal_tier_floor() {
+    let mut record = display(16);
+    record.thermal = ThermalState::Fair;
+    let mut policy = Governor::new(RenderScale::Percent85, record);
+    assert!(policy.commit(ms(16)));
+    assert_eq!(policy.state().tier, 1);
+
+    for order in 1..=12 {
+        observe(&mut policy, order, 11);
+        assert!(!policy.commit(ms(1016 + order * 16)));
+    }
+    for order in 13..=24 {
+        observe(&mut policy, order, 8);
+        assert_eq!(policy.commit(ms(1016 + order * 16)), order == 24);
+    }
+    assert_eq!(policy.state().scale, RenderScale::Native);
+    assert_eq!(policy.state().tier, 1);
+}
+
 fn build_hold(switched: bool) {
     let mut policy = Governor::new(RenderScale::Percent85, display(16));
     let committed = policy.state();
