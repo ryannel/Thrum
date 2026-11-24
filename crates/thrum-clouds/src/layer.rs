@@ -327,7 +327,7 @@ impl Layer {
             physical: [
                 kind.extinction() as f32,
                 model.erosion as f32,
-                model.detail_mean as f32,
+                kind.deck as f32,
                 kind.droplet_radius as f32,
             ],
             erosion: phase,

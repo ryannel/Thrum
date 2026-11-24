@@ -110,6 +110,18 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,su
     let samples = cloud.light_samples;
     if samples == 0u { return cloud_sun_depths(world,world.y).xy; }
     let path = mapping.path_border.xyz;
+    // At high Sun the local interval is short. Its midpoint resolves the
+    // current lobe, while the cumulative path supplies the remaining column.
+    // Blend smoothly into full refinement as the Sun approaches grazing.
+    let short_column = smoothstep(0.35,0.55,path.y)*select(1.0,0.0,placed);
+    if short_column==1.0 {
+        let reach=min(120.0,(cloud.heights.y-point.y)/path.y);
+        let local=cloud_density(point+path*(0.5*reach),footprint)*reach;
+        let handoff=world+path*reach;
+        let depths=cloud_sun_depths(handoff,handoff.y);
+        let toward_sun=local+depths.x;
+        return vec2(toward_sun,max(toward_sun,depths.y));
+    }
     // At very low Sun, cached height intervals can cover hundreds of
     // metres along the ray. A close silver lining reveals those intervals.
     // The coarse path cannot resolve the authored volume's internal lobes.
@@ -162,7 +174,11 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,su
     // At low Sun the removed cached interval can span the whole lobe. Keep
     // the cached depth behind the sample and add it to the refined depth ahead.
     let below = max(0.0, depths.y - depths.z);
-    let cached=vec2(toward_sun, mix(max(toward_sun, depths.y), toward_sun + below, refinement));
+    var cached=vec2(toward_sun, mix(max(toward_sun, depths.y), toward_sun + below, refinement));
+    if short_column>0.0 {
+        let midpoint=cloud_density(point+path*(0.5*reach),footprint)*reach+depths.x;
+        cached=mix(cached,vec2(midpoint,max(midpoint,depths.y)),short_column);
+    }
     return mix(cached,direct,rim_detail);
 }
 
@@ -170,6 +186,19 @@ fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray
     if mass<=0.0 {return part;}
     let aerial=environment_aerial(camera+ray*(weighted/mass),uv);
     return cloud_with_air(part,aerial.transmission,aerial.scatter);
+}
+
+fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
+                    footprint:f32,sun_depth:f32,bank:f32)->vec3<f32> {
+    // A partly joined bank has side walls around each opening. Ahead of a
+    // lit wall the density drops toward the Sun; inside a lobe it stays high.
+    let ahead=cloud_density(point+mapping.path_border.xyz*max(170.0,2.0*footprint),footprint);
+    let relative=(sigma-ahead)/max(sigma,0.08*cloud.physical.x);
+    let exposed=smoothstep(-0.18,0.78,relative);
+    let beam=exp(-0.28*sun_depth);
+    let shade=0.24+0.72*exposed;
+    let rim=0.095*beam*exposed*exposed;
+    return mix(source,source*shade+solar*rim,bank);
 }
 
 @compute @workgroup_size(8,8)
@@ -209,10 +238,11 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let transmission_floor = select(0.001, 1e-8, covers_disc);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
+    let bank=smoothstep(0.12,0.45,cloud.physical.z)*(1.0-smoothstep(0.73,0.98,cloud.physical.z));
     var distance=begin;var samples=0u;
     for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>transmission_floor;i++) {
         samples+=1u;
-        let step=min(end-distance,max(cloud.heights.z,distance*0.002));
+        let step=min(end-distance,max(cloud.heights.z,distance*0.003));
         let at=distance+step*0.5;let point=air_camera+ray*at;
         let footprint=at/f32(size.y);
         let placed = cloud_placed(point, footprint);
@@ -226,7 +256,10 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                 var sun_depths = vec2(0.0);
                 if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0); }
-                let source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
+                var source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
+                if bank>0.0 && placed.x==0.0 && any(solar>vec3(0.0)) {
+                    source=cloud_bank_light(source,solar,point,sigma,footprint,sun_depths.x,bank);
+                }
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
                 // A part spans at most 0.25 of the lent air's optical depth.

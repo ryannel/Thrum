@@ -483,7 +483,20 @@ impl GameSetup {
         if setup.content == GameContent::Exit {
             setup.sun_proof_geometry.prepare(&mut scene);
         }
-        let cloud_sky = setup.clouds.sky_profile(config.render_extent);
+        let cloud_sky = setup
+            .clouds
+            .sky_profile(config.render_extent)
+            .map(|mut sky| {
+                if matches!(
+                    capabilities.recipe(),
+                    Ok(thrum_render::capabilities::Recipe::AppleTile)
+                ) {
+                    // Trace one member of each 2×2 block and reproject the other
+                    // three with the cloud's world-space travel between submissions.
+                    sky.refresh_stride = 2;
+                }
+                sky
+            });
         let weather = clouded_weather(setup, shapes.as_ref())?;
         let world = GameWorld(WorldPort::Inline(Box::new(
             WorldDriver::for_setup(&setup, weather).map_err(FrameError::World)?,

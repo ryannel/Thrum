@@ -23,6 +23,7 @@ fn cumulative_depth_stays_monotone_without_ringing_or_negative_extinction() {
         // though this entry point exercises only the cubic interpolation.
         struct Mapping {path_border:vec4<f32>}
         const mapping=Mapping(vec4<f32>(0.0,1.0,0.0,0.0));
+        @group(0) @binding(1) var noise_sampler:sampler;
         @group(0) @binding(0) var<storage,read_write> output:array<vec4<f32>>;
         @compute @workgroup_size(64)
         fn main(@builtin(global_invocation_id) id:vec3<u32>) {

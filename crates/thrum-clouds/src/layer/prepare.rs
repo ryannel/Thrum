@@ -64,7 +64,7 @@ impl Layer {
             wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT,
             size_of::<Uniform>() as u64,
         );
-        let texture_entry = |binding, storage| {
+        let texture_entry = |binding, storage, filterable| {
             let visibility = wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT;
             if storage {
                 binding::storage_texture(
@@ -78,7 +78,7 @@ impl Layer {
                 binding::texture(
                     binding,
                     visibility,
-                    wgpu::TextureSampleType::Float { filterable: false },
+                    wgpu::TextureSampleType::Float { filterable },
                     wgpu::TextureViewDimension::D2Array,
                 )
             }
@@ -87,13 +87,13 @@ impl Layer {
             label: Some(TRACE),
             entries: &[
                 uniform_entry,
-                texture_entry(1, false),
-                texture_entry(2, false),
-                texture_entry(3, true),
-                texture_entry(4, true),
-                texture_entry(5, false),
-                texture_entry(6, false),
-                texture_entry(7, false),
+                texture_entry(1, false, false),
+                texture_entry(2, false, false),
+                texture_entry(3, true, false),
+                texture_entry(4, true, false),
+                texture_entry(5, false, true),
+                texture_entry(6, false, true),
+                texture_entry(7, false, true),
                 binding::storage(9, wgpu::ShaderStages::COMPUTE, true, 0),
                 binding::storage(10, wgpu::ShaderStages::COMPUTE, true, 0),
                 binding::texture(
@@ -201,7 +201,7 @@ impl Layer {
             &params,
             &textures,
             uniform_entry,
-            texture_entry,
+            |binding, storage| texture_entry(binding, storage, false),
             &input,
         );
         let temporal = super::temporal::Temporal::new(surface, &params, &textures, &compose_layout);
