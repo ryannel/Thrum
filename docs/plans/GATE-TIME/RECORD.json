@@ -1188,7 +1188,33 @@
     },
     "M14": {
       "definitions": "82e03e1685f13ad69e3df3b6871ce69838ebc4e489c7fa4e451ea54ae8682e78",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "23772f97510f789cc99b40e675022b0ffa6eeae6",
+          "review": ".orchestrate/evidence/GATE-TIME/M14-review.md",
+          "items": {
+            "M14.1": "pass",
+            "M14.2": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 53873,
+            "cached": 945152,
+            "output": 4975,
+            "turns": 1
+          },
+          "at": "2026-11-24T04:26:35Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 1 Must Fi",
@@ -1222,6 +1248,13 @@
           "output": 72681,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "23772f97510f789cc99b40e675022b0ffa6eeae6",
+        "review": ".orchestrate/evidence/GATE-TIME/M14-review.md",
+        "checked": "a864268f5ce228af432525baddb2378c1305d754",
+        "at": "2026-11-24T04:26:35Z"
       }
     }
   },

@@ -808,7 +808,7 @@
     {
       "id": "M14",
       "name": "The full workspace check passes when a fast test needs more time on a busy Mac",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "The fast-test guard holds at ten seconds on every merge. On the busy Mac, the workspace check accepts a slow but successful rerun within its bounded window and reports the time it cost.",
       "items": [
         {
@@ -819,8 +819,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M14/runner-inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M14-review.md"
         },
         {
           "id": "M14.2",
@@ -830,8 +830,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M14/record.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M14-review.md"
         }
       ],
       "failed_reviews": 0,
