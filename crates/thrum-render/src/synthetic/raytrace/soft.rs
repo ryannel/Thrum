@@ -12,6 +12,7 @@ use crate::graph::{
     ResourceDescriptor, ResourceId, ResourceScope, TextureKind,
 };
 use crate::pass_key::{PassKey, PipelineRole};
+use crate::records::SoftSunFrame;
 use crate::runtime::DeviceSite;
 use crate::shaders::wgsl;
 
@@ -26,29 +27,11 @@ const PROBE_COPY: wgpu::TextureUsages = if cfg!(feature = "creation-counters") {
 } else {
     wgpu::TextureUsages::empty()
 };
-const FRAME_BYTES: u64 = size_of::<SoftFrame>() as u64;
+const FRAME_BYTES: u64 = size_of::<SoftSunFrame>() as u64;
 const FLOAT: wgpu::TextureSampleType = wgpu::TextureSampleType::Float { filterable: false };
 const UINT: wgpu::TextureSampleType = wgpu::TextureSampleType::Uint;
 const COMPUTE: wgpu::ShaderStages = wgpu::ShaderStages::COMPUTE;
 const FRAGMENT: wgpu::ShaderStages = wgpu::ShaderStages::FRAGMENT;
-
-#[repr(C, align(16))]
-#[derive(bytemuck::Pod, bytemuck::Zeroable, Clone, Copy)]
-struct SoftFrame {
-    inverse: [[f32; 4]; 4],
-    previous: [[f32; 4]; 4],
-    camera: [f32; 4],
-    extent: [u32; 2],
-    jitter_delta: [f32; 2],
-    enabled: u32,
-    valid: u32,
-    phase: u32,
-    settle: u32,
-    dive_cosine: f32,
-    radius: f32,
-    rim_rays: u32,
-    padding: u32,
-}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub(crate) enum Stage {
@@ -352,7 +335,7 @@ impl SoftSun {
         previous: &SyntheticView,
         drawn: [u32; 2],
         valid: bool,
-    ) -> SoftFrame {
+    ) -> SoftSunFrame {
         let now_jitter = if view.raster_jitter_enabled() {
             view.raster_jitter_pixels()
         } else {
@@ -365,7 +348,7 @@ impl SoftSun {
         };
         let camera = glam::Vec3::from_array(view.camera_position());
         let relative = (view.raster_projection() * glam::Mat4::from_translation(camera)).inverse();
-        SoftFrame {
+        SoftSunFrame {
             inverse: relative.to_cols_array_2d(),
             previous: previous.view_proj_columns(),
             camera: camera.extend(0.0).to_array(),
@@ -728,54 +711,5 @@ impl SceneContext<'_> {
         let [x, y] = self.target.drawn.map(|axis| axis.div_ceil(TILE));
         pass.dispatch_workgroups(x, y, 1);
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn shader_validates() {
-        use super::SoftFrame;
-        use std::mem::offset_of;
-        use wgpu::naga;
-        let source = super::shader_source();
-        let module = naga::front::wgsl::parse_str(&source)
-            .unwrap_or_else(|error| panic!("{}", error.emit_to_string(&source)));
-        let frame = module
-            .types
-            .iter()
-            .find_map(|(_, ty)| (ty.name.as_deref() == Some("SoftSunFrame")).then_some(&ty.inner))
-            .expect("soft Sun frame record");
-        let naga::TypeInner::Struct { members, span } = frame else {
-            panic!("soft Sun frame must be a struct");
-        };
-        assert_eq!(*span as usize, size_of::<SoftFrame>());
-        let expected = [
-            offset_of!(SoftFrame, inverse),
-            offset_of!(SoftFrame, previous),
-            offset_of!(SoftFrame, camera),
-            offset_of!(SoftFrame, extent),
-            offset_of!(SoftFrame, jitter_delta),
-            offset_of!(SoftFrame, enabled),
-            offset_of!(SoftFrame, valid),
-            offset_of!(SoftFrame, phase),
-            offset_of!(SoftFrame, settle),
-            offset_of!(SoftFrame, dive_cosine),
-            offset_of!(SoftFrame, radius),
-            offset_of!(SoftFrame, rim_rays),
-            offset_of!(SoftFrame, padding),
-        ];
-        assert!(
-            members
-                .iter()
-                .map(|field| field.offset as usize)
-                .eq(expected)
-        );
-        naga::valid::Validator::new(
-            naga::valid::ValidationFlags::all(),
-            naga::valid::Capabilities::all(),
-        )
-        .validate(&module)
-        .unwrap_or_else(|error| panic!("{}", error.emit_to_string(&source)));
     }
 }

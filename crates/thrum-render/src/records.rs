@@ -152,6 +152,21 @@ records! {
         near_partition: [f32; 4],
     }
     ShadowView { light_view_proj: Matrix, clip_upstream: [u32; 4] }
+    SoftSunFrame {
+        inverse: Matrix,
+        previous: Matrix,
+        camera: [f32; 4],
+        extent: [u32; 2],
+        jitter_delta: [f32; 2],
+        enabled: u32,
+        valid: u32,
+        phase: u32,
+        settle: u32,
+        dive_cosine: f32,
+        radius: f32,
+        rim_rays: u32,
+        padding: u32,
+    }
     MeshRecord {
         first_index: u32,
         index_count: u32,
