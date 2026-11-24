@@ -46,6 +46,7 @@ thrum_test_support::macos_gpu_test! {
         });
         for (tick, (absent, clear)) in frames[0].iter().zip(&frames[1]).enumerate() {
             assert_eq!(absent.len(), extent.into_iter().product::<u32>() as usize * 4);
+            assert_eq!(clear.len(), absent.len(), "clear RGBA length at frame {tick}");
             let differing = absent.iter().zip(clear).filter(|(a, b)| a != b).count();
             assert_eq!(differing, 0, "different RGBA bytes at frame {tick}");
         }

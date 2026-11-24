@@ -128,6 +128,10 @@ def validate(record,scene='shade'):
             raise ValueError('expected the same noon view in every arm')
         if record.get('deck_tripwires') != deck_tripwires(record['runs']):
             raise ValueError('deck tripwires lack their paired pass and work investigation')
+        if 'reference_investigation' in record:
+            expected_investigation = investigate_decks(record['runs'], record['deck_tripwires'])
+            if record['investigation'] != expected_investigation:
+                raise ValueError('deck investigation does not describe the measured pair')
         return
     if scene in ('first-frame', 'low-sun'):
         validate_first_frame(record)
@@ -292,6 +296,34 @@ def deck_tripwires(rows):
     return json.loads(json.dumps(findings))
 
 
+def investigate_decks(rows, tripwires):
+    notes = []
+    absent = rows[0]
+    if max(absent['whole_frame_gpu_ns'], absent['first_submission']['whole_frame_gpu_ns']) > 1e9 / 120:
+        notes.append(f"Clouds absent also exceeds 120 Hz: {absent['whole_frame_gpu_ns'] / 1e6:.3f} ms steady, "
+                     f"{absent['first_submission']['whole_frame_gpu_ns'] / 1e6:.3f} ms first submission. "
+                     "This establishes some frame cost without clouds.")
+    for row in rows[1:]:
+        preset = row['preset']
+        findings = tripwires[preset]
+        if findings['refresh_excess']:
+            largest = ', '.join(f'{name} {value / 1e6:.3f} ms' for name, value in findings['largest_cloud_passes'])
+            notes.append(f"{preset}: exceeds 120 Hz at {row['whole_frame_gpu_ns'] / 1e6:.3f} ms steady or "
+                         f"{row['first_submission']['whole_frame_gpu_ns'] / 1e6:.3f} ms on the first submission. "
+                         f"Largest cloud pass intervals: {largest}.")
+        for name, (fair, measured) in findings['passes_at_least_25_percent_over_fair'].items():
+            notes.append(f'{preset}: {name} took {measured / 1e6:.4f} ms compared with fair at {fair / 1e6:.4f} ms. '
+                         f'The cloud resource inventory totals {findings["resource_bytes"]:,} bytes, compared with '
+                         f'{tripwires["fair"]["resource_bytes"]:,} bytes in fair. The pair measures the pass increase '
+                         'under shared load. It does not isolate per-invocation work from contention.')
+        if findings['trace_cost_outgrows_work']:
+            notes.append(f"{preset}: trace takes {findings['trace_time_ratio_to_fair']:.1%} of fair's time for "
+                         f"{findings['trace_work_ratio_to_fair']:.1%} of its counted ray samples. The counter includes "
+                         'visits through empty space and omits nested sunlight work. The discrepancy warrants measuring '
+                         'lighting work per contributing sample as well as shared-load contention.')
+    return '\n'.join(notes) or 'No deck tripwires triggered in this measurement.'
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse'])
@@ -334,6 +366,7 @@ def main():
             record['estimates'] = FIRST_FRAME_ESTIMATES
         if args.scene == 'decks':
             record['deck_tripwires'] = deck_tripwires(rows)
+            record['investigation'] = investigate_decks(rows, record['deck_tripwires'])
         previous = args.previous or (FIXTURES['low-sun'] if args.scene == 'placed' else None)
         if previous:
             record['previous'] = json.loads(previous.read_text())
@@ -345,9 +378,19 @@ def main():
         record = json.loads(destination.read_text())
         validate(record, args.scene)
         if args.scene == 'decks':
-            fresh = dict(record, runs=rows, deck_tripwires=deck_tripwires(rows),
-                         commit=run(['git', 'rev-parse', 'HEAD']),
-                         load={'before': before, 'after': os.getloadavg()})
+            tripwires = deck_tripwires(rows)
+            fresh = {
+                'commit': run(['git', 'rev-parse', 'HEAD']),
+                'dirty': bool(run(['git', 'status', '--porcelain'])),
+                'load': {'before': before, 'after': os.getloadavg()},
+                'machine': platform.platform(),
+                'build': 'release, capture off, named GPU passes',
+                'estimates': record['estimates'],
+                'runs': rows,
+                'deck_tripwires': tripwires,
+                'investigation': investigate_decks(rows, tripwires),
+                'reference_investigation': {key: record[key] for key in ('commit', 'investigation')},
+            }
             validate(fresh, args.scene)
             print(json.dumps(fresh))
             return
