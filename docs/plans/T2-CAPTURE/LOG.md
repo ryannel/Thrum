@@ -105,3 +105,10 @@
   reports separately and preserves the original capture error. Seventeen CPU-only cases and
   three hardware Chrome lifecycle probes passed.
   [Target evidence](../../../.orchestrate/evidence/T2-CAPTURE/M4/repair-ownership.md).
+
+- 2026-11-24 Repaired M4's early-exit verdict. Only an explicit harness close now
+  qualifies Chrome's exit as requested. The launcher still reaps the process group
+  and removes the profile after a control disconnect. Nineteen CPU-only cases and
+  three hardware Chrome probes passed, including successful validation and sync
+  after an early exit that correctly left the manifest incomplete.
+  [Evidence](../../../.orchestrate/evidence/T2-CAPTURE/M4/early-exit-proof.md).
