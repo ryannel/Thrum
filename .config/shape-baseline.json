@@ -157,13 +157,6 @@
     "string-errors": {
       "version": 5,
       "files": {
-        "crates/thrum-app/src/capture_writer.rs": 2,
-        "crates/thrum-app/src/game.rs": 5,
-        "crates/thrum-app/src/offscreen.rs": 11,
-        "crates/thrum-app/src/offscreen/clock.rs": 1,
-        "crates/thrum-app/src/sky.rs": 1,
-        "crates/thrum-app/src/web.rs": 8,
-        "crates/thrum-app/src/web/capture.rs": 3,
         "examples/v1-game/src/camera.rs": 2,
         "examples/v1-game/src/camera/route.rs": 3,
         "examples/v1-game/src/content.rs": 3,
