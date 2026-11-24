@@ -37,12 +37,12 @@ fn turret_cap(site: vec2<u32>, local: vec2<f32>) -> f32 {
     }
     return cap;
 }
-fn noise(point:vec3<f32>, anchor:vec3<u32>, stream:u32)->f32 {
+fn noise(point:vec3<f32>)->f32 {
     let offset=vec3<i32>(floor(point));let f=vec3<f32>(smooth_unit(fract(point.x)),smooth_unit(fract(point.y)),smooth_unit(fract(point.z)));
     var n=0.0;
     for(var x=0;x<=1;x++){for(var y=0;y<=1;y++){for(var z=0;z<=1;z++){
         let w=select(vec3<f32>(1.0)-f,f,vec3<bool>(x!=0,y!=0,z!=0));
-        n+=w.x*w.y*w.z*random(anchor.x+u32(offset.x+x),anchor.y+u32(offset.y+y),anchor.z+u32(offset.z+z),stream);
+        n+=w.x*w.y*w.z*random(p.noise.x+u32(offset.x+x),p.noise.y+u32(offset.y+y),p.noise.z+u32(offset.z+z),20u);
     }}}return n;
 }
 @compute @workgroup_size(8,8)
@@ -84,15 +84,10 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     }}
     let rem=vec2<f32>(vec2<i32>(p.integers.xy)-vec2<i32>(p.noise.xy)*4);
     let grem=f32(i32(p.integers.z)-i32(p.noise.z)*2);
-    let deck_time = (p.origin.z + grem) / 2.0;
-    let n=noise(vec3<f32>((coordinate+rem)/4.0,deck_time),p.noise.xyz,20u);
+    let n=noise(vec3<f32>((coordinate+rem)/4.0,(p.origin.z+grem)/2.0));
     let deck=p.vertical.x*smooth_unit((n-(1.0-1.3*smooth_unit((p.weather.x-0.45)/0.55)))/0.2);
     coverage=max(coverage,deck);
-    if deck > 0.0 {
-        let relief = noise(vec3<f32>(coordinate, deck_time), vec3<u32>(p.integers.xy, p.noise.z), 21u);
-        let height = 0.34 + 0.66 * (0.30 * n + 0.70 * relief);
-        depth = max(depth, p.physical.y * pow(deck, 0.7) * height);
-    }
+    depth=max(depth,p.physical.y*pow(deck,0.7)*(0.6+0.4*n));
     let tau=p.physical.w*depth*coverage*(1.0-(p.vertical.y+p.vertical.z)*0.5);
     if coverage==0.0 || depth==0.0 {coverage=0.0;depth=0.0;age=0.0;}
     let q=vec2<i32>(i32(id.x),i32(row));let layer=i32(p.rows.w);
