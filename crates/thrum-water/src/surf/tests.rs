@@ -22,11 +22,7 @@ fn surf_records_match_the_cache_and_query() {
             record!(SurfRecord, controls, bounds, bodies),
         ],
     );
-    let cache = map_gpu::declarations_at(0)
-        + COMPONENT
-        + &SurfGpu::source(0, 7)
-        + include_str!("cache.wgsl");
-    validate(&cache);
+    validate(&super::cache::Cache::compute_source());
     let query = map_gpu::declarations_at(1)
         + COMPONENT
         + &SurfGpu::source(1, 7)

@@ -139,11 +139,7 @@ impl Cache {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let source = map_gpu::declarations_at(0)
-            + include_str!("../column/records.wgsl")
-            + &SurfGpu::source(0, COMPUTE_SURF_BINDING)
-            + &Self::ring_source(true)
-            + include_str!("cache.wgsl");
+        let source = Self::compute_source();
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -238,6 +234,14 @@ impl Cache {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.group, &[]);
         pass.dispatch_workgroups(self.count.div_ceil(GROUP_WIDTH), 1, 1);
+    }
+
+    pub(super) fn compute_source() -> String {
+        map_gpu::declarations_at(0)
+            + include_str!("../column/records.wgsl")
+            + &SurfGpu::source(0, COMPUTE_SURF_BINDING)
+            + &Self::ring_source(true)
+            + include_str!("cache.wgsl")
     }
 
     fn ring_source(enabled: bool) -> String {
