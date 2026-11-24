@@ -216,3 +216,9 @@
   The shared simulator lifecycle verified shutdown after success, failure and cancellation. All eight image turns released after shutdown,
   with six byte-exact images and 1,000 matching continuation checkpoints. The scoped workspace check passed all 60 selected tests.
   The merged tip receives the shared exact-image check. [M5 evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)
+
+- 2026-11-24 The merged steady run matched all digests, but Chrome admitted 93.87% of warm inputs.
+  A diagnostic recorded browser wakeups on one-second boundaries and a close for absence. The headless
+  proof now disables background timer throttling. The 36,000-tick rerun matched all 1,200 digests on each
+  replica, with warm admission between 96.69% and 100%. Chrome's fault and freeze scenarios, the listen-host
+  match, and all eight Chrome cost rows also passed. [M5 evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)
