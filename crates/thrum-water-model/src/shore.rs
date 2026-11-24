@@ -1,3 +1,5 @@
+mod swash;
+
 use crate::{Bed, Stage, WaterError};
 use std::collections::VecDeque;
 use std::f64::consts::{FRAC_PI_4, TAU};
@@ -143,6 +145,7 @@ pub struct ShoreTransform {
     // stage, direction, wavelength, then row-major nodes.
     lags: Vec<Lag>,
     exposures: Vec<Vec<f64>>,
+    contours: Vec<Vec<[f64; 3]>>,
 }
 
 impl ShoreTransform {
@@ -150,6 +153,14 @@ impl ShoreTransform {
     /// # Errors
     /// Refuses invalid stage, fetch, margin or depth floor.
     pub fn prepare(bed: Bed, config: ShoreConfig) -> Result<Self, WaterError> {
+        Self::prepare_with_joins(bed, config, &[])
+    }
+
+    pub(crate) fn prepare_with_joins(
+        bed: Bed,
+        config: ShoreConfig,
+        joins: &[bool],
+    ) -> Result<Self, WaterError> {
         validate(config)?;
         let mut stages = vec![config.stage.min];
         let mut stage = config.stage.min;
@@ -166,8 +177,16 @@ impl ShoreTransform {
         }
         let mut lags = Vec::new();
         let mut exposures = Vec::new();
+        let mut contours = Vec::new();
         for &stage in &stages {
             let region = Region::new(&bed, config, stage);
+            contours.push(swash::prepare(
+                &bed,
+                &region.open,
+                joins,
+                region.level,
+                config.margin,
+            ));
             for direction in 0..8 {
                 let angle = f64::from(direction) * FRAC_PI_4;
                 let dir = [angle.cos(), angle.sin()];
@@ -203,6 +222,7 @@ impl ShoreTransform {
             stages,
             lags,
             exposures,
+            contours,
         })
     }
 
@@ -222,6 +242,29 @@ impl ShoreTransform {
         self.exposures.iter().map(Vec::as_slice)
     }
 
+    /// Contour offsets and validity, in stage and row-major node order.
+    pub fn contour_planes(&self) -> impl ExactSizeIterator<Item = &[[f64; 3]]> {
+        self.contours.iter().map(Vec::as_slice)
+    }
+
+    pub(crate) fn contour(&self, stage: f64, point: [f64; 2]) -> Option<([f64; 2], f64)> {
+        let corners = self.bed.weights(point)?;
+        let (lo, t) = self.stage_blend(stage);
+        let hi = (lo + 1).min(self.stages.len() - 1);
+        let mut sum = [0.0; 3];
+        for (stage, blend) in [(lo, 1.0 - t), (hi, t)] {
+            for (i, weight) in corners {
+                for (target, value) in sum.iter_mut().zip(self.contours[stage][i]) {
+                    *target += weight * blend * value;
+                }
+            }
+        }
+        (sum[2] > 0.0).then(|| {
+            let reference = std::array::from_fn(|axis| point[axis] + sum[axis] / sum[2]);
+            (reference, sum[2])
+        })
+    }
+
     /// Number of lag layers (eight directions times six wavelengths times stages).
     pub fn layers(&self) -> usize {
         self.lags.len()
@@ -229,7 +272,9 @@ impl ShoreTransform {
 
     /// Retained sample payload, excluding allocator and struct overhead.
     pub fn bytes(&self) -> usize {
-        (self.lags.len() + self.exposures.len()) * self.bed.heights.len() * size_of::<f64>()
+        (self.lags.len() + self.exposures.len() + 3 * self.contours.len())
+            * self.bed.heights.len()
+            * size_of::<f64>()
     }
 
     /// Lag and gradient blended in log wavelength and stage simultaneously.

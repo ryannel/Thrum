@@ -125,9 +125,12 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
     }
     if SURF_CACHE_ENABLED && transformed.w > 0.0 {
         surf_weight = 1.0;
-        f.displacement += vec4(transformed.xyz, 0.0);
+        let short = surf_short_weights(index);
+        let previous_short = f.displacement.xyz - f.velocity.xyz * water.level_dt_reset.y;
+        f.displacement = short.x * f.displacement + vec4(transformed.xyz, 0.0);
+        f.velocity *= short.x;
         let previous_sample = surf_previous(index);
-        surf_motion = transformed.xyz - previous_sample.xyz;
+        surf_motion = transformed.xyz - previous_sample.xyz + (short.x - short.y) * previous_short;
         surf_variance = previous_sample.w;
         if sea { surf_normal = sea_surf_normal(index, local, vertex.z); }
     }

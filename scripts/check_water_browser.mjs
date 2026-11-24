@@ -328,10 +328,11 @@ async function inspectSurf(evaluate,result,frame) {
     for(let i=0;i<mesh.length/4;i++){
       const [x,z,spacing,body]=mesh.subarray(i*4,i*4+4);
       const halfWidth=spacing<=0.5?64:32;
-      if(cache[i*8+3]===0 || (body===0&&Math.max(Math.abs(x),Math.abs(z))>=halfWidth*spacing))continue;
+      const cacheOffset=i*12;
+      if(cache[cacheOffset+3]===0 || (body===0&&Math.max(Math.abs(x),Math.abs(z))>=halfWidth*spacing))continue;
       if(i%6!==0)continue;
       nodes.push(body===0?[x+Math.floor(settings[0]),z+Math.floor(settings[1]),body]:[x,z,body]);
-      samples.push(Array.from(cache.subarray(i*8,i*8+3)));
+      samples.push(Array.from(cache.subarray(cacheOffset,cacheOffset+3)));
     }
     const entries=__island.surfEntries;
     const limits={};
@@ -641,7 +642,7 @@ try {
       result.frame_report_history={before,after};
     }
   } else if(mode==='fixed' && surfInspection){
-    const views=['sand','beach','offshore','lee','headland','island','seaward'];
+    const views=['sand','beach','offshore','lee','headland','island','seaward','handoff'];
     for(const [index,name] of views.entries()){
       await evaluate(`game.edit_control('camera.island',${index})`);
       for(let phase=0;phase<3;phase++){
@@ -660,7 +661,7 @@ try {
     const spacing=surfInspection?100:0;
     if(surfInspection){
       const view=Number(process.env.THRUM_WATER_ISLAND_CAMERA??'0');
-      assert(Number.isInteger(view)&&view>=0&&view<=6,'invalid surf camera');
+      assert(Number.isInteger(view)&&view>=0&&view<=7,'invalid surf camera');
       await evaluate(`game.edit_control('camera.island',${view})`);
       result.surf_camera=view;
       await until(async()=>{

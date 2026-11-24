@@ -76,8 +76,12 @@ fn surf_keeps_the_beach_waterline_closed_form() {
         let expected = sign * c * swash / (1.0 + sign * c);
         let x = 50.0 + expected / 0.1;
         let component = f.layers[0].components()[0];
-        let time = (component.wave_vector[0] * x - if sign > 0.0 { 0.0 } else { TAU / 2.0 })
-            / component.frequency();
+        let (lag, _) = map
+            .shore_transform(0)
+            .unwrap()
+            .sample(0, 60.0, 0.0, [50.0, 2.0]);
+        let phase = if sign > 0.0 { 0.0 } else { TAU / 2.0 };
+        let time = (component.wave_vector[0] * (50.0 + lag) - phase) / component.frequency();
         let surface = map.surface(&f, [x, 2.0], time).unwrap();
         assert!((surface.sample.height - expected).abs() < 1e-9);
         let (mut lo, mut hi) = (45.0, 55.0);

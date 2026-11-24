@@ -5,6 +5,8 @@ use crate::{
 use std::f64::consts::{FRAC_PI_4, TAU};
 use thrum_sea_model::Sample;
 
+const SWASH_C: f64 = 0.6 / (2.0 * std::f64::consts::SQRT_2);
+
 /// Nearest shore-transform sector for a finite nonzero wave vector.
 /// A vector on a boundary belongs to the sector in the increasing angle direction.
 #[expect(
@@ -104,6 +106,7 @@ impl Map {
         {
             return Err(WaterError::new("surf", "invalid surf profile"));
         }
+        let joins = self.swash_joins();
         let transforms = self
             .bodies
             .iter()
@@ -112,7 +115,7 @@ impl Map {
                 if matches!(b.kind, BodyKind::Chart(_) | BodyKind::Hollows(_)) {
                     return Ok(None);
                 }
-                ShoreTransform::prepare(
+                ShoreTransform::prepare_with_joins(
                     self.shore_bed(id),
                     ShoreConfig {
                         level: b.level,
@@ -131,6 +134,7 @@ impl Map {
                             Source::Water
                         },
                     },
+                    &joins,
                 )
                 .map(Some)
             })
@@ -141,6 +145,24 @@ impl Map {
             pyramid: BedPyramid::new(&self.bed),
         }));
         Ok(())
+    }
+
+    fn swash_joins(&self) -> Vec<bool> {
+        let mut joins = Vec::new();
+        for body in &self.bodies {
+            if let BodyKind::Chart(chart) = &body.kind {
+                joins.resize(self.bed.heights.len(), false);
+                for (i, &inside) in chart.footprint.iter().enumerate() {
+                    if inside {
+                        joins[i] = true;
+                        for j in self.bed.neighbours(i) {
+                            joins[j] = true;
+                        }
+                    }
+                }
+            }
+        }
+        joins
     }
 
     fn shore_bed(&self, id: usize) -> crate::Bed {
@@ -259,7 +281,18 @@ impl Surf {
         sample.velocity[0] += row.row.current[0];
         sample.velocity[2] += row.row.current[1];
         let (limited, flow) = map.limited(field, point, row);
-        let gains = limited.gains;
+        let mut gains = limited.gains;
+        if row.row.gains[0] > 0.0 && field.variances()[0] > 0.0 {
+            let weight = self
+                .contour(map, row.body, point, row.depth, limited.swash_depth)
+                .map_or(1.0, |(_, coverage)| {
+                    1.0 - smooth(coverage)
+                        * (1.0 - short_geometry_weight(row.depth, limited.swash_depth))
+                });
+            for gain in &mut gains[1..] {
+                *gain *= weight;
+            }
+        }
         for (i, layer) in field.layers.iter().enumerate().skip(1) {
             let wave = layer
                 .scaled(gains[i])
@@ -282,6 +315,20 @@ impl Surf {
             current: row.row.current,
             wet: row.bed.is_none_or(|bed| sample.height > bed),
         })
+    }
+
+    fn contour(
+        &self,
+        map: &Map,
+        body: usize,
+        point: [f64; 2],
+        depth: f64,
+        swash: f64,
+    ) -> Option<([f64; 2], f64)> {
+        self.transforms[body]
+            .as_ref()
+            .filter(|_| swash > 0.0 && depth < 4.0 * swash)
+            .and_then(|transform| transform.contour(map.bodies[body].stage.value, point))
     }
 
     fn transform(
@@ -330,6 +377,24 @@ fn smooth(x: f64) -> f64 {
     t * t * (3.0 - 2.0 * t)
 }
 
+fn short_geometry_weight(depth: f64, swash: f64) -> f64 {
+    if swash > 0.0 {
+        smooth((depth / swash - 0.85) / (1.3 - 0.85))
+    } else {
+        1.0
+    }
+}
+
+fn wet_floor(thickness: f64, swash: f64) -> f64 {
+    let floor = 0.02 * swash;
+    let knee = 0.15 * swash;
+    if thickness >= floor + knee {
+        return thickness;
+    }
+    let t = ((thickness - floor) / knee).max(0.0);
+    floor + knee * t * t * (2.0 - t)
+}
+
 /// Borrowed assembled long-wave sheet, including transformation and shaping.
 pub struct SurfSheet<'a> {
     surf: &'a Surf,
@@ -365,8 +430,8 @@ impl SurfSheet<'_> {
                 height: 0.0,
             };
         }
-        let c = 0.6 / (2.0 * 2.0_f64.sqrt());
-        let draw = c * swash / (1.0 - c);
+        let contour = self.surf.contour(self.map, body, rest, depth, swash);
+        let draw = SWASH_C * swash / (1.0 - SWASH_C);
         let fade = if swash > 0.0 {
             smooth((depth - draw) / (0.5 * swash - draw))
         } else {
@@ -470,7 +535,7 @@ impl SurfSheet<'_> {
         let mut displacement = displacement.map(|value| value * scale);
         let phase = im.atan2(re);
         let section = self.surf.profile.section.sample(phase, index);
-        let height = re * scale + (section.height * envelope - re) * scale * fade;
+        let mut height = re * scale + (section.height * envelope - re) * scale * fade;
         let vector = std::array::from_fn::<_, 2, _>(|axis| gx[axis] * re + gy[axis] * im);
         let norm = vector[0].hypot(vector[1]);
         if norm > 1e-20 {
@@ -478,10 +543,69 @@ impl SurfSheet<'_> {
                 displacement[axis] += section.throw * envelope * scale * fade * vector[axis] / norm;
             }
         }
+        if let Some((reference, coverage)) = contour {
+            let support = smooth(coverage) * (1.0 - smooth(depth / swash - 3.0));
+            let ordinary = smooth((depth / swash - 0.35) / (0.85 - 0.35));
+            let inner = support * (1.0 - ordinary);
+            for distance in &mut displacement {
+                *distance *= 1.0 - inner;
+            }
+            if inner > 0.0 {
+                let q = self.contour_phase(body, reference, row.gains[0], time, swash);
+                height = height * (1.0 - inner) + inner * SWASH_C * (depth + swash) * q;
+            }
+            if depth > 0.35 * swash
+                && let Some(bed) = self
+                    .map
+                    .bed
+                    .height(std::array::from_fn(|axis| rest[axis] + displacement[axis]))
+            {
+                let thickness = row.level - bed + height;
+                let merge = support * smooth((depth / swash - 0.35) / 0.1);
+                height += merge * (wet_floor(thickness, swash) - thickness);
+            }
+        }
         SheetPoint {
             world: std::array::from_fn(|a| rest[a] + displacement[a]),
             height,
         }
+    }
+
+    fn contour_phase(&self, body: usize, point: [f64; 2], gain: f64, time: f64, swash: f64) -> f64 {
+        let mut re = 0.0;
+        let mut im = 0.0;
+        let mut variance = 0.0;
+        for component in self.field.layers[0].components() {
+            if component.amplitude == 0.0 {
+                continue;
+            }
+            let k = component.wave_vector[0].hypot(component.wave_vector[1]);
+            let wavelength = TAU / k;
+            let (lag, _, exposure) = if (20.0..=640.0).contains(&wavelength) {
+                self.surf.transform(
+                    self.map,
+                    body,
+                    point,
+                    shore_sector(component.wave_vector) as usize,
+                    wavelength,
+                )
+            } else {
+                (0.0, [0.0; 2], 1.0)
+            };
+            let amplitude = component.amplitude * gain * exposure.sqrt();
+            let phase =
+                component.anchored_phase(point, time) + k * if lag.is_finite() { lag } else { 0.0 };
+            let (sin, cos) = phase.sin_cos();
+            re += amplitude * cos;
+            im += amplitude * sin;
+            variance += 0.5 * amplitude * amplitude;
+        }
+        let envelope = re.hypot(im);
+        if envelope == 0.0 {
+            return 0.0;
+        }
+        let scale = (0.6 * swash / (4.0 * variance.sqrt())).min(1.0);
+        re / envelope * smooth(scale * envelope / (SWASH_C * swash))
     }
 
     fn derivatives(&self, rest: [f64; 2]) -> Sample {

@@ -5,7 +5,7 @@ struct ShoreBody {
 }
 struct SurfRecord {
     controls: vec4<f32>, // lag floor, ratio, cut cell, column tolerance
-    bounds: vec4<f32>, // max normalized throw, first throw index, minimum body level
+    bounds: vec4<f32>, // max throw, first throw index, minimum body level, first contour plane
     bodies: array<ShoreBody, BODY_LIMIT>,
 }
 @group(SURF_GROUP) @binding(SURF_FIRST) var<uniform> surf: SurfRecord;
@@ -15,6 +15,7 @@ struct SurfRecord {
 @group(SURF_GROUP) @binding(SURF_FIRST + 4u) var bed_pyramid: texture_2d<f32>;
 
 const SURF_TAU: f32 = 6.283185307179586;
+const SWASH_C: f32 = 0.21213203435596425;
 
 struct LagSample {
     value: f32,
@@ -161,6 +162,73 @@ fn surf_section(phase: f32, index: f32) -> vec3<f32> {
     return mix(section_row(lo, phase), section_row(hi, phase), clamp((index - a) / (b - a), 0.0, 1.0));
 }
 
+fn contour_plane(cell: Cell, stage: u32) -> vec3<f32> {
+    let layer = i32(surf.bounds.w) + i32(stage);
+    var result = vec3(0.0);
+    for (var i = 0u; i < 4u; i++) {
+        result += cell.weights[i] * textureLoad(surf_exposures, cell.corners[i], layer, 0).xyz;
+    }
+    return result;
+}
+
+fn shore_contour(cell: Cell, stages: StageBlend) -> vec3<f32> {
+    let low = contour_plane(cell, stages.low);
+    if stages.weight == 0.0 { return low; }
+    return mix(low, contour_plane(cell, stages.high), stages.weight);
+}
+
+fn contour_short_weight(depth: f32, swash: f32, coverage: f32) -> f32 {
+    return mix(1.0, swash_short_weight(depth, swash), smoothstep(0.0, 1.0, coverage));
+}
+
+// The still-water contour is outside the shoaling/section fade. Only
+// its complex sum and time derivative are needed by the inner profile.
+fn contour_phase(point: vec2<f32>, stages: StageBlend, gain: f32, anchor: vec2<f32>,
+    dt: f32, swash: f32, count: u32) -> vec2<f32> {
+    let cell = map_cell(point);
+    var field = vec2(0.0);
+    var rate = vec2(0.0);
+    var variance = 0.0;
+    for (var i = 0u; i < count; i++) {
+        let wave = surf_component(i);
+        if wave.amplitude == 0.0 { continue; }
+        let wavelength = SURF_TAU * wave.inverse_k;
+        var exposure = 1.0;
+        var lag = 0.0;
+        if wavelength >= 20.0 && wavelength <= 640.0 && cell.inside {
+            let sector = wave.shore_sector % SURF_SECTORS;
+            exposure = shore_exposure(cell, stages.low, sector);
+            if stages.weight > 0.0 {
+                exposure = mix(exposure, shore_exposure(cell, stages.high, sector), stages.weight);
+            }
+            let sample = fitted_lag(cell, stages, sector, log2(wavelength / 20.0));
+            if sample.valid { lag = sample.value / wave.inverse_k; }
+        }
+        let phase = dot(wave.vector, point - anchor) + wave.phase - wave.omega * dt + lag;
+        let a = wave.amplitude * gain * sqrt(max(0.0, exposure));
+        let moment = a * vec2(cos(phase), sin(phase));
+        field += moment;
+        rate += vec2(moment.y, -moment.x) * wave.omega;
+        variance += 0.5 * a * a;
+    }
+    let envelope = length(field);
+    if envelope == 0.0 { return vec2(0.0); }
+    let scale = min(1.0, 0.6 * swash / (4.0 * sqrt(variance)));
+    let u = clamp(scale * envelope / (SWASH_C * swash), 0.0, 1.0);
+    let weight = u * u * (3.0 - 2.0 * u);
+    let envelope_rate = dot(field, rate) / envelope;
+    let q = field.x / envelope;
+    let weight_rate = 6.0 * u * (1.0 - u) * scale * envelope_rate / (SWASH_C * swash);
+    return vec2(q * weight, q * weight_rate + weight * (rate.x - q * envelope_rate) / envelope);
+}
+
+fn swash_wet_floor(thickness: f32, swash: f32) -> f32 {
+    let floor = 0.02 * swash;
+    let knee = 0.15 * swash;
+    let t = clamp((thickness - floor) / knee, 0.0, 1.0);
+    return select(floor + knee * t * t * (2.0 - t), thickness, t == 1.0);
+}
+
 struct SurfPoint {
     displacement: vec3<f32>,
     index: f32,
@@ -170,6 +238,7 @@ struct SurfPoint {
     direction: vec2<f32>,
     section_weight: f32,
     lip: f32,
+    short_weight: f32,
     swash_rates: vec4<f32>, // slope xz, upward velocity, height change per metre of depth
 }
 
@@ -187,6 +256,7 @@ fn surf_forward(
     dt: f32, chop: f32, heights: vec4<f32>, count: u32,
 ) -> SurfPoint {
     var empty: SurfPoint;
+    empty.short_weight = 1.0;
     if row.gains.x == 0.0 || heights.x == 0.0 || count == 0u { return empty; }
     let cell = map_cell(point);
     let depth = select(1.0e30, row.water.x - cell.bed, cell.inside);
@@ -200,7 +270,7 @@ fn surf_forward(
         empty.variance = rms * rms;
         return empty;
     }
-    let draw = (0.6 / (2.0 * sqrt(2.0) - 0.6)) * swash;
+    let draw = SWASH_C * swash / (1.0 - SWASH_C);
     var fade = f32(depth > 0.0);
     if swash > 0.0 { fade = smoothstep(draw, 0.5 * swash, depth); }
     var field = vec2(0.0);
@@ -242,7 +312,6 @@ fn surf_forward(
         horizontal -= chop * moment.y * vector / max(length(vector), 1.0e-20);
     }
     let amplitude = length(field);
-    if amplitude == 0.0 && variance == 0.0 { return empty; }
     let phase = atan2(field.y, field.x);
     let index = 2.0 * amplitude / (surf.controls.y * floor_depth);
     let scale = min(1.0, 0.6 * max(0.0, depth + swash) / max(4.0 * sqrt(variance), 1.0e-30));
@@ -264,8 +333,44 @@ fn surf_forward(
     }
     // The swash is below the section's fade interval. Its leading-order
     // slope comes from the arriving phase and the local depth limiter.
-    let height_per_depth = select(0.0, scale * height / max(depth + swash, 1e-20), scale < 1.0);
-    let swash_rates = vec4(-scale * im_vector, scale * height_dt, height_per_depth);
-    return SurfPoint(scale * vec3(horizontal.x, height, horizontal.y), index, phase,
-        variance * (1.0 - scale * scale), variance, direction, fade, lip, swash_rates);
+    var height_per_depth = select(0.0, scale * height / max(depth + swash, 1e-20), scale < 1.0);
+    var slope = -scale * im_vector;
+    height_dt *= scale;
+    height *= scale;
+    horizontal *= scale;
+    let record = surf.bodies[body];
+    var short_weight = 1.0;
+    if cell.inside && record.count > 0u && swash > 0.0 && depth < 4.0 * swash {
+        let stages = surf_stages(record, stage);
+        let contour = shore_contour(cell, stages);
+        if contour.z > 0.0 {
+            let ratio = depth / swash;
+            short_weight = contour_short_weight(depth, swash, contour.z);
+            let support = smoothstep(0.0, 1.0, contour.z) * (1.0 - smoothstep(3.0, 4.0, ratio));
+            let inner = support * (1.0 - smoothstep(0.35, 0.85, ratio));
+            horizontal *= 1.0 - inner;
+            if inner > 0.0 {
+                let q = contour_phase(point + contour.xy / contour.z, stages, row.gains.x,
+                    anchor, dt, swash, count);
+                let factor = SWASH_C * (depth + swash);
+                height = mix(height, factor * q.x, inner);
+                height_dt = mix(height_dt, factor * q.y, inner);
+                height_per_depth = mix(height_per_depth, SWASH_C * q.x, inner);
+                slope *= 1.0 - inner;
+                fade *= 1.0 - inner;
+                lip *= 1.0 - inner;
+            }
+            if ratio > 0.35 {
+                let displaced = map_cell(point + horizontal);
+                if displaced.inside {
+                    let thickness = row.water.x - displaced.bed + height;
+                    let merge = support * smoothstep(0.35, 0.45, ratio);
+                    height += merge * (swash_wet_floor(thickness, swash) - thickness);
+                }
+            }
+        }
+    }
+    return SurfPoint(vec3(horizontal.x, height, horizontal.y), index, phase,
+        variance * (1.0 - scale * scale), variance, direction, fade, lip, short_weight,
+        vec4(slope, height_dt, height_per_depth));
 }

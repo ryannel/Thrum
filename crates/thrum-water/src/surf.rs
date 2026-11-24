@@ -72,7 +72,7 @@ impl SurfGpu {
         )?;
         let exposure = texture(
             "surf exposures",
-            [width, height, (stages * EXPOSURE_LAYERS).max(1)],
+            [width, height, (stages * (EXPOSURE_LAYERS + 1)).max(1)],
             wgpu::TextureFormat::Rgba32Float,
         )?;
         let section_rows = profile.section.rows();
@@ -114,6 +114,21 @@ impl SurfGpu {
                     shore.exposure_planes(),
                     &mut scratch,
                 );
+                // Keep references in the same texture binding as exposure.
+                // Their planes follow all the packed sector exposure planes.
+                let first = (stages * EXPOSURE_LAYERS) as u32 + base;
+                for (offset, plane) in shore.contour_planes().enumerate() {
+                    for (texel, &[x, z, weight]) in scratch.iter_mut().zip(plane) {
+                        *texel = [x as f32, z as f32, weight as f32, 0.0];
+                    }
+                    write(
+                        queue,
+                        &exposure,
+                        [0, 0, first + offset as u32],
+                        [width, height],
+                        &scratch,
+                    );
+                }
             }
         }
         let mut onset = f64::INFINITY;
@@ -169,7 +184,7 @@ impl SurfGpu {
                 (profile.section.maximum_throw() as f32).next_up(),
                 (onset as f32).next_down(),
                 (minimum_level as f32).next_down(),
-                0.0,
+                (stages * EXPOSURE_LAYERS) as f32,
             ],
             bodies,
         };

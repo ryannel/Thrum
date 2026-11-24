@@ -8,6 +8,7 @@ struct CacheSettings {
 struct CacheSample {
     current: vec4<f32>,
     previous: vec4<f32>,
+    short_weights: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> cache_settings: CacheSettings;
 @group(0) @binding(1) var<storage, read> mesh: array<vec4<f32>>;
@@ -60,10 +61,14 @@ fn fill_surf_cache(@builtin(global_invocation_id) id: vec3<u32>) {
             now.displacement = mix(now_a.displacement, now_b.displacement, blend);
             now.variance = mix(now_a.variance, now_b.variance, blend);
             face = mix(breaking_face(now_a), breaking_face(now_b), blend);
-            before.displacement = mix(cache_sample(a, body, -dt, true).displacement,
-                cache_sample(b, body, -dt, true).displacement, blend);
+            now.short_weight = mix(now_a.short_weight, now_b.short_weight, blend);
+            let before_a = cache_sample(a, body, -dt, true);
+            let before_b = cache_sample(b, body, -dt, true);
+            before.displacement = mix(before_a.displacement, before_b.displacement, blend);
+            before.short_weight = mix(before_a.short_weight, before_b.short_weight, blend);
         }
-        result = CacheSample(vec4(now.displacement, 1.0 + face), vec4(before.displacement, now.variance));
+        result = CacheSample(vec4(now.displacement, 1.0 + face), vec4(before.displacement, now.variance),
+            vec4(now.short_weight, before.short_weight, 0.0, 0.0));
     }
     cache[i] = result;
 }

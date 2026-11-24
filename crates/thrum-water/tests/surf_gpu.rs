@@ -257,7 +257,7 @@ fn measure_cache(
     let entries = readback::buffer(device, queue, &witness.nodes, ..);
     let displacement = readback::buffer(device, queue, &witness.samples, ..);
     let nodes: &[[f32; 4]] = bytemuck::cast_slice(&entries);
-    let samples: &[[f32; 8]] = bytemuck::cast_slice(&displacement);
+    let samples: &[[f32; 12]] = bytemuck::cast_slice(&displacement);
     let sheets = [0, 1].map(|body| map.surf_sheet(field, body, time).expect("model"));
     let [ox, oz] = witness.anchor.map(f32::floor);
     let mut counts = [0; 2];

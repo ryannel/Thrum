@@ -387,7 +387,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
 #[cfg(target_os = "macos")]
 fn surf_checkpoints() -> Vec<(String, String, f64)> {
     [
-        "sand", "beach", "offshore", "lee", "headland", "island", "seaward",
+        "sand", "beach", "offshore", "lee", "headland", "island", "seaward", "handoff",
     ]
     .into_iter()
     .zip(0_u32..)

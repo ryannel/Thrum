@@ -198,7 +198,7 @@ fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocati
     cut_parts[lane] = part;
     workgroupBarrier();
     if lane != 0u { return; }
-    let gains = query_gains(point);
+    var gains = query_gains(point);
     var result: QueryWave;
     if point.body != 0xffffffffu {
         if point.has_bed == 0u {
@@ -217,6 +217,16 @@ fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocati
                 }
             }
             result = surf_query(point, cut);
+            if surf.bodies[point.body].count > 0u && point.gains.x * settings.heights.x > 0.0 {
+                let depth = point.level_current_bed.x - point.level_current_bed.w;
+                let swash = min(settings.swash_margin.x * length(settings.heights * point.gains),
+                    settings.swash_margin.y);
+                if swash > 0.0 && depth < 1.3 * swash {
+                    let stages = surf_stages(surf.bodies[point.body], point.surf_stage.x);
+                    let contour = shore_contour(map_cell(point.position), stages);
+                    gains = vec4(gains.x, gains.yzw * contour_short_weight(depth, swash, contour.z));
+                }
+            }
         }
     }
     write_answer(group.x, point, gains, result);

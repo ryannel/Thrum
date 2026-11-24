@@ -94,7 +94,7 @@ fn spectrum_sector_boundaries_have_the_same_tie_rule_at_every_wavelength() {
 }
 
 #[test]
-fn uprush_keeps_the_arriving_crests_phase_after_the_section_fades() {
+fn regular_wave_swash_uses_one_phase_and_keeps_both_waterline_extrema() {
     use thrum_sea_model::{Component, LongWaves};
     use thrum_water_model::{Body, BodyKind, Field, Map, Profile, Sheet, Stage, SurfProfile};
 
@@ -121,19 +121,19 @@ fn uprush_keeps_the_arriving_crests_phase_after_the_section_fades() {
     .expect("plane beach");
     map.enable_surf(SurfProfile::default())
         .expect("shore transform");
-    let rest = [0.25, 0.0];
+    let contour = [0.0, 0.0];
     let wavelength = 40.0;
     let k = TAU / wavelength;
     let amplitude = 0.4;
     let shore = map.shore_transform(0).expect("prepared shore");
-    let (lag, _) = shore.sample(0, wavelength, 0.0, rest);
+    let (lag, _) = shore.sample(0, wavelength, 0.0, contour);
     assert!(lag.is_finite() && (k * lag).cos() < 0.8, "{lag}");
     let field = Field {
         layers: [
             vec![Component {
                 wave_vector: [k, 0.0],
                 amplitude,
-                phase: -k * (rest[0] + lag),
+                phase: -k * (contour[0] + lag),
             }],
             Vec::new(),
             Vec::new(),
@@ -141,14 +141,25 @@ fn uprush_keeps_the_arriving_crests_phase_after_the_section_fades() {
         ]
         .map(|components| LongWaves::new(components, 0.0).expect("wave")),
     };
-    // The phase puts the incoming crest at this station. The section and
-    // shoaling have faded here, leaving only the depth-limited wave.
-    let significant_height = 2.0 * 2.0_f64.sqrt() * amplitude;
-    let swash = 0.7 * significant_height;
-    let depth = -rest[0] / 10.0;
-    let expected = 0.6 * (depth + swash) / (2.0 * 2.0_f64.sqrt());
-    let sample = map.surf_sheet(&field, 0, 0.0).expect("sheet").forward(rest);
-    assert!((sample.height - expected).abs() < 1e-9, "{sample:?}");
+    let swash = 0.7 * 2.0 * 2.0_f64.sqrt() * amplitude;
+    let c = 0.6 / (2.0 * 2.0_f64.sqrt());
+    let half_period = std::f64::consts::PI / (thrum_sea_model::GRAVITY * k).sqrt();
+    for (time, q) in [(0.0, 1.0), (half_period, -1.0)] {
+        let sheet = map.surf_sheet(&field, 0, time).expect("sheet");
+        let edge = 10.0 * c * swash * q / (1.0 + c * q);
+        let mut previous = f64::INFINITY;
+        for i in -32..=32 {
+            let rest = [edge + f64::from(i) * 0.01, 0.0];
+            let sample = sheet.forward(rest);
+            let thickness = sample.height - rest[0] / 10.0;
+            assert!(thickness < previous, "{rest:?} {thickness}");
+            assert!((sample.world[0] - rest[0]).abs() < 1e-12);
+            if i == 0 {
+                assert!(thickness.abs() < 1e-8, "{sample:?} {edge}");
+            }
+            previous = thickness;
+        }
+    }
 }
 
 #[test]

@@ -146,6 +146,11 @@ pub(super) fn run(gpu: &Gpu) -> Value {
             "stage_endpoint":{"lag":8,"exposure":4},
             "between_stages":{"lag":16,"exposure":8},
             "additional_lag_probes_per_boundary_axis":2,
+            "eligible_swash_node":{
+                "contour_reference_reads":{"stage_endpoint":4,"between_stages":8},
+                "inner_profile":"One additional lag and exposure sum with no gradient probes.",
+                "overlap":"Up to four additional bed reads at the displaced position.",
+            },
             "forward_evaluations_per_cached_node":{"interior":2,"ring_edge":6},
             "sources":["crates/thrum-water/src/surf.wgsl", "crates/thrum-water/src/surf/cache.wgsl"],
         },

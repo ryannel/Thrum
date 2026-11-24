@@ -12,3 +12,10 @@ fn lost_wave_power(original: vec4<f32>, limited: vec4<f32>, heights: vec4<f32>) 
     let after = limited * heights;
     return max(0.0, dot(before, before) - dot(after, after)) * 0.0625;
 }
+
+// The resolved short waves fade through the overlap. The pixel shading
+// still resolves their normals independently of displaced geometry.
+fn swash_short_weight(depth: f32, swash: f32) -> f32 {
+    if swash <= 0.0 { return 1.0; }
+    return smoothstep(0.85, 1.3, depth / swash);
+}

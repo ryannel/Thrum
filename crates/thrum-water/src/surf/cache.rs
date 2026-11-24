@@ -38,7 +38,8 @@ pub struct SurfWitness {
     /// Rest nodes as x, z, spacing and body slot.
     pub nodes: wgpu::Buffer,
     /// Displacement xyz and 1 plus breaking-face weight (0 outside the bed), then previous
-    /// displacement xyz and long-wave variance before the depth limit.
+    /// displacement xyz and long-wave variance before the depth limit, then
+    /// the current and previous short-wave geometry weight with two padding words.
     pub samples: wgpu::Buffer,
     /// World x/z used to place the camera-relative sea nodes.
     pub anchor: [f32; 2],
@@ -59,6 +60,7 @@ struct CacheSettings {
 struct CacheSample {
     current: [f32; 4],
     previous: [f32; 4],
+    short_weights: [f32; 4],
 }
 
 pub(crate) struct Cache {
@@ -265,7 +267,8 @@ impl Cache {
                 include_str!("render.wgsl")
             } else {
                 "fn surf_current(_index: u32) -> vec4<f32> { return vec4(0.0); }
-                 fn surf_previous(_index: u32) -> vec4<f32> { return vec4(0.0); }"
+                 fn surf_previous(_index: u32) -> vec4<f32> { return vec4(0.0); }
+                 fn surf_short_weights(_index: u32) -> vec2<f32> { return vec2(1.0); }"
             }
     }
 

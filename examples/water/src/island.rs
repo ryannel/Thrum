@@ -252,15 +252,17 @@ pub const CAMERAS: [Camera; 6] = [
 /// Forty-metre view of the same shore margin as the sand camera.
 pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0, 0.0, 12.0], 65.0);
 
-/// Sand, overhead, offshore, lee, headland, whole-island and seaward surf views.
-pub const SURF_VIEWS: [Camera; 7] = [
+/// Sand, overhead, offshore, lee, headland, whole-island, seaward and foam handoff views.
+pub const SURF_VIEWS: [Camera; 8] = [
     CAMERAS[0],
-    Camera::look_at([-128.0, 40.0, 9.0], [-137.0, 0.0, -3.0], 78.0),
+    Camera::look_at([-90.0, 40.0, 34.0], [-174.0, 0.0, 1.0], 81.0),
     Camera::look_at([-1106.0, 40.0, 8.0], [-106.0, 0.0, 8.0], 20.0),
-    Camera::look_at([362.0, 40.0, 25.0], [351.0, 0.0, 16.0], 72.0),
+    Camera::look_at([253.0, 40.0, 171.0], [237.0, 0.0, 154.0], 59.0),
     Camera::look_at([-101.0, 40.0, -94.0], [-127.0, 0.0, -98.0], 79.0),
     Camera::look_at([110.0, 300.0, 85.0], [110.0, 0.0, 84.9], 92.0),
     Camera::look_at([-112.0, 2.0, 30.0], [-158.0, 0.0, 15.0], 65.0),
+    // The 2 m coarse cells put the near window edge at z = 8 m here.
+    Camera::look_at([-240.0, 40.0, 264.0], [-125.0, 0.0, 12.0], 58.0),
 ];
 
 /// Build the island with its cooked ground and the mapped water contribution.
@@ -356,13 +358,19 @@ fn build_island(
         .slider(
             "camera.island",
             if surf_route {
-                "Sand, Beach, Sea, Lee, Headland, Island, Seaward"
+                "Sand/Beach/Sea/Lee/Headland/Island/Out/Handoff"
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
                 "Beach / Lake / Pond / Hill / Map / Sill"
             },
-            0.0..=if foam || surf_route { 6.0 } else { 5.0 },
+            0.0..=if surf_route {
+                7.0
+            } else if foam {
+                6.0
+            } else {
+                5.0
+            },
         )
         .step(1.0)
         .default(if surf_route { 1.0 } else { 3.0 })
