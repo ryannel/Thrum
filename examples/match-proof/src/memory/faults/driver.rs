@@ -312,7 +312,7 @@ impl Match {
                     player.budget,
                     |target| {
                         if prediction_run {
-                            return Controls::axes(super::super::axes(29_721, slot, target * 11));
+                            return Controls::axes(crate::seeded_axes(29_721, slot, target * 11));
                         }
                         // Keep motion on one axis during shorter recovery controls.
                         // Alternate before the hero would reach the arena wall.

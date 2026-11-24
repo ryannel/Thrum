@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ticks,
                 controller,
                 listen,
-                axes,
+                trace,
                 join_ms,
                 control,
             ] => {
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ticks.parse()?,
                     controller,
                     listen.parse()?,
-                    axes.parse()?,
+                    trace,
                     join_ms.parse()?,
                     Path::new(control),
                 );
@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 controller,
                 control,
                 token,
-                axes,
+                trace,
             ] => {
                 return native::client(
                     ticket,
@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     controller,
                     Path::new(control),
                     Path::new(token),
-                    axes.parse()?,
+                    trace,
                     cfg!(target_os = "macos")
                         && std::env::var_os("THRUM_TRACE_AUTHORED_FRAMES").is_some(),
                 );

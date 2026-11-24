@@ -35,6 +35,26 @@ fn unix_us() -> u64 {
     )
 }
 
+const CONTROL_WITNESS_INTERVAL: u64 = 30;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Trace {
+    Default,
+    Axes,
+    Seeded,
+}
+
+impl Trace {
+    fn parse(value: &str) -> ProofResult<Self> {
+        match value {
+            "default" => Ok(Self::Default),
+            "axes" => Ok(Self::Axes),
+            "seeded" => Ok(Self::Seeded),
+            _ => Err("unknown socket trace".into()),
+        }
+    }
+}
+
 fn controls(tick: u64) -> [f32; 3] {
     let direction = if (tick / 180).is_multiple_of(2) {
         0.75
@@ -78,7 +98,7 @@ struct Player {
     next_sample: u64,
     corrections: u64,
     axes: [[f32; 3]; thrum_network::session::SLOTS],
-    record_axes: bool,
+    trace: Trace,
     trace_authored_frames: bool,
 }
 
@@ -88,7 +108,7 @@ impl Player {
         profile: Profile,
         bodies: u32,
         token: Option<PlayerToken>,
-        record_axes: bool,
+        trace: Trace,
         trace_authored_frames: bool,
     ) -> ProofResult<Self> {
         #[cfg(not(target_arch = "wasm32"))]
@@ -125,7 +145,7 @@ impl Player {
             next_sample: 0,
             corrections: 0,
             axes: [[0.0; 3]; thrum_network::session::SLOTS],
-            record_axes,
+            trace,
             trace_authored_frames,
         })
     }
@@ -144,14 +164,32 @@ impl Player {
         // Poll input between world steps so catch-up cannot keep controls
         // behind a compute batch. Chrome yields to WebTransport between turns.
         let trace_authored_frames = self.trace_authored_frames;
+        let seeded_slot = self.client.seed().zip(self.client.slot());
+        let trace = self.trace;
         self.client.advance_with_prediction_events(
             now,
             1,
             |tick| {
+                let axes = if trace == Trace::Seeded {
+                    seeded_slot.map_or([0.0; 3], |(seed, slot)| {
+                        crate::seeded_axes(seed, slot, tick)
+                    })
+                } else {
+                    controls(tick)
+                };
+                if tick.is_multiple_of(CONTROL_WITNESS_INTERVAL)
+                    && trace == Trace::Seeded
+                    && let Some((seed, slot)) = seeded_slot
+                {
+                    let canonical = thrum_network::input_batch::canonical_axes(axes)
+                        .expect("script produces normalized axes");
+                    rows.push(timestamp(json!({"event": "authored_axes", "tick": tick,
+                        "slot": slot, "seed": seed, "axes": axes, "canonical_axes": canonical})));
+                }
                 if trace_authored_frames {
                     rows.push(timestamp(json!({"event": "authored_frame", "tick": tick})));
                 }
-                Controls::axes(controls(tick))
+                Controls::axes(axes)
             },
             |event| {
                 if matches!(event, PredictionEvent::Corrected(_)) {
@@ -175,7 +213,7 @@ impl Player {
                 self.playing.get_or_insert(now);
             }
             rows.push(timestamp(json!({
-                "event": "state", "state": format!("{state:?}"), "tick": self.client.world().tick(),
+                "event": "state", "clock_us": now, "state": format!("{state:?}"), "tick": self.client.world().tick(),
                 "epoch": self.client.epoch(), "slot": self.client.slot(), "link": self.link.id(),
                 "used_saved_token": self.token_in.is_some(),
                 "same_token": self.token_in.zip(self.client.token()).map(|(a,b)| a == b),
@@ -206,7 +244,7 @@ impl Player {
         }
         world.crowd.digests.borrow_mut().clear();
         for step in world.steps.drain(..) {
-            if self.record_axes
+            if self.trace == Trace::Axes
                 && (self.axes != step.axes
                     || step.roster.joined | step.roster.away | step.roster.back | step.roster.left
                         != 0)
@@ -229,7 +267,8 @@ impl Player {
                 "event": "sample", "tick": self.client.world().tick(),
                 "playout": self.client.playout(now).map(|view| view.position),
                 "prediction": self.client.controller(now).map(|view| json!({
-                    "tick": view.tick, "predicted": view.predicted, "state": controller_bits(view.current),
+                    "tick": view.tick, "interpolation": view.interpolation,
+                    "predicted": view.predicted, "state": controller_bits(view.current),
                 })),
                 "lead": self.client.reported_lead(), "corrections": self.corrections,
                 "link": self.link.id(), "counters": counters(&self.link, now),

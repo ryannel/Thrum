@@ -5,6 +5,7 @@ import asyncio
 import json
 import random
 import signal
+import time
 from pathlib import Path
 
 
@@ -12,7 +13,8 @@ async def run(args):
     loop = asyncio.get_running_loop()
     randomizer = random.Random(args.seed)
     stats = {"seed": args.seed, "one_way_ms": 50, "jitter_ms": 10, "loss": 0.02,
-             "directions": [{"forwarded": 0, "dropped": 0, "cut": 0, "bytes": 0, "seen_bytes": 0} for _ in range(2)]}
+             "directions": [{"forwarded": 0, "dropped": 0, "cut": 0, "bytes": 0, "seen_bytes": 0,
+                             "first_packet_us": None, "last_packet_us": None} for _ in range(2)]}
     backends = {}
     opening = {}
     cut = False
@@ -21,6 +23,10 @@ async def run(args):
 
     def forward(direction, data, send):
         row = stats["directions"][direction]
+        now = time.monotonic_ns() // 1000
+        if row["first_packet_us"] is None:
+            row["first_packet_us"] = now
+        row["last_packet_us"] = now
         row["seen_bytes"] += len(data)
         if cut:
             row["cut"] += 1

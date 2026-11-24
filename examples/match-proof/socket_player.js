@@ -2,12 +2,12 @@
 import initialize, { SocketPlayer } from './match_proof.js';
 
 await initialize();
-const { ticket, bodies, axes } = await (await fetch('/config')).json();
+const { ticket, bodies, trace } = await (await fetch('/config')).json();
 while ((await (await fetch('/rows', { method: 'POST', body: '[]' })).text()) === 'hold') {
     await new Promise(resolve => setTimeout(resolve, 25));
 }
 let saved = sessionStorage.getItem('player token') ?? '';
-let player = new SocketPlayer(ticket, bodies, saved, axes);
+let player = new SocketPlayer(ticket, bodies, saved, trace);
 let nextRecord = 0;
 let command = '';
 let pending = [];
@@ -42,7 +42,7 @@ async function upload(batch) {
     if (next !== command) {
         if (next === 'reconnect') {
             player.free();
-            player = new SocketPlayer(ticket, bodies, saved, axes);
+            player = new SocketPlayer(ticket, bodies, saved, trace);
         }
         if (next === 'perturb') pending.push(JSON.parse(player.perturb()));
         command = next;

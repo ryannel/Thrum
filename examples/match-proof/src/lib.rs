@@ -48,6 +48,18 @@ pub fn restore_in_browser(
         .map_err(|error| wasm_bindgen::JsError::new(&error.to_string()))
 }
 
+#[cfg(any(not(target_arch = "wasm32"), feature = "sockets"))]
+pub(crate) fn seeded_axes(seed: u64, slot: usize, tick: u64) -> [f32; 3] {
+    // Hold most axes briefly so both axis encodings are represented in the cost profile.
+    let value = seed ^ (tick / 11).wrapping_mul(0x9e37_79b9) ^ ((slot as u64 + 1) * 0x85eb_ca77);
+    let value = value.wrapping_mul(0xc2b2_ae3d_27d4_eb4f);
+    let axis = |shift| {
+        let integer = u16::try_from((value >> shift) & 1023_u64).expect("ten-bit input");
+        f32::from(integer) / 521.7 - 0.98
+    };
+    [axis(32), axis(49), 0.0]
+}
+
 fn hex(bytes: &[u8]) -> String {
     const DIGITS: &[u8; 16] = b"0123456789abcdef";
     let mut output = String::with_capacity(bytes.len() * 2);

@@ -260,7 +260,7 @@ impl Player {
         let changes = &mut self.axes_changes;
         let previous = &mut self.previous_axes;
         let result = self.client.advance(now, |tick| {
-            let axes = axes(run.seed, index, tick);
+            let axes = crate::seeded_axes(run.seed, index, tick);
             let bits = [axes[0].to_bits(), axes[1].to_bits()];
             *changes += u64::from(bits != *previous);
             *previous = bits;
@@ -411,17 +411,6 @@ fn player_time(index: usize, time: u64) -> u64 {
     1_011_711 * (index as u64 + 1) + time + if index == 2 { time / 10_000 } else { 0 }
 }
 
-fn axes(seed: u64, slot: usize, tick: u64) -> [f32; 3] {
-    // Hold most axes briefly so both axis encodings are represented in the cost profile.
-    let value = seed ^ (tick / 11).wrapping_mul(0x9e37_79b9) ^ ((slot as u64 + 1) * 0x85eb_ca77);
-    let value = value.wrapping_mul(0xc2b2_ae3d_27d4_eb4f);
-    let axis = |shift| {
-        let integer = u16::try_from((value >> shift) & 1023_u64).expect("ten-bit input");
-        f32::from(integer) / 521.7 - 0.98
-    };
-    [axis(32), axis(49), 0.0]
-}
-
 fn condition(profile: &str, seed: u64) -> Result<Conditioner, String> {
     let (delay_ms, jitter_ms, loss_ppm) = match profile {
         "local" => (2, 0, 0),
@@ -523,7 +512,7 @@ fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
         }
         if run.listen && state.started && before < run.ticks {
             let tick = before + 1;
-            host.stage_local(tick, axes(run.seed, 0, tick), [])
+            host.stage_local(tick, crate::seeded_axes(run.seed, 0, tick), [])
                 .map_err(|error| error.to_string())?;
         }
         host_probe.advance(&mut host, time, run)?;

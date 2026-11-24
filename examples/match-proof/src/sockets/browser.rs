@@ -2,7 +2,7 @@
 
 use wasm_bindgen::prelude::*;
 
-use super::{Player, token_from_text};
+use super::{Player, Trace, token_from_text};
 use thrum_network::session::World;
 use thrum_transport::{Profile, Ticket};
 
@@ -16,15 +16,22 @@ fn js_error(error: impl std::fmt::Display) -> JsError {
 #[wasm_bindgen]
 impl SocketPlayer {
     #[wasm_bindgen(constructor)]
-    pub fn new(ticket: &str, bodies: u32, saved: &str, axes: bool) -> Result<Self, JsError> {
+    pub fn new(ticket: &str, bodies: u32, saved: &str, trace: &str) -> Result<Self, JsError> {
         let ticket = ticket.parse::<Ticket>().map_err(js_error)?;
         let token = (!saved.is_empty())
             .then(|| token_from_text(saved))
             .transpose()
             .map_err(js_error)?;
-        Player::new(&ticket, Profile::default(), bodies, token, axes, false)
-            .map(Self)
-            .map_err(js_error)
+        Player::new(
+            &ticket,
+            Profile::default(),
+            bodies,
+            token,
+            Trace::parse(trace).map_err(js_error)?,
+            false,
+        )
+        .map(Self)
+        .map_err(js_error)
     }
 
     pub fn advance(&mut self) -> Result<String, JsError> {

@@ -15,8 +15,8 @@ use thrum_network::session::{ClientState, Host, SLOTS, Settings, World};
 use thrum_transport::{Controller, Link, Profile, native};
 
 use super::{
-    CrowdWorld, FaultWire, Instant, Player, ProofResult, Shared, controls, counters, micros,
-    timestamp, token_from_text,
+    CONTROL_WITNESS_INTERVAL, CrowdWorld, FaultWire, Instant, Player, ProofResult, Shared, Trace,
+    controls, counters, micros, timestamp, token_from_text,
 };
 
 fn emit(output: &mut impl Write, value: &Value) -> io::Result<()> {
@@ -67,10 +67,11 @@ pub fn host(
     ticks: u64,
     controller: &str,
     listen: bool,
-    trace_axes: bool,
+    trace: &str,
     join_ms: u32,
     control: &Path,
 ) -> ProofResult<()> {
+    let trace = Trace::parse(trace)?;
     let thread_qos = super::scheduling::interactive()?;
     let rule_workers = configure_workers(bodies)?;
     let profile = profile(controller)?;
@@ -91,7 +92,8 @@ pub fn host(
     };
     let world = Shared::new(CrowdWorld::new(bodies, 1, true, true).without_publication());
     world.0.borrow_mut().images = Some(RefCell::default());
-    let mut host = Host::new(world, FaultWire, settings, [9; 16], 71, listen, 0)?;
+    let seed = 71;
+    let mut host = Host::new(world, FaultWire, settings, [9; 16], seed, listen, 0)?;
     let clock = Instant::now();
     let mut output = BufWriter::new(io::stdout().lock());
     let mut links = Vec::<Link>::new();
@@ -117,7 +119,7 @@ pub fn host(
                     &mut output,
                     &timestamp(json!({
                         "event": "host", "pid": std::process::id(), "ticket": ticket.to_string(),
-                        "listen": listen, "bodies": bodies, "controller": controller, "rule_workers": rule_workers, "thread_qos": thread_qos,
+                        "listen": listen, "bodies": bodies, "seed": seed, "controller": controller, "rule_workers": rule_workers, "thread_qos": thread_qos,
                         "tick_us": settings.tick_us, "minimum_barrier_spacing_us": minimum_barrier_spacing_us,
                         "digest_interval": settings.digest_interval,
                         "absence": settings.absence, "held_expiry": settings.held_expiry,
@@ -194,7 +196,7 @@ pub fn host(
             &mut output,
             host.world(),
             advance_us,
-            trace_axes,
+            trace,
             &mut prior_axes,
         )?;
         while let Some(closed) = host.take_disconnect() {
@@ -205,7 +207,7 @@ pub fn host(
             emit(
                 &mut output,
                 &timestamp(json!({"event": "disconnect", "link": closed.link,
-                "epoch": closed.epoch, "tick": closed.tick, "reason": format!("{:?}", closed.reason), "counters": final_counters})),
+                "epoch": closed.epoch, "tick": closed.tick, "clock_us": now, "reason": format!("{:?}", closed.reason), "counters": final_counters})),
             )?;
             links.retain(|link| link.id() != closed.link);
         }
@@ -217,14 +219,14 @@ pub fn host(
                 "actual": fault.actual.map(|d| format!("{d:016x}")), "parts": fault.parts})),
             )?;
         }
-        if now >= next_report || tick != prior && trace_axes {
+        if now >= next_report || tick != prior && trace == Trace::Axes {
             next_report = now + 100_000;
             for link in &links {
                 if let Some(stream) = host.stream(link.id()) {
                     emit(
                         &mut output,
                         &timestamp(json!({
-                            "event":"stream", "tick": tick, "link": link.id(), "slot": stream.slot,
+                            "event":"stream", "clock_us": now, "tick": tick, "link": link.id(), "slot": stream.slot,
                             "epoch": stream.epoch, "retained_bytes": stream.retained_bytes,
                         "held": stream.held, "stepped": stream.stepped,
                             "retained_sets": host.retained(link.id()), "staged_frames": stream.staged_frames,
@@ -260,7 +262,7 @@ fn emit_world(
     output: &mut impl Write,
     world: &Shared,
     advance_us: u64,
-    trace_axes: bool,
+    trace: Trace,
     prior_axes: &mut [[f32; 3]; SLOTS],
 ) -> io::Result<()> {
     let mut world = world.0.borrow_mut();
@@ -287,7 +289,13 @@ fn emit_world(
         )?;
     }
     for step in world.steps.drain(..) {
-        if trace_axes
+        if trace == Trace::Seeded && step.tick.is_multiple_of(CONTROL_WITNESS_INTERVAL) {
+            emit(
+                output,
+                &timestamp(json!({"event": "admitted_axes", "tick": step.tick, "axes": step.axes})),
+            )?;
+        }
+        if trace == Trace::Axes
             && (step.axes != *prior_axes
                 || step.roster.joined | step.roster.away | step.roster.back | step.roster.left != 0)
         {
@@ -314,10 +322,11 @@ pub fn client(
     controller: &str,
     control: &Path,
     token_path: &Path,
-    trace_axes: bool,
+    trace: &str,
     trace_authored_frames: bool,
 ) -> ProofResult<()> {
     let ticket = ticket.parse()?;
+    let trace = Trace::parse(trace)?;
     let thread_qos = super::scheduling::interactive()?;
     let rule_workers = configure_workers(bodies)?;
     let profile = profile(controller)?;
@@ -346,7 +355,7 @@ pub fn client(
             profile.clone(),
             bodies,
             load()?,
-            trace_axes,
+            trace,
             trace_authored_frames,
         )
     };

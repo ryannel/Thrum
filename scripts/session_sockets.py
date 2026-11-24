@@ -88,7 +88,7 @@ class Peer:
 
 
 class Match:
-    def __init__(self, directory, programs, bodies, ticks, controller="bbr", listen=False, axes=False,
+    def __init__(self, directory, programs, bodies, ticks, controller="bbr", listen=False, trace="default",
                  join_ms=60_000, chrome_admitted=False):
         self.output = directory
         self.directory = directory
@@ -97,7 +97,7 @@ class Match:
         self.ticks = ticks
         self.controller = controller
         self.listen = listen
-        self.axes = axes
+        self.trace = trace
         self.join_ms = join_ms
         self.chrome_admitted = chrome_admitted
         self.processes = []
@@ -141,7 +141,7 @@ class Match:
     def launch_host(self):
         self.directory.mkdir(parents=True, exist_ok=False)
         self.process([self.programs[MAC], "socket-host", self.bodies, self.ticks, self.controller,
-                      str(self.listen).lower(), str(self.axes).lower(), self.join_ms, self.output / "host-control"],
+                      str(self.listen).lower(), self.trace, self.join_ms, self.output / "host-control"],
                      self.output / "host.stderr", self.host.path)
         self.config = self.wait("host ticket", lambda: self.host.events("host"), 15)[0]
 
@@ -173,16 +173,15 @@ class Match:
         return peer
 
     def spawn(self, peer):
-        axes = str(self.axes).lower()
         if peer.target == CHROME:
             admission = [] if self.chrome_admitted else lock_args("chrome")
             command = [*admission, "node", "scripts/session_socket_browser.mjs",
                        peer.output / "chrome", self.programs[CHROME], peer.log.path, peer.output / "control",
-                       peer.output / "page", peer.ticket, self.bodies, axes]
+                       peer.output / "page", peer.ticket, self.bodies, self.trace]
             peer.process = self.process(command, peer.output / "peer.stderr")
         else:
             command = [self.programs[peer.target], "socket-client", peer.ticket, self.bodies, self.controller,
-                       peer.output / "control", peer.output / "token", axes]
+                       peer.output / "control", peer.output / "token", self.trace]
             if peer.target == IOS:
                 command = simulator_lifecycle.lock_command([sys.executable, __file__, "simulator-peer",
                                                             peer.output / "restart", *command])
@@ -365,6 +364,46 @@ def stable(run, targets):
         assert [baseline["tick"] for baseline in proof["baselines"]] == [0]
         results.append((peer, proof))
     return results
+
+
+def seeded_controls(run):
+    """Match observed authored values to the host's admitted values by tick and slot."""
+    by_slot = {}
+    for peer in run.peers:
+        playing, = peer.playing()
+        slot = playing["slot"]
+        assert slot not in by_slot
+        authored = {}
+        for row in peer.log.events("authored_axes"):
+            assert row["slot"] == slot and row["seed"] == run.config["seed"], row
+            assert row["tick"] not in authored, row
+            authored[row["tick"]] = row
+        by_slot[slot] = authored
+    assert sorted(by_slot) == list(range(len(run.peers)))
+
+    commits = {row["tick"]: row for row in run.host.events("commit")}
+    checked = [0] * len(by_slot)
+    off_grid = 0
+    witness = []
+    for row in run.host.events("admitted_axes"):
+        tick = row["tick"]
+        if tick <= 600:
+            continue
+        admitted = {}
+        for slot, authored in sorted(by_slot.items()):
+            if not commits[tick]["admissions"][slot]:
+                continue
+            frame = authored[tick]
+            assert row["axes"][slot] == frame["canonical_axes"], (tick, slot, row, frame)
+            checked[slot] += 1
+            off_grid += frame["axes"] != frame["canonical_axes"]
+            admitted[slot] = row["axes"][slot]
+        if len(admitted) == len(by_slot) and len({tuple(axes) for axes in admitted.values()}) == len(by_slot):
+            witness.append({"tick": tick, "admitted_axes_by_slot": admitted})
+    assert all(checked) and witness and 2 * off_grid > sum(checked), (checked, off_grid, witness)
+    return {"seed": run.config["seed"], "admitted_samples_by_slot": checked,
+            "off_grid_admitted_samples": off_grid, "all_slots_distinct_samples": len(witness),
+            "examples": witness[:4]}
 
 
 def returned(run, peer, before, report_at, action, *, stay=False):
@@ -592,28 +631,49 @@ def slow_chrome(run):
     return [(other, compare(run, other)) for other in others] + [(peer, subject)]
 
 
+def byte_window(start_bytes, end_bytes, start_us, end_us):
+    assert 0 <= start_bytes <= end_bytes and start_us < end_us
+    return {"start_us": start_us, "end_us": end_us, "start_bytes": start_bytes, "end_bytes": end_bytes,
+            "bits_per_second": (end_bytes - start_bytes) * 8_000_000 / (end_us - start_us)}
+
+
 def cost_rows(run, peer):
     playing = peer.playing()[0]
     baseline, = peer.log.events("baseline")
     commit = run.host.events("commit")
     wall = [row["wall_us"] for row in commit]
-    samples = [row for row in peer.log.events("sample") if row["playout"] is not None and row["lead"] is not None]
+    end = next(row for row in peer.log.events("state") if row["state"].startswith("Ended("))
+    samples = [row for row in peer.log.events("sample")
+               if playing["wall_us"] <= row["wall_us"] < end["wall_us"]
+               and row["playout"] is not None and row["lead"] is not None]
     assert samples and baseline["hello_to_restore_us"] is not None and playing["hello_to_playing_us"] is not None
     delays = [(bisect_right(wall, row["wall_us"]) - row["playout"]) * run.config["tick_us"] for row in samples]
     controller_samples = [row for row in samples if row["prediction"] is not None]
     assert controller_samples
     predicted_samples = [row for row in controller_samples if row["prediction"]["predicted"]]
-    # A confirmed controller and the crowd present the same endpoint. A zero
-    # measured offset is possible even though a browser's wire counter is absent.
-    hero_leads = [row["prediction"]["tick"] - row["playout"] if row["prediction"]["predicted"] else 0
-                  for row in controller_samples]
+    hero_leads = []
+    for sample in controller_samples:
+        view = sample["prediction"]
+        phase = view["interpolation"]
+        crowd_position = max(sample["tick"] - 1, 0) + phase
+        hero_position = max(view["tick"] - 1, 0) + phase
+        assert abs(crowd_position - sample["playout"]) < 1e-8, sample
+        assert view["predicted"] or view["tick"] == sample["tick"], sample
+        hero_leads.append(hero_position - crowd_position)
     stalls = peer.log.events("stall")
-    end = next(row for row in peer.log.events("state") if row["state"].startswith("Ended("))
     authority_link = run.host_peer(playing)["link"]
-    authority = next(row["counters"] for row in run.host.events("disconnect") if row["link"] == authority_link)
+    authority_end = next(row for row in run.host.events("disconnect") if row["link"] == authority_link)
+    authority_start = next(row for row in run.host.events("stream")
+                           if row["link"] == authority_link and row["wall_us"] >= playing["wall_us"])
+    authority = authority_end["counters"]
     client = end["counters"]
     relay = relay_record(peer)
-    duration = (commit[-1]["wall_us"] - commit[0]["wall_us"] + run.config["tick_us"]) / 1_000_000
+    duration = (end["clock_us"] - playing["clock_us"]) / 1_000_000
+    assert duration > 0
+    corrections = end["corrections"] - playing["corrections"]
+    restore_host_tick = bisect_right(wall, baseline["wall_us"])
+    hello, = [row for row in peer.log.events("state") if row["state"] == "Negotiating"]
+    assert 0 < bisect_right(wall, hello["wall_us"]) <= baseline["tick"] < restore_host_tick
     held = commit[-1]["held"][playing["slot"]]
     wire = [row["seen_bytes"] for row in relay["directions"]]
     images = run.host.events("image")
@@ -627,6 +687,10 @@ def cost_rows(run, peer):
                       "endpoint_wire_bytes": authority["wire_sent"], "relay_wire_bytes": wire[1]},
         "browser_wire_bytes_absent": peer.target == CHROME and client["wire_sent"] is None,
         "baseline_bytes": baseline["bytes"],
+        "baseline_tick": baseline["tick"],
+        "host_tick_at_hello": bisect_right(wall, hello["wall_us"]),
+        "host_tick_at_restore": restore_host_tick,
+        "first_playing_tick": playing["tick"],
         "join_total_us": playing["hello_to_playing_us"],
         "join_hello_to_welcome_us": baseline["hello_to_restore_us"] - baseline["welcome_to_restore_us"],
         "join_transfer_us": baseline["welcome_to_restore_us"],
@@ -638,20 +702,32 @@ def cost_rows(run, peer):
         "playout_stall_count": len(stalls),
         "playout_stall_total_us": sum(stall["duration_us"] for stall in stalls),
         "playout_stalls": stalls,
-        "corrections_per_minute": end["corrections"] * 60 / duration,
+        "corrections_per_minute": corrections * 60 / duration,
         "hero_lead_over_crowd_median_ticks": statistics.median(hero_leads),
         "hero_controller_samples": len(controller_samples),
         "hero_predicted_samples": len(predicted_samples),
         "ticks_held": held,
         "longest_host_commit_gap_us": longest_gap(commit),
         "image_tick_us": image_tick_us,
-        "match_seconds": duration,
+        "match_seconds": (commit[-1]["clock_us"] - run.host.events("start")[0]["clock_us"]) / 1_000_000,
+        "playing_seconds": duration,
         "tripwires": [],
     }
-    for direction in ("to_host", "from_host"):
-        for layer in ("relay_wire_bytes", "application_bytes_sent"):
-            if row[direction][layer] * 8 / duration > 64_000:
-                row["tripwires"].append({"name": "64 kbit/s", "direction": direction, "layer": layer})
+    row["bandwidth_windows"] = {}
+    for direction, relay_direction, (first, last) in zip(
+            ("to_host", "from_host"), relay["directions"],
+            ((playing, end), (authority_start, authority_end)), strict=True):
+        window = row["bandwidth_windows"][direction] = {
+            "relay_wire_bytes": byte_window(0, relay_direction["seen_bytes"],
+                                            relay_direction["first_packet_us"], relay_direction["last_packet_us"]),
+            "application_bytes_sent": byte_window(first["counters"]["application_sent"],
+                                                   last["counters"]["application_sent"],
+                                                   first["clock_us"], last["clock_us"]),
+        }
+        for layer, sample in window.items():
+            if sample["bits_per_second"] > 64_000:
+                row["tripwires"].append({"name": "64 kbit/s", "direction": direction, "layer": layer,
+                                         "bits_per_second": sample["bits_per_second"]})
     if image_tick_us > run.config["tick_us"]:
         row["tripwires"].append({"name": "image write longer than tick period"})
     return row
@@ -659,11 +735,14 @@ def cost_rows(run, peer):
 
 def inspect_costs(result, previous):
     if previous:
-        for key, value in result.items():
-            if isinstance(value, (int, float)) and not isinstance(value, bool) and key in previous:
-                if value > previous[key] * 1.25:
-                    result["tripwires"].append({"name": "quarter growth", "field": key,
-                                                "previous": previous[key], "sample": value})
+        for key in ("baseline_bytes", "join_total_us", "join_transfer_us", "join_catch_up_us",
+                    "confirmed_delay_median_us", "confirmed_delay_max_us", "playout_stall_count",
+                    "playout_stall_total_us", "corrections_per_minute", "ticks_held",
+                    "longest_host_commit_gap_us", "image_tick_us"):
+            value = result[key]
+            if value > previous[key] * 1.25:
+                result["tripwires"].append({"name": "quarter growth", "field": key,
+                                            "previous": previous[key], "sample": value})
         for direction in ("to_host", "from_host"):
             for key, value in result[direction].items():
                 if value is not None and value > previous[direction][key] * 1.25:
@@ -678,6 +757,8 @@ class IncompleteCostJoin(RuntimeError):
 def cost_match(directory, programs, target, controller, bodies, chrome_admitted):
     with match(directory, programs, bodies, 10_000, controller, join_ms=120_000,
                chrome_admitted=chrome_admitted) as run:
+        run.start()
+        run.wait("authority commits before hello", run.tick)
         peer = run.launch(target)
         run.wait(f"{target} target admission", lambda: peer.log.events("client"), 2100)
 
@@ -687,17 +768,13 @@ def cost_match(directory, programs, target, controller, bodies, chrome_admitted)
                 raise IncompleteCostJoin(states[-1]["state"])
             return value()
 
-        # Measure an initial join with the normal lobby start. The faults
-        # campaign independently forces joins into an already running match.
         deadline = run.join_ms / 1000 + 20
-        run.wait(f"{target} cost baseline", lambda: live(lambda: peer.log.events("baseline")), deadline)
-        run.start()
         run.wait(f"{target} cost join outcome", lambda: live(peer.playing), deadline)
         run.end_after(900)
         run.finish([peer])
         results = [(peer, compare(run, peer))]
     measurement = cost_rows(run, peer)
-    measurement["join_context"] = "initial lobby"
+    measurement["join_context"] = "running match"
     return measurement, report(run, results)
 
 
@@ -736,16 +813,16 @@ def run_scenario(scenario, target, directory, programs):
     if scenario == "costs":
         return costs(directory, programs, target)
     if scenario == "slow" and target == MAC:
-        with match(directory / "unstalled", programs, 10_000, 1500, axes=True) as control:
+        with match(directory / "unstalled", programs, 10_000, 1500, trace="axes") as control:
             peers = stable(control, [MAC, MAC, MAC])
         other = report(control, peers)
-        with match(directory / "stalled", programs, 10_000, 1500, axes=True) as run:
+        with match(directory / "stalled", programs, 10_000, 1500, trace="axes") as run:
             peers = slow_mac(run)
         return {"stalled": report(run, peers), "unstalled": other}
 
     ticks = {"steady": 36_000, "listen": 3600, "faults": 7800, "slow": 2100}[scenario]
     with match(directory / "match", programs, 10_000, ticks, listen=scenario == "listen",
-               axes=scenario == "slow") as run:
+               trace={"slow": "axes", "steady": "seeded"}.get(scenario, "default")) as run:
         if scenario == "steady":
             peers = stable(run, [MAC, MAC, CHROME, IOS])
         elif scenario == "listen":
@@ -759,6 +836,7 @@ def run_scenario(scenario, target, directory, programs):
         assert min(result["admitted_fraction_after_warmup"]) >= 0.95, result["admitted_fraction_after_warmup"]
     if scenario == "steady":
         assert result["elapsed_host_us"] >= 600_000_000
+        result["seeded_controls"] = seeded_controls(run)
     return result
 
 

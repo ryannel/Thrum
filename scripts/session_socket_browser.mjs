@@ -6,7 +6,7 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 
-const [directory, artifacts, log, control, pageControl, ticket, bodies, axes] = process.argv.slice(2);
+const [directory, artifacts, log, control, pageControl, ticket, bodies, trace] = process.argv.slice(2);
 const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const page = '<!doctype html><title>Thrum socket match</title><script type="module" src="/socket_player.js"></script>';
 const staticFiles = new Set(['match_proof.js', 'match_proof_bg.wasm', 'socket_player.js']);
@@ -19,7 +19,7 @@ const server = createServer(async (request, response) => {
             response.end(page);
         } else if (request.url === '/config') {
             response.setHeader('Content-Type', 'application/json');
-            response.end(JSON.stringify({ ticket, bodies: Number(bodies), axes: axes === 'true' }));
+            response.end(JSON.stringify({ ticket, bodies: Number(bodies), trace }));
         } else if (request.url === '/rows' && request.method === 'POST') {
             let data = '';
             for await (const chunk of request) {
