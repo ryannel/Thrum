@@ -163,8 +163,8 @@
           "statement": "The shape-rule suite guards the production reader in `./dev check` by verifying that it finds a known item check in a checked-in `DONE.json`. With `work_packages` fixtures, `script-caller` recognizes a script named only by an item check in both an open and a Done work package and refuses it when unnamed. `test-binary` recognizes named targets, and history-name pins expire when their work package is Done.",
           "check": "python3 scripts/test_shape_rules.py Fixture.test_done_when_checks_read_checked_in_plan && python3 scripts/test_shape_rules.py",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP5/replan/WP5.1.log",
           "verdict": "",
           "review": ""
         },
@@ -173,8 +173,8 @@
           "statement": "The repository guard passes on the migrated plans with the existing rule versions and baseline. Its link check accepts a tracked page's link to the manifest-listed G7 record's `#checks` heading both before and after byte-for-byte restore. With G7 restored, a missing-file link added to the tracked page is still reported.",
           "check": "python3 scripts/test_evidence_store.py EvidenceStore.test_restored_markdown_is_only_a_link_target && ./dev check-docs",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP5/replan/WP5.2.log",
           "verdict": "",
           "review": ""
         },
@@ -183,8 +183,8 @@
           "statement": "Git tracks no files under `docs/evidence/`. The three legacy records listed in the WP5 plan are history entries in the live manifest and recover byte for byte from the blobs at their original paths in `77c70eaac`.",
           "check": "PYTHONPATH=scripts python3 -c 'from evidence_store import ROOT, content, entries, git, tracked; paths = (\"docs/evidence/CULLING/M2.md\", \"docs/evidence/render/cooked-draw/BASE\", \"docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md\"); manifest = {entry[\"path\"]: entry for entry in entries(ROOT)}; assert not any(path.startswith(\"docs/evidence/\") for path in tracked(ROOT)); assert all(manifest[path][\"kind\"] == \"history\" and content(ROOT, manifest[path]) == git(ROOT, \"show\", \"77c70eaac:\" + path) for path in paths)'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP5/replan/WP5.3.log",
           "verdict": "",
           "review": ""
         }

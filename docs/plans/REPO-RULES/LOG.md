@@ -109,3 +109,5 @@
   The shared `exact-images` check supplies the post-merge image proof.
 - 2026-11-24 Removed WP5.4 because Orchestrate refuses main-branch checks as work-package items. WP5.1–WP5.3
   cover the reader and evidence changes, and the checked merge passed the exact-baseline reference guard.
+- 2026-11-24 Reran WP5.1–WP5.3 on the M3 Max against the authorized plan at `ce8611efa`. The shape-rule
+  suite, repository guard, and byte-for-byte history recovery passed. [Proof logs](../../../.orchestrate/evidence/REPO-RULES/WP5/replan/).
