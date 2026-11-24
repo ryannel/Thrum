@@ -258,8 +258,8 @@
           "check": "node --test scripts/test_browser_capture_shutdown.mjs",
           "ask": "Do the tests exercise production teardown and finalization with controlled processes and observe the command status, manifest, receipt, owned processes and profile? In the delayed-receipt case, does the browser stand-in exit with status 2 after requested close without TERM or KILL, and does the test require command exit 0, a complete manifest and recorded browser status 2?",
           "target": "stand_in:chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/profile-ownership.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },
@@ -268,8 +268,8 @@
           "statement": "On the LaunchServices path, the run owns the browser lifetime from launch through reaping. Only the owned browser and helpers are eligible for escalation. The launcher remains available to record the real termination and denied postflight, and other callers keep their qualification and exit requirements.",
           "ask": "Trace startup before CDP, Browser.close with no reply, TERM and KILL, and final receipt handling. Can a wrapper exit, a stale PID or a CDP disconnect satisfy the process-exit check or cause a signal to another run? Is there a cleanup path that skips owned processes or the profile on a prior capture error? Verify the direct-child checker and the existing launcher consumers still enforce their own verdict rules.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/profile-ownership.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },

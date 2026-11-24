@@ -112,3 +112,9 @@
   three hardware Chrome probes passed, including successful validation and sync
   after an early exit that correctly left the manifest incomplete.
   [Evidence](../../../.orchestrate/evidence/T2-CAPTURE/M4/early-exit-proof.md).
+
+- 2026-11-24 Fixed the profile leak after a launcher admission timeout. The Swift supervisor now
+  creates the profile after accepting start and owns removal through browser reaping. Twenty CPU
+  shutdown cases passed. The signed launcher left no profile or browser after faults on both sides
+  of spawn before DevTools. Hardware Chrome probes passed ordinary close and both control-disconnect
+  cases. [Evidence](../../../.orchestrate/evidence/T2-CAPTURE/M4/profile-ownership.md).
