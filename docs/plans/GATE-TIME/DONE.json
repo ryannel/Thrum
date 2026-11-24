@@ -840,7 +840,7 @@
     {
       "id": "M15",
       "name": "Merge verification reuses a bounded local Cargo cache",
-      "status": "not_started",
+      "status": "blocked",
       "quality_bar": "The configured merge check makes real Cargo rebuilds cheaper on the busy Mac and returns the ordinary check's verdict on the exact candidate.",
       "items": [
         {
@@ -875,7 +875,17 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_hardware",
+        "what": "Resume when the Mac has enough free space for both build directories and enough CPU and Metal capacity to complete the required checks.",
+        "work": {
+          "commit": "2248665f6bf6e2dc6d1e6718386f7cdecf4cafc5",
+          "branch": "build/gate-time",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/GATE-TIME/M15-handoff.md"
+      }
     },
     {
       "id": "M5",
