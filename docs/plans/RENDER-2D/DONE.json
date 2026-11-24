@@ -378,10 +378,10 @@
           "ask": "Does the run report the window's points, backing scale and surface extent from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/metal/window-review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.7",
@@ -390,40 +390,40 @@
           "ask": "Is the camera centre advanced through successive submissions of the same retained scene at each scale, and does the pixel-based check reject a frozen camera even when the requested centres advance?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/chrome/canvas/sprites-crisp.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.8",
           "statement": "On Metal through a slow diagonal pan and a fast scroll at 1.5\u00d7, 2\u00d7 and 2.37\u00d7, the test card's original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the existing 1920\u00d71080 card, ground and rotating field with T2 engine capture in realtime mode, at 0.05 and 3 output pixels per simulation tick in X with the 0.53 diagonal Y component at each scale. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's 1.5\u00d7 take to locate the offending patches.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/metal/motion-review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.9",
           "statement": "On Metal, pixel sprites retain distinct fine marks and clean outlines at their still scales. Smooth sprites look clean over light and dark backgrounds, including at 0.25\u00d7.",
           "inspect": "Capture fixed stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234. Inspect the existing pixel sprites at 1\u00d7, 1.5\u00d7, 2.37\u00d7, 4\u00d7 and 6\u00d7, the original stripe and checker patches at 1.5\u00d7, and smooth sprites at 0.25\u00d7, 0.5\u00d7, 1\u00d7 and 2\u00d7 over light and dark backgrounds. Judge full frames and native-size crops. Check that (1) pixel art keeps distinct one-texel marks, square structure and clean outlines, and (2) smooth art has no fringe, halo, bleed or visible aliasing at quarter size.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/metal/fixed-review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.10",
           "statement": "In Chrome WebGPU at DPR 1 and 2, the original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed in slow and fast scrolls at 1.5\u00d7 and 2.37\u00d7. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the M3.8 sprite route in T2 realtime mode at 1.5\u00d7 and 2.37\u00d7, both speeds and both DPRs, holding the backing extent at 1920\u00d71080. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's Chrome takes to locate the offending patches.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/chrome/motion-review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.11",
