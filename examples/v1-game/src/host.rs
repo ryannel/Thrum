@@ -440,7 +440,7 @@ impl GameSetup {
         let cloud_sky = setup.clouds.sky_profile(config.render_extent);
         let weather = clouded_weather(setup, shapes.as_ref())?;
         let world = GameWorld(WorldPort::Inline(Box::new(
-            WorldDriver::for_setup(setup, weather).map_err(FrameError::World)?,
+            WorldDriver::for_setup(&setup, weather).map_err(FrameError::World)?,
         )));
         let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky)?;
         if let Some(shade) = &shade {
