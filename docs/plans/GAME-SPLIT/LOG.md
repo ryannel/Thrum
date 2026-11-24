@@ -50,3 +50,9 @@
 - 2026-11-25 Reduced the cooked-row visual rebuild fixture to 160×90 after a Metal test exceeded
   the merge timeout. All 12 rebuild cases passed on Metal with the same row-write stages and
   exact frame comparisons. [Metal run](../../../.orchestrate/evidence/GAME-SPLIT/WP3/rebuild-fixture-metal.log)
+- 2026-11-25 WP3 review fixes compiled the diagnostic clouds, route overlays and browser
+  qualification pages only with `proving`. The ordinary camera route still runs without an
+  overlay. The full game-only package passed on Mac and built for Wasm, and the five pinned
+  default-feature targets passed on Metal. Chrome exercised both bundles, and both iPhone
+  simulator binaries linked with the expected command ABI.
+  [Review-fix evidence](../../../.orchestrate/evidence/GAME-SPLIT/WP3-review-fixes/README.md)
