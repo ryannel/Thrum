@@ -1122,7 +1122,7 @@
     {
       "id": "WP13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1271,17 +1271,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "After three Metal inspections could not follow two adjacent ridges through both turning and narrowing, the planner needs to authorize a revised shared-sheet approach or select the live-window fallback.",
-        "work": {
-          "commit": "6bad9e6e849647a65f3b63afc1030edbcced1474",
-          "branch": "build/waters",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/WATERS/WP13-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP8",
