@@ -239,7 +239,7 @@ def capture_soft(args):
         "python3", "scripts/capture_v1_runtime.py", "--binary", str(args.binary),
         "--store", str(args.store), "--output", str(directory), "--params", str(params),
         "--scene", "exit", "--case", args.scenario, "--mode", args.mode,
-        "--extent", "1280", "720",
+        "--extent", "1280", "720", "--source", args.source,
     ]
     if args.route:
         from run_v1_showcase import store_root
@@ -276,6 +276,7 @@ def soft_capture(argv):
     parser.add_argument("--scenario", default="checkpoint")
     parser.add_argument("--route", action="store_true")
     parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--source", choices=("sdr", "scene-linear"), default="sdr")
     parser.add_argument("--eye", type=float, nargs=3)
     parser.add_argument("--yaw", type=float, default=0)
     parser.add_argument("--pitch", type=float, default=0)
