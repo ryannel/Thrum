@@ -323,6 +323,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Small water checks leave the full sea grids to the long tier (WATERS M17), 24 Nov · [review](../../.orchestrate/evidence/WATERS/M17-review.md)
 - Chart gauges and solver determinism run within the fast-suite limit (RIVERS M9), 24 Nov · [review](../../.orchestrate/evidence/RIVERS/M9-review.md)
 - Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6), 24 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
 - The world lane’s resume origin is proved without real-time pacing (EFFECT-GRAPH M5), 24 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M5-review.md)
