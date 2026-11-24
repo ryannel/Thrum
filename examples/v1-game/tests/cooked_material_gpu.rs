@@ -1,8 +1,7 @@
 //! G6 material hook in the game: a game-authored WGSL hook reloads explicitly into the running
 //! scene's cooked meshes, an invalid hook leaves the last pixels drawing with a diagnostic in the
-//! hook's own file and line, a burst of requests compiles only the outstanding and the newest one,
-//! and a device replaced while a reload is outstanding draws the last accepted hook once it
-//! validates on the new device. `THRUM_G6_MATERIAL_CAPTURE_DIR` keeps the captures as PPM files.
+//! hook's own file and line, and a burst of requests compiles only the outstanding and newest one.
+//! `THRUM_G6_MATERIAL_CAPTURE_DIR` keeps the captures as PPM files.
 #![cfg(not(target_arch = "wasm32"))]
 
 use crate::support;
@@ -11,7 +10,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use support::cooked::{Game, Host, Opener, Sources, Tree, device, game};
+use support::cooked::{Game, Host, Opener, Sources, Tree, game};
 use thrum_asset_gpu::{
     CookedAssets, CookedDrawPath, CookedStats, MaterialHook, MaterialOutcome, MaterialReload,
 };
@@ -67,19 +66,6 @@ const MISSPELT: &str =
     "fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
     var out = surface;
     out.roughness = roughnes * 0.5;
-    return out;
-}
-";
-
-/// Every factor infinite or NaN, computed at run time so no compiler folds it away.
-const NON_FINITE: &str =
-    "fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
-    var out = surface;
-    let zero = at.uv.x * 0.0;
-    out.base_colour = vec4(zero / zero);
-    out.roughness = 1.0 / zero;
-    out.metalness = zero / zero;
-    out.emissive = vec3(1.0 / zero);
     return out;
 }
 ";
@@ -425,119 +411,6 @@ fn the_identity_hook_draws_the_built_in_material_case(path: CookedDrawPath) {
 }
 
 #[test]
-fn a_hook_that_writes_non_finite_factors_draws_the_placement_material() {
-    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path);
-    }
-}
-
-fn a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path: CookedDrawPath) {
-    let Some(test_gpu) = thrum_test_support::gpu(
-        "a_hook_that_writes_non_finite_factors_draws_the_placement_material_case",
-        None,
-    ) else {
-        return;
-    };
-    let sources = cooked("non-finite");
-    let cook = &sources.cook;
-    pollster::block_on(async {
-        let Game { mut host, device } = game(
-            &test_gpu,
-            DEVICE,
-            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
-            path,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
-        )
-        .await;
-        let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
-            .expect("rigid placements");
-        let stats = assets.stats();
-        let material = assets.material();
-        host.set_game_contribution(Box::new(assets))
-            .expect("attach");
-        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
-        let mut clock = Duration::ZERO;
-        drive_until_drawn(&mut host, &device, &stats, &mut clock);
-        host.world_mut().pause().expect("pause");
-        let default = capture(&mut host, "default");
-        let serial = material.request(hook("non-finite.wgsl", NON_FINITE));
-        let (outcome, _) = until_outcome(&material, serial, || render_frame(&mut host));
-        assert!(
-            matches!(outcome, MaterialOutcome::Promoted { .. }),
-            "{outcome}"
-        );
-        let sanitized = capture(&mut host, "non-finite-hook");
-        let differing = default
-            .iter()
-            .zip(&sanitized)
-            .filter(|(a, b)| a != b)
-            .count();
-        assert_eq!(differing, 0, "non-finite factors changed {differing} bytes");
-    });
-}
-
-#[test]
-fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws() {
-    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(path);
-    }
-}
-
-fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(
-    path: CookedDrawPath,
-) {
-    let Some(test_gpu) = thrum_test_support::gpu(
-        "requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case",
-        None,
-    ) else {
-        return;
-    };
-    let sources = cooked("material-early");
-    let cook = &sources.cook;
-    pollster::block_on(async {
-        let Game { mut host, device } = game(
-            &test_gpu,
-            DEVICE,
-            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
-            path,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
-        )
-        .await;
-        let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
-            .expect("rigid placements");
-        let stats = assets.stats();
-        let material = assets.material();
-        let first = material.request(hook("early/green.wgsl", GREEN));
-        let second = material.request(hook("early/bands.wgsl", BANDS));
-        assert_eq!(
-            material.take_outcomes(),
-            vec![MaterialOutcome::Superseded { serial: first }]
-        );
-        host.set_game_contribution(Box::new(assets))
-            .expect("attach");
-        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
-        let mut clock = Duration::ZERO;
-        let (outcome, _) = until_outcome(&material, second, || {
-            clock += Duration::from_millis(16);
-            host.drive(clock, None).expect("frame");
-            settle(&mut host, &device);
-        });
-        assert!(
-            matches!(outcome, MaterialOutcome::Promoted { .. }),
-            "{outcome}"
-        );
-        assert_eq!(material.accepted().as_deref(), Some("early/bands.wgsl"));
-        assert!(stats.lock().expect("stats").drawn.is_some());
-    });
-}
-
-#[test]
 fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request() {
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request_case(path);
@@ -610,118 +483,6 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
         );
         assert_eq!(seen.len(), 2, "one outcome each: {seen:?}");
         assert_eq!(material.accepted().as_deref(), Some("burst/green.wgsl"));
-        settle(&mut host, &device);
-    });
-}
-
-#[test]
-fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload() {
-    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload_case(
-            path,
-        );
-    }
-}
-
-fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload_case(
-    path: CookedDrawPath,
-) {
-    let Some(test_gpu) = thrum_test_support::gpu(
-        "a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload_case",
-        None,
-    ) else {
-        return;
-    };
-    let sources = cooked("material-device");
-    let cook = &sources.cook;
-    pollster::block_on(async {
-        let config = FrameConfig {
-            render_extent: EXTENT,
-            surface: None,
-        };
-        let Game {
-            mut host,
-            device: old_device,
-        } = game(&test_gpu, DEVICE, 1, path, config).await;
-        let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
-            .expect("rigid placements");
-        let stats = assets.stats();
-        let material = assets.material();
-        host.set_game_contribution(Box::new(assets))
-            .expect("attach");
-        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
-        let mut clock = Duration::ZERO;
-        drive_until_drawn(&mut host, &old_device, &stats, &mut clock);
-        host.world_mut().pause().expect("pause");
-        let accepted = material.request(hook("hooks/bands.wgsl", BANDS));
-        let (outcome, _) = until_outcome(&material, accepted, || {
-            render_frame(&mut host);
-        });
-        assert!(
-            matches!(outcome, MaterialOutcome::Promoted { .. }),
-            "{outcome}"
-        );
-        let before = capture(&mut host, "device-before");
-
-        // Request a reload, then replace the device before any frame could draw it.
-        let outstanding = material.request(hook("hooks/green.wgsl", GREEN));
-        let (device, queue, capabilities) =
-            device(&test_gpu.fresh_adapter(), DEVICE, 2, path).await;
-        let mut candidate = host
-            .device_prepare_inputs()
-            .expect("inputs")
-            .prepare(&capabilities, &queue, None)
-            .await
-            .expect("replacement");
-        old_device.destroy();
-        host.publish_device(&mut candidate)
-            .expect("publish replacement");
-        assert!(
-            material.restoring(),
-            "the replacement draws the built-in material until the hook validates"
-        );
-        let swaps = stats.lock().expect("stats").swaps.len();
-        let (outcome, _) = until_outcome(&material, outstanding, || {
-            render_frame(&mut host);
-        });
-        assert!(
-            matches!(outcome, MaterialOutcome::Retired { .. }),
-            "{outcome}"
-        );
-        // The same set is staged again for the new device, and drawn with the accepted hook.
-        let deadline = Instant::now() + Duration::from_secs(30);
-        while stats.lock().expect("stats").swaps.len() == swaps {
-            assert!(Instant::now() < deadline, "the set never restaged");
-            render_frame(&mut host);
-        }
-        assert_eq!(material.accepted().as_deref(), Some("hooks/bands.wgsl"));
-        // The accepted hook compiles again for the new device through the one compile owner,
-        // after the outstanding old-device compile, and draws once valid and submitted.
-        let deadline = Instant::now() + Duration::from_secs(30);
-        while material.restoring() {
-            assert!(
-                Instant::now() < deadline,
-                "the accepted hook was never restored"
-            );
-            render_frame(&mut host);
-            std::thread::sleep(Duration::from_millis(2));
-        }
-        let after = capture(&mut host, "device-after");
-        assert_eq!(
-            changed_pixels(&before, &after),
-            0,
-            "the new device draws the last accepted hook"
-        );
-
-        // A reload on the new device then promotes as usual.
-        let again = material.request(hook("hooks/green.wgsl", GREEN));
-        let (outcome, _) = until_outcome(&material, again, || render_frame(&mut host));
-        assert!(
-            matches!(outcome, MaterialOutcome::Promoted { .. }),
-            "{outcome}"
-        );
-        let green = capture(&mut host, "device-green");
-        assert!(changed_pixels(&after, &green) > 640 * 360 / 100);
         settle(&mut host, &device);
     });
 }

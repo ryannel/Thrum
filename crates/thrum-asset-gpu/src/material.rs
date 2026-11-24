@@ -1235,6 +1235,27 @@ mod tests {
     }
 
     #[test]
+    fn requests_before_the_first_frame_coalesce_without_a_compile_target() {
+        let material = MaterialReload::new();
+        let first = material.request(hook());
+        let mut newest_hook = hook();
+        newest_hook.name = "hooks/newest.wgsl".into();
+        let newest = material.request(newest_hook);
+
+        assert_eq!(
+            material.take_outcomes(),
+            [MaterialOutcome::Superseded { serial: first }]
+        );
+        assert!(material.accepted().is_none());
+        let mut state = material.state();
+        let waiting = state.queue.waiting.as_ref().expect("waiting request");
+        assert_eq!(waiting.serial, newest);
+        assert_eq!(waiting.hook.name, "hooks/newest.wgsl");
+        assert!(state.start().is_none(), "compilation waits for the scene");
+        assert!(!state.queue.running);
+    }
+
+    #[test]
     fn a_burst_during_a_compile_supersedes_waiting_requests_before_they_compile() {
         let mut state = State::default();
         state.queue.running = true;
@@ -1251,7 +1272,8 @@ mod tests {
     }
 
     #[test]
-    fn a_replaced_device_queues_its_restore_behind_an_outstanding_old_device_compile() {
+    fn a_replaced_device_draws_the_last_accepted_hook_after_the_restore_waits_for_the_old_compile()
+    {
         // Serial 3 is accepted and drawing; serial 4 is compiling for the old device.
         let material = reload(State {
             surface: Some((1, 1)),

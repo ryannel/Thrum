@@ -1,4 +1,5 @@
 //! Actual resident cooked meshlets in a requested slot and an ordinary main view.
+mod material_reload;
 mod support;
 
 use support::{Fixture, Witness};
