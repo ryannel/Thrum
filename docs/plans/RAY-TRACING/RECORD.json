@@ -491,6 +491,47 @@
         "by": "plan",
         "task": "Answer the Must Fix findings in RAY-TRACING's latest design review (.orchestrate/evidence/RAY-TRACING/design-review.md),",
         "at": "2026-11-23T09:16:09Z"
+      },
+      "ready_for_review": {
+        "commit": "275e7738b7eb5620fb87022e6f00f37255fdc52c",
+        "checked": "275e7738b7eb5620fb87022e6f00f37255fdc52c",
+        "at": "2026-11-24T03:25:17Z",
+        "reused": [
+          "Test command",
+          "M3.1",
+          "M3.4",
+          "M3.6",
+          "M3.7",
+          "M3.8",
+          "M3.9",
+          "M3.10",
+          "M3.12",
+          "M3.13",
+          "M3.14",
+          "M3.15",
+          "M3.16"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 1612668,
+          "cached": 255336064,
+          "output": 260544,
+          "turns": 6
+        },
+        "session_usage": {
+          "input": 1612668,
+          "cached": 255336064,
+          "output": 260544,
+          "turns": 6
+        }
       }
     },
     "M4": {
