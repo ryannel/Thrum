@@ -57,6 +57,7 @@ fn view_volume_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let phase = scattering_phase(dot(direction, sun));
     let limit = min(32000.0, top_distance(h, direction.y));
     let forward_cos = dot(direction, volume_history.current_view_forward_phase.xyz);
+    let cloud_projection = volume_cloud_projection(direction);
     var baseline = empty_ray();
     var correction = empty_ray();
     var throughput = vec3(1.0);
@@ -82,7 +83,7 @@ fn view_volume_main(@builtin(global_invocation_id) id: vec3<u32>) {
             let sample_distance = mix(start, end, jitter);
             let world = eye + direction * sample_distance;
             let visibility = volume_terrain_visibility(world, sample_distance * forward_cos)
-                * volume_cloud_visibility(eye, direction, sun, start, end);
+                * volume_cloud_visibility(eye, direction, cloud_projection, start, end);
             let sigma_lo = extinction(densities, 0u);
             let sigma_hi = extinction(densities, 1u);
             let rayleigh_lo = RAYLEIGH_BETA[0] * densities.x;

@@ -1,4 +1,5 @@
 //! Submission-owned view-volume history on Metal.
+#[expect(dead_code, reason = "history reads raw volume and image bytes")]
 mod fixture;
 
 use thrum_render::{atmosphere::VIEW_VOLUME_SETTLE_FRAMES, synthetic::FrameLighting};

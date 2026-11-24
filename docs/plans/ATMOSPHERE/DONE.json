@@ -439,10 +439,10 @@
           "lock": "gpu",
           "ask": "Does the test show that the forward decoder's own split of solar in-scatter by a surface's shadow is not applied on top of the volume's, by comparing a shadowed surface's aerial term with the volume's value at its depth?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/provider-horizon/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M7.13",

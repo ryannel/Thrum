@@ -725,3 +725,8 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   The archived starting renderer uses the same preparation. Metal and Chrome match their original
   submitted frame hashes and forward shader text, with the existing graph comparison.
   [Post-merge parity evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/post-merge-parity/README.md)
+
+- 2026-11-24 M7.4 uses the registered provider's path to sample the volume. Metal readbacks retain the GPU
+  field's solar shadow and negative terminal correction above, at and below the geometric horizon. The CPU
+  field remains clear below its minimum Sun elevation. The existing forward-decoder, terminal-pair and history
+  checks pass on Metal. [Horizon evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/provider-horizon/README.md)

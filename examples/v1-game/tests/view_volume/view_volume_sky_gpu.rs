@@ -1,4 +1,8 @@
 //! The view volume’s terminal-pair composition on Metal.
+#[expect(
+    dead_code,
+    reason = "sky composition reads the image and terminal pair"
+)]
 mod fixture;
 
 use fixture::{SCATTER_GAIN, STORAGE_EXPOSURE, SUN_LUX};

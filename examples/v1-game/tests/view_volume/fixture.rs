@@ -1,9 +1,4 @@
 //! A short perspective ray, with an off-axis caster and a sampled Sun path.
-#![expect(
-    dead_code,
-    reason = "the three planned GPU test targets use different observations"
-)]
-
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
     atmosphere::{Aerosol, AtmosphereFrame, SunOpticalDepth},

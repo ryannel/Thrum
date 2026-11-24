@@ -98,19 +98,30 @@ pub(crate) fn source(cascades: bool, cloud: CloudVariant) -> String {
         "fn volume_terrain_visibility(point: vec3<f32>, depth: f32) -> f32 { return 1.0; }"
     };
     let cloud = if cloud.present() {
-        let source = if cloud.gpu() {
-            wgsl!("atmosphere/cloud_gpu.wgsl")
+        let (source, path) = if cloud.gpu() {
+            (
+                wgsl!("atmosphere/cloud_gpu.wgsl"),
+                "if cloud_field.plane_drift.w == 0.0 { return vec3(0.0); }
+                 return cloud_field.path_border.xyz;",
+            )
         } else {
-            wgsl!("atmosphere/cloud.wgsl")
+            (
+                wgsl!("atmosphere/cloud.wgsl"),
+                "let sun = aerial_frame.sun_lux.xyz;
+                 if cloud_field.validity.x == 0.0 || sun.y < cloud_field.plane_drift.w { return vec3(0.0); }
+                 return sun;",
+            )
         };
         format!(
             "@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n\
-             @group(1) @binding(4) var aerial_sampler: sampler;\n{source}\n{}",
+             @group(1) @binding(4) var aerial_sampler: sampler;\n{source}\n\
+             fn volume_cloud_path() -> vec3<f32> {{ {path} }}\n{}",
             wgsl!("atmosphere/volume_cloud_segment.wgsl")
         )
     } else {
-        "fn volume_cloud_visibility(eye: vec3<f32>, direction: vec3<f32>,\n\
-             sun: vec3<f32>, start: f32, end: f32) -> f32 { return 1.0; }"
+        "fn volume_cloud_projection(direction: vec3<f32>) -> f32 { return -1.0; }\n\
+         fn volume_cloud_visibility(eye: vec3<f32>, direction: vec3<f32>,\n\
+             projection: f32, start: f32, end: f32) -> f32 { return 1.0; }"
             .to_owned()
     };
     format!(
