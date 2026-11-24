@@ -219,11 +219,19 @@ async function existingGame(cdp, sessionId) {
   };
 }
 
-async function destroyActualDevice(cdp, sessionId, previous, onDestroy) {
+async function queryActualDevices(cdp, sessionId) {
   const prototype = await cdp.call('Runtime.evaluate', { expression: 'GPUDevice.prototype' }, sessionId);
   if (prototype.exceptionDetails || !prototype.result.objectId) throw new Error('Actual WebGPU device prototype unavailable');
-  const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
-  await cdp.call('Runtime.releaseObject', { objectId: prototype.result.objectId }, sessionId);
+  try {
+    const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
+    return objects;
+  } finally {
+    await cdp.call('Runtime.releaseObject', { objectId: prototype.result.objectId }, sessionId);
+  }
+}
+
+async function destroyActualDevice(cdp, sessionId, previous, onDestroy) {
+  const objects = await queryActualDevices(cdp, sessionId);
   const selected = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId,
     functionDeclaration: 'function(previous){const fresh=this.filter(device=>!previous?.includes(device));if(fresh.length!==1)throw new Error(`Expected one fresh actual GPUDevice, found ${fresh.length}`);return fresh[0];}',
     arguments: [previous ? { objectId: previous } : { value: null }] }, sessionId);
@@ -1237,7 +1245,28 @@ async function unloadGamePage(cdp, sessionId, timeout) {
   }, timeout, 'WebGPU page unloaded');
 }
 
-async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource, files) {
+async function releaseGameGraphics(cdp, sessionId, game) {
+  await game.setVisible(false);
+  const { objectId } = await queryActualDevices(cdp, sessionId);
+  try {
+    const result = await cdp.call('Runtime.callFunctionOn', { objectId, awaitPromise: true, returnByValue: true,
+      functionDeclaration: `async function() {
+        document.querySelector('#scene')?.getContext('webgpu')?.unconfigure();
+        await Promise.all(this.map(device => {
+          device.destroy();
+          return device.lost;
+        }));
+        return this.length;
+      }`,
+    }, sessionId);
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  } finally {
+    await cdp.call('Runtime.releaseObject', { objectId }, sessionId);
+  }
+}
+
+async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource, files, verifyOwnedShutdown = false) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   let sessionId, state, response, input, game, pausedAt, pause, controls, params, tabs, otherTarget;
   // Requests the page makes to the dev server, in order, for the mesh edit's asset identity.
@@ -1580,6 +1609,13 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
     const scope = route?.scope ?? material?.scope ?? sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : tabCase ? 'Actual Chrome tab activation, document visibility, input release and manual pause; no display cadence claim' : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
+    if (verifyOwnedShutdown && game) {
+      // The case has captured its final state. Retire its devices while the
+      // document can still acknowledge their destruction.
+      cdp.event = () => {};
+      const devices = await releaseGameGraphics(cdp, sessionId, game);
+      log(`Released ${devices} WebGPU device(s) after the case`);
+    }
     // Wait for document unload before Target.closeTarget can race Browser.close.
     await unloadGamePage(cdp, sessionId, timeout);
     log('WebGPU page unloaded');
@@ -2093,7 +2129,6 @@ async function cleanup(child, exited, cdp, server, profile, {
   graceMs = 10000, completedCost = false, ownedShutdown,
 } = {}) {
   const failures = [];
-  let shutdown;
   if (child?.pid && !exited()) {
     const closeRequested = cdp?.socket.readyState === WebSocket.OPEN;
     if (closeRequested) {
@@ -2113,18 +2148,15 @@ async function cleanup(child, exited, cdp, server, profile, {
         try { await waitFor(() => exited(), completedCost ? 60000 : 3000, 'owned Chrome forced exit'); } catch (error) { failures.push(error.message); }
       }
     }
-    // Chrome can end a requested shutdown with its own watchdog. Keep that
-    // outcome distinct from a graceful exit and require the whole group to exit.
     if (ownedShutdown) {
       try {
-        const watchdog = ownedShutdown.complete && closeRequested && !failures.length &&
-          child.exitCode === 2 && child.signalCode === null &&
+        ownedShutdown.receipt.watchdog = child.exitCode === 2 && child.signalCode === null &&
           /^Teardown watchdog expired; recording dump and terminating\.$/m.test(await fs.readFile(ownedShutdown.log, 'utf8'));
         await waitFor(() => chromeGroupExited(child.pid), 5000, 'owned Chrome process group exit');
-        shutdown = { watchdog, owned_processes_gone: true };
+        ownedShutdown.receipt.owned_processes_gone = true;
       } catch (error) { failures.push(error.message); }
     }
-    if ((child.exitCode !== 0 || child.signalCode) && !shutdown?.watchdog) {
+    if (child.exitCode !== 0 || child.signalCode) {
       // A completed cost take retains its submitted samples if Chrome has
       // already exited after closing the final target. Retain its exit code.
       if (!completedCost) {
@@ -2138,7 +2170,6 @@ async function cleanup(child, exited, cdp, server, profile, {
     try { await fs.rm(profile, { recursive: true }); } catch (error) { failures.push(`Profile cleanup: ${error.message}`); }
   }
   if (failures.length) throw new Error(`Cleanup failed; profile preserved at ${profile}: ${failures.join('; ')}`);
-  return shutdown;
 }
 
 async function qualifyExtent(cdp, origin, output, timeout, wasm) {
@@ -2352,7 +2383,7 @@ async function main() {
         cook = watched.cook;
         results.push(await checkContentEdits(cdp, serving.origin, watched.origin, watched.source, output, waitFor, content));
       }
-      else results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files));
+      else results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files, args.verifyOwnedShutdown));
     }
     if (modes.includes('field-oracle-direct')) results.push(await compareFieldOracle(output, results));
   } catch (error) { failure = error; }
@@ -2360,17 +2391,13 @@ async function main() {
     cook?.kill();
     // The reflection referee releases its WebGPU probe resources when its tab closes.
     const drainGpuResources = args.case === 'environment' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
-    const ownedShutdown = args.verifyOwnedShutdown
-      ? { log: chromeLogPath, complete: !failure && results.length > 0 }
-      : undefined;
-    let shutdown;
+    const shutdown = {};
     try {
-      shutdown = await cleanup(child, () => ended, cdp, server, profile, {
-        graceMs: drainGpuResources ? 45000 : ownedShutdown?.complete ? 20000 : undefined,
+      await cleanup(child, () => ended, cdp, server, profile, {
+        graceMs: drainGpuResources ? 45000 : args.verifyOwnedShutdown ? 20000 : undefined,
         completedCost: args.case === 'sprites-field-cost' && results.length === 1,
-        ownedShutdown,
+        ownedShutdown: args.verifyOwnedShutdown ? { log: chromeLogPath, receipt: shutdown } : undefined,
       });
-      if (shutdown?.watchdog) console.log('Chrome shutdown watchdog fired after the check; owned process group exited');
     }
     catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
     await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ chrome_shutdown: { exit_code: child?.exitCode, signal: child?.signalCode, ...shutdown }, passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
