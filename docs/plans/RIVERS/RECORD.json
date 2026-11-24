@@ -576,7 +576,33 @@
     },
     "M9": {
       "definitions": "8c5e600d306d11a6bb4241752fb0b92a5e92e145a29e9a4b7daf78438816a495",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "a472716d90075ca7ceb205e48bbd86679658b516",
+          "review": ".orchestrate/evidence/RIVERS/M9-review.md",
+          "items": {
+            "M9.1": "pass",
+            "M9.2": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 55461,
+            "cached": 522496,
+            "output": 2569,
+            "turns": 1
+          },
+          "at": "2026-11-24T02:10:27Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The main-branch check workspace-tests fails on 299376222cb1 at normal machine load. Three tests hit nextest's 10 s limit",
@@ -610,6 +636,13 @@
           "output": 19695,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "a472716d90075ca7ceb205e48bbd86679658b516",
+        "review": ".orchestrate/evidence/RIVERS/M9-review.md",
+        "checked": "65ebd23f1386e03c66ec04d892dc99132643187c",
+        "at": "2026-11-24T02:10:27Z"
       }
     }
   },

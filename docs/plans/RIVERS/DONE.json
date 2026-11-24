@@ -337,7 +337,7 @@
     {
       "id": "M9",
       "name": "Chart gauges and solver determinism run within the fast-suite limit",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Preserve the chart-source and byte-determinism proofs on compact CPU fixtures in the default Nextest tier.",
       "items": [
         {
@@ -347,7 +347,9 @@
           "ask": "Do the gauge place, sample intervals, wet unblended cells and nonzero fall discharge independently witness the original assertions and refusals on the smaller fixture? Do the isolated and focused batch results pass on the first attempt under normal builder load?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/M9/M9.1.md"
+          "evidence": ".orchestrate/evidence/RIVERS/M9/M9.1.md",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/M9-review.md"
         },
         {
           "id": "M9.2",
@@ -356,7 +358,9 @@
           "ask": "What shows that the eight-thread solve crosses the active span threshold and performs work in multiple row chunks? Do the isolated and focused batch results pass on the first attempt under normal builder load?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/M9/M9.2.md"
+          "evidence": ".orchestrate/evidence/RIVERS/M9/M9.2.md",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/M9-review.md"
         }
       ],
       "failed_reviews": 0,
