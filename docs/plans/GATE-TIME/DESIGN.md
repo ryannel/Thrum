@@ -727,6 +727,40 @@ says how it counts. Both are reports. Nothing fails on them, or on a step's time
 a check's length follows the load it runs under: the same tests summed to 820 s and to 1,471 s in two checks
 of 21 November.
 
+<a id="workspace-reruns-under-builder-load"></a>
+
+**15. The workspace check gives a stopped test one bounded serial rerun under builder load.** M14 builds this
+before M5. The runner already waits for its parallel nextest invocation to exit and runs exact timeout cases
+with one test thread. That releases its own test jobs. It leaves the builders, other main checks and `exact-images`
+running. On 24 November, at about 40 load on 14 cores with nine builders, both attempts reached ten seconds for
+different CPU and GPU cases across the three runs at 02:45:14, 03:54:31 and 04:00:03. The latter two checks even
+ran the same commit. The same sea case passed its rerun in 5.5 s in the earlier check and timed out in the later
+one. The rain and river CPU cases also passed in other runs.
+
+Use the normal ten-second stop for the side-by-side pass of both commands. In `./dev check-all` only, allow up to
+30 seconds for each serial rerun of a timed-out test, after the parallel invocation has exited. Use the same test
+build, features and exact test identity. Apply this to the workspace pass and the draw-probe pass. A successful
+rerun requires a passing result for that exact case. Assertion failures, repeat timeouts, missing results and
+runner errors still fail the check. The report gives the case, both times and the verdict, and calls out reruns
+that passed above ten seconds so they remain visible for speed work. `./dev check` uses ten seconds for both
+attempts, even when its selection runs the whole workspace. The fast-test target, the empty exemption list and
+the guard counts stay as in M12 and M13.
+
+Allowing more time on the workspace rerun covers both CPU scheduling and GPU contention and costs extra wall time
+only for a test that already stopped. A test that now takes more than ten seconds can pass `check-all` within the
+rerun cap and is reported as over the ten-second target. The merge check still enforces that target. Taking a
+shared `gpu` slot would still allow other GPU holders to run. Taking `gpu.alone` would queue behind other work,
+leave uncoordinated GPU work running and leave CPU contention in either case. Moving the serial pass to the end of
+the command would release no additional nextest jobs and would leave the same external load. Keep the rerun after
+its own parallel pass. The 30-second cap is provisional until the loaded proof passes.
+
+The incident cases are `thrum-rain-model::it conformance::the_harness_passes_rain_bands_against_themselves_and_reports_ignored_exposure`,
+`thrum-river-model::it chop::each_sample_of_a_river_file_carries_its_own_gains`,
+`thrum-river-model::it wetting::the_hollow_and_the_terrace_rise_from_nothing_with_no_step`,
+`thrum-river-model::it wetting::the_rules_the_wetting_replaces_would_fail`,
+`water-scene::foam_scene_gpu craft_trail_outlives_removed_source_and_spreads` and
+`thrum-sea::it portable_limits_gpu::default_webgpu_limits_match_the_model_a_day_in`.
+
 ## Interfaces
 
 | Interface | For |
@@ -734,7 +768,7 @@ of 21 November.
 | A long test: marked `#[ignore]` with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | Any module with a test that takes over about ten seconds and cannot be made fast. Its builder adds the binary to the list, with the fault the test leaves unguarded before a merge |
 | The main-tier list, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary. The docs check fails a test file or target that names a feature the list does not cover | Any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole |
 | The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules and declared edges of mechanism 4; `./dev check-all` runs the whole workspace | Every builder. A module that adds a folder outside a package gets the whole workspace on every change there until it adds a path rule. A module that adds a test reading another package's files at run time declares the edge in the same landing |
-| The runner, from M8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. One that runs over ten seconds is reported, and one that runs over sixty fails the check; from M13 one is stopped at ten seconds, run once more alone, and fails unless it then passes within ten. The runner's configuration, `.config/nextest.toml`, holds the groups of tests that take turns and the tests counted as heavy | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
+| The runner, from M8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. From M13 a test is stopped at ten seconds and rerun once serially under the same limit. From M14 only `./dev check-all` gives that serial rerun 30 seconds and reports passes above ten seconds. `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
 | Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
 | The guard rules, from M12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
 | The check's closing lines, from M8 and M12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and M5's record |
@@ -778,6 +812,7 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 | M11 | The `[[test]]` tables, the `autotests` line and the `test` keys of each workspace package's manifest; one new root file in each package's `tests/` folder; in each test file it folds, the lines that declare or import shared helpers, and a test's own name where the test starts itself again by name; the root file of a folder-style target, where it has to be renamed to stay a module; `.config/nextest.toml` and `.config/long-tests.txt`, for the names that moved; the lines of `.config/unplanned-test-binaries.txt` for the targets it folds; the new guard in the repository guards under `scripts/`, with its suite; the check command in `tools/xtask/src/` only where it names a test binary | Nothing | The widest set in this module. Every module that adds a test adds a file or a `[[test]]` table in these folders and manifests, so the lead starts it when few builders are in test files, and whichever lands second rebases. `TEST-SUPPORT` M3 converts the test files of every crate and M4 edits the cooked tests: the lead does not run either beside this where it can choose. `REVIEW-RENDER` and `HOST` build in the renderer's tests, and `DEAD-CODE` M5 edits `cooked_rows_gpu.rs`. The binaries this module's own open items name stay targets of their own: `foam_scene_gpu` (M3.1), `pool_gpu` (M4.1) and `scene_view_absent_gpu` (M4.4). A changed set of test targets links every worktree's tests again once, so the lead checks free disk first |
 | M3 | `examples/water/tests/foam_scene_gpu.rs`, `wake_scene_gpu.rs` and any other test file of the water scene that holds a test on the exempt list; the child's arguments in `examples/water/tests/support/island.rs`; `.config/long-tests.txt` and `.config/nextest.toml` | `WATERS` M7, whose open items run the foam test for its ten minutes and which is building in these files | `PUDDLES` M5.4 runs the foam scene's binary and M3.2 `stage_gpu`, and each needs only that the binary passes. `stage_gpu`, `inland_floating_gpu` and `bodies_gpu` also start a child through `island.rs`, each with a test that is not ignored, so running ignored tests in the child changes nothing for them |
 | M4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` M2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
+| M14 | The check runner, its tests and help in `tools/xtask/src/`, `.config/nextest.toml`, and the corresponding timeout text in `ORCHESTRATE.md` and `CONTRIBUTING.md`. Load evidence in the working folder | The landed M13 runner | `REPO-RULES` owns the check command outside the test runner. M5 uses the contributor guide's merge timing |
 | M5 | The commands table and test-command text of `CONTRIBUTING.md` | `DEAD-TOOLS` M2, which edits other rows of the same table | `DEAD-TOOLS` M3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` M3, the one rename, waits for this milestone |
 
 ## Not built here
@@ -864,3 +899,7 @@ changes the reviewer makes: the thing the rule refuses, added, fails with the me
 passes. The closing lines are proved by a reviewer who adds up one saved check's own test lines. The stop at ten
 seconds is proved by three scratch tests in one run of the check: one always over the limit, one over it only the
 first time it runs, and one that fails an assertion; and by the record of three whole runs beside builders.
+
+The workspace rerun is proved by fast runner tests and by a complete `./dev check-all` under builder load
+with the incident's CPU and GPU cases replayed under the same contention. The record includes a rerun that
+takes over ten seconds and passes.

@@ -806,6 +806,32 @@
       ]
     },
     {
+      "id": "M14",
+      "name": "The full workspace check passes when a fast test needs more time on a busy Mac",
+      "status": "not_started",
+      "quality_bar": "The fast-test guard holds at ten seconds on every merge. On the busy Mac, the workspace check accepts a slow but successful rerun within its bounded window and reports the time it cost.",
+      "items": [
+        {
+          "id": "M14.1",
+          "statement": "Both check commands stop the parallel attempt at 10 seconds. Only a timed-out case runs a second time, once and serially, in its original build and feature set. A passing 15-second rerun passes check-all and is reported above the fast-test target. The same result fails check, even with the whole workspace selected. A second timeout at the applicable cap, an assertion failure on either attempt, a missing rerun result or a runner error fails the command. A clean first pass runs no retry, and the merge limit and exemption guard still hold. Guard: the xtask runner tests and limit-exempt.",
+          "check": "sh -c 'out=$(cargo test --locked --offline -p xtask workspace_rerun 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\" || { echo \"$out\"; exit 1; }' && python3 scripts/shape_rules.py check --rule limit-exempt",
+          "ask": "Trace the normal workspace and draw-probe paths for both commands. Do only timed-out cases enter the serial pass after the initial process exits, using exact test identities and the same features? Can check-all recover a passing result above 10 seconds only on its rerun, which the runner still stops at 30 seconds? Do any other first-pass failures or retry process errors still fail the command?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M14.2",
+          "statement": "On the fixed revision, a whole ./dev check-all exits zero at contention comparable to the incident, about 40 load on 14 cores with other CPU work and an overlapping Metal workload. The six named CPU and GPU incident cases pass using the serial rerun settings under comparable load. At least one real timed-out case passes its rerun after more than 10 seconds and within 30 seconds in the whole check. Record: revision, commands, exit status, load samples during reruns, other CPU and GPU work, and case names, times and verdicts from the whole run and incident replay.",
+          "check": "python3 .orchestrate/evidence/GATE-TIME/M14/check_loaded.py",
+          "ask": "Do the raw logs show that a full check-all passed with a real timeout recovered above ten seconds, and that the six incident cases passed the serial rerun or focused replay? Do the load samples and overlapping process records cover the reruns and show contention comparable to the incident? Does the evidence checker reject a record with no over-ten-second recovery, a failed or missing incident case, or missing load evidence?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "M5",
       "name": "The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs",
       "status": "blocked",

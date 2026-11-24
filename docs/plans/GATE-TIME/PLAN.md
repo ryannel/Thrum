@@ -11,7 +11,8 @@ another module's: change nothing those tests assert about the engine. The milest
 ## Open for the human
 
 - Assumption: a merge's check takes about five minutes for a typical landing, on this Mac while builders work. It is judged on real merges since the check took its present shape: at least five that ran Rust tests, and too few of them over five minutes to be chance, which is none while fewer than nine are counted. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure.
-- Assumption: a test stopped at ten seconds is run once more, alone, and fails the check only if it is over ten seconds again. Load took a test of under ten seconds past it in 8 of the last 18 whole checks, 22 tests in one. The other choice fails at the first stop.
+- Assumption: the merge check reruns a test stopped at ten seconds once, serially, under the same limit. Load took a test of under ten seconds past it in 8 of the last 18 whole checks, 22 tests in one.
+- Assumption: `./dev check-all` gets a 30-second cap for its one serial rerun, subject to proof under the builder load that caused the failures. Ten seconds remains the fast-test target and the merge limit.
 - Assumption: "the number of test binaries can only go down" counts the binaries no plan names, 43 of 275 today, because approved open items name 147 not yet written; M11 takes the whole number from 263 to about 110. The other choice rewrites the 176 binary names in 17 modules' open items now, and freezes the whole number.
 - Assumption: the stepped hour, the foam's ten-minute moored run, the three field flythroughs and the shore-blend solve run whole on main after merges, like the gale. The other choice keeps a short run of any in every merge's check.
 - Assumption: the whole workspace's tests run on main at most once an hour, with no `gpu` lock, which would hold a GPU slot through the build. The other choice is every four hours under the lock, like the long tests and exact images.
@@ -58,6 +59,17 @@ another module's: change nothing those tests assert about the engine. The milest
 
 ## M4 Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text: done
 [review](../../../.orchestrate/evidence/GATE-TIME/M4-review.md)
+
+## M14 The full workspace check passes when a fast test needs more time on a busy Mac
+
+Build this before M5. Use [the workspace rerun design](DESIGN.md#workspace-reruns-under-builder-load).
+Keep the replay, its checker `check_loaded.py`, the raw check output and the load samples in
+`.orchestrate/evidence/GATE-TIME/M14/`. Capture a successful `./dev check-all` on the fixed code during
+representative contention, and replay the six incident cases with the same serial rerun settings. If a named
+case finishes on the first pass, time it through the focused replay. Use active builders and a concurrent Metal
+workload, or reproduce the incident's CPU and Metal contention with controlled competing work. Capture the
+one-minute load during reruns, the core and builder counts, and the overlapping GPU work. Keep the checker's
+read of the retained record cheap so milestone checks can run again without launching a second workspace sweep.
 
 ## M5 The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs
 
