@@ -97,9 +97,18 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     coverage=max(coverage,deck);
     depth=max(depth,p.physical.y*pow(deck,0.7)*(0.6+0.4*n));
     let tau=p.physical.w*depth*coverage*(1.0-(p.vertical.y+p.vertical.z)*0.5);
+    var base=p.physical.x;
     if coverage==0.0 || depth==0.0 {coverage=0.0;depth=0.0;age=0.0;}
+    else {
+        // Match the CPU field so sky, Sun paths and column queries agree.
+        let mixed=smooth_unit(4.0*share*(1.0-share));
+        let relief=smooth_unit((0.7*n+0.3*opening-0.2)/0.6);
+        let lift=min(0.62*p.physical.y*mixed*relief*smooth_unit(deck/coverage),
+                     max(0.0,p.physical.z-depth));
+        base+=lift;
+    }
     let q=vec2<i32>(i32(id.x),i32(row));let layer=i32(p.rows.w);
-    textureStore(columns,q,layer,vec4<f32>(p.physical.x,p.physical.x+depth,coverage,p.weather.y));
+    textureStore(columns,q,layer,vec4<f32>(base,base+depth,coverage,p.weather.y));
     textureStore(optical,q,layer,vec4<f32>(age,tau,p.vertical.yz));
     let generation=p.integers.z-u32(p.noise.w<hash(site.x,site.y,0u,1u));
     textureStore(identities,q,layer,vec4<u32>(site,generation,generation_mask));

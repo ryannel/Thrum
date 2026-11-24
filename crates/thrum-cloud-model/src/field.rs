@@ -278,11 +278,20 @@ impl Field {
         if coverage == 0.0 || depth == 0.0 {
             return clear;
         }
+        // Neighbouring banks can sit at different heights in a mixed deck.
+        // Move the whole column within the type's height bounds so the
+        // column's optical depth stays the same and both ends of the
+        // weather transition keep their original condensation level.
+        let mixed = smooth(4.0 * t.deck * (1.0 - t.deck));
+        let relief = smooth((0.7 * n + 0.3 * opening - 0.2) / 0.6);
+        let lift = (0.62 * t.depth[0] * mixed * relief * smooth(deck / coverage))
+            .min((t.depth[1] - depth).max(0.0));
+        let base = t.base + lift;
         Column {
             coverage,
             kind: parameters.kind,
-            base: t.base,
-            top: t.base + depth,
+            base,
+            top: base + depth,
             age,
             optical_depth: t.extinction()
                 * depth

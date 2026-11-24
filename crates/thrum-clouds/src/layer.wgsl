@@ -72,14 +72,6 @@ fn cloud_bank_billow(point:vec3<f32>,footprint:f32)->f32 {
     let air=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
     return textureSampleLevel(shape_noise,noise_sampler,air*vec3(2.0,3.0,2.0),erosion_mip(2.0*footprint,50.0)).r;
 }
-fn cloud_bank_floor(point:vec3<f32>,footprint:f32)->f32 {
-    // Hold the broad floor height through each column. Sampling this octave
-    // at a fixed height gives each lobe its own rounded underside.
-    let air=point.xz/9200.0+vec2(cloud.noise.x,cloud.noise.y);
-    let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(air.x,0.31,air.y),
-                                 erosion_mip(footprint,72.0)).r;
-    return 0.84*smoothstep(0.23,0.69,swell);
-}
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f32)->f32 {
     if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
@@ -88,12 +80,10 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     let eroded=cloud_erode(sigma,extinction,cloud.physical.y,shape,detail);
     let bank=cloud_bank_weight();
     if bank==0.0 {return eroded;}
-    // Erode the underside unevenly inside the mixed bank, where individual
-    // lobes have lifted bases. The cloud and the local Sun march see the same
-    // relief, and erosion never adds density outside the weather column.
-    let floor=cloud_bank_floor(point,footprint);
-    let lift=floor*mix(0.86,1.03,detail);
-    return eroded*mix(1.0,smoothstep(0.85*lift,lift+0.16,height),bank);
+    // The weather map already varies floor height by bank. Keep only
+    // smaller scale erosion in the view trace, inside that column.
+    let lift=0.22*cloud_bank_billow(point,footprint);
+    return eroded*mix(1.0,smoothstep(0.7*lift,lift+0.14,height),bank);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
