@@ -783,7 +783,7 @@
     {
       "id": "M6",
       "name": "A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -814,7 +814,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M6/paused-camera/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },
         {
@@ -924,13 +924,6 @@
           "evidence": ".orchestrate/evidence/CLOUDS/M6/placed-targets-final.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Paused camera movement leaves placed-cloud shade stale",
-          "item": "M6.2",
-          "repeat": false
         }
       ]
     },
