@@ -753,7 +753,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As easy to start from as Godot's high-level multiplayer guide, and as plain about its limits as Factorio's notes on desyncs. The guide is enough to put a second game in a match without reading engine source, the contracts and the ledger say exactly what was proved, and, as with Godot's or Unreal's networking, a single-player build carries none of it."
     },
     {
