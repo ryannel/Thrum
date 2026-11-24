@@ -1,27 +1,14 @@
 {
   "module": "REPO-RULES",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/REPO-RULES/design-review.md",
-    "commit": "f0a2f57cabfd82b47ba4393965befb0809ebc9c5",
-    "hash": "b23e675f99b9f6e4b780bc62526978056437343a5a7f7081be89b6c6365acc6d",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13",
-    "path": "headless",
-    "usage": {
-      "input": 98672,
-      "cached": 2903680,
-      "output": 8238,
-      "turns": 1
-    },
-    "at": "2026-11-24T19:38:09Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "a481f0574d83928fd70a3f799728d5b96acbe10d75a4173ebee8aca9a1b7ba83",
+    "after": [
+      ".orchestrate/evidence/REPO-RULES/design-review-4.md",
+      ".orchestrate/evidence/REPO-RULES/design-review.md"
+    ],
+    "at": "2026-11-24T20:12:34Z"
   },
   "work_packages": {
     "WP1": {
@@ -212,12 +199,12 @@
       "ends_stretch": true
     },
     "WP5": {
-      "definitions": "ba9b3751dfa100894a5b297d1f98d70ac2ffb1ba3060d42bd99af60cb50a3735",
+      "definitions": "cb3b241796d0fef86609364c36eb2eb8943e93f95497dd0d2ace9ca161d95488",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with 4 Must Fix ",
-        "at": "2026-11-24T19:33:00Z"
+        "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with its 1 Must ",
+        "at": "2026-11-24T20:12:34Z"
       }
     }
   },
@@ -249,11 +236,15 @@
     {
       "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with 4 Must Fix findings.\n\nMust Fix 1 is now mostly settled outside this module: orchestrate 3.0.4 migrate (commit 77c70eaac on main) repaired the 56 renamed-heading anchors and the BRIEF.md links. scripts/repo_check.py now reports only two link faults besides the shape-rule errors: (a) docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md links ../../plans/BRIEF.md; it is one of three legacy files still tracked under docs/evidence/, which the merge refuses to change but allows to remove, so the lead suggests WP5 untracks those legacy files (moving them to the working folder .orchestrate/evidence/) rather than editing them, which also matches the storage rules; (b) docs/plans/ATMOSPHERE/DESIGN.md links ../APPLE-TILE/PLAN.md#wp0-proof-route-counters-and-capture-probe-pending, stale since before the rename because that heading now ends in done; repoint it as a planner edit to ATMOSPHERE, accepting that ATMOSPHERE owes a design review. These are the lead's suggestions; choose otherwise if the design says so.\n\nMain fails ./dev check until the DONE.json key reader fix lands, so every builder merge is held. Make WP5 the smallest landing that turns main green on its own, ahead of and independent of WP3, if the design allows it, and resolve Must Fix 2 to 4 against WP3 and the manifest interface without holding WP5 back.",
       "at": "2026-11-24T19:33:00Z"
+    },
+    {
+      "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.\n\nMain fails ./dev check until WP5 lands, so every merge in the project is held; keep WP5 the smallest change that turns main green and lands ahead of WP3 and WP4.",
+      "at": "2026-11-24T20:12:34Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T19:33:00Z"
+    "at": "2026-11-24T20:12:34Z"
   },
   "design_history": [
     {
@@ -350,6 +341,29 @@
         "turns": 1
       },
       "at": "2026-11-24T16:11:58Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/REPO-RULES/design-review.md",
+      "commit": "f0a2f57cabfd82b47ba4393965befb0809ebc9c5",
+      "hash": "b23e675f99b9f6e4b780bc62526978056437343a5a7f7081be89b6c6365acc6d",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 98672,
+        "cached": 2903680,
+        "output": 8238,
+        "turns": 1
+      },
+      "at": "2026-11-24T19:38:09Z"
     }
   ]
 }
