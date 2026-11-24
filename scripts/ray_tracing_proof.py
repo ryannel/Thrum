@@ -233,7 +233,7 @@ def capture_soft(args):
     }) + "\n")
     env = dict(os.environ, THRUM_HARDWARE="ray-query", THRUM_RECIPE="apple-tile",
                THRUM_SUN_SHADOW_METHOD="traced", THRUM_SUN_PENUMBRA=args.penumbra,
-               THRUM_CAPTURE_FIXED_EYE=json.dumps(pose["eye"]),
+               THRUM_CAPTURE_RENDERER_SIGNATURE="1", THRUM_CAPTURE_FIXED_EYE=json.dumps(pose["eye"]),
                THRUM_SUN_PROOF_GEOMETRY=args.geometry)
     cmd = [
         "python3", "scripts/capture_v1_runtime.py", "--binary", str(args.binary),
@@ -256,6 +256,7 @@ def capture_soft(args):
     runtime = json.loads((directory / "runtime.json").read_text())
     records = runtime["images"]
     assert runtime["mode"] == args.mode and runtime["complete"], directory
+    assert "renderer_signature" in runtime, directory
     assert runtime["backend"] == "Metal" and runtime["recipe"] == "Ok(AppleTile)", directory
     assert "EXPERIMENTAL_RAY_QUERY" in runtime["enabled_features"], directory
     assert records and all(row["shadow_selection"]["sun"] == "Traced" for row in records), directory
