@@ -16,6 +16,8 @@ pub mod cooked;
 pub mod effect;
 mod exit_scene;
 mod field_meshes;
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+mod governor_load;
 mod host;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 mod hosted;
@@ -34,9 +36,10 @@ use thrum_fixtures::mixed_field::{self as field, day_cycle as environment};
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{
-    BrowserGame, CookedValley, create_browser_game, create_field_game, create_placed_browser_game,
-    create_route_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley,
-    qualify_effect_after_opaque, qualify_effect_state, qualify_lent_products,
+    BrowserGame, CookedValley, GovernorBrowser, create_browser_game, create_field_game,
+    create_governor_game, create_placed_browser_game, create_route_game, create_sprite_game,
+    create_sprite_probe, fetch_cooked_valley, qualify_effect_after_opaque, qualify_effect_state,
+    qualify_lent_products,
 };
 #[cfg(all(target_arch = "wasm32", feature = "draw-probe"))]
 pub use browser::{BrowserLightProbe, create_light_list_probe};
@@ -69,6 +72,6 @@ pub fn valley_config(
 #[cfg(target_os = "macos")]
 pub use window::{
     CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RenderScaleTrace,
-    RuntimeCaptureOutput, SceneCaptureRequest, capture_game, run_runtime_capture,
+    RuntimeCaptureOutput, SceneCaptureRequest, WindowGovernor, capture_game, run_runtime_capture,
     run_scene_capture, run_window,
 };

@@ -24,7 +24,7 @@ cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
-cases.push('route-diagnostic', 'scale');
+cases.push('route-diagnostic', 'scale', 'governor');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost', 'sprites-crisp');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -100,6 +100,72 @@ async function assets(directory) {
     result.set(`/${name}`, { bytes, type, sha256: sha(bytes) });
   }
   return result;
+}
+
+async function qualifyGovernor(cdp, origin, output, wasm) {
+  const arms = [];
+  const rounds = 6144;
+  for (const timestamps of [true, false]) {
+    const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+    const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
+    try {
+      await cdp.call('Page.navigate', { url: origin + '/governor.html' }, sessionId);
+      await waitFor(async () => {
+        const reply = await cdp.call('Runtime.evaluate', {
+          expression: 'Boolean(document.querySelector("canvas"))', returnByValue: true,
+        }, sessionId);
+        return reply.result.value;
+      }, 10000, 'governor canvas');
+      const reply = await cdp.call('Runtime.evaluate', {
+        expression: `(async () => {
+          const wasm = await import('/v1_game.js');
+          await wasm.default();
+          const game = await wasm.create_governor_game(document.querySelector('canvas'), ${timestamps}, ${rounds});
+          const frames = [];
+          const trace = await new Promise((resolve, reject) => {
+            let start;
+            const tick = now => {
+              try {
+                start ??= now;
+                frames.push(now - start);
+                game.frame(now);
+                if (now - start >= 9450) resolve(JSON.parse(game.trace()));
+                else requestAnimationFrame(tick);
+              } catch (error) { reject(error); }
+            };
+            requestAnimationFrame(tick);
+          });
+          game.free();
+          return { ...trace, frames };
+        })()`,
+        returnByValue: true, awaitPromise: true,
+      }, sessionId);
+      if (reply.exceptionDetails) throw new Error(JSON.stringify(reply.exceptionDetails));
+      const trace = reply.result.value;
+      const source = timestamps ? 'Gpu' : 'AnimationFrame';
+      await fs.writeFile(path.join(output, `governor-${source}.json`), JSON.stringify(trace));
+      const prior = trace.rows.filter(row => row.tick < 75).at(-1);
+      const loaded = trace.rows.filter(row => row.tick >= 75 && row.tick < 168);
+      const drop = prior && loaded.find(row => row.scale < prior.scale);
+      const minimum = Math.min(...loaded.map(row => row.scale));
+      const recovery = drop && trace.rows.find(row =>
+        row.tick >= 168 && row.reason === 'Recovery' && row.scale > minimum);
+      if (!drop || !recovery || trace.rows.at(-1)?.scale < prior.scale || drop.source !== source ||
+          (timestamps && !loaded.some(row => row.debug_load_ns > 0)) ||
+          (!timestamps && trace.rows.some(row => row.debug_load_ns !== null))) {
+        throw new Error(`Governor did not lower and recover on ${source}, see ${output}`);
+      }
+      arms.push({ source, drop, recovery, presented: trace.presented });
+    } finally {
+      await cdp.call('Target.closeTarget', { targetId });
+    }
+  }
+  const record = {
+    case: 'governor', target: 'chrome-webgpu', arms, rounds, wasm: wasm.sha256,
+    commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
+  };
+  await fs.writeFile(path.join(output, 'governor.json'), JSON.stringify(record, null, 2));
+  return record;
 }
 
 async function serve(files, receive) {
@@ -2283,6 +2349,8 @@ async function main() {
     const rows = args.case === 'mesh-rows' ? await prepareMeshRows(files, output, args.cook, args['assets-source']) : undefined;
     const content = args.case === 'content-edits' ? await loadContentEdits(files, output) : undefined;
     if (args.case === 'clouds-placed') await preparePlacedClouds(files, output, repo);
+    const governorPage = Buffer.from('<!doctype html><canvas width="1280" height="720"></canvas>');
+    files.set('/governor.html', { bytes: governorPage, type: 'text/html', sha256: sha(governorPage) });
     const serving = await serve(files, (request, response) => rows?.receive(request, response) || lent?.receive(request, response) || content?.receive?.(request, response)); server = serving.server;
     const chromeLog = await fs.open(chromeLogPath, 'a');
     let startupError;
@@ -2310,7 +2378,7 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'route-diagnostic' && mode !== 'scale' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'route-diagnostic' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode === 'scale' || mode.startsWith('moving-route'))) {
@@ -2325,7 +2393,8 @@ async function main() {
     if (modes.includes('route-diagnostic')) await routeStops(files, directory);
     if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     for (const mode of modes) {
-      if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms'], files.get('/v1_game_bg.wasm')));
+      if (mode === 'governor') results.push(await qualifyGovernor(cdp, serving.origin, output, files.get('/v1_game_bg.wasm')));
+      else if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms'], files.get('/v1_game_bg.wasm')));
       else if (mode === 'sprites-field' || mode === 'sprites-field-cost') results.push(await qualifySpriteField({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'], wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor,
         commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),

@@ -361,3 +361,14 @@
   promotion and resize. Metal verified the shared byte and slot limits, capture recovery and zero timed-copy
   allocations of pipelines, bind groups or query sets on the Mac render owner.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/drawable-capture/README.md).
+
+- 2026-11-24 M7 builds the frame host's clock-free quality governor, held-frame admission, registered aerial cadence and separate GPU and animation-frame timing paths. The scale recovery estimate projects the recorded forward and effect work onto the next prepared render area. The rest of the measured GPU time stays fixed in that estimate.
+- Metal verified policy, extent failure and cancellation, external knobs, thermal recovery and identical route authority. Hardware Chrome verified both timing paths. Ordered real-time Metal crops showed continuous silhouettes and lighting across all eight scale steps. [M7 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7/README.md)
+- M7 stays in progress. Current live Mac drawable acquisitions return `Occluded`, which leaves D7.2 and D7.3 open. The T2 time records show long intervals near load onset, which leaves D7.8 pacing open. [M7 handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7-handoff.md)
+
+- 2026-11-24 M7 resumed on current main. Delayed samples feed the governor through the ordered frame timing
+  collector, including Metal timestamp validation. The repository check passed 1,141 tests after the prescribed
+  serial rerun of six concurrent timeouts. All three fixed Metal arms again ended at tick 540 with authority hash
+  `edfe096ac1c674bf`. The unlocked 60 Hz window presented on all three arms of the shared-GPU run. Its loaded
+  governor returned to the unloaded miss rate in the comparison window but did not recover its starting scale
+  during the run. [Resumed target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/README.md)

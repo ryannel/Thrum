@@ -10,8 +10,8 @@ use crate::surface::{SurfaceAction, surface_action};
 
 use thrum_render::{
     capabilities::{
-        DeviceCapabilities, DeviceProfile, DeviceRecipe, DeviceWatch, OpenedDevice,
-        configure_surface, sdr_surface_config,
+        DeviceCapabilities, DeviceProfile, DeviceRecipe, DeviceRestriction, DeviceWatch,
+        OpenedDevice, configure_surface, sdr_surface_config,
     },
     present::SurfaceProfile,
     runtime::{DevicePrepareInputs, FrameHost, FrameWorld, PreparedDevice, SceneSource},
@@ -43,7 +43,12 @@ pub(super) async fn open_canvas_device(
     surface: &wgpu::Surface<'static>,
     extent: [u32; 2],
     generation: u64,
+    remove_features: wgpu::Features,
 ) -> Result<GraphicsDevice, String> {
+    let restriction = DeviceRestriction {
+        remove_features,
+        ..Default::default()
+    };
     let OpenedDevice {
         adapter,
         device,
@@ -53,6 +58,7 @@ pub(super) async fn open_canvas_device(
     } = DeviceRecipe {
         profile: DeviceProfile::Portable,
         generation,
+        restriction: (!remove_features.is_empty()).then_some(&restriction),
         ..Default::default()
     }
     .open(instance, Some(surface))
@@ -89,8 +95,10 @@ impl Replacement {
         inputs: DevicePrepareInputs,
         extent: [u32; 2],
         generation: u64,
+        remove_features: wgpu::Features,
     ) -> Result<Box<Self>, String> {
-        let gpu = open_canvas_device(instance, surface, extent, generation).await?;
+        let gpu =
+            open_canvas_device(instance, surface, extent, generation, remove_features).await?;
         let prepared = inputs
             .prepare(
                 &gpu.capabilities,
@@ -184,6 +192,7 @@ pub(super) struct Recovery {
     instance: wgpu::Instance,
     surface: Rc<wgpu::Surface<'static>>,
     pending: Option<Mailbox>,
+    remove_features: wgpu::Features,
     pub(super) error: Option<String>,
     last_attempted: u64,
     pub(super) generation: u64,
@@ -197,11 +206,13 @@ impl Recovery {
         instance: wgpu::Instance,
         surface: Rc<wgpu::Surface<'static>>,
         generation: u64,
+        remove_features: wgpu::Features,
     ) -> Self {
         Self {
             instance,
             surface,
             pending: None,
+            remove_features,
             error: None,
             last_attempted: generation,
             generation,
@@ -238,9 +249,17 @@ impl Recovery {
         self.attempts += 1;
         self.error = None;
         self.pending = Some(pending);
+        let remove_features = self.remove_features;
         wasm_bindgen_futures::spawn_local(async move {
-            let result =
-                Replacement::prepare(&instance, &surface, inputs, extent, generation).await;
+            let result = Replacement::prepare(
+                &instance,
+                &surface,
+                inputs,
+                extent,
+                generation,
+                remove_features,
+            )
+            .await;
             if let Some(destination) = destination.upgrade() {
                 *destination.borrow_mut() = Some(result);
             }

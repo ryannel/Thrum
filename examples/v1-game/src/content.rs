@@ -469,7 +469,22 @@ fn attach_selected(
             ]),
         ))?;
     } else {
-        host.set_game_contribution(Box::new(assets))?;
+        let contribution: Box<dyn thrum_render::contribution::SceneContribution> = Box::new(assets);
+        #[cfg(target_os = "macos")]
+        let contribution = match launch_value("THRUM_GOVERNOR_LOAD") {
+            Ok(rounds) => {
+                let rounds = rounds
+                    .parse::<u32>()
+                    .map_err(|_| "invalid debug load rounds")?;
+                if rounds > crate::governor_load::DebugLoad::MAX_ROUNDS {
+                    return Err("debug load rounds exceed the qualification limit".to_owned());
+                }
+                crate::governor_load::DebugLoad::new(230..320, rounds).alongside(contribution)
+            }
+            Err(std::env::VarError::NotPresent) => contribution,
+            Err(error) => return Err(error.to_string()),
+        };
+        host.set_game_contribution(contribution)?;
     }
     let camera = if let (Some(camera), Ok(height)) = (camera, launch_value("THRUM_CAMERA_HEIGHT")) {
         let mut eye = camera.eye();

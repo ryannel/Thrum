@@ -7,6 +7,7 @@ fn knob() -> QualityKnob {
         value: 2,
         range: 1..=8,
         invalidation: QualityInvalidation::EffectHistory,
+        governor_steps: None,
     }
 }
 

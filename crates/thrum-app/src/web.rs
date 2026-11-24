@@ -17,6 +17,7 @@ use thrum_core::sim::{WorldLifecycle, WorldLifecyclePolicy};
 use thrum_render::{
     capabilities::{DeviceWatch, SurfaceConfigError, configure_surface},
     contribution::SceneContribution,
+    governor::{DisplayRecord, ThermalState},
     present::SurfaceProfile,
     runtime::{FrameHost, FrameSample, PendingCapture, SceneSource, SurfaceOutput},
 };
@@ -142,6 +143,15 @@ pub struct WebShell<W: InlineWorld, V: SceneSource<W::Page>> {
     profile_enabled: bool,
     held_contribution: Option<Box<dyn SceneContribution>>,
     attach_error: Option<String>,
+    governor: Option<BrowserCadence>,
+}
+
+#[derive(Default)]
+struct BrowserCadence {
+    previous: Option<Duration>,
+    interval: Option<Duration>,
+    warmup: u8,
+    previous_present: Option<Duration>,
 }
 
 /// Create the canvas surface and first device, and let the game prepare its inline runtime.
@@ -152,6 +162,22 @@ pub async fn create_game<G: Game>(
     canvas: HtmlCanvasElement,
     generation: u64,
     game: &mut G,
+) -> Result<WebShell<G::World, G::Scene>, WebHostError>
+where
+    G::World: InlineWorld,
+{
+    create_game_with_feature_mask(canvas, generation, game, wgpu::Features::empty()).await
+}
+
+/// Create a browser host with selected features removed from its device recipe.
+///
+/// # Errors
+/// Returns a device, surface or game preparation failure.
+pub async fn create_game_with_feature_mask<G: Game>(
+    canvas: HtmlCanvasElement,
+    generation: u64,
+    game: &mut G,
+    remove_features: wgpu::Features,
 ) -> Result<WebShell<G::World, G::Scene>, WebHostError>
 where
     G::World: InlineWorld,
@@ -169,6 +195,7 @@ where
         &surface,
         [canvas.width().max(1), canvas.height().max(1)],
         generation,
+        remove_features,
     )
     .await
     .map_err(WebHostError::Device)?;
@@ -188,7 +215,8 @@ where
         )
         .await
         .map_err(WebHostError::Prepare)?;
-    let recovery = recovery::Recovery::new(instance, Rc::clone(&surface), generation);
+    let recovery =
+        recovery::Recovery::new(instance, Rc::clone(&surface), generation, remove_features);
     Ok(WebShell {
         canvas,
         adapter_name: gpu.adapter_name,
@@ -213,6 +241,7 @@ where
         profile_enabled: false,
         held_contribution: None,
         attach_error: None,
+        governor: None,
     })
 }
 
@@ -374,6 +403,29 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             self.needs_reconfigure = false;
             resize = false;
         }
+        if let Some(cadence) = &mut self.governor {
+            let measured = cadence
+                .previous
+                .replace(now)
+                .map(|then| now.saturating_sub(then));
+            if let Some(measured) = measured.filter(|value| !value.is_zero()) {
+                // Establish cadence from the initial unloaded animation frames.
+                if cadence.warmup < 20 {
+                    cadence.interval =
+                        Some(cadence.interval.map_or(measured, |old| old.min(measured)));
+                    cadence.warmup += 1;
+                }
+                if let Some(interval) = cadence.interval.filter(|_| cadence.warmup >= 20) {
+                    self.host.governor_display(
+                        DisplayRecord {
+                            interval,
+                            thermal: ThermalState::Nominal,
+                        },
+                        resize || self.needs_reconfigure || self.recovery.is_pending(),
+                    );
+                }
+            }
+        }
         let advanced = self.host.advance(now).map_err(|error| error.to_string())?;
         let can_acquire = advanced.can_acquire_serial()
             && extent[0] > 0
@@ -423,6 +475,25 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         } else {
             advanced.submit(None).map_err(|error| error.to_string())?
         };
+        if let Some(cadence) = &mut self.governor
+            && report.surface_presented
+            && !self
+                .device
+                .features()
+                .contains(wgpu::Features::TIMESTAMP_QUERY)
+            && let Some(order) = self.host.last_submission()
+        {
+            if self
+                .host
+                .governor_frame()
+                .is_some_and(|frame| frame.mark.held())
+            {
+                cadence.previous_present = None;
+            } else if let Some(previous) = cadence.previous_present.replace(now) {
+                self.host
+                    .governor_animation_frame(order, now.saturating_sub(previous));
+            }
+        }
         self.observe_world(report, now)?;
         self.collect_completed()
     }
@@ -463,6 +534,10 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// # Errors
     /// Returns a timestamp, retained-update or clock restart failure.
     pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), String> {
+        if let Some(cadence) = &mut self.governor {
+            cadence.previous = None;
+            cadence.previous_present = None;
+        }
         let now = self.clock.now(timestamp_ms)?;
         self.set_play(visible, self.clock.user_paused(), now)
     }
@@ -514,6 +589,19 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// The game's runtime, for reads.
     pub fn host(&self) -> &FrameHost<W, V> {
         &self.host
+    }
+
+    /// Enable dynamic quality driven by the page's animation cadence.
+    /// Returns false if the prepared scene has no supported render-scale steps.
+    pub fn enable_governor(&mut self) -> bool {
+        let admitted = self.host.enable_governor(DisplayRecord {
+            interval: Duration::ZERO,
+            thermal: ThermalState::Nominal,
+        });
+        if admitted {
+            self.governor = Some(BrowserCadence::default());
+        }
+        admitted
     }
 
     /// Set the drawn subrectangle of the next frame.

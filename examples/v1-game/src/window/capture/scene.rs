@@ -67,6 +67,10 @@ pub struct SceneCaptureRequest {
     pub windows: Option<String>,
     /// Scripted scale changes while driving the moving route.
     pub scale_trace: Option<RenderScaleTrace>,
+    /// Record the route endpoint authority, with an explicit governor arm.
+    pub governor_identity: Option<bool>,
+    /// Force a thermal excursion through the Mac platform record on the fixed route.
+    pub governor_thermal: bool,
     /// `THRUM_CAPTURE_PRESENT_CONTROL`: `on` keeps each checkpoint's surface texture too.
     pub present_control: Option<String>,
     /// `THRUM_CAPTURE_PARAMS`: parameter files, one still each.
@@ -153,6 +157,7 @@ pub(in crate::window) async fn run(
         held_keys: 0,
         replay_controls: false,
         capture_route: None,
+        governor_enabled: false,
         capture_eye: None,
         capture_cooked: None,
         cloud_capture: false,

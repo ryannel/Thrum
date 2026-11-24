@@ -87,6 +87,9 @@ pub(crate) struct AtmospherePrepared {
     sky_dependencies: [u32; 4],
     diffuse_dependencies: [u32; 4],
     aerial_dependencies: [[u32; 4]; 5],
+    aerial_quality: crate::contribution::QualitySettings,
+    aerial_age: u32,
+    pending_aerial_age: u32,
 }
 
 impl AtmospherePrepared {
@@ -106,6 +109,26 @@ impl AtmospherePrepared {
             exposure,
             far_aerial,
         )
+    }
+
+    pub(crate) fn aerial_quality(&self) -> &crate::contribution::QualityKnob {
+        &self.aerial_quality.knobs()[0]
+    }
+
+    pub(crate) fn set_aerial_quality(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Option<Result<(), crate::contribution::QualityError>> {
+        (self.aerial_quality().name == name).then(|| self.aerial_quality.set(name, value))
+    }
+
+    pub(crate) fn commit_aerial_quality(&mut self) {
+        self.aerial_quality.commit();
+    }
+
+    pub(crate) fn pending_aerial_age(&self) -> u32 {
+        self.pending_aerial_age
     }
 
     pub(crate) fn observer_uniform(&self) -> &wgpu::Buffer {
@@ -301,6 +324,19 @@ impl AtmospherePrepared {
             sky_dependencies: [0; 4],
             diffuse_dependencies: [0; 4],
             aerial_dependencies: [[0; 4]; 5],
+            aerial_quality: crate::contribution::QualitySettings::new(vec![
+                crate::contribution::QualityKnob {
+                    name: "atmosphere.aerial cadence".into(),
+                    effect: "Primary aerial lookup update interval in submitted frames",
+                    value: 1,
+                    range: 1..=4,
+                    invalidation: crate::contribution::QualityInvalidation::Age,
+                    governor_steps: Some([1, 2, 4]),
+                },
+            ])
+            .expect("prepared aerial update intervals"),
+            aerial_age: 0,
+            pending_aerial_age: 0,
         };
         result.update(queue, frame, view, [1, 1], None);
         result
@@ -391,9 +427,17 @@ impl AtmospherePrepared {
         let [a, b, c, d] = record.inverse_view_projection;
         let aerial_dependencies =
             [a, b, c, d, record.camera_altitude].map(|lane| lane.map(f32::to_bits));
-        if self.validity & SKY_VALID == 0 || aerial_dependencies != self.aerial_dependencies {
+        let dirty =
+            self.validity & SKY_VALID == 0 || aerial_dependencies != self.aerial_dependencies;
+        let age = self.aerial_age.saturating_add(1);
+        let cadence = self.aerial_quality.knobs()[0].value;
+        if self.validity & AERIAL_VALID == 0 || (dirty && (age >= cadence || view.history_reset()))
+        {
             self.validity &= !AERIAL_VALID;
             self.aerial_dependencies = aerial_dependencies;
+            self.pending_aerial_age = 0;
+        } else {
+            self.pending_aerial_age = age;
         }
         queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&record));
     }
@@ -410,6 +454,7 @@ impl AtmospherePrepared {
             volume.submitted();
         }
         self.submitted_sky = self.pending_sky.take();
+        self.aerial_age = self.pending_aerial_age;
         self.validity = TRANSPORT_VALID
             | SKY_VALID
             | DIFFUSE_VALID

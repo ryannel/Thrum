@@ -148,6 +148,7 @@ impl DiagnosticEffect {
                         value: 3,
                         range: 1..=16,
                         invalidation: thrum_render::contribution::QualityInvalidation::None,
+                        governor_steps: None,
                     },
                     thrum_render::contribution::QualityKnob {
                         name: "volume slices".into(),
@@ -156,6 +157,7 @@ impl DiagnosticEffect {
                         range: 1..=4,
                         invalidation:
                             thrum_render::contribution::QualityInvalidation::EffectHistory,
+                        governor_steps: None,
                     },
                     thrum_render::contribution::QualityKnob {
                         name: "catch-up ticks".into(),
@@ -163,6 +165,7 @@ impl DiagnosticEffect {
                         value: 8,
                         range: 1..=8,
                         invalidation: thrum_render::contribution::QualityInvalidation::ViewHistory,
+                        governor_steps: None,
                     },
                 ])
                 .expect("diagnostic quality defaults"),

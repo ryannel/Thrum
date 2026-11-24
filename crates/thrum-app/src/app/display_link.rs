@@ -2,15 +2,18 @@
 //! event loop; it never touches simulation, the renderer or the drawable.
 
 use objc2::{
-    DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained, runtime::AnyObject, sel,
+    AnyThread, DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained,
+    runtime::AnyObject, sel,
 };
 use objc2_app_kit::NSApplicationDidChangeScreenParametersNotification;
 use objc2_foundation::{
-    MainThreadMarker, NSNotification, NSNotificationCenter, NSObject, NSObjectProtocol, NSRunLoop,
-    NSRunLoopCommonModes,
+    MainThreadMarker, NSNotification, NSNotificationCenter, NSObject, NSObjectProtocol,
+    NSProcessInfo, NSProcessInfoThermalState, NSProcessInfoThermalStateDidChangeNotification,
+    NSRunLoop, NSRunLoopCommonModes,
 };
 use objc2_quartz_core::{CADisplayLink, CAFrameRateRange};
 use std::cell::Cell;
+use thrum_render::governor::ThermalState;
 use winit::{
     event_loop::EventLoopProxy,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
@@ -69,12 +72,69 @@ impl LinkTarget {
     }
 }
 
+define_class!(
+    // SAFETY: the observer carries a thread-safe event proxy and has no AppKit state.
+    #[unsafe(super = NSObject)]
+    #[thread_kind = AnyThread]
+    #[ivars = EventLoopProxy<UserEvent>]
+    struct ThermalObserver;
+
+    impl ThermalObserver {
+        // SAFETY: NSNotificationCenter supplies the notification to this selector.
+        #[unsafe(method(thermalStateChanged:))]
+        fn thermal_state_changed(&self, _notification: &NSNotification) {
+            self.publish();
+        }
+    }
+);
+
+impl ThermalObserver {
+    #[expect(
+        unsafe_code,
+        reason = "Foundation registration and NSObject initialization"
+    )]
+    fn start(wake: EventLoopProxy<UserEvent>) -> Retained<Self> {
+        let observer = Self::alloc().set_ivars(wake);
+        // SAFETY: the superclass initializer owns the allocated NSObject.
+        let observer: Retained<Self> = unsafe { msg_send![super(observer), init] };
+        // SAFETY: the selector accepts one notification and the owner unregisters before drop.
+        unsafe {
+            NSNotificationCenter::defaultCenter().addObserver_selector_name_object(
+                &observer,
+                sel!(thermalStateChanged:),
+                Some(NSProcessInfoThermalStateDidChangeNotification),
+                None,
+            );
+        }
+        observer.publish();
+        observer
+    }
+
+    fn publish(&self) {
+        let _ = self
+            .ivars()
+            .send_event(UserEvent::ThermalState(thermal_state()));
+    }
+}
+
+/// Read the Mac's current ProcessInfo thermal state.
+#[must_use]
+pub fn thermal_state() -> ThermalState {
+    match NSProcessInfo::processInfo().thermalState() {
+        NSProcessInfoThermalState::Nominal => ThermalState::Nominal,
+        NSProcessInfoThermalState::Fair => ThermalState::Fair,
+        NSProcessInfoThermalState::Serious => ThermalState::Serious,
+        _ => ThermalState::Critical,
+    }
+}
+
 /// One display link tied to the actual NSView selected by winit. Retaining the
 /// target and link together ensures the callback cannot outlive its event sink.
 pub(super) struct ViewDisplayLink {
     link: Retained<CADisplayLink>,
     target: Retained<LinkTarget>,
     observes_display: bool,
+    thermal: Retained<ThermalObserver>,
 }
 
 impl ViewDisplayLink {
@@ -86,6 +146,7 @@ impl ViewDisplayLink {
         window: &Window,
         wake: EventLoopProxy<UserEvent>,
         observes_display: bool,
+        preferred_refresh: Option<f32>,
     ) -> Result<Self, String> {
         let mtm = MainThreadMarker::new().ok_or("display link must start on AppKit main thread")?;
         let handle = window
@@ -94,6 +155,7 @@ impl ViewDisplayLink {
         let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
             return Err("macOS window did not provide an NSView".into());
         };
+        let thermal = ThermalObserver::start(wake.clone());
         let target = LinkTarget::new(wake, mtm);
         // SAFETY: winit owns this NSView for at least the lifetime of `window`.
         // The selector is declared on NSView in the macOS SDK and returns an
@@ -106,8 +168,8 @@ impl ViewDisplayLink {
         };
         link.setPreferredFrameRateRange(CAFrameRateRange {
             minimum: 60.0,
-            maximum: 120.0,
-            preferred: 120.0,
+            maximum: preferred_refresh.unwrap_or(120.0),
+            preferred: preferred_refresh.unwrap_or(120.0),
         });
         // SAFETY: creation and removal both occur on AppKit's main thread.
         unsafe { link.addToRunLoop_forMode(&NSRunLoop::mainRunLoop(), NSRunLoopCommonModes) };
@@ -127,6 +189,7 @@ impl ViewDisplayLink {
             link,
             target,
             observes_display,
+            thermal,
         })
     }
 }
@@ -138,6 +201,8 @@ impl Drop for ViewDisplayLink {
     )]
     fn drop(&mut self) {
         self.link.invalidate();
+        // SAFETY: this object is the registered thermal observer.
+        unsafe { NSNotificationCenter::defaultCenter().removeObserver(&self.thermal) };
         if self.observes_display {
             // SAFETY: This is the retained observer registered during start.
             unsafe { NSNotificationCenter::defaultCenter().removeObserver(&self.target) };

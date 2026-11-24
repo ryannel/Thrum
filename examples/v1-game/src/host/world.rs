@@ -54,6 +54,14 @@ impl WorldPort {
         }
     }
 
+    #[cfg(target_os = "macos")]
+    pub(super) fn inline_authority_hash(&self) -> Option<u64> {
+        match self {
+            Self::Inline(driver) => Some(driver.world.game().sim.authority_hash()),
+            Self::Threaded(_) | Self::Starting => None,
+        }
+    }
+
     pub(super) fn tick(&self) -> u64 {
         match self {
             Self::Inline(driver) => driver.tick(),

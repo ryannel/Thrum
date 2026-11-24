@@ -692,6 +692,11 @@ impl GameWorld {
     pub fn tick(&self) -> u64 {
         self.0.tick()
     }
+    #[cfg(target_os = "macos")]
+    pub(crate) fn inline_authority_hash(&self) -> Option<u64> {
+        self.0.inline_authority_hash()
+    }
+
     /// Delay before the next inline world deadline.
     #[must_use]
     pub fn next_due_in(&self) -> Option<Duration> {

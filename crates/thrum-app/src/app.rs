@@ -4,6 +4,7 @@
 mod device;
 mod display;
 mod display_link;
+pub use display_link::thermal_state;
 mod edit_flow;
 mod profile_recording;
 mod qualification;
@@ -13,7 +14,8 @@ mod render_actor;
 
 pub use display::{DisplayOverride, WindowDisplayOptions};
 pub use qualification::{
-    ExtentWindow, TransitionArm, WindowExtentCapture, WindowQualification, WindowTransitionProof,
+    ExtentWindow, GovernorProof, TransitionArm, WindowExtentCapture, WindowQualification,
+    WindowTransitionProof,
 };
 
 use std::{
@@ -79,6 +81,7 @@ enum UserEvent {
         number: u64,
     },
     DisplayParametersChanged,
+    ThermalState(thrum_render::governor::ThermalState),
     RenderDone,
     DeviceLost(u64),
     ControlsEdited,
@@ -102,6 +105,8 @@ struct App<G: Game> {
     display_link: Option<ViewDisplayLink>,
     window: Option<Arc<Window>>,
     display_target: Option<f64>,
+    governor_display: thrum_render::governor::DisplayRecord,
+    display_tick: u64,
     target_sequence: u64,
     display_link_callbacks: usize,
     late_target_evaluations: usize,
@@ -206,6 +211,11 @@ impl<G: WindowGame + 'static> App<G> {
             display_link: None,
             window: None,
             display_target: None,
+            governor_display: thrum_render::governor::DisplayRecord {
+                interval: Duration::ZERO,
+                thermal: thrum_render::governor::ThermalState::Nominal,
+            },
+            display_tick: 0,
             target_sequence: 0,
             display_link_callbacks: 0,
             late_target_evaluations: 0,
@@ -506,6 +516,15 @@ impl<G: WindowGame + 'static> App<G> {
             },
             WindowExtentCapture::attributes,
         );
+        let governor_proof = self
+            .transition_proof
+            .as_ref()
+            .is_some_and(|proof| proof.governor.is_some());
+        let attributes = if governor_proof {
+            attributes.with_window_level(winit::window::WindowLevel::AlwaysOnTop)
+        } else {
+            attributes
+        };
         let window = Arc::new(
             event_loop
                 .create_window(attributes.with_title(self.config.window_title))
@@ -604,12 +623,17 @@ impl<G: WindowGame + 'static> App<G> {
             })),
         )
         .map_err(|error| error.to_string())?;
-        panel.show(None);
+        if !governor_proof {
+            panel.show(None);
+        }
         self.panel = Some(panel);
         self.display_link = Some(ViewDisplayLink::start(
             self.window.as_ref().ok_or("window missing")?,
             wake.clone(),
             self.display.is_some(),
+            self.transition_proof
+                .as_ref()
+                .and_then(|proof| proof.governor.map(|_| 60.0)),
         )?);
         self.adapter_name.clone_from(&gpu.adapter_name);
         self.surface_format = Some(gpu.config.format);
@@ -915,6 +939,8 @@ impl<G: WindowGame + 'static> App<G> {
                 profile_revision: crate::profile::revision(self.game.controls()),
                 timing_requested: self.timing_requested(),
                 backing_scale,
+                governor_display: self.governor_display,
+                display_tick: self.display_tick,
                 edits: self.edits.pending(),
             },
         });
@@ -1303,6 +1329,9 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 callback,
                 number,
             } => {
+                self.display_tick = number;
+                self.governor_display.interval =
+                    Duration::try_from_secs_f64(target - callback).unwrap_or_default();
                 self.profile.set_available(self.recovery.ready());
                 if let Ok(timestamp) = Duration::try_from_secs_f64(callback) {
                     self.profile.callback(timestamp);
@@ -1362,6 +1391,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 self.edits.request();
             }
             UserEvent::DisplayParametersChanged => self.refresh_display_record(),
+            UserEvent::ThermalState(state) => self.governor_display.thermal = state,
             UserEvent::WorldAdvanced => {
                 if let Err(error) = self.reconcile_pause() {
                     self.error = Some(error);

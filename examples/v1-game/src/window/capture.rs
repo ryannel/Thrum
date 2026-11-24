@@ -735,7 +735,11 @@ async fn record(
         .map(|text| HazeTake::parse(&text))
         .transpose()?;
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
-    let motion_capture = mode == "realtime" && is_motion_capture(scenario);
+    let governed = matches!(capture_output, RuntimeCaptureOutput::Governor { .. });
+    if governed && (scenario != "route" || mode != "realtime") {
+        return Err("governor capture requires the real-time moving route".to_owned());
+    }
+    let motion_capture = mode == "realtime" && (governed || is_motion_capture(scenario));
     let elapsed_observation = motion_capture || sprite_motion(scenario);
     let sprite_scroll_timings = scenario == "sprites-scroll"
         && crate::content::launch_value("THRUM_SPRITE_PASS_TIMING").as_deref() == Ok("1");
@@ -746,7 +750,11 @@ async fn record(
         prepare_parameters(&mut driver, scenario, &mode, haze_take, parity_checkpoint)?;
     reset_native_capture(&mut driver);
     let sprite_cost = scenario == "sprites-field-cost";
-    let observer_only = sprite_cost || capture_output == RuntimeCaptureOutput::ObserverOnly;
+    let observer_only = sprite_cost
+        || matches!(
+            capture_output,
+            RuntimeCaptureOutput::ObserverOnly | RuntimeCaptureOutput::Governor { images: false }
+        );
     if observer_only && !motion_capture && !sprite_cost {
         return Err(
             "observer-only control requires realtime exit or content-edit motion".to_owned(),
@@ -780,6 +788,17 @@ async fn record(
     // Match the 60 Hz world and Chrome motion take. The native window and
     // existing 120 Hz capture scenarios keep their own opportunity cadence.
     let requested_hz = capture_hz(scenario, motion_capture);
+    let mut quality_trace = Vec::new();
+    if governed
+        && !driver
+            .host_mut()
+            .enable_governor(thrum_render::governor::DisplayRecord {
+                interval: Duration::from_secs(1) / requested_hz,
+                thermal: thrum_render::governor::ThermalState::Nominal,
+            })
+    {
+        return Err("governor capture requires a prepared TAAU scene".to_owned());
+    }
     let mut clock = OpportunityClock::new(origin, requested_hz, timebase)?;
     let mut running = false;
     let mut night_variant = false;
@@ -788,7 +807,11 @@ async fn record(
         native_recovery::Recovery::new(recovery_mode, capabilities.generation(), hardware);
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
-    let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);
+    let (hard_end, soft_end, world_end) = if governed {
+        (12.0, 10.0, f64::INFINITY)
+    } else {
+        scenario_bounds(scenario, recovery_mode)
+    };
     loop {
         if mode == "still" || held_sample(scenario) {
             break;
@@ -882,6 +905,20 @@ async fn record(
         if observer_only && report.submitted {
             trace.observe_route_end(report.tick, returned);
         }
+        if governed
+            && report.submitted
+            && let Some(quality) = driver.host().governor_frame()
+        {
+            quality_trace.push(json!({
+                "submission": driver.last_submission(), "tick": report.tick,
+                "scale": quality.state.scale.percent(), "tier": quality.state.tier,
+                "reason": format!("{:?}", quality.state.reason),
+                "source": quality.source.map(|source| format!("{source:?}")),
+                "knobs": quality.knobs.iter().map(|knob| (&knob.name, knob.value))
+                    .collect::<std::collections::BTreeMap<_, _>>(),
+                "aerial_age": quality.aerial_age,
+            }));
+        }
         if t >= 3.0 && report.submitted && final_hold.is_none() {
             final_hold = Some(origin.elapsed());
         }
@@ -944,7 +981,10 @@ async fn record(
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     result["display_phase_counts"] = phase_counts;
-    result["gpu_pass_timing"] = json!(!elapsed_observation || sprite_scroll_timings);
+    result["gpu_pass_timing"] = json!(governed || !elapsed_observation || sprite_scroll_timings);
+    if governed {
+        result["governor"] = json!(quality_trace);
+    }
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);

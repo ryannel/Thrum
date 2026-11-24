@@ -1,0 +1,254 @@
+"""Qualify the quality governor against the authored route on Mac Metal."""
+
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+from statistics import median
+
+from apple_presentation import ROOT, mac_binary, read_rows, run
+from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
+
+LOAD = (230, 320)
+ROUNDS = 4600
+WINDOW_EXTENT = (960, 540)
+CADENCE = "atmosphere.aerial cadence"
+
+
+def environment(output):
+    binary, env = mac_binary(cook=True, counters=True)
+    store = output / "store"
+    run(str(ROOT / "target/release/thrum-cook"), "cook", str(SOURCE), str(store))
+    route = json.loads(MOVING_ROUTE.read_text())
+    if store_root(store) != route["cooked_root"]:
+        raise ValueError("cooked store does not match the moving route")
+    env.update(THRUM_ASSET_STORE=str(store), THRUM_SCENE="valley",
+               THRUM_RECIPE="portable", THRUM_RECONSTRUCTION="taau",
+               THRUM_ROUTE_OVERLAY=route["overlay"])
+    return binary, env, route
+
+
+def sample_changes(samples):
+    changes = []
+    for sample in samples:
+        quality = sample["quality"]
+        if quality is None:
+            continue
+        state = (quality["scale"], quality["tier"])
+        if not changes or changes[-1][0] != state:
+            changes.append((state, sample))
+    return [sample for _, sample in changes]
+
+
+def window_arm(output, binary, env, route, name, *, enabled=True, load=0, thermal=False):
+    directory = output / name
+    directory.mkdir()
+    route_path = output / "window-route.json"
+    route_path.write_text(json.dumps(dict(route, render_extent=WINDOW_EXTENT)))
+    launch = dict(env, THRUM_GOVERNOR="on" if enabled else "off",
+                  THRUM_GOVERNOR_LOAD=str(load), THRUM_GOVERNOR_ROUTE=str(route_path),
+                  THRUM_GOVERNOR_RECORD="thermal" if thermal else "observed",
+                  THRUM_MAC_TRANSITION=str(directory), THRUM_MAC_TRANSITION_ARM="baseline",
+                  THRUM_V1_FRAMES="520")
+    with (directory / "game.log").open("w") as log:
+        result = subprocess.run(["/usr/bin/caffeinate", "-d", "-i", "-u", str(binary)],
+                                cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,
+                                check=False, timeout=100)
+    if result.returncode:
+        raise ValueError(f"Mac window could not finish {name}: {(directory / 'game.log').read_text()}")
+    game = (directory / "game.log").read_text()
+    if "adapter=Apple M3 Max" not in game or "x".join(map(str, WINDOW_EXTENT)) not in game:
+        raise ValueError(f"wrong running Metal target in {directory}")
+    rows = read_rows(directory / "frames.jsonl")
+    display = read_rows(directory / "display.jsonl")
+    if not rows or not display or rows[-1]["world_tick"] < LOAD[1] + 180:
+        raise ValueError(f"Metal window did not complete the route in {directory}")
+    samples = [sample for row in rows for sample in row["governor"]["samples"]]
+    if not samples or any((sample["quality"] is not None) != enabled for sample in samples):
+        raise ValueError(f"governor enabled state or sample coverage is wrong in {directory}")
+    if not any(sample["gpu_ns"] for sample in samples):
+        raise ValueError(f"missing Metal GPU timestamps in {directory}")
+    if load and not any(sample["debug_load_ns"] for sample in samples):
+        raise ValueError(f"missing GPU work from the debug load in {directory}")
+    return dict(
+        directory=str(directory), rows=rows, samples=samples, changes=sample_changes(samples),
+        display_hz=round(1 / median(row["target"] - row["media"] for row in display), 2),
+        proxy="Display-link opportunities with no render-owner present call (render-side proxy)",
+    )
+
+
+def miss_rate(arm, first, until):
+    rows = [row for row in arm["rows"] if first <= row["world_tick"] < until]
+    if len(rows) < 12:
+        raise ValueError(f"missing display opportunities in {arm['directory']} at {first}..{until}")
+    start, end = rows[0], rows[-1]
+    count = end["governor"]["missed_present_proxy"] - start["governor"]["missed_present_proxy"]
+    ticks = end["sequence"] - start["sequence"]
+    if ticks <= 0:
+        raise ValueError("display sequence did not advance")
+    return dict(missed=count, ticks=ticks, rate=count / ticks)
+
+
+def validate_recovery(changes, *, scale=False):
+    field = "scale" if scale else "tier"
+    recoveries = []
+    levels = [100, 85, 75, 67, 50] if scale else [0, 1, 2]
+    for previous, row in zip(changes, changes[1:]):
+        if row["quality"]["reason"] != "Recovery":
+            continue
+        if previous["quality"][field] == row["quality"][field]:
+            continue
+        if levels.index(previous["quality"][field]) - levels.index(row["quality"][field]) != 1:
+            raise ValueError(f"recovery skipped a prepared {field} step")
+        if row["observation_ns"] - previous["observation_ns"] < 1_000_000_000:
+            raise ValueError(f"recovery changed {field} within its one-second minimum period")
+        recoveries.append(row)
+    if not recoveries:
+        raise ValueError(f"governor never recovered its {field}")
+    return recoveries
+
+
+def mac_governor(output, *, steady=False, capture=False):
+    binary, env, route = environment(output)
+    if steady:
+        arm = window_arm(output, binary, env, route, "steady")
+        last_tick = route["origin_tick"] + route["keys"][-1]["tick"]
+        changes = [row for row in arm["changes"] if row["tick"] <= last_tick]
+        if not changes:
+            raise ValueError("no recorded quality")
+        count = sum(a["quality"]["scale"] != b["quality"]["scale"]
+                    for a, b in zip(changes, changes[1:]))
+        if count > 2:
+            raise ValueError(f"steady route changed scale {count} times in {arm['directory']}")
+        return dict(target="mac-metal", scale_changes=count, display_hz=arm["display_hz"],
+                    changes=changes, binary_sha256=digest(binary))
+
+    if capture:
+        return mac_governor_capture(output, binary, env, route)
+
+    arms = {
+        "steady": window_arm(output, binary, env, route, "steady"),
+        "loaded": window_arm(output, binary, env, route, "loaded", load=ROUNDS),
+        "loaded-off": window_arm(output, binary, env, route, "loaded-off", enabled=False, load=ROUNDS),
+    }
+    changes = arms["loaded"]["changes"]
+    if not changes:
+        raise ValueError("missing governed frame samples")
+    samples = arms["loaded"]["samples"]
+    loaded = [sample for sample in samples if sample["debug_load_ns"]]
+    previous = next(sample for sample in reversed(samples) if sample["tick"] < LOAD[0])
+    starting_scale = previous["quality"]["scale"]
+    drop = next((row for row in changes
+                 if row["tick"] >= LOAD[0] and row["quality"]["scale"] < starting_scale), None)
+    if drop is None or drop["tick"] > loaded[0]["tick"] + 12:
+        raise ValueError(f"no panic step in the routed load window, first step {drop}")
+    recoveries = validate_recovery(changes, scale=True)
+    if not any(row["tick"] >= LOAD[1] and row["quality"]["scale"] >= starting_scale
+               for row in recoveries):
+        raise ValueError(f"scale did not recover at least to its starting step {starting_scale}")
+    first = max(drop["tick"] + 20, LOAD[0] + 30)
+    comparison = {name: miss_rate(arm, first, LOAD[1]) for name, arm in arms.items()}
+    baseline, governed, disabled = (comparison[name] for name in ("steady", "loaded", "loaded-off"))
+    # Two opportunities of measurement tolerance at window boundaries.
+    if (governed["rate"] > baseline["rate"] + 2 / governed["ticks"]
+            or disabled["rate"] <= baseline["rate"] + 2 / disabled["ticks"]
+            or disabled["rate"] <= governed["rate"]):
+        raise ValueError(f"loaded/off did not falsify a return to baseline proxy rate: {comparison}")
+    return dict(target="mac-metal", comparison=comparison, changes=changes, load=LOAD,
+                rounds=ROUNDS, proxy=arms["loaded"]["proxy"], display_hz=arms["loaded"]["display_hz"],
+                binary_sha256=digest(binary))
+
+
+def mac_governor_capture(output, binary, env, route):
+    width, height = WINDOW_EXTENT
+    route_path = output / "capture-route.json"
+    route_path.write_text(json.dumps(dict(route, render_extent=WINDOW_EXTENT)))
+    arms = {}
+    for name in ("tap-off", "tap-on"):
+        directory = output / name
+        flags = ["--observer-only"] if name == "tap-off" else []
+        run("python3", "scripts/capture_v1_runtime.py", "--binary", str(binary),
+            "--store", env["THRUM_ASSET_STORE"], "--route", str(route_path),
+            "--case", "route", "--mode", "realtime", "--extent", str(width), str(height),
+            "--reconstruction", "taau", "--recipe", "portable", "--output", str(directory),
+            *flags, env=dict(env, THRUM_GOVERNOR="on", THRUM_GOVERNOR_LOAD=str(ROUNDS)), timeout=180)
+        runtime = json.loads((directory / "runtime.json").read_text())
+        manifest = json.loads((directory / "manifest.json").read_text())
+        if runtime["backend"] != "Metal" or manifest["timebase"] != "realtime":
+            raise ValueError("wrong capture target or timebase")
+        if not manifest["complete"]:
+            raise ValueError(f"incomplete realtime capture in {directory}")
+        quality = runtime["governor"]
+        loaded = [row for row in quality if LOAD[0] <= row["tick"] < LOAD[1]]
+        if not loaded or min(row["scale"] for row in loaded) >= quality[0]["scale"]:
+            raise ValueError(f"real-time governor did not lower under load in {directory}")
+        if quality[-1]["scale"] <= min(row["scale"] for row in loaded):
+            raise ValueError(f"real-time governor did not recover in {directory}")
+        timings = [row for row in runtime["opportunities"] if 330 <= row["tick"] < 420]
+        arms[name] = dict(
+            directory=str(directory), submitted=len(quality), captured=len(manifest["records"]),
+            step_thread_median_ms=median(row["step_thread_cpu_ns"] for row in timings) / 1e6,
+            step_wall_median_ms=median(row["step_wall_ns"] for row in timings) / 1e6,
+            drain_wall_median_ms=median(row["drain_wall_ns"] for row in timings) / 1e6,
+        )
+    return dict(target="mac-metal", capture_mode="realtime", binary_sha256=digest(binary), arms=arms)
+
+
+def mac_governor_identity(output):
+    binary, env, _route = environment(output)
+    arms = {}
+    for name, enabled, load in (("off", False, 0), ("on", True, 0), ("loaded", True, ROUNDS)):
+        directory = output / name
+        launch = dict(env, THRUM_CAPTURE_SCENE=str(directory), THRUM_CAPTURE_ROUTE=str(MOVING_ROUTE),
+                      THRUM_GOVERNOR="on" if enabled else "off", THRUM_GOVERNOR_LOAD=str(load),
+                      THRUM_GOVERNOR_IDENTITY="1")
+        run(str(binary), env=launch, timeout=300)
+        header = read_rows(directory / "route.jsonl")[0]
+        if header["backend"] != "Metal" or "Apple M3 Max" not in header["adapter"]:
+            raise ValueError(f"wrong identity target: {header}")
+        arms[name] = json.loads((directory / "authority.json").read_text())
+    if (len({(arm["tick"], arm["hash"]) for arm in arms.values()}) != 1
+            or arms["loaded"]["loaded_frames"] == 0
+            or arms["loaded"]["minimum_scale"] >= 100
+            or arms["off"]["loaded_frames"] or arms["on"]["loaded_frames"]):
+        raise ValueError(f"authority or forced-load witness mismatch: {arms}")
+    return dict(target="mac-metal", arms=arms, binary_sha256=digest(binary))
+
+
+def mac_governor_thermal(output):
+    binary, env, route = environment(output)
+    directory = output / "thermal"
+    route_path = output / "thermal-route.json"
+    route_path.write_text(json.dumps(dict(route, render_extent=WINDOW_EXTENT)))
+    launch = dict(env, THRUM_CAPTURE_SCENE=str(directory), THRUM_CAPTURE_ROUTE=str(route_path),
+                  THRUM_GOVERNOR_RECORD="thermal")
+    run(str(binary), env=launch, timeout=300)
+    header = read_rows(directory / "route.jsonl")[0]
+    if header["backend"] != "Metal" or "Apple M3 Max" not in header["adapter"]:
+        raise ValueError(f"wrong thermal target: {header}")
+    trace = json.loads((directory / "thermal.json").read_text())
+    states = sample_changes(trace["samples"])
+    changes = [row for index, row in enumerate(states)
+               if index == 0 or row["quality"]["tier"] != states[index - 1]["quality"]["tier"]]
+    actual = [(row["quality"]["tier"], row["quality"]["knobs"][CADENCE],
+               row["quality"]["reason"], row["quality"]["thermal"]) for row in changes]
+    expected = [(0, 1, "Initial", "Nominal"), (1, 2, "Thermal", "Serious"),
+                (2, 4, "Thermal", "Serious"), (1, 2, "Recovery", "Nominal"),
+                (0, 1, "Recovery", "Nominal")]
+    if actual != expected:
+        raise ValueError(f"thermal record did not degrade and restore effect tier: {actual}")
+    validate_recovery(changes)
+    pipelines = trace["pipelines"]
+    if pipelines is None or pipelines[0] != pipelines[1] or pipelines[1][1] != 0:
+        raise ValueError(f"thermal record created a pipeline: {pipelines}")
+    if not any(sample["quality"]["aerial_age"] and sample["quality"]["tier"] == 2
+               for sample in trace["samples"]):
+        raise ValueError("aerial cadence did not age its retained output")
+    return dict(target="mac-metal", changes=changes, pipeline_counts=pipelines,
+                platform_thermal=trace["platform_thermal"], scope="fixed route on the Metal frame host",
+                binary_sha256=digest(binary))
+
+
+def digest(path: Path):
+    with path.open("rb") as source:
+        return hashlib.file_digest(source, "sha256").hexdigest()

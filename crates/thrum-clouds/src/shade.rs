@@ -173,6 +173,7 @@ impl Shade {
                     value: profile.refresh_stride.trailing_zeros(),
                     range: 0..=2,
                     invalidation: QualityInvalidation::EffectHistory,
+                    governor_steps: None,
                 },
                 QualityKnob {
                     name: "cloud local light samples".into(),
@@ -180,6 +181,7 @@ impl Shade {
                     value: profile.light_samples,
                     range: 0..=3,
                     invalidation: QualityInvalidation::EffectHistory,
+                    governor_steps: None,
                 },
             ])
             .map_err(|_| Error::Unsupported("Sky quality declaration"))?,

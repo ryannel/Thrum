@@ -32,6 +32,8 @@ pub(super) struct FrameEdits<E> {
     pub(super) profile_revision: u64,
     pub(super) timing_requested: bool,
     pub(super) backing_scale: u64,
+    pub(super) governor_display: thrum_render::governor::DisplayRecord,
+    pub(super) display_tick: u64,
     pub(super) edits: E,
 }
 pub(super) enum RenderJob<E> {
@@ -263,7 +265,11 @@ impl<G: Game> Actor<G> {
                 if let Some(proof) = &mut self.transition_proof {
                     proof.begin_frame(request.sequence);
                 }
-                backing = Some((request.extent, request.platform.backing_scale));
+                backing = Some((
+                    request.extent,
+                    request.platform.backing_scale,
+                    request.platform.governor_display,
+                ));
                 let frame = self.frame(&request, &mut reply);
                 if let Some(proof) = &mut self.transition_proof {
                     proof.stage("collecting frame completions and reply");
@@ -340,8 +346,8 @@ impl<G: Game> Actor<G> {
         reply.platform.counters = FrameCounters::read(&self.host);
         reply.platform.readback = G::readback(&self.host);
         reply.platform.worker_wall = start.elapsed();
-        if let (Some(proof), Some((extent, scale))) = (&mut self.transition_proof, backing)
-            && let Err(error) = proof.frame(&reply, extent, scale, self.host.last_submission())
+        if let (Some(proof), Some((extent, scale, display))) = (&mut self.transition_proof, backing)
+            && let Err(error) = proof.frame(&reply, extent, scale, display, &self.host)
         {
             reply.outcome = RenderOutcome::Frame(Err(error.to_string()));
         }
@@ -395,6 +401,14 @@ impl<G: Game> Actor<G> {
             && self.refused_surface_generation != Some(request.surface_generation)
             && !self.needs_reconfigure;
         let now = self.origin.elapsed();
+        let observed = request.platform.governor_display;
+        let display = self.transition_proof.as_ref().map_or(observed, |proof| {
+            proof.display_record(observed, request.platform.display_tick)
+        });
+        self.host
+            .governor_display(display, self.transition.holds_governor());
+        self.host
+            .governor_display_tick(now, request.platform.display_tick);
         let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         reply.target_status = Some(lead.status);
         self.host.set_presentation_lead(lead.duration);
@@ -507,6 +521,7 @@ impl<G: Game> Actor<G> {
         ensure_device(&self.gpu.watch)?;
         if report.surface_presented {
             self.gpu.queue.present(frame);
+            self.host.governor_present_called();
             if let Some(proof) = &mut self.transition_proof {
                 proof.presented();
             }

@@ -1154,6 +1154,32 @@ impl PreparedSynthetic {
             .map(raytrace::LampShadows::unshadowed)
     }
 
+    pub(crate) fn aerial_quality(&self) -> Option<crate::contribution::QualityKnob> {
+        self.atmosphere
+            .as_ref()
+            .map(|atmosphere| atmosphere.aerial_quality().clone())
+    }
+
+    pub(crate) fn set_aerial_quality(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Option<Result<(), crate::contribution::QualityError>> {
+        self.atmosphere.as_mut()?.set_aerial_quality(name, value)
+    }
+
+    pub(crate) fn commit_aerial_quality(&mut self) {
+        if let Some(atmosphere) = &mut self.atmosphere {
+            atmosphere.commit_aerial_quality();
+        }
+    }
+
+    pub(crate) fn aerial_age(&self) -> Option<u32> {
+        self.atmosphere
+            .as_ref()
+            .map(AtmospherePrepared::pending_aerial_age)
+    }
+
     /// Set and commit the production lamp quality knob for an offscreen probe.
     /// # Errors
     /// The scene must trace lamps and the limit must fit the cluster capacity.

@@ -57,6 +57,8 @@ pub enum QualityInvalidation {
     /// Preserve histories.
     #[default]
     None,
+    /// Retain the effect history and report its age.
+    Age,
     /// Reset only the effect's owned histories.
     EffectHistory,
     /// Reset the view's reconstruction history as well.
@@ -76,9 +78,12 @@ pub struct QualityKnob {
     pub range: std::ops::RangeInclusive<u32>,
     /// Invalidation when this value changes.
     pub invalidation: QualityInvalidation,
+    /// Prepared values for the three governor tiers, if this control participates.
+    pub governor_steps: Option<[u32; 3]>,
 }
 
 /// Bounded staging for an effect's quality controls. Repeated requests coalesce.
+#[derive(Clone)]
 pub struct QualitySettings {
     knobs: Vec<QualityKnob>,
     pending: Vec<Option<u32>>,
@@ -90,7 +95,14 @@ impl QualitySettings {
     pub fn new(knobs: Vec<QualityKnob>) -> Result<Self, QualityError> {
         let mut names = std::collections::BTreeSet::new();
         for knob in &knobs {
-            if !names.insert(&knob.name) || !knob.range.contains(&knob.value) {
+            if !names.insert(&knob.name)
+                || !knob.range.contains(&knob.value)
+                || knob.governor_steps.is_some_and(|steps| {
+                    steps[0] != knob.value
+                        || steps.iter().any(|value| !knob.range.contains(value))
+                        || knob.invalidation == QualityInvalidation::ViewHistory
+                })
+            {
                 return Err(QualityError::InvalidDefinition {
                     name: knob.name.clone(),
                 });

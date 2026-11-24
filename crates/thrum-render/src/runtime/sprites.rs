@@ -118,6 +118,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 lead_status: self.lead_status,
                 submission_order: 0,
                 render_extent: self.render_extent,
+                governor: None,
                 history_identity: [0; 2],
                 jitter_phase: None,
                 completed_ticks: frame.completed_ticks,

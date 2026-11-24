@@ -5,7 +5,10 @@
 use std::{fs::File, path::Path, time::Duration};
 
 use thrum_core::ClockConfig;
-use thrum_render::{present::SurfaceProfile, runtime::CaptureLimits, synthetic::CaptureSource};
+use thrum_render::{
+    governor::DisplayRecord, present::SurfaceProfile, runtime::CaptureLimits,
+    synthetic::CaptureSource,
+};
 
 use super::{
     Driver, RenderScaleTrace, SceneCaptureRequest,
@@ -139,7 +142,28 @@ pub(super) fn record(
     driver.host_mut().world_mut().resume(Duration::ZERO)?;
     let mut pending = Some(route.clone());
     let scale_arm = request.scale_trace;
+    let governor_identity = request.governor_identity.is_some();
+    let thermal_proof = request
+        .governor_thermal
+        .then_some(thrum_app::GovernorProof::Thermal {
+            from: 235,
+            until: 310,
+        });
+    let display = DisplayRecord {
+        interval: Duration::from_secs(1) / tick_hz,
+        thermal: thrum_app::thermal_state(),
+    };
+    if (request.governor_identity == Some(true) || thermal_proof.is_some())
+        && !driver.host_mut().enable_governor(display)
+    {
+        return Err("governor proof requires a prepared TAAU scene".to_owned());
+    }
+    #[cfg(feature = "creation-counters")]
+    let mut thermal_pipelines = None;
+    let mut thermal_rows = Vec::new();
     let mut scale = thrum_render::synthetic::RenderScale::Native;
+    let mut loaded_frames = 0;
+    let mut minimum_scale = 100;
     loop {
         let host = driver.host_mut();
         let tick = host.world().tick();
@@ -153,6 +177,13 @@ pub(super) fn record(
         }
         let time = Duration::from_secs_f64(host.route_step_ms(phi) / 1000.0);
         let next_tick = tick + 1;
+        if let Some(proof) = thermal_proof {
+            #[cfg(feature = "creation-counters")]
+            if next_tick == 234 {
+                thermal_pipelines = Some(pipeline_counts(host));
+            }
+            host.governor_display(proof.display_record(display, next_tick), false);
+        }
         if scale_arm.is_some() {
             let next_scale =
                 crate::camera::route_render_scale(next_tick.saturating_sub(route.origin_tick));
@@ -172,10 +203,11 @@ pub(super) fn record(
                     .iter()
                     .any(|[first, last]| (*first..=*last).contains(&routed))
             });
-        let capture = window
-            || checkpoints
-                .peek()
-                .is_some_and(|checkpoint| route.origin_tick + checkpoint.tick == tick + 1);
+        let capture = thermal_proof.is_none()
+            && (window
+                || checkpoints
+                    .peek()
+                    .is_some_and(|checkpoint| route.origin_tick + checkpoint.tick == tick + 1));
         if capture {
             host.enable_submitted_capture_from(tick + 1, CaptureLimits::default(), source)?;
         }
@@ -195,6 +227,38 @@ pub(super) fn record(
         }
         let index = u32::try_from(frame.tick).map_err(|error| error.to_string())?;
         let sample = completed_sample(host, index, frame.tick)?;
+        if governor_identity {
+            loaded_frames += u32::from(
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .and_then(|gpu| {
+                        gpu.passes()
+                            .iter()
+                            .find(|pass| pass.name.ends_with("debug load"))
+                    })
+                    .is_some(),
+            );
+            if let Some(governor) = &sample.governor {
+                minimum_scale = minimum_scale.min(governor.state.scale.percent());
+            }
+        }
+        if thermal_proof.is_some()
+            && let Some(quality) = &sample.governor
+        {
+            thermal_rows.push(serde_json::json!({
+                "tick": sample.tick, "submission": sample.submission_order,
+                "observation_ns": sample.observation.as_nanos(),
+                "quality": {
+                    "scale": quality.state.scale.percent(), "tier": quality.state.tier,
+                    "reason": format!("{:?}", quality.state.reason),
+                    "thermal": format!("{:?}", quality.display.thermal),
+                    "knobs": quality.knobs.iter().map(|knob| (&knob.name, knob.value))
+                        .collect::<std::collections::BTreeMap<_, _>>(),
+                    "aerial_age": quality.aerial_age,
+                },
+            }));
+        }
         let alpha = sample.presentation_alpha;
         #[expect(clippy::cast_possible_truncation, reason = "phase is a small fraction")]
         if (alpha - phi as f32).abs() > ALPHA_TOLERANCE {
@@ -273,10 +337,54 @@ pub(super) fn record(
             }
         }
     }
+    if thermal_proof.is_some() {
+        #[cfg(feature = "creation-counters")]
+        let pipelines = thermal_pipelines.map(|before| [before, pipeline_counts(driver.host())]);
+        #[cfg(not(feature = "creation-counters"))]
+        let pipelines: Option<[[u64; 2]; 2]> = None;
+        std::fs::write(
+            directory.join("thermal.json"),
+            serde_json::json!({
+                "samples": thermal_rows, "pipelines": pipelines,
+                "platform_thermal": [format!("{:?}", display.thermal),
+                                     format!("{:?}", thrum_app::thermal_state())],
+            })
+            .to_string(),
+        )
+        .map_err(|error| error.to_string())?;
+    }
+    if governor_identity {
+        let world = driver.host().world();
+        let hash = world
+            .inline_authority_hash()
+            .ok_or("identity needs the inline game world")?;
+        std::fs::write(
+            directory.join("authority.json"),
+            serde_json::json!({
+                "tick": world.tick(), "hash": format!("{hash:016x}"),
+                "loaded_frames": loaded_frames, "minimum_scale": minimum_scale,
+            })
+            .to_string(),
+        )
+        .map_err(|error| error.to_string())?;
+    }
     if let Some(missed) = checkpoints.next() {
         return Err(format!("route ended before checkpoint {}", missed.name));
     }
     Ok(())
+}
+
+#[cfg(feature = "creation-counters")]
+fn pipeline_counts(host: &crate::host::Runtime) -> [u64; 2] {
+    let report = host.creation_report();
+    [
+        report
+            .pipelines
+            .iter()
+            .map(|row| row.render + row.compute + row.mesh)
+            .sum(),
+        report.violations,
+    ]
 }
 
 fn capture_windows(value: Option<&str>, last_tick: u64) -> Result<Vec<[u64; 2]>, String> {

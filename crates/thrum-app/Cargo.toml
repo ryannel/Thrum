@@ -29,7 +29,7 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std", "meta
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
 objc2 = "=0.6.5"
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["NSApplication", "NSScreen", "NSView", "NSWindow", "objc2-quartz-core"] }
-objc2-foundation = { version = "=0.3.2", default-features = false, features = ["NSArray", "NSNotification", "NSObject", "NSRunLoop", "NSString"] }
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["NSArray", "NSNotification", "NSObject", "NSProcessInfo", "NSRunLoop", "NSString"] }
 objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["CABase", "CADisplayLink", "CAFrameRateRange", "CALayer", "CAMetalLayer", "objc2-core-foundation"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

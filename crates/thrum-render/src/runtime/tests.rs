@@ -36,6 +36,7 @@ fn sample(tick: u64) -> FrameSample {
         history_identity: [0; 2],
         jitter_phase: None,
         render_extent: [64; 2],
+        governor: None,
         submission_order: tick,
         completed_ticks: 1,
         queued_ticks: 0,

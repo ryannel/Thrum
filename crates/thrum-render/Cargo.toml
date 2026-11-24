@@ -325,3 +325,17 @@ path = "tests/timing_validity.rs"
 [[test]]
 name = "presenter_single_path"
 path = "tests/presenter_single_path.rs"
+
+[[test]]
+name = "governor_policy"
+path = "tests/governor_policy.rs"
+
+[[test]]
+name = "governor_knobs"
+path = "tests/governor_knobs.rs"
+required-features = ["creation-counters"]
+
+[[test]]
+name = "governor_transition"
+path = "tests/governor_transition.rs"
+required-features = ["creation-counters"]

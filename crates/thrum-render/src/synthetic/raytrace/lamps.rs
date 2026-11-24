@@ -20,6 +20,7 @@ impl LampShadows {
             value: capacity,
             range: 0..=capacity,
             invalidation: QualityInvalidation::ViewHistory,
+            governor_steps: None,
         }])
         .expect("valid lamp shadow control");
         let quality = device.create_buffer(&wgpu::BufferDescriptor {

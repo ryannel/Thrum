@@ -445,6 +445,44 @@ impl Simulation {
     pub fn handle(&self, id: StableId) -> Option<Handle> {
         self.runtime.handle(id)
     }
+    #[cfg(target_os = "macos")]
+    pub(crate) fn authority_hash(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        self.capture().hash_authority_metadata(&mut hash);
+        self.tick().hash(&mut hash);
+        let world = self.runtime.read();
+        for slot in 0..world.capacity() {
+            let slot = u32::try_from(slot).expect("world capacity was admitted as u32");
+            let Some(entity) = world.live_at_slot(slot) else {
+                continue;
+            };
+            let handle = entity.handle();
+            let row = self.get(handle).expect("world read retained a live handle");
+            row.id.hash(&mut hash);
+            handle.hash(&mut hash);
+            row.position.0.map(f64::to_bits).hash(&mut hash);
+            row.velocity.0.map(f64::to_bits).hash(&mut hash);
+            row.health.hash(&mut hash);
+            row.ownership
+                .map(|owner| (owner.peer, owner.connection_epoch, owner.actor))
+                .hash(&mut hash);
+            row.visual.hash(&mut hash);
+            self.authored_drift(handle)
+                .map(|(origin, amplitude, period, phase)| {
+                    (
+                        origin.map(f64::to_bits),
+                        amplitude.map(f64::to_bits),
+                        period,
+                        phase,
+                    )
+                })
+                .hash(&mut hash);
+        }
+        hash.finish()
+    }
+
     /// Whether the next tick can acquire an unleased page.
     pub fn can_publish_next(&self) -> bool {
         self.runtime.can_publish_next()

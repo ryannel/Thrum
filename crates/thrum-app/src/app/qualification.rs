@@ -1,7 +1,7 @@
 //! Opt-in Mac qualification observer; ordinary presentation remains the only producer.
 
 mod transition;
-pub use transition::{TransitionArm, WindowTransitionProof};
+pub use transition::{GovernorProof, TransitionArm, WindowTransitionProof};
 pub(super) use transition::{TransitionProof, TransitionTicks};
 
 use crate::{

@@ -5,6 +5,8 @@
 
 mod cloud_observation;
 mod environment;
+mod governor;
+pub use governor::{GovernorBrowser, create_governor_game};
 #[cfg(feature = "draw-probe")]
 mod light_probe;
 #[cfg(feature = "draw-probe")]

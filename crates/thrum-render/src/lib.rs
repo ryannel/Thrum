@@ -18,6 +18,7 @@ pub mod contribution;
 pub mod error;
 pub mod extract;
 pub mod frame;
+pub mod governor;
 pub mod graph;
 mod graph_record;
 pub mod history;

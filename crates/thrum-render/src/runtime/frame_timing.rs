@@ -91,6 +91,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     }
                 }
             }
+            if let Some(governor) = &mut self.governor {
+                governor.observe(&sample);
+            }
             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
         }
         Ok(())

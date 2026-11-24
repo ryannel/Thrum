@@ -27,6 +27,7 @@ pub struct ExtentRequest {
 
 struct Build {
     request: ExtentRequest,
+    prepares_candidate: bool,
     cancelled: Arc<AtomicBool>,
     job: JoinHandle<Result<Option<PreparedExtent>, FrameError>>,
 }
@@ -81,6 +82,15 @@ impl ExtentTransition {
     #[must_use]
     pub fn busy(&self) -> bool {
         self.build.is_some()
+    }
+
+    /// Whether frames must exclude the detached build or its deferred switch.
+    #[must_use]
+    pub fn holds_governor(&self) -> bool {
+        self.build
+            .as_ref()
+            .is_some_and(|build| build.prepares_candidate)
+            || self.ready.is_some()
     }
 
     /// Take the candidate out for admission at this boundary.
@@ -172,6 +182,7 @@ impl ExtentTransition {
         if inputs.is_none() && self.discarded.is_empty() {
             return Ok(());
         }
+        let prepares_candidate = inputs.is_some();
         let discarded = std::mem::take(&mut self.discarded);
         let cancelled = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&cancelled);
@@ -184,6 +195,7 @@ impl ExtentTransition {
             .map_err(|error| FrameError::gpu("start extent preparation", error))?;
         self.build = Some(Build {
             request,
+            prepares_candidate,
             cancelled,
             job,
         });

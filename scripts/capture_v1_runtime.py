@@ -263,7 +263,9 @@ def run(args):
     if output.exists():
         raise ValueError("output must be a new directory")
     observer_only = getattr(args, "observer_only", False) or args.case == "sprites-field-cost"
-    if observer_only and (args.case not in ("exit-route", "exit-drift", "content-edits", "sprites-field-cost") or args.mode != "realtime"):
+    governed = os.environ.get("THRUM_GOVERNOR") == "on"
+    if observer_only and (args.case not in ("exit-route", "exit-drift", "content-edits", "sprites-field-cost")
+                          and not (governed and args.case == "route") or args.mode != "realtime"):
         raise ValueError("--observer-only requires realtime exit or content-edit motion")
     output.parent.mkdir(parents=True, exist_ok=True)
     if shutil.disk_usage(output.parent).free < ALLOWANCE:

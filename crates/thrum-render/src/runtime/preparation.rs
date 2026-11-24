@@ -191,6 +191,13 @@ impl TargetPreparation {
 }
 
 impl PreparedRenderer {
+    pub(super) fn three_d_mut(&mut self) -> Option<&mut PreparedSynthetic> {
+        match self {
+            Self::ThreeD(scene) => Some(scene),
+            Self::TwoD(_) => None,
+        }
+    }
+
     pub(super) fn three_d(&self) -> Option<&PreparedSynthetic> {
         match self {
             Self::ThreeD(scene) => Some(scene),

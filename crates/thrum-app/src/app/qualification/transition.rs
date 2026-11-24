@@ -51,6 +51,42 @@ pub struct WindowTransitionProof {
     pub arm: TransitionArm,
     /// Retain the ordinary submitted T2 images with their extents.
     pub tap: bool,
+    /// Record governor samples and optionally inject a platform thermal excursion.
+    pub governor: Option<GovernorProof>,
+}
+
+/// Governor observations on the same real surface and display link as the transition proof.
+#[derive(Clone, Copy)]
+pub enum GovernorProof {
+    /// Record the actual platform thermal state.
+    Observed,
+    /// Supply serious pressure for this half-open range of display-link ticks.
+    Thermal {
+        /// First display-link tick with forced pressure.
+        from: u64,
+        /// First display-link tick with forced nominal state.
+        until: u64,
+    },
+}
+
+impl GovernorProof {
+    /// Apply a proof's scoped thermal pressure to the platform record for this opportunity.
+    #[must_use]
+    pub fn display_record(
+        self,
+        mut display: thrum_render::governor::DisplayRecord,
+        tick: u64,
+    ) -> thrum_render::governor::DisplayRecord {
+        use thrum_render::governor::ThermalState;
+        if let Self::Thermal { from, until } = self {
+            display.thermal = if (from..until).contains(&tick) {
+                ThermalState::Serious
+            } else {
+                ThermalState::Nominal
+            };
+        }
+        display
+    }
 }
 
 pub(in crate::app) struct TransitionTicks(BufWriter<File>);
@@ -92,6 +128,7 @@ pub(in crate::app) struct TransitionProof {
     present_media: Option<f64>,
     arm: TransitionArm,
     faulted: bool,
+    governor: Option<GovernorProof>,
     drawable: Option<([u32; 2], [u32; 2])>,
     switch: Option<Value>,
 }
@@ -112,6 +149,7 @@ impl TransitionProof {
             present_media: None,
             arm: options.arm,
             faulted: false,
+            governor: options.governor,
             drawable: None,
             switch: None,
         })
@@ -217,12 +255,26 @@ impl TransitionProof {
         Ok(self.skip_restore() && size != metal)
     }
 
-    pub(in crate::app) fn frame<R>(
+    pub(in crate::app) fn display_record(
+        &self,
+        display: thrum_render::governor::DisplayRecord,
+        tick: u64,
+    ) -> thrum_render::governor::DisplayRecord {
+        self.governor
+            .map_or(display, |proof| proof.display_record(display, tick))
+    }
+
+    pub(in crate::app) fn frame<
+        R,
+        W: thrum_render::runtime::FrameWorld,
+        V: thrum_render::runtime::SceneSource<W::Page>,
+    >(
         &mut self,
         reply: &RenderReply<R>,
         extent: [u32; 2],
         scale: u64,
-        submission: Option<u64>,
+        display: thrum_render::governor::DisplayRecord,
+        host: &thrum_render::runtime::FrameHost<W, V>,
     ) -> io::Result<()> {
         if let Some(error) = self.configure_error.take() {
             return Err(error);
@@ -231,6 +283,31 @@ impl TransitionProof {
         self.sequence = None;
         let presented =
             matches!(&reply.outcome, RenderOutcome::Frame(Ok(report)) if report.surface_presented);
+        let governor = self.governor.map(|_| {
+            let samples = reply.samples.iter().flatten().map(|sample| json!({
+                "submission": sample.submission_order,
+                "tick": sample.tick,
+                "observation_ns": sample.observation.as_nanos(),
+                "render_extent": sample.render_extent,
+                "gpu_ns": sample.gpu_pass_ns.as_ref().map(|gpu| gpu.sum() + sample.gpu_present_ns.unwrap_or_default()),
+                "debug_load_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.passes().iter().find(|pass| pass.name.ends_with("debug load")).map(|pass| pass.nanoseconds)),
+                "quality": sample.governor.as_ref().map(governor_record),
+            })).collect::<Vec<_>>();
+            #[cfg(feature = "creation-counters")]
+            let pipelines = {
+                let report = host.creation_report();
+                Some((report.pipelines.iter().map(|row| row.render + row.compute + row.mesh).sum::<u64>(), report.violations))
+            };
+            #[cfg(not(feature = "creation-counters"))]
+            let pipelines: Option<(u64, u64)> = None;
+            json!({
+                "state": host.governor_frame().as_ref().map(governor_record),
+                "platform_thermal": format!("{:?}", display.thermal),
+                "missed_present_proxy": host.governor_missed_ticks(),
+                "samples": samples,
+                "pipelines": pipelines,
+            })
+        });
         writeln!(
             self.output,
             "{}",
@@ -243,7 +320,9 @@ impl TransitionProof {
                 "present_media": self.present_media.take(),
                 "status": format!("{:?}", reply.platform.surface_status),
                 "transition_error": reply.platform.transition_error,
-                "submission": submission,
+                "submission": host.last_submission(),
+                "world_tick": host.world().source().tick,
+                "governor": governor,
                 "wall_ms": reply.platform.worker_wall.as_secs_f64() * 1000.0,
                 "work": std::mem::take(&mut self.work),
                 "drawable": self.drawable.take(),
@@ -252,4 +331,19 @@ impl TransitionProof {
         )?;
         self.output.flush()
     }
+}
+
+fn governor_record(frame: &thrum_render::runtime::GovernorFrame) -> Value {
+    json!({
+        "scale": frame.state.scale.percent(),
+        "tier": frame.state.tier,
+        "reason": format!("{:?}", frame.state.reason),
+        "source": frame.source.map(|source| format!("{source:?}")),
+        "budget_ns": frame.budget.as_nanos(),
+        "display_interval_ns": frame.display.interval.as_nanos(),
+        "thermal": format!("{:?}", frame.display.thermal),
+        "held": frame.mark.held(),
+        "aerial_age": frame.aerial_age,
+        "knobs": frame.knobs.iter().map(|knob| (&knob.name, knob.value)).collect::<std::collections::BTreeMap<_, _>>(),
+    })
 }

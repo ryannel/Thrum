@@ -39,6 +39,8 @@ mod extent;
 #[cfg(not(target_arch = "wasm32"))]
 mod extent_transition;
 mod frame_timing;
+mod governor;
+pub use governor::GovernorFrame;
 mod preparation;
 mod presentation;
 mod sprites;
@@ -428,6 +430,8 @@ pub struct FrameSample {
     pub jitter_phase: Option<u32>,
     /// Pixel extent of the drawn scene subrectangle.
     pub render_extent: [u32; 2],
+    /// Dynamic quality committed for this frame, if enabled.
+    pub governor: Option<GovernorFrame>,
     /// Committed updates served in this host call, including catch-up work.
     pub completed_ticks: u32,
     /// Due updates still queued after this call.
@@ -677,6 +681,9 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     last_scene_apply: SceneApplyReport,
     render_extent: [u32; 2],
     render_scale: crate::synthetic::RenderScale,
+    governor: Option<governor::GovernorHost>,
+    governor_display_tick: Option<governor::DisplayTick>,
+    governor_missed_ticks: u64,
     changed_slots: Vec<u32>,
     prepared: PreparedRenderer,
     presenter: Option<SurfacePresenter>,
@@ -774,32 +781,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.timing_requested
     }
 
-    /// List contribution quality controls with committed values and declared invalidations.
-    #[must_use]
-    pub fn quality_knobs(&self) -> Vec<crate::contribution::QualityKnob> {
-        let mut knobs = self
-            .contribution
-            .as_ref()
-            .map_or_else(Vec::new, |entry| entry.quality_knobs());
-        knobs.extend_from_slice(self.prepared.lamp_quality());
-        knobs
-    }
-    /// Stage a quality value for the next frame boundary.
-    /// # Errors
-    /// Refuses an absent contribution, unknown name or out-of-range value.
-    pub fn set_quality_knob(
-        &mut self,
-        name: &str,
-        value: u32,
-    ) -> Result<(), crate::contribution::QualityError> {
-        if let Some(result) = self.prepared.set_lamp_quality(name, value) {
-            return result;
-        }
-        self.contribution
-            .as_mut()
-            .ok_or(crate::contribution::QualityError::NoContribution)?
-            .set_quality_knob(name, value)
-    }
     /// Attach an engine module that draws into the scene's forward pass with the scene's
     /// lighting. It is rebuilt on every visual or device republication.
     ///
@@ -836,6 +817,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if self.scene_kind() == SceneKind::TwoD {
             self.attach_sprite_contribution(contribution.as_mut())?;
             self.contribution = Some(contribution);
+            if let Some(governor) = &mut self.governor {
+                governor.refresh();
+            }
             self.contribution_error = None;
             return Ok(());
         }
@@ -885,6 +869,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.commit_3d_transition(staged, || true);
             self.visual_owner = Arc::new(());
             self.reset_replacement_history();
+            if let Some(governor) = &mut self.governor {
+                governor.refresh();
+            }
             self.contribution_error = None;
             return Ok(());
         }
@@ -903,6 +890,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.reset_replacement_history();
         }
         self.contribution = Some(contribution);
+        if let Some(governor) = &mut self.governor {
+            governor.refresh();
+        }
         self.contribution_error = None;
         Ok(())
     }
@@ -944,6 +934,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.visual_owner = Arc::new(());
                 self.reset_replacement_history();
                 self.contribution = Some(contribution);
+                if let Some(governor) = &mut self.governor {
+                    governor.refresh();
+                }
             }
             Ok(None) => self.contribution = Some(contribution),
             Err(error) => {
@@ -1294,6 +1287,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             last_scene_apply: initial_scene_apply,
             render_extent,
             render_scale: crate::synthetic::RenderScale::Native,
+            governor: None,
+            governor_display_tick: None,
+            governor_missed_ticks: 0,
             changed_slots,
             prepared: gpu.prepared,
             presenter,
@@ -1855,7 +1851,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_, W, V>, FrameError> {
         self.observation = now;
         let wall_start = Instant::now();
+        self.governor_boundary(now);
         self.poll_gpu()?;
+        self.commit_governor(now)?;
         let (report, advanced) = self.admit_world(now)?;
         Ok(AdvancedFrame {
             host: Some(self),
@@ -2080,6 +2078,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.last_extracted = frame.extracted;
         let lighting = frame_scene.lighting;
         self.history_reset_pending |= self.prepared.commit_lamp_quality(&self.queue);
+        if let Some(scene) = self.prepared.three_d_mut() {
+            scene.commit_aerial_quality();
+        }
         if self.contribution.as_mut().is_some_and(|entry| {
             entry.commit_quality_knobs() == crate::contribution::QualityInvalidation::ViewHistory
         }) {
@@ -2157,6 +2158,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     .three_d()
                     .and_then(PreparedSynthetic::pending_jitter_phase),
                 render_extent: scale.extent(self.render_extent),
+                governor: self.governor_frame(),
                 completed_ticks: frame.completed_ticks,
                 queued_ticks: frame.queued_ticks,
                 tick_cpu: frame.tick_cpu,
@@ -2175,7 +2177,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 surface_fault: None,
                 timing_fault: false,
                 native_segment: None,
-                timing_requested: self.timing_requested,
+                timing_requested: self.timing_requested || self.governor.is_some(),
                 culling_mode: self.prepared.camera_culling(),
                 culling_selection: self.prepared.culling_selection(),
                 shadow_selection: self.prepared.shadow_selection(),
@@ -2537,13 +2539,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         report.submitted = true;
         report.surface_presented = surface_presented;
         report.wall = wall_start.elapsed();
+        self.commit_submitted_view(source, view_history_epoch);
+        surface_encode_outcome(report, surface_error)
+    }
+
+    fn commit_submitted_view(&mut self, source: SourceTick, view_history_epoch: u64) {
         if let PreparedRenderer::ThreeD(scene) = &mut self.prepared {
             scene.commit_frame();
+        }
+        if let Some(governor) = &mut self.governor {
+            governor.submitted();
         }
         self.history_reset_pending = false;
         self.submitted_view_history_epoch = view_history_epoch;
         self.last_view_source = Some(source);
-        surface_encode_outcome(report, surface_error)
     }
 
     /// Render and read back the current committed scene once for visual evidence.
@@ -2856,6 +2865,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         .camera_culling
                         .or_else(|| slot.target.take_culling_counts_if_3d());
                     if slot.timings.pending_frame().is_none() {
+                        if let Some(governor) = &mut self.governor {
+                            governor.observe(&sample);
+                        }
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         continue;
                     }
@@ -2871,6 +2883,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         Err(error) => {
                             slot.refuse_timing(&mut sample, &mut self.timing_stats, error);
                             slot.recover_timings(self.prepared.capabilities(), &self.queue)?;
+                            if let Some(governor) = &mut self.governor {
+                                governor.observe(&sample);
+                            }
                             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         }
                     }

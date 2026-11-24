@@ -44,6 +44,11 @@ pub enum RuntimeCaptureOutput {
     Images,
     /// Keep every image while driving the realtime render-scale trace.
     ScaleTraceImages,
+    /// Run the governor under real-time load along the capture route.
+    Governor {
+        /// Record submitted images as well as frame and quality records.
+        images: bool,
+    },
     /// Keep every submitted image with the opted-in cooked mesh stages.
     #[cfg(feature = "draw-probe")]
     MeshStageImages,
@@ -106,6 +111,15 @@ pub fn run_scene_capture(
     pollster::block_on(capture::scene::run(output, request, hardware))
 }
 
+/// Dynamic quality selection and optional authored route for a Mac window run.
+#[derive(Default)]
+pub struct WindowGovernor {
+    /// Enable the governor for a prepared TAAU scene.
+    pub enabled: bool,
+    /// A validated route is prepared from this authored route text before the window starts.
+    pub route: Option<String>,
+}
+
 /// Run the bounded V1 scene in a macOS window and print its frames report.
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
@@ -115,6 +129,7 @@ pub fn run_window(
     transition: Option<thrum_app::WindowTransitionProof>,
     qualification: Option<thrum_app::WindowQualification>,
     display: Option<thrum_app::WindowDisplayOptions>,
+    governor: WindowGovernor,
 ) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
@@ -165,7 +180,16 @@ pub fn run_window(
         title,
         render_thread: "thrum-v1-render",
         panel_title: "Thrum demo",
-        window_size: if display
+        window_size: if transition
+            .as_ref()
+            .is_some_and(|proof| proof.governor.is_some())
+        {
+            governor
+                .route
+                .as_deref()
+                .and_then(|route| crate::CameraRoute::declared(route).ok())
+                .map_or([960, 540], |(extent, _)| extent)
+        } else if display
             .as_ref()
             .is_some_and(|options| options.output.is_some())
         {
@@ -180,7 +204,8 @@ pub fn run_window(
             world: None,
             held_keys: 0,
             replay_controls: true,
-            capture_route: None,
+            capture_route: governor.route,
+            governor_enabled: governor.enabled,
             capture_eye: None,
             capture_cooked: None,
             cloud_capture: false,
@@ -221,6 +246,7 @@ struct WindowGame {
     held_keys: u8,
     replay_controls: bool,
     capture_route: Option<String>,
+    governor_enabled: bool,
     capture_eye: Option<[f32; 3]>,
     capture_cooked: Option<CaptureCooked>,
     cloud_capture: bool,
@@ -284,6 +310,7 @@ fn capture_game_with_route_limit(
             .transpose()
             .map_err(|error| format!("fixed capture eye: {error}"))?,
         hardware: Vec::new(),
+        governor_enabled: false,
         capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
             .map(std::fs::read_to_string)
             .transpose()
@@ -452,6 +479,17 @@ impl RuntimeSetup for WindowGame {
             }
             std::time::Duration::ZERO
         };
+        if self.governor_enabled
+            && !host.enable_governor(thrum_render::governor::DisplayRecord {
+                interval: std::time::Duration::ZERO,
+                thermal: thrum_render::governor::ThermalState::Nominal,
+            })
+        {
+            return Err("governor requires a prepared TAAU scene".to_owned());
+        }
+        if self.capture_route.is_some() && self.replay_controls {
+            host.world_mut().resume(offset)?;
+        }
         let origin = Instant::now()
             .checked_sub(offset)
             .ok_or("capture route origin underflow")?;

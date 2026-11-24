@@ -43,6 +43,18 @@ fn main() {
                 }
                 None => capture_output,
             };
+        let capture_output = if governor_enabled()
+            .unwrap_or_else(|error| report_capture_failure(&error))
+        {
+            let images = match capture_output {
+                v1_game::RuntimeCaptureOutput::Images => true,
+                v1_game::RuntimeCaptureOutput::ObserverOnly => false,
+                _ => report_capture_failure("governor capture needs the ordinary real-time route"),
+            };
+            v1_game::RuntimeCaptureOutput::Governor { images }
+        } else {
+            capture_output
+        };
         if let Err(error) = v1_game::run_runtime_capture(
             std::path::Path::new(&output),
             &scenario,
@@ -76,7 +88,21 @@ fn main() {
     let qualification =
         window_qualification().unwrap_or_else(|error| report_capture_failure(&error));
     let display = window_display_options().unwrap_or_else(|error| report_capture_failure(&error));
-    v1_game::run_window(hardware, window_capture, transition, qualification, display);
+    let governor = v1_game::WindowGovernor {
+        enabled: governor_enabled().unwrap_or_else(|error| report_capture_failure(&error)),
+        route: std::env::var_os("THRUM_GOVERNOR_ROUTE")
+            .map(std::fs::read_to_string)
+            .transpose()
+            .unwrap_or_else(|error| report_capture_failure(&error.to_string())),
+    };
+    v1_game::run_window(
+        hardware,
+        window_capture,
+        transition,
+        qualification,
+        display,
+        governor,
+    );
 }
 
 #[cfg(target_os = "macos")]
@@ -157,6 +183,15 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
         output: output.into(),
         arm,
         tap: std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_some(),
+        governor: match std::env::var("THRUM_GOVERNOR_RECORD").as_deref() {
+            Ok("thermal") => Some(thrum_app::GovernorProof::Thermal {
+                from: 90,
+                until: 210,
+            }),
+            Ok("observed") => Some(thrum_app::GovernorProof::Observed),
+            Err(std::env::VarError::NotPresent) => None,
+            _ => return Err("THRUM_GOVERNOR_RECORD must be observed or thermal".to_owned()),
+        },
     }))
 }
 
@@ -239,6 +274,10 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         surface_extent: text("THRUM_CAPTURE_SURFACE_EXTENT")?,
         windows: text("THRUM_CAPTURE_WINDOWS")?,
         scale_trace: render_scale_trace()?,
+        governor_thermal: std::env::var("THRUM_GOVERNOR_RECORD").as_deref() == Ok("thermal"),
+        governor_identity: std::env::var_os("THRUM_GOVERNOR_IDENTITY")
+            .map(|_| governor_enabled())
+            .transpose()?,
         present_control: text("THRUM_CAPTURE_PRESENT_CONTROL")?,
         params: std::env::var_os("THRUM_CAPTURE_PARAMS")
             .map(|value| std::env::split_paths(&value).collect()),
@@ -257,5 +296,14 @@ fn render_scale_trace() -> Result<Option<v1_game::RenderScaleTrace>, String> {
         Ok("trace") => Ok(Some(RenderScaleTrace::Continuous)),
         Ok("reset") => Ok(Some(RenderScaleTrace::ResetAtStep)),
         _ => Err("THRUM_ROUTE_RENDER_SCALE must be trace or reset".to_owned()),
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn governor_enabled() -> Result<bool, String> {
+    match std::env::var("THRUM_GOVERNOR").as_deref() {
+        Ok("on") => Ok(true),
+        Ok("off") | Err(std::env::VarError::NotPresent) => Ok(false),
+        _ => Err("THRUM_GOVERNOR must be on or off".to_owned()),
     }
 }

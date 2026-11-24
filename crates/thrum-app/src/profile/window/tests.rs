@@ -17,6 +17,7 @@ fn sample(order: u64) -> FrameSample {
         history_identity: [0; 2],
         jitter_phase: None,
         render_extent: [64; 2],
+        governor: None,
         completed_ticks: 1,
         queued_ticks: 0,
         tick_cpu: Duration::from_micros(order),

@@ -565,9 +565,11 @@ def ios_edr(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route"])
+    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal"])
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--steady", action="store_true", help="qualify the unloaded governor arm")
+    parser.add_argument("--realtime-capture", action="store_true", help="retain the T2 governor tap")
     args = parser.parse_args()
     if args.output is None:
         scratch = ROOT / "tmp"
@@ -578,7 +580,14 @@ def main():
         output.mkdir(parents=True)
     from apple_display_proof import mac_edr, mac_edr_modes, mac_edr_headroom, mac_edr_identity, mac_edr_route
 
-    checks = {("edr", "ios-sim"): ios_edr,
+    from apple_governor_proof import mac_governor, mac_governor_identity, mac_governor_thermal
+
+    if (args.steady or args.realtime_capture) and args.check != "governor":
+        parser.error("governor options require the governor check")
+    checks = {("governor", "mac-metal"): lambda output: mac_governor(
+                  output, steady=args.steady, capture=args.realtime_capture),
+              ("governor-identity", "mac-metal"): mac_governor_identity,
+              ("governor-thermal", "mac-metal"): mac_governor_thermal,("edr", "ios-sim"): ios_edr,
               ("edr", "mac-metal"): mac_edr,
               ("edr-modes", "mac-metal"): mac_edr_modes,
               ("edr-headroom", "mac-metal"): mac_edr_headroom,
