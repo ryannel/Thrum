@@ -182,3 +182,15 @@
   original checker during simultaneous crossings. The 1920×1080 realtime trial on Apple tile and
   portable Metal kept the checker square and retained the mean through the old flash phases.
   [Metal screening](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/separable-screen/README.md)
+- 2026-11-24 At merged renderer `e0aeaf6be`, all six Metal realtime takes retained both stripe
+  orientations, square checks, closed ground joins and clean rotating outlines. The 2× crossings
+  briefly soften without the previous dark flash. The 1.5× timing record covers both Metal recipes
+  and Chrome WebGPU, with GPU timestamps, overdraw estimates and shared machine load.
+  [Filter and timings](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/M3.1-merged-filter-review.md) ·
+  [Metal motion](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/M3.8-merged-motion-review.md)
+- 2026-11-24 Both shared checks cover `e0aeaf6be`. The merged-revision milestone check passed the
+  repository gate and every target command except the AppKit window rerun, which exited while
+  the graphical session was locked. The earlier passing window capture supplies M3.6 evidence.
+  [Exact images](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/e0aeaf6be8acad28f2c9046e789a33ca26126dc8/main-exact-images.json) ·
+  [Long tests](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/e0aeaf6be8acad28f2c9046e789a33ca26126dc8/main-long-tests.json) ·
+  [Milestone check](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/separable-milestone-check.json)
