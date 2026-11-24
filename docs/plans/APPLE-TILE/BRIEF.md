@@ -1,6 +1,6 @@
 # Apple tile recipe brief (G3t)
 
-9 November 2026. Scoped re-plan explicitly recommissioned by the lead after two failed design reviews, under the [build order](../BRIEF.md#active-gate-order-and-budgets)
+9 November 2026. Scoped re-plan explicitly recommissioned by the lead after two failed design reviews, under the [build order](../VISION.md#active-gate-order-and-budgets)
 and the [architecture responsibility map](../../design/ARCHITECTURE-BRIEF.md#proposed-module-map).
 This brief is the input to independent design review; it states requirements rather than selecting mechanisms.
 

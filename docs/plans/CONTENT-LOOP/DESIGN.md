@@ -80,7 +80,7 @@ describes; where it and this design disagree, this design wins, and WP3 brings i
 see [open questions](#open-questions)); parameter files as a product kind; sprite-sheet and font products (track
 3 adds them when it starts); cooked textures on entity materials (entities keep the scene's material table); a
 mesh-shader meshlet path; source admission, and with it a boundary for an external save and build provenance in
-the manifest (both wait for T1; see [what a publication promises](#what-a-publication-promises-m3)); a browser
+the manifest (both wait for T1; see [what a publication promises](#what-a-publication-promises-wp3)); a browser
 client that verifies and stages off the page's thread. None of these is needed by the exit or by the first sea or cloud
 frame.
 
@@ -156,7 +156,7 @@ configured, as placements are.
    and a discarded frame cannot expose a half-uploaded product. The cost is one frame of latency, which
    placements share when a scene has a lease.
 3. **Whole sets, with every other reader.** A lease's products switch together, in the frame the scene's
-   placements and rows switch, under [one publication, one switch](#one-publication-one-switch-m1-m2). That
+   placements and rows switch, under [one publication, one switch](#one-publication-one-switch-wp1-wp2). That
    section also says what supersedes a publication and what refuses one.
 4. **Identity.** Each lent product carries its manifest name, content hash, profile, format, dimension, extent
    and mip count. A product whose hash did not change keeps its texture and view across generations and is not
@@ -203,7 +203,7 @@ scene's mesh selection. Today those rows are authored in code and "changing a sl
   of bytes per frame. The write is the row's part of preparing a publication, and the route reports it done once
   the frame carrying its last bytes is submitted. The row does not switch then. It switches in the publication's
   switch frame, with every other row, the placements and the leases
-  ([one publication, one switch](#one-publication-one-switch-m1-m2)). That frame records the switch of every
+  ([one publication, one switch](#one-publication-one-switch-wp1-wp2)). That frame records the switch of every
   reader of the row: the forward draw ranges, the compaction's mesh table (range and bounds), the depth prepass,
   and the Sun casters' draws and fits. No frame mixes old and new.
 - **The switch is tentative, like every recording.** It commits when its frame is submitted. A discarded switch
@@ -320,7 +320,7 @@ arrive in the middle of a write. So a sweep leaves a file whose modification tim
 notice path's own batch limit, for the next sweep. A file whose stamp changes while it is hashed is already left
 for the next scan, and a sweep is now that scan. A modification time ahead of the clock holds nothing back. A
 one-shot `cook` and the watcher's first cook read every file at once, as they do today. A writer that pauses
-longer than 250 ms inside one save is the case [a save has no boundary](#what-a-publication-promises-m3) names.
+longer than 250 ms inside one save is the case [a save has no boundary](#what-a-publication-promises-wp3) names.
 
 **An idle sweep leaves no trace.** A sweep that finds no change writes nothing to the store (no `HEAD`, no
 product, no stat-cache file) and does not call the cycle callback, which is where `thrum-cook watch` prints.
@@ -363,10 +363,10 @@ put in force, and it stays in force.
 and lent, with the reason recorded. Where the cooker finds the fault, the asset's previous product stays in the
 manifest. Where the running game finds it (a device refusal, a failed upload, a missing name, an arena refusal),
 the manifest has moved and residency keeps its last good resident generation
-([rule 7](#one-publication-one-switch-m1-m2)).
+([rule 7](#one-publication-one-switch-wp1-wp2)).
 
 **Held: one switch for every reader.** A publication's products change through placements, leases and mesh rows
-in the same submitted frame ([one publication, one switch](#one-publication-one-switch-m1-m2)). This is the
+in the same submitted frame ([one publication, one switch](#one-publication-one-switch-wp1-wp2)). This is the
 reader half of C05's qualified visual preview, met as the contract words it, and C05 is not changed. It concerns
 cooked products only, so it holds whether or not their sources were admitted.
 
@@ -436,14 +436,14 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
 | A lease's meaning: placement, extent, optics, the consumer's own history | The consumer (`SEA`, `CLOUDS`) and the game |
 
 **An edit, in order.** The watcher learns of the save, from a notice or from its next
-[sweep](#the-sweep-m4), the stat cache rehashes only that file, the cooker cooks only
+[sweep](#the-sweep-wp4), the stat cache rehashes only that file, the cooker cooks only
 the changed asset for each profile, and `HEAD` moves. The loader's next poll maps the new manifest, resolves
 every placement, lease and row by name, keeps each product whose hash is unchanged, and plans copies for the
 rest. It fills staging chunks off the render thread. Each frame records at most a budget of copies, and a changed
 row's geometry goes to the host, which writes it under its own bound. When a submitted frame has carried the
 last copy and the last row write, the publication is ready. The next frame draws the new placements, offers the
 new set to leases and switches the rows, and the switch commits for all of them when that frame is submitted
-([one publication, one switch](#one-publication-one-switch-m1-m2)).
+([one publication, one switch](#one-publication-one-switch-wp1-wp2)).
 
 ## What later modules will ask
 
@@ -466,7 +466,7 @@ path, with no change to the store, the manifest, residency or publication.
 - **Every mesh product carries its meshlets.** The `MLET`, `MLVX`, `MLTR` and `MLBD` sections are written for
   every mesh and every profile, whichever path draws it. No profile, product kind or loader strips them.
 - **A row is its product's geometry in its product's order.** The row conversion copies vertices one for one and
-  the index list unchanged, as [cooked mesh rows](#cooked-mesh-rows-m2) says, and a row is held with its product's
+  the index list unchanged, as [cooked mesh rows](#cooked-mesh-rows-wp2) says, and a row is held with its product's
   content hash. The index list is in meshlet order, so meshlet `i` of the product is one contiguous index range
   of the row, and the product's meshlet table and bounds describe the row without a second cook. A conversion
   that reorders, welds or re-indexes breaks this and is not made. The row uploads none of those sections: nothing
@@ -503,7 +503,7 @@ volume, belong to those modules and are not loosened.
 - **Staging:** at most four chunks of one budget, whatever is loading.
 - **A switch frame:** bind groups for the changed placements and the row's table writes; no copy.
 - **A watching cooker with nothing to do (WP4):** one stat pass over the source tree per sweep, and no write.
-  [The sweep](#the-sweep-m4) says how its interval is set.
+  [The sweep](#the-sweep-wp4) says how its interval is set.
 - **Latency:** an edit shows when its slowest reader is ready. Recorded per publication as frames from first
   copy to switch.
 - **Memory:** live products, plus old and new for a publication's changed products from its first copy until its

@@ -462,7 +462,7 @@ is what keeps a new glyph out of an old run and an old box.
   paint list with the new stamp. That is the **prepared layout**. The layout being drawn stays the one that is
   drawn, hit-tested and focused. A value the game sets goes to both, so neither freezes.
 - **Refuse.** A new table that lacks a size or a scale a live text uses makes the interface refuse its part.
-  Under [CONTENT-LOOP's rule 7](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) the publication is
+  Under [CONTENT-LOOP's rule 7](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-wp1-wp2) the publication is
   then refused for every reader, with the reason named, and the prepared layout is dropped. A refused change of
   scale is reported to the game.
 - **Ready.** The interface is one more reader of the publication, under that design's rule 3. Its part is ready
@@ -487,7 +487,7 @@ is what keeps a new glyph out of an old run and an old box.
 
 Between prepare and commit the interface does its layout twice and holds two lists of rows. That is paid only
 through an authoring edit or a change of scale. An edit may create the second list's storage, as
-[CONTENT-LOOP](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) lets an edit create buffers; it
+[CONTENT-LOOP](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-wp1-wp2) lets an edit create buffers; it
 compiles nothing.
 
 ### 12. One shell for every game

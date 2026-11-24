@@ -23,7 +23,7 @@ The [13 November current-build proof](../../../.orchestrate/evidence/render/mac-
 window replacement and matched cadence arms from the merged `7a791b20` source.
 
 Needs `T2-CAPTURE:WP0` only; no item waits on `APPLE-TILE`. Each item's full protocol is in
-[the design](DESIGN.md#m2-and-m3-qualification-protocol), and the done-when file owns the criteria. Cadence is
+[the design](DESIGN.md#wp2-and-wp3-qualification-protocol), and the done-when file owns the criteria. Cadence is
 judged from the OS-reported presented time of each game drawable, because both 11 November traces had empty
 display tables for a cause that is not authorization
 ([diagnosis](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md)).
@@ -63,7 +63,7 @@ Stop rules:
 ## WP3 After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion
 
 Needs `APPLE-TILE:WP3`, and Mac WP2 by module order. It repeats the whole qualification on the changed surface and
-present path; [the design](DESIGN.md#m2-and-m3-qualification-protocol) has the protocol and the dependency chain.
+present path; [the design](DESIGN.md#wp2-and-wp3-qualification-protocol) has the protocol and the dependency chain.
 
 - [ ] WP3.1, unattended: the complete WP2.1 protocol on the integrated release build, with fresh build, shader,
       content and recipe identity.

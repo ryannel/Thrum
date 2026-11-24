@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md",
     "commit": "7d573e340c8738b9dc40284bdb75ebbab9fc8e10",
-    "hash": "88d97c2e0e067a4b0f69530596874616e4ce5cedb039135c6a7a14227d4209eb",
+    "hash": "960d26cc1b69fe3b66897d4d18f39e23683f43f009844cfbdce4e53c4d4e129e",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",

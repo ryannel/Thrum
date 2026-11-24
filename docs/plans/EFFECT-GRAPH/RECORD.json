@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
     "commit": "b67c49cfec853ba86d6027c904893e13cbf05914",
-    "hash": "92100c789fb5d9c591e48e3780dfa883e025243f17abdb8e9c22ecf3724eec61",
+    "hash": "dd6f646ce8f1168d6eb0ba322c821f43342d0119a384fc06778460dbe9160ec4",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",

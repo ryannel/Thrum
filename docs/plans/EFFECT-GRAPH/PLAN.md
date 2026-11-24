@@ -33,7 +33,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 
 ## WP4 A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one
 
-[The display phase](DESIGN.md#the-display-phase-m4) is the design. [The timing model](DESIGN.md#the-timing-model)
+[The display phase](DESIGN.md#the-display-phase-wp4) is the design. [The timing model](DESIGN.md#the-timing-model)
 in it holds every rule about a frame's time, and [the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-m4)
 says whose files it is built in.
 

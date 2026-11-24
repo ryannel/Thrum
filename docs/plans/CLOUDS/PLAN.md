@@ -54,7 +54,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP18 Small cloud products check Metal and portable limits with headroom
 
-Use the [fixture design](DESIGN.md#weather-map-and-sun-path-regressions-m18) for the cases in the [case list and baseline times](LOG.md#m18-workspace-timing-baseline).
+Use the [fixture design](DESIGN.md#weather-map-and-sun-path-regressions-wp18) for the cases in the [case list and baseline times](LOG.md#m18-workspace-timing-baseline).
 
 Record the command and the first focused run's Nextest output on the Mac under normal builder load, with both
 named outcomes and per-test times excluding compilation. Use WP18.1's command with the workspace check's

@@ -482,7 +482,7 @@ the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean t
 
 The weather state steps on the committed tick, and the display shows each 60 Hz tick twice or more. Travel is a
 function of time, so every presented frame takes it **at the display's time** `t = C − 1 + p` in ticks, where `C`
-is the frame's committed tick and `p` its [display phase](../EFFECT-GRAPH/DESIGN.md#the-display-phase-m4), which
+is the frame's committed tick and `p` its [display phase](../EFFECT-GRAPH/DESIGN.md#the-display-phase-wp4), which
 `EFFECT-GRAPH` WP4 gives every effect. That time is the frame's **consumed target**, on the world's time, less
 one tick. The consumed target is the time the frame's host observed, plus its lead of at most 50 ms toward the
 moment the platform expects to show the frame, and it is a time on the host's clock. Display time is the

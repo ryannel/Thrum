@@ -250,7 +250,7 @@
   [a ruling in the module list](../ARCHITECTURE.md#exact-baselines), as `ATMOSPHERE` M9's was: M3's builder
   adds the coverage output and regenerates the references it moves in one landing, and they stay `APPLE-TILE`'s.
   M3.10 rewritten; M3.11 (loaded campaign against a control), M3.12 (what moved) and M3.13 (cost) added; M3
-  renamed. [Design](DESIGN.md#m3-one-image-under-load). M1's and M2's finished task lists left the plan file.
+  renamed. [Design](DESIGN.md#wp3-one-image-under-load). M1's and M2's finished task lists left the plan file.
 
 - 2026-11-15 Design review fixes. MF2: coverage output and refreshed references land together only after M3.11's
   campaign, M3.12's difference images and the verifier pass on a local candidate; a failure pushes nothing (M3.10

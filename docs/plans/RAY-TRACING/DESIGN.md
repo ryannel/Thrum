@@ -133,7 +133,7 @@ Read for this design, 17 and 18 November 2026:
   NVIDIA's SIGMA do this. Ambient occlusion is traced the same way at lower resolution, as Microsoft's
   real-time denoised ambient occlusion sample (MIT) does. Both run in a deferred renderer, after depth and
   before lighting. This renderer is forward, which is what
-  [the soft shadow's design](#soft-sun-shadows-m4) has to answer.
+  [the soft shadow's design](#soft-sun-shadows-wp4) has to answer.
 - **Apple's hidden surface removal.** A tile GPU shades each opaque pixel once whatever the draw order, so a
   ray traced inside the forward pass's fragment stage costs one ray a pixel with no depth prepass. That is why
   the hard shadow is traced inline, and why this design adds no prepass.
@@ -265,7 +265,7 @@ pipeline and its caster index count exist only to draw those maps, and both are 
 them. None of the three is read when a mask is set. So in a scene with Sun shadows off, a wall of entities
 and a wall that is a cooked placement both stand in the structure as casters, and a lamp's ray stops at them.
 
-**Edits (WP2).** [A content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) needs no new
+**Edits (WP2).** [A content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-wp1-wp2) needs no new
 kind of reader. A replacement row's mesh structure is built in the frame that records the row's last write, so
 the row is ready when it is today. A replacement placement's is built in the frame that records its last copy.
 The scene structure is built from the set the frame shows, so the switch frame traces the new geometry and no
@@ -384,7 +384,7 @@ at that fragment, and counted.
 The lamp origin lift uses the transformed authored normal oriented toward the lamp. Mirrored transforms
 reverse raster winding while leaving the transformed normal pointed out of the lit face.
 
-A lamp's ray tests the cast bit of [the mask](#the-structure-m1-m2) and nothing else. It needs no Sun shadow,
+A lamp's ray tests the cast bit of [the mask](#the-structure-wp1-wp2) and nothing else. It needs no Sun shadow,
 no cascade and no shadow pipeline, so a room lit only by lamps, in a scene with Sun shadows off, is shadowed
 by its walls.
 
@@ -548,7 +548,7 @@ its existing lighting, graph passes and Sun-path product. It offers no ray insta
 with the visible sky and its shade active. At the same cloud state, camera and time, traced occlusion darkens
 the base of a prop while open ground stays unchanged. Verify Apple tile and resolved occlusion in both reports.
 
-`Shade` prepares through [the WP3 boundary](#scene-preparation-and-maps-fallback-m3). It keeps compatible
+`Shade` prepares through [the WP3 boundary](#scene-preparation-and-maps-fallback-wp3). It keeps compatible
 accepted cloud resources and temporal state. If the device generation changes, stage a full replacement. On
 the same generation, read the compatible weather resources while staging the bindings and resources that the
 candidate's Sun-path target and sky surface need. Describe the resulting graph for host validation. Keep any
@@ -585,7 +585,7 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   path has: `Traced` to `Maps`, lamp shadows and ambient occlusion to off, the structure to none. The scene
   prepares Maps directly on the resolved recipe. A request the registry admits also needs every contribution
   to support candidate preparation. If an admitted traced candidate fails while the device is usable,
-  [prepare Maps once from the inputs to the same operation](#scene-preparation-and-maps-fallback-m3).
+  [prepare Maps once from the inputs to the same operation](#scene-preparation-and-maps-fallback-wp3).
 - **Report.** For each request: what was asked, what it resolved to and, where the two differ, why. The
   reasons are that the device did not enable ray queries, that the recipe lists no ray effect, that a
   contribution lacks candidate preparation, or that preparation failed. The report also gives the hardware
@@ -735,7 +735,7 @@ hooks. A new object-safe hook exposes candidate preparation and defaults to unsu
 opted-in member prepares from a shared borrow of its accepted state and returns a candidate with the
 resources and declarations it will install. Its infallible commit takes that candidate and installs it on
 the member. WP3 opts the cooked contribution in for both traced and Maps candidates. WP5 opts the
-[valley's cloud provider](#ambient-occlusion-m5) in through the same hook. A `SceneContributions` list admits
+[valley's cloud provider](#ambient-occlusion-wp5) in through the same hook. A `SceneContributions` list admits
 candidate preparation only if every leaf opts in, including leaves in nested lists. The empty list is eligible.
 Admission reads support before any traced preparation or call to `rebuild`. Detached visual and device
 preparation carry that decision with their host identity. Check that identity before publication so a change
@@ -792,7 +792,7 @@ recovery under C06.
 2. **Preparation.** The scene resolves its requests before trying a candidate. With ray demand, the arena and
    cooked meshes use the structure-build usage and build their mesh structures, the shader is composed with the
    traced operations, and pipelines are created through the device's creation authority. The host commits the
-   complete candidate under [the preparation boundary](#scene-preparation-and-maps-fallback-m3).
+   complete candidate under [the preparation boundary](#scene-preparation-and-maps-fallback-wp3).
 3. **Each frame.** Uploads are reconciled. The structure pass sets one instance for each active entity and
    each placement a contribution offers, and rebuilds the scene structure. The caster height map is drawn;
    cascades only if something reads them. The forward pass shades: each Sun-facing fragment traces the centre

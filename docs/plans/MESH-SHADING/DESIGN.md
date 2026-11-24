@@ -182,7 +182,7 @@ meshlet table, meshlet-vertex list and packed meshlet triangles are uploaded. Th
 carries all of them (`thrum-asset`'s `Meshlet`, and the meshlet-vertex and meshlet-triangle sections), so the
 cooker and the product format do not change. They are part of the mesh's residency: copied under the same
 upload budget, shown and retired with the mesh, and switched by
-[a content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) like the rest of it.
+[a content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-wp1-wp2) like the rest of it.
 
 A contribution that resolved to any other path uploads none of this and changes no usage, on any device,
 including one that enabled the stages. So the paired record's existing-path arm, and an ordinary scene on a

@@ -41,7 +41,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 
 ## WP5 Small cooked publications prove supersession and safe reuse
 
-Use the [fixture design](DESIGN.md#cooked-publication-regressions-m5) for the cases in the
+Use the [fixture design](DESIGN.md#cooked-publication-regressions-wp5) for the cases in the
 [workspace case list and baseline times](LOG.md#m5-workspace-timing-baseline).
 
 Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace

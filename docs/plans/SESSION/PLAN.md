@@ -39,7 +39,7 @@ Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#p
 
 ## WP8 A small in-memory match catches reliable-lane recovery regressions
 
-Use the [fixture design](DESIGN.md#reliable-lane-recovery-fixture-m8) for the cases in the
+Use the [fixture design](DESIGN.md#reliable-lane-recovery-fixture-wp8) for the cases in the
 [workspace case list and baseline times](LOG.md#m8-workspace-timing-baseline).
 
 Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
@@ -53,7 +53,7 @@ Criteria: WP5.1–WP5.14 in the done-when file.
 `TRANSPORT` left the three socket adapters, the relay and its proof programs in `examples/link-proof` with
 `scripts/transport_link.py`, which show how each target is started and how a page reaches the host. Use the relay.
 
-Adopt the [shared simulator lifecycle](DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5) before
+Adopt the [shared simulator lifecycle](DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-wp5) before
 rerunning the socket proofs. Limit changes to other proof commands, including `scripts/transport_link.py`, to
 simulator admission, clean starting state and cleanup. Use the short device proof to verify cleanup, the
 CPU record to verify outer lock release on cancellation and presentation timeout, and the existing socket

@@ -61,7 +61,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP18 The submitted craft trail is checked through a minute of ageing in the fast suite
 
-Land the [compact Metal trail fixture](DESIGN.md#compact-metal-craft-trail-m18) ahead of unfinished
+Land the [compact Metal trail fixture](DESIGN.md#compact-metal-craft-trail-wp18) ahead of unfinished
 water work. Adapt the trail-test portion of `52345b514` from `build/waters` to the current main
 fixture. Record the default Nextest time on the Mac, excluding compilation, for the exact test alone
 and within the foam binary under normal builder load. Both runs pass on the first attempt under the
@@ -72,7 +72,7 @@ existing ten-second limit. WP13.14 continues to verify the guard when the surf w
 Land the fixture reductions first if a long-tier entry would hold them behind failures in other
 packages. WATERS owns the sea field and cache regressions.
 
-Use the [fixture design](DESIGN.md#water-fixtures-and-full-sea-sweeps-m17) for the cases in the
+Use the [fixture design](DESIGN.md#water-fixtures-and-full-sea-sweeps-wp17) for the cases in the
 [workspace case list and baseline times](LOG.md#m17-workspace-timing-baseline).
 
 Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace

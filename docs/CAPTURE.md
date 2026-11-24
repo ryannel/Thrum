@@ -309,7 +309,7 @@ ORCHESTRATE_SCRIPT="${ORCHESTRATE_LOOP:?Set ORCHESTRATE_LOOP to the installed ag
 
 The command takes the exclusive simulator lock for the whole run, including the build and cook. Keep the
 turn within the 30-minute hold limit. The capture records the actual native foreground engine texture.
-The [shared lifecycle](plans/SESSION/DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5) starts each run with a fresh app installation and data container, a new proof directory and cleared XCTest
+The [shared lifecycle](plans/SESSION/DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-wp5) starts each run with a fresh app installation and data container, a new proof directory and cleared XCTest
 runner state. The supervisor holds admission across the LaunchServices handoff and verifies shutdown before
 release on completion, worker failure or cancellation. The owned device stays shut down for reuse.
 

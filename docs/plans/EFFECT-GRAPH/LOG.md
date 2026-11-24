@@ -167,7 +167,7 @@
   `BLOCKED needs_dependency` ("settle and assign the shared display-time interface change"). Alpha stops at the
   committed tick, so under a display lead `C − 1 + α` is not the display's time. Each frame now gives effects the
   unclamped phase; alpha and authority do not change. `HOST` was the builder's other candidate and waits on seven
-  milestones. [Design](DESIGN.md#the-display-phase-m4). M3's builder note and stop rules left the plan with M3 Done.
+  milestones. [Design](DESIGN.md#the-display-phase-wp4). M3's builder note and stop rules left the plan with M3 Done.
 - 2026-11-16 Planner: M4 revised after its design review's one Must Fix (MF5), with `CLOUDS`. The phase
   describes the consumed target, the observation plus the lead, so alpha stays the phase held to 1 in every
   frame and an expired target has one meaning. `Offscreen::step_for` reads the clock once; the window hosts are

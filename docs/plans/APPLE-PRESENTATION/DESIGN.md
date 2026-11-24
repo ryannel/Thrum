@@ -11,8 +11,8 @@
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
 [the loop's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
 fresh design review of that revision passed on 11 November. Revised 14 November for WP4 to WP12
-([settled below](#m4-to-m12-settled-14-november-2026)), and twice on 19 November for
-[the surface across a transition](#the-surface-across-a-transition-m4), the second time after
+([settled below](#wp4-to-wp12-settled-14-november-2026)), and twice on 19 November for
+[the surface across a transition](#the-surface-across-a-transition-wp4), the second time after
 [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) asked for one answer to the drawable's size
 after a failed configure and for a stated iOS transition. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
@@ -32,7 +32,7 @@ which a builder holds."
 
 **What a design approval covers.** A Design Approved result for this revision approves the whole module. WP1–WP3
 are as the 11 November review approved them and are not changed. For WP4 to WP12 the review reads
-[the section that settles them](#m4-to-m12-settled-14-november-2026), which holds the four things the earlier
+[the section that settles them](#wp4-to-wp12-settled-14-november-2026), which holds the four things the earlier
 approval left for it: the EDR transform and its H = 1 identity, the exposure handoff of the normalising MetalFX
 fallback, the lifecycle of a generation build, and the archive mechanism. Where that section and an older
 paragraph of this page disagree, that section governs.
@@ -324,7 +324,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   in-flight frame completes, so it skips frames throughout a drag. G4 changes the rule, with G3b owner review: the
   surface is left as configured while the size changes, the layer scales the picture, and the surface is
   reconfigured once, in the step that takes the generation built for the new size.
-  [The surface across a transition](#the-surface-across-a-transition-m4) gives the rule and why.
+  [The surface across a transition](#the-surface-across-a-transition-wp4) gives the rule and why.
 - *Off-thread build.* This needs `PreparedSynthetic` split in two:
   - an immutable prepared part (pipelines, layouts, samplers), shared behind an `Arc`, which the builder reads;
   - per-generation state (targets, per-slot frame buffers, bind groups, providers), which the builder creates.
@@ -333,7 +333,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   A newer extent cancels a running build, whose result is dropped. Device loss during a build drops the build and takes
   the recovery path.
 - *Governor during transitions.* The governor holds while a build runs and resumes when the build ends, whether or
-  not a generation was taken. [The rule](#the-governor-across-a-build-m4-and-m7) is below.
+  not a generation was taken. [The rule](#the-governor-across-a-build-wp4-and-wp7) is below.
 - *Occlusion.* A fully occluded window stops the display link and so stops encoding. Presentation drop covers only
   transient acquisition failures, so no GPU time goes to frames nobody sees.
 
@@ -395,7 +395,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   generation builds.
 - WP9 takes a planning baseline of launch-to-ready. WP10 then builds and proves the pipeline preparation work: the
   pinned backend, offline metallibs and parallel pre-warm, and WP12 local archive qualification, all within V1. Their
-  mechanism is [settled below](#pipeline-preparation-m10-and-m12).
+  mechanism is [settled below](#pipeline-preparation-wp10-and-wp12).
 - Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's per-post authorization rules in G4 WP10/U1.
 
 **What would change these choices:**
@@ -420,7 +420,7 @@ backing size in Chrome. A host is still created at an extent its caller names, s
 and every exact baseline keep the extent they were retained at: WP4 moves no retained image. Chrome has one
 thread, so there a new extent is prepared between two frames as it is today, and the page records the gap. iOS
 prepares between two frames too, in its render owner, because its lease lets it present nothing meanwhile
-([the surface across a transition](#the-surface-across-a-transition-m4) says why). Only the Mac builds off the
+([the surface across a transition](#the-surface-across-a-transition-wp4) says why). Only the Mac builds off the
 render thread, and the lifecycle below is the Mac's.
 
 ### The lifecycle of a generation build (WP4)

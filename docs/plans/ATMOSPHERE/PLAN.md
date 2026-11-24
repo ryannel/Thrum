@@ -54,7 +54,7 @@ holds its criteria, the finished work and the work left.
 
 ## WP11 Small Metal probes keep the atmospheric lookup checks fast
 
-Use the [fixture design](DESIGN.md#atmosphere-lookup-regressions-m11) for the cases in the [case list and baseline times](LOG.md#m11-workspace-timing-baseline).
+Use the [fixture design](DESIGN.md#atmosphere-lookup-regressions-wp11) for the cases in the [case list and baseline times](LOG.md#m11-workspace-timing-baseline).
 
 Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
 check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a

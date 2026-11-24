@@ -55,7 +55,7 @@ The FidelityFX Shadow Denoiser's source may be ported, with its licence recorded
 `indirect_radiance` is in `synthetic_environment.wgsl` and `synthetic_plain.wgsl`. Microsoft's real-time denoised ambient occlusion sample is the reference for the filter.
 The production list is assembled by `examples/v1-game/src/clouds.rs`. Its `Shade::rebuild_for_attachment`
 can take the accepted weather map before validation, and cloud setup currently submits noise work directly.
-Use [the candidate preparation boundary](DESIGN.md#scene-preparation-and-maps-fallback-m3) for this opt-in.
+Use [the candidate preparation boundary](DESIGN.md#scene-preparation-and-maps-fallback-wp3) for this opt-in.
 
 ## WP6 A person turns ray-traced shadows on for this Mac with one launch setting, the record shows how the valley looks with them and what they cost beside shadow maps, and where rays cannot run the same launch draws shadow maps
 

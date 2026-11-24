@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/CULLING/design-review.md",
     "commit": "390abd364e08c6f1471075f5904836623f0090bf",
-    "hash": "d5f19536300fdf323a9dace3f7547419f4c6be2f4c6b0849200f8af569103dce",
+    "hash": "01f6d26596fdc06d6ef78d12b27bb1adebb8fb81cdaeb98a6484509429765b35",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",

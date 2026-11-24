@@ -62,7 +62,7 @@ culling mode.
    meshes, and the field default decided from paired rows.
 3. The valley's 10,000 entities culled by default and equal to Direct in every pixel, on Mac and Chrome, and the
    gate closed. That proof needs Direct itself to be one image, so WP3 also makes the forward pass draw
-   [one image under load](#m3-one-image-under-load).
+   [one image under load](#wp3-one-image-under-load).
 
 **Not built here:** LOD selection; several cameras; meshlet culling of field meshes; a visibility buffer; Metal
 indirect command buffers; GPU-written draw *counts* (`MULTI_DRAW_INDIRECT_COUNT` has no Metal or WebGPU support in
@@ -479,7 +479,7 @@ only when a scene is prepared.
 is caught. For this module:
 
 - It must not move `APPLE-TILE`'s registered baselines, on the Mac or in Chrome, with one exception that the
-  module list rules: WP3's [coverage output](#m3-one-image-under-load). The main-branch check `exact-images`
+  module list rules: WP3's [coverage output](#wp3-one-image-under-load). The main-branch check `exact-images`
   runs the verifier on main after each merge, and WP2 and WP3 carry `verify` as their claim-time check, which
   passes from that run. No image run is asked before a merge, except WP3's one run for its planned refresh.
 - WP1 was built before the verifier existed and carried the native matrix as an automated check.
@@ -518,7 +518,7 @@ is caught. For this module:
    comparison that varies under load, which stops the module that meets it.
 8. **The coverage output costs more than expected.** Early sign: WP3.13's paired rows cross a tripwire. Outcome:
    the cause is investigated and given a disposition within WP3, as the Cost paragraph of
-   [the mechanism](#m3-one-image-under-load) says. The figure alone never stops the work package.
+   [the mechanism](#wp3-one-image-under-load) says. The figure alone never stops the work package.
 
 ## Performance
 

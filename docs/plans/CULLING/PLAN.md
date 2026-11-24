@@ -28,7 +28,7 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 ## WP3 The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome
 
 Criteria: WP3.1–WP3.13 in the done-when file. Read [Frame cadence](DESIGN.md#frame-cadence) first, then
-[One image under load](DESIGN.md#m3-one-image-under-load) for anything you change.
+[One image under load](DESIGN.md#wp3-one-image-under-load) for anything you change.
 
 Everything is built and on main. The coverage output, its references and pins landed at `534ba5021`, the
 campaign on main passed, and [the second review](../../../.orchestrate/evidence/CULLING/WP3-review.md) passed eleven items. It

@@ -4,7 +4,7 @@
 [the brief](../VISION.md). C02, C04, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), the
 [graph decision](../../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) and
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) govern. Revised 16 November 2026: a fourth
-work package gives effects [the display phase](#the-display-phase-m4). Revised again that day after
+work package gives effects [the display phase](#the-display-phase-wp4). Revised again that day after
 that revision's review (finding MF5; `git show 8ed45fc5b:.orchestrate/evidence/EFFECT-GRAPH/design-review.md`): the
 phase describes the target the clock consumes, and a prediction is carried a tick at a time. Revised a third
 time that day, after WP4's first review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review-1.md)): which
@@ -41,7 +41,7 @@ The builder's diagnosis (`.orchestrate/evidence/CLOUDS/WP2-temporal-blocker.md` 
 "HOST/EFFECT-GRAPH, with their clock/platform consumers", that it "preserve enough target information and
 endpoint history, or explicitly define a bounded prediction coordinate for presentation-only advection", and that
 authoritative weather stay unchanged. The time a frame gives an effect is this module's interface, so the change
-is [WP4](#the-display-phase-m4) here. `HOST` waits on seven work packages and changes none of this.
+is [WP4](#the-display-phase-wp4) here. `HOST` waits on seven work packages and changes none of this.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `graph.rs`, `graph_record.rs`,
 `contribution.rs`, `synthetic/{scene_graph,contributed}.rs`, `atmosphere/graph.rs`, the [SEA](../SEA/BRIEF.md) and
@@ -75,7 +75,7 @@ existing passes or descriptors (they keep their exact output); real async-comput
 | Need | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
 | **N1 Declare 3D, cube and mipped storage-array textures** | Transient, persistent and history scopes; the portable recipe's limits and the Mac's | A descriptor the graph accepts but allocates as 2D. Rejected by exact readback of every texel of each kind on Metal and in Chrome |
-| **N2 Keep simulated state that advances with the world, not with the display** | 1 to several display frames per tick; hitches of many ticks; discarded and capture frames; pause; a tick that goes backwards; a new timeline | State that advances once per drawn frame, or that resets when a tick repeats. Rejected by comparing GPU state exactly with expectations written from [the state table](#state-time-and-the-tentative-frame-m2) after a scripted mix of those frames |
+| **N2 Keep simulated state that advances with the world, not with the display** | 1 to several display frames per tick; hitches of many ticks; discarded and capture frames; pause; a tick that goes backwards; a new timeline | State that advances once per drawn frame, or that resets when a tick repeats. Rejected by comparing GPU state exactly with expectations written from [the state table](#state-time-and-the-tentative-frame-wp2) after a scripted mix of those frames |
 | **N3 Run a pass less often than every frame, by a runtime value** | Every frame to once in many; changed while running; two histories at different cadences | Recompiling the graph on change, or a skipped pass whose readers get an older side. Rejected by creation counters across a change and by exact readback of a consumer's output on every run and skip boundary |
 | **N4 Draw after opaque geometry, from scene depth and the scene behind** | Both native recipes and Chrome; a depth-only effect and a refracting one | A pass that reads last frame's depth or colour. Rejected by a moving occluder: the effect is hidden behind it in the same frame |
 | **N5 Feed reconstruction's inputs** | Motion, reactive coverage and reset on cuts, replacement and effect reset | Zero motion on a moving effect. Rejected by reading motion from submitted frames against the known displacement |
@@ -291,10 +291,10 @@ exists in host time only. "The display target" had also meant two different host
    | The first to interpolate once a queue has drained | `T − O − d`, in the span it never left | Forward, to where that span's frames would have been |
    | The first to interpolate after a resume | `T − O − d` in the new span: `C_R · d`, plus the host time from the resume's first tick falling due to the frame's consumed target | Forward from `C_R · d`, never back. Showing that first tick, by less than a tick plus 50 ms: the time the tick's commit and the frame took to arrive, plus the lead. With a 30 ms lead the planner's run steps 38.3 ms |
    | A frame whose target is past the bound | `C · d + 50 ms` | Held there until the world commits or stops |
-   | The first after a rewind, or on another timeline | That of the tick it now shows | The change of tick. Rule 1 of [state and time](#state-time-and-the-tentative-frame-m2) resets the effect's state in the same frame |
+   | The first after a rewind, or on another timeline | That of the tick it now shows | The change of tick. Rule 1 of [state and time](#state-time-and-the-tentative-frame-wp2) resets the effect's state in the same frame |
 
 10. **Sampling is read-only.** Reading the phase or the due time admits no tick and changes no clock. Rule 1
-    of [state and time](#state-time-and-the-tentative-frame-m2) reads the frame's tick only, so what an
+    of [state and time](#state-time-and-the-tentative-frame-wp2) reads the frame's tick only, so what an
     effect's state does in a frame is the same with any phase.
 11. **Every source of world time states its phase and its tick's due time from its own clock.** None forms a
     phase from an alpha already held at 1, and there is no default for either.
@@ -778,5 +778,5 @@ on the valley route with no effect attached.
 | Which storage formats, counts and view dimensions does Chrome's record allow? | WP1 records them |
 | Do these cadence rules serve the first sea and cloud frames? | Their designs' cost accounts; a failure reopens [cadence](#cadence) here |
 | Is one shared refraction copy the right source on Apple tile? | WP3 records its cost; `SEA` decides |
-| Do the camera, entities, waves and sprites move evenly under a display lead? | Not by WP4. Their owners plan it; see [the display phase](#the-display-phase-m4) |
+| Do the camera, entities, waves and sprites move evenly under a display lead? | Not by WP4. Their owners plan it; see [the display phase](#the-display-phase-wp4) |
 | How far does a window's consumed target lie from the platform's, between the two clock reads of the Mac's render actor and the iPhone's render owner? | Not by WP4, which leaves both hosts as they are. Whoever next plans those frame loops measures it, and pairs the two clocks once if it shows |

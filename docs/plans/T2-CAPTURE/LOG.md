@@ -84,7 +84,7 @@
 - 2026-11-24 Planner. The failed `exact-images` run on `7236c735c9f6` retained 481 night SDR frames.
   A read-only diagnostic matched their identities and decoded digests against the registered reference.
   The shutdown deadline signalled `open`, left the profile, and read the launcher receipt before Chrome's
-  exit and the postflight were recorded. [M4](PLAN.md#m4-a-completed-chrome-capture-survives-slow-shutdown-and-leaves-no-browser-or-profile)
+  exit and the postflight were recorded. [M4](PLAN.md#wp4-a-completed-chrome-capture-survives-slow-shutdown-and-leaves-no-browser-or-profile)
   plans bounded cleanup of the actual owned browser after the completed capture.
 
 - 2026-11-24 Design review Must Fix 1. The design and M4.1 now cover Chrome exiting on its own with status 2

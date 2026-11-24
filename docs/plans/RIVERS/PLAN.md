@@ -38,7 +38,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 Build this repair first. It can land independently of the island work in WP4, which waits for WATERS WP9.
 
-Use the [fixture design](DESIGN.md#compact-river-solver-fixtures-m8) for the cases in the
+Use the [fixture design](DESIGN.md#compact-river-solver-fixtures-wp8) for the cases in the
 [workspace case list and baseline times](LOG.md#m8-workspace-timing-baseline).
 
 Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
@@ -47,7 +47,7 @@ focused batch under normal builder load. The batch passes the existing ten-secon
 
 ## WP9 Chart gauges and solver determinism run within the fast-suite limit
 
-Land this repair before WP4. Use the [compact fixtures](DESIGN.md#compact-chart-gauge-and-determinism-fixtures-m9)
+Land this repair before WP4. Use the [compact fixtures](DESIGN.md#compact-chart-gauge-and-determinism-fixtures-wp9)
 for the two tests that timed out on their isolated retry. Record the work each fixture does and the test
 times with the default Nextest profile, excluding compilation, alone and together under normal builder load.
 Both pass on the first attempt under the existing ten-second limit.

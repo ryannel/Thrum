@@ -793,7 +793,7 @@ the field is read, so they add no state.
 
 **Interaction waves and foam are state.** The text below calls the interaction waves the wake, after their first source. Each is the integral of what bodies and breaking waves did, and advances on the
 committed tick through `EFFECT-GRAPH`'s
-[state table](../EFFECT-GRAPH/DESIGN.md#state-time-and-the-tentative-frame-m2). The seam runs a producer once in
+[state table](../EFFECT-GRAPH/DESIGN.md#state-time-and-the-tentative-frame-wp2). The seam runs a producer once in
 a frame, so each operator takes the number of ticks to advance as a parameter:
 
 | Layer | A frame *n* ticks ahead | A full frame: the first of an epoch, a backward tick, a new timeline, a replaced device |

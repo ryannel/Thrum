@@ -174,7 +174,7 @@ with zero new trace attempts consumed. [Evidence and one-command runbook](../../
 [records](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/M0-M1-records.md), the review briefs to
 [review briefs](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/review-briefs.md), the console witness commission to
 [evidence](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/console-witness-correction.md), and the M2 and M3 protocol detail to
-[the design](DESIGN.md#m2-and-m3-qualification-protocol). M0 and M3 were renamed for what someone can see. No item
+[the design](DESIGN.md#wp2-and-wp3-qualification-protocol). M0 and M3 were renamed for what someone can see. No item
 or scope changed.
 
 - 2026-11-11 M2 scoped re-plan, missing display events. Read-only export of both retained traces shows

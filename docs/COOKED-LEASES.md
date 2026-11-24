@@ -55,4 +55,4 @@ is `hash`; both hashes belong to the same offered publication. A foam texture ca
 volumes use portable R8 and preferred BC4 where sliced-3D BC is available. Font and sprite-sheet
 metadata, array pages, volume atlases and iPhone-specific volume encodings remain later work.
 
-See the [publication design](plans/CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2).
+See the [publication design](plans/CONTENT-LOOP/DESIGN.md#one-publication-one-switch-wp1-wp2).

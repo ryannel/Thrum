@@ -5,7 +5,7 @@ Reconstruction, display and the quality governor (gate G4), governed by
 [Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list and seam rulings](../ARCHITECTURE.md#interfaces) · paired plan [APPLE-TILE](../APPLE-TILE/PLAN.md)
 
-Read the [design](DESIGN.md#m4-to-m12-settled-14-november-2026) and seams 5–9 before starting.
+Read the [design](DESIGN.md#wp4-to-wp12-settled-14-november-2026) and seams 5–9 before starting.
 Build in the order below.
 
 ## Open for the owner
@@ -40,7 +40,7 @@ Build in the order below.
 
 ## WP15 Chrome's SDR valley matches the retained frames again
 
-Restore the [SDR shoulder arithmetic](DESIGN.md#the-edr-transform-and-its-h--1-identity-m6) before continuing WP6.
+Restore the [SDR shoulder arithmetic](DESIGN.md#the-edr-transform-and-its-h--1-identity-wp6) before continuing WP6.
 Match the route, cooked root and record identities in the before-and-after Chrome fixed day captures.
 Keep both receipts and rerun D6.2 and D6.3 on the corrected shader. The shared `exact-images` run proves
 the full matrix on the landing against the [registered APPLE-TILE baselines](../ARCHITECTURE.md#exact-baselines).

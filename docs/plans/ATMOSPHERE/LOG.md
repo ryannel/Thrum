@@ -420,7 +420,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
 - 2026-11-14 The design has not been reviewed since this change. No builder starts M9 until a design review
   returns Design Approved.
 - 2026-11-16 M9's block, "Restore reliable cooker edit publication", is planned as `CONTENT-LOOP` M4
-  ([the sweep](../CONTENT-LOOP/DESIGN.md#the-sweep-m4)): macOS left saves unreported and the cooker's watcher
+  ([the sweep](../CONTENT-LOOP/DESIGN.md#the-sweep-wp4)): macOS left saves unreported and the cooker's watcher
   never re-read them. M9 gets no `depends_on` entry for it, because the script clears a milestone's passed
   items when its definitions change, and M9.1, M9.2, M9.4 and M9.5 are proved. The lead runs `unblock` for M9
   once `CONTENT-LOOP` M4 is Done. No item, design text or assumption of this module changed.

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/WATERS/design-review.md",
     "commit": "8939bdf4a4151d1c4304b18438d4e50e686817a4",
-    "hash": "b4e3b29bf52adff75fc03f49930e29867aaf523434e8d6d58a182c984d593463",
+    "hash": "ec175a1f53573c028c639659d81fa7b7edcb3d1cae46b4a0d6a9f72f8a854e72",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",

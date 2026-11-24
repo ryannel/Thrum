@@ -329,7 +329,7 @@ and new file hashes go in the log. From WP7 the same refresh serves each row's b
 **Three rows, one encoding (WP7).** The rows are compared as 8-bit sRGB submitted output after tone mapping,
 before display: T2's `sdr` source in Chrome and on the Mac's portable row. The Apple row keeps EDR selected and
 is captured at headroom 1, where
-[`APPLE-PRESENTATION`'s EDR transform](../APPLE-PRESENTATION/DESIGN.md#the-edr-transform-and-its-h--1-identity-m6)
+[`APPLE-PRESENTATION`'s EDR transform](../APPLE-PRESENTATION/DESIGN.md#the-edr-transform-and-its-h--1-identity-wp6)
 is the SDR curve term for term, and its submitted float frame is encoded to 8 bits for the comparison, within
 one code of the SDR path's. What that row shows above headroom 1 is compared by nothing here: the exit record
 cites `APPLE-PRESENTATION`'s own EDR evidence for it. The comparison's record names each row's source and

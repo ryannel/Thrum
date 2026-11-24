@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/GAME-UI/design-review.md",
     "commit": "04ecff7932b4939f52ca742a0b8bb17d7ecad9e9",
-    "hash": "dd28f105ad409f608fed1a32da93df173d0fd6d5195e5a6223b84c25fdb8ad43",
+    "hash": "1da85a597ba39ebe45332f5104c5d3a771fc9a0ec83d8aa80b00c0a19e6cafc6",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
