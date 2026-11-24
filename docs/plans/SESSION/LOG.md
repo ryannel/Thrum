@@ -244,3 +244,16 @@
   transfer, and each client replayed through the host's tick at restore. The records retain the first
   Playing transition, shared interpolation phase, and byte counters with their measurement windows.
   The simulator proof fixtures now read the migrated plan names. [Target evidence](../../../.orchestrate/evidence/SESSION/WP5/review-fix/README.md)
+
+## WP6 game-maker guide and headless proof
+
+- Added the [game-maker guide](../../SESSION.md), copied the deterministic profile wording into C13
+  verbatim and documented how SESSION uses the A0 and A5 decisions. Recorded N1's implementation,
+  correctness, device scope and unrun paths in the maturity ledger.
+- The V1 game, starter and creator scenes omit both networking crates. The in-memory proof reaches
+  neither socket adapter's added dependencies. The reconnect token now uses the already locked
+  entropy provider version that predates TRANSPORT.
+- On the Mac, all 31 integer/session tests passed. At A0 and on the harsh profile, all four in-memory
+  replicas matched 1,200 digests each. The headless socket match repeated the same digest count on
+  two Mac clients, Chrome and the iPhone simulator over A0-conditioned loopback. The simulator
+  verified shutdown. [Builder evidence](../../../.orchestrate/evidence/SESSION/WP6/README.md)

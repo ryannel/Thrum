@@ -684,70 +684,70 @@
           "statement": "A guide linked from the networking design tells a game maker how to put a game in a match: declaring the rule set, the action wire, which actions are commands and a predicted controller; handling roster events; starting a host and joining with a ticket; reading connection state; rehearsing on the in-memory link; and running the match command on the three targets.",
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it say that a late timed action is lost and a command is not, that a hero the crowd pushes is corrected every tick, that the crowd is drawn behind the hero, that a peer too slow for the match is dropped, that the match ends with its host, that a rule set must step for every set it admits because a refused step on the host ends the match, that a difference the rules overwrite before a digest tick is not reported, and that anyone with the ticket can join?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.2",
           "statement": "The networking design says what is built and what is not, C13 carries the addition in the design's words, and the A0 and A5 decision records say which of their parts a deterministic match uses, leaves unused or replaced.",
           "ask": "Is C13's addition word for word the design's, and is C13 otherwise unchanged? Does the networking design or any A5 record still describe as open or selected something this module settled differently (the fixed five-tick lead, the nine-step replay cap, who retains results, the handshake) without saying so?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.3",
           "statement": "The maturity ledger says what this module proved and what it did not.",
           "ask": "Do the ledger's N1 rows keep implementation, correctness and device results apart? Do they name as not run a second machine, any path that is not loopback, a physical iPhone, Safari, Firefox, a public host, host migration and whole-world rollback, and claim no speed for the simulator?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.4",
           "statement": "At the closing commit the V1 game, the starter and the creator scenes have neither `thrum-network` nor `thrum-transport` in their dependency closures, and a package that uses the session with the in-memory link has no crate in its closure that `TRANSPORT` added for sockets.",
           "check": "python3 scripts/session_match.py closure",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/closure.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.5",
           "statement": "At the closing commit the full match on the in-memory link again holds every client's digest equal to the host's at every digest tick, at A0 and on the harsh profile.",
           "check": "python3 scripts/session_match.py memory steady",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/memory-steady.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.6",
           "statement": "At the closing commit a headless host and two Mac clients, a Chrome page and an iPhone-simulator client again share the 10,000-body crowd over sockets through the relay for ten minutes with equal digests.",
           "check": "python3 scripts/session_match.py sockets steady",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/sockets/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.7",
           "statement": "The engine crates hold no game types, and the tests' second rule set uses every part of the session the reference crowd does not: actions, commands and roster events.",
           "ask": "Does thrum-network or thrum-core name a type, constant or rule of the reference crowd or of the tests' second rule set? Could SWARM put its own rules in a match through the public interface and the match command, without editing either?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
