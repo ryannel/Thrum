@@ -228,3 +228,14 @@
   [Chrome inspection](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.10-chrome-motion.md) ·
   [Merge result](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3-window-and-proof-merge.log) ·
   [Item refusal](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.13-orchestrate-refusal.json)
+- The verified merge at `abffdf252` landed the AppKit proof and passed the repository gate. On that
+  commit, the shared `long-tests` run passed with the feature-gated 2D generation inventory. A fresh
+  Retina window run matched all three backing sizes and the first resize. The WebGPU sweep passed on
+  retry after a Chrome shutdown error.
+  [Long-tests receipt](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.13-main-long-tests.json) ·
+  [Window receipt](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.6-merged-window.json) ·
+  [Chrome receipt](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.7-merged-chrome/sprites-crisp.json)
+- Orchestrate 3.0.7 refuses the pinned WP3.13 command in the post-merge item checker. For the planner,
+  an inspection of a covering shared-run receipt would preserve the proof without invoking the
+  refused item command.
+  [Orchestrate refusal](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.13-orchestrate-3.0.7-refusal.json)

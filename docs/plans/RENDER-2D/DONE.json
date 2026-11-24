@@ -378,7 +378,7 @@
           "ask": "Does the unattended check verify shell geometry at the three sizes and after resize, record console state, and distinguish a presented sample from geometry alone using observed surface occlusion and no drawable? Does a complete real-window record covering the landed path link each presented submission, including the first after resize, to the matching engine pixels and exact card comparison by submission ID? A geometry-only result leaves the presentation proof open.",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.6-window.json",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.6-merged-window.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -390,7 +390,7 @@
           "ask": "Is the camera centre advanced through successive submissions of the same retained scene at each scale, and does the pixel-based check reject a frozen camera even when the requested centres advance?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.7-browser/sprites-crisp.json",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.7-merged-chrome/sprites-crisp.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -440,10 +440,10 @@
           "statement": "The shared main-branch check long-tests passes on a commit containing the completed WP3 changes, including the feature-gated generation inventory repaired in WP3.12.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.13-main-long-tests.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
