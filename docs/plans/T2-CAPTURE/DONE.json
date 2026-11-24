@@ -249,7 +249,7 @@
     {
       "id": "M4",
       "name": "A completed Chrome capture survives slow shutdown and leaves no browser or profile",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "The registered Chrome captures retain exact frame identities and decoded digests. A slow shutdown after validation succeeds when cleanup and both denied preflights are confirmed, with the actual termination recorded.",
       "items": [
         {
@@ -258,8 +258,8 @@
           "check": "node --test scripts/test_browser_capture_shutdown.mjs",
           "ask": "Do the tests exercise production teardown and finalization with controlled processes and observe the command status, manifest, receipt, owned processes and profile? In the delayed-receipt case, does the browser stand-in exit with status 2 after requested close without TERM or KILL, and does the test require command exit 0, a complete manifest and recorded browser status 2?",
           "target": "stand_in:chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/early-exit-proof.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },
@@ -268,9 +268,9 @@
           "statement": "On the LaunchServices path, the run owns the browser lifetime from launch through reaping. Only the owned browser and helpers are eligible for escalation. The launcher remains available to record the real termination and denied postflight, and other callers keep their qualification and exit requirements.",
           "ask": "Trace startup before CDP, Browser.close with no reply, TERM and KILL, and final receipt handling. Can a wrapper exit, a stale PID or a CDP disconnect satisfy the process-exit check or cause a signal to another run? Is there a cleanup path that skips owned processes or the profile on a prior capture error? Verify the direct-child checker and the existing launcher consumers still enforce their own verdict rules.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/repair-ownership.md",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },
         {
@@ -284,13 +284,19 @@
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         }
       ],
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "findings": [
         {
-          "name": "Supervisor disconnect marks an early Chrome exit as requested",
+          "name": "Pre-DevTools launcher timeout leaves the capture profile",
           "item": "M4.1",
-          "different": "The previous defect masked a capture error during a failed manifest write. Here manifest publication succeeds and incorrectly certifies a browser exit before the harness requested shutdown.",
+          "different": "The previous defect accepted an early browser exit. This startup failure is correctly rejected, but the profile remains before Chrome has even started.",
+          "repeat": false
+        },
+        {
+          "name": "Node transfers profile ownership before Swift accepts admission",
+          "item": "M4.2",
+          "different": "The earlier shutdown-request write failure stranded a running browser group. This ownership gap occurs during startup with a writable volume and no browser group.",
           "repeat": false
         }
       ]
