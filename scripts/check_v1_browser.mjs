@@ -2258,6 +2258,11 @@ async function checkShippingBoundary(cdp, origin, timeout, wasm) {
       if (/fault/i.test(value)) throw new Error(value);
       if (/^Running the 10,000-entity/.test(value)) return value;
     }, timeout, 'normal scene with qualification query parameters present');
+    const game = await existingGame(cdp, sessionId);
+    const presented = await waitFor(
+      () => game.invoke('const count = Number(game.presented()); return count >= 3 ? count : null;'),
+      timeout, 'normal scene presented frames',
+    );
     const exports = await evaluate(`(async () => {
       const bindings = await import('/v1_game.js');
       return {
@@ -2279,7 +2284,7 @@ async function checkShippingBoundary(cdp, origin, timeout, wasm) {
     const proofFiles = await evaluate(`Promise.all(['/capture.html', '/capture.mjs', '/temporal.html', '/moving-v1.json'].map(
       async path => [path, (await fetch(path)).status]))`);
     if (proofFiles.some(([, code]) => code !== 404)) throw new Error(`The normal bundle serves qualification files: ${JSON.stringify(proofFiles)}`);
-    return { case: 'shipping-boundary', status, wasm_sha256: wasmHash, exports, proofFiles };
+    return { case: 'shipping-boundary', status, presented, wasm_sha256: wasmHash, exports, proofFiles };
   } finally {
     await cdp.call('Target.closeTarget', { targetId });
   }

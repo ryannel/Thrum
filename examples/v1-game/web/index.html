@@ -180,7 +180,6 @@
         }
         // @proving
         const running = sprites ? "Running the sprite scene…" : probe.has("field") ? "Running the 100,513-instance field…" : "Running the 10,000-entity scene…";
-        status.textContent = running;
         const pauseProbe = probe.has("pause-probe");
         const resizeProbe = probe.has("resize-probe");
         const overloadProbe = probe.has("overload-probe");
@@ -189,6 +188,7 @@
         const running = "Running the 10,000-entity scene…";
         const qualify = false;
         // @end
+        status.textContent = running;
         let exitReported = false;
         let stopped = false;
         // @proving
