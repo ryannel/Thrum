@@ -64,7 +64,7 @@ fn view_volume_reads_the_live_sun_path_without_cascades() {
         "view volume Sun-path graph",
         Some(wgpu::Backend::Metal),
         thrum_test_support::Profile::Portable,
-        &Default::default(),
+        &thrum_test_support::Restriction::default(),
     ) else {
         return;
     };
