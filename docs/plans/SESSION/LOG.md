@@ -222,3 +222,10 @@
   proof now disables background timer throttling. The 36,000-tick rerun matched all 1,200 digests on each
   replica, with warm admission between 96.69% and 100%. Chrome's fault and freeze scenarios, the listen-host
   match, and all eight Chrome cost rows also passed. [M5 evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)
+
+- 2026-11-24 The next clean run showed a Chrome replica backlog and a host close for falling behind.
+  Socket builds now optimize across crate boundaries, and Chrome yields between replica steps.
+  A clock regression reproduced skipped future input targets after a delayed poll at the staging limit.
+  The clock now keeps those targets consecutive. The steady run matched every digest on all four replicas,
+  with 99.73% to 100% warm admission. The other eight socket cases and the adaptive-lead regression passed.
+  [M5 evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)

@@ -527,7 +527,7 @@
           "check": "python3 scripts/session_match.py sockets steady",
           "ask": "Read the harness. Is each peer a separate process that reaches the others only through thrum-transport's sockets and the relay, with the relay's forwarded and dropped counts in the record? Is each client the session and the reference crowd built for its target, with its platform, target triple and browser or runtime version in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests, and does the harness compare them without supplying any?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.1-active-chrome/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.1-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -538,7 +538,7 @@
           "check": "python3 scripts/session_match.py sockets faults --target mac-metal",
           "ask": "Does the record hold, for each event, its time, the link identifiers and epochs before and after, the baseline's tick and size, and the reason each surviving end reported? Is the harness's own note of the kill and the cut kept apart from what the sessions reported?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.2-verified/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.2-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -548,7 +548,7 @@
           "statement": "With a Chrome page as the subject, over sockets through the relay under A0's profile: it joins a 10,000-body match after tick 3,600; its link is cut for longer than the idle timeout and it returns to its slot with its token; it is reloaded and comes back with its saved token; and one value the rules carry forward is changed in its world and it is repaired. After each, its digest equals the host's at every digest tick, the other players' never differ, and the host commits every tick of the run.",
           "check": "python3 scripts/session_match.py sockets faults --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.3-active-chrome/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.3-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -558,7 +558,7 @@
           "statement": "With a client in the iPhone simulator as the subject, over sockets through the relay under A0's profile: it joins a 10,000-body match after tick 3,600; its link is cut for longer than the idle timeout and it returns to its slot with its token; it is killed and started again and comes back with its saved token; and one value the rules carry forward is changed in its world and it is repaired. After each, its digest equals the host's at every digest tick, the other players' never differ, and the host commits every tick of the run.",
           "check": "python3 scripts/session_match.py sockets faults --target ios-sim",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.4-verified/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.4-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -569,7 +569,7 @@
           "check": "python3 scripts/session_match.py sockets slow --target mac-metal",
           "ask": "Does the host in this run make its sends from its tick, so that a send that waited on the stalled client would show as a late tick? Is the longest gap between two host commits on record, with and without the stalled client?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.5-verified/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.5-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -579,7 +579,7 @@
           "statement": "Over sockets, a Chrome page is frozen twice. Frozen for longer than the held-control expiry, its slot gets neutral axes at one tick on every peer, and thawed it catches up or is repaired on the same link. Frozen for longer than the absence limit, it is closed, and thawed it returns to its slot on a new link with its token. Throughout, the host commits every tick and the other players' digests stay equal to its own. What the host saw during each freeze is on record.",
           "check": "python3 scripts/session_match.py sockets slow --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.6-active-chrome/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.6-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -589,7 +589,7 @@
           "statement": "A Mac process that hosts and plays, with a Chrome page and an iPhone-simulator client joined to it over sockets through the relay, holds the same digests as its clients for 3,600 ticks.",
           "check": "python3 scripts/session_match.py sockets listen",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.7-active-chrome/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.7-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -600,7 +600,7 @@
           "check": "python3 scripts/session_match.py sockets costs --target mac-metal",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.8-verified/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.8-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -610,7 +610,7 @@
           "statement": "With a Chrome client, the same rows as the Mac's are on record from two separate runs through the relay under A0's profile, each with BBR and with Cubic on the host, with the browser's version. What Chrome cannot report is marked absent, never zero. The figures are baselines: none decides the result.",
           "check": "python3 scripts/session_match.py sockets costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SESSION/M5/M5.9-active-chrome/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.9-consecutive-targets/record.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
