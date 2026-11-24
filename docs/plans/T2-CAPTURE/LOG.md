@@ -90,3 +90,11 @@
 - 2026-11-24 Design review Must Fix 1. The design and M4.1 now cover Chrome exiting on its own with status 2
   after requested close. The delayed-receipt test requires command exit 0, a complete manifest and recorded
   browser status 2 once validation, sync, cleanup and both denied preflights are confirmed.
+
+- 2026-11-24 Built M4 with a LaunchServices supervisor that owns Chrome and its helpers through
+  reaping, records the actual termination and both preflights, and lets a validated capture retain
+  completion after bounded escalation. Eleven CPU-only shutdown cases passed, including the delayed
+  status-2 receipt. Hardware Chrome closed through LaunchServices and the same supervisor reaped
+  controlled browser and helper processes after TERM and KILL.
+  [Ownership and target evidence](../../../.orchestrate/evidence/T2-CAPTURE/M4/ownership.md).
+  The shared exact-images check supplies the registered frame comparisons after merge.
