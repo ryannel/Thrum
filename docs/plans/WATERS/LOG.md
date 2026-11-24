@@ -803,3 +803,14 @@
   Retained the second take. Review the visible scale of the crest and the
   combined displacement at the bore before tuning again.
   [Three takes and the measured positions](../../../.orchestrate/evidence/WATERS/M13/bounded-swash-iteration.md).
+
+- 2026-11-24 Raised native surf realtime capture to 2560 × 1440.
+  Portable Metal submitted all fixed trade views and both tide sweeps
+  with zero observer omissions. The exposed beach breaks, the lee is
+  quieter and a crest curves around the headland. The fixed stills
+  leave downwind swell recovery unclear. Gaps in the tide submissions
+  limit the judgement of small waterline jumps. M13.8 remains open.
+  The retained model profile locates two closer peaks without height
+  gain across the sampled approach. The three-look stop still applies.
+  [Target inspection](../../../.orchestrate/evidence/WATERS/M13/review1440-metal-controls.md).
+  [Model profile](../../../.orchestrate/evidence/WATERS/M13/review1440-retained-profile.log).
