@@ -85,6 +85,7 @@ required-features = ["proving"]
 name = "valley_culling"
 path = "tests/valley_route_support/bench.rs"
 harness = false
+required-features = ["proving"]
 
 [[bench]]
 name = "recipe_cost"
