@@ -777,3 +777,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   the incident meter. The opt-in test bank's denser upper part makes the low solar disc visibly dim in SDR on Metal
   and Chrome while the near layer still fades terrain and movers. Retook the fixed and realtime views on both targets.
   [Review correction evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP8/review-fixes/README.md)
+
+- 2026-11-25 WP3 reproduced the reduced stock drop on the Mac CPU. At the second crossing state, stock returned
+  zero while the dense comparator retained 2.6958% visibility. The bounded filter retained 2.6879% and reached
+  zero with the comparator on the extinction sweep. Retained it as a diagnostic candidate. The authored-spur
+  in-game verdict remains open pending the original submitted inputs and matched fixed Metal and Chrome replay.
+  The diagnostic runs from the working folder. The landing changes only these plan records.
+  [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP3/README.md)

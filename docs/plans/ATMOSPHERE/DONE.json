@@ -671,15 +671,15 @@
     {
       "id": "WP3",
       "name": "A renderer developer can reproduce the shadow sampling failure and assess one filter offline",
-      "status": "not_started",
+      "status": "in_progress",
       "items": [
         {
           "id": "WP3.1",
           "statement": "The reduced two-state crossing can be regenerated from its recipe and pinned stock shader. Stock reaches zero visibility at the second state while the dense comparator still sees a limb. Record: the rerun command, the two states and outputs, and the recovery status of the authored spur, D32, uniforms and submitted inputs for both historical trajectories.",
           "ask": "Does the rerun produce both named states with the stock comparison and reproduce the premature zero? Does the record identify the historical 1920 \u00d7 1080 submissions 226 and 227 at row 665, and leave the in-game verdict open for their matched fixed Metal and Chrome replay?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP3/README.md#wp3-1",
           "verdict": "",
           "review": ""
         },
@@ -688,8 +688,8 @@
           "statement": "One CPU trial compares stock, candidate and dense visibility on the same stored-depth field for the two crossing states, 21 extinction states, uniform clear and uniform occlusion. Record: per-state visibility, signed residuals, adjacent steps, work and the retain-or-park verdict.",
           "ask": "Does the candidate use 64 \u00d7 16 weighted chord samples and at most 4,096 filter loads per query throughout? Does the verdict park the candidate if it loses the limb at the crossing, extinguishes early, rebounds or stays positive at the end of the sweep, or changes either uniform control?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP3/README.md#wp3-2",
           "verdict": "",
           "review": ""
         },
@@ -698,8 +698,8 @@
           "statement": "The diagnostic is a standalone CPU invocation in the working folder. It leaves the production surface evaluator and all five registered exact sets intact. Record: the landing diff and baseline impact.",
           "ask": "Does the work package diff leave the shaders, scenes, recipes, controls, five registered references, comparison files and registry entries identical to its base?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP3/README.md#wp3-3",
           "verdict": "",
           "review": ""
         }
