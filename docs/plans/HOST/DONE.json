@@ -281,7 +281,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m46-mac-and-chrome-runtime",
+          "evidence": ".orchestrate/evidence/HOST/M4/isolated-web/README.md",
           "verdict": "",
           "review": ""
         },

@@ -72,3 +72,7 @@
   passed on `d30c839b236f`, covering the merged HOST fixes. The current V1 Mac witness built and reached a
   locked console before recording. Its window evidence comes from the prior target pass.
   [Target evidence](../../../.orchestrate/evidence/HOST/M4/resumed/README.md)
+- 2026-11-24 The merged check passed the Mac window and overload cases before Chrome lost its copy of
+  the Wasm file in the checkout build cache. The lifecycle runner now keeps both web pages and its cooker
+  in the run directory, where the browser can compare the served Wasm with the same file at case completion.
+  [Cache-removal regression and target runs](../../../.orchestrate/evidence/HOST/M4/isolated-web/README.md)
