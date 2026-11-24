@@ -195,8 +195,18 @@ fn accumulate_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     textureStore(samples_out, pixel, vec4(bits, bitcast<u32>(z), flags));
 }
 
+fn sample_counts(sample: vec4<u32>) -> vec2<u32> {
+    return vec2(sample.w & 31u, (sample.w >> 5u) & 31u);
+}
+
 fn sample_mean(sample: vec4<u32>) -> vec2<f32> {
-    return vec2<f32>(countOneBits(sample.xy)) / vec2<f32>(vec2(sample.w & 31u, (sample.w >> 5u) & 31u));
+    return vec2<f32>(countOneBits(sample.xy)) / vec2<f32>(sample_counts(sample));
+}
+
+fn sample_votes(sample: vec4<u32>) -> vec2<u32> {
+    let lit = countOneBits(sample.xy);
+    return select(vec2(0u), vec2(1u), lit < sample_counts(sample)) |
+           select(vec2(0u), vec2(2u), lit > vec2(0u));
 }
 
 @compute @workgroup_size(SOFT_SUN_TILE, SOFT_SUN_TILE)
@@ -224,6 +234,7 @@ fn filter_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     let step_size = select(1, 2, fresh || max(variance.x, variance.y) > 0.12);
     var total = centre * 4.0;
     var weight = 4.0;
+    var votes = sample_votes(own);
     for (var y = -2; y <= 2; y++) {
         for (var x = -2; x <= 2; x++) {
             if (x == 0 && y == 0) || abs(x) + abs(y) == 4 { continue; }
@@ -235,10 +246,15 @@ fn filter_sun(@builtin(global_invocation_id) id: vec3<u32>) {
             let plane_distance = abs(dot(plane, neighbour_point - point));
             let tap = exp2(-4.0 * plane_distance / max(pixel_world, 1e-5)) /
                 (1.0 + f32(x * x + y * y));
+            if tap < 1e-4 { continue; }
             total += tap * sample_mean(neighbour);
             weight += tap;
+            votes |= sample_votes(neighbour);
         }
     }
-    textureStore(values_out, pixel,
-        vec4(select(total / weight, centre, settled), select(vec2(0.0), vec2(1.0), settled)));
+    // Agreement is carried by the actual votes. An all-one half float is
+    // still a penumbra if any contributing ray saw shadow.
+    let proven = settled | (votes != vec2(3u));
+    let value = select(total / weight, centre, proven);
+    textureStore(values_out, pixel, vec4(value, select(vec2(0.0), vec2(1.0), proven)));
 }

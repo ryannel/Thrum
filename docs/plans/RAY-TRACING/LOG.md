@@ -188,3 +188,7 @@
   accumulation in the mixed region. The open-rim fixture exposed an excessive far-face reach at grazing
   angles. The soft forward operation also bounds that reach by the scale implied by the difference between
   adjacent shading normals. The hard penumbra-off operation retains its original reach.
+- 2026-11-24 WP4 fast-caster refinement. The low moving cube exposed a striped remnant in the previous
+  frame's fractional visibility. The design's rim-ray option rechecks those fractions against the current
+  disc and restores the centre value where the rays agree. It starts at four rays and preserves disputed
+  history values rounded to an endpoint, as WP4.7 requires.

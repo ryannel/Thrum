@@ -46,7 +46,8 @@ struct SoftFrame {
     settle: u32,
     dive_cosine: f32,
     radius: f32,
-    padding: [u32; 2],
+    rim_rays: u32,
+    padding: u32,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
@@ -299,6 +300,7 @@ impl SoftSun {
     pub(in crate::synthetic) const PENUMBRA: &str = "Sun penumbra";
     const SETTLE: &str = "Sun penumbra settle length";
     const DIVE: &str = "Sun penumbra dive limit";
+    const RIM: &str = "Sun penumbra rim rays";
 
     pub(in crate::synthetic) fn new(device: &DeviceSite) -> Self {
         let knob = |name: &str, effect, value, range| QualityKnob {
@@ -322,6 +324,12 @@ impl SoftSun {
                 "Maximum angle below the receiver plane in degrees",
                 30,
                 1..=89,
+            ),
+            knob(
+                Self::RIM,
+                "Current rim rays used to verify a soft edge",
+                4,
+                0..=4,
             ),
         ])
         .expect("valid Sun penumbra controls");
@@ -369,7 +377,8 @@ impl SoftSun {
             settle: self.settings.knobs()[1].value,
             dive_cosine: (self.settings.knobs()[2].value as f32).to_radians().sin(),
             radius: crate::shader_constants::SUN_ANGULAR_RADIUS,
-            padding: [0; 2],
+            rim_rays: self.settings.knobs()[3].value,
+            padding: 0,
         }
     }
 
@@ -753,6 +762,7 @@ mod tests {
             offset_of!(SoftFrame, settle),
             offset_of!(SoftFrame, dive_cosine),
             offset_of!(SoftFrame, radius),
+            offset_of!(SoftFrame, rim_rays),
             offset_of!(SoftFrame, padding),
         ];
         assert!(

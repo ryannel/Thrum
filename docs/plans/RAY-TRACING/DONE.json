@@ -402,8 +402,8 @@
           "statement": "A shadow's edge is sharp where its caster touches the receiver and widens with the caster's distance as the Sun's angular size sets it: at a prop's base, under a balloon, and from a ridge at a low Sun.",
           "inspect": "`fixed` stills of those three in the populated valley with the penumbra on and off, whole and as native-size crops across each edge.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/inspection.md",
           "verdict": "",
           "review": ""
         },
@@ -412,8 +412,8 @@
           "statement": "With the camera and the scene at rest, no penumbra shows grain, and none crawls from frame to frame.",
           "inspect": "Consecutive `realtime` frames at rest at the route's stops, as native-size crops of the widest penumbrae and as the difference between neighbouring frames.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/inspection.md",
           "verdict": "",
           "review": ""
         },
@@ -432,8 +432,8 @@
           "statement": "Under a snap turn and across a camera cut, ground that comes into view settles without a flash or lasting grain.",
           "inspect": "`realtime` sequences of a snap turn and a cut, as consecutive native-size frames around newly revealed ground.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/inspection.md",
           "verdict": "",
           "review": ""
         },
@@ -442,8 +442,8 @@
           "statement": "As the Sun sets behind a ridge, the Sun's light on a lit surface dims without a step.",
           "inspect": "A `fixed` time-lapse of the sunset at one stop, as consecutive frames and as the brightness of three lit points plotted against time.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/inspection.md",
           "verdict": "",
           "review": ""
         },
@@ -476,8 +476,8 @@
           "check": "python3 scripts/ray_tracing_cost.py soft",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/cost-notes.md",
           "verdict": "",
           "review": ""
         },
@@ -496,8 +496,8 @@
           "statement": "Where another body's shadow crosses a coarse rounded body at a low Sun, its edge is as soft across the body's terminator band as on the surfaces beside it, and with the penumbra on the body shows no dark facet where it turns from the Sun. The same holds on a coarse curved shell with an open rim, under an opaque panel that stands metres toward the Sun with its back to the shell: the panel's edge is as soft across the shell's terminator band beside the rim when the panel is part of the shell's mesh as when it is a separate instance.",
           "inspect": "`fixed` stills at a low Sun, with the penumbra on and off, whole and as native-size crops along the shadow's edge from the Sun-facing side through the terminator band. One set is of a coarse rounded body that another body's shadow crosses through its terminator band, as a balloon in another balloon's shadow is. One is of the open shell and its panel from one camera, twice: with the panel joined into the shell's mesh, and with the same panel as a separate instance. In each of those two the panel's edge crosses the terminator band on the shell's last face before the rim, and the two sets of crops are laid side by side. The evidence gives the dive limit in force and says which capture is which arrangement.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/inspection.md",
           "verdict": "",
           "review": ""
         }

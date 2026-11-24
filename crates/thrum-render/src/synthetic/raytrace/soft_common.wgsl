@@ -10,7 +10,8 @@ struct SoftSunFrame {
     settle: u32,
     dive_cosine: f32,
     radius: f32,
-    padding: vec2<u32>,
+    rim_rays: u32,
+    padding: u32,
 }
 
 fn soft_within(pixel: vec2<i32>, extent: vec2<u32>) -> bool {

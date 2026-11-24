@@ -272,13 +272,17 @@ pub(crate) fn measure_shadows() {
                 .timed_pass_span_nanoseconds()
                 .expect("timed-pass span");
             let passes = timings.values();
-            let dive_limit = host
-                .quality_knobs()
-                .into_iter()
-                .find(|knob| knob.name == "Sun penumbra dive limit")
-                .map(|knob| knob.value);
+            let quality = host.quality_knobs();
+            let knob = |name| {
+                quality
+                    .iter()
+                    .find(|knob| knob.name == name)
+                    .map(|knob| knob.value)
+            };
+            let dive_limit = knob("Sun penumbra dive limit");
+            let rim_rays = knob("Sun penumbra rim rays");
             report(
-                &json!({"method":format!("{method:?}"),"lamps":lamps,"penumbra":penumbra,"dive_limit_degrees":dive_limit,"history_bytes":history_bytes,"tick":tick,"timed_pass_span_ns":span,
+                &json!({"method":format!("{method:?}"),"lamps":lamps,"penumbra":penumbra,"dive_limit_degrees":dive_limit,"rim_rays":rim_rays,"history_bytes":history_bytes,"tick":tick,"timed_pass_span_ns":span,
                 "frame_cpu_ns":(sample.upload_cpu+sample.encode_cpu).as_nanos(),"passes_ns":passes,
                 "upload_cpu_ns":sample.upload_cpu.as_nanos(),"encode_cpu_ns":sample.encode_cpu.as_nanos(),
                 "recipe":"AppleTile","cooked_root":cooked_root,"resolved_draw_path":format!("{:?}",stats.lock().expect("stats").draw_path)}),

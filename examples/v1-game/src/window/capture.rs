@@ -1062,6 +1062,7 @@ async fn record(
             "enabled": knob.value != 0,
             "settle_frames": penumbra.iter().find(|knob| knob.name == "Sun penumbra settle length").map(|knob| knob.value),
             "dive_limit_degrees": penumbra.iter().find(|knob| knob.name == "Sun penumbra dive limit").map(|knob| knob.value),
+            "rim_rays": penumbra.iter().find(|knob| knob.name == "Sun penumbra rim rays").map(|knob| knob.value),
             "history_bytes": driver.host().sun_penumbra_history_bytes(),
         });
     }
