@@ -2056,6 +2056,19 @@ async function compareFieldOracle(output, results) {
   return result;
 }
 
+async function closeBrowserConnections(socket, server) {
+  socket?.close();
+  if (server) {
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        server.closeAllConnections();
+        reject(new Error('Owned HTTP server did not close'));
+      }, 3000);
+      server.close(error => { clearTimeout(timer); error ? reject(error) : resolve(); });
+    });
+  }
+}
+
 async function cleanup(child, exited, cdp, server, profile, graceMs = 10000, completedCost = false) {
   const failures = [];
   if (child?.pid && !exited()) {
@@ -2079,11 +2092,8 @@ async function cleanup(child, exited, cdp, server, profile, graceMs = 10000, com
       }
     }
   } else if (child?.pid) failures.push('Owned Chrome exited before graceful cleanup');
-  cdp?.socket.close();
-  if (server) {
-    try { await new Promise((resolve, reject) => { const timer = setTimeout(() => { server.closeAllConnections(); reject(new Error('Owned HTTP server did not close')); }, 3000); server.close(error => { clearTimeout(timer); error ? reject(error) : resolve(); }); }); }
-    catch (error) { failures.push(error.message); }
-  }
+  try { await closeBrowserConnections(cdp?.socket, server); }
+  catch (error) { failures.push(error.message); }
   if (profile && !failures.length) {
     try { await fs.rm(profile, { recursive: true }); } catch (error) { failures.push(`Profile cleanup: ${error.message}`); }
   }
@@ -2317,7 +2327,7 @@ async function main() {
   console.log(`PASS ${results.length} case(s); artifacts: ${output}`);
 }
 
-export { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead, movingRouteFiles, destroyActualDevice };
+export { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice };
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => { console.error(error); process.exitCode = 1; });
 }

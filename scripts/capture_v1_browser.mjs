@@ -8,7 +8,8 @@ import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
 import { captureReceiver } from './browser_capture_receiver.mjs';
-import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
+import { finalizeBrowserCapture, readLauncherReceipt } from './browser_capture_shutdown.mjs';
+import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
 const decompress = promisify(gunzip);
 const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -67,7 +68,6 @@ const space = await fs.statfs(parent);
 if (space.bavail * space.bsize < 16 * 1024 ** 3) throw new Error('Less than the declared 16 GiB free-space allowance');
 await fs.mkdir(output);
 await fs.mkdir(path.join(output, 'frames'));
-const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
 const files = await assets(path.resolve(args['web-root']));
 await movingRouteFiles(files, path.resolve(args['web-root']));
 let captureRoute;
@@ -128,7 +128,7 @@ await fs.writeFile(path.join(bundle, 'Contents/Info.plist'), `<?xml version="1.0
 execFileSync('/usr/bin/swiftc', ['-module-cache-path', path.join(output, 'swift-cache'), 'scripts/capture_browser_launcher.swift', '-o', launcher]);
 execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', bundle]);
 manifest.launcher = { sha256: sha(await fs.readFile(launcher)), scope: 'LaunchServices app identity, preflight must be false before starting Chrome; no permission request' };
-let child, cdp, server, cook, ended = false, failure;
+let profile, control, launchError, socket, cdp, server, cook, failure;
 const retainRaw = args['retain-raw'] === 'on';
 const spoolPath = path.join(output, 'frames.rgba');
 const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
@@ -143,21 +143,36 @@ try {
     if (head.root !== route.cooked_root || head.generation !== route.cooked_generation) throw new Error(`Cooked root mismatch ${JSON.stringify(head)}`);
     manifest.cooked = head;
   }
-  manifest.flags = [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'];
+  profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
+  manifest.flags = [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-crashpad-for-testing', '--disable-component-update', '--window-size=1280,1100', 'about:blank'];
   if (spriteField) manifest.flags.splice(-1, 0, '--disable-renderer-backgrounding', '--disable-background-timer-throttling');
-  child = spawn('/usr/bin/open', ['-n', '-W', bundle, '--args', output, args.chrome, ...manifest.flags], { stdio: 'ignore' });
-  let startupError;
-  child.once('error', error => { startupError = error; ended = true; });
-  child.once('exit', () => { ended = true; });
+  const requestDirectory = await fs.mkdtemp(path.join(output, 'chrome-shutdown-'));
+  const wrapper = spawn('/usr/bin/open', ['-n', '-W', bundle, '--args', output, '--owned', requestDirectory, args.chrome, ...manifest.flags], { stdio: 'ignore' });
+  control = requestDirectory;
+  wrapper.once('error', error => { launchError = error; });
+  wrapper.unref();
+  const browserReady = async () => {
+    if (launchError) throw launchError;
+    const receipt = await readLauncherReceipt(output);
+    if (receipt?.error || receipt?.chrome_exited || receipt?.chrome_final) {
+      throw new Error(receipt.error ?? 'Chrome exited before DevTools was ready');
+    }
+    return receipt?.chrome_pid ? receipt : undefined;
+  };
   const endpoint = await waitFor(async () => {
-    if (startupError || ended) throw startupError ?? new Error('Chrome exited');
+    if (!await browserReady()) return;
     try { return (await fs.readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).trim().split('\n'); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
   }, 15000, 'Chrome DevTools');
-  const socket = new WebSocket(`ws://127.0.0.1:${endpoint[0]}${endpoint[1]}`);
-  await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }); });
+  socket = new WebSocket(`ws://127.0.0.1:${endpoint[0]}${endpoint[1]}`);
+  let socketError;
+  socket.addEventListener('error', () => { socketError = new Error('Chrome DevTools connection failed'); }, { once: true });
+  manifest.permission_preflight = await waitFor(async () => {
+    if (socketError) throw socketError;
+    const receipt = await browserReady();
+    if (socket.readyState === WebSocket.OPEN) return receipt;
+  }, 15000, 'Chrome DevTools connection');
   cdp = new Cdp(socket);
-  manifest.permission_preflight = JSON.parse(await fs.readFile(path.join(output, 'launcher.json'), 'utf8'));
   if (manifest.permission_preflight.screen_recording_before !== false) throw new Error('Launcher permission preflight was not denied');
   manifest.browser = await cdp.call('Browser.getVersion');
   manifest.gpu = await cdp.call('SystemInfo.getInfo'); hardware(manifest.gpu);
@@ -301,25 +316,25 @@ try {
   }
 } catch (error) { failure ??= error; }
 finally {
-  await Promise.all(pending);
-  await rawSpool?.close();
   cook?.kill();
   // Realtime atmosphere takes can keep large readback pools alive until the
   // owned Chrome process exits. Allow it to drain those pools under shared load.
   const drainLargeCapture = spriteField || Boolean(args.haze) || (spoolRaw && args.atmosphere !== 'off');
-  try { await cleanup(child, () => ended, cdp, server, profile, drainLargeCapture ? 45000 : undefined); } catch (error) { failure ??= error; }
-  try {
-    manifest.permission_preflight = JSON.parse(await fs.readFile(path.join(output, 'launcher.json'), 'utf8'));
-    if (manifest.permission_preflight.screen_recording_after !== false || manifest.permission_preflight.chrome_exit_code !== 0) failure ??= new Error('Launcher final preflight/Chrome exit failed');
-  } catch (error) { failure ??= error; }
-  manifest.error = failure ? String(failure) : undefined;
-  manifest.complete &&= !failure;
-  if (manifest.permission_preflight?.screen_recording_before !== false) manifest.complete = false;
-  manifest.console_after = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: extent[0] * 4, extent };
   manifest.spool_encoding = spriteField ? 'browser File download, raw RGBA8' : retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
-  manifest.encoded_bytes = manifest.records.reduce((total, row) => total + row.bytes, 0);
-  await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  await finalizeBrowserCapture({
+    output, control, launchError, cdp, profile, manifest,
+    graceMs: drainLargeCapture ? 45000 : undefined,
+    closeConnections: async () => {
+      try { await closeBrowserConnections(socket, server); }
+      finally {
+        await Promise.all(pending);
+        await rawSpool?.close();
+      }
+      manifest.encoded_bytes = manifest.records.reduce((total, row) => total + row.bytes, 0);
+      manifest.console_after = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
+    },
+    captureError: () => failure,
+  });
 }
-if (failure) throw failure;
 console.log(`PASS ${manifest.observer_only ? "capture-off observer arm;" : manifest.negative_control_pass ? "negative control, incomplete capture;" : "complete capture;"} ${manifest.records.length} exact submitted images, ${manifest.encoded_bytes} encoded bytes`);
