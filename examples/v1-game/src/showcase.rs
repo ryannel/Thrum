@@ -9,9 +9,12 @@ use crate::SceneCamera;
 
 /// The valley's three stable entity rows; repeated products share publication identity.
 pub(crate) fn entity_mesh_names(content: crate::GameContent) -> Vec<String> {
+    let valley = &["rock", "sphere", "rock"];
     let names = match content {
         crate::GameContent::Exit => crate::exit_scene::MESH_NAMES.as_slice(),
-        _ => &["rock", "sphere", "rock"],
+        crate::GameContent::Grid => valley,
+        #[cfg(feature = "proving")]
+        crate::GameContent::Field => valley,
     };
     names.iter().map(|name| (*name).to_owned()).collect()
 }
