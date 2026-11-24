@@ -124,6 +124,7 @@ pub fn run_scene_capture(
 
 /// Dynamic quality selection and optional authored route for a Mac window run.
 #[derive(Default)]
+#[cfg_attr(not(feature = "proving"), derive(Clone, Copy))]
 pub struct WindowGovernor {
     /// Enable the governor for a prepared TAAU scene.
     pub enabled: bool,
