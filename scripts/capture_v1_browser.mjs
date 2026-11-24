@@ -13,7 +13,7 @@ import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnect
 const decompress = promisify(gunzip);
 const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
-const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', witness: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
+const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', witness: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': '', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
 args.effect = 'off';
 args.clouds = 'off';
 args['cloud-view'] = '';
@@ -66,6 +66,18 @@ const parent = await fs.realpath(path.dirname(output));
 if (parent !== tmp && !parent.startsWith(tmp + path.sep)) throw new Error('Output parent escapes repository tmp/');
 const space = await fs.statfs(parent);
 if (space.bavail * space.bsize < 16 * 1024 ** 3) throw new Error('Less than the declared 16 GiB free-space allowance');
+if (!args['web-root']) {
+  const proving = spriteField || args.effect !== 'off' || args.clouds !== 'off' ||
+    args.witness !== 'off' || args.atmosphere !== 'off' || args['diagnostic-clouds'] === 'on' ||
+    args['renderer-signature'] === 'on' || Boolean(args.haze);
+  args['web-root'] = proving ? 'target/v1-game-web-proving' : 'target/v1-game-web';
+  if (proving) {
+    execFileSync('sh', ['examples/v1-game/web/build.sh', '--proving'], {
+      env: { ...process.env, CARGO_TARGET_DIR: 'target', THRUM_V1_WEB_OUTPUT: args['web-root'], RUSTC_WRAPPER: '' },
+      stdio: 'inherit',
+    });
+  }
+}
 await fs.mkdir(output);
 await fs.mkdir(path.join(output, 'frames'));
 const files = await assets(path.resolve(args['web-root']));
