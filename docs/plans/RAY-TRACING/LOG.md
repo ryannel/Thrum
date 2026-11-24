@@ -205,3 +205,9 @@
   [Visual proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md) ·
   [Motion proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/replan/moving-casters/README.md) ·
   [Checks](../../../.orchestrate/evidence/RAY-TRACING/WP4/replan-items.json).
+- 2026-11-25 WP4 review repair. Both reprojection lookups use the renderer's motion convention. A
+  nonuniform Metal fixture proves the new predecessor in forward and accumulation. A camera-ray
+  alignment test covers a receiver below an 8 mm caster, and the maturity ledger gives the 720p
+  measured extent. Held-disc sequences repeat over the history window. The continuous solar sweep
+  retains history and weights more recent votes during light motion. The new 481-frame trace,
+  held balloon, motion and paired cost are in the [review proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md).

@@ -403,7 +403,7 @@
           "inspect": "`fixed` stills of those three in the populated valley with the penumbra on and off, whole and as native-size crops across each edge.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -413,7 +413,7 @@
           "inspect": "Consecutive `realtime` frames at rest at the route's stops, as native-size crops of the widest penumbrae and as the difference between neighbouring frames.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -423,7 +423,7 @@
           "inspect": "`realtime` sequences as consecutive native-size frames, each numbered. One is around a moving balloon's shadow and a named still receiver its soft edge crosses, from the frame before occlusion changes there to two past the settle length. One is around a caster the proving ground moves low and fast enough that its shadow moves further in a frame than its edge is wide, with a named still receiver the edge leaves for the body and one it leaves for full Sun, from the frame before to three frames after.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/moving-casters/README.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -433,7 +433,7 @@
           "inspect": "`realtime` sequences of a snap turn and a cut, as consecutive native-size frames around newly revealed ground.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -443,7 +443,7 @@
           "inspect": "A `fixed` time-lapse of the sunset at one stop, as consecutive frames and as the brightness of three lit points plotted against time.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -455,7 +455,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/history.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -466,7 +466,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan-items.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/weighted-items.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -477,7 +477,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan-cost.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
@@ -487,7 +487,7 @@
           "inspect": "`fixed` stills at a low Sun, with the penumbra on and off, whole and as native-size crops along the shadow's edge from the Sun-facing side through the terminator band. One set is of a coarse rounded body that another body's shadow crosses through its terminator band, as a balloon in another balloon's shadow is. One is of the open shell and its panel from one camera, twice: with the panel joined into the shell's mesh, and with the same panel as a separate instance. In each of those two the panel's edge crosses the terminator band on the shell's last face before the rim, and the two sets of crops are laid side by side. The evidence gives the dive limit in force and says which capture is which arrangement.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         }
