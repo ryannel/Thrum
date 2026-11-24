@@ -67,7 +67,7 @@ impl FrameWorld for World {
     }
 }
 pub(crate) struct Source {
-    view: SyntheticView,
+    pub(crate) view: SyntheticView,
     light: FrameLighting,
 }
 impl SceneSource<SourceTick> for Source {

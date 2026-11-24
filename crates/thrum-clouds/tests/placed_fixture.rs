@@ -206,17 +206,23 @@ impl Fixture {
         FrameHost<scene_fixture::World, scene_fixture::Source>,
         WeatherInput,
     ) {
+        self.submit_at(gpu, range, sky, resident, sun, 0.0).await
+    }
+
+    pub(super) async fn submit_at(
+        &self,
+        gpu: &Opened,
+        range: [f64; 2],
+        sky: bool,
+        resident: bool,
+        sun: [f32; 3],
+        z: f32,
+    ) -> (
+        FrameHost<scene_fixture::World, scene_fixture::Source>,
+        WeatherInput,
+    ) {
         let format = wgpu::TextureFormat::Bgra8Unorm;
-        let view = thrum_render::synthetic::SyntheticView::perspective(
-            [0.0, 40.0, 0.0],
-            [0.0, 160.0, 0.0],
-            [0.0, 0.0, -1.0],
-            TRACE_FOV,
-            1.0,
-            0.1,
-            200_000.0,
-        )
-        .expect("vertical column view");
+        let view = column_view(z);
         let mut host = scene_fixture::prepare_view(
             &gpu.capabilities,
             &gpu.queue,
@@ -251,7 +257,37 @@ impl Fixture {
         members.push(Box::new(shade));
         host.set_scene_contribution(Box::new(SceneContributions::new(members)))
             .expect("attach shapes");
-        let texture = gpu.device.create_texture(&wgpu::TextureDescriptor {
+        let output = output(gpu);
+        let mut now = Duration::ZERO;
+        thrum_test_support::wait::until("lease load", Duration::from_secs(4), || {
+            frame(gpu, &mut host, &output, now);
+            if !resident || lease.offered().is_some() {
+                return Some(());
+            }
+            now += Duration::from_millis(16);
+            None
+        });
+        frame(gpu, &mut host, &output, now + Duration::from_millis(16));
+        (host, input)
+    }
+}
+
+pub(super) fn column_view(z: f32) -> thrum_render::synthetic::SyntheticView {
+    thrum_render::synthetic::SyntheticView::perspective(
+        [0.0, 40.0, z],
+        [0.0, 160.0, z],
+        [0.0, 0.0, -1.0],
+        TRACE_FOV,
+        1.0,
+        0.1,
+        200_000.0,
+    )
+    .expect("vertical column view")
+}
+
+pub(super) fn output(gpu: &Opened) -> wgpu::TextureView {
+    gpu.device
+        .create_texture(&wgpu::TextureDescriptor {
             label: Some("placed fixture display"),
             size: wgpu::Extent3d {
                 width: RENDER[0],
@@ -261,45 +297,31 @@ impl Fixture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format,
+            format: wgpu::TextureFormat::Bgra8Unorm,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[],
-        });
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut now = Duration::ZERO;
-        thrum_test_support::wait::until("lease load", Duration::from_secs(4), || {
-            host.drive(
-                now,
-                Some(&SurfaceOutput {
-                    view: &view,
-                    extent: RENDER,
-                }),
-            )
-            .expect("submit placed frame");
-            gpu.device
-                .poll(wgpu::PollType::wait_indefinitely())
-                .expect("placed fixture complete");
-            while host.poll_completed().expect("placed completion").is_some() {}
-            if !resident || lease.offered().is_some() {
-                return Some(());
-            }
-            now += Duration::from_millis(16);
-            None
-        });
-        host.drive(
-            now + Duration::from_millis(16),
-            Some(&SurfaceOutput {
-                view: &view,
-                extent: RENDER,
-            }),
-        )
-        .expect("draw resident stack");
-        gpu.device
-            .poll(wgpu::PollType::wait_indefinitely())
-            .expect("stack used");
-        while host.poll_completed().expect("draw complete").is_some() {}
-        (host, input)
-    }
+        })
+        .create_view(&wgpu::TextureViewDescriptor::default())
+}
+
+pub(super) fn frame(
+    gpu: &Opened,
+    host: &mut FrameHost<scene_fixture::World, scene_fixture::Source>,
+    output: &wgpu::TextureView,
+    now: Duration,
+) {
+    host.drive(
+        now,
+        Some(&SurfaceOutput {
+            view: output,
+            extent: RENDER,
+        }),
+    )
+    .expect("submit placed frame");
+    gpu.device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("placed fixture complete");
+    while host.poll_completed().expect("placed completion").is_some() {}
 }
 
 pub(super) fn ground(gpu: &Opened, input: &WeatherInput) -> Vec<u8> {

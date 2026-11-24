@@ -25,6 +25,69 @@ thrum_test_support::macos_gpu_test! {
         run(60.0, &[(0.5, [0.0, 40.0])]);
     }
 }
+thrum_test_support::macos_gpu_test! {
+    fn paused_camera_uses_the_current_placed_form_and_sun_windows() {
+        use placed_fixture::{Fixture, column_view, frame, ground, output};
+        use std::time::Duration;
+
+        let Some(gpu) = thrum_test_support::open(
+            "paused placed shade",
+            Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        ) else {
+            return;
+        };
+        let fixture = Fixture::new();
+        let elevation = 20.0_f32.to_radians();
+        let sun = [elevation.cos(), elevation.sin(), 0.0];
+        let range = [25.0, 40.0];
+        let (mut host, input) = pollster::block_on(fixture.submit(&gpu, range, true, true, sun));
+        let output = output(&gpu);
+        let read_ground = |input: &thrum_clouds::WeatherInput| {
+            let (_, mapping) = input.ground_product().expect("ground mapping");
+            (
+                ground(&gpu, input),
+                thrum_test_support::readback::buffer(&gpu.device, &gpu.queue, &mapping, ..),
+            )
+        };
+        assert_eq!(input.shapes_report().expect("volume report").volume_instances, 1);
+        let (volume, initial_mapping) = read_ground(&input);
+        let mut now = Duration::from_secs(1);
+        let mut previous_mapping = initial_mapping;
+        for (camera_z, moves_windows) in [(36.0, false), (180.0, true)] {
+            host.source_mut().view = column_view(camera_z);
+            frame(&gpu, &mut host, &output, now);
+            let report = input.shapes_report().expect("column report");
+            assert_eq!(report.volume_instances, 0);
+            // The first move changes the form at fixed origins. The next
+            // moves Sun windows while the already-column placement is unchanged.
+            assert_eq!(report.placed_map_updated, !moves_windows);
+            assert_eq!(report.placement_upload_bytes > 0, !moves_windows);
+            assert_eq!(input.placed_map().expect("placed state").2.tick(), fixture.state.tick());
+            let (actual, mapping) = read_ground(&input);
+            let (_fresh, reference) = pollster::block_on(
+                fixture.submit_at(&gpu, range, true, true, sun, camera_z),
+            );
+            let (expected, expected_mapping) = read_ground(&reference);
+            assert!(expected.chunks_exact(8).any(|texel| texel[..2] != [0, 0]));
+            assert!(moves_windows || expected != volume, "the two forms must cast different shade");
+            assert!(actual == expected, "stale ground field at fixed tick, camera z={camera_z}");
+            assert_eq!(mapping, expected_mapping, "ground mapping at camera z={camera_z}");
+            // The far-value slot can change with the density even if the windows stay put.
+            assert_eq!(mapping[64..] != previous_mapping[64..], moves_windows);
+            previous_mapping = mapping;
+
+            now += Duration::from_millis(16);
+            frame(&gpu, &mut host, &output, now);
+            let unchanged = input.shapes_report().expect("unchanged report");
+            assert_eq!(unchanged.placement_upload_bytes, 0);
+            assert!(!unchanged.placed_map_updated);
+            assert!(read_ground(&input) == (actual, previous_mapping.clone()));
+            now += Duration::from_millis(16);
+        }
+    }
+}
 
 #[cfg(target_os = "macos")]
 fn run(elevation: f32, arms: &[(f64, [f64; 2])]) {

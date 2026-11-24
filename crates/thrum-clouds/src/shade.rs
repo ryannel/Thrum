@@ -451,6 +451,9 @@ impl SceneContribution for Shade {
                 environment.true_sun.toward_sun,
                 frame.history_reset,
                 gpu.shapes.as_deref(),
+                gpu.placed_map
+                    .as_ref()
+                    .is_some_and(crate::shapes::map::ShapeMap::runs),
             )
         });
         if result.is_err() {

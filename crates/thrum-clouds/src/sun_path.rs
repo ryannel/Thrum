@@ -351,7 +351,7 @@ impl SunPath {
         sun: [f32; 3],
         cut: bool,
     ) -> Result<(), Error> {
-        self.upload_with_shapes(queue, weather, time, state, camera, sun, cut, None)
+        self.upload_with_shapes(queue, weather, time, state, camera, sun, cut, None, false)
     }
 
     #[expect(
@@ -368,10 +368,9 @@ impl SunPath {
         sun: [f32; 3],
         cut: bool,
         shapes: Option<&crate::shapes::Shapes>,
+        placed_map_dirty: bool,
     ) -> Result<(), Error> {
         let step = self.clock.begin(time, u64::MAX, [0; 2]);
-        let changed = shapes.is_some_and(crate::shapes::Shapes::history_invalid);
-        self.runs = step != EffectStep::Keep || changed;
         let (model, kind) = weather.density_data(state);
         let mut heights = weather.height_range();
         if let Some(shapes) = shapes {
@@ -406,9 +405,25 @@ impl SunPath {
             .iter()
             .zip(self.direction)
             .any(|(a, b)| (*a - b).abs() > 0.0005);
-        // A paused world's light can be edited without advancing its tick.
-        // Such an edit invalidates the ray direction, independently of weather.
-        self.runs |= jumped;
+        self.pending_origins = std::array::from_fn(|i| {
+            let width = self.profile.levels[i].texel * f64::from(self.profile.size);
+            let block = width / 4.0;
+            std::array::from_fn(|a| {
+                ((camera[a] - state.travel()[a]) / block).floor() * block - width / 2.0
+            })
+        });
+        let moved = std::array::from_fn::<_, 3, _>(|i| {
+            !super::weather::same_origin(self.pending_origins[i], self.origins[i])
+        });
+        // The trace can select new placed forms on the same tick. Refresh
+        // their shade even with no weather time available for rotating rows.
+        // Map dirtiness survives recordings that wrote inputs but never submitted.
+        let placed_changed = shapes.is_some_and(crate::shapes::Shapes::history_invalid)
+            || (step == EffectStep::Keep && placed_map_dirty);
+        self.runs = step != EffectStep::Keep
+            || placed_changed
+            || jumped
+            || (shapes.is_some() && !time.capture && moved.contains(&true));
         if self.runs {
             let stamp = RowStamp {
                 tick: time.tick,
@@ -416,20 +431,12 @@ impl SunPath {
                 parameters: state.parameters(),
             };
             self.pending_time = state.time();
-            for i in 0..3 {
-                let width = self.profile.levels[i].texel * f64::from(self.profile.size);
-                self.pending_origins[i] = std::array::from_fn(|a| {
-                    ((camera[a] - state.travel()[a]) / (width / 4.0)).floor() * (width / 4.0)
-                        - width / 2.0
-                });
+            for (i, moved) in moved.into_iter().enumerate() {
                 let origin = self.pending_origins[i];
                 let rows = &mut self.pending_stamps[i];
                 rows.clone_from(&self.stamps[i]);
                 rows.resize(self.profile.size as usize, stamp);
-                let reset = step == EffectStep::Reset
-                    || changed
-                    || jumped
-                    || !super::weather::same_origin(origin, self.origins[i]);
+                let reset = step == EffectStep::Reset || placed_changed || jumped || moved;
                 let (start, count) = super::weather::update_rows(
                     rows,
                     stamp,
@@ -620,7 +627,7 @@ impl SunPath {
         }
         self.runs = false;
     }
-    /// Current recording selected a new tick.
+    /// Whether this pass has work in the current recording.
     pub fn runs(&self, index: usize) -> bool {
         index < self.groups.len() && self.runs && (index >= 3 || self.ranges[index].1 > 0)
     }
