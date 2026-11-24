@@ -86,3 +86,7 @@
   The shutdown deadline signalled `open`, left the profile, and read the launcher receipt before Chrome's
   exit and the postflight were recorded. [M4](PLAN.md#m4-a-completed-chrome-capture-survives-slow-shutdown-and-leaves-no-browser-or-profile)
   plans bounded cleanup of the actual owned browser after the completed capture.
+
+- 2026-11-24 Design review Must Fix 1. The design and M4.1 now cover Chrome exiting on its own with status 2
+  after requested close. The delayed-receipt test requires command exit 0, a complete manifest and recorded
+  browser status 2 once validation, sync, cleanup and both denied preflights are confirmed.

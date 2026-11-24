@@ -260,11 +260,13 @@ escalation or when the capture itself failed.
 
 After all existing capture validation and sync have succeeded, a grace timeout and the actual termination
 status during requested shutdown are diagnostics if the owned processes are gone, the profile is removed
-and both attributed preflights are denied. Keep the shutdown outcome, escalation and actual exit status or
-signal in the manifest. An unexpected browser exit before shutdown, capture or validation failure, missing,
-failed or granted preflight, unconfirmed process exit, or failed cleanup still fails the command. Preserve
-the original capture error when teardown also fails and record the cleanup error separately. The verifier
-continues to compare the completed candidate against the same retained bytes and identities.
+and both attributed preflights are denied. This includes Chrome exiting on its own with status 2 after
+`Browser.close` is requested. Once the final receipt confirms that exit, the command exits 0 and keeps
+the manifest complete, with Chrome's status 2 recorded. Keep the shutdown outcome, escalation and actual
+exit status or signal in the manifest. An unexpected browser exit before shutdown, capture or validation
+failure, missing, failed or granted preflight, unconfirmed process exit, or failed cleanup still fails the
+command. Preserve the original capture error when teardown also fails and record the cleanup error separately.
+The verifier continues to compare the completed candidate against the same retained bytes and identities.
 
 ## Research and reconciliation
 
