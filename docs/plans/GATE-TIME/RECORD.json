@@ -1187,12 +1187,12 @@
       }
     },
     "M14": {
-      "definitions": "accd7ca25ea04a5554d25d347eaf0487923fdcdf7cace97107bfc388b8e51bd6",
+      "definitions": "82e03e1685f13ad69e3df3b6871ce69838ebc4e489c7fa4e451ea54ae8682e78",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The main-branch check workspace-tests (`./dev check-all`) fails on a different test each run, so it is the 10 s merge-ti",
-        "at": "2026-11-24T03:09:00Z"
+        "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 1 Must Fi",
+        "at": "2026-11-24T03:15:50Z"
       }
     }
   },
@@ -1240,11 +1240,15 @@
     {
       "task": "The main-branch check workspace-tests (`./dev check-all`) fails on a different test each run, so it is the 10 s merge-tier bound, not a regression. 024514 df2667cf: rain-model conformance and river-model chop. 035431 6f6e5eff: river-model wetting x2 and foam_scene_gpu craft_trail. 040003 6f6e5eff: thrum-sea portable_limits_gpu a_day_in. Each hit 10.0 s side by side and again 10.0 s \"alone\". The alone rerun is not alone in practice: the machine runs about 40 load on 14 cores with nine builders, exact-images on the GPU and other main checks. Logs are in .git/orchestrate/main-checks/workspace-tests/logs/. Plan the fix in the module that owns `./dev` and .config/nextest.toml, so a test that passes on a quiet machine does not fail main. Keep the fast-suite intent (owner: fastest suite possible, guardrails in the merge check). Options to judge: hold the gpu lock for the alone rerun of GPU tests; a longer bound for the rerun only; or measure the reruns serially after the check releases its jobs. Done means the fix is planned as an item or milestone with a check that shows the rerun passes under builder load.",
       "at": "2026-11-24T03:09:00Z"
+    },
+    {
+      "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-24T03:15:50Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T03:09:00Z"
+    "at": "2026-11-24T03:15:50Z"
   },
   "design_history": [
     {
