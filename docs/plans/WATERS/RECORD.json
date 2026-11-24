@@ -1288,39 +1288,39 @@
       }
     },
     "WP8": {
-      "definitions": "1e32916e6dc58889d4736ff99a440a10d77fa4790b6ef78fb43ead149623f103",
+      "definitions": "8fce8713ee8b315225f6bbbeadfd743961260dc21657b1a6d43f9d447193e332",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
-        "at": "2026-11-18T04:32:39Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP9": {
-      "definitions": "45719f63e69f82242e48cfeb0521917fb4d3c4f60516ac3ffc4273498e8e30a3",
+      "definitions": "a306952d7445f5c5bd416a4fb14b70a886ef3365e699190be362109a33c80c74",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP10": {
-      "definitions": "8ad43e66b59e514fd0a34dae2382e2a8c441292ecca1c190b7318f758ffec4ba",
+      "definitions": "ad3918f35abd449a767a386906bb5f75043a0915c44ed736ba78fdadaebc00ce",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP11": {
-      "definitions": "26397966d945bbcf18b29dbda8e08688fb8365f2a6e792b212fcb37397f4455a",
+      "definitions": "a1271f3180a7e204b8b0e424ae012ee2362a186fe4389c9096eb20b510b39612",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
-        "at": "2026-11-20T10:47:17Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       },
       "ends_stretch": true
     },
@@ -1413,39 +1413,39 @@
       }
     },
     "WP13": {
-      "definitions": "2c39650b5e36ed5c02b87eaa2e5464d39712c8faf0b32256904b5aaa857431d7",
+      "definitions": "4ae0f7a6c5adb2024e691af747f14f29fa8270c7363dadd5c281223ea706ba1b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
-        "at": "2026-11-24T04:46:50Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP15": {
-      "definitions": "74b2dece5fdc0245d25fa3499d27120e38f99dfadad417910ebc432de721ae91",
+      "definitions": "0f3018995128a2c30cdacec3534ab34532af24bd9feffdea2ed2914a2d00f151",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
-        "at": "2026-11-18T04:32:39Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP14": {
-      "definitions": "e7ccdb3e89d1925c6e2df537a30bcef51445f1b93349655f618d89b0e46ef985",
+      "definitions": "1b8097431c9074bca7d6309b27fdecff0c95f95cf21c00150687a34bf81b5a25",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
-        "at": "2026-11-18T04:32:39Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP16": {
-      "definitions": "ad1594b0260ce1479db528fb5f00c786470aa9fe8df87914598298f13b66799e",
+      "definitions": "007c129f068589f5e945c0502c8bfa17e07c22863b6ee59dfecb2996fbf89bb5",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 1 Must Fix findings ",
-        "at": "2026-11-18T05:23:29Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP17": {
@@ -1680,11 +1680,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-24T04:46:50Z"
+    },
+    {
+      "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
+      "at": "2026-11-24T22:06:49Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T04:46:50Z"
+    "at": "2026-11-24T22:06:49Z"
   },
   "design_history": [
     {

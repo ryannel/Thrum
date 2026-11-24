@@ -25,100 +25,59 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "dd2227aeb8613aee8355c88a47d7c4fa9b8ce5f26ef02fe4832c60d629c4efb0",
+      "definitions": "31d3b4862311397a05c2130efe3ae4bb337489b5758ca066c1f1ffd2df6a910a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP2": {
-      "definitions": "695011a770f84f3281f292108d9ea5f33ca0479cfcc08bbd6e1d11fd6a0772ae",
+      "definitions": "53a36a021b3c9658122f30f4cd2d2b9f21d8c798967f1ed80634ff3f4f0a5130",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
-        "at": "2026-11-13T19:40:18Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP3": {
-      "definitions": "4f7621888d26a544fa441615443b52a075bc8d7613b5ce63683f1bb3689f5dad",
+      "definitions": "83268e707b9dce00b96bad04167dab3f21b36a4eb61359a9edfe6aac86014f90",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
-        "at": "2026-11-13T19:40:18Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP4": {
-      "definitions": "5f3efe3322a4c075dc87447917fb72c1a7a72d2ae218759885cb426757d2b0c1",
+      "definitions": "5173749d96a57ad29a03a23be0561477e8ae11979837862911396930c641e1b1",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP5": {
-      "definitions": "40d1008836dd5a5d2f8cbc3727b7ca719c96c592bf324215eb47d182ee93ba70",
+      "definitions": "a14f522cbab47284f6a8efb78769334e88863530104626ecb1d8ab29cc3b9483",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
-        "at": "2026-11-13T19:40:18Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP6": {
-      "definitions": "c8033a784c6d55017563a1fa5de5e5acde6cd7205eb2fa03cedfb646932e27de",
+      "definitions": "fd5eee01f8047dc16096eee7123c0fd88cc272b76f10269bd4cd1ba6f2871515",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -137,11 +96,15 @@
     {
       "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
       "at": "2026-11-15T22:19:37Z"
+    },
+    {
+      "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
+      "at": "2026-11-24T22:06:49Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-15T22:19:37Z"
+    "host": "codex",
+    "at": "2026-11-24T22:06:49Z"
   },
   "design_history": [
     {

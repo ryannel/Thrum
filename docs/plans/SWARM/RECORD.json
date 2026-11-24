@@ -34,109 +34,68 @@
       }
     },
     "WP2": {
-      "definitions": "1b624bee5becb225b29bbd57b491083dd95494402d6a3088a4dc635898f98742",
+      "definitions": "dacb6f9f100c88c213c619e7a248a69068c6624f390ad90b8b24fd22a374c567",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",
-        "at": "2026-11-14T22:15:19Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP3": {
-      "definitions": "cd002a61ca6e674e42160e8a3a5d605e768dd29ccbd275d80a2543c5a969971c",
+      "definitions": "d97c948c1442fd5c15a8c3550d2fb7379a7967a46dc01cab0b173a2450a4c1cc",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T16:54:40Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP4": {
-      "definitions": "fc28249c89c19d4f9c269248c5871e528f5c760b9a02ae4d7c17fe0d15686908",
+      "definitions": "942f664096972c6b6d84b869988337517e055724113e74fe23ef2b457944e40c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
-        "at": "2026-11-13T20:28:50Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP5": {
-      "definitions": "029b34a6881224d328aa29d2686d6e095dc17ee7338eff061f4711427c7411b7",
+      "definitions": "c2c5492f4188602968fe18827d652e1f2b58960f5a7425337b6d81fd669ff0e4",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 2 Must Fix findings in",
-        "at": "2026-11-13T20:58:55Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP6": {
-      "definitions": "456812567bed144d9432d2b716ff537a59e84965a63d096398cd28d4a0165b61",
+      "definitions": "f09bfc9153581e9897654c577fe09b3c250cab5fbcad2297715fa0ae80d6017e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP7": {
-      "definitions": "d2e57b5411c30d5d0419166608139b23edba96a92dccfd463286830610c62f6d",
+      "definitions": "a25bbbf2f8cd24a0c4619d8284e60816078e3f0cd5e7714d61b7526e65d62c04",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      }
     },
     "WP8": {
-      "definitions": "ebf8e9ce6b94890f4e1375728341466f013def9d8beebd2d1cb5354234059123",
+      "definitions": "2cd5a4f1d4b6796c570aea1f902c827bf2cdd66b1f5aff545fdf24f8b69a82f4",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:47Z"
-      }
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -171,11 +130,15 @@
     {
       "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and consolidation for Thrum.\" The purpose is to make Thrum cheaper to change: a shorter merge gate, no tools, records or code that nothing uses, and no proof heavier than the fault it guards. It must not change what the engine draws, simulates or sends.\n\nStart from /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/REPORT.md. Read it in place; don't copy it or edit it. Beside it, results.json holds every finding, findings/<reviewer>.md holds the full write-ups, and verified/<reviewer>-<n>.md holds the second agents' corrections. Where a verifier corrected a finding, the verifier is right.\n\nIn scope: the report's sections 1 to 4 (gate time, dead tools and records, dead engine code, and small API changes that delete stubs). Also in scope: the parts of section 6 that are code or files, meaning the fixtures and record writers that still use docs/evidence, and the water settings that are parsed twice. Section 5, the test kit, belongs to TEST-SUPPORT as a milestone after its M2, so plan it there. Section 7 needs designs of its own: list each part as not planned, with one line each.\n\nSection 6's plan and settings text belongs to the lead and the planners:\n- L8-01: no rule says a Done item's check is history, so about 770 path mentions are treated as frozen.\n- L8-05: `! grep` and `test ! -e` checks pass when their path is missing (HOST M4.5, CLOUDS M14.13, SHOWCASE M9.7, HOST M3.2).\n- L8-07: ten open items ask for new tracked files under docs/evidence, which the merge guard refuses.\nFix those in the open done-when items and in ORCHESTRATE.md where it's within planner authority. Name any change that only the orchestrate skill can make, and keep that out of this plan.\n\nWhat the plan must respect:\n- A done-when item names a behaviour, not a file location. SHOWCASE M9.6 failed review over a byte-identical fixture move because its items named paths.\n- Up to three Claude builders (Opus 5.5 medium) can work at once. Shape the work so that milestones with disjoint files can run side by side, as separate modules if that's what it takes, and say which ones can.\n- Other builders are live, on Codex, in APPLE-PRESENTATION, HOST, RAY-TRACING, REVIEW-RENDER, SESSION, TEST-SUPPORT and RENDER-2D. The findings' verifier notes say which files are busy and which open done-when items name them. Declare each milestone's files, so the lead can confirm them before a builder starts.\n- A deletion that drops a capability or a proof is the owner's call. Carry each one as an assumption, with the other choice stated. That covers the headless release-trust toolchain (8,500 lines), the nine benches nothing runs, the ten-minute gale soak (actual_gale_keeps_the_fleet_in_contact_on_metal) moving from the gate to a main-branch check with a 60-second run left in the gate, and the reference tests that the 17 November bar may retire. The state-delta codec stays unless SESSION's design changes, because that design says keep.\n- scripts/ is a covered path for exact baselines, so script deletions land together.\n- Changes to the gate's machinery (the test profile, nextest) are measured before they're switched on.\n- Order by payoff. Gate time comes first, because every merge pays it.\n\nDone when the design has passed its review and the plan is merged.",
       "at": "2026-11-20T10:12:47Z"
+    },
+    {
+      "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
+      "at": "2026-11-24T22:06:49Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-20T10:12:47Z"
+    "host": "codex",
+    "at": "2026-11-24T22:06:49Z"
   },
   "design_history": [
     {

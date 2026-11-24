@@ -292,7 +292,9 @@
           "check": "python3 scripts/repo_layout.py check",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP4.2",
@@ -310,7 +312,9 @@
           "check": "python3 scripts/repo_layout.py check --pins",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP4.4",

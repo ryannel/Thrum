@@ -393,7 +393,7 @@
       }
     },
     "WP3": {
-      "definitions": "46dfcd7ff694472a532c2f506b83e283edf97ade3f448048e70cdf785015c734",
+      "definitions": "e5c238fb28a004e782bf2c06c08a739edad833c0cab60c4fac419f22978ee2f6",
       "reviews": [
         {
           "verdict": "fail",
@@ -516,26 +516,26 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fi",
-        "at": "2026-11-24T16:15:36Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP4": {
-      "definitions": "66ce361ceaad83cb4dc02180ad5cfdb882f5afa7e0a69f20cc880531c5c20c36",
+      "definitions": "0dfd5b7b7746644a627cf4358242f23f378216f510060617cf6374898c797a72",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fi",
-        "at": "2026-11-24T16:15:36Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP5": {
-      "definitions": "10e75a90ef0d0141d0f9d6617f210bf231975a803c8b62db405db5414d378021",
+      "definitions": "4f70347bb66ce7af869760353bb274cfe4e8f559121a00c66512e0e23eab7b87",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fi",
-        "at": "2026-11-24T16:15:36Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       },
       "ends_stretch": true
     }
@@ -572,11 +572,15 @@
     {
       "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 5 Must Fix findings.",
       "at": "2026-11-24T16:15:36Z"
+    },
+    {
+      "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
+      "at": "2026-11-24T22:06:49Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T16:15:36Z"
+    "at": "2026-11-24T22:06:49Z"
   },
   "design_history": [
     {

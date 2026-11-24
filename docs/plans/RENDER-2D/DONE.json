@@ -429,19 +429,9 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "blocked",
+      "status": "not_started",
       "quality_bar": "Pixel stability as in Celeste. At normal viewing size and recorded speed, fine lines and checks stay distinct and their contrast holds during the pan. Edges as clean as in Hades and Hollow Knight, with no fringe, halo, neighbouring sheet colour or gap between ground tiles. Judge the running output by eye.",
-      "diagnosed_for_planner_finding": true,
-      "blocked": {
-        "reason": "needs_context",
-        "what": "WP3.11 can't be met as written. Orchestrate 3.0.7 rejects its indirect `main-check` call and WP3.13\u2019s direct call. The planner needs to revise both item definitions before WP3 can advance to review.",
-        "work": {
-          "commit": "a091dcdec0d0f4a0d9bc49ead16833b07b138bf6",
-          "branch": "build/render-2d",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/RENDER-2D/WP3-handoff.md"
-      }
+      "diagnosed_for_planner_finding": true
     },
     {
       "id": "WP4",

@@ -271,13 +271,14 @@
       }
     },
     "WP3": {
-      "definitions": "ce6789080f44d3e103694c7cd9d75ce05d0b986d79d5c8318e5b71569332018d",
+      "definitions": "4eda106eb6fa2ddab77886e877660355a9a196e75ddbec5f29b40519830319a9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 2 Must F",
-        "at": "2026-11-18T05:29:44Z"
-      }
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -296,11 +297,15 @@
     {
       "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. This is round 3 and the module is converging, so take the smallest fix that removes each defect: an explicit portable recipe must stay on the portable path; for the frame timing, either measure the whole command-buffer GPU span or label the number as the pass interval it is. Timing is a tripwire under the owner's 17 Nov bar, not a gate.",
       "at": "2026-11-18T05:29:44Z"
+    },
+    {
+      "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
+      "at": "2026-11-24T22:06:49Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-18T05:29:44Z"
+    "host": "codex",
+    "at": "2026-11-24T22:06:49Z"
   },
   "design_history": [
     {

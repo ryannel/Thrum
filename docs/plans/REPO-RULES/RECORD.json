@@ -173,29 +173,22 @@
       }
     },
     "WP3": {
-      "definitions": "ff95c82c0028e67a0388c8c939c19aed235a9eb9fc9bb08bd56da4f036878d15",
+      "definitions": "e6c382f5fd2c23a1d35e30ce174a6551d7b73b85db7bac46a466138d200e402c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with 4 Must Fix ",
-        "at": "2026-11-24T19:33:00Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       }
     },
     "WP4": {
-      "definitions": "b970ab8ac930fc77add165be471043a7ec4fba6063a0bcf08f49d000f0773bef",
+      "definitions": "27b329bfc3dee065f45ae49b282ff3a1eea71786bac49cf967a37e43fb474791",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",
-        "at": "2026-11-14T22:15:19Z"
+        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
+        "at": "2026-11-24T22:06:49Z"
       },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ],
       "ends_stretch": true
     },
     "WP5": {
@@ -276,11 +269,15 @@
     {
       "task": "Unblock REPO-RULES WP5. The builder wrote: WP5.4 can't be met as written because Orchestrate refuses work-package checks that call `main-check`. The planner must remove or replace the item. The builder's handoff, .orchestrate/evidence/REPO-RULES/WP5-handoff.md, says what is finished; its fix is already on main (6e9f47d93, 5b4f32110) and scripts/repo_check.py passes there. Replace WP5.4 with a check the work package can show before the merge, or drop it if the other items already cover it. A plan you keep ends with `KEEP REPO-RULES WP5: builder: <where the plan provides it>`.",
       "at": "2026-11-24T20:49:08Z"
+    },
+    {
+      "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
+      "at": "2026-11-24T22:06:49Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T20:49:08Z"
+    "at": "2026-11-24T22:06:49Z"
   },
   "design_history": [
     {
