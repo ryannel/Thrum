@@ -1017,7 +1017,7 @@ async fn record(
         trace.drain(&mut driver, writer.as_ref(), origin, collect)?;
         let drain = drain.elapsed();
         let work = work.finish().map_err(|e| e.to_string())?;
-        let idle_gpu_progress = if governed && !active_pacing {
+        let idle_gpu_progress = if (governed || target_wind) && !active_pacing {
             Some(trace.progress_before(
                 &mut driver,
                 &mut admission,
