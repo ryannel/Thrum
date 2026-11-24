@@ -900,6 +900,10 @@ passes. The closing lines are proved by a reviewer who adds up one saved check's
 seconds is proved by three scratch tests in one run of the check: one always over the limit, one over it only the
 first time it runs, and one that fails an assertion; and by the record of three whole runs beside builders.
 
-The workspace rerun is proved by fast runner tests and by a complete `./dev check-all` under builder load
-with the incident's CPU and GPU cases replayed under the same contention. The record includes a rerun that
-takes over ten seconds and passes.
+The workspace rerun is proved by fast runner tests and a passing full `./dev check-all` on the fixed revision
+under contention comparable to the incident. Each of the six incident cases must pass under comparable load,
+either on a serial rerun in the full check or during a focused replay. Either run can supply the recovery of a real
+test stopped on its first attempt whose serial rerun passes in more than ten and at most thirty seconds.
+A focused replay limits the test selection on that same revision and uses the production workspace runner's
+initial ten-second stop, exact-case serial retry and final verdict. Only output from that runner counts as
+recovery evidence.

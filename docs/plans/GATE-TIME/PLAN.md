@@ -65,11 +65,16 @@ another module's: change nothing those tests assert about the engine. The milest
 Build this before M5. Use [the workspace rerun design](DESIGN.md#workspace-reruns-under-builder-load).
 Keep the replay, its checker `check_loaded.py`, the raw check output and the load samples in
 `.orchestrate/evidence/GATE-TIME/M14/`. Capture a successful `./dev check-all` on the fixed code during
-representative contention, and replay the six incident cases with the same serial rerun settings. If a named
-case finishes on the first pass, time it through the focused replay. Use active builders and a concurrent Metal
-workload, or reproduce the incident's CPU and Metal contention with controlled competing work. Capture the
-one-minute load during reruns, the core and builder counts, and the overlapping GPU work. Keep the checker's
-read of the retained record cheap so milestone checks can run again without launching a second workspace sweep.
+representative contention. Use a focused replay through the production workspace runner on the same revision
+for incident cases without a passing serial rerun in the full run, or to capture a recovery above ten seconds
+and within thirty if the full run has none. Use active builders and a concurrent Metal workload, or reproduce
+the incident's CPU and Metal contention with controlled competing work. Capture the one-minute load during
+the runs, including the reruns, the core and builder counts, and the overlapping GPU work.
+
+Have `check_loaded.py` read the retained records for the passing full check, the six incident case results and
+the load evidence. Accept the over-ten-second recovery from either run when the record ties the first-attempt
+timeout, passing serial retry within thirty seconds and production verdict to the same real case and fixed
+revision. Keep the checker cheap so milestone checks can rerun from the records.
 
 ## M5 The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs
 
