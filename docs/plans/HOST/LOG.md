@@ -97,3 +97,6 @@
   clean main because its plan reader expects the pre-migration schema.
   [Proof](../../../.orchestrate/evidence/HOST/WP5/README.md)
   [Handoff](../../../.orchestrate/evidence/HOST/WP5-handoff.md)
+- 2026-11-24 Ran the replanned WP5.3 check on the Mac after rebasing onto the updated plan. The
+  reference guard verified all five registered Mac and Chrome baseline pins.
+  [Reference guard](../../../.orchestrate/evidence/HOST/WP5/WP5.3-reference-guard.log)

@@ -333,8 +333,8 @@
           "statement": "Every registered Mac and Chrome exact baseline's definition, retained references and comparison files match its pin at the candidate commit. Guard: the existing exact-baseline reference check in `./dev check`.",
           "check": "python3 scripts/exact_baselines.py guard",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/WP5/WP5.3-reference-guard.log",
           "verdict": "",
           "review": ""
         }
