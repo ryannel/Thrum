@@ -3004,7 +3004,7 @@
         "implementation": "On the CLOUDS M7 builder branch, V1 authors four weather presets and a tick-driven weather sequence. Metal and Chrome can capture held-Sun weather motion.",
         "correctness": "Metal proves exact whole-frame equality for clear and clouds absent, as well as CPU/GPU weather and optical depths for cell, deck and placed clouds. Consecutive consumed 120 Hz wind targets advance the correct world distance.",
         "visuals": "Metal and Chrome fixed captures show clear and fair weather. Broken-bank rim contrast and low-Sun overcast relief still fall short. The Metal sequence shows an abrupt overhead retreat on the return to clear. The visible wind cadence and whole lives in broken weather remain open.",
-        "device": "Apple M3 Max Metal and Chrome WebGPU engine output. Matched loaded 1440p Metal GPU means were 9.47 ms absent, 82.89 ms fair, 84.25 ms broken and 41.55 ms overcast.",
+        "device": "Apple M3 Max Metal and Chrome WebGPU engine output. Matched loaded 1440p Metal GPU means were 4.38 ms absent, 80.62 ms fair, 95.50 ms broken and 37.63 ms overcast.",
         "record": "../../.orchestrate/evidence/CLOUDS/M7/README.md"
       },
       "name": "Cloud fields and projections",
