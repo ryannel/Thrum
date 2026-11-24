@@ -229,3 +229,11 @@
   The clock now keeps those targets consecutive. The steady run matched every digest on all four replicas,
   with 99.73% to 100% warm admission. The other eight socket cases and the adaptive-lead regression passed.
   [M5 evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)
+
+- 2026-11-24 The merged steady run showed Chrome receiving sets while its replica fell behind. The grid now packs
+  circles by cell, sorts occupied cells for wide queries and selects the circle predicate before traversal.
+  The 36,000-tick release match matched all 1,200 digests on each of the four peers and admitted every warm input.
+  The isolated outer runner now stages the checkout's Python modules. Both cancellations and the deadline verified
+  shutdown before the contender entered. The workspace check and branch-runnable milestone checks passed.
+  The iPhone image proof matched six images and 1,000 checkpoints across eight separately verified shutdowns.
+  [M5 rerun evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)
