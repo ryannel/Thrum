@@ -676,7 +676,7 @@
         {
           "id": "WP3.1",
           "statement": "The reduced two-state crossing can be regenerated from its recipe and pinned stock shader. Stock reaches zero visibility at the second state while the dense comparator still sees a limb. Record: the rerun command, the two states and outputs, and the recovery status of the authored spur, D32, uniforms and submitted inputs for both historical trajectories.",
-          "ask": "Does the rerun produce both named states with the stock comparison and reproduce the premature zero? Does the record identify the historical 1920 × 1080 submissions 226 and 227 at row 665, and leave the in-game verdict open for their matched fixed Metal and Chrome replay?",
+          "ask": "Does the rerun produce both named states with the stock comparison and reproduce the premature zero? Does the record identify the historical 1920 \u00d7 1080 submissions 226 and 227 at row 665, and leave the in-game verdict open for their matched fixed Metal and Chrome replay?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -686,7 +686,7 @@
         {
           "id": "WP3.2",
           "statement": "One CPU trial compares stock, candidate and dense visibility on the same stored-depth field for the two crossing states, 21 extinction states, uniform clear and uniform occlusion. Record: per-state visibility, signed residuals, adjacent steps, work and the retain-or-park verdict.",
-          "ask": "Does the candidate use 64 × 16 weighted chord samples and at most 4,096 filter loads per query throughout? Does the verdict park the candidate if it loses the limb at the crossing, extinguishes early, rebounds or stays positive at the end of the sweep, or changes either uniform control?",
+          "ask": "Does the candidate use 64 \u00d7 16 weighted chord samples and at most 4,096 filter loads per query throughout? Does the verdict park the candidate if it loses the limb at the crossing, extinguishes early, rebounds or stays positive at the end of the sweep, or changes either uniform control?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -714,8 +714,8 @@
       "items": [
         {
           "id": "WP4.1",
-          "statement": "One bounded CPU trial compares the source-side reuse candidate with independent rays against the reconstructed triangles. It covers open Sun, broad edge, narrow crest with four moving receiver and phase pairs and its ablation, close umbra with the 64 m partition control, compact caster only and terrain–caster overlap. Record: a reproducible input recipe, rerun command, reference convergence, blocked coverage, omission, overcoverage, spent work and unanswered queries.",
-          "ask": "Can you rerun all named cases from the recorded recipe? Do the centre controls show coverage from the straddling faces and a nonzero terrain–caster intersection counted once? Are omission and overcoverage reported separately at common samples? Does the record charge work spent on unanswered queries to the preset cap and give a retain-or-park verdict for the single candidate?",
+          "statement": "One bounded CPU trial compares the source-side reuse candidate with independent rays against the reconstructed triangles. It covers open Sun, broad edge, narrow crest with four moving receiver and phase pairs and its ablation, close umbra with the 64 m partition control, compact caster only and terrain\u2013caster overlap. Record: a reproducible input recipe, rerun command, reference convergence, blocked coverage, omission, overcoverage, spent work and unanswered queries.",
+          "ask": "Can you rerun all named cases from the recorded recipe? Do the centre controls show coverage from the straddling faces and a nonzero terrain\u2013caster intersection counted once? Are omission and overcoverage reported separately at common samples? Does the record charge work spent on unanswered queries to the preset cap and give a retain-or-park verdict for the single candidate?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

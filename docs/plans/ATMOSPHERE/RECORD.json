@@ -643,21 +643,21 @@
       }
     },
     "WP3": {
-      "definitions": "f47d2786ece7673cafec556ebd5e67c241b8f94e97f3af14df9c28ce8f8c75ba",
+      "definitions": "6d9b71959b5627bd8d5d18d4e76646235785a7e87a9f311e71a6ac29cc6b38f5",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its Must Fi",
-        "at": "2026-11-24T22:16:43Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must ",
+        "at": "2026-11-24T22:27:38Z"
       }
     },
     "WP4": {
-      "definitions": "4770924eee770af4ae731cdcd0b4cbc263024029c4871661ebd1e0cd9ac7673f",
+      "definitions": "d865812a6796823b6e4f699c5ce97225f3213506b66402f58a54d5ffdac7835f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its Must Fi",
-        "at": "2026-11-24T22:16:43Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must ",
+        "at": "2026-11-24T22:27:38Z"
       },
       "ends_stretch": true
     }
@@ -750,11 +750,15 @@
     {
       "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its Must Fix findings.",
       "at": "2026-11-24T22:16:43Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-24T22:27:38Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T22:16:43Z"
+    "at": "2026-11-24T22:27:38Z"
   },
   "design_history": [
     {
