@@ -15,6 +15,8 @@ elif [ -n "${1:-}" ]; then
   exit 2
 fi
 build_root=${CARGO_TARGET_DIR:-target}
+# A qualification can retain its own page while continuing to share Cargo's build cache.
+web_output=${THRUM_V1_WEB_OUTPUT:-"$build_root/$web"}
 # Each page compiles into its own Cargo target folder. Cargo's lock ends with the build, before
 # wasm-bindgen reads the Wasm, so a shared release/v1_game.wasm would let a concurrent build of
 # the other page swap in its Wasm: the hook could reach the default page, or leave the dev page.
@@ -25,32 +27,32 @@ fi
 rustc_path=$(rustup which rustc --toolchain stable)
 # shellcheck disable=SC2086 # $features is empty or one flag and its value
 RUSTC="$rustc_path" rustup run stable cargo build -p v1-game --lib --release --target wasm32-unknown-unknown --locked --offline --target-dir "$cargo_target" $features
-mkdir -p "$build_root/$web"
+mkdir -p "$web_output"
 if command -v wasm-bindgen >/dev/null 2>&1; then
   bindgen_bin=wasm-bindgen
 else
   bindgen_bin="${CARGO_HOME:-$HOME/.cargo}/bin/wasm-bindgen"
 fi
-"$bindgen_bin" --target web --out-dir "$build_root/$web" "$cargo_target/wasm32-unknown-unknown/release/v1_game.wasm"
-cp examples/v1-game/web/index.html "$build_root/$web/index.html"
-cp examples/v1-game/web/temporal.html "$build_root/$web/temporal.html"
-witness=$(mktemp "$build_root/$web/.temporal-witness.XXXXXX")
+"$bindgen_bin" --target web --out-dir "$web_output" "$cargo_target/wasm32-unknown-unknown/release/v1_game.wasm"
+cp examples/v1-game/web/index.html "$web_output/index.html"
+cp examples/v1-game/web/temporal.html "$web_output/temporal.html"
+witness=$(mktemp "$web_output/.temporal-witness.XXXXXX")
 trap 'rm -f "$witness"' EXIT
 RUSTC="$rustc_path" rustup run stable cargo run --locked --offline --quiet \
   -p thrum-render --example temporal_witness --target-dir "$build_root" > "$witness"
 chmod a+r "$witness"
-mv "$witness" "$build_root/$web/temporal-witness.json"
-cp examples/v1-game/web/route.html "$build_root/$web/route.html"
-cp examples/v1-game/web/capture.html "$build_root/$web/capture.html"
-cp examples/v1-game/web/capture.mjs "$build_root/$web/capture.mjs"
-cp examples/v1-game/web/capture_upload.mjs "$build_root/$web/capture_upload.mjs"
-cp examples/v1-game/routes/*.json "$build_root/$web/"
-cp crates/thrum-controls/web/thrum-controls.js "$build_root/$web/thrum-controls.js"
-cp crates/thrum-app/web/host-page.js "$build_root/$web/host-page.js"
-cp examples/v1-game/params/*.params.json "$build_root/$web/"
+mv "$witness" "$web_output/temporal-witness.json"
+cp examples/v1-game/web/route.html "$web_output/route.html"
+cp examples/v1-game/web/capture.html "$web_output/capture.html"
+cp examples/v1-game/web/capture.mjs "$web_output/capture.mjs"
+cp examples/v1-game/web/capture_upload.mjs "$web_output/capture_upload.mjs"
+cp examples/v1-game/routes/*.json "$web_output/"
+cp crates/thrum-controls/web/thrum-controls.js "$web_output/thrum-controls.js"
+cp crates/thrum-app/web/host-page.js "$web_output/host-page.js"
+cp examples/v1-game/params/*.params.json "$web_output/"
 if [ -n "$features" ]; then
-  cp examples/v1-game/materials/*.material.wgsl "$build_root/$web/"
+  cp examples/v1-game/materials/*.material.wgsl "$web_output/"
 else
-  rm -f "$build_root/$web/"*.material.wgsl
+  rm -f "$web_output/"*.material.wgsl
 fi
-printf 'Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "%s/%s"\n' "$build_root" "$web"
+printf 'Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "%s"\n' "$web_output"

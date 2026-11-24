@@ -38,7 +38,7 @@ def run(*arguments, cwd=ROOT, env=None):
     subprocess.run(command, cwd=cwd, env=env, check=True)
 
 
-def prepare_mac(folder, revision, env):
+def prepare_mac(folder, revision, env, cooker):
     folder.mkdir()
     metadata = json.loads(subprocess.check_output(
         ['cargo', 'metadata', '--locked', '--offline', '--format-version', '1',
@@ -63,7 +63,7 @@ def prepare_mac(folder, revision, env):
         '--target-dir', folder / 'target', cwd=archive, env=env)
     run('xcrun', 'swiftc', '-module-cache-path', folder / 'swift-cache', '-parse-as-library',
         MAC_WITNESS / 'record_owned_window.swift', '-o', folder / 'record_owned_window')
-    run(COOKER, 'cook', ASSETS, folder / 'store')
+    run(cooker, 'cook', ASSETS, folder / 'store')
 
 
 def check_mac(folder, revision):
@@ -81,10 +81,10 @@ def check_mac(folder, revision):
     check_mac_overload(folder, PRESET)
 
 
-def prepare_web(env):
+def prepare_web(folder, env):
     build = ROOT / 'examples/v1-game/web/build.sh'
-    run(build, env=env)
-    run(build, '--dev', env=env)
+    run(build, env=dict(env, THRUM_V1_WEB_OUTPUT=str(folder / 'v1-game-web')))
+    run(build, '--dev', env=dict(env, THRUM_V1_WEB_OUTPUT=str(folder / 'v1-game-web-dev')))
 
 
 def check_web(folder):
@@ -95,8 +95,8 @@ def check_web(folder):
         for suffix in ('', '-retry', '-retry-2'):
             output = folder / (case + suffix)
             try:
-                run('node', WEB_CHECK, '--case', case, '--web-root', ROOT / 'target' / web_root,
-                    '--cook', COOKER, '--output', output)
+                run('node', WEB_CHECK, '--case', case, '--web-root', folder.parent / web_root,
+                    '--cook', folder.parent / 'thrum-cook', '--output', output)
             except subprocess.CalledProcessError:
                 receipt = output / 'run.json'
                 if suffix == '-retry-2' or not receipt.is_file():
@@ -168,12 +168,14 @@ def main():
     if not args.prepared:
         revision_file.write_text(revision + '\n')
         env = dict(environment(), CARGO_TARGET_DIR=str(ROOT / 'target'))
+        cooker = output / 'thrum-cook'
         if any(target != 'ios-sim' for target in args.target):
             run('cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook', env=env)
+            shutil.copy2(COOKER, cooker)
         if 'mac-metal' in args.target:
-            prepare_mac(output / 'mac', revision, env)
+            prepare_mac(output / 'mac', revision, env, cooker)
         if 'chrome-webgpu' in args.target:
-            prepare_web(env)
+            prepare_web(output, env)
     if args.action == 'check':
         if 'mac-metal' in args.target:
             keep_awake = subprocess.Popen(['caffeinate', '-d', '-i'])

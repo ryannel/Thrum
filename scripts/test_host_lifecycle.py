@@ -1,7 +1,8 @@
-"""Simulator launch ownership for the direct command and milestone runner."""
+"""Lifecycle check preparation and simulator launch ownership."""
 
 import json
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import unittest
@@ -9,6 +10,45 @@ from unittest.mock import patch
 
 import host_lifecycle
 from host_lifecycle import simulator
+
+
+class ChromeInputs(unittest.TestCase):
+    def test_prepared_cases_survive_checkout_build_cache_removal(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            cache = root / 'target'
+            cooker = cache / 'debug' / 'thrum-cook'
+            output = root / 'tmp' / 'run'
+            cooker.parent.mkdir(parents=True)
+            cooker.write_bytes(b'cooker')
+            seen = {}
+
+            def run(*arguments, env=None):
+                if arguments[0] == 'cargo':
+                    self.assertEqual(Path(env['CARGO_TARGET_DIR']), cache)
+                elif Path(arguments[0]).name == 'build.sh':
+                    self.assertEqual(Path(env['CARGO_TARGET_DIR']), cache)
+                    page = Path(env['THRUM_V1_WEB_OUTPUT'])
+                    page.mkdir()
+                    (page / 'v1_game_bg.wasm').write_text('dev' if '--dev' in arguments else 'default')
+                else:
+                    self.assertEqual(arguments[0], 'node')
+                    case = arguments[arguments.index('--case') + 1]
+                    page = arguments[arguments.index('--web-root') + 1]
+                    executable = arguments[arguments.index('--cook') + 1]
+                    self.assertEqual(Path(executable).read_bytes(), b'cooker')
+                    seen[case] = (Path(page) / 'v1_game_bg.wasm').read_text()
+
+            argv = ['host_lifecycle.py', 'prepare', '--target', 'chrome-webgpu', '--output', str(output)]
+            with patch.object(host_lifecycle, 'ROOT', root), patch.object(host_lifecycle, 'COOKER', cooker), \
+                 patch.object(host_lifecycle, 'run', side_effect=run), patch.object(sys, 'argv', argv), \
+                 patch.object(host_lifecycle, 'environment', return_value={}), \
+                 patch.object(host_lifecycle.subprocess, 'check_output', return_value='revision\n'):
+                host_lifecycle.main()
+                shutil.rmtree(cache)
+                host_lifecycle.check_web(output / 'chrome')
+
+            self.assertEqual(seen, {**dict.fromkeys(host_lifecycle.WEB_CASES, 'default'), 'material': 'dev'})
 
 
 class SimulatorDispatch(unittest.TestCase):
