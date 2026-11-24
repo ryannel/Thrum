@@ -1122,7 +1122,7 @@
     {
       "id": "WP13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1136,8 +1136,8 @@
           "ask": "Does the test fail when the lag is left out, and when the section is?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/qualified-field-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -1147,8 +1147,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_capability_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/surf-capability-r2.log",
           "verdict": "",
           "review": ""
         },
@@ -1159,8 +1159,8 @@
           "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, whose highest surface WP12.12 holds to the test's own cut, and would a query that left the transform out fail? Does one probe sit in a column that holds three surfaces, under a crest the two trains make together?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/shore-shielded-floating.log",
           "verdict": "",
           "review": ""
         },
@@ -1192,8 +1192,8 @@
           "ask": "Would the Metal guard fail both if wet long-wave loss below index 1 were discarded and if the breaking wave's share stayed distributed? Does the far estimator use the same wet lost power, including loss below index 1?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/shore-shielded-foam.log",
           "verdict": "",
           "review": ""
         },
@@ -1223,8 +1223,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_frame_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/shore-shielded-frame.log",
           "verdict": "",
           "review": ""
         },
@@ -1234,8 +1234,8 @@
           "check": "node scripts/check_water_browser.mjs --case surf",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/clearance-chrome-conformance.json",
           "verdict": "",
           "review": ""
         },
@@ -1255,8 +1255,8 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/clearance-metal-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -1266,8 +1266,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p water-scene --test foam_scene_gpu -E 'test(=craft_trail_outlives_removed_source_and_spreads)' --test-threads 1 --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/recovered-trail-check.log",
           "verdict": "",
           "review": ""
         }
