@@ -584,7 +584,7 @@
           "ask": "Does the test use a ground band that differs between two heights over one point, so a read at the wrong height fails? Does a factor that adds the 2D field's value to the band's fail the ln 2 case?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/checks/ground-band-review-fix.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
           "builder_result": "pass"
         },
@@ -605,7 +605,7 @@
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from outside the bank, at its edge and inside it, toward and away from the Sun. Judge each whole and in native-size crops of the fog against a ridge, a prop and the ground.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/review-fixes/README.md#metal-fixed",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
           "builder_result": "pass"
         },
@@ -625,7 +625,7 @@
           "inspect": "Capture the same stills, the walk, the pan and the mover in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/review-fixes/README.md#chrome-fixed-and-realtime",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
           "builder_result": "pass"
         },
@@ -665,25 +665,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Fog near the camera as in Red Dead Redemption 2 and The Last of Us Part II: the land, props and movers fade into it by depth with clean edges, the Sun and its shadows weaken inside it, and nothing trails or pops as the camera passes through.",
-      "findings": [
-        {
-          "name": "An invalid Sun-path provider still shades receivers inside the ground band",
-          "item": "WP8.3",
-          "repeat": false
-        },
-        {
-          "name": "The solar disc stays visibly clipped through the Metal test bank",
-          "item": "WP8.5",
-          "repeat": false
-        },
-        {
-          "name": "The solar disc stays visibly clipped through the Chrome test bank",
-          "item": "WP8.7",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "Fog near the camera as in Red Dead Redemption 2 and The Last of Us Part II: the land, props and movers fade into it by depth with clean edges, the Sun and its shadows weaken inside it, and nothing trails or pops as the camera passes through."
     },
     {
       "id": "WP3",

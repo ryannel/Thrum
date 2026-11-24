@@ -432,7 +432,7 @@
         {
           "verdict": "fail",
           "commit": "c3a3e004d687befbce7f63c27d2ebe16f9fc6c47",
-          "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review-1.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -478,6 +478,39 @@
             "turns": 1
           },
           "at": "2026-11-24T22:53:18Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "e97adfdd90d50ad09512bcfc6c6b44fa009a6e95",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.8": "pass",
+            "WP8.9": "pass",
+            "WP8.10": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 180941,
+            "cached": 12665344,
+            "output": 22297,
+            "turns": 1
+          },
+          "at": "2026-11-24T23:51:29Z"
         }
       ],
       "authorised": {
@@ -510,6 +543,13 @@
           "output": 213630,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "e97adfdd90d50ad09512bcfc6c6b44fa009a6e95",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP8-review.md",
+        "checked": "3ac5d549d98213d0ce52105e02c8796af6c7d8b4",
+        "at": "2026-11-24T23:51:29Z"
       }
     },
     "WP9": {
