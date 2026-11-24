@@ -1413,12 +1413,12 @@
       }
     },
     "M13": {
-      "definitions": "84ebc13842e162eee4b600c08b8c8eeb92104b716ec05b49540e173316e369bb",
+      "definitions": "969f72764e78ba089edcd73256c3cee3338ec879947b159f3a11beb3b90a3ad4",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS M13 is blocked with needs_context. The builder's question: M13.6 can't be met as written until the plan says wher",
-        "at": "2026-11-23T11:07:43Z"
+        "task": "WATERS M13 is blocked with needs_context after three failed visual passes on the shoreline. The builder handoff is .orch",
+        "at": "2026-11-24T04:36:45Z"
       }
     },
     "M15": {
@@ -1672,11 +1672,15 @@
     {
       "task": "The main-branch check workspace-tests fails on 299376222cb1 at normal machine load. Three tests hit nextest's 10 s limit both side by side and when retried alone: thrum-river-model::it gauge::a_river_whose_source_is_another_river_s_chart_follows_that_chart_s_level, thrum-river-model::it report::the_same_input_gives_the_same_bytes_on_one_thread_and_on_eight, and water-scene::foam_scene_gpu craft_trail_outlives_removed_source_and_spreads. The log is .git/orchestrate/main-checks/workspace-tests/logs/20261124-015732-299376222cb1-1090-423.stderr. Find why each is too slow for the fast suite (a regression, an oversized world, or a test that belongs in the long tier), and plan the fix in the module whose code it is, in its plan or as its next milestone.",
       "at": "2026-11-24T01:13:58Z"
+    },
+    {
+      "task": "WATERS M13 is blocked with needs_context after three failed visual passes on the shoreline. The builder handoff is .orchestrate/evidence/WATERS/M13-handoff.md (see its \"Design decision\" section); the unmerged work is at 48f4bd7fe on build/waters. A vertical cut of the f64 long-wave sheet shows dry/wet/dry runs in 30 of 173 rows (a ~1 m dry strip behind ~5.5 m of wet sheet), so tessellation and optical fades cannot close the gap between bore and swash. Decide in the WATERS design and M13 items how to limit the coherent trough or dissipate the bore, keeping the regular-wave draw-back rule and the single CPU/GPU sheet, choosing a modern technique that gives a plausible shipped-game shoreline (owner bar: shipped-game look and speed, not physical accuracy). Adjust M13.4, M13.5, M13.7, M13.8 and M13.11 so the builder can meet them; record any choice the owner has not made as an assumption. Done: the design and done-when file answer the question, ./dev check-docs passes, and the files are left for the plan command to commit.",
+      "at": "2026-11-24T04:36:45Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T01:13:58Z"
+    "at": "2026-11-24T04:36:45Z"
   },
   "design_history": [
     {
