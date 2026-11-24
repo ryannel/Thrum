@@ -40,7 +40,7 @@ impl WeatherPreset {
         let (coverage, kind) = match self {
             Self::Clear => (0.0, 1.0),
             Self::Fair => (0.50, 1.0),
-            Self::Broken => (0.70, 0.42),
+            Self::Broken => (0.73, 0.42),
             Self::Overcast => (1.0, 0.0),
         };
         Parameters {
@@ -164,7 +164,7 @@ pub fn shade_config() -> ShadeConfig {
         types: vec![
             Type {
                 base: 1600.0,
-                depth: [300.0, 600.0],
+                depth: [520.0, 720.0],
                 liquid_water: 0.00025,
                 droplet_radius: 0.00001,
                 deck: 1.0,
