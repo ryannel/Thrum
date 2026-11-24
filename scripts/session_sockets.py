@@ -1,4 +1,4 @@
-"""Run the reference world on independent session peers over A0-conditioned sockets."""
+"""Run independent session peers over A0-conditioned sockets."""
 
 from bisect import bisect_right
 from contextlib import contextmanager
@@ -25,6 +25,7 @@ SCENARIOS = ("steady", "faults", "slow", "listen", "costs")
 MAC = "mac-metal"
 CHROME = "chrome-webgpu"
 IOS = "ios-sim"
+BROWSER_FILES = ("socket_player.js", "match_proof.js", "match_proof_bg.wasm")
 
 
 def write_atomic(path, text):
@@ -320,7 +321,7 @@ def relay_record(peer):
     return record
 
 
-def report(run, peers):
+def report(run, peers, *, warmup=600):
     commits = run.host.events("commit")
     assert [row["tick"] for row in commits] == list(range(1, run.ticks + 1))
     digests = run.host.events("digest")
@@ -329,7 +330,7 @@ def report(run, peers):
     identities = [row for peer in run.peers for row in peer.log.events("client")]
     all_pids = [run.config["pid"], *(row["pid"] for row in identities)]
     assert len(set(all_pids)) == len(all_pids), all_pids
-    warm = commits[600:]
+    warm = commits[warmup:]
     admitted_fraction = [
         sum(row["admissions"][slot] for row in warm) / len(warm)
         for slot in range(len(run.peers) + run.listen)
@@ -880,6 +881,60 @@ def file_sha(path):
         return hashlib.file_digest(data, "sha256").hexdigest()
 
 
+def record_simulator(result, release):
+    peer, = [peer for peer in result["players"] if peer["target"] == IOS]
+    events = peer["simulator_turn"]
+    boot, = [event for event in events if event["event"] == "booted"]
+    shutdown, = [event for event in events if event["event"] == "shutdown_verified"
+                 and event["utc_s"] > boot["utc_s"]]
+    assert shutdown["udid"] == boot["udid"]
+    release.update(runtime=simulator_lifecycle.RUNTIME, simulator=boot["udid"],
+                   device=simulator_lifecycle.NAME)
+
+
+def game_proof(programs, ticks, bodies, output):
+    for number in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(number, interrupt)
+    provenance = conformance.identity()
+    SCRATCH.mkdir(parents=True, exist_ok=True)
+    output = (output or SCRATCH / f"game-{time.time_ns()}" / "record.json").resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    targets = [target for target in (MAC, CHROME, IOS) if target in programs]
+    artifacts = {}
+    with tempfile.TemporaryDirectory(prefix="game-programs-", dir=SCRATCH) as directory:
+        snapshots = {}
+        for target in targets:
+            source = programs[target]
+            destination = Path(directory) / target
+            destination.mkdir()
+            if target == CHROME:
+                snapshots[target] = destination
+                for name in BROWSER_FILES:
+                    shutil.copy2(source / name, destination / name)
+                artifacts[target] = {"source": str(source), "sha256": {
+                    name: file_sha(destination / name) for name in BROWSER_FILES
+                }}
+            else:
+                artifact = destination / source.name
+                shutil.copy2(source, artifact)
+                snapshots[target] = artifact
+                artifacts[target] = {"source": str(source), "sha256": file_sha(artifact)}
+
+        with match(output.parent / "match", snapshots, bodies, ticks) as run:
+            peers = stable(run, targets)
+        result = report(run, peers, warmup=0)
+        rule_set = result["host"]["rule_set"]
+        for peer in result["players"]:
+            assert peer["baselines"][0]["rule_set"] == rule_set, "replica used a different rule set"
+        if IOS in programs:
+            record_simulator(result, artifacts[IOS])
+
+    packet = {**provenance, "scenario": "game", "target": MAC, "artifacts": artifacts,
+              **result, "result": "pass"}
+    write_atomic(output, json.dumps(packet, indent=2) + "\n")
+    print(json.dumps({"result": "pass", "record": str(output)}))
+
+
 def proof(scenario, target, output, build):
     for number in (signal.SIGTERM, signal.SIGHUP):
         signal.signal(number, interrupt)
@@ -920,14 +975,7 @@ def proof(scenario, target, output, build):
         else:
             result = run_scenario(scenario, target, output.parent, paths)
         if IOS in targets:
-            peer, = [peer for peer in result["players"] if peer["target"] == IOS]
-            events = peer["simulator_turn"]
-            boot, = [event for event in events if event["event"] == "booted"]
-            shutdown, = [event for event in events if event["event"] == "shutdown_verified"
-                         and event["utc_s"] > boot["utc_s"]]
-            assert shutdown["udid"] == boot["udid"]
-            release[IOS].update(runtime=simulator_lifecycle.RUNTIME, simulator=boot["udid"],
-                                device=simulator_lifecycle.NAME)
+            record_simulator(result, release[IOS])
         provenance["duration_seconds"] = time.monotonic() - began
     packet = {**provenance, "scenario": scenario, "target": target, "release": release, **result, "result": "pass"}
     write_atomic(output, json.dumps(packet, indent=2) + "\n")

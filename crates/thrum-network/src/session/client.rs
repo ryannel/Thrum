@@ -412,7 +412,9 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         self.held
     }
 
-    /// Read the next resolved result. Poll this as part of consuming session events.
+    /// Read the next resolved timed-frame or command result.
+    /// Drain after each advance, even if the game does not use dispositions.
+    /// Unread results count towards the input capacity.
     pub fn result(&mut self) -> Option<ResultEvent> {
         self.replica.results.pop_front()
     }

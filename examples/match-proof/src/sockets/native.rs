@@ -119,6 +119,7 @@ pub fn host(
                     &mut output,
                     &timestamp(json!({
                         "event": "host", "pid": std::process::id(), "ticket": ticket.to_string(),
+                        "rule_set": crate::hex(&host.world().identity().0),
                         "listen": listen, "bodies": bodies, "seed": seed, "controller": controller, "rule_workers": rule_workers, "thread_qos": thread_qos,
                         "tick_us": settings.tick_us, "minimum_barrier_spacing_us": minimum_barrier_spacing_us,
                         "digest_interval": settings.digest_interval,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Headless SESSION checks on the registered reference crowd."""
+"""Run headless matches with the reference crowd or game-owned proof programs."""
 
 import argparse
 import fcntl
@@ -419,15 +419,73 @@ def identity(scratch):
             "source_copy_outside_checkout": True, "build": "release"}
 
 
+def positive(value):
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be positive")
+    return number
+
+
+def game_program(parser, path):
+    if path is None or not path.is_file() or not os.access(path, os.X_OK):
+        parser.error(f"expected an executable proof program, got {path}")
+    return path.resolve()
+
+
+def run_game(parser, args):
+    if args.action not in ("memory", "sockets"):
+        parser.error("game is a scenario for memory or sockets")
+    if args.target != "mac-metal":
+        parser.error("game uses the Mac host; select clients with --ios-program and --chrome-page")
+    if args.ticks is None:
+        parser.error("game requires --ticks")
+    native = game_program(parser, args.program)
+    if args.action == "memory":
+        if any(value is not None for value in (args.ios_program, args.chrome_page, args.bodies)):
+            parser.error("memory game takes a Mac program only")
+        from session_memory import game_proof
+        game_proof(native, args.profile or "a0", args.ticks, args.output)
+        return
+
+    if args.profile is not None:
+        parser.error("sockets game uses the A0 relay")
+    if args.bodies is not None and args.bodies < 0:
+        parser.error("--bodies must be nonnegative")
+    import session_sockets
+    programs = {session_sockets.MAC: native}
+    if args.ios_program is not None:
+        programs[session_sockets.IOS] = game_program(parser, args.ios_program)
+    if args.chrome_page is not None:
+        page = args.chrome_page.resolve()
+        missing = [name for name in session_sockets.BROWSER_FILES if not (page / name).is_file()]
+        if missing:
+            parser.error(f"missing browser files in {page}: {', '.join(missing)}")
+        programs[session_sockets.CHROME] = page
+    session_sockets.game_proof(programs, args.ticks, 128 if args.bodies is None else args.bodies, args.output)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["image", "identity", "image-costs", "memory", "sockets", "closure"])
     parser.add_argument("scenario", nargs="?", choices=[
-        "steady", "faults", "slow", "listen", "lead", "costs", "prediction", "prediction-costs", *session_faults.SCENARIOS,
+        "steady", "faults", "slow", "listen", "lead", "costs", "prediction", "prediction-costs", "game",
+        *session_faults.SCENARIOS,
     ])
     parser.add_argument("--target", choices=TARGETS, default="mac-metal")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--program", type=Path, help="Mac executable for the game scenario")
+    parser.add_argument("--ticks", type=positive, help="number of authority ticks for the game scenario")
+    parser.add_argument("--profile", choices=("local", "a0", "harsh"), help="conditioner for memory game")
+    parser.add_argument("--bodies", type=int, help="world size argument for sockets game (default 128)")
+    parser.add_argument("--ios-program", type=Path, help="add an iPhone simulator executable to sockets game")
+    parser.add_argument("--chrome-page", type=Path, help="add a prepared browser proof directory to sockets game")
     args = parser.parse_args()
+    if args.scenario == "game":
+        run_game(parser, args)
+        return
+    if any(value is not None for value in
+           (args.program, args.ticks, args.profile, args.bodies, args.ios_program, args.chrome_page)):
+        parser.error("game program and workload options require the game scenario")
     if args.action == "sockets":
         import session_sockets
         if args.scenario not in session_sockets.SCENARIOS:

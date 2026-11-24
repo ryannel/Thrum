@@ -249,3 +249,32 @@ def proof(scenario, output, build):
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(packet, indent=2) + "\n")
     print(json.dumps({"result": "pass", "record": str(output)}))
+
+
+def game_proof(program, profile, ticks, output):
+    provenance = conformance.identity()
+    SCRATCH.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="game-", dir=SCRATCH) as directory:
+        artifact = Path(directory) / program.name
+        shutil.copy2(program, artifact)
+        with artifact.open("rb") as handle:
+            artifact_hash = hashlib.file_digest(handle, "sha256").hexdigest()
+        result = json.loads(subprocess.check_output([artifact, "memory", profile, str(ticks)], text=True))
+
+    interval = result["digest_interval"]
+    assert 1 <= interval <= ticks, "match has no digest checkpoints"
+    host = result["host"]
+    assert host["tick"] == ticks
+    assert [tick for tick, _ in host["digests"]] == list(range(interval, ticks + 1, interval))
+    peers = result["players"]
+    assert 1 <= len(peers) <= 4, "expected one to four independent replica records"
+    for peer in peers:
+        assert peer["rule_set"] == host["rule_set"], "replica used a different rule set"
+        assert peer["tick"] == ticks and peer["digests"] == host["digests"], "replica did not match the host"
+    packet = {**provenance, "result": "pass", "target": "mac-metal", "scenario": "game",
+              "profile": profile, "ticks": ticks, "program": str(program),
+              "artifact_sha256": artifact_hash, "match": result}
+    output = output or SCRATCH / f"memory-game-{time.time_ns()}.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(packet, indent=2) + "\n")
+    print(json.dumps({"result": "pass", "record": str(output)}))

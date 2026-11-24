@@ -38,7 +38,7 @@ on decode. A slot frame holds up to eight actions. Apply actions in the order th
 | Choose | Send through | What happens |
 | --- | --- | --- |
 | Timed action, such as a jump at the sampled moment | The `Controls` returned from the sampling callback to `Client::advance` | The frame targets a specific tick. A late timed action is lost. Missing frames may hold axes briefly and carry zero timed actions. |
-| Ordered command, such as choosing an upgrade | `Client::command` | On a live link the host admits the command in sequence at the first barrier with room. The command has no target-tick expiry. Poll `Client::result` for the disposition. |
+| Ordered command, such as choosing an upgrade | `Client::command` | On a live link the host admits the command in sequence at the first barrier with room. The command has no target-tick expiry. |
 
 A committed result identifies the tick that included the input. The game rule decides whether the included
 action had an effect. A disconnect can leave a command's outcome uncertain. The new connection starts from a
@@ -82,7 +82,18 @@ ticks of history and returns to the confirmed character when that span is exhaus
    [Transport setup and ticket format](TRANSPORT.md#start-a-host-and-hand-out-a-ticket)
 4. Call `Host::advance(now, u64::MAX)` regularly to poll links. Call `Host::start(now)` when the lobby is ready
    to run ticks. Call `Client::advance(now, sample_controls)` regularly on each client. Its sampling callback
-   receives the target tick. Poll before drawing so the game sees the latest state the session can present.
+   receives the target tick. After every advance, call `Client::result()` until it returns `None`. Drain both
+   timed-frame and command results even if your game ignores their dispositions. Unread results count towards
+   input capacity and eventually stop the client sampling new frames. Use this loop for sockets and rehearsal.
+   Poll before drawing so the game sees the latest state the session can present.
+
+   ```rust
+   client.advance(now_us, sample_controls)?;
+   while let Some(result) = client.result() {
+       handle_result(result); // This can be a no-op if the game ignores dispositions.
+   }
+   ```
+
 5. Use `Client::state`, `baseline_progress`, `newest`, `held`, `reported_lead`, `take_stall` and `take_skip` to
    report connection and playout status. Show the reason on `Refused`, `Ended` or `Closed`. The host can read
    `Host::stream` and `Host::take_disconnect` for peer progress and close reasons. A peer too slow for the
@@ -110,7 +121,7 @@ python3 scripts/session_match.py memory steady
 
 For sockets, use a Mac with Node.js, Chrome, the workspace's `wasm-bindgen` CLI (the version is in the
 [starter setup](../examples/starter/README.md)), and Xcode with the iPhone 18 Pro simulator runtime installed.
-Set `ORCHESTRATE_SCRIPT` to your installed `agent_loop.py` path so the command can admit Chrome and the
+Export `ORCHESTRATE_SCRIPT` with your installed `agent_loop.py` path so the command can admit Chrome and the
 simulator under their resource locks. Run the full reference match with one headless Mac host, two native
 Mac clients, a headless Chrome page and an iPhone simulator client. It runs those clients together for ten
 minutes through A0's loopback relay and prints the saved JSON record path when the checks pass.
@@ -121,11 +132,53 @@ python3 scripts/session_match.py sockets steady
 
 For one target's socket fault scenario, the `sockets faults` subcommand accepts `--target` with `mac-metal`,
 `chrome-webgpu` or `ios-sim`. The host stays on the Mac. The full steady scenario always exercises all three
-client targets. For your game's campaign, supply your game's world, action codec and scripted player in your
-proof package. The socket harness accepts a target-to-program mapping. Expose a native host and client with
-the harness's arguments and trace events, and a Wasm client with the corresponding browser entry point.
-[Match harness](../scripts/session_sockets.py), [browser entry point](../examples/match-proof/socket_player.js)
+client targets.
 
 The reference match is a headless loopback proof on one Mac. The simulator qualifies function. The match uses
 one full world per peer, samples digests at committed ticks, and predicts only the local controller. It has no
 host migration or whole-world rollback. [Networking design and evidence scope](design/modules/NETWORKING.md)
+
+## Run your game's proof programs
+
+Build a self-contained Mac executable with your game's world, action codec and scripted player. Set
+`GAME_MATCH_PROGRAM` to its path. The `game` scenario accepts this executable directly.
+
+```sh
+python3 scripts/session_match.py memory game --program "$GAME_MATCH_PROGRAM" --ticks 120
+```
+
+The executable receives `memory PROFILE TICKS`. Set `--profile` to `a0` (the default), `harsh`, or `local`.
+Run a host and at least one independently restored client in virtual time. Send one JSON object to standard
+output, with `digest_interval`, a `host` object and a `players` array. Each world object supplies its final
+`tick`, its hexadecimal `rule_set` identity and its own ordered `digests` array of `[tick, digest]` pairs.
+Record a digest at each positive multiple of the interval. The runner checks the complete cadence, rule-set
+identity and equality across all recorded worlds.
+
+Reuse the same Mac executable for the socket host and one Mac client. Supply `GAME_IOS_PROGRAM` and
+`GAME_CHROME_PAGE` to add an iPhone simulator executable and a prepared Chrome proof directory. Omit either
+flag to leave out that client. The runner takes device locks, starts the processes and relays, and compares
+the baseline and digest records. Use `--bodies` to pass a game world size (default 128).
+
+```sh
+python3 scripts/session_match.py sockets game --program "$GAME_MATCH_PROGRAM" --ticks 120 \
+    --ios-program "$GAME_IOS_PROGRAM" --chrome-page "$GAME_CHROME_PAGE"
+```
+
+The socket program uses these arguments, in order.
+
+| Mode | Arguments after the mode |
+| --- | --- |
+| `socket-host` | `BODIES TICKS CONTROLLER LISTEN TRACE JOIN_MS CONTROL_FILE` |
+| `socket-client` | `TICKET BODIES CONTROLLER CONTROL_FILE TOKEN_FILE TRACE` |
+
+For `sockets game`, the controller is `bbr`, listen is `false` and the trace is `default`. Start the authority
+clock when the runner writes `run` to the host control file. Flush each event as one line of JSON. The host
+reports `host` with its ticket, PID, rule-set identity and digest interval, then `image`, `start`, `commit`,
+`digest` and `finish` events. A client reports `client` with its PID, `baseline` with its restored image and
+rule-set identity, its `digest` events and an `Ended` state at the final tick. Follow the reference fields
+and timing. [Host and native client](../examples/match-proof/src/sockets/native.rs), [client events](../examples/match-proof/src/sockets.rs)
+
+For Chrome, put your `socket_player.js` beside the `match_proof.js` and `match_proof_bg.wasm` generated from
+your game by `wasm-bindgen --target web --out-name match_proof`. The runner serves the directory's three
+files, reports the Chrome PID and supplies the ticket at `/config`. Your page posts its session events
+to `/rows`. [Reference browser entry point](../examples/match-proof/socket_player.js)

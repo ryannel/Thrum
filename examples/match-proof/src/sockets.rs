@@ -230,6 +230,7 @@ impl Player {
             self.restored.get_or_insert(now);
             rows.push(timestamp(json!({
                 "event": "baseline", "tick": tick, "digest": format!("{digest:016x}"),
+                "rule_set": crate::hex(&world.crowd.identity().0),
                 "bytes": bytes, "hello_to_restore_us": self.hello.map(|h| now-h),
                 "welcome_to_restore_us": self.welcomed.map(|w| now-w),
                 "link": self.link.id(), "epoch": self.client.epoch(),
