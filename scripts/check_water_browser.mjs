@@ -663,6 +663,15 @@ try {
       assert(Number.isInteger(view)&&view>=0&&view<=6,'invalid surf camera');
       await evaluate(`game.edit_control('camera.island',${view})`);
       result.surf_camera=view;
+      await until(async()=>{
+        const status=await evaluate('game.frame(performance.now());game.report()');
+        return /^Cooked generation [0-9]+ drawn/.test(status);
+      },'cooked surf drawn');
+      for(let frame=0;frame<8;frame++){
+        await until(()=>evaluate('game.frame_ready()'),'free surf warm-up slot');
+        await evaluate('game.frame(performance.now())');
+      }
+      await until(()=>evaluate('game.frame_ready()'),'surf warm-up completion');
     }
     await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;
       let lastOpportunity=-Infinity;
@@ -675,7 +684,7 @@ try {
         __intervals.push(timestamp);collect();
         if(!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
         if(elapsed-lastOpportunity>=${spacing}){
-          game.frame(${now}+elapsed);__opportunities++;lastOpportunity=elapsed;
+          game.frame(${surfInspection?'timestamp':`${now}+elapsed`});__opportunities++;lastOpportunity=elapsed;
         }
         if(game.capture_omissions())throw Error('submitted motion observer omitted an image');
         if(elapsed<${duration})requestAnimationFrame(loop);else {__expected=presented()-__firstPresented;drain();}
@@ -684,13 +693,21 @@ try {
     const count=await evaluate('__motion.length');
     for(let i=0;i<count;i++){
       const image=await evaluate(`({identity:__motion[${i}].identity,frame:__motion[${i}].frame})`),rgba=await pixels(`__motion[${i}].rgba`);
-      image.elapsed=Number(/observation=([0-9.]+)/.exec(image.frame)[1])-now/1000;
+      image.observation_seconds=Number(/observation=([0-9.]+)/.exec(image.frame)[1]);
+      image.elapsed=image.observation_seconds-now/1000;
       assert(rgba.length===width*height*4,'motion extent differs');
       const file=`motion-${String(i).padStart(4,'0')}.png`;await fs.writeFile(path.join(output,file),png(rgba,width,height));result.frames.push({...image,file,sha256_rgba:hash(rgba)});
     }
     const timestamps=await evaluate('__intervals');result.callback_intervals_ms=timestamps.slice(1).map((v,i)=>v-timestamps[i]);
     result.omissions=await evaluate('game.capture_omissions()');await evaluate('game.end_capture()');
     assert(result.omissions===0,'motion contains omissions');
+    if(surfInspection){
+      const first=result.frames[0]?.observation_seconds;
+      assert(result.frames.every((frame,index)=>index===0||frame.observation_seconds>
+        result.frames[index-1].observation_seconds),'surf presentation clock stalled');
+      assert(result.frames.at(-1)?.observation_seconds-first>=10.0,'surf motion covers less than ten seconds');
+      for(const frame of result.frames)frame.elapsed=frame.observation_seconds-first;
+    }
     const ids=result.frames.map(f=>Number(/submission=([0-9]+)/.exec(f.frame)[1]));
     assert(ids.length>1&&ids.every((v,i)=>i===0||v===ids[i-1]+1),'submitted motion IDs are not contiguous');
     assert(result.frames.every(f=>f.identity.includes('presented=true')),'motion contains an unpresented source');

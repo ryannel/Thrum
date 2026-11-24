@@ -773,3 +773,13 @@
   coherent set while retaining the regular-wave draw-back rule.
   [Long-wave cut](../../../.orchestrate/evidence/WATERS/M13/continuous-swash-cut.log) ·
   [Metal frame](../../../.orchestrate/evidence/WATERS/M13/soft-edge-metal-0015.png).
+- 2026-11-24 The Chrome capture initially spent part of its interval at tick zero.
+  The page's initial visibility event set a clock origin before the harness's
+  synthetic timestamps. The surf preview now warms cooked content and drives
+  its capture from the page's animation timestamps. The hardware preview
+  submitted 117 frames over 12.0162 s with advancing observations and zero
+  faults or omissions. A wider 40 m Metal framing and the sand view showed the
+  approaching ridge and the pitch, but left crest spacing unclear. The
+  alternative lee view still showed a raised wave. Kept these cameras as
+  experiments. [Chrome timing](../../../.orchestrate/evidence/WATERS/M13/continuous-chrome-clock-receipt.json) ·
+  [Metal overview stills](../../../.orchestrate/evidence/WATERS/M13/overview-fixed-receipt.json).
