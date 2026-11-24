@@ -85,6 +85,7 @@ impl Lighting {
             &prepared.exposure.samples,
             None,
             None,
+            None,
         );
         Ok(Self {
             groups,

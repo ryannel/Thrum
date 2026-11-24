@@ -511,7 +511,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     let inputs = prepared.target_inputs();
                     for slot in &mut slots {
                         slot.target
-                            .share_reconstruction_history(&inputs, &self.slots[0].target);
+                            .share_view_history(&inputs, &self.slots[0].target);
                     }
                 }
                 Some(slots)

@@ -321,10 +321,25 @@ impl WorldDriver {
         route_overlay: scene::RouteOverlay,
         clouds: Option<crate::simulation::Weather>,
     ) -> Result<Self, String> {
-        let sim = if clouds.is_some() {
-            scene::weather_simulation(content, route_overlay, clouds)?
+        Self::selected_with_sun_proof(content, route_overlay, clouds, crate::SunProofGeometry::Off)
+    }
+
+    pub(super) fn selected_with_sun_proof(
+        content: GameContent,
+        route_overlay: scene::RouteOverlay,
+        clouds: Option<crate::simulation::Weather>,
+        proof: crate::SunProofGeometry,
+    ) -> Result<Self, String> {
+        let sim = if proof == crate::SunProofGeometry::Off {
+            if clouds.is_some() {
+                scene::weather_simulation(content, route_overlay, clouds)?
+            } else {
+                scene::simulation(content, route_overlay)?
+            }
+        } else if content == GameContent::Exit && route_overlay == scene::RouteOverlay::Off {
+            scene::exit_simulation(clouds, proof).map_err(|error| error.to_string())?
         } else {
-            scene::simulation(content, route_overlay)?
+            return Err("Sun shadow proof geometry needs the populated exit scene".to_owned());
         };
         Self::with_simulation(route_overlay, sim, content.entity_count())
     }

@@ -1,5 +1,8 @@
 //! Authored transforms and closed paths shared by the native and browser game.
 
+mod shadow_proof;
+pub use shadow_proof::SunProofGeometry;
+
 use std::sync::{Arc, OnceLock};
 
 use serde::Deserialize;

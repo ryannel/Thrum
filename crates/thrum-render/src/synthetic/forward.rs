@@ -180,7 +180,7 @@ impl PreparedSynthetic {
         let bound = if self.bucket_route.is_some() { 2 } else { 1 };
         pass.set_bind_group(0, view_group, &offsets[..bound]);
         if !depth_only && self.uses_shadow_rays() {
-            pass.set_bind_group(1, &self.ray_light_group(exposure_side)?, &[]);
+            pass.set_bind_group(1, &self.ray_light_group(exposure_side, target)?, &[]);
         } else {
             pass.set_bind_group(1, &self.light[exposure_side], &[]);
         }

@@ -728,7 +728,7 @@ impl TargetPreparation {
                     )
                     .map_err(|error| FrameError::gpu("scene target", error))?;
                     if let Some(first) = slots.first() {
-                        target.share_reconstruction_history(prepared, &first.target);
+                        target.share_view_history(prepared, &first.target);
                     }
                     let timing_layout = self.timing.map(|layout| layout.with_stars(&target));
                     let passes = target.timed_pass_count();

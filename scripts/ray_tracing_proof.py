@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 
 
@@ -197,7 +198,89 @@ def shadow_capture(output, binary, exit_store, lamp_store, motion):
             "extent": [1280, 720], "views": rows}
 
 
+def stops():
+    route = json.loads((ROOT / "examples/v1-game/routes/exit-flythrough.json").read_text())
+    poses = {"contact": route["keys"][0]}
+    for stop in route["checkpoints"]:
+        tick = stop["tick"]
+        before, after = next(
+            (a, b) for a, b in zip(route["keys"], route["keys"][1:])
+            if a["tick"] <= tick <= b["tick"]
+        )
+        fraction = (tick - before["tick"]) / (after["tick"] - before["tick"])
+
+        def between(a, b):
+            return a + fraction * (b - a)
+
+        poses[stop["name"]] = {
+            "eye": [between(a, b) for a, b in zip(before["eye"], after["eye"])],
+            **{key: between(before[key], after[key])
+               for key in ("yaw_degrees", "pitch_degrees")},
+        }
+    return poses
+
+
+def capture_soft(args):
+    args.output.mkdir(parents=True, exist_ok=True)
+    directory = args.output / args.name
+    params = args.output / f"{args.name}.params.json"
+    pose = stops()[args.stop] if args.eye is None else {
+        "eye": args.eye, "pitch_degrees": args.pitch, "yaw_degrees": args.yaw,
+    }
+    params.write_text(json.dumps({
+        "world.paused": True, "sky.solar_time": args.solar,
+        "camera.yaw": pose["yaw_degrees"], "camera.pitch": pose["pitch_degrees"],
+    }) + "\n")
+    env = dict(os.environ, THRUM_HARDWARE="ray-query", THRUM_RECIPE="apple-tile",
+               THRUM_SUN_SHADOW_METHOD="traced", THRUM_SUN_PENUMBRA=args.penumbra,
+               THRUM_CAPTURE_FIXED_EYE=json.dumps(pose["eye"]),
+               THRUM_SUN_PROOF_GEOMETRY=args.geometry)
+    cmd = [
+        "python3", "scripts/capture_v1_runtime.py", "--binary", str(args.binary),
+        "--store", str(args.store), "--output", str(directory), "--params", str(params),
+        "--scene", "exit", "--case", args.scenario, "--mode", args.mode,
+        "--extent", "1280", "720",
+    ]
+    if args.route:
+        cmd.extend(["--route", str(ROOT / "examples/v1-game/routes/exit-flythrough.json")])
+    if args.verify_only:
+        cmd.append("--verify-only")
+    subprocess.run(cmd, cwd=ROOT, env=env, check=True)
+    runtime = json.loads((directory / "runtime.json").read_text())
+    records = runtime["images"]
+    assert runtime["mode"] == args.mode and runtime["complete"], directory
+    assert runtime["backend"] == "Metal" and runtime["recipe"] == "Ok(AppleTile)", directory
+    assert "EXPERIMENTAL_RAY_QUERY" in runtime["enabled_features"], directory
+    assert records and all(row["shadow_selection"]["sun"] == "Traced" for row in records), directory
+    expected = args.penumbra == "on"
+    assert runtime.get("sun_penumbra", {}).get("enabled", False) == expected, directory
+
+
+def soft_capture(argv):
+    parser = argparse.ArgumentParser(description="Metal T2 Sun penumbra samples")
+    parser.add_argument("--binary", type=Path, default=ROOT / "target/release/v1-game")
+    parser.add_argument("--store", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--name", required=True)
+    parser.add_argument("--stop", choices=stops(), default="contact")
+    parser.add_argument("--solar", type=float, default=17.4)
+    parser.add_argument("--penumbra", choices=("on", "off"), default="on")
+    parser.add_argument("--mode", choices=("fixed", "realtime"), default="fixed")
+    parser.add_argument("--scenario", default="checkpoint")
+    parser.add_argument("--route", action="store_true")
+    parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--eye", type=float, nargs=3)
+    parser.add_argument("--yaw", type=float, default=0)
+    parser.add_argument("--pitch", type=float, default=0)
+    parser.add_argument("--geometry", choices=("off", "fast", "joined", "separate"), default="off")
+    capture_soft(parser.parse_args(argv))
+
+
+
 def main():
+    if sys.argv[1:2] == ["soft-capture"]:
+        soft_capture(sys.argv[2:])
+        return
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("case", choices=["edit", "casters", "lifecycle", "demand", "stills",
                                          "contributions", "sun-out", "shadow-stills", "shadow-motion"])

@@ -676,6 +676,7 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
                 | PassKey::Secondary { .. }
                 | PassKey::RayStructureBuild
                 | PassKey::NativeReset
+                | PassKey::SoftSun(_)
                 | PassKey::NativeWitness => return Err(RenderError::GraphPassMismatch),
             };
             Ok(RecordBinding::new(id, kind, record))

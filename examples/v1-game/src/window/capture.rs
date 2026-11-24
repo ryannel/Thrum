@@ -75,6 +75,10 @@ pub(super) fn run(
             | "exit-route"
             | "exit-drift"
             | "exit-stop"
+            | "sun-settle"
+            | "sun-cut"
+            | "sun-set"
+            | "sun-motion"
             | "sprites-field"
             | "sprites-field-cost"
             | "sprites-scroll"
@@ -481,6 +485,7 @@ fn start_writer(
                 | "clouds-route"
                 | "exit-route"
                 | "exit-drift"
+                | "sun-motion"
                 | "sprites-field"
         ) || recovery != super::NativeRecovery::Disabled
         {
@@ -632,6 +637,10 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
                 | "sprites-field-cost"
                 | "atmosphere-scrub"
                 | "atmosphere-ground-pan"
+                | "sun-settle"
+                | "sun-cut"
+                | "sun-set"
+                | "sun-motion"
         )
 }
 
@@ -1046,6 +1055,15 @@ async fn record(
         "ring_omissions":driver.omissions(),"writer_omissions":trace.writer_omissions,
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
+    let penumbra = driver.host().quality_knobs();
+    if let Some(knob) = penumbra.iter().find(|knob| knob.name == "Sun penumbra") {
+        result["sun_penumbra"] = json!({
+            "enabled": knob.value != 0,
+            "settle_frames": penumbra.iter().find(|knob| knob.name == "Sun penumbra settle length").map(|knob| knob.value),
+            "dive_limit_degrees": penumbra.iter().find(|knob| knob.name == "Sun penumbra dive limit").map(|knob| knob.value),
+            "history_bytes": driver.host().sun_penumbra_history_bytes(),
+        });
+    }
     result["display_phase_counts"] = phase_counts;
     result["gpu_pass_timing"] = json!(governed || !elapsed_observation || sprite_scroll_timings);
     if governed {
@@ -1068,6 +1086,9 @@ fn is_motion_capture(scenario: &str) -> bool {
     matches!(
         scenario,
         "exit-route"
+            | "sun-settle"
+            | "sun-cut"
+            | "sun-motion"
             | "exit-drift"
             | "content-edits"
             | "atmosphere-scrub"
@@ -1229,6 +1250,40 @@ fn lighting_edits(
     origin: Instant,
     haze_take: Option<HazeTake>,
 ) -> Result<(), String> {
+    if scenario == "sun-cut" {
+        let phase = scenario_time.as_secs_f64();
+        let (yaw, cut) = if phase >= 2.5 && !*night_variant {
+            *night_variant = true;
+            (-50.0_f32, true)
+        } else if (1.0..2.5).contains(&phase) {
+            (42.0_f32, false)
+        } else {
+            return Ok(());
+        };
+        let host = driver.host_mut();
+        if (host.camera_orientation()[1] - yaw.to_radians()).abs() > 1e-6 {
+            host.set_camera_yaw(yaw.to_radians())?;
+            if cut {
+                host.invalidate_history();
+            }
+            trace
+                .controls
+                .push(json!({"kind":if cut {"sun-cut"} else {"sun-snap"},
+                "scenario_ns":scenario_time.as_nanos(),"accepted_ns":origin.elapsed().as_nanos(),
+                "yaw_degrees":yaw}));
+        }
+        return Ok(());
+    }
+    if scenario == "sun-set" {
+        let progress = (scenario_time.as_secs_f64() / 4.0).clamp(0.0, 1.0);
+        let solar = 17.45 + 0.65 * progress;
+        driver.parameters(&json!({"sky.solar_time":solar}).to_string())?;
+        trace.controls.push(
+            json!({"kind":"sun-set","scenario_ns":scenario_time.as_nanos(),
+            "accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar}),
+        );
+        return Ok(());
+    }
     if matches!(scenario, "atmosphere-scrub" | "atmosphere-ground-pan") {
         let t = scenario_time.as_secs_f32();
         if let Some(take) = haze_take {
@@ -1327,6 +1382,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         "clouds-dusk" => (14.5, 14.0, f64::INFINITY),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "exit-route" => (32.0, 0.0, f64::INFINITY),
+        "sun-settle" | "sun-cut" | "sun-motion" => (5.0, 4.0, 4.0),
         "exit-drift" | "sprites-field" => (25.0, 23.0, 23.0),
         "content-edits" => (13.0, 12.0, 12.0),
         "atmosphere-scrub" => (11.0, 10.0, 0.0),

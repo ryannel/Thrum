@@ -1,5 +1,8 @@
 //! A receiver, optional casters and a camera from which to sample the receiver.
 
+/// Coarse receiving geometry for Sun terminator tests.
+pub mod terminator;
+
 use glam::{Mat4, Vec3};
 use thrum_render::{
     abi::InstanceRecord,

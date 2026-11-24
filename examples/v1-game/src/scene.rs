@@ -162,7 +162,9 @@ pub(crate) fn weather_simulation(
     match (content, overlay) {
         (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, route_overlay, clouds),
         (GameContent::Field, false) => field_simulation(clouds),
-        (GameContent::Exit, false) => exit_simulation(clouds).map_err(|error| error.to_string()),
+        (GameContent::Exit, false) => {
+            exit_simulation(clouds, crate::SunProofGeometry::Off).map_err(|error| error.to_string())
+        }
         (_, true) => Err("the route overlay needs grid content".to_owned()),
     }
 }
@@ -186,8 +188,9 @@ fn new_simulation(entity_count: usize, clouds: bool) -> Result<Simulation, Strin
     .map_err(|error| format!("simulation setup: {error:?}"))
 }
 
-fn exit_simulation(
+pub(crate) fn exit_simulation(
     clouds: Option<crate::simulation::Weather>,
+    proof: crate::SunProofGeometry,
 ) -> Result<Simulation, crate::simulation::SimError> {
     let fixture = crate::exit_scene::layout();
     let mut sim = Simulation::new_exit(
@@ -202,11 +205,14 @@ fn exit_simulation(
         clouds.is_some(),
     )?;
     for (index, prop) in fixture.entities.iter().copied().enumerate() {
-        let drift = fixture.loops.get(index).copied();
+        let drift = proof.drift(index, fixture.loops.get(index).copied());
         sim.seed_drift(
             ComponentEntity {
                 id: StableId(index as u128),
-                position: drift.map_or(Position(prop.position()), |path| path.at(0)),
+                position: drift.map_or(
+                    Position(proof.position(index).unwrap_or_else(|| prop.position())),
+                    |path| path.at(0),
+                ),
                 velocity: Velocity::default(),
                 health: 100,
                 ownership: peer_ownership(ENTITY_COUNT, index)
@@ -228,7 +234,7 @@ fn exit_simulation(
 /// Returns setup or seeding failure.
 #[doc(hidden)]
 pub fn exit_authority() -> Result<Simulation, crate::simulation::SimError> {
-    exit_simulation(None)
+    exit_simulation(None, crate::SunProofGeometry::Off)
 }
 
 /// The last `PEER_COUNT` slots are owned by, and registered to, the peers.

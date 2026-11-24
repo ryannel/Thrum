@@ -389,6 +389,7 @@ impl SecondaryPrepared {
             shadows: prepared.shadow.is_some().into(),
             sun: crate::capabilities::SunShadowMethod::Maps,
             traced_lamps: false,
+            soft_sun: false,
         };
         let (source, shader) = crate::shaders::Shader::SecondaryScene(variant)
             .compile_with_source(device, PASS, false);

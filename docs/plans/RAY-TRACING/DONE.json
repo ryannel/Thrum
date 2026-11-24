@@ -388,7 +388,7 @@
     {
       "id": "WP4",
       "name": "Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
@@ -454,8 +454,8 @@
           "ask": "Does the test plant a history value that a correct reset, each case that shows the centre ray, the choice between `passed` and `stopped`, and the pass's settling of a texel the soft edge has left must each not return, so that a stale or wrongly chosen read fails?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/history.md",
           "verdict": "",
           "review": ""
         },
@@ -465,8 +465,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_soft_knob_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/metal-verify.log",
           "verdict": "",
           "review": ""
         },

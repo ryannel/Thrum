@@ -548,6 +548,7 @@ impl GameScene {
             .with_display_overlay(setup.display_overlay);
         scene.ray_structure = setup.display_overlay == DisplayOverlay::TracedGeometry;
         scene.sun_shadow_method = setup.sun_shadow_method;
+        scene.sun_penumbra = setup.sun_penumbra;
         scene.lamp_shadows = setup.lamp_shadows;
         scene.camera_culling = setup.camera_culling;
         if setup.clouds != crate::CloudSelection::Off {

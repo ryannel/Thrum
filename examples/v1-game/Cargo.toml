@@ -39,6 +39,7 @@ name = "field_occlusion_gpu"
 path = "tests/support/field_occlusion_gpu.rs"
 
 [dependencies]
+glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 thrum-fixtures = { path = "../../crates/thrum-fixtures" }
 pollster = "=1.0.1"
 serde = { version = "=1.0.229", features = ["derive", "rc"] }
@@ -76,7 +77,6 @@ half = { version = "=2.7.1", default-features = false }
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 sha2 = "=0.10.9"
 thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
-glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 thrum-cook = { path = "../../crates/thrum-cook", features = ["fault-probe"] }
 
 [[bench]]

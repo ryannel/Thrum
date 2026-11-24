@@ -244,6 +244,18 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             Ok("traced") => thrum_render::synthetic::SunShadowMethod::Traced,
             _ => return Err("THRUM_SUN_SHADOW_METHOD must be maps or traced".to_owned()),
         },
+        sun_penumbra: match launch_value("THRUM_SUN_PENUMBRA").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("off") => false,
+            Ok("on") => true,
+            _ => return Err("THRUM_SUN_PENUMBRA must be off or on".to_owned()),
+        },
+        sun_proof_geometry: match launch_value("THRUM_SUN_PROOF_GEOMETRY").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("off") => crate::SunProofGeometry::Off,
+            Ok("fast") if content == crate::GameContent::Exit => crate::SunProofGeometry::Fast,
+            Ok("joined") if content == crate::GameContent::Exit => crate::SunProofGeometry::Joined,
+            Ok("separate") if content == crate::GameContent::Exit => crate::SunProofGeometry::Separate,
+            _ => return Err("THRUM_SUN_PROOF_GEOMETRY requires off or an exit scene selection: fast, joined or separate".to_owned()),
+        },
         lamp_shadows: match launch_value("THRUM_LAMP_SHADOWS").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => false,
             Ok("on") => true,

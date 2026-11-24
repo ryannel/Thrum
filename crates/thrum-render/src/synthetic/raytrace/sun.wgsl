@@ -5,14 +5,7 @@ fn shadow_tangent_surface(model: mat4x4<f32>, local: vec3<f32>, normal: vec3<f32
     return vec4(relative, dot(relative, normal));
 }
 
-fn closest_shadow_hit(origin: vec3<f32>, direction: vec3<f32>, distance: f32) -> RayIntersection {
-    var query: ray_query;
-    rayQueryInitialize(&query, scene_structure, RayDesc(RAY_FLAG_FORCE_OPAQUE, 1u, 0.0, distance, origin, direction));
-    while rayQueryProceed(&query) {}
-    return rayQueryGetCommittedIntersection(&query);
-}
-
-fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
+fn hard_sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     let direction = light.direction_to_light.xyz;
     let cosine = dot(receiver.normal, direction);
     if cosine <= 0.0 { return 1.0; }

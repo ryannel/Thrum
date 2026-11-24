@@ -282,7 +282,7 @@ fn taau_prepares_and_resets_on_real_metal() {
             .map(|_| OffscreenTarget::new(&device, &prepared, 64, 64).unwrap())
             .collect();
         let (first, second) = targets.split_at_mut(1);
-        second[0].share_reconstruction_history(&prepared.target_inputs(), &first[0]);
+        second[0].share_view_history(&prepared.target_inputs(), &first[0]);
         for i in 0..4 {
             let target = &mut targets[i % 2];
             scene.view = scene.view.with_history_reset(i == 3);

@@ -15,6 +15,7 @@ pub mod controls;
 pub mod cooked;
 pub mod effect;
 mod exit_scene;
+pub use exit_scene::SunProofGeometry;
 mod field_meshes;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 mod governor_load;

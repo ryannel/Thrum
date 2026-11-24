@@ -46,6 +46,7 @@ pub(crate) fn fixed() -> impl Iterator<Item = PassKey> {
     ]
     .into_iter()
     .chain(AtmosphereStage::ORDER.map(PassKey::Atmosphere))
+    .chain(crate::synthetic::SoftSunStage::ALL.map(PassKey::SoftSun))
 }
 
 /// The category the renderer gives a pass of this name, for tests that

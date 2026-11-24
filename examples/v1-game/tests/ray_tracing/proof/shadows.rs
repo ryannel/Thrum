@@ -15,9 +15,11 @@ fn valley(
     extent: [u32; 2],
     hour: f32,
     route_overlay: v1_game::RouteOverlay,
+    penumbra: bool,
 ) -> (Host, Stats) {
     let setup = GameSetup {
         sun_shadow_method: method,
+        sun_penumbra: penumbra,
         lamp_shadows: lamps,
         valley_stars: true,
         route_overlay,
@@ -106,6 +108,7 @@ pub(crate) fn prove_sun_out() {
             EXTENT,
             0.0,
             v1_game::RouteOverlay::Off,
+            false,
         );
         host.enable_submitted_capture_from(
             1,
@@ -168,11 +171,20 @@ pub(crate) fn measure_shadows() {
         .expect("published valley")
         .manifest
         .to_string();
-    for (method, lamps) in [
-        (SunShadowMethod::Maps, false),
-        (SunShadowMethod::Traced, false),
-        (SunShadowMethod::Traced, true),
-    ] {
+    let profile_soft = std::env::var_os("THRUM_RAY_SOFT_COST").is_some();
+    let selections: &[_] = if profile_soft {
+        &[
+            (SunShadowMethod::Traced, false, false),
+            (SunShadowMethod::Traced, false, true),
+        ]
+    } else {
+        &[
+            (SunShadowMethod::Maps, false, false),
+            (SunShadowMethod::Traced, false, false),
+            (SunShadowMethod::Traced, true, false),
+        ]
+    };
+    for &(method, lamps, penumbra) in selections {
         let (mut host, stats) = valley(
             &store,
             &metal,
@@ -181,7 +193,13 @@ pub(crate) fn measure_shadows() {
             extent,
             17.3,
             v1_game::RouteOverlay::Proof,
+            profile_soft,
         );
+        if profile_soft {
+            host.set_quality_knob("Sun penumbra", u32::from(penumbra))
+                .expect("prepared Sun penumbra");
+        }
+        let history_bytes = host.sun_penumbra_history_bytes();
         let mut input: Value = serde_json::from_str(ROUTE).expect("authored moving route");
         input["cooked_root"] = json!(cooked_root);
         let route =
@@ -198,13 +216,54 @@ pub(crate) fn measure_shadows() {
         host.set_camera_route(route.clone()).expect("arm route");
         for tick in 0..=route.keys.last().expect("route end").tick {
             let now = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
+            if profile_soft && penumbra && tick == 180 {
+                assert!(
+                    host.drive(now, Some(&surface))
+                        .expect("submit dive measurement")
+                        .submitted
+                );
+                let texture = host
+                    .submitted_sun_disc_witness()
+                    .expect("raw disc ray results");
+                let bytes = thrum_test_support::readback::texture(
+                    &metal.device,
+                    &metal.queue,
+                    texture,
+                    thrum_test_support::readback::Mip::level(0),
+                    ..,
+                );
+                let mut counts = [0_u32; 4];
+                let mut aligned = 0_u32;
+                for [_, _, valid, dive] in bytes.as_chunks::<4>().0 {
+                    aligned += u32::from(dive & 4 != 0);
+                    counts[match (valid, dive & 3) {
+                        (1, 0) => 0,
+                        (1, 1) => 1,
+                        (0, 2) => 2,
+                        _ => 3,
+                    }] += 1;
+                }
+                report(
+                    &json!({"type":"dive_account","tick":tick,"ordinary":counts[0],
+                    "dipping":counts[1],"excluded":counts[2],"background_or_invalid":counts[3],"depth_alignment_queries":aligned,
+                    "target":"mac-metal"}),
+                );
+                wait(&metal.device);
+                drop(thrum_test_support::wait::until(
+                    "complete dive measurement",
+                    Duration::from_secs(20),
+                    || host.poll_completed().expect("complete dive measurement"),
+                ));
+                continue;
+            }
             let sample = frame(&mut host, &metal, now, &surface);
             assert_eq!(sample.tick, route.origin_tick + tick);
             assert_eq!(sample.shadow_selection.sun, method);
             assert_eq!(sample.shadow_selection.lamps, lamps);
-            if ![0, 90, 180, 230, 290, 340, 360]
-                .iter()
-                .any(|stop| (*stop..=*stop + 3).contains(&tick))
+            if (profile_soft && tick == 180)
+                || ![0, 90, 180, 230, 290, 340, 360]
+                    .iter()
+                    .any(|stop| (*stop..=*stop + 3).contains(&tick))
             {
                 continue;
             }
@@ -213,8 +272,13 @@ pub(crate) fn measure_shadows() {
                 .timed_pass_span_nanoseconds()
                 .expect("timed-pass span");
             let passes = timings.values();
+            let dive_limit = host
+                .quality_knobs()
+                .into_iter()
+                .find(|knob| knob.name == "Sun penumbra dive limit")
+                .map(|knob| knob.value);
             report(
-                &json!({"method":format!("{method:?}"),"lamps":lamps,"tick":tick,"timed_pass_span_ns":span,
+                &json!({"method":format!("{method:?}"),"lamps":lamps,"penumbra":penumbra,"dive_limit_degrees":dive_limit,"history_bytes":history_bytes,"tick":tick,"timed_pass_span_ns":span,
                 "frame_cpu_ns":(sample.upload_cpu+sample.encode_cpu).as_nanos(),"passes_ns":passes,
                 "upload_cpu_ns":sample.upload_cpu.as_nanos(),"encode_cpu_ns":sample.encode_cpu.as_nanos(),
                 "recipe":"AppleTile","cooked_root":cooked_root,"resolved_draw_path":format!("{:?}",stats.lock().expect("stats").draw_path)}),

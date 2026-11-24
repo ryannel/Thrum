@@ -28,6 +28,7 @@ pub(crate) struct SyntheticTargetInputs {
     pub(super) ray_structure: bool,
     pub(super) traced_view: bool,
     pub(super) uses_shadow_rays: bool,
+    pub(super) soft_sun: Option<super::raytrace::soft::SoftPipelines>,
     pub(super) shadow_selection: ShadowSelection,
     pub(super) bucket_route: Option<mesh_route::TargetMembers>,
     pub(super) caster_culling: Option<CasterCulling>,
@@ -76,6 +77,7 @@ impl PreparedSynthetic {
             ray_structure: self.ray_structure.is_some(),
             traced_view: self.traced_view.is_some(),
             uses_shadow_rays: self.uses_shadow_rays(),
+            soft_sun: self.soft_sun.as_ref().map(|soft| soft.pipelines.clone()),
             shadow_selection: self.shadow_selection,
             bucket_route: self.bucket_route.as_ref().map(BucketRoute::target_members),
             caster_culling: self

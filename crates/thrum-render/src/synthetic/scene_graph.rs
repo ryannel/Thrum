@@ -414,7 +414,7 @@ impl super::SyntheticTargetInputs {
             &mut prepared_keys,
         )?;
         let exposure_sample =
-            ExposureResolve::append_graph(&mut graph, self.exposure_key(), light)?;
+            ExposureResolve::append_graph(&mut graph, self.exposure_key(), light.clone())?;
         accesses.push(Access::new(
             exposure_sample.clone(),
             0..exposure::SAMPLE_BYTES,
@@ -428,6 +428,16 @@ impl super::SyntheticTargetInputs {
             &exposure_sample,
             &mut accesses,
             &mut late_uniforms,
+        )?;
+        let soft_sun = self.append_soft_visibility(
+            &mut graph,
+            &mut prepared_keys,
+            &mut accesses,
+            [width, height],
+            &depth,
+            &motion,
+            &light[0],
+            ray_structure.as_ref(),
         )?;
         let forward = graph.declare(
             PassKey::Opaque,
@@ -469,6 +479,14 @@ impl super::SyntheticTargetInputs {
             &late_uniforms,
             early_stars.unwrap_or(forward),
         )?;
+        if let Some((_, passes)) = &soft_sun {
+            for pass in passes {
+                graph.dependency(forward, *pass)?;
+            }
+            if let Some(first) = late.first {
+                graph.dependency(passes[3], first)?;
+            }
+        }
         let temporal = self.append_temporal(
             &mut graph,
             &mut prepared_keys,
@@ -508,6 +526,9 @@ impl super::SyntheticTargetInputs {
             ray_structure.filter(|_| self.traced_view),
         )?;
         late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
+        if let Some((_, passes)) = &soft_sun {
+            graph.dependency(passes[3], display_pass)?;
+        }
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =
             Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
@@ -562,6 +583,7 @@ impl super::SyntheticTargetInputs {
                 secondary,
                 native,
                 refraction: late.copy,
+                soft_sun: soft_sun.map(|(resources, _)| resources),
                 pre_tone,
                 temporal,
                 taau,
@@ -657,6 +679,7 @@ impl super::SyntheticTargetInputs {
                 AttachmentUse::Depth,
                 self.stars.is_some()
                     || self.temporal_inputs
+                    || self.soft_sun.is_some()
                     || self.effect_graph.after_opaque.iter().any(|pass| pass.depth),
             )?,
             attachment(SCENE_FORMAT, AttachmentUse::Scene, false)?,
@@ -1372,6 +1395,9 @@ impl super::SyntheticTargetInputs {
                 })
             }
             PassKey::RayStructureBuild => super::raytrace::binding(id),
+            PassKey::SoftSun(stage) => B::new(id, PassKind::Compute, move |frame, pass| {
+                frame.soft_sun(stage, pass)
+            }),
             PassKey::NativeReset => Self::bind_native(id, false),
             PassKey::NativeWitness => Self::bind_native(id, true),
             PassKey::Readback => B::new(id, PassKind::Copy, |frame, pass| frame.copy(pass)),

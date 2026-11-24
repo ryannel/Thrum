@@ -512,6 +512,11 @@ impl SyntheticView {
         self.jitter_sample.map_or(0, |(phase, _)| phase)
     }
 
+    pub(super) fn raster_jitter_pixels(&self) -> [f32; 2] {
+        self.jitter_sample
+            .map_or([0.0; 2], |(phase, _)| halton_jitter(phase))
+    }
+
     pub(super) fn raster_projection(&self) -> Mat4 {
         if self.raster_jitter_enabled() {
             self.jittered_projection()

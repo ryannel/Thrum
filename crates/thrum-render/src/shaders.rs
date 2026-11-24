@@ -299,6 +299,7 @@ pub(crate) struct SceneVariant {
     pub(crate) shadows: SunShadows,
     pub(crate) sun: SunShadowMethod,
     pub(crate) traced_lamps: bool,
+    pub(crate) soft_sun: bool,
 }
 
 macro_rules! shader_catalog {
@@ -352,6 +353,7 @@ shader_catalog! {
     Cluster => wgsl!("synthetic/cluster.wgsl");
     RayBuild => wgsl!("synthetic/raytrace/build_probe.wgsl");
     RayView => wgsl!("synthetic/raytrace/view.wgsl");
+    SoftSun => crate::synthetic::soft_sun_shader();
     CopyMarker => wgsl!("synthetic/readback/copy_marker.wgsl");
     Visibility => visibility_source();
     Pyramid => concat!(
@@ -540,6 +542,7 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
                     shadows,
                     sun: SunShadowMethod::Maps,
                     traced_lamps: false,
+                    soft_sun: false,
                 };
                 sources.push(("SecondaryScene", Shader::SecondaryScene(variant).source()));
                 for sun in [SunShadowMethod::Maps, SunShadowMethod::Traced] {
@@ -553,6 +556,13 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
                             ..variant
                         };
                         sources.push(("Scene", Shader::Scene(variant).source()));
+                        if sun == SunShadowMethod::Traced {
+                            let soft = SceneVariant {
+                                soft_sun: true,
+                                ..variant
+                            };
+                            sources.push(("Scene soft Sun", Shader::Scene(soft).source()));
+                        }
                     }
                 }
             }

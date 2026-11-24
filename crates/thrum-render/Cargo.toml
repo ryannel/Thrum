@@ -339,3 +339,13 @@ required-features = ["creation-counters"]
 name = "governor_transition"
 path = "tests/governor_transition.rs"
 required-features = ["creation-counters"]
+
+[[test]]
+name = "ray_soft_knob_gpu"
+path = "tests/ray_soft_knob_gpu.rs"
+required-features = ["creation-counters"]
+
+[[test]]
+name = "ray_soft_history_gpu"
+path = "tests/ray_soft_history_gpu.rs"
+required-features = ["creation-counters"]

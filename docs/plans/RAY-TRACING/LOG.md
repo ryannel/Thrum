@@ -176,3 +176,10 @@
   prism's far face. Apple M3 Max Metal verified occlusion for both windings and both mesh
   arrangements, with the adjacent point lit. Removing the far face in two controls verified that the distances straddle
   the forward shader's passage reach. [Metal readbacks](../../../.orchestrate/evidence/RAY-TRACING/M3/terminator/README.md).
+
+- 2026-11-24 WP4 builder checkpoint. Added opt-in disc rays, two visibility values and submitted soft history.
+  The Metal guards checked planted depths and values, camera cut, target and device replacement, and hard-frame
+  parity across the live toggle. Proposed design note for review. Metal's reconstructed distant terrain needed a
+  short local alignment query before the original lift. The larger-lift diagnostic removed the same patches but
+  also altered the close geometry, so the implementation retains the shared shadow lift.
+  [History guards](../../../.orchestrate/evidence/RAY-TRACING/WP4/history.md).

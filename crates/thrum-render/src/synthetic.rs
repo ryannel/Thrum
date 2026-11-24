@@ -52,6 +52,7 @@ mod native_witness;
 mod preparation;
 mod raytrace;
 pub(crate) use raytrace::RetainedRayMeshes;
+pub(crate) use raytrace::soft::{Stage as SoftSunStage, shader_source as soft_sun_shader};
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
 pub(crate) mod readback;
@@ -118,6 +119,10 @@ const CUBE_INDICES: [u16; 36] = [
 
 /// Immutable CPU scene, converted at prepare time rather than each draw.
 #[derive(Clone, Debug)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "independent scene preparation requests"
+)]
 pub struct SyntheticScene {
     /// Ask preparation for a scene-wide ray structure for diagnostics.
     /// Preparation falls back to the ordinary scene if the device or recipe cannot trace.
@@ -138,6 +143,8 @@ pub struct SyntheticScene {
     pub sun_shadows: bool,
     /// Main view's Sun visibility method, when the Sun casts shadows.
     pub sun_shadow_method: SunShadowMethod,
+    /// Prepare soft Sun visibility when the scene resolves to traced Sun shadows.
+    pub sun_penumbra: bool,
     /// Ask for hard shadows from the main view's local lights.
     pub lamp_shadows: bool,
     /// Camera opaque draw: the direct oracle or GPU frustum compaction.
@@ -222,6 +229,7 @@ impl SyntheticScene {
         Self {
             ray_structure: false,
             sun_shadow_method: SunShadowMethod::Maps,
+            sun_penumbra: false,
             lamp_shadows: false,
             sun_optical_depth: None,
             materials: Vec::new(),
@@ -291,6 +299,7 @@ impl SyntheticScene {
             view: SyntheticView::default(),
             sun_shadows: false,
             sun_shadow_method: SunShadowMethod::Maps,
+            sun_penumbra: false,
             lamp_shadows: false,
             camera_culling: CullMode::Direct,
             star_catalogue: None,
@@ -539,6 +548,7 @@ pub struct PreparedSynthetic {
     ray_structure_selection: RayStructureSelection,
     shadow_selection: ShadowSelection,
     lamp_shadows: Option<raytrace::LampShadows>,
+    soft_sun: Option<raytrace::soft::SoftSun>,
     row_updates: Option<mesh_rows::LiveRows>,
     /// Scenes that select meshes draw per bucket; others keep the legacy
     /// single-pipeline route.
@@ -1154,6 +1164,46 @@ impl PreparedSynthetic {
             .map(raytrace::LampShadows::unshadowed)
     }
 
+    /// Runtime controls for the prepared Sun penumbra.
+    #[must_use]
+    pub fn sun_penumbra_quality(&self) -> &[crate::contribution::QualityKnob] {
+        self.soft_sun
+            .as_ref()
+            .map_or(&[], |soft| soft.settings.knobs())
+    }
+
+    pub(crate) fn set_sun_penumbra_quality(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Option<Result<(), crate::contribution::QualityError>> {
+        self.soft_sun
+            .as_mut()
+            .filter(|soft| soft.settings.knobs().iter().any(|knob| knob.name == name))
+            .map(|soft| soft.settings.set(name, value))
+    }
+
+    pub(crate) fn commit_sun_penumbra_quality(&mut self) {
+        if let Some(soft) = self.soft_sun.as_mut() {
+            soft.commit_settings();
+        }
+    }
+
+    /// Update the runtime penumbra control outside a frame host.
+    ///
+    /// # Errors
+    /// Returns an error if soft Sun visibility was not prepared.
+    #[cfg(feature = "creation-counters")]
+    pub fn set_sun_penumbra_for_probe(
+        &mut self,
+        enabled: bool,
+    ) -> Result<(), crate::contribution::QualityError> {
+        self.set_sun_penumbra_quality(raytrace::soft::SoftSun::PENUMBRA, u32::from(enabled))
+            .ok_or(crate::contribution::QualityError::NoContribution)??;
+        self.commit_sun_penumbra_quality();
+        Ok(())
+    }
+
     pub(crate) fn aerial_quality(&self) -> Option<crate::contribution::QualityKnob> {
         self.atmosphere
             .as_ref()
@@ -1316,6 +1366,16 @@ impl PreparedSynthetic {
                 output,
             );
         }
+        if let Some((soft, target)) = self.soft_sun.as_mut().zip(target.soft_sun.as_ref()) {
+            soft.update(
+                queue,
+                target,
+                &view,
+                &self.view_sample,
+                drawn,
+                self.history.candidate_identity(view.history_reset())[1] != 0,
+            );
+        }
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         let mut record = view.view_record(&self.view_sample, f32::from_bits(self.exposure_bits));
@@ -1436,6 +1496,9 @@ impl PreparedSynthetic {
             self.view_sample = view;
             self.jitter_phase = (self.jitter_phase + 1) % 32;
             self.history.submitted();
+            if let Some(soft) = self.soft_sun.as_mut() {
+                soft.submitted();
+            }
         }
     }
     /// Reset temporal correspondence when the authoritative world or replay
@@ -1762,6 +1825,7 @@ struct TargetResources {
     secondary: Vec<secondary::Resources>,
     native: Option<native_witness::graph::Resources>,
     refraction: Option<ResourceId>,
+    soft_sun: Option<raytrace::soft::SoftResources>,
     pre_tone: PreToneInput,
     temporal: temporal::TemporalResources,
     taau: Option<taau::TaauResources>,
@@ -1787,6 +1851,7 @@ pub struct OffscreenTarget {
     secondary: Vec<wgpu::BindGroup>,
     pub(crate) native: Option<Arc<native_witness::Binding>>,
     effects: after_opaque::TargetEffects,
+    soft_sun: Option<raytrace::soft::SoftTarget>,
     capture_source: CaptureSource,
     device: wgpu::Device,
     prepared_owner: Arc<()>,
@@ -1919,6 +1984,14 @@ impl OffscreenTarget {
         let motion_view = texture_view(&ids.motion)?;
         let reactive_view = texture_view(&ids.reactive)?;
         let effects = prepared.late_bindings(device, &textures, &ids, &depth)?;
+        let soft_sun = prepared.prepare_soft_target(
+            device,
+            &textures,
+            ids.soft_sun.as_ref(),
+            &depth,
+            &motion_view,
+            [width, height],
+        )?;
         let temporal = prepared.temporal.target(
             device,
             &textures,
@@ -2047,6 +2120,7 @@ impl OffscreenTarget {
             native,
             capture_source,
             effects,
+            soft_sun,
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
             day_graphs,
@@ -2134,9 +2208,12 @@ impl OffscreenTarget {
     pub(crate) fn texture_allocation(&self) -> (u32, u64) {
         let (count, bytes) = self.textures.allocation();
         let extra = u64::from(self.day_depth.is_some());
+        let soft_textures = 4 * u32::from(self.soft_sun.is_some());
         (
-            count + u32::from(self.day_depth.is_some()),
-            bytes + extra * u64::from(self.width) * u64::from(self.height) * 4,
+            count + u32::from(self.day_depth.is_some()) + soft_textures,
+            bytes
+                + extra * u64::from(self.width) * u64::from(self.height) * 4
+                + self.sun_penumbra_history_bytes(),
         )
     }
 

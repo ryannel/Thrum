@@ -28,6 +28,7 @@ pub(super) fn prepare(
     cloud: Option<&crate::atmosphere::SunOpticalDepth>,
     shadowed: SunShadows,
     selection: ShadowSelection,
+    soft_sun: bool,
     fail_pipeline: bool,
 ) -> (String, wgpu::ShaderModule, &'static str) {
     let shader = crate::shaders::Shader::Scene(crate::shaders::SceneVariant {
@@ -36,6 +37,7 @@ pub(super) fn prepare(
         shadows: shadowed,
         sun: selection.sun,
         traced_lamps: selection.lamps,
+        soft_sun,
     });
     let (source, module) =
         shader.compile_with_source(device, "prepared synthetic shader ABI2", fail_pipeline);
@@ -47,7 +49,12 @@ pub(super) fn prepare(
     (source, module, entry)
 }
 
-fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) -> String {
+fn traced(
+    mut source: String,
+    shadowed: SunShadows,
+    selection: ShadowSelection,
+    soft_sun: bool,
+) -> String {
     let sun = shadowed == SunShadows::Enabled && selection.sun == SunShadowMethod::Traced;
     if !sun && !selection.lamps {
         return source;
@@ -58,7 +65,19 @@ fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) 
             + source[start..]
                 .find("// Within a few degrees")
                 .expect("end of Sun operation");
-        source.replace_range(start..end, wgsl!("synthetic/raytrace/sun.wgsl"));
+        let hard = wgsl!("synthetic/raytrace/sun.wgsl");
+        if soft_sun {
+            source.replace_range(
+                start..end,
+                &format!(
+                    "{hard}\n{}\n{}",
+                    wgsl!("synthetic/raytrace/soft_common.wgsl"),
+                    wgsl!("synthetic/raytrace/soft_forward.wgsl")
+                ),
+            );
+        } else {
+            source.replace_range(start..end, &format!("{hard}\nfn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {{ return hard_sun_visibility(input, receiver); }}\n"));
+        }
         source = source.replace(
             "dpdx(input.world_position),\n        dpdy(input.world_position),normalize(input.normal)",
             "dpdx(input.shadow_surface.xyz),\n        dpdy(input.shadow_surface.xyz),normalize(input.normal)",
@@ -256,6 +275,7 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             lamps: variant.traced_lamps,
             ..ShadowSelection::default()
         },
+        variant.soft_sun,
     )
 }
 
@@ -282,6 +302,7 @@ mod tests {
                     compose_with_cloud(true, true, false, shadows),
                     shadows,
                     selection,
+                    sun == SunShadowMethod::Traced,
                 );
                 let module = naga::front::wgsl::parse_str(&source)
                     .unwrap_or_else(|error| panic!("{}", error.emit_to_string(&source)));

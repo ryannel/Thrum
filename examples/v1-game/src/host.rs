@@ -84,6 +84,10 @@ pub struct GameSetup {
     pub display_overlay: DisplayOverlay,
     /// Main view's Sun shadow method.
     pub sun_shadow_method: SunShadowMethod,
+    /// Prepare soft visibility for the traced Sun.
+    pub sun_penumbra: bool,
+    /// Opt-in geometry for Sun shadow captures in the exit scene.
+    pub sun_proof_geometry: crate::SunProofGeometry,
     /// Trace hard shadows from the main view's local lights.
     pub lamp_shadows: bool,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
@@ -121,6 +125,8 @@ impl Default for GameSetup {
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             display_overlay: DisplayOverlay::Off,
             sun_shadow_method: SunShadowMethod::Maps,
+            sun_penumbra: false,
+            sun_proof_geometry: crate::SunProofGeometry::Off,
             lamp_shadows: false,
             diagnostic_clouds: false,
             haze: None,
@@ -400,11 +406,19 @@ impl GameSetup {
                 .clone();
             scene.meshes = Some(rows.selection(slots));
         }
+        if setup.content == GameContent::Exit {
+            setup.sun_proof_geometry.prepare(&mut scene);
+        }
         let cloud_sky = setup.clouds.sky_profile(config.render_extent);
         let weather = clouded_weather(setup, shapes.as_ref())?;
         let world = GameWorld(WorldPort::Inline(Box::new(
-            WorldDriver::selected(setup.content, setup.route_overlay, weather)
-                .map_err(FrameError::World)?,
+            WorldDriver::selected_with_sun_proof(
+                setup.content,
+                setup.route_overlay,
+                weather,
+                setup.sun_proof_geometry,
+            )
+            .map_err(FrameError::World)?,
         )));
         let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky)?;
         if let Some(shade) = &shade {

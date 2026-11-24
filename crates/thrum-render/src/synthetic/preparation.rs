@@ -334,11 +334,18 @@ impl PreparedSynthetic {
         let lamp_shadows = shadow_selection
             .lamps
             .then(|| raytrace::LampShadows::new(device, queue));
+        let soft_sun = (scene.sun_penumbra
+            && shadow_enabled
+            && shadow_selection.sun == SunShadowMethod::Traced)
+            .then(|| raytrace::soft::SoftSun::new(device));
         let light_layout = if trace_lights {
             light_entries.push(binding::acceleration_structure(
                 15,
                 wgpu::ShaderStages::FRAGMENT,
             ));
+            if soft_sun.is_some() {
+                light_entries.extend(raytrace::soft::SoftPipelines::light_entries());
+            }
             if lamp_shadows.is_some() {
                 light_entries.extend(raytrace::LampShadows::layout_entries());
             }
@@ -430,7 +437,14 @@ impl PreparedSynthetic {
             cloud: cloud.as_ref(),
             aerial: None,
         }
-        .bind(device, &map_light_layout, &exposure_samples, None, None);
+        .bind(
+            device,
+            &map_light_layout,
+            &exposure_samples,
+            None,
+            None,
+            None,
+        );
         let mut entries = vec![binding::storage(
             0,
             wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
@@ -646,6 +660,7 @@ impl PreparedSynthetic {
             scene.sun_optical_depth.as_ref(),
             scene_source::SunShadows::from(shadow.is_some()),
             shadow_selection,
+            soft_sun.is_some(),
             fail_traced_pipeline,
         );
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
@@ -883,6 +898,7 @@ impl PreparedSynthetic {
             ray_structure_selection,
             shadow_selection,
             lamp_shadows,
+            soft_sun,
             bucket_route,
             caster_boxes,
             shadow_members,

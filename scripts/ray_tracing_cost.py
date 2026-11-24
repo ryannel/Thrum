@@ -192,12 +192,79 @@ def shadows(output):
         output.write_text(text)
 
 
+def soft(output):
+    machine = command("system_profiler", "SPHardwareDataType", "SPDisplaysDataType")
+    before = os.getloadavg()
+    rows = run_test("shadow_cost", release=True, extra_env={"THRUM_RAY_SOFT_COST": "1"})
+    dive, = [row for row in rows if row.get("type") == "dive_account"]
+    opaque = dive["ordinary"] + dive["dipping"] + dive["excluded"]
+    dive["share_beyond_limit"] = dive["excluded"] / opaque
+    dive["share_inside_limit"] = 1.0 - dive["share_beyond_limit"]
+
+    forward = "synthetic forward opaque"
+    stages = [
+        "traced Sun visibility trace", "traced Sun visibility neighbourhood",
+        "traced Sun visibility accumulation", "traced Sun visibility filter",
+    ]
+    figures = ("timed_pass_span_ns", "frame_cpu_ns")
+    arms = {enabled: {} for enabled in (False, True)}
+    for row in rows:
+        if row is dive:
+            continue
+        enabled = row["penumbra"]
+        timings = row["passes_ns"]
+        if row["method"] != "Traced" or row["lamps"] or row["recipe"] != "AppleTile":
+            raise ValueError(f"incorrect traced recipe or selection in {row}")
+        if not all((stage in timings) == enabled for stage in stages):
+            raise ValueError(f"incorrect visibility timing in {row}")
+        values = [timings[forward], *(row[key] for key in figures)]
+        values.extend(timings[stage] for stage in stages if enabled)
+        if not all(math.isfinite(value) and value > 0 for value in values):
+            raise ValueError(f"missing required measurement in {row}")
+        if not row["history_bytes"] or not row["dive_limit_degrees"]:
+            raise ValueError(f"missing history residency or dive limit in {row}")
+        arms[enabled][row["tick"]] = row
+    if not arms[False] or arms[False].keys() != arms[True].keys():
+        raise ValueError("paired timing rows must cover the same route ticks")
+
+    summary = {}
+    for enabled, samples in arms.items():
+        summary["on" if enabled else "off"] = {
+            **{key: median(row[key] for row in samples.values()) for key in figures},
+            **{stage: median(row["passes_ns"][stage] for row in samples.values())
+               for stage in ([forward, *stages] if enabled else [forward])},
+        }
+    record = {
+        "revision": command("git", "rev-parse", "HEAD"),
+        "target": "mac-metal",
+        "machine": [line.strip() for line in machine.splitlines() if line.strip().startswith(
+            ("Chip:", "Chipset Model:", "Memory:", "Total Number of Cores:"))],
+        "os": command("sw_vers", "-productVersion"),
+        "load_average_before": before,
+        "load_average_after": os.getloadavg(),
+        "timed_pass_span_scope": (
+            "Contended. First timed pass through surface consumer. The preceding queued "
+            "view, instance, light, cluster, caster heights and soft frame uniforms are "
+            "outside the span. CPU time includes those writes."
+        ),
+        "median_ns": summary,
+        "dive_account": dive,
+        "pairs": [{"tick": tick, "off": arms[False][tick], "on": arms[True][tick]}
+                  for tick in sorted(arms[False])],
+    }
+    rendered = json.dumps(record, indent=2) + "\n"
+    print(rendered, end="")
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(rendered)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("profile", choices=["structure", "valley", "shadows"])
+    parser.add_argument("profile", choices=["structure", "valley", "shadows", "soft"])
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    {"structure": structure, "valley": valley, "shadows": shadows}[args.profile](args.output)
+    {"structure": structure, "valley": valley, "shadows": shadows, "soft": soft}[args.profile](args.output)
 
 
 if __name__ == "__main__":

@@ -1542,6 +1542,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         )
     }
 
+    /// Bytes of Sun visibility history shared by this host's active frame slots.
+    #[must_use]
+    pub fn sun_penumbra_history_bytes(&self) -> u64 {
+        self.slots
+            .first()
+            .and_then(|slot| slot.target.three_d())
+            .map_or(0, OffscreenTarget::sun_penumbra_history_bytes)
+    }
+
     /// Number of optional views skipped because all GPU packet slots were held.
     pub fn dropped_views(&self) -> u64 {
         self.dropped_views
@@ -1633,6 +1642,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     #[must_use]
     pub fn submitted_shadow_witness(&self) -> Option<&wgpu::Texture> {
         self.latest_submitted_target()?.shadow_witness()
+    }
+
+    /// Raw Sun disc ray results from the newest in-flight submitted frame.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn submitted_sun_disc_witness(&self) -> Option<&wgpu::Texture> {
+        self.latest_submitted_target()?.sun_disc_witness()
     }
 
     fn latest_submitted_target(&self) -> Option<&OffscreenTarget> {
@@ -2080,6 +2096,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.history_reset_pending |= self.prepared.commit_lamp_quality(&self.queue);
         if let Some(scene) = self.prepared.three_d_mut() {
             scene.commit_aerial_quality();
+            scene.commit_sun_penumbra_quality();
         }
         if self.contribution.as_mut().is_some_and(|entry| {
             entry.commit_quality_knobs() == crate::contribution::QualityInvalidation::ViewHistory
