@@ -419,7 +419,7 @@
         {
           "verdict": "fail",
           "commit": "97116ed695da05e8f2e157cb418320f706c371c8",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M5-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M5-review-1.md",
           "items": {
             "M5.1": "fail"
           },
@@ -446,6 +446,30 @@
             "turns": 1
           },
           "at": "2026-11-23T23:43:28Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "f9abaf9486311d78a4c5c082d1bdacd3e89bd345",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M5-review.md",
+          "items": {
+            "M5.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 55803,
+            "cached": 671616,
+            "output": 2709,
+            "turns": 1
+          },
+          "at": "2026-11-24T00:18:05Z"
         }
       ],
       "authorised": {
@@ -482,6 +506,13 @@
           "output": 56695,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "f9abaf9486311d78a4c5c082d1bdacd3e89bd345",
+        "review": ".orchestrate/evidence/EFFECT-GRAPH/M5-review.md",
+        "checked": "ac00513a21d8b96ca6f47b9cb17c0ca16cc912b7",
+        "at": "2026-11-24T00:18:05Z"
       }
     }
   },
