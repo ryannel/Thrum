@@ -334,13 +334,14 @@ fn a_detached_extent_preserves_current_capture_admission() {
     assert!(stopped.publish_extent(candidate));
     submit(&mut stopped, &new_output, NEW);
     complete(&mut stopped, &device);
-    assert_eq!(stopped.submitted_capture_usage(), Some((0, 0)));
+    assert_eq!(stopped.submitted_capture_usage(), Some((1, 0)));
     let image = captured(&mut stopped, &device);
     assert_eq!(
         (image.session, image.extent, image.sample.submission_order),
         (7, OLD, old.submission_order)
     );
     stopped.recycle_submitted_image(image);
+    assert_eq!(stopped.submitted_capture_usage(), Some((0, 0)));
     assert!(
         stopped
             .try_submitted_image()
@@ -384,8 +385,15 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     };
     let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     let mut host = host(&cap, &queue, OLD);
-    host.enable_submitted_capture_with_limits(7, CaptureLimits::default())
-        .expect("transition fixture");
+    host.enable_submitted_capture_with_limits(
+        7,
+        CaptureLimits {
+            // The proof drains all five old and new images after the switch.
+            staging_slots: 5,
+            ..CaptureLimits::default()
+        },
+    )
+    .expect("transition fixture");
     let old_output = view(&device, OLD);
     let new_output = view(&device, NEW);
     let reset_image = independent_reset(&cap, &device, &queue, &new_output, NEW, 3);
