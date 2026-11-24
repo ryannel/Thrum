@@ -75,10 +75,10 @@ fn cloud_bank_billow(point:vec3<f32>,footprint:f32)->f32 {
 fn cloud_bank_floor(point:vec3<f32>,footprint:f32)->f32 {
     // Hold the broad floor height through each column. Sampling this octave
     // at a fixed height gives each lobe its own rounded underside.
-    let air=point.xz/6400.0+vec2(cloud.noise.x,cloud.noise.y);
-    let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(2.0*air.x,0.31,2.0*air.y),
-                                 erosion_mip(2.0*footprint,50.0)).r;
-    return 0.64*smoothstep(0.10,0.80,swell);
+    let air=point.xz/9200.0+vec2(cloud.noise.x,cloud.noise.y);
+    let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(air.x,0.31,air.y),
+                                 erosion_mip(footprint,72.0)).r;
+    return 0.84*smoothstep(0.23,0.69,swell);
 }
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f32)->f32 {
     if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
@@ -92,8 +92,8 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     // lobes have lifted bases. The cloud and the local Sun march see the same
     // relief, and erosion never adds density outside the weather column.
     let floor=cloud_bank_floor(point,footprint);
-    let lift=floor*mix(0.78,1.10,detail);
-    return eroded*mix(1.0,smoothstep(0.85*lift,lift+0.12,height),bank);
+    let lift=floor*mix(0.86,1.03,detail);
+    return eroded*mix(1.0,smoothstep(0.85*lift,lift+0.16,height),bank);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
@@ -216,13 +216,16 @@ fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray
 }
 
 fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
-                    footprint:f32,sun_depth:f32,sun_alignment:f32,bank:f32)->vec3<f32> {
+                    distance:f32,footprint:f32,sun_depth:f32,sun_alignment:f32,bank:f32)->vec3<f32> {
     // A partly joined bank has side walls around each opening. Ahead of a
     // lit wall the density drops toward the Sun; inside a lobe it stays high.
     let ahead=cloud_density(point+mapping.path_border.xyz*max(170.0,2.0*footprint),footprint);
-    let relative=(sigma-ahead)/max(sigma,0.08*cloud.physical.x);
-    let exposed=smoothstep(-0.18,0.78,relative);
     let high_sun=smoothstep(0.32,0.66,mapping.path_border.y);
+    // Small, thin gaps contribute less direct light when the Sun is high
+    // and their walls no longer resolve within the distant pixel footprint.
+    let distant=high_sun*smoothstep(4200.0,9500.0,distance);
+    let relative=(sigma-ahead)/max(sigma,mix(0.08,0.32,distant)*cloud.physical.x);
+    let exposed=smoothstep(-0.18,0.78,relative);
     let beam=exp(-mix(0.28,0.14,high_sun)*sun_depth);
     let interior=exp(-0.085*sun_depth);
     let billow=smoothstep(0.20,0.79,cloud_bank_billow(point,footprint));
@@ -230,7 +233,7 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     // At noon the Sun lights the inward wall of a gap from above. Keep
     // the wider transmission lobe on exposed walls, with a narrower falloff
     // into the bank so the same light does not wash out its whole underside.
-    let rim=beam*exposed*exposed*(0.095+0.16*high_sun*exposed);
+    let rim=beam*exposed*exposed*(0.095+0.16*high_sun*exposed)*mix(1.0,0.48,distant);
     let glare=1.0-0.70*smoothstep(0.72,0.96,sun_alignment);
     return mix(source,source*shade*glare+solar*rim,bank);
 }
@@ -295,7 +298,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0); }
                 var source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
                 if bank>0.0 && placed.x==0.0 && any(solar>vec3(0.0)) {
-                    source=cloud_bank_light(source,solar,point,sigma,footprint,sun_depths.x,sun_alignment,bank);
+                    source=cloud_bank_light(source,solar,point,sigma,at,footprint,sun_depths.x,sun_alignment,bank);
                 }
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
