@@ -181,10 +181,12 @@ pub fn shade_config() -> ShadeConfig {
             Type {
                 base: 1600.0,
                 depth: [465.0, 680.0],
-                liquid_water: 0.00025,
+                liquid_water: 0.00035,
                 droplet_radius: 0.00001,
                 deck: 1.0,
-                profile: [0.2, 0.2],
+                // Let the billow field shape the underside over a deeper
+                // condensation ramp. Keep the upper layer optically thick.
+                profile: [0.65, 0.19],
             },
             Type {
                 base: 1600.0,
