@@ -963,8 +963,8 @@
           "statement": "As the weather moves from clear to fair, to broken, to overcast and back to clear, a minute each, the sky changes with no pop, step or restart. No cloud switches on or off; a deck closes by thickening and by its gaps closing.",
           "inspect": "Capture a `realtime` sequence of the four changes from 40 m at noon. Judge consecutive frames at 1x across each change, whole and in native-size crops overhead.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/final-cycle-opinion.md",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/last-clear-opinion.md",
           "verdict": "",
           "review": ""
         },
