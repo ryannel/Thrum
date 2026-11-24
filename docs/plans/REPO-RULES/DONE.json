@@ -154,7 +154,7 @@
     {
       "id": "WP5",
       "name": "The repository gate passes with migrated plans",
-      "status": "in_progress",
+      "status": "blocked",
       "depends_on": [],
       "quality_bar": "The merge gate passes with the existing rule versions and ratchet, and legacy evidence is recoverable from a full clone.",
       "items": [
@@ -200,7 +200,17 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_context",
+        "what": "WP5.4 can't be met as written because Orchestrate refuses work-package checks that call `main-check`. The planner must remove or replace the item.",
+        "work": {
+          "commit": "5b4f32110af88f5b6b304213e88ace07e8ed6c5f",
+          "branch": "build/repo-rules",
+          "pushed": true
+        },
+        "handoff": ".orchestrate/evidence/REPO-RULES/WP5-handoff.md"
+      }
     },
     {
       "id": "WP3",
