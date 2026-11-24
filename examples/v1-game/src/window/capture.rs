@@ -335,6 +335,35 @@ impl Trace {
         Ok(writer.finish(Duration::from_secs(10)))
     }
 
+    // The offscreen render owner otherwise sleeps between observations. Give
+    // queued frames and their later timestamp resolves time to retire during
+    // that idle period without waiting into the next render opportunity.
+    fn progress_before<G: Game>(
+        &mut self,
+        driver: &mut Offscreen<G>,
+        admission: &mut admission::Admission,
+        writer: Option<&ImageWriter>,
+        origin: Instant,
+        next: Instant,
+    ) -> Result<Value, String> {
+        let mut polls = 0;
+        let mut cpu = Duration::ZERO;
+        let mut wall = Duration::ZERO;
+        while driver.pending_frames() != 0
+            && next.saturating_duration_since(Instant::now()) > Duration::from_millis(2)
+        {
+            std::thread::sleep(Duration::from_millis(1));
+            let work = WorkClock::start().map_err(|error| error.to_string())?;
+            let collect = admission.collect_images(driver, origin);
+            self.drain(driver, writer, origin, collect)?;
+            let work = work.finish().map_err(|error| error.to_string())?;
+            polls += 1;
+            cpu += work.cpu;
+            wall += work.wall;
+        }
+        Ok(json!({"polls": polls, "cpu_ns": cpu.as_nanos(), "wall_ns": wall.as_nanos()}))
+    }
+
     fn drain<G: Game>(
         &mut self,
         driver: &mut Offscreen<G>,
@@ -927,12 +956,24 @@ async fn record(
         trace.drain(&mut driver, writer.as_ref(), origin, collect)?;
         let drain = drain.elapsed();
         let work = work.finish().map_err(|e| e.to_string())?;
+        let idle_gpu_progress = if governed && !active_pacing {
+            Some(trace.progress_before(
+                &mut driver,
+                &mut admission,
+                writer.as_ref(),
+                origin,
+                opportunity.target,
+            )?)
+        } else {
+            None
+        };
         trace.opportunity(json!({"step_cpu_start":step.cpu_start,"step_cpu_end":step.cpu_end,"loop_cpu_start":work.cpu_start,"loop_cpu_end":work.cpu_end,"step_thread_cpu_ns":step.cpu.as_nanos(),"step_wall_ns":step.wall.as_nanos(),"loop_thread_cpu_ns":work.cpu.as_nanos(),"loop_work_wall_ns":work.wall.as_nanos(),"drain_wall_ns":drain.as_nanos(),"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
             "scenario_ns":opportunity.scenario_time.as_nanos(),"accepted_ns":if control_dispatched {Some(accepted.as_nanos())} else {None},
             "control_dispatched":control_dispatched,
             "skipped_before":opportunity.skipped_before,"skip_reason":"driver busy or host oversleep",
             "returned_ns":returned.as_nanos(),"requested_yaw_degrees":yaw,"accepted_yaw_degrees":accepted_yaw,
             "submitted":report.submitted,"tick":report.tick,"dropped_view":report.dropped_view,
+            "idle_gpu_progress":idle_gpu_progress,
             "admission_usage":admission_usage,"ring_omissions":driver.omissions()-omissions_before,
             "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()}), &report);
         last_sample_time = opportunity.scenario_time;
