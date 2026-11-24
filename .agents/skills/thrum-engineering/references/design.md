@@ -1,6 +1,6 @@
 # Module design
 
-What a Thrum module design must contain, and the engine rules for getting there. `/plan-module` covers the process.
+What a Thrum module design must contain, and the engine rules for getting there. The orchestrate planner skill covers the process.
 A design lives at `docs/plans/<MODULE>/DESIGN.md`, and it is what the plan, the done-when file and the reviewer check
 against. Keep it reading as what is true now: revise sections in place, rather than appending amendments.
 
@@ -59,7 +59,7 @@ A cue the mechanism can't produce is a design defect. Change the mechanism; don'
 
 This is a check that the mechanism can make the cue, not a pass mark for the build. The bar is the most plausible
 result as fast as possible (`ORCHESTRATE.md`, 17 November 2026). So a design names no numerical acceptance for
-rendering: no ceiling against an `f64` or photon reference, no bound a milestone measures first and then asserts,
+rendering: no ceiling against an `f64` or photon reference, no bound a work package measures first and then asserts,
 no rule that a miss ends `BLOCKED`. Pick the cheapest mechanism that reaches the shipped-game look, and say which
 terms a builder may tune by eye. Numerical proof belongs to what a game or another module reads and to the
 contracts between modules.
@@ -88,7 +88,7 @@ contracts between modules.
   cue. A wrong substitute is something that could look right while missing the behaviour, such as moving texture in
   place of cloud growth.
 - **Performance:** the cost account and tripwires.
-- **Open questions:** each with the experiment or milestone that will settle it.
+- **Open questions:** each with the experiment or work package that will settle it.
 
 The design is ready to build when an implementer can walk its normal frame and a coupled interaction without
 inventing a core algorithm, coupling or convention. Tuning values may stay open, labelled as such.

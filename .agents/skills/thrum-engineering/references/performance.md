@@ -1,7 +1,7 @@
 # Performance
 
 The owner's policy is to make best-practice decisions for high performance up front, lay the best foundation you
-can, build with tripwires, and tune later. Don't invent numeric budget gates. Record before-and-after figures, and
+can, build with tripwires, and tune later. Use measured performance tripwires. Record before-and-after figures, and
 keep the experience intact. The background is in `docs/design/AI-PERFORMANCE.md` and
 `docs/design/decisions/HARDWARE-NATIVE-ENGINE.md`.
 

@@ -1,10 +1,10 @@
-# Orchestrate profile: Thrum
+# Orchestrate project settings: Thrum
 
-Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-milestone`, `/review-milestone`,
-`/build`). This file holds what's specific to Thrum.
+Thrum uses the orchestrate lead, planner, builder and reviewer skills. The lead runs the `plan`, `review`
+and `build` commands with the project settings below.
 
-- **Purpose:** [the brief](docs/plans/BRIEF.md): purpose, the V1 exit and the gates.
-- **Quality bar:** looks as good as a shipped high-end game of this kind, named per milestone, e.g. sea and wakes as
+- **Purpose:** [the vision and scope document](docs/plans/VISION.md): goal, the V1 exit and its milestones.
+- **Quality bar:** looks as good as a shipped high-end game of this kind, named per work package, e.g. sea and wakes as
   in Sea of Thieves, skies as in Red Dead Redemption 2, and runs fast, smooth at the display's full refresh. Judged in
   words against an agent-written inspection list, never against target images or a physical reference.
   [What is proved, and how hard](#what-is-proved-and-how-hard) says what that asks of a plan, a build and a review.
@@ -12,7 +12,7 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Plans:** docs/plans
 - **Evidence:** .orchestrate/evidence
 - **Graded examples:** docs/design/GRADED-EXAMPLES.md  *(loop: past verdicts the owner agreed with or overturned)*
-- **Test command:** ./dev check  *(loop: CI is manual-only, so this is the gate; documentation-only work may run ./dev check-docs while building)*
+- **Test command:** ./dev check  *(loop: CI is manual-only, so this check must pass before a merge; documentation-only work may run ./dev check-docs while building)*
 - **Merge:** push  *(loop: owner allows verified checkpoints straight to main)*
 - **Branch:** main  *(loop)*
 - **Remote:** origin  *(loop)*
@@ -45,11 +45,11 @@ means that tracked record. *(owner, 20 Nov 2026: provenance records are tracked 
 | Target | What it is | Run | Capture | Edge conditions |
 |---|---|---|---|---|
 | mac-metal | This M3 Max, 120 Hz ProMotion, Metal | `scripts/run_v1_showcase.py`, `./dev` scenarios | [T2 engine capture](docs/plans/T2-CAPTURE/DESIGN.md): fixed-time images and elapsed-time motion, lossless sources/contact sheets; active-panel rows separate | Low sun, storm, distance, fast camera, full refresh |
-| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | [T2 engine capture](docs/plans/T2-CAPTURE/DESIGN.md) M1: submitted fixed checkpoints, realtime output and time records; DOM/browser chrome separate | Same scenarios as mac-metal |
-| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | [T2 engine capture](docs/plans/T2-CAPTURE/DESIGN.md) M2: engine output/time records; `simctl` screenshots/video corroborate simulator function/UI/lifecycle within recorded timing limits | Rotation, background and foreground |
+| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | [T2 engine capture](docs/plans/T2-CAPTURE/DESIGN.md) WP1: submitted fixed checkpoints, realtime output and time records; DOM/browser chrome separate | Same scenarios as mac-metal |
+| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | [T2 engine capture](docs/plans/T2-CAPTURE/DESIGN.md) WP2: engine output/time records; `simctl` screenshots/video corroborate simulator function/UI/lifecycle within recorded timing limits | Rotation, background and foreground |
 
 Rules for proof on these targets:
-- A visual milestone that claims submitted output or elapsed-time engine motion uses T2 engine capture on its
+- A visual work package that claims submitted output or elapsed-time engine motion uses T2 engine capture on its
   target and names the capture mode it selects: `still`, `fixed` or `realtime` on the Mac, `fixed` or `realtime` in
   Chrome. Chrome endpoint images and `simctl` captures alone cannot prove submitted temporal output or elapsed-time
   engine motion. Simulator evidence is function only.
@@ -68,7 +68,7 @@ Rules for proof on these targets:
 Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on-main), 15 November 2026):
 - **The proof of record** is the script's run of `./dev check` and every item's check on the merged tip. Prove a
   thing on your branch once, merge, and don't prove it again after a rebase: rerun only what the script says
-  failed. A visual milestone takes one capture pass, after its last merge.
+  failed. A visual work package takes one capture pass, after its last merge.
 - **Exact images** are verified on main after the merge, by the main-branch check `exact-images`. No proof is
   needed before a merge. An item whose check is `python3 scripts/exact_baselines.py verify` passes from that
   shared run: set it `pass` with the evidence `main-branch check exact-images`, and don't run it yourself.
@@ -79,20 +79,20 @@ Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on
   merge's, take none, so the GPU can be busy while `gpu` reads free. That is expected, and nothing to report.
 - **Nothing waits for a person under a lock.** Before an attended run, check that the console is unlocked and the
   panel awake, and only then take the lock. If they aren't, end `BLOCKED needs_access` at once.
-- **Timing is a tripwire, in a module's last milestone too.** It is taken while other builders work, under the
+- **Timing is a tripwire, in a module's last work package too.** It is taken while other builders work, under the
   lock its run needs, records the load, and fails only on a collapse or a missing measurement. Nobody is paused
   for a timing, and no builder ends `BLOCKED` asking for a quiet machine. The evidence and the maturity ledger
   call the figures taken under load. Figures for a quiet machine, where they are still wanted, wait for one
-  window the lead batches for every module, and no milestone waits for it. The one exception is a sitting that
-  a module's design asks for by name, because smoothness at 1x is judged in it, as `SHOWCASE` M8's is: that
-  builder ends `BLOCKED` asking the lead for it, and the lead keeps the others paused until the milestone is
-  Ready for Review. *(lead, 18 Nov 2026, on the owner's bar of 17 Nov; from 15 Nov every last milestone asked
-  for a paused sitting, and `CULLING` M3 and `SCENE-VIEWS` M3 each stopped on it)*
+  window the lead batches for every module, and no work package waits for it. The one exception is a sitting that
+  a module's design asks for by name, because smoothness at 1x is judged in it, as `SHOWCASE` WP8's is: that
+  builder ends `BLOCKED` asking the lead for it, and the lead keeps the others paused until the work package is
+  Ready for Review. *(lead, 18 Nov 2026, on the owner's bar of 17 Nov; from 15 Nov every last work package asked
+  for a paused sitting, and `CULLING` WP3 and `SCENE-VIEWS` WP3 each stopped on it)*
 
-- **A Done item's check is its record.** Nothing runs a Done milestone's item checks again: the script compares
+- **A Done item's check is its record.** Nothing runs a Done work package's item checks again: the script compares
   only what the item asks for, and `./dev check` runs no item's check. So later work may move, rename,
   merge or delete a file, a test target or a script that only Done items name, and it leaves the Done item's
-  text as it was. Nobody edits a Done item to follow a move, because a changed item un-Dones its milestone.
+  text as it was. Nobody edits a Done item to follow a move, because a changed item un-Dones its work package.
   Three things still bind: a name an open item's check uses, a registered exact baseline with its comparison
   files, and what `./dev check` runs. A test that `./dev check` runs is still a proof, so deleting or
   shortening one is planned as an item that says what guards the behaviour afterwards. *(planner, 20 Nov 2026,
@@ -107,7 +107,7 @@ result as fast as possible, not physical accuracy. Planners write items to these
 reviewers judge by them.
 
 - **Rendering and visual work passes on look and speed.** The look is judged in the running game against the
-  milestone's inspection list and its shipped-game bar. Speed is a tripwire record: no budget is invented.
+  work package's inspection list and its shipped-game bar. Speed is a tripwire record: no budget is invented.
 - **A physical or f64 reference is a diagnostic.** Use one when output looks wrong, to find the cause. No item
   holds a shader, a GPU product or a light model to a reference within a bound, and a plan never asks a builder
   to measure a bound first and then assert it. A miss against a reference is not a finding. A builder may tune
@@ -125,19 +125,19 @@ reviewers judge by them.
   unculled one, is a regression guard and stays.
 - **Proof is proportional to risk.** New rendering work gets a full inspection. A fix round is reviewed on what
   the last review found and what the fix touched. A tripwire record passes on its check alone, with a reviewer's
-  question only in a module's last milestone. An evidence item that costs
+  question only in a module's last work package. An evidence item that costs
   more than the fault it would catch is not written.
 
 Three rules for how a planner words an item *(planner, 20 Nov 2026, from the cleanup review)*:
 
 - **An item names a behaviour, not a place.** It says what must be true of the engine, a tool or a record, and
-  names a file only where that file is the thing delivered. `SHOWCASE` M9.6 failed review over a move that kept
+  names a file only where that file is the thing delivered. `SHOWCASE` WP9.6 failed review over a move that kept
   every byte, because its items named folders.
 - **A check that asserts absence fails when its subject is missing.** `! grep X path` and `test ! -e path` pass
   when `path` has moved, so the check proves nothing from then on. Search the whole of `crates` and `examples`
   with `git grep`, count what must exist exactly once, or test first that the thing searched is there.
 - **No item asks for a tracked file under `docs/evidence`.** The merge refuses one. A record a reviewer reads is
-  "this milestone's evidence", in the working folder. A file that a later check reads is test data, and the
+  evidence for the work package, in the working folder. A file that a later check reads is test data, and the
   item says so. A provenance record is neither: it is tracked under `docs/provenance`.
 
 Three rules for the tests a plan adds *(owner, 21 Nov 2026: "Yes, plan it"; they bind an item written or
@@ -145,9 +145,9 @@ re-planned from that day)*:
 
 - **A check is a guard or a record, and the item says which.** A guard is a test or a rule that stays in the tree
   and runs in `./dev check` from then on, so it meets [the test tiers](#test-tiers)' limits like any other test. A
-  record runs once, to show the milestone: a capture, a measurement, a before and after. Its script and data are
-  the milestone's evidence where they can run from there. What has to be tracked for the script's own run is
-  deleted by the module's last milestone, which carries an item for it. The item's statement closes with
+  record runs once, to show the work package: a capture, a measurement, a before and after. Its script and data are
+  the work package's evidence where they can run from there. What has to be tracked for the script's own run is
+  deleted by the module's last work package, which carries an item for it. The item's statement closes with
   `Guard:` or `Record:` and what it is.
 - **A plan that adds a GPU test or a main-tier test says what only that test can show**: what a device alone
   shows, or what full size or a long run shows that the smallest world cannot. An item that cannot say so asks
@@ -156,7 +156,7 @@ re-planned from that day)*:
   [the two questions](#test-tiers) to any new test that takes over about a second. No lint can tell that a GPU
   test should have been a CPU test, so that judgement is the reviewer's.
 
-A milestone that was In Progress or Ready for Review on 17 November 2026 keeps the items it was approved with.
+A work package that was In Progress or Ready for Review on 17 November 2026 keeps the items it was approved with.
 
 ## Test tiers
 
@@ -172,23 +172,23 @@ check is planned to take about five minutes for a typical landing, and a test in
 21 November)* And on 21 November, of four changes to
 make tests faster: "These all sound really reasonable." Three are rules below: a test uses the smallest world that
 shows its behaviour, logic is tested without a device, and a package's tests are one binary. The fourth is a
-measurement of where a builder's session goes, `GATE-TIME` M10, which changes no rule. And later that day, of
+measurement of where a builder's session goes, `GATE-TIME` WP10, which changes no rule. And later that day, of
 guard rules so that those habits hold without anyone remembering them: "Yes, plan it." What must hold every time
 is in the merge check, under [What keeps the merge tier fast](#what-keeps-the-merge-tier-fast).
 
-[GATE-TIME](docs/plans/GATE-TIME/DESIGN.md#mechanisms) builds the tiers. Each part below binds from the milestone
-that builds it: the long tests' move (M1), the tests behind a Cargo feature (M6), the side-by-side run and the
-limit on one test (M8), the selection with the whole run on main (M7), the guard rules (M12), the ten-second
-bound (M9, and M3 for the water scene), the stop at ten seconds (M13), and one test binary a package (M11).
-Until its milestone is Done, `./dev check` runs what it ran
+[GATE-TIME](docs/plans/GATE-TIME/DESIGN.md#mechanisms) builds the tiers. Each part below binds from the work package
+that builds it: the long tests' move (WP1), the tests behind a Cargo feature (WP6), the side-by-side run and the
+limit on one test (WP8), the selection with the whole run on main (WP7), the guard rules (WP12), the ten-second
+bound (WP9, and WP3 for the water scene), the stop at ten seconds (WP13), and one test binary a package (WP11).
+Until its work package is Done, `./dev check` runs what it ran
 before. The two rules for how a test is written need nothing built: they bind a test written or changed from
-21 November 2026, and M9 and M3 apply them to the tests over ten seconds that exist.
+21 November 2026, and WP9 and WP3 apply them to the tests over ten seconds that exist.
 
 | Tier | When | What runs | Risk it accepts | How a fault gets back to its cause |
 |---|---|---|---|---|
-| **Merge** | Before every merge | `./dev check`: the build and the lints of the whole workspace, a compile of every test behind a Cargo feature, the repository guards and script suites, and the fast tests of the packages the change can reach, run side by side. Then the merging milestone's item checks, which test what that milestone changed | A fault that only a long run, a full-size world, an exact image or a test outside the selection shows reaches main | The merge is refused, so the cause is the branch |
+| **Merge** | Before every merge | `./dev check`: the build and the lints of the whole workspace, a compile of every test behind a Cargo feature, the repository guards and script suites, and the fast tests of the packages the change can reach, run side by side. Then the merging work package's item checks, which test what that work package changed | A fault that only a long run, a full-size world, an exact image or a test outside the selection shows reaches main | The merge is refused, so the cause is the branch |
 | **Main** | On main's tip after merges, by the `Main-branch check` lines under [Rules](#rules), each no more often than its `every` | Exact images; the long tests in a release build and the tests behind a Cargo feature; and every fast test in the workspace | The fault sits on main for up to the check's interval and one run, and later merges build on it. It costs the module that caused it; nothing ships from main | A failure is run again once, then traced through the commits since the last pass to the first that fails. Each step of the trace is one whole run of the check, so the commit is named some hours after its merge, not within the hour. The lead gives that commit's module the fix as its next task, or reverts the commit |
-| **Milestone and release** | Once, when a milestone claims Ready for Review; and at a release point, which is the V1 exit's closing record or anything published | A milestone's captures, inspections, cost records and sittings, and the test command once more on main's tip, which there is the whole workspace's fast tests unless the merge's own pass is reused. At a release point, everything on the one commit: the whole-workspace check, every main-branch check, and the release's own items | A fault only an eye, a device or a quiet machine shows lasts until the milestone that looks, or the release | The review names the item. At a release point the tier that fails names it, as above |
+| **Work package and release** | Once, when a work package claims Ready for Review; and at a release point, which is the V1 exit's closing record or anything published | A work package's captures, inspections, cost records and sittings, and the test command once more on main's tip, which there is the whole workspace's fast tests unless the merge's own pass is reused. At a release point, everything on the one commit: the whole-workspace check, every main-branch check, and the release's own items | A fault only an eye, a device or a quiet machine shows lasts until the work package that looks, or the release | The review names the item. At a release point the tier that fails names it, as above |
 
 - **A test in the merge tier is fast: about ten seconds or less**, run alone on this Mac in the build the check
   uses. A test that takes longer is made fast where the time comes from how it was written or built: one case to
@@ -198,7 +198,7 @@ before. The two rules for how a test is written need nothing built: they bind a 
   `./dev long-tests`; a test is marked only once a `Main-branch check` line under Rules runs that command. No
   shortened run of it stays in the merge tier for comfort. One stays only where a design shows it is fast and
   catches a kind of fault nothing else catches, in any tier. A proof of a fault that is silent and costly is
-  the last to move: it is made fast where it can be. Until `GATE-TIME` M9, and M3 for the water scene, a long test is one over
+  the last to move: it is made fast where it can be. Until `GATE-TIME` WP9, and WP3 for the water scene, a long test is one over
   about a minute, and the tests between ten seconds and that are on `GATE-TIME`'s exempt list.
   *(owner, 21 Nov 2026: accepted the ten-second limit, and that a new long test needs a plan's decision)*
 - **A merge-tier test uses the smallest world that shows its behaviour.** A world is what the test builds to
@@ -218,19 +218,19 @@ before. The two rules for how a test is written need nothing built: they bind a 
 - **Who holds those two rules.** Whoever writes or changes a test writes it to them, and a planner writes items
   to them. A reviewer who reads a new or changed test asks two questions of it, once: what is the smallest
   world that would show this, and what here needs a device? A test already in the tree is held to them only when
-  it is changed or when the check reports it as slow. From `TEST-SUPPORT` M6 the engineering skill says how to
+  it is changed or when the check reports it as slow. From `TEST-SUPPORT` WP6 the engineering skill says how to
   write a test to them, in one block, and the test kit has the small target a GPU test draws to.
-- **A package's integration tests are one test binary**, from `GATE-TIME` M11. macOS checks every newly linked
+- **A package's integration tests are one test binary**, from `GATE-TIME` WP11. macOS checks every newly linked
   binary the first time it runs, about a third of a second each, and Cargo makes each file in a `tests/` folder
   a binary. So a test file is a module of its package's one test target, `it`, and its tests run as
   `cargo test -p <package> --test it <file>::`. A new test file is declared there, and the repository guards
   fail a file under `tests/` that no target compiles. A file is a target of its own only while something names
   its binary or it has to run apart: an open item's check, the main-tier list, a long test or a test behind a
   Cargo feature in it, a `required-features` or `harness = false` entry, a build for another target, or a
-  script. From M11 a planner's new item runs a file's tests through `it`, and a planner who re-plans a module
-  writes the checks of its unstarted milestones the same way. An item approved before M11 keeps its check: its
-  file is a target of its own, and joins `it` in the first landing that edits it after the item's milestone is
-  Done. Until M11 a new test goes in a test file that exists. *(owner, 21 Nov 2026, approving the lead's
+  script. From WP11 a planner's new item runs a file's tests through `it`, and a planner who re-plans a module
+  writes the checks of its unstarted work packages the same way. An item approved before WP11 keeps its check: its
+  file is a target of its own, and joins `it` in the first landing that edits it after the item's work package is
+  Done. Until WP11 a new test goes in a test file that exists. *(owner, 21 Nov 2026, approving the lead's
   proposal of fewer test binaries, from 265 towards one a package)*
 - **The merge tier is targeted.** `./dev check` runs the test binaries of the packages a change can reach: each
   workspace package that holds a changed file, and every package that depends on one, directly or through others,
@@ -251,15 +251,15 @@ before. The two rules for how a test is written need nothing built: they bind a 
   The missed edge reaches main and sits there until the next whole-workspace run, the main-branch check
   `workspace-tests`: up to its interval and one run, and some hours more to name the commit. Until that commit
   is fixed or reverted the script still counts main as passing, and two things fail for a fault they did not
-  cause. One is a later merge whose selection holds the failing test. The other is every milestone's Ready for
+  cause. One is a later merge whose selection holds the failing test. The other is every work package's Ready for
   Review: after a builder merges, the script runs the test command once more on main's tip, where nothing
   differs from main, so that run is the whole workspace unless no other merge has landed since and the merge's
   own pass is reused. So no merge waits for the whole run, but a fault on main holds the Ready for Review of
-  every module's milestones, not only of the module that caused it. A builder whose merge or Ready for Review
+  every module's work packages, not only of the module that caused it. A builder whose merge or Ready for Review
   fails in a test its change cannot reach reads `python3 "$ORCHESTRATE_SCRIPT" main-check workspace-tests`
   before it debugs. Where that shows the test failing on main, the builder leaves the test alone and ends
   `BLOCKED main_broken:` with the test's name, and the lead has the commit fixed or reverted. *(planner's
-  assumption until the owner answers: the other choice selects the Ready for Review run by the milestone's own
+  assumption until the owner answers: the other choice selects the Ready for Review run by the work package's own
   change, which needs a change to the orchestrate script)*
 - **A test behind a Cargo feature** (`creation-counters`, `draw-probe`, `fault-probe`) is compiled in the merge
   tier and run in the main tier: the main-tier list names its package and features beside the long tests, whole
@@ -269,21 +269,21 @@ before. The two rules for how a test is written need nothing built: they bind a 
   *(planner's assumption until the owner answers: the other choice runs these only in the item checks that name
   them)*
 - <a id="what-keeps-the-merge-tier-fast"></a>**What keeps the merge tier fast.** `./dev check` runs tests side by side and ends with the time of each of
-  its steps and its ten slowest tests, and from `GATE-TIME` M12 with the summed time of its tests and of its GPU
+  its steps and its ten slowest tests, and from `GATE-TIME` WP12 with the summed time of its tests and of its GPU
   tests. Those are reports: nothing fails on how long a check takes, because checks run beside builders. Four
   rules do fail a merge, beside the other counts that only fall. *(owner, 21 Nov 2026: "Yes, plan it")*
-  - *The limit on one test.* A test still running at ten seconds is stopped (`GATE-TIME` M13), and the check
+  - *The limit on one test.* A test still running at ten seconds is stopped (`GATE-TIME` WP13), and the check
     runs it once more, alone, after the others: it fails unless it then passes within ten, and the closing lines
     name it with its time alone. Only `./dev check-all` allows 30 seconds for that serial rerun and calls out
     passes above the ten-second fast-test target. A test that fails any other way is not run again. *(the owner accepted ten seconds; the second run is the
     planner's assumption until the owner answers, because load alone takes a short test past ten)*
-  - *The exempt list only shrinks*, from M12. A test is exempt from the limit only by its exact name in
+  - *The exempt list only shrinks*, from WP12. A test is exempt from the limit only by its exact name in
     `.config/nextest.toml`. `GATE-TIME` empties the list, and no landing adds a name or loosens the limit.
-  - *A main-tier test is added only by a plan*, from M12. The entries of the main-tier list and the tests marked
+  - *A main-tier test is added only by a plan*, from WP12. The entries of the main-tier list and the tests marked
     `long:` are counted, and the count only falls. The one exception is a landing that a done-when item asks
     for, [as above](#what-is-proved-and-how-hard): it raises the rule's version, which starts the count again.
     A builder with no such item makes the test fast, or writes the proposal for a planner in its module's log.
-  - *No new test binary unless a plan names it*, from M12. A plan names an integration test target when a
+  - *No new test binary unless a plan names it*, from WP12. A plan names an integration test target when a
     done-when item's check runs it with `--test`, open or Done, or the main-tier list names it. The targets no
     plan names are listed in `.config/unplanned-test-binaries.txt`, which only shrinks, and a target that is
     neither named nor listed fails. So a new test goes in a test file that exists, and a planner who wants a
@@ -291,13 +291,13 @@ before. The two rules for how a test is written need nothing built: they bind a 
     exists: the next merge in any module would fail on it.
 
   The docs check also fails when a test marked `long:` sits in a binary the main-tier list does not name.
-- **A test runs in a process of its own, beside others**, from `GATE-TIME` M8. It relies on no other test of its binary having run and
+- **A test runs in a process of its own, beside others**, from `GATE-TIME` WP8. It relies on no other test of its binary having run and
   on no static shared with one, so a mutex in a test file does not make tests take turns. A test that needs a
   device to itself joins a group in `.config/nextest.toml`, and one that starts a thread pool is counted there as
   heavy, in the landing that adds it. A failed test is not run again, but for the one second run of a test the
   limit stopped. `./dev check` needs cargo-nextest installed, and says so where it is missing.
 - **A change is tested where it is made.** A builder runs the tests of what it touched while it works, and
-  `./dev check` once, to merge. A milestone that changes what a long test or a test behind a feature guards
+  `./dev check` once, to merge. A work package that changes what a long test or a test behind a feature guards
   carries an item whose check is `python3 "$ORCHESTRATE_SCRIPT" main-check long-tests`, so it is not Done until
   those tests pass on main with its commit in.
 - **A diagnostic runs in no tier.** A physical or f64 reference is run by hand, when output looks wrong.
@@ -311,20 +311,20 @@ before. The two rules for how a test is written need nothing built: they bind a 
 - **Main-branch check cross-target:** `bash scripts/check_cross_target.sh`; every 1h; timeout 15m  *(planner, 20 Nov 2026: the Linux and Windows type-check of the tests runs on main, not in a merge's check)*
 - **Main-branch check workspace-tests:** `./dev check-all`; every 1h; timeout 60m  *(owner, 20 Nov 2026: a merge runs the tests its change touches, and the full workspace runs on main. Planner, 21 Nov 2026: it takes no GPU slot, like a merge's check, whose load it is once an hour; held for the whole command, a slot would be kept through the build and the CPU tests, and builders would wait for it)*
 - **Human decides:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible
-  actions. Gate order within the V1 exit is the agents' call.
+  actions. Milestone order within the V1 exit is the agents' call.
 - **Licences and paths not to touch:** no GPL or share-alike code or data (restrictive-licence code may inform ideas
   only); never modify Broadsides (ported module by module under [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md));
   preserve the owner's uncommitted files.
 
 ## Project guidance
 [thrum-engineering](.agents/skills/thrum-engineering/SKILL.md) holds the engine rules for planning, building and
-reviewing. The architecture brief is [docs/design/ARCHITECTURE-BRIEF.md](docs/design/ARCHITECTURE-BRIEF.md), the
+reviewing. The [engine requirements](docs/design/ARCHITECTURE-BRIEF.md) map engine responsibilities. The
 shared contracts are [docs/design/CONTRACTS.md](docs/design/CONTRACTS.md), and capability status is
 [docs/design/maturity.json](docs/design/maturity.json) (implementation, correctness, visuals and device kept apart).
 Scratch goes in `tmp/<task>/`, under [the storage rules](docs/ASSET-LIFECYCLE.md).
 
-Some items need a fresh reader, for example CREATOR's M3.1: an agent that has opened only the documents the item
+Some items need a fresh reader, for example CREATOR's WP3.1: an agent that has opened only the documents the item
 names. A reviewer cannot be that reader, because the review skill and these settings load engineering guidance
 before any item is read. The lead commissions the fresh reader as a separate new session, never the builder or the
-reviewer, from the brief the module's design names. The builder retains its record as evidence, and the reviewer
+reviewer, with the task the module's design specifies. The builder retains its record as evidence, and the reviewer
 judges the record and reruns what it retains.

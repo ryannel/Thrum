@@ -8,7 +8,7 @@ multiplayer play share the same authoritative rules.
 
 **Status:** the V1 game runs a provisional 10,000-entity simulation on macOS and Chrome WebGPU, plus a thin
 iPhone simulator shell. The optional cooked valley shares the physical sky and frame host on Mac and Chrome.
-The showcase and creator experience remain unfinished. See [the brief](docs/plans/BRIEF.md) and [the status page](docs/plans/STATUS.md).
+The showcase and creator experience remain unfinished. See [the vision and scope document](docs/plans/VISION.md) and [the status page](docs/plans/STATUS.md).
 
 **Make your first scene.** On a Mac, after the setup below, `./dev starter` opens a cooked rock on lit ground
 under a physically based sky, with Sun sliders and asset hot reload, in about 40 lines of game code. The
@@ -43,7 +43,7 @@ On Windows, use Git Bash for `./dev`, or run
 `./dev.ps1 check` from PowerShell. Set `THRUM_PYTHON=python`
 if Python is not installed as `python3`. Fetch the locked Rust dependencies once before the offline checks on a clean copy.
 
-- [Project brief](docs/plans/BRIEF.md), [module list](docs/plans/ARCHITECTURE.md) and [status](docs/plans/STATUS.md): the purpose and V1 exit, the modules in build order, and where each stands.
+- [Vision and scope document](docs/plans/VISION.md), [module list](docs/plans/ARCHITECTURE.md) and [status](docs/plans/STATUS.md): the goal and V1 exit, the modules in build order, and where each stands.
 - [Engine design](docs/design/README.md): requirements, architecture, modules and research.
 - [Contributing](CONTRIBUTING.md): commands, conventions and review evidence.
 - [Cooked product leases](docs/COOKED-LEASES.md): sampling textures and volumes from another engine pass.

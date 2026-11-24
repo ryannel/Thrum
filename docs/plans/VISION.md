@@ -1,8 +1,8 @@
-# Project brief: Thrum
+# Vision and scope document for Thrum
 
 This is the owner's page: what Thrum is for, the V1 exit and how the owner wants to work. It was folded from
 `docs/BUILD-PLAN.md` on 11 November 2026, when the plans took the orchestrate 1.7.0 shape. The build plan's wording is
-kept wherever it said what is wanted. Its paragraphs on where each gate stood are gone, because
+kept wherever it said what is wanted. Its paragraphs on progress toward each milestone are gone, because
 [the status page](STATUS.md) reports that now; `git show 42fdce97:docs/BUILD-PLAN.md` has the last copy.
 [The module list](ARCHITECTURE.md) plans the work. [Contracts](../design/CONTRACTS.md) own invariants, and
 [maturity](../design/maturity.json) keeps implementation, correctness, visuals and device results apart.
@@ -20,12 +20,12 @@ project as a whole, so nothing below is quoted as the owner's unless it names it
 
 That is the build plan's purpose, as it stood on 10 November 2026. Later statements that changed or added to it:
 
-- **6 November 2026.** The owner replaced numeric performance gates with three rules: design for speed up front,
+- **6 November 2026.** The owner replaced numeric performance thresholds with three rules: design for speed up front,
   build with tripwires, tune later in a dedicated phase
   ([the decision](../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md)).
 - **6 November 2026.** Verified checkpoints are pushed to main, as a proof of concept.
-- **10 November 2026.** Sea and clouds are to be finished and consolidated, as two Thrum modules that never gate the
-  exit ([the module list](ARCHITECTURE.md#where-sea-and-clouds-are-finished)).
+- **10 November 2026.** Sea and clouds are to be finished and consolidated as Thrum modules. The V1 exit does not depend on them
+  ([the module list](ARCHITECTURE.md#where-sea-and-clouds-are-finished)).
 - **10 November 2026.** The next goal after V1 is [a swarm-survival test game](../design/NEXT-GOAL-SWARM-GAME.md),
   with 2D support and online multiplayer built up towards it. From that page: "A swarm survivor", "2D support in
   the engine" and "Multiplayer. Several players play together over the network."
@@ -49,7 +49,7 @@ owner.
   and sees where frame time goes.
 - **Game makers**, later: the engine holds no game types, and a game links only what it uses.
 
-The planner's reading of the V1 exit and gate G6. Not confirmed by the owner.
+The planner's reading of the V1 exit and milestone G6. Not confirmed by the owner.
 
 ## Decisions
 
@@ -66,15 +66,15 @@ Each is carried from the build plan unless it names another source.
    fitness; transport is not part of the exit, and "can come before V1 if we have space for it, but it's not
    urgent" (the owner, 15 November 2026). A fresh agent builds a small scene from public docs alone. The initial
    60 Hz game clock is configurable, not an engine ceiling.
-2. **When a gate closes.** Its outcome runs in the game on the named target, correctness, lifecycle and required
+2. **When a milestone is reached.** Its outcome runs in the game on the named target, correctness, lifecycle and required
    oracle checks pass, `./dev check` is green, and independent code, evidence and agent visual review pass.
-3. **Numeric performance and allocation figures are baselines, not gates.** The owner, 6 November 2026
+3. **Numeric performance and allocation figures serve as baselines.** The owner, 6 November 2026
    ([the decision](../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md)). Design for performance up front;
    investigate visible stutter or hitches, about 25% comparable regression or unexpected scaling. Tune whole frames
    later.
 4. **Visual work is judged in the running game** against an inspection list whose bar is set by shipped high-end
    games, and closes on a clean-context reviewer's pass. Acceptance never blocks other work.
-5. **The order of gates within the V1 exit is the agents' call.** From the project settings.
+5. **The order of milestones within the V1 exit is the agents' call.** From the project settings.
 6. **Sea and clouds are finished as Thrum modules and are not part of the V1 exit.** The module list's decision,
    10 November 2026, from the owner's request that both be finished and consolidated. Adding them to the exit is
    the owner's call.
@@ -84,14 +84,14 @@ Each is carried from the build plan unless it names another source.
 8. **Working constraints.** Choose layouts, ownership, scheduling and hardware seams by best practice; reuse hot
    storage and one publication spine and job graph, with scalar references. Preserve admission validation,
    checked IDs, pipeline closure and history. Measure wins; keep function, visual and device evidence separate,
-   one compact page per gate. Shrink plan, ledger and evidence.
+   one compact page per milestone. Shrink plan, ledger and evidence.
 
 <a id="active-gate-order-and-budgets"></a>
 
-## The gates
+## The milestones
 
-The V1 exit is reached through these gates. G0, G2S and G3a closed before the loop began; each other gate closes
-through the module named, and [the status page](STATUS.md) says where that module stands.
+The V1 exit is the release milestone reached through the milestones below. G0, G2S and G3a were reached
+before the build began. For the others, [the status page](STATUS.md) reports progress in the modules named.
 
 - **G0, integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
   command records runnable rows and absent consumers. Shipping trees exclude SQLite and authoring.
@@ -112,7 +112,7 @@ through the module named, and [the status page](STATUS.md) says where that modul
   LUTs and Sun disk; physical illuminance drives lights and shadows; time controls span dawn through night. Follow
   the Broadsides reading map and the PD and CC0 rules. Module: `ATMOSPHERE`.
   The TAAU route proof on Metal and Chrome records sunrise shadows, the lookout depth edge and the aerial glow at
-  sunset. The west-lookout crossing and exact disk match remain open. [M6 builder evidence](../../.orchestrate/evidence/ATMOSPHERE/WP6/README.md)
+  sunset. The west-lookout crossing and exact disk match remain open. [WP6 builder evidence](../../.orchestrate/evidence/ATMOSPHERE/WP6/README.md)
 - **G3t, tile dataflow and Metal boundary.** One registry, graph-derived attachment storage, one split scene and
   output graph, G4's pre-tone colour and exposure input, and a prepared generation-owned native segment with its
   twin, under [the boundary record](../design/decisions/G3T-METAL-BOUNDARY.md). No raw or wgpu encoder splice and
@@ -133,12 +133,12 @@ through the module named, and [the status page](STATUS.md) says where that modul
   reload support asset, shader and parameter edits. A fresh agent uses only public docs and the starter, builds a
   small scene without reading internals, and records friction. Keep that scene to about 100 game lines, report
   game lines and zero engine game types. See [the creator guide](../design/ENGINE-EXPERIENCE.md). Module: `CREATOR`.
-  [M1](../../.orchestrate/evidence/CREATOR/WP1.md) proves the shared Mac/Chrome scene route and live assets;
-  [M2](../../.orchestrate/evidence/CREATOR/WP2.md) and its [independent review](../../.orchestrate/evidence/CREATOR/WP2-review.md)
-  prove the profiler. [M3](../../.orchestrate/evidence/CREATOR/WP3.md) records the lead-commissioned fresh scene on Mac and
+  [WP1](../../.orchestrate/evidence/CREATOR/WP1.md) proves the shared Mac/Chrome scene route and live assets;
+  [WP2](../../.orchestrate/evidence/CREATOR/WP2.md) and its [independent review](../../.orchestrate/evidence/CREATOR/WP2-review.md)
+  prove the profiler. [WP3](../../.orchestrate/evidence/CREATOR/WP3.md) records the lead-commissioned fresh scene on Mac and
   Chrome, the documentation check, native mistakes and the attended window journey.
   The clipping and shadow-cascade overlays and parameter files as a cooked product remain unbuilt and outside
-  this gate's scope.
+  the scope of G6.
 - **G7, V1 showcase.** Assemble the exit scene on Mac Apple tile and portable and on Chrome portable. The fixed
   route passes correctness and agent visual review; record whole frames and visible stutter, startup and hitches.
   Native and web share scene and controls. Close with the visual digest, functional and platform status and the
@@ -171,7 +171,7 @@ Retained-forward is parked at `a4b9da8`; split pre-submit at `30ae560`; nonlinea
 
 ## How it will be judged
 
-A gate closes as decision 2 says. Visual work is judged as decision 4 says: in the running game, in words, against
+Decision 2 defines when a milestone is reached. Visual work is judged as decision 4 says: in the running game, in words, against
 an inspection list, never against target images. The bar is a shipped high-end game of the kind, such as sea and
 wakes as in Sea of Thieves and skies as in Red Dead Redemption 2, smooth at the display's full refresh. At the V1
 exit the outstanding physical-device runs are reported. The owner's own judgements are batched: owner review is
@@ -184,7 +184,7 @@ one window a day, and reports to the owner are asynchronous.
 - **The iPhone 18 Pro simulator** proves build and link, lifecycle, input, surface and display-link function, never
   speed; a run fails if it cannot boot. No physical iPhone is available: do not ask or wait. Label Mac stand-ins
   **proxy** and never record them as iPhone results.
-- CI remains manual-only, so `./dev check` is the gate.
+- CI remains manual-only, so `./dev check` must pass before a merge.
 
 ## How the owner wants to work
 
@@ -197,7 +197,7 @@ work meanwhile.
 ## Still open
 
 - **When sea and cloud builders start.** Not decided yet. Until the owner says, `SEA` and `CLOUDS` are planned no
-  further than their briefs.
+  further than their module briefs.
 - **The licence for code and data lifted from Broadsides.** Not decided yet; nothing is lifted until it is.
 - **The purpose line still says "3D engine"**, and the 10 November goal adds 2D. Rewording it is the owner's.
 - **What finishes the goal after V1.** Not decided yet; the module list holds a proposal.

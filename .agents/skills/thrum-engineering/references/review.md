@@ -1,6 +1,6 @@
 # Review
 
-What a Thrum reviewer checks, beyond what `/review-milestone` covers. The owner-graded verdicts are in
+What a Thrum reviewer checks, in addition to the orchestrate reviewer skill. The owner-graded verdicts are in
 `docs/design/GRADED-EXAMPLES.md`. They are the best guide to how strict to be.
 
 Contents: [The bar and the weight of a review](#the-bar-and-the-weight-of-a-review) ·
@@ -17,24 +17,24 @@ a shipped high-end game against its inspection list and runs fast. Judge to that
 - **A reference is a diagnostic, not a finding.** That a shader, a light model or a GPU product differs from a
   physical or `f64` reference is not a Must Fix. It becomes one only when the difference shows as a failed
   inspection item, breaks a contract between modules, or changes what a query answers a game. Don't ask a design
-  or a milestone for a reference, a ceiling or a measured bound for how something looks.
+  or a work package for a reference, a ceiling or a measured bound for how something looks.
 - **A deliberate change to an exact image is not a regression.** It needs the refresh record, not a model that
   justifies the new pixels.
 - **Keep full rigour where a failure is silent and costly:** networking and transport, simulation determinism,
   cooked formats, and the contracts between modules.
 - **Weigh the review by the risk.** New rendering work gets the whole inspection list. A fix round is judged on
   the items that failed and on what the fix touched; pass the rest from the earlier review unless the fix could
-  have moved them. A tripwire record is judged by its check, and by a question only in a module's last milestone.
-  A design re-review after a change of bar or of proof reads the changed parts against the brief.
+  have moved them. A tripwire record is judged by its check, and by a question only in a module's last work package.
+  A design re-review after a change of bar or proof checks the changed parts against the planning inputs.
 - **A Must Fix is something a player, a game maker or another module would meet.** Paperwork that could be
   tidier is a Suggestion.
 
 ## Design reviews
 
-Read the brief first, and derive what the module must do before you read the design. Then compare the two, keeping
-three kinds of gap separate:
+Read the vision and scope document, the planning task and any module brief it references. Derive what the
+module must do before reading its design. Look for three kinds of gap.
 - omissions;
-- additions the brief doesn't support;
+- additions the planning inputs don't support;
 - couplings that can't work.
 
 An explicit, safe deferral is not an omission.
@@ -97,7 +97,7 @@ Look at captured images and sequences yourself. Say whether you watched motion o
 downscaled, and which build you saw. A reviewer that can't play video asks for a frame strip at 10 fps or more over
 the window in question.
 
-Judge each indispensable cue separately, against the milestone's inspection list and its shipped-game bar. Good
+Judge each indispensable cue separately, against the work package's inspection list and its shipped-game bar. Good
 lighting or performance doesn't make up for failed dynamics. Cover the transitions (start from rest, stops, turns,
 camera cuts), because onset faults hide there.
 
@@ -112,8 +112,8 @@ Challenge:
 - contention on the shared GPU.
 
 A timing taken while another agent used the GPU is labelled as contended, or it doesn't count. Inside a
-milestone that is expected: such a timing is a tripwire, and it fails only on a collapse or a missing
-measurement. That holds in a module's last milestone too. A record taken under load is not a finding, and no
+work package that is expected: such a timing is a tripwire, and it fails only on a collapse or a missing
+measurement. That holds in a module's last work package too. A record taken under load is not a finding, and no
 review asks for a sitting with the other builders paused unless the module's design names one. A figure quoted
 without its load is a finding.
 
@@ -124,7 +124,7 @@ Look for these first. Each one passed its author's own checks.
 - **Tuning a mechanism that can't make the cue.** Hours of gain, resolution, foam and shading work went into a wake
   whose wave model couldn't form a Kelvin wedge at varying speed. A short CPU reproduction showed it.
 - **Correct but invisible.** Physically calibrated wakes and foam were true to scale and unreadable at the game camera.
-- **Judged in the lab.** A cloud look judged at seconds per frame shipped as a 288 ms fog. Critics gated on close
+- **Judged in the lab.** A cloud look judged at seconds per frame shipped as a 288 ms fog. Critics required close
   views and offline-paced clips while the real run stuttered.
 - **A plan that only grows.** A cloud plan grew to 399 lines of amendments, and a water plan was a list of effects in
   build order with the speed range never designed. Neither had a criterion that moved.
@@ -139,6 +139,6 @@ Look for these first. Each one passed its author's own checks.
 - **Paperwork displacing the defect.** Notes and qualification grew while the visible defect stayed.
 - **Verdicts from descriptions.** Techniques were endorsed from their write-ups, and critics' passes were relayed as
   fact. Both proved wrong.
-- **Copying the nearest example.** Each milestone copied the closest working code, so GPU data packing, errors,
-  device setup and test gating each ended up done three to five different ways. The copies then drifted until one
+- **Copying the nearest example.** Each work package copied the closest working code, so GPU data packing, errors,
+  device setup and GPU test admission each ended up done three to five different ways. The copies then drifted until one
   of them broke a platform.

@@ -7,7 +7,7 @@ The Bash `./dev` launcher defaults to an empty `RUSTC_WRAPPER`, overriding machi
 Set `RUSTC_WRAPPER` explicitly when opting into a compiler wrapper for a particular invocation.
 Both launchers set `CARGO_INCREMENTAL=0` for `check`, including the xtask build and its child Cargo
 commands. The pinned compiler has failed verification with unstable incremental trait-obligation
-fingerprints after revision changes; the gate therefore does not reuse that query cache.
+fingerprints after revision changes; the check therefore does not reuse that query cache.
 
 | Command | What it does |
 | --- | --- |
@@ -44,7 +44,7 @@ owned `CARGO_TARGET_DIR`. `cargo clean` affects that build directory; inspect ow
 
 ## Change the smallest complete interaction
 
-Start from [the brief](docs/plans/BRIEF.md), your module in [the module list](docs/plans/ARCHITECTURE.md), the owning specification and affected contracts.
+Start from [the vision and scope document](docs/plans/VISION.md), your module in [the module list](docs/plans/ARCHITECTURE.md), the owning specification and affected contracts.
 Describe the behavior, its state owner and observable result before adding APIs. Keep simulation rules
 independent of rendering, transport and platform I/O. Local and remote inputs use the same validation
 and authority; transport does not become a second gameplay implementation.
@@ -66,18 +66,18 @@ license, purpose and target/build cost; the guard cannot verify the upstream lic
 Record dependency purpose, exact version/license and target costs before adding external libraries. Do
 not vendor third-party engine code without source revision, applicable license/notices and a maintenance rationale.
 
-`./dev check` is the hard gate: pinned rustfmt, workspace Clippy, Rust tests and repository checks.
+`./dev check` must pass before a merge and runs pinned rustfmt, workspace Clippy, Rust tests and repository checks.
 Clippy runs `all` and `pedantic` plus selected restriction lints (`Cargo.toml`, thresholds in `clippy.toml`)
 with every warning denied. Suppress only with `#[expect(lint, reason = "...")]` on the narrowest item;
 `#[allow]` is rejected and an unfulfilled expectation fails. Production code does not `unwrap` or print,
 keeps `pub` for exported items only, and documents every unsafe block of an approved exception.
 
 The repository check also keeps `#[cfg(test)]` to test modules in production files and requires a reason
-on every `#[ignore]`. Size gates are generous backstops, not targets: a function fails above 200 lines, a
+on every `#[ignore]`. The size limits are generous backstops: a function fails above 200 lines, a
 production file notes above 1,000 code lines and fails above 2,500, and a test file notes above 2,000 and
 fails above 4,000 (blank, comment and inline-test lines excluded). A note asks whether the file still holds
 one responsibility; split by responsibility, never to satisfy a count. Folder file counts and argument
-counts are not gated.
+counts have no limit.
 
 For capability design and performance-sensitive implementation, use the owning design's
 [cost account](docs/design/AI-PERFORMANCE.md#the-cost-account-in-each-owning-design). Consider repeated cheap work,
@@ -207,9 +207,10 @@ For unattended submitted-output images and elapsed-time motion on Mac, use the [
 
 Explain the result, rationale, tests actually run and remaining limits. Update the owning specification
 and maturity entry when behavior or evidence changes. Visible output is captured and checked as in the
-[Thrum engineering rules](.agents/skills/thrum-engineering/references/building.md#verify), and milestones marked for review close through
-`/review-milestone` ([ORCHESTRATE.md](ORCHESTRATE.md)); owner feedback is asynchronous and never blocks work. Current document hashes can be refreshed after
-reviewing the diff; this does not update historical review hashes or promote any maturity status.
+[Thrum engineering rules](.agents/skills/thrum-engineering/references/building.md#verify). The lead runs
+orchestrate's `review` command for work packages marked Ready for Review ([project settings](ORCHESTRATE.md)).
+Owner feedback is asynchronous and never blocks work. Current document hashes can be refreshed after reviewing
+the diff; this does not update historical review hashes or promote any maturity status.
 Documentation-only changes need `./dev check-docs`, not an unrelated engine test campaign.
 
 Keep compact reproducible evidence, in the working folder, with exact source/build/fixture identity. Do not commit generated
@@ -245,8 +246,8 @@ The [registry](.config/exact-baselines.json) lists references, comparison files 
 comparison files or baseline definitions unless their pins and refreshes are updated. Each pin hashes the
 definition and the paths and Git object IDs of all protected files in HEAD. The guard prints the computed
 pins; copy them into the registry after committing the protected changes. A refresh records `anchor` (an
-existing anchor in `docs/plans/ARCHITECTURE.md`), `module` and `milestone`. A changed pin needs a changed
-refresh. Commit the registry update before checking; uncommitted protected changes fail.
+existing anchor in `docs/plans/ARCHITECTURE.md`), `module` and the work package ID in the registry's `milestone` field.
+A changed pin needs a changed refresh. Commit the registry update before checking; uncommitted protected changes fail.
 A full run keeps compact records
 with revision, binary/Wasm hashes, cooked root, comparisons and elapsed time; successful bulk frames are
 removed after the owner publishes their comparisons or complete motion verification; source manifests and

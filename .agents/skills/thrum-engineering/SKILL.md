@@ -8,12 +8,12 @@ description: "How Thrum's engine code is laid out and written: where each respon
 Thrum is a reusable, native-first Rust 3D engine. Agents write and maintain nearly all of it, so it stays workable
 only if an agent landing cold in any file can guess where things are and how they work. This skill gives you that
 map, the shapes the codebase has adopted for recurring jobs, and the engine facts you could not work out alone. The
-orchestrate skills (`/plan-module`, `/build-milestone`, `/review-milestone`) cover how work runs. `ORCHESTRATE.md`
+orchestrate skills (lead, planner, builder and reviewer) cover how work runs. `ORCHESTRATE.md`
 holds this project's settings for them.
 
 ## Extend the shape that exists
 
-Most of the code's problems come from one habit: each milestone copied the nearest working example, so the same
+Most of the code's problems come from one habit: each work package copied the nearest working example, so the same
 job is now done three to five ways. GPU data is packed by hand in every GPU crate. Errors come in five shapes. Device
 setup is written once per host. Each copy then drifted from the others. One drift means the sea can never prepare
 on iPhone: the iOS shell asks for fewer storage buffers than the sea needs.
@@ -73,7 +73,7 @@ the matching section before you write code that does one of these jobs.
 | Modules | `foo.rs` plus a `foo/` folder; no `mod.rs` (lint-enforced) | any crate |
 
 **Writing a test.** Each line links to its entry. [Patterns' Tests](references/patterns.md#tests) also gives the
-unit-test layout and the GPU gate.
+unit-test layout and GPU test admission.
 - Prove a behaviour on [the smallest world](references/patterns.md#the-smallest-world) that shows it.
 - Test [logic on the CPU](references/patterns.md#logic-without-a-device) and open a device only for what a GPU alone
   can show, at the test kit's small target.
@@ -84,7 +84,7 @@ unit-test layout and the GPU gate.
 | Job | Adopted shape | Reference |
 |---|---|---|
 | Construction | `new(..) -> Result<Self, E>` that validates up front; a documented `*Config` struct for many settings | `CookConfig` in `crates/thrum-cook/src/cooker.rs` |
-| Names | Say what the thing does (`transmittance`, `PublicationPage`). Milestone and gate codes (`g2s_`, `G5`, `t2_`) stay in plans and evidence | — |
+| Names | Say what the thing does (`transmittance`, `PublicationPage`). Planning IDs (`G2S`, `G5`, `WP7`) stay in plans and evidence | — |
 | GPU labels | Spaced plain words: `"camera visibility"` | `crates/thrum-render/src/visibility.rs` |
 | Maths | `glam` for vectors and matrices | `crates/thrum-render/Cargo.toml` |
 
@@ -119,7 +119,7 @@ costly: networking, simulation determinism, cooked formats and the contracts bet
 a proof to the risk it covers.
 
 **Cost is designed, then measured.** The owner's policy is best-practice decisions up front, tripwires while
-building, tuning later. Don't invent numeric budget gates. Per-frame and per-tick code reuses its buffers, uploads
+building, tuning later. Use measured performance tripwires. Per-frame and per-tick code reuses its buffers, uploads
 only what changed, and doesn't read back from the GPU to make progress.
 
 **Dependencies.** A new crate or external dependency gets an entry in `.config/architecture.toml` and an exact
@@ -134,13 +134,13 @@ about devices, frame time or visuals come only from runs on the targets in `ORCH
 
 - [Patterns](references/patterns.md): before you write code that does one of the jobs in the table above.
 - [Rust code](references/rust-code.md): when you design a public type, an error enum, a decoder or test support.
-- [Building](references/building.md): when you build a milestone: proving it in the game, capture, and what to
+- [Building](references/building.md): when you build a work package: proving it in the game, capture, and what to
   deliver.
 - [Performance](references/performance.md): when you design or change performance-sensitive code, or make a
   performance claim.
 - [System diagnosis](references/system-diagnosis.md): when a visual or behavioural cue stays wrong after a local fix.
 - [Design](references/design.md): when you research or write a module design, or reconcile existing code with one.
-- [Architecture](references/architecture.md): when you plan at project level: the module map, briefs and proof
+- [Architecture](references/architecture.md): when you plan at project level: the module map, planning inputs and proof
   order.
-- [Review](references/review.md): when you review a design, a milestone or a claim, including the failures this
+- [Review](references/review.md): when you review a design, a work package or a claim, including the failures this
   engine has already paid for.

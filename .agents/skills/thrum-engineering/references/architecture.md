@@ -1,16 +1,16 @@
 # Engine architecture
 
-What project-level planning (`/plan-module` for the whole engine) needs to know about Thrum.
+What project-level planning (for the whole engine) needs to know about Thrum.
 
 ## Where the architecture lives
 
 | What | Where |
 |---|---|
-| Purpose, the V1 exit and the gates | `docs/plans/BRIEF.md` |
+| Goal, the V1 exit and its milestones | `docs/plans/VISION.md` |
 | The module list and build order | `docs/plans/ARCHITECTURE.md` |
 | Requirements coverage (E01–E21) | `docs/design/ARCHITECTURE-BRIEF.md` |
 | Shared invariants between modules | `docs/design/CONTRACTS.md` |
-| Each module's brief | `docs/plans/<MODULE>/BRIEF.md` |
+| Legacy module brief, where retained | `docs/plans/<MODULE>/BRIEF.md` |
 
 Where an older document in `docs/design/` disagrees with these, these win. Update a record in place, rather than
 writing a competing version.
@@ -56,14 +56,14 @@ codebase's inconsistency to mechanisms that no module owned, so each host or cra
 - capture and readback;
 - shader composition.
 
-When a module brief needs one of these, name the module that owns it.
+When a module needs one of these, name the module that owns it.
 
 ## Cost across the whole scene
 
 Allocate time, memory, loading and content budgets across the whole scene where targets are known, and keep
 estimates apart from measurements. Individually affordable modules don't make a viable engine. The account has to
 include the systems that run at the same time, background work and quality transitions. Follow the owner's
-performance policy: decide for performance up front, then build with tripwires rather than invented gates.
+performance policy: decide for performance up front, then build with tripwires.
 
 ## Proof order
 
@@ -75,9 +75,9 @@ Order proofs by the architectural assumption each can disprove. Each proof names
 
 A demonstration that happens to exist doesn't select the architecture.
 
-## Module briefs
+## Module planning inputs
 
-A brief gives a module:
+Record these inputs for each module:
 - its requirements and consumers;
 - its contracts with neighbours;
 - its budget;

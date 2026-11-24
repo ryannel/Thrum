@@ -115,18 +115,18 @@ needs (H05, H08). `thrum-sea` binds 17 buffers and 13 passes by position (H17).
 ## Device setup
 
 Rule: `device-request` counts adapter/device calls outside HOST's capabilities module and the registered
-test-support package. Use the recipe and send tests through the gate.
+test-support package. Use the recipe and the shared GPU admission check.
 
 **Shape.** `DeviceRecipe` selects features and limits by profile and returns the device, queue, capability record
 and fault watch. A host can supply a surface and a wake callback. A test uses the recipe on the adapter admitted
-by the test gate. Pipelines are created through `DeviceSite::render` / `compute` (`runtime/creation.rs`), which
+by the GPU admission check. Pipelines are created through `DeviceSite::render` / `compute` (`runtime/creation.rs`), which
 records each creation.
 
 ## Tests
 
 Rules: `path-attribute` refuses `#[path]` (use normal modules); `whole-file-gpu-gate` refuses an OS condition
 that removes tests from a harness: a file-level `#![cfg(...target_os...)]` on a test file, or an OS condition on any
-module, product or test, whose declared subtree holds a test (gate the individual GPU tests). Use
+module, product or test, whose declared subtree holds a test (check GPU availability in each test that needs it). Use
 `cfg(any(test, target_os = "..."))` to keep a portable module's tests everywhere. A platform shell whose tests drive
 its own platform APIs may keep its condition with a `// platform-only tests: <reason>` comment directly above.
 `test-readback` counts a buffer mapped for reading (`map_async` or `map_buffer_on_submit` with `MapMode::Read`) and
@@ -142,18 +142,18 @@ fall: a new test reads back and waits through the kit.
   production implementation is zero-cost.
 
 **GPU tests.** Ask `thrum_test_support::gpu(test_name, backend)` for admission. Return on `None`:
-the gate writes a visible reason to stderr, and fails instead under `THRUM_REQUIRE_GPU=1`.
+the GPU admission check writes a visible reason to stderr, and fails the test under `THRUM_REQUIRE_GPU=1`.
 Use only a dev-dependency on this package. `test-crate-edges` enforces that boundary, and permits
 normal dependencies on a registered fixtures package only from the registered proving ground.
 
-Gate only the tests that need a GPU, and pass the specific backend for a backend-bound test. A test that asks for
+Check availability only in tests that need a GPU, and pass the specific backend for a backend-bound test. A test that asks for
 any backend and then asserts Metal, or opens the `apple-tile` recipe, fails on a Linux or Windows adapter instead of
 skipping; admit `Some(wgpu::Backend::Metal)`. A test that runs on any backend may assert Metal only under
 `#[cfg(target_os = "macos")]`. The CPU graph
 validation cases use portable limits and feature facts and compile on every target.
 
 **The kit.** `thrum-test-support` writes once the jobs every GPU test repeats:
-- `open(test, backend, profile, &restriction)` (the `render` feature) asks the gate, on `backend` where given, and
+- `open(test, backend, profile, &restriction)` (the `render` feature) requests a GPU on `backend` where given and
   returns the recipe's device, queue and capabilities, or `None` for a reported skip. `thrum-render`'s unit tests
   call `crate::test_device::open`, the same call typed by the crate.
 - `readback::buffer(device, queue, &buffer, range)` and `readback::texture(device, queue, &texture, Mip, range)`
@@ -193,7 +193,7 @@ and the default limit is no later than the test tiers'.
 *Test logic on the CPU, and open a device only for what a GPU alone can show.* A selection, a layout, a state
 machine, a record's bytes, a refusal or arithmetic a model shares with a shader is a test that asks for no GPU. A
 GPU test covers what only a device shows: a shader compiles and a pipeline is accepted under its limits,
-submitted output or GPU state equals what the CPU side states, a device's lifecycle holds. It asks the gate, draws
+submitted output or GPU state equals what the CPU side states, a device's lifecycle holds. It requests a GPU and draws
 to the kit's target for the fewest frames that show it, and reads back through the kit:
 
 ```rust
@@ -324,7 +324,7 @@ targets that nothing runs. Each count only falls.
 
 - **A new script** is named by what runs it: `./dev` or `tools/xtask`, a CI workflow, a `Main-branch check` line,
   Rust source, another named script, or a tracked document outside the plans folder. A proof tool is named by the
-  done-when item whose check runs it, whether that milestone is open or Done. A suite `test_X` lives with the
+  done-when item whose check runs it, whether that work package is open or Done. A suite `test_X` lives with the
   script `X` beside it.
 - **A new bench** is run by a script, a `./dev` command, a CI workflow or a document, with its name spelled out,
   as in `cargo bench --bench NAME`.
@@ -333,13 +333,13 @@ targets that nothing runs. Each count only falls.
 
 ## Names
 
-Rule: `history-names` counts milestone/gate segments in file paths, environment variable names in source,
+Rule: `history-names` counts historical planning IDs in file paths, environment variable names in source,
 Cargo target names and descriptions. Use subject names such as `asset_reload`, not `g5_reload`; `rgba8` and
 `vec3` are ordinary names. Only `--zero` exempts dynamically discovered pinned names; the baseline inventories
 all existing names so an unrelated plan's status change does not change its counts.
 
-Name things for what they do. Many file names, environment variables and some identifiers carry milestone and gate
-codes (`g2s_`, `g2r`, `t2_`, `G3c`, `M3b`, `G5`). A reader without the history can't tell what they mean. Keep codes
+Name things for what they do. Many file names, environment variables and some identifiers carry historical planning
+IDs (`g2s_`, `g2r`, `t2_`, `G3c`, `M3b`, `G5`). A reader without the history can't tell what they mean. Keep codes
 in plans, logs and evidence.
 
 When you rename, rename completely:

@@ -1,14 +1,17 @@
 # Thrum — contributor instructions
 
 Thrum is a native-first, reusable Rust 3D engine and a showcase of AI-driven engineering. Start at
-[README](README.md), then the purpose in [the brief](docs/plans/BRIEF.md) and your module in
+[README](README.md), then the goal in [the vision and scope document](docs/plans/VISION.md) and your module in
 [the module list](docs/plans/ARCHITECTURE.md). A provisional simulation and synthetic renderer run in the V1 test game,
 but no general engine runtime exists yet; future SDK commands in design documents are proposals, not commands to run.
 
 ## How work runs
 
-- Work follows the orchestrate skills, configured by [ORCHESTRATE.md](ORCHESTRATE.md): `plan-module` to plan,
-  `build-milestone` to build one milestone, `review-milestone` to judge one, and `build` to run the build unattended.
+Use the agreed terms in [the glossary](docs/plans/GLOSSARY.md) in code, documentation and conversation.
+
+- The [project settings](ORCHESTRATE.md) configure the orchestrate skills. The lead runs `plan` to start
+  a planner, `review` to start a reviewer, and `build` for an unattended build. The builder skill covers
+  building and proving one work package.
   [thrum-engineering](.agents/skills/thrum-engineering/SKILL.md) holds the engine rules they use.
 - For code changes, read [CONTRIBUTING](CONTRIBUTING.md) and use `./dev check`; documentation-only work uses
   `./dev check-docs`, and `./dev help` lists the implemented commands. Ordinary fixes need only their owning design,
@@ -23,7 +26,7 @@ but no general engine runtime exists yet; future SDK commands in design document
 - If work is delegated, name the model and effort (medium by default) and give the delegate the shared contracts, file
   ownership, affected consumers and completion criteria. Integrate and verify the combined result sequentially.
 - Local commits are verified checkpoints. The owner authorises pushing verified checkpoints to `main`, as
-  ORCHESTRATE.md's `Integrate` line says. Don't publish or deploy anything else without authorisation.
+  ORCHESTRATE.md's `Merge` line says. Don't publish or deploy anything else without authorisation.
 
 ## Engine rules
 
