@@ -67,3 +67,8 @@
 - 2026-11-23 Matched the replay helper's target predicate to its macOS offscreen and Wasm browser callers.
   The iPhone simulator's strict Clippy check and release build passed with the helper excluded.
   [Target reruns](../../../.orchestrate/evidence/HOST/M4/target-checks/README.md)
+- 2026-11-24 Reverified the Metal game contract, the starter on Mac and in Chrome, and the iPhone 18 Pro
+  simulator route and overload recovery using the revised check. The full Mac and Chrome exact-image verifier
+  passed on `d30c839b236f`, covering the merged HOST fixes. The current V1 Mac witness built and reached a
+  locked console before recording. Its window evidence comes from the prior target pass.
+  [Target evidence](../../../.orchestrate/evidence/HOST/M4/resumed/README.md)

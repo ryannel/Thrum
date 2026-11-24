@@ -213,7 +213,7 @@
     {
       "id": "M4",
       "name": "A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -226,8 +226,8 @@
           "check": "cargo test --locked --offline -p thrum-app --test game_contract",
           "ask": "Does any type from winit, AppKit or web-sys appear in what a game implements? Does the sky kit still have a second construction path for the browser? Can the same game value run offscreen and in the window?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m41-game-contract",
           "verdict": "",
           "review": ""
         },
@@ -236,8 +236,8 @@
           "statement": "The browser binding of typed controls is the engine's, as the Mac panel is: a game declares its controls once and writes no page glue for them.",
           "ask": "What control code does the V1 game's browser module still hold that the starter also holds, or would have to copy?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m42-browser-controls",
           "verdict": "",
           "review": ""
         },
@@ -247,8 +247,8 @@
           "check": "sh -c '! grep -rn \"camera\\.yaw\" crates/ | grep -q .'",
           "ask": "Can you tell product code from measurement in the render actor's frame function? Does `PLATFORM-RUNTIME-MAC`'s qualification still produce its records, with its checks unedited?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m43-mac-qualification-observer",
           "verdict": "",
           "review": ""
         },
@@ -257,8 +257,8 @@
           "statement": "A second game would copy nothing from the first: what is left in `examples/v1-game` is its scenes, rules, controls declaration, camera policy, content and entry points.",
           "ask": "Read the game's library. What would a 2D game with other rules have to copy from it unchanged to run in the window, on the page and in the offscreen driver? Name each item, or say there is none.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m44-second-game",
           "verdict": "",
           "review": ""
         },
@@ -269,8 +269,8 @@
           "lock": "simulator",
           "ask": "List what the iPhone app's render owner and `thrum-app`'s render actor both still define. Is each entry the owner thread, the UIKit lifecycle, the surface lease, touch or the command table, which the design leaves to `GAME-UI` M6? Is the device request, the lifecycle policy, the outcome mapping, the frame host or the frame job and reply defined twice anywhere?",
           "target": "ios-sim",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m45-iphone-simulator",
           "verdict": "",
           "review": ""
         },
@@ -280,8 +280,8 @@
           "check": "sh -c './dev check-web && python3 scripts/host_lifecycle.py check --target mac-metal --target chrome-webgpu'",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m46-mac-and-chrome-runtime",
           "verdict": "",
           "review": ""
         },
@@ -290,8 +290,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
