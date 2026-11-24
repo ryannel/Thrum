@@ -20,7 +20,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: every surface the forward pass draws gets wet by one rule, props and rocks included, with how much each darkens read from its roughness and metalness unless its material says.
 - Assumption: in the V1 valley rain sits behind a selection that is off by default, so the exit scene is unchanged, and it waits for the populated valley (`SHOWCASE` WP5).
 - Assumption: this module builds inside `WATERS`' crates and the forward shader under eight rulings, and four of them replace what `WATERS`' design expected: a puddle is not a lake with a seed point, a raindrop is not an impulse record, the shore's film is also drawn on wet paving, and a yard of puddles is mirrored at several heights.
-- Assumption: the module closes only after `WATERS` has its mirror view, its look in motion and its light under water (M14, M10 and M16), because a puddle that mirrors only what is on screen is below the bar.
+- Assumption: the module closes only after `WATERS` has its mirror view, its look in motion and its light under water (WP14, WP10 and WP16), because a puddle that mirrors only what is on screen is below the bar.
 - Assumption: the owner's bar of 17 November applies as in `WATERS`: puddles, rain bands and wetness stay tested against the model, and the wet look and rings are judged by eye.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 on the island and the showcase's extent in the valley, and no timing figure decides an item (brief decision 3).
 
