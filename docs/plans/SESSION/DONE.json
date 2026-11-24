@@ -684,10 +684,10 @@
           "statement": "A guide linked from the networking design tells a game maker how to put a game in a match: declaring the rule set, the action wire, which actions are commands and a predicted controller; handling roster events; starting a host and joining with a ticket; reading connection state; rehearsing on the in-memory link; and running the match command on the three targets.",
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it say that a late timed action is lost and a command is not, that a hero the crowd pushes is corrected every tick, that the crowd is drawn behind the hero, that a peer too slow for the match is dropped, that the match ends with its host, that a rule set must step for every set it admits because a refused step on the host ends the match, that a difference the rules overwrite before a digest tick is not reported, and that anyone with the ticket can join?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP6.2",
@@ -695,8 +695,8 @@
           "ask": "Is C13's addition word for word the design's, and is C13 otherwise unchanged? Does the networking design or any A5 record still describe as open or selected something this module settled differently (the fixed five-tick lead, the nine-step replay cap, who retains results, the handshake) without saying so?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -705,8 +705,8 @@
           "ask": "Do the ledger's N1 rows keep implementation, correctness and device results apart? Do they name as not run a second machine, any path that is not loopback, a physical iPhone, Safari, Firefox, a public host, host migration and whole-world rollback, and claim no speed for the simulator?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -715,8 +715,8 @@
           "check": "python3 scripts/session_match.py closure",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP6/closure.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -725,8 +725,8 @@
           "check": "python3 scripts/session_match.py memory steady",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP6/memory-steady.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -735,8 +735,8 @@
           "check": "python3 scripts/session_match.py sockets steady",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP6/sockets/record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -744,17 +744,29 @@
           "statement": "The engine crates hold no game types, and the tests' second rule set uses every part of the session the reference crowd does not: actions, commands and roster events.",
           "ask": "Does thrum-network or thrum-core name a type, constant or rule of the reference crowd or of the tests' second rule set? Could SWARM put its own rules in a match through the public interface and the match command, without editing either?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP6/README.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
+          "builder_result": "open"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As easy to start from as Godot's high-level multiplayer guide, and as plain about its limits as Factorio's notes on desyncs. The guide is enough to put a second game in a match without reading engine source, the contracts and the ledger say exactly what was proved, and, as with Godot's or Unreal's networking, a single-player build carries none of it."
+      "status": "in_progress",
+      "quality_bar": "As easy to start from as Godot's high-level multiplayer guide, and as plain about its limits as Factorio's notes on desyncs. The guide is enough to put a second game in a match without reading engine source, the contracts and the ledger say exactly what was proved, and, as with Godot's or Unreal's networking, a single-player build carries none of it.",
+      "findings": [
+        {
+          "name": "The guide omits draining timed-frame results",
+          "item": "WP6.1",
+          "repeat": false
+        },
+        {
+          "name": "The match command cannot select a second game",
+          "item": "WP6.7",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP7",

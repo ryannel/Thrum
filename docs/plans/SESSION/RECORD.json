@@ -783,7 +783,50 @@
     },
     "WP6": {
       "definitions": "48caf09973d9d001c09a84ba74e17d603b690b5031914a5731b9e1657ddb9004",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "af8cefbf8607ecaeb76bd48dbd03e6b4d9a18d8e",
+          "review": ".orchestrate/evidence/SESSION/WP6-review.md",
+          "items": {
+            "WP6.1": "fail",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "fail"
+          },
+          "findings": [
+            {
+              "name": "The guide omits draining timed-frame results",
+              "item": "WP6.1",
+              "repeat": false
+            },
+            {
+              "name": "The match command cannot select a second game",
+              "item": "WP6.7",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 92376,
+            "cached": 1382272,
+            "output": 5769,
+            "turns": 1
+          },
+          "at": "2026-11-24T23:37:24Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
