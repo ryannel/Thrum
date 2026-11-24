@@ -32,9 +32,24 @@ else
   bindgen_bin="${CARGO_HOME:-$HOME/.cargo}/bin/wasm-bindgen"
 fi
 "$bindgen_bin" --target web --out-dir "$web_output" "$cargo_target/wasm32-unknown-unknown/release/v1_game.wasm"
-cp examples/v1-game/web/index.html "$web_output/index.html"
+page_variant=proving
+if [ -z "$mode" ]; then
+  page_variant=shipping
+fi
+# Both builds share the page sources. Emit only the blocks for the selected variant.
+for page in index route; do
+  awk -v variant="$page_variant" '
+    /^[[:space:]]*\/\/ @proving$/ { section = "proving"; next }
+    /^[[:space:]]*\/\/ @shipping$/ { section = "shipping"; next }
+    /^[[:space:]]*\/\/ @end$/ { section = ""; next }
+    !section || section == variant
+  ' "examples/v1-game/web/$page.html" > "$web_output/$page.html"
+done
 if [ -n "$mode" ]; then
   cp examples/v1-game/web/temporal.html "$web_output/temporal.html"
+  cp examples/v1-game/web/capture.html examples/v1-game/web/capture.mjs \
+    examples/v1-game/web/capture_upload.mjs "$web_output/"
+  cp examples/v1-game/routes/*.json "$web_output/"
   witness=$(mktemp "$web_output/.temporal-witness.XXXXXX")
   trap 'rm -f "$witness"' EXIT
   RUSTC="$rustc_path" rustup run stable cargo run --locked --offline --quiet \
@@ -43,12 +58,15 @@ if [ -n "$mode" ]; then
   mv "$witness" "$web_output/temporal-witness.json"
 else
   rm -f "$web_output/temporal.html" "$web_output/temporal-witness.json"
+  rm -f "$web_output/capture.html" "$web_output/capture.mjs" "$web_output/capture_upload.mjs"
+  for route in examples/v1-game/routes/*.json; do
+    name=${route##*/}
+    if [ "$name" != exit-flythrough.json ]; then
+      rm -f "$web_output/$name"
+    fi
+  done
+  cp examples/v1-game/routes/exit-flythrough.json "$web_output/"
 fi
-cp examples/v1-game/web/route.html "$web_output/route.html"
-cp examples/v1-game/web/capture.html "$web_output/capture.html"
-cp examples/v1-game/web/capture.mjs "$web_output/capture.mjs"
-cp examples/v1-game/web/capture_upload.mjs "$web_output/capture_upload.mjs"
-cp examples/v1-game/routes/*.json "$web_output/"
 cp crates/thrum-controls/web/thrum-controls.js "$web_output/thrum-controls.js"
 cp crates/thrum-app/web/host-page.js "$web_output/host-page.js"
 cp examples/v1-game/params/*.params.json "$web_output/"

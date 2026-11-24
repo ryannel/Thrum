@@ -1,4 +1,5 @@
 //! Verify the cooked cloud library against the accepted source manifests.
+#![cfg(feature = "proving")]
 
 mod authoring;
 

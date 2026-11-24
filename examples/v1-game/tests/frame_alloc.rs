@@ -1,5 +1,5 @@
 //! Metal allocation measurements for the active serial and threaded frame paths.
-#![cfg(not(target_arch = "wasm32"))]
+#![cfg(all(feature = "proving", not(target_arch = "wasm32")))]
 #![allow(
     unsafe_code,
     reason = "test-only counting allocator delegates every operation to System"

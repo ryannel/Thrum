@@ -1,4 +1,7 @@
 //! Read the joint view-volume transmittance through a slab on Metal.
+
+#![cfg(feature = "proving")]
+
 #[expect(
     dead_code,
     reason = "the shared fixture also checks sky pixels in other binaries"

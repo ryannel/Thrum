@@ -1,4 +1,7 @@
 //! The medium ends at the handover and ordered clear transport carries on.
+
+#![cfg(feature = "proving")]
+
 #[expect(dead_code, reason = "the shared fixture includes sky-pixel readers")]
 mod fixture;
 mod medium_fixture;

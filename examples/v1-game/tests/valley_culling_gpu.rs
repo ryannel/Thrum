@@ -1,5 +1,5 @@
 //! Explicit real-target proof; the launcher supplies a freshly cooked store.
-#![cfg(not(target_arch = "wasm32"))]
+#![cfg(all(feature = "proving", not(target_arch = "wasm32")))]
 mod valley_route_support {
     mod valley_route;
     pub(super) use valley_route::run;

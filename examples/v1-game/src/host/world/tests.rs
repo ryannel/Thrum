@@ -6,6 +6,7 @@ use super::{GameRules, WorldDriver};
 use thrum_core::sim::ClockedWorld;
 
 #[test]
+#[cfg(feature = "proving")]
 fn reconstruction_fixture_replaces_the_prop_on_authoritative_tick_sixty() {
     use thrum_core::{StableId, sim::WorldGame};
     let mut driver = WorldDriver::new(

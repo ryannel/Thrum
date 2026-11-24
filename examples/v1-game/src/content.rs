@@ -226,6 +226,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     Ok(crate::GameSetup {
         #[cfg(feature = "proving")]
         sprite_scale,
+        #[cfg(feature = "proving")]
         route_scale_props: false,
         #[cfg(feature = "proving")]
         sprite_probe: if sprite_scale.is_some() {
@@ -304,6 +305,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         },
         #[cfg(feature = "proving")]
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
+        #[cfg(feature = "proving")]
         haze: crate::host::haze_selection(launch_value("THRUM_HAZE").ok().as_deref())?,
         #[cfg(feature = "proving")]
         test_bank: launch_value("THRUM_HAZE").as_deref()

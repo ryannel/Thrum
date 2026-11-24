@@ -336,18 +336,28 @@ impl CameraRoute {
 fn overlay(name: &str) -> Result<RouteOverlay, String> {
     match name {
         "off" => Ok(RouteOverlay::Off),
+        #[cfg(feature = "proving")]
         "proof" => Ok(RouteOverlay::Proof),
+        #[cfg(feature = "proving")]
         "motion" => Ok(RouteOverlay::Motion),
+        #[cfg(feature = "proving")]
         "reconstruction" => Ok(RouteOverlay::Reconstruction),
+        #[cfg(feature = "proving")]
         "unmirrored" => Ok(RouteOverlay::Unmirrored),
+        #[cfg(feature = "proving")]
         "light-off" => Ok(RouteOverlay::LightOff),
+        #[cfg(feature = "proving")]
         "lamp-stop" => Ok(RouteOverlay::LampStop),
+        #[cfg(feature = "proving")]
         "night-lights" => Ok(RouteOverlay::NightLights),
         #[cfg(feature = "draw-probe")]
         "mirror-omit" => Ok(RouteOverlay::MirrorOmit),
         #[cfg(feature = "draw-probe")]
         "stars-off" => Ok(RouteOverlay::StarsOff),
-        _ => Err("route overlay must be off, proof, unmirrored or light-off".to_owned()),
+        #[cfg(feature = "proving")]
+        _ => Err("unknown route overlay".to_owned()),
+        #[cfg(not(feature = "proving"))]
+        _ => Err("route overlays require the proving build".to_owned()),
     }
 }
 

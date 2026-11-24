@@ -25,6 +25,7 @@ cases.push('mesh-rows');
 cases.push('effect-after-opaque');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
 cases.push('route-diagnostic', 'scale', 'governor');
+cases.push('shipping-boundary');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost', 'sprites-crisp');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -204,7 +205,7 @@ const observeFaults = `document.addEventListener('DOMContentLoaded', () => {
 const readState = `JSON.stringify({status:document.querySelector('#status')?.textContent,player:document.querySelector('#player')?.textContent,width:document.querySelector('canvas')?.width,height:document.querySelector('canvas')?.height,hidden:document.hidden})`;
 const playerX = state => { const match = /player x=([-\d.]+)/.exec(state.player ?? ''); return match ? Number(match[1]) : undefined; };
 const field = (status, key) => Number(new RegExp(`(?:^|[ ;])${key}=(\\d+)(?:[ ;]|$)`).exec(status)?.[1]);
-const gameState = '({report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day(),fault:game.graphics_fault(),recovering:game.recovering(),recoveryError:game.graphics_recovery_error(),player:game.controlled_position()})';
+const gameState = '({report:game.report(),complete:game.complete?.() ?? false,paused:game.paused(),time:game.time_of_day(),fault:game.graphics_fault(),recovering:game.recovering(),recoveryError:game.graphics_recovery_error(),player:game.controlled_position()})';
 
 // A 4x4 opaque RGB PNG of one colour.
 function solidPng(rgb) {
@@ -2240,6 +2241,50 @@ async function cleanup(child, exited, cdp, server, profile, {
   if (failures.length) throw new Error(`Cleanup failed; profile preserved at ${profile}: ${failures.join('; ')}`);
 }
 
+async function checkShippingBoundary(cdp, origin, timeout, wasm) {
+  const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+  const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
+  try {
+    await cdp.call('Page.enable', {}, sessionId);
+    await installWasmReceipt(cdp, sessionId);
+    await cdp.call('Page.navigate', { url: origin + '/?extent-probe&qualify&pause-probe&resize-probe&overload-probe&diagnostic-clouds&field' }, sessionId);
+    const evaluate = async (expression) => {
+      const response = await cdp.call('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }, sessionId);
+      if (response.exceptionDetails) throw new Error(JSON.stringify(response.exceptionDetails));
+      return response.result.value;
+    };
+    const status = await waitFor(async () => {
+      const value = await evaluate("document.querySelector('#status')?.textContent");
+      if (/fault/i.test(value)) throw new Error(value);
+      if (/^Running the 10,000-entity/.test(value)) return value;
+    }, timeout, 'normal scene with qualification query parameters present');
+    const exports = await evaluate(`(async () => {
+      const bindings = await import('/v1_game.js');
+      return {
+        module: Object.keys(bindings).sort(),
+        browserGame: Object.getOwnPropertyNames(bindings.BrowserGame.prototype).sort(),
+        globals: ['thrumExtentReport', 'thrumCloudCheck'].filter(name => name in window),
+      };
+    })()`);
+    const wasmHash = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
+    if (exports.globals.length ||
+        exports.module.some(name => /qualify|probe|governor|placed|field|sprite/i.test(name)) ||
+        exports.browserGame.some(name => /route_render_scale|cloud_submission|haze|submitted_capture|begin_fixed_submission|begin_linear_capture|exit_sweep_samples|renderer_signature|^complete$/i.test(name))) {
+      throw new Error(`The normal build exposed qualification hooks: ${JSON.stringify(exports)}`);
+    }
+    const route = await evaluate("fetch('/route.html').then(response => response.text())");
+    if (!route.includes('install_route') || /thrumRoute|thrumCheckpointPng|scale-proof|culling-proof|route_render_scale/.test(route)) {
+      throw new Error('The normal route page is missing route support or contains qualification hooks');
+    }
+    const proofFiles = await evaluate(`Promise.all(['/capture.html', '/capture.mjs', '/temporal.html', '/moving-v1.json'].map(
+      async path => [path, (await fetch(path)).status]))`);
+    if (proofFiles.some(([, code]) => code !== 404)) throw new Error(`The normal bundle serves qualification files: ${JSON.stringify(proofFiles)}`);
+    return { case: 'shipping-boundary', status, wasm_sha256: wasmHash, exports, proofFiles };
+  } finally {
+    await cdp.call('Target.closeTarget', { targetId });
+  }
+}
+
 async function qualifyExtent(cdp, origin, output, timeout, wasm) {
   const arms = [];
   for (const dpr of [1, 2]) {
@@ -2313,7 +2358,7 @@ async function main() {
   // Default checks must work in a clean verifier checkout and use the current sources.
   // Explicit web roots remain caller-owned (including the development page).
   if (args['web-root'] === 'target/v1-game-web') {
-    const proving = args.case !== 'material-disabled';
+    const proving = !['material-disabled', 'shipping-boundary'].includes(args.case);
     execFileSync('sh', ['examples/v1-game/web/build.sh', ...(proving ? ['--proving'] : [])],
       { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
     if (proving) args['web-root'] = 'target/v1-game-web-proving';
@@ -2326,6 +2371,15 @@ async function main() {
   }
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
+  if (args.case === 'shipping-boundary') {
+    const bytes = await fs.readFile(path.join(directory, 'route.html'));
+    files.set('/route.html', { bytes, type: 'text/html', sha256: sha(bytes) });
+    for (const name of ['capture.html', 'capture.mjs', 'temporal.html', 'moving-v1.json']) {
+      if (await fs.stat(path.join(directory, name)).catch(error => {
+        if (error.code !== 'ENOENT') throw error;
+      })) throw new Error(`The normal bundle contains ${name}`);
+    }
+  }
   mixedOracle = args.mixedOracle === true;
   if (args.case.startsWith('environment-') || args.case === 'exit-sweep') await routeStops(files, directory);
   // The params case's file: two valid entries and one typo; the case rewrites it to test reload.
@@ -2383,7 +2437,7 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'route-diagnostic' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'route-diagnostic' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode === 'scale' || mode.startsWith('moving-route'))) {
@@ -2400,6 +2454,7 @@ async function main() {
     for (const mode of modes) {
       if (mode === 'governor') results.push(await qualifyGovernor(cdp, serving.origin, output, files.get('/v1_game_bg.wasm')));
       else if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms'], files.get('/v1_game_bg.wasm')));
+      else if (mode === 'shipping-boundary') results.push(await checkShippingBoundary(cdp, serving.origin, args['timeout-ms'], files.get('/v1_game_bg.wasm')));
       else if (mode === 'sprites-field' || mode === 'sprites-field-cost') results.push(await qualifySpriteField({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'], wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor,
         commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
@@ -2480,7 +2535,7 @@ async function main() {
   console.log(`PASS ${results.length} case(s); artifacts: ${output}`);
 }
 
-export { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice };
+export { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice, existingGame };
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => { console.error(error); process.exitCode = 1; });
 }

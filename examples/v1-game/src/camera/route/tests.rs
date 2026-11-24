@@ -62,7 +62,7 @@ fn file(keys: &[serde_json::Value], cuts: &[u64], checkpoints: &[(u64, &str)]) -
         "keys": keys,
         "cuts": cuts,
         "checkpoints": checkpoints.iter().map(|(tick, name)| serde_json::json!({"tick": tick, "name": name})).collect::<Vec<_>>(),
-        "overlay": "proof",
+        "overlay": "off",
     })
     .to_string()
 }
@@ -80,7 +80,7 @@ fn cut_route() -> CameraRoute {
 #[test]
 fn worked_cut_example_and_clamp() {
     let route = cut_route();
-    assert_eq!(route.overlay, RouteOverlay::Proof);
+    assert_eq!(route.overlay, RouteOverlay::Off);
     // s = tick − 1 − origin + alpha.
     let before = route.pose(110, 0.5);
     assert!((before.eye[0] - 0.95).abs() < 1e-6, "{before:?}");
@@ -94,6 +94,32 @@ fn worked_cut_example_and_clamp() {
     assert_eq!(route.pose(90, 0.0).eye[0], 0.0);
     assert_eq!(route.pose(500, 0.5).eye[0], 7.0);
     assert_eq!(route.pose(500, 0.5).epoch, 2);
+}
+
+#[test]
+fn route_overlay_admission_follows_the_proving_feature() {
+    for overlay in [
+        "proof",
+        "motion",
+        "reconstruction",
+        "unmirrored",
+        "light-off",
+        "lamp-stop",
+        "night-lights",
+    ] {
+        let text = file(&[key(0, 0.0, 0.0), key(10, 1.0, 10.0)], &[], &[(5, "a")])
+            .replace("\"overlay\":\"off\"", &format!("\"overlay\":\"{overlay}\""));
+        assert_eq!(
+            CameraRoute::declared(&text).is_ok(),
+            cfg!(feature = "proving"),
+            "{overlay}"
+        );
+        assert_eq!(
+            CameraRoute::parse(&text, camera(), 60).is_ok(),
+            cfg!(feature = "proving"),
+            "{overlay}"
+        );
+    }
 }
 
 #[test]

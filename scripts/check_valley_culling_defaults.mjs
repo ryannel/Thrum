@@ -1,9 +1,9 @@
 // Exercise the shipped page: scene selection must be independent of star visibility.
-// Run after web/build.sh and a release thrum-cook build, under the shared GPU lock.
+// Run after web/build.sh and a release thrum-cook build, under the shared GPU and Chrome locks.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
-import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup } from './check_v1_browser.mjs';
+import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, existingGame } from './check_v1_browser.mjs';
 
 const output = path.resolve(process.argv[2] ?? 'tmp/culling-m3/default-selection');
 await fs.mkdir(output, { recursive: true });
@@ -33,7 +33,7 @@ try {
   for (const valley of [true, false]) {
     for (const stars of ['on', 'off']) {
       for (const request of [undefined, 'default', 'direct', 'frustum', 'occlusion']) {
-        const query = new URLSearchParams({ qualify: '', stars });
+        const query = new URLSearchParams({ stars });
         if (valley) query.set('assets', cooked.origin);
         if (request) query.set('culling', request);
         const expected = request === 'direct' ? 'Direct' : request === 'frustum' ? 'Frustum'
@@ -42,14 +42,19 @@ try {
         const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
         const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
         await cdp.call('Page.navigate', { url: `${serving.origin}/?${query}` }, sessionId);
-        const status = await waitFor(async () => {
+        await waitFor(async () => {
           const response = await cdp.call('Runtime.evaluate', {
             expression: "document.querySelector('#status')?.textContent", returnByValue: true,
           }, sessionId);
           const value = response.result.value ?? '';
           if (/fault|error/i.test(value)) throw Error(value);
-          return /culling=/.test(value) ? value : undefined;
-        }, 90000, 'shipped page completed qualification');
+          return /^Running/.test(value);
+        }, 90000, 'shipped page startup');
+        const game = await existingGame(cdp, sessionId);
+        const status = await waitFor(
+          () => game.invoke('return game.presented() >= 600n ? game.report() : null;'),
+          90000, 'shipped page completed 600 presentations',
+        );
         if (!status.includes(`culling=${expected};`) || !status.includes(`culling_reason=${reason}`)) {
           throw Error(`valley=${valley} stars=${stars} request=${request}: ${status}`);
         }

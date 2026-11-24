@@ -67,16 +67,11 @@ if (parent !== tmp && !parent.startsWith(tmp + path.sep)) throw new Error('Outpu
 const space = await fs.statfs(parent);
 if (space.bavail * space.bsize < 16 * 1024 ** 3) throw new Error('Less than the declared 16 GiB free-space allowance');
 if (!args['web-root']) {
-  const proving = spriteField || args.effect !== 'off' || args.clouds !== 'off' ||
-    args.witness !== 'off' || args.atmosphere !== 'off' || args['diagnostic-clouds'] === 'on' ||
-    args['renderer-signature'] === 'on' || Boolean(args.haze);
-  args['web-root'] = proving ? 'target/v1-game-web-proving' : 'target/v1-game-web';
-  if (proving) {
-    execFileSync('sh', ['examples/v1-game/web/build.sh', '--proving'], {
-      env: { ...process.env, CARGO_TARGET_DIR: 'target', THRUM_V1_WEB_OUTPUT: args['web-root'], RUSTC_WRAPPER: '' },
-      stdio: 'inherit',
-    });
-  }
+  args['web-root'] = 'target/v1-game-web-proving';
+  execFileSync('sh', ['examples/v1-game/web/build.sh', '--proving'], {
+    env: { ...process.env, CARGO_TARGET_DIR: 'target', THRUM_V1_WEB_OUTPUT: args['web-root'], RUSTC_WRAPPER: '' },
+    stdio: 'inherit',
+  });
 }
 await fs.mkdir(output);
 await fs.mkdir(path.join(output, 'frames'));

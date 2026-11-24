@@ -1,5 +1,6 @@
 //! V1 fixture, camera and lighting policy for the engine frame runtime.
 
+#[cfg(feature = "proving")]
 mod cloud;
 mod star_catalogue;
 #[cfg(feature = "proving")]
@@ -14,7 +15,7 @@ use crate::{
 };
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
-    atmosphere::{Aerosol, AtmosphereFrame},
+    atmosphere::AtmosphereFrame,
     error::RenderError,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameError, SceneFrame, SceneSource},
@@ -27,7 +28,7 @@ use thrum_render::{
 fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
-    haze: Option<Aerosol>,
+    #[cfg(feature = "proving")] haze: Option<thrum_render::atmosphere::Aerosol>,
     #[cfg(feature = "proving")] medium_epoch: Option<u64>,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
@@ -41,6 +42,7 @@ fn atmosphere_lighting(
     .with_nightglow()
     .with_simulation_time(sun.simulation_time_seconds)
     .expect("the sampled game clock is finite");
+    #[cfg(feature = "proving")]
     let frame = haze.map_or(frame, |aerosol| {
         frame.with_aerosol(aerosol).with_view_volume()
     });
@@ -224,6 +226,7 @@ fn scale_basis(instance: &mut InstanceRecord, half_extent: f32) {
 /// Give two existing static fixtures a small cross-section for the realtime
 /// render-scale inspection. Their simulation positions and the other grid rows
 /// remain the ordinary route's.
+#[cfg(feature = "proving")]
 fn apply_render_scale_props(scene: &mut SyntheticScene) {
     for slot in [5063, 5069] {
         let instance = &mut scene.instances[slot];
@@ -238,6 +241,7 @@ fn apply_render_scale_props(scene: &mut SyntheticScene) {
 }
 
 /// The moving-route proof overlay's retuned diagnostic light, above the mirrored pair.
+#[cfg(feature = "proving")]
 pub(crate) const ROUTE_OVERLAY_LIGHT: SyntheticPointLight = SyntheticPointLight {
     position: [0.0, 240.55, -3.2],
     radius: 4.0,
@@ -247,6 +251,7 @@ pub(crate) const ROUTE_OVERLAY_LIGHT: SyntheticPointLight = SyntheticPointLight 
 /// Cold geometry for the moving-route overlay: valley-scale bases matching the
 /// authoritative reseeds, one mirrored basis, and diagnostic light 0 moved beside them.
 /// Two-sided state is all-or-nothing, so the mirrored basis switches the whole list.
+#[cfg(feature = "proving")]
 fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay) {
     for (slot, position) in scene::ROUTE_OVERLAY {
         let instance = &mut scene.instances[slot];
@@ -366,12 +371,14 @@ pub struct GameScene {
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
-    haze: Option<Aerosol>,
+    #[cfg(feature = "proving")]
+    haze: Option<thrum_render::atmosphere::Aerosol>,
     #[cfg(feature = "proving")]
     pub(super) medium_epoch: Option<u64>,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
+    #[cfg(feature = "proving")]
     exit_entities: crate::ExitEntities,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
@@ -380,9 +387,12 @@ pub struct GameScene {
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
     pub(super) display_overlay: DisplayOverlay,
+    #[cfg(feature = "proving")]
     temporal_inputs: bool,
     reconstruction: thrum_render::synthetic::Reconstruction,
+    #[cfg(feature = "proving")]
     temporal_pan: (u64, f32),
+    #[cfg(feature = "proving")]
     temporal_star_edit: u64,
     camera: Option<SceneCamera>,
     route_overlay: scene::RouteOverlay,
@@ -484,6 +494,7 @@ impl GameScene {
     }
 
     pub(super) fn new(setup: GameSetup) -> Self {
+        #[cfg(feature = "proving")]
         let temporal: Option<serde_json::Value> =
             (setup.display_overlay == DisplayOverlay::TemporalInputs).then(|| {
                 serde_json::from_str(thrum_render::synthetic::TEMPORAL_WITNESS_JSON)
@@ -499,11 +510,13 @@ impl GameScene {
             cloud_input: None,
             cloud_sky: None,
             cloud_shapes: None,
+            #[cfg(feature = "proving")]
             haze: setup.haze,
             #[cfg(feature = "proving")]
             medium_epoch: setup.test_bank.then_some(1),
             cooked_rows: None,
             content: setup.content,
+            #[cfg(feature = "proving")]
             exit_entities: setup.exit_entities,
             valley_stars: !setup.content.is_field() && setup.valley_stars,
             day_phase_offset: 0.0,
@@ -512,12 +525,15 @@ impl GameScene {
             camera_pitch: 0.0,
             camera_yaw: 0.0,
             display_overlay: setup.display_overlay,
+            #[cfg(feature = "proving")]
             temporal_inputs: temporal.is_some(),
             native_witness: native_witness_selection(),
             reconstruction: setup.reconstruction,
+            #[cfg(feature = "proving")]
             temporal_star_edit: temporal.as_ref().map_or(u64::MAX, |f| {
                 f["star_edit_tick"].as_u64().expect("fixture star tick")
             }),
+            #[cfg(feature = "proving")]
             temporal_pan: temporal.as_ref().map_or((u64::MAX, 0.0), |f| {
                 (
                     f["pan_tick"].as_u64().expect("fixture pan tick"),
@@ -525,7 +541,7 @@ impl GameScene {
                 )
             }),
             camera: None,
-            route_overlay: setup.route_overlay,
+            route_overlay: setup.route_overlay(),
             route: None,
             #[cfg(feature = "draw-probe")]
             omit_mirror: omit_mirror(setup.route_overlay),
@@ -567,7 +583,6 @@ impl GameScene {
         scene.view = scene
             .view
             .with_native_witness(native_witness_selection())
-            .with_temporal_inputs(setup.display_overlay == DisplayOverlay::TemporalInputs)
             .with_reconstruction(
                 setup.reconstruction != thrum_render::synthetic::Reconstruction::Off,
             )
@@ -575,6 +590,12 @@ impl GameScene {
                 setup.reconstruction == thrum_render::synthetic::Reconstruction::Reference,
             )
             .with_display_overlay(setup.display_overlay);
+        #[cfg(feature = "proving")]
+        {
+            scene.view = scene
+                .view
+                .with_temporal_inputs(setup.display_overlay == DisplayOverlay::TemporalInputs);
+        }
         scene.ray_structure = setup.display_overlay == DisplayOverlay::TracedGeometry;
         scene.sun_shadow_method = setup.sun_shadow_method;
         scene.sun_penumbra = setup.sun_penumbra;
@@ -594,13 +615,16 @@ impl GameScene {
                 [crate::clouds::GROUND_SIZE; 2],
                 1,
             )?);
-        } else if setup.diagnostic_clouds {
+        }
+        #[cfg(feature = "proving")]
+        if setup.clouds == crate::CloudSelection::Off && setup.diagnostic_clouds {
             scene.sun_optical_depth = Some(if setup.haze.is_some() {
                 cloud::haze_banks()?
             } else {
                 cloud::diagnostic()?
             });
         }
+        #[cfg(feature = "proving")]
         if setup.route_overlay != scene::RouteOverlay::Off {
             if setup.content != GameContent::Grid {
                 return Err(FrameError::InvalidState(
@@ -697,6 +721,7 @@ impl SceneSource<PublishedPage> for GameScene {
         })
     }
 
+    #[cfg(feature = "proving")]
     #[expect(
         clippy::cast_possible_truncation,
         reason = "bounded sinusoidal fixture position is converted from game-clock f64 to renderer f32"
@@ -722,6 +747,7 @@ impl SceneSource<PublishedPage> for GameScene {
         {
             debug_assert!(false, "cloud publication: {error}");
         }
+        #[cfg(feature = "proving")]
         if self.content == GameContent::Exit && self.exit_entities == crate::ExitEntities::Omit {
             return into.extract(
                 SourceTick {
@@ -746,10 +772,12 @@ impl SceneSource<PublishedPage> for GameScene {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, FrameError> {
-        let temporal_yaw = if self.temporal_inputs && source.tick >= self.temporal_pan.0 {
+        let yaw = self.camera_yaw;
+        #[cfg(feature = "proving")]
+        let yaw = if self.temporal_inputs && source.tick >= self.temporal_pan.0 {
             self.temporal_pan.1
         } else {
-            self.camera_yaw
+            yaw
         };
         let field = self.content.is_field() && self.camera.is_none();
         let routed = self.route.as_ref().zip(self.camera);
@@ -764,19 +792,16 @@ impl SceneSource<PublishedPage> for GameScene {
                     .with_history_epoch(pose.epoch)
             }
             #[cfg(feature = "proving")]
-            None if field => {
-                field_view(source.tick, alpha, extent, self.camera_pitch, temporal_yaw)?
-            }
+            None if field => field_view(source.tick, alpha, extent, self.camera_pitch, yaw)?,
             None => frame_view(
                 source.tick,
                 alpha,
                 extent,
                 self.camera_pitch,
-                temporal_yaw,
+                yaw,
                 self.camera,
             )?,
         }
-        .with_temporal_inputs(self.temporal_inputs)
         .with_native_witness(self.native_witness)
         .with_display_overlay(self.display_overlay)
         .with_jitter_sequence(0, [640, 360])
@@ -784,6 +809,8 @@ impl SceneSource<PublishedPage> for GameScene {
         .with_reconstruction_reference(
             self.reconstruction == thrum_render::synthetic::Reconstruction::Reference,
         );
+        #[cfg(feature = "proving")]
+        let view = view.with_temporal_inputs(self.temporal_inputs);
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
         // Authored scene and field coordinates already measure altitude above sea level.
         let camera_altitude_m = view.camera_position()[1]
@@ -805,6 +832,7 @@ impl SceneSource<PublishedPage> for GameScene {
             atmosphere_lighting(
                 sun,
                 camera_altitude_m,
+                #[cfg(feature = "proving")]
                 self.haze,
                 #[cfg(feature = "proving")]
                 self.medium_epoch,
@@ -814,10 +842,11 @@ impl SceneSource<PublishedPage> for GameScene {
             && self.camera.is_some()
             && matches!(lighting, FrameLighting::Atmosphere(_))
         {
-            view.with_celestial_epoch(u64::from(
+            #[cfg(feature = "proving")]
+            let view = view.with_celestial_epoch(u64::from(
                 self.temporal_inputs && source.tick >= self.temporal_star_edit,
-            ))
-            .with_celestial_basis(sun.equatorial_to_world)?
+            ));
+            view.with_celestial_basis(sun.equatorial_to_world)?
         } else {
             view
         };
@@ -841,6 +870,7 @@ mod tests {
     use thrum_render::synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView};
 
     #[test]
+    #[cfg(feature = "proving")]
     fn reconstruction_light_follows_the_sampled_game_endpoint_and_holds_when_paused() {
         let policy = GameScene::new(crate::GameSetup {
             route_overlay: scene::RouteOverlay::Reconstruction,
@@ -888,26 +918,24 @@ mod tests {
             .to_string()
         };
         let parse = |overlay| crate::CameraRoute::parse(&route_text(overlay), camera, 60).unwrap();
-        let mut policy = GameScene::new(crate::GameSetup {
-            route_overlay: scene::RouteOverlay::Proof,
-            ..crate::GameSetup::default()
-        });
+        let mut policy = GameScene::new(crate::GameSetup::default());
         assert!(
-            policy.install_route(parse("proof"), 49).is_err(),
+            policy.install_route(parse("off"), 49).is_err(),
             "needs a camera"
         );
         policy.select_camera(camera).unwrap();
+        #[cfg(feature = "proving")]
         assert!(
-            policy.install_route(parse("off"), 49).is_err(),
+            policy.install_route(parse("proof"), 49).is_err(),
             "overlay mismatch"
         );
         assert!(
-            policy.install_route(parse("proof"), 48).is_err(),
+            policy.install_route(parse("off"), 48).is_err(),
             "wrong tick"
         );
-        policy.install_route(parse("proof"), 49).unwrap();
+        policy.install_route(parse("off"), 49).unwrap();
         assert!(
-            policy.install_route(parse("proof"), 49).is_err(),
+            policy.install_route(parse("off"), 49).is_err(),
             "second route"
         );
         assert!(policy.select_camera(camera).is_err());
@@ -966,6 +994,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "proving")]
     fn route_overlay_changes_only_its_bases_and_light_zero() {
         let off = GameScene::scene([640, 360], crate::GameSetup::default()).unwrap();
         let on = GameScene::scene(
@@ -1072,6 +1101,7 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            #[cfg(feature = "proving")]
             haze: None,
             #[cfg(feature = "proving")]
             medium_epoch: None,
@@ -1087,6 +1117,7 @@ mod tests {
             cooked_rows: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,
+            #[cfg(feature = "proving")]
             exit_entities: crate::ExitEntities::Draw,
             valley_stars: true,
             day_phase_offset: 0.1,
@@ -1095,9 +1126,12 @@ mod tests {
             camera_pitch,
             camera_yaw,
             display_overlay: DisplayOverlay::Off,
+            #[cfg(feature = "proving")]
             temporal_inputs: false,
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
+            #[cfg(feature = "proving")]
             temporal_pan: (30, -0.05),
+            #[cfg(feature = "proving")]
             temporal_star_edit: 15,
             camera: Some(camera),
             route_overlay: scene::RouteOverlay::Off,

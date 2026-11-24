@@ -295,11 +295,11 @@ def verify(root=ROOT):
         run('native-build', ['rustup', 'run', '1.99.1', 'cargo', 'build', '--release', '--locked', '--offline',
                              '-p', 'v1-game', '--features', 'draw-probe,thrum-render/creation-counters'])
         run('cooker-build', ['rustup', 'run', '1.99.1', 'cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook'])
-        run('web-build', ['sh', 'examples/v1-game/web/build.sh'])
+        run('web-build', ['sh', 'examples/v1-game/web/build.sh', '--proving'])
         run('cook', ['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(output / 'valley')])
         from run_v1_showcase import store_root
         report.update(native_binary_sha256=sha(root / 'target/release/v1-game'),
-                      wasm_artifact_hashes={p.name: sha(p) for p in sorted((root / 'target/v1-game-web').iterdir()) if p.is_file()},
+                      wasm_artifact_hashes={p.name: sha(p) for p in sorted((root / 'target/v1-game-web-proving').iterdir()) if p.is_file()},
                       cooked_root=store_root(output / 'valley'),
                       compiler=git_version_command(['rustup', 'run', '1.99.1', 'rustc', '-Vv'], root),
                       host=git_version_command(['sw_vers'], root))
@@ -320,7 +320,8 @@ def verify(root=ROOT):
             name = entry['id']
             directory = output / name
             run(name, ['node', 'scripts/capture_v1_browser.mjs', '--mode', 'fixed', '--scene', entry['scene'],
-                       '--source', entry['source'], '--cook', 'target/release/thrum-cook', '--output', str(directory)], entry)
+                       '--source', entry['source'], '--cook', 'target/release/thrum-cook',
+                       '--web-root', 'target/v1-game-web-proving', '--output', str(directory)], entry)
             command = [sys.executable, 'scripts/apple_tile_m1_compare_browser.py', '--reference-digest',
                        '--reference', entry['reference'], '--candidate', str(directory),
                        '--output', str(output / (name + '-comparison.json'))]

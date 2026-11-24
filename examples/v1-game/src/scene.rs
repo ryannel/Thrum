@@ -19,6 +19,7 @@ pub(crate) const PEER_COUNT: usize = 4;
 /// Moving-route proof overlay: static grid slots outside the moving prefix, the
 /// controlled peers and the subjects, reseeded at valley metres in front of the
 /// cooked sphere and rock. Heights are the terrain surface plus a 0.18 m half extent.
+#[cfg(feature = "proving")]
 pub(crate) const ROUTE_OVERLAY: [(usize, [f32; 3]); 11] = [
     (5060, [-0.6, 240.075, -3.5]),
     (5061, [0.6, 240.090, -3.5]),
@@ -33,6 +34,7 @@ pub(crate) const ROUTE_OVERLAY: [(usize, [f32; 3]); 11] = [
     (5070, [1.0, 240.121, -8.5]),
 ];
 /// The night stop uses these same positions and colours for illumination and visible emitters.
+#[cfg(feature = "proving")]
 pub(crate) const NIGHT_LAMPS: [([f32; 3], [f32; 3]); 4] = [
     ([-1.35, 240.55, -3.0], [0.30, 0.13, 0.06]),
     ([1.35, 240.50, -3.0], [0.06, 0.19, 0.30]),
@@ -40,15 +42,21 @@ pub(crate) const NIGHT_LAMPS: [([f32; 3], [f32; 3]); 4] = [
     ([1.65, 240.55, -7.8], [0.29, 0.12, 0.22]),
 ];
 /// First reserved entity of the four visible night-lamp emitters.
+#[cfg(feature = "proving")]
 pub(crate) const NIGHT_LAMP_FIRST_SLOT: usize = 5071;
+#[cfg(feature = "proving")]
 const FIRST_LAMP_MATERIAL: u64 = REFLECTION_SUBJECT_MATERIAL + 1;
 
 /// The overlay slot whose cold basis mirrors local x (a negative determinant).
+#[cfg(feature = "proving")]
 pub(crate) const ROUTE_OVERLAY_MIRRORED_SLOT: usize = 5060;
 /// M1's visible moving subject uses an existing automatic mover, not a render-only animation.
+#[cfg(feature = "proving")]
 pub(crate) const MOTION_SUBJECT_SLOT: usize = MOVING_COUNT - 1;
+#[cfg(feature = "proving")]
 pub(crate) const MOTION_SUBJECT_POSITION: [f32; 3] = [-6.0, 240.6, -5.0];
 
+#[cfg(feature = "proving")]
 fn route_overlay_position(index: usize) -> Option<[f32; 3]> {
     ROUTE_OVERLAY
         .iter()
@@ -103,18 +111,25 @@ pub enum RouteOverlay {
     #[default]
     Off,
     /// Reseeded valley instances, one mirrored basis and the retuned light.
+    #[cfg(feature = "proving")]
     Proof,
     /// M1 proof: the same static overlay plus one visible automatic mover.
+    #[cfg(feature = "proving")]
     Motion,
     /// M3 temporal witness: moving prop/light and an authoritative replacement at tick 60.
+    #[cfg(feature = "proving")]
     Reconstruction,
     /// The same instances and light with no mirrored basis (one-sided pipelines).
+    #[cfg(feature = "proving")]
     Unmirrored,
     /// The proof overlay with the retuned light at zero intensity.
+    #[cfg(feature = "proving")]
     LightOff,
     /// Valley night stop with four visible lamps around the contact props.
+    #[cfg(feature = "proving")]
     LampStop,
     /// Night stop with visible emissive cores at the four point lights.
+    #[cfg(feature = "proving")]
     NightLights,
     /// Diagnostic control: omit only the overlay's mirrored instance.
     #[cfg(feature = "draw-probe")]
@@ -292,6 +307,8 @@ pub(crate) fn register_peers(sim: &mut Simulation, entity_count: usize) -> Resul
 #[cfg(feature = "proving")]
 fn field_simulation(clouds: Option<crate::simulation::Weather>) -> Result<Simulation, String> {
     let entity_count = crate::field::ENTITY_COUNT;
+    #[cfg(not(feature = "proving"))]
+    let _ = route_overlay;
     let mut sim = new_simulation(entity_count, clouds.is_some())?;
     for index in 0..entity_count {
         let entity = crate::field::entity(index);
@@ -328,6 +345,8 @@ fn grid_simulation(
     if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
         return Err("fixture entity count is outside the physical slot range".into());
     }
+    #[cfg(not(feature = "proving"))]
+    let _ = route_overlay;
     let mut sim = new_simulation(entity_count, clouds.is_some())?;
     let moving_count = entity_count / ENTITY_COUNT * MOVING_COUNT
         + entity_count % ENTITY_COUNT * MOVING_COUNT / ENTITY_COUNT;
@@ -336,57 +355,27 @@ fn grid_simulation(
         let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
         let reflection_subject = entity_count == ENTITY_COUNT && index == REFLECTION_SUBJECT_SLOT;
         let ownership = peer_ownership(entity_count, index)?;
-        let overlay = (route_overlay != RouteOverlay::Off)
-            .then(|| route_overlay_position(index))
-            .flatten()
-            .filter(|_| entity_count == ENTITY_COUNT);
-        let lamp = (route_overlay == RouteOverlay::NightLights && entity_count == ENTITY_COUNT)
-            .then(|| index.checked_sub(NIGHT_LAMP_FIRST_SLOT))
-            .flatten()
-            .filter(|&offset| offset < NIGHT_LAMPS.len());
+        let position = if reflection_subject {
+            REFLECTION_SUBJECT_POSITION.map(f64::from)
+        } else {
+            [x, y, 0.5]
+        };
+        let speed = if index < moving_count { 0.05 } else { 0.0 };
+        let visual = if reflection_subject {
+            REFLECTION_SUBJECT_MATERIAL
+        } else {
+            (index % 2) as u64
+        };
+        #[cfg(feature = "proving")]
+        let (position, speed, visual) =
+            seed_route_overlay(route_overlay, index, entity_count, position, speed, visual);
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
-            position: Position(
-                if matches!(
-                    route_overlay,
-                    RouteOverlay::Motion | RouteOverlay::Reconstruction
-                ) && index == MOTION_SUBJECT_SLOT
-                {
-                    MOTION_SUBJECT_POSITION.map(f64::from)
-                } else if let Some(lamp) = lamp {
-                    NIGHT_LAMPS[lamp].0.map(f64::from)
-                } else if let Some(position) = overlay {
-                    position.map(f64::from)
-                } else if reflection_subject {
-                    REFLECTION_SUBJECT_POSITION.map(f64::from)
-                } else {
-                    [x, y, 0.5]
-                },
-            ),
-            velocity: Velocity([
-                if matches!(
-                    route_overlay,
-                    RouteOverlay::Motion | RouteOverlay::Reconstruction
-                ) && index == MOTION_SUBJECT_SLOT
-                {
-                    3.0
-                } else if index < moving_count {
-                    0.05
-                } else {
-                    0.0
-                },
-                0.0,
-                0.0,
-            ]),
+            position: Position(position),
+            velocity: Velocity([speed, 0.0, 0.0]),
             health: 100,
             ownership,
-            visual: Some(if let Some(lamp) = lamp {
-                FIRST_LAMP_MATERIAL + lamp as u64
-            } else if reflection_subject {
-                REFLECTION_SUBJECT_MATERIAL
-            } else {
-                (index % 2) as u64
-            }),
+            visual: Some(visual),
         })
         .map_err(|error| format!("seed entity {index}: {error:?}"))?;
     }
@@ -396,6 +385,38 @@ fn grid_simulation(
     Ok(sim)
 }
 
+#[cfg(feature = "proving")]
+fn seed_route_overlay(
+    overlay: RouteOverlay,
+    index: usize,
+    entity_count: usize,
+    position: [f64; 3],
+    speed: f64,
+    visual: u64,
+) -> ([f64; 3], f64, u64) {
+    if matches!(overlay, RouteOverlay::Motion | RouteOverlay::Reconstruction)
+        && index == MOTION_SUBJECT_SLOT
+    {
+        return (MOTION_SUBJECT_POSITION.map(f64::from), 3.0, visual);
+    }
+    if overlay == RouteOverlay::Off || entity_count != ENTITY_COUNT {
+        return (position, speed, visual);
+    }
+    if overlay == RouteOverlay::NightLights
+        && let Some(lamp) = index.checked_sub(NIGHT_LAMP_FIRST_SLOT)
+        && let Some((position, _)) = NIGHT_LAMPS.get(lamp)
+    {
+        return (
+            position.map(f64::from),
+            speed,
+            FIRST_LAMP_MATERIAL + lamp as u64,
+        );
+    }
+    let position = route_overlay_position(index).map_or(position, |point| point.map(f64::from));
+    (position, speed, visual)
+}
+
+#[cfg(feature = "proving")]
 pub(crate) fn reconstruction_spawn(
     sim: &Simulation,
 ) -> Result<Vec<crate::simulation::Command>, String> {
@@ -447,6 +468,7 @@ fn extract_rows<const OMIT_MIRROR: bool>(
         [0.0; 3],
         |sink| {
             snapshot.visit(|handle, id, position, visual| {
+                #[cfg(feature = "draw-probe")]
                 if OMIT_MIRROR && handle.slot as usize == ROUTE_OVERLAY_MIRRORED_SLOT {
                     return;
                 }
@@ -468,6 +490,7 @@ fn extract_rows<const OMIT_MIRROR: bool>(
                         next_index[index] += 1;
                     }
                 }
+                #[cfg(feature = "draw-probe")]
                 if OMIT_MIRROR && slot as usize == ROUTE_OVERLAY_MIRRORED_SLOT {
                     sink.remove(slot);
                     continue;
@@ -836,6 +859,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "proving")]
     fn motion_witness_moves_in_the_real_world_and_leaves_the_old_proof_alone() {
         let proof = simulation(super::GameContent::Grid, super::RouteOverlay::Proof)
             .expect("existing proof");
@@ -884,6 +908,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "proving")]
     fn route_overlay_reseeds_only_its_slots_and_off_matches_the_fixture() {
         let fixture = simulation_with_count(ENTITY_COUNT).expect("fixture");
         let off =

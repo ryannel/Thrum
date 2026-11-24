@@ -17,6 +17,7 @@ mod light_probe;
 pub use light_probe::{BrowserLightProbe, create_light_list_probe};
 #[cfg(feature = "proving")]
 mod sprites;
+#[cfg(feature = "proving")]
 mod submitted_capture;
 
 use std::{
@@ -25,6 +26,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[cfg(feature = "proving")]
 use thrum_app::web::SAMPLES;
 use thrum_app::web::{ControlTiming, PageGame, PageRuntime};
 use thrum_asset::{BrowserFetch, DevClient};
@@ -176,6 +178,7 @@ pub async fn create_browser_game(
             } else {
                 thrum_render::synthetic::DisplayOverlay::Off
             },
+            #[cfg(feature = "proving")]
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
             valley_stars: valley_stars.unwrap_or(false),
@@ -225,6 +228,7 @@ pub async fn create_field_game(
             content: crate::GameContent::Field,
             exit_entities: crate::ExitEntities::Draw,
             cooked_mesh_rows: crate::host::MeshRowSource::Code,
+            #[cfg(feature = "proving")]
             diagnostic_clouds: false,
             haze: None,
             camera_culling,
@@ -506,11 +510,11 @@ pub async fn create_route_game(
     if diagnostic_clouds == Some(true) || haze.is_some() || capture_weather.is_some() {
         return Err(js_error("diagnostic scenes require the proving build"));
     }
-    let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
+    let (extent, _overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
     #[cfg(not(feature = "draw-probe"))]
     let valley_stars = true;
     #[cfg(feature = "draw-probe")]
-    let valley_stars = overlay != crate::RouteOverlay::StarsOff;
+    let valley_stars = _overlay != crate::RouteOverlay::StarsOff;
     canvas.set_width(extent[0]);
     canvas.set_height(extent[1]);
     #[cfg(feature = "proving")]
@@ -533,11 +537,14 @@ pub async fn create_route_game(
             } else {
                 thrum_render::synthetic::Reconstruction::Off
             },
-            route_overlay: overlay,
+            #[cfg(feature = "proving")]
+            route_overlay: _overlay,
+            #[cfg(feature = "proving")]
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
             #[cfg(feature = "proving")]
             cloud_weather,
+            #[cfg(feature = "proving")]
             haze: crate::host::haze_selection(haze.as_deref()).map_err(js_error)?,
             #[cfg(feature = "proving")]
             test_bank: haze.as_deref() == Some(crate::host::scene_source::test_bank::SELECTION),
@@ -660,6 +667,7 @@ impl BrowserGame {
     ///
     /// # Errors
     /// Reduced scale requires portable temporal reconstruction.
+    #[cfg(feature = "proving")]
     pub fn route_render_scale(&mut self, routed_tick: u32) -> Result<(), JsValue> {
         self.page
             .shell
@@ -1069,6 +1077,7 @@ impl BrowserGame {
 
     /// True after 600 GPU-complete frame samples have been collected.
     #[must_use]
+    #[cfg(feature = "proving")]
     pub fn complete(&self) -> bool {
         self.page.shell.samples().len() == SAMPLES
     }
@@ -1105,6 +1114,7 @@ impl BrowserGame {
 
     /// Per-frame GPU pass sum plus surface blit from the held exit stop.
     #[must_use]
+    #[cfg(feature = "proving")]
     pub fn exit_sweep_samples(&self) -> String {
         let rows = self
             .page

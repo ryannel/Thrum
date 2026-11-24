@@ -47,7 +47,8 @@ EXIT_SOURCE = SOURCE.with_name('exit')
 RUNS = REPO / 'tmp/g7-showcase/runs'
 COOK = REPO / 'target/release/thrum-cook'
 GAME = REPO / 'target/release/v1-game'
-WEB = REPO / 'target/v1-game-web'
+SHIPPING_WEB = REPO / 'target/v1-game-web'
+WEB = REPO / 'target/v1-game-web-proving'
 WASM = WEB / 'v1_game_bg.wasm'
 CHECKER = REPO / 'scripts/check_v1_browser.mjs'
 BASELINE = REPO / 'examples/v1-game/tests/fixtures/showcase/valley-baseline.json'
@@ -107,10 +108,10 @@ def route():
     return stops
 
 
-def web_presets():
+def web_presets(web_root=WEB):
     """The web root must ship each checked-in route preset byte for byte, so a stale build never shows an old stop."""
     for stop in ROUTE:
-        built = WEB / f'showcase-{stop}.params.json'
+        built = web_root / f'showcase-{stop}.params.json'
         if not built.is_file() or sha256(built) != sha256(PARAMS / built.name):
             raise Failure(f'{built} is missing or differs from the checked-in preset; rebuild the web page')
 
@@ -138,27 +139,27 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2) + '\n')
 
 
-def build(run, web):
-    """Build release thrum-cook and v1-game, and the default web page if asked; return build seconds."""
+def build(run, web, *, proving=True):
+    """Build release thrum-cook and v1-game, plus the selected web bundle if asked."""
     started = time.monotonic()
     with open(run / 'build.log', 'w') as log:
         steps = [['rustup', 'run', TOOLCHAIN, 'cargo', 'build', '--release', '--locked',
                   '-p', 'thrum-cook', '-p', 'v1-game', '--bin', 'thrum-cook', '--bin', 'v1-game']]
         if web:
-            steps.append(['sh', 'examples/v1-game/web/build.sh'])
+            steps.append(['sh', 'examples/v1-game/web/build.sh', *(['--proving'] if proving else [])])
         for step in steps:
             if subprocess.run(step, cwd=REPO, stdout=log, stderr=subprocess.STDOUT).returncode:
                 raise Failure(f'build failed: {" ".join(step)} (see {run / "build.log"})')
     return time.monotonic() - started
 
 
-def identities(web, built):
+def identities(web, built, *, web_root=WEB):
     # Under --no-build the binaries may predate the commit; only a run that builds proves they match it.
     # The run's main revision is the commit's merge base with main; origin/main itself may move during a session.
     found = {'commit': git('rev-parse', 'HEAD'), 'main_base': git('merge-base', 'HEAD', 'origin/main'),
              'origin_main_at_run': git('rev-parse', 'origin/main'),
              'dirty': bool(git('status', '--porcelain')), 'built_by_this_run': built}
-    for name, path in [('thrum_cook', COOK), ('v1_game', GAME)] + ([('wasm', WASM)] if web else []):
+    for name, path in [('thrum_cook', COOK), ('v1_game', GAME)] + ([('wasm', web_root / WASM.name)] if web else []):
         if not path.exists():
             raise Failure(f'{path} is not built; run without --no-build')
         found[f'{name}_sha256'] = sha256(path)
@@ -266,15 +267,16 @@ class Logged(http.server.SimpleHTTPRequestHandler):
 def chrome(args):
     route()
     run = new_run('chrome')
-    seconds = None if args.no_build else build(run, web=True)
-    record = {'command': 'chrome', 'stop': args.stop, 'build_seconds': seconds, 'builds': identities(web=True, built=not args.no_build)}
-    web_presets()
+    seconds = None if args.no_build else build(run, web=True, proving=False)
+    record = {'command': 'chrome', 'stop': args.stop, 'build_seconds': seconds,
+              'builds': identities(web=True, built=not args.no_build, web_root=SHIPPING_WEB)}
+    web_presets(SHIPPING_WEB)
     watcher = server = None
     try:
         watcher, assets = watch(run, copy_source(run, exit_assets=EXIT_SOURCE if args.exit else None), serve=True)
         # build.sh copies the presets into the web root, so the page fetches them beside index.html.
         handler = type('Handler', (Logged,), {'log_path': run / 'requests.log'})
-        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), lambda *a: handler(*a, directory=str(WEB)))
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), lambda *a: handler(*a, directory=str(SHIPPING_WEB)))
         threading.Thread(target=server.serve_forever, daemon=True).start()
         inputs = {'assets': assets, 'params': f'showcase-{args.stop}.params.json'}
         if args.exit:

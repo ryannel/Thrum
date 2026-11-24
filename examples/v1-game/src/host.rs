@@ -52,6 +52,7 @@ impl From<bool> for MeshRowSource {
 
 /// Visual selection for the exit scene's entity population.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[cfg(feature = "proving")]
 pub enum ExitEntities {
     /// Draw the populated scene.
     #[default]
@@ -98,8 +99,10 @@ pub struct GameSetup {
     /// Trace hard shadows from the main view's local lights.
     pub lamp_shadows: bool,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
+    #[cfg(feature = "proving")]
     pub diagnostic_clouds: bool,
     /// The diagnostic view volume's clear-air aerosol. Absent in ordinary scenes.
+    #[cfg(feature = "proving")]
     pub haze: Option<thrum_render::atmosphere::Aerosol>,
     /// Opt-in analytic test bank stand-in for weather-provided fog.
     #[cfg(feature = "proving")]
@@ -107,6 +110,7 @@ pub struct GameSetup {
     /// The grid or the dense flythrough field.
     pub content: GameContent,
     /// Draw the exit terrain and sample objects with its entity population suppressed.
+    #[cfg(feature = "proving")]
     pub exit_entities: ExitEntities,
     /// How the camera's opaque draw is culled; Direct draws every instance.
     pub camera_culling: CullMode,
@@ -114,13 +118,29 @@ pub struct GameSetup {
     pub valley_stars: bool,
     /// Reseed the moving-route proof overlay (11 static grid slots at valley metres,
     /// one mirrored basis and one retuned local light). Grid content only; off by default.
+    #[cfg(feature = "proving")]
     pub route_overlay: RouteOverlay,
     /// Narrow two overlay props for the realtime render-scale witness.
+    #[cfg(feature = "proving")]
     pub route_scale_props: bool,
     /// Draw the flythrough field's props as a rock, a column and a spruce,
     /// some mirrored, instead of boxes. Also selects meshes for valley entities. Occlusion uses
     /// the same mesh buckets with a class-matched depth prepass.
     pub field_meshes: bool,
+}
+
+impl GameSetup {
+    pub(crate) fn route_overlay(&self) -> RouteOverlay {
+        #[cfg(feature = "proving")]
+        {
+            self.route_overlay
+        }
+        #[cfg(not(feature = "proving"))]
+        {
+            let _ = self;
+            RouteOverlay::Off
+        }
+    }
 }
 
 impl Default for GameSetup {
@@ -143,21 +163,27 @@ impl Default for GameSetup {
             #[cfg(feature = "proving")]
             sun_proof_geometry: crate::SunProofGeometry::Off,
             lamp_shadows: false,
+            #[cfg(feature = "proving")]
             diagnostic_clouds: false,
+            #[cfg(feature = "proving")]
             haze: None,
             #[cfg(feature = "proving")]
             test_bank: false,
             content: GameContent::Grid,
+            #[cfg(feature = "proving")]
             exit_entities: ExitEntities::Draw,
             camera_culling: CullMode::Direct,
             valley_stars: false,
+            #[cfg(feature = "proving")]
             route_overlay: RouteOverlay::Off,
+            #[cfg(feature = "proving")]
             route_scale_props: false,
             field_meshes: false,
         }
     }
 }
 
+#[cfg(feature = "proving")]
 pub(crate) fn haze_selection(
     value: Option<&str>,
 ) -> Result<Option<thrum_render::atmosphere::Aerosol>, String> {
@@ -165,7 +191,6 @@ pub(crate) fn haze_selection(
     let Some(value) = value else {
         return Ok(None);
     };
-    #[cfg(feature = "proving")]
     if value == scene_source::test_bank::SELECTION {
         return Ok(Some(Aerosol::default()));
     }

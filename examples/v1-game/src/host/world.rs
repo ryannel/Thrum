@@ -288,6 +288,7 @@ pub(crate) struct WorldDriver {
 
 pub(super) struct GameRules {
     entity_count: usize,
+    #[cfg(feature = "proving")]
     route_overlay: scene::RouteOverlay,
     pub(super) sim: Simulation,
     desired_axes: [f32; 3],
@@ -345,7 +346,7 @@ impl WorldDriver {
                 .map_err(|error| error.to_string())?;
             return Self::with_simulation(setup.route_overlay, sim, setup.content.entity_count());
         }
-        Self::selected(setup.content, setup.route_overlay, clouds)
+        Self::selected(setup.content, setup.route_overlay(), clouds)
     }
 
     fn with_simulation(
@@ -353,7 +354,10 @@ impl WorldDriver {
         sim: Simulation,
         entity_count: usize,
     ) -> Result<Self, String> {
+        #[cfg(not(feature = "proving"))]
+        let _ = route_overlay;
         let game = GameRules {
+            #[cfg(feature = "proving")]
             route_overlay,
             sim,
             entity_count,
@@ -472,6 +476,7 @@ pub(super) enum GameWorldError {
         source: SimError,
     },
     Exhausted(&'static str),
+    #[cfg(feature = "proving")]
     Reconstruction(String),
 }
 
@@ -482,6 +487,7 @@ impl std::fmt::Display for GameWorldError {
             Self::Admission(error) => write!(f, "local input admission: {error:?}"),
             Self::Simulation { operation, source } => write!(f, "{operation}: {source:?}"),
             Self::Exhausted(what) => write!(f, "{what} exhausted"),
+            #[cfg(feature = "proving")]
             Self::Reconstruction(message) => f.write_str(message),
         }
     }
@@ -558,6 +564,7 @@ impl WorldGame for GameRules {
             self.admitted_axes = self.desired_axes;
             self.input_sequence = next_sequence;
         }
+        #[cfg(feature = "proving")]
         let commands =
             if self.route_overlay == scene::RouteOverlay::Reconstruction && self.sim.tick() == 59 {
                 scene::reconstruction_spawn(&self.sim).map_err(GameWorldError::Reconstruction)?
@@ -565,7 +572,12 @@ impl WorldGame for GameRules {
                 Vec::new()
             };
         self.sim
-            .step(&commands)
+            .step(
+                #[cfg(feature = "proving")]
+                &commands,
+                #[cfg(not(feature = "proving"))]
+                &[],
+            )
             .map_err(|source| GameWorldError::Simulation {
                 operation: "simulation step",
                 source,

@@ -1,4 +1,7 @@
 //! Read the shared forward lookup and the real incident-light resolve on Metal.
+
+#![cfg(feature = "proving")]
+
 #[expect(
     dead_code,
     reason = "the shared fixture also reads cumulative view volumes"

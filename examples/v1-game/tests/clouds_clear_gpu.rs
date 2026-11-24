@@ -1,5 +1,7 @@
 //! Coverage zero leaves the rendered scene byte-for-byte unchanged.
 
+#![cfg(feature = "proving")]
+
 thrum_test_support::macos_gpu_test! {
     fn selecting_a_clear_sky_preserves_every_pixel() {
         use thrum_render::runtime::FrameConfig;

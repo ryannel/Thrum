@@ -47,8 +47,10 @@
       <output id="status">Starting WebGPU…</output>
     </main>
     <script type="module">
-      import init, * as bindings from "./v1_game.js";
-      const { create_browser_game, create_placed_browser_game, create_field_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } = bindings;
+      import init, { create_browser_game, fetch_cooked_valley } from "./v1_game.js";
+      // @proving
+      import { create_placed_browser_game, create_field_game, create_sprite_game, create_sprite_probe } from "./v1_game.js";
+      // @end
       import { bindControls } from "./thrum-controls.js";
       import { mountPage } from "./host-page.js";
 
@@ -58,11 +60,11 @@
       try {
         await init();
         const probe = new URL(location.href).searchParams;
-        // ?field draws the dense flythrough field; ?culling=direct|frustum|occlusion picks camera culling.
         const cooked = probe.has("assets");
         const exit = probe.get("scene") === "exit";
-        const sprites = probe.get("scene") === "sprites";
         const clouds = probe.get("clouds") ?? undefined;
+        // @proving
+        const sprites = probe.get("scene") === "sprites";
         const placed = probe.get("placed-clouds");
         const spriteSweep = sprites && probe.get("sprite-probe")?.startsWith("sweep:");
         if (spriteSweep) {
@@ -94,6 +96,9 @@
         }
         // The route comparison uses the canvas's authored backing size at the calibrated viewport.
         const fixedGrid = (sprites && probe.has("backing")) || (exit && probe.has("measure")) || probe.has("resize-probe") || probe.has("route-check");
+        // @shipping
+        const fixedGrid = false;
+        // @end
         let backingDirty = true;
         let lastDpr;
         if (!fixedGrid) {
@@ -110,12 +115,16 @@
           if (canvas.width !== width) canvas.width = width;
           if (canvas.height !== height) canvas.height = height;
         };
-        if (exit && (!cooked || probe.has("field"))) throw new Error("The exit scene requires a cooked store");
+        if (exit && !cooked) throw new Error("The exit scene requires a cooked store");
+        // @proving
+        if (exit && probe.has("field")) throw new Error("The exit scene requires a cooked store");
         if (exit && probe.has("measure")) {
           canvas.width = 1920;
           canvas.height = 1080;
         }
+        // @end
         syncBackingSize();
+        // @proving
         const scale = Number(probe.get("scale") ?? 2);
         if (sprites && (!Number.isInteger(scale) || scale < 1 || scale > 6)) {
           throw new Error("Sprite scale must be an integer from 1 to 6");
@@ -150,6 +159,9 @@
           label.textContent = "Diagnostic cloud-shade stand-in, drifting at 160 m/s east and 40 m/s south.";
           canvas.after(label);
         }
+        // @shipping
+        const game = await create_browser_game(canvas, cooked && probe.get("stars") !== "off", false, false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
+        // @end
         // ?assets=<thrum-cook watch --serve origin> draws the cooked valley; ?stars=off is a visual control.
         if (cooked) {
           status.textContent = "Fetching the cooked valley…";
@@ -166,15 +178,22 @@
             }
           })();
         }
+        // @proving
         const running = sprites ? "Running the sprite scene…" : probe.has("field") ? "Running the 100,513-instance field…" : "Running the 10,000-entity scene…";
         status.textContent = running;
         const pauseProbe = probe.has("pause-probe");
         const resizeProbe = probe.has("resize-probe");
         const overloadProbe = probe.has("overload-probe");
         const qualify = probe.has("qualify") || pauseProbe || resizeProbe || overloadProbe;
+        // @shipping
+        const running = "Running the 10,000-entity scene…";
+        const qualify = false;
+        // @end
         let exitReported = false;
         let stopped = false;
+        // @proving
         const cloudCheck = (clouds || placed) && probe.has("cloud-check") ? globalThis.thrumCloudCheck : undefined;
+        // @end
         const pressed = new Set();
         // Sliders, the pause toggle and the Sun readout come from the game's typed controls.
         // Edits go through the game's checked setters at once; pause takes the same path as
@@ -293,17 +312,23 @@
           if (event.target instanceof Element && event.target.closest("input, button")) clearControls();
         });
         let lastPlayerUpdate = 0;
+        // @proving
         let beforeCloudFrame;
+        // @end
         const page = mountPage(game, {
           controlView: controls,
           recoveryButton: document.querySelector("#restore-graphics"),
           physicalKeys: false,
+          // @proving
           canFrame: () => !spriteSweep && !cloudCheck?.hold,
+          // @end
           onHidden: clearControls,
           beforeFrame() {
             syncBackingSize();
+            // @proving
             beforeCloudFrame = cloudCheck?.enabled ? game.presented() : undefined;
             if (beforeCloudFrame !== undefined) game.observe_next_cloud_submission(cloudCheck.ground);
+            // @end
           },
           onGraphics({ fault, recovering, error, unavailable, wasUnavailable }) {
             if (unavailable) {
@@ -317,12 +342,18 @@
               status.textContent = running;
             }
           },
+          // @proving
           async afterFrame(time, graphicsUnavailable) {
+          // @shipping
+          afterFrame(time) {
+          // @end
+            // @proving
             if (beforeCloudFrame !== undefined && game.presented() !== beforeCloudFrame) {
               const observation = game.inspect_cloud_submission();
               if (!observation) throw new Error("Submitted frame did not publish cloud products");
               cloudCheck.frames.push({presented: Number(game.presented()), callback_ms: time, ...JSON.parse(await observation)});
             }
+            // @end
             pollMaterial();
             if (time - lastPlayerUpdate >= 500) {
               player.textContent = game.controlled_position();
@@ -335,17 +366,20 @@
                 }
               }
             }
+            // @proving
             if (!graphicsUnavailable && qualify && game.complete()) {
               status.textContent = game.report();
               stopped = true;
               page.stop();
             }
+            // @end
           },
           onError(error, phase) {
             status.textContent = phase === "lifecycle" ? `Lifecycle fault: ${error}` : `Frame fault: ${error}; ${game.report()}`;
             stopped = true;
           },
         });
+        // @proving
         if (cloudCheck) cloudCheck.resume = page.schedule;
         if (pauseProbe) {
           setTimeout(() => {
@@ -381,6 +415,7 @@
             }, 250);
           }, 1000);
         }
+        // @end
       } catch (error) {
         status.textContent = `Startup fault: ${error}`;
       }

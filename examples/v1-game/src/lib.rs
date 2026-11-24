@@ -64,12 +64,14 @@ pub use content::attach_cooked_scene_with_probe;
 pub use content::{CloudQualityError, apply_cloud_quality};
 #[cfg(not(target_arch = "wasm32"))]
 pub use content::{attach_cooked_scene, selected_setup};
+#[cfg(feature = "proving")]
+pub use host::ExitEntities;
 #[cfg(not(target_arch = "wasm32"))]
 pub use host::WorldControls;
 #[cfg(feature = "proving")]
 #[doc(hidden)]
 pub use host::field_in_view_share;
-pub use host::{ExitEntities, GameHost, GameScene, GameSetup, GameWorld, MeshRowSource};
+pub use host::{GameHost, GameScene, GameSetup, GameWorld, MeshRowSource};
 pub use scene::{GameContent, RouteOverlay};
 #[doc(hidden)]
 pub use scene::{exit_authority, simulation_with_count};
