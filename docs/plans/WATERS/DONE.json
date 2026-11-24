@@ -1046,7 +1046,7 @@
     {
       "id": "M18",
       "name": "The submitted craft trail is checked through a minute of ageing in the fast suite",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Keep the full elapsed-time trail witness and its original bounds in the default Nextest tier on Metal.",
       "items": [
         {
@@ -1057,7 +1057,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M18/README.md"
+          "evidence": ".orchestrate/evidence/WATERS/M18/README.md",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M18-review.md"
         }
       ],
       "failed_reviews": 0,

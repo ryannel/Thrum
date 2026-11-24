@@ -1523,7 +1523,32 @@
     },
     "M18": {
       "definitions": "ccdf2f11f46522a654e8d009834a4b9c63303173c201cef72770f92b2bfb7207",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "5789ae3d76173158817b7f88b316e8b4091d0dd7",
+          "review": ".orchestrate/evidence/WATERS/M18-review.md",
+          "items": {
+            "M18.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 47366,
+            "cached": 452992,
+            "output": 2482,
+            "turns": 1
+          },
+          "at": "2026-11-24T03:07:54Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The main-branch check workspace-tests fails on 299376222cb1 at normal machine load. Three tests hit nextest's 10 s limit",
@@ -1557,6 +1582,13 @@
           "output": 10546,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "5789ae3d76173158817b7f88b316e8b4091d0dd7",
+        "review": ".orchestrate/evidence/WATERS/M18-review.md",
+        "checked": "f59f0a120beed8f3c91548d3e7167bf48122e168",
+        "at": "2026-11-24T03:07:54Z"
       }
     }
   },
