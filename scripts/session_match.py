@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import sim2d_conformance as conformance
 import session_faults
+import simulator_lifecycle
 
 
 ROOT = conformance.ROOT
@@ -33,12 +34,14 @@ COST_SIZES = (2000, 5000, 10000)
 COST_TICK = 240
 
 
-def build(target, tree=ROOT, output=None):
-    output = output or (ROOT / "target")
+def build(target, tree=ROOT, output=None, *, sockets=False):
+    output = output or (ROOT / "target" / "session-sockets" if sockets else ROOT / "target")
     triple = TARGETS[target]
     channel = tomllib.loads((tree / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
     args = ["rustup", "run", channel, "cargo", "build", "--locked", "--offline", "--release", "-p", PACKAGE,
             "--target-dir", str(output)]
+    if sockets:
+        args += ["--features", "sockets"]
     if triple:
         args += ["--target", triple]
     if target == "chrome-webgpu":
@@ -58,9 +61,13 @@ def sha(path):
 class Runner:
     def __init__(self, target, scratch):
         self.target = target
-        self.artifact = build(target)
+        built = build(target)
+        snapshot = scratch / target
+        snapshot.mkdir()
+        self.artifact = snapshot / built.name
+        shutil.copy2(built, self.artifact)
         self.artifact_hash = sha(self.artifact)
-        self.device = conformance.simulator() if target == "ios-sim" else None
+        self.lifecycle = scratch / "simulator-turns.jsonl" if target == "ios-sim" else None
         self.web = None
         self.loaded_wasm_hash = None
         self.user_agent = None
@@ -98,17 +105,18 @@ class Runner:
         arguments = [self.artifact, operation, count, str(mixed).lower(), data]
         if last is not None:
             arguments.append(last)
-        if self.device:
-            arguments = ["xcrun", "simctl", "spawn", self.device, *arguments]
-            return json.loads(conformance.device_command("simulator", arguments))
+        if self.lifecycle:
+            return json.loads(simulator_lifecycle.run_case(arguments, record=self.lifecycle))
         return json.loads(conformance.command(arguments))
 
     def record(self):
+        turns = [json.loads(line) for line in self.lifecycle.read_text().splitlines()] if self.lifecycle else []
         return {
             "artifact_sha256": self.artifact_hash,
             "build": "release",
             "target": self.target,
-            "simulator": self.device,
+            "simulator": next((turn["udid"] for turn in turns if turn["event"] == "booted"), None),
+            "simulator_turns": turns,
             "browser_version": self.browser_version,
             "user_agent": self.user_agent,
             "loaded_wasm_sha256": self.loaded_wasm_hash,
@@ -190,6 +198,9 @@ def trace_images(native, receiver, scratch, revision, reference):
     print(f"{target}: write {name} images", file=sys.stderr, flush=True)
     if receiver is native:
         host = local = mac_capture(native, revision, name, mixed)
+    elif target == "ios-sim":
+        host = mac_capture(native, revision, name, mixed)
+        local = receiver.invoke("capture", 10_000, mixed, IMAGE_TICKS)
     else:
         with ThreadPoolExecutor(max_workers=1) as pool:
             pending = pool.submit(mac_capture, native, revision, name, mixed)
@@ -370,13 +381,21 @@ def identity(scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["image", "identity", "image-costs", "memory"])
+    parser.add_argument("action", choices=["image", "identity", "image-costs", "memory", "sockets"])
     parser.add_argument("scenario", nargs="?", choices=[
-        "steady", "lead", "costs", "prediction", "prediction-costs", *session_faults.SCENARIOS,
+        "steady", "faults", "slow", "listen", "lead", "costs", "prediction", "prediction-costs", *session_faults.SCENARIOS,
     ])
     parser.add_argument("--target", choices=TARGETS, default="mac-metal")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.action == "sockets":
+        import session_sockets
+        if args.scenario not in session_sockets.SCENARIOS:
+            parser.error("sockets requires steady, faults, slow, listen or costs")
+        if args.target == "ios-sim" and args.scenario in ("slow", "costs"):
+            parser.error("the simulator is for function only")
+        session_sockets.proof(args.scenario, args.target, args.output, build)
+        return
     if args.action == "memory":
         if args.scenario is None or args.target != "mac-metal":
             parser.error("memory needs a scenario on mac-metal")

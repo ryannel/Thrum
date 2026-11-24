@@ -194,3 +194,25 @@
   On the Mac, recovery resumed datagrams on the same link and matched the authority digest at stop. The
   persistent-full control closed at the deadline. The first two-case workspace batch passed at 0.032 s and
   0.060 s. The individual runs, baseline and assertion audit are in the [M8 evidence](../../../.orchestrate/evidence/SESSION/M8/README.md).
+## M5 socket sessions
+
+- Added release entry points for the Mac authority and replica, the simulator replica and the Chrome Wasm
+  replica. Each runs the registered crowd through the production session and its target's transport adapter.
+  The harness drives A0 packet relays, records process and build identity, and compares digests written by the
+  independent worlds. Native 10,000-body runs use a bounded rule worker pool. The socket profile records its
+  catch-up and drain settings, plus the requested Darwin scheduling class.
+- Verified the Mac, Chrome and simulator fault sequences, the Mac stalled-client control, both Chrome renderer
+  freezes, and the Mac listen host with Chrome and simulator replicas. The cost campaigns retained both repeats
+  for BBR and Cubic at 2,000 and 10,000 bodies, with initial lobby join phases and a playing interval. The Chrome
+  endpoint wire counter is absent and the relay counts both wire directions.
+- Real socket runs exposed missed authoring periods during delayed client polls and receive-credit exhaustion
+  during delayed authority steps. The session now bounds its authoring horizon, offers timed input before
+  replica catch-up and earns receive credit in elapsed tick periods. The focused network tests and adaptive
+  lead regression passed. [Socket evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)
+
+
+- 2026-11-24 Bounded the socket authority's catch-up rate and verified the 36,000-tick match with four independent replicas.
+  Each matched all 1,200 digests. The three fault targets, both stalled-peer checks, the listen host and both cost matrices passed.
+  The shared simulator lifecycle verified shutdown after success, failure and cancellation. All eight image turns released after shutdown,
+  with six byte-exact images and 1,000 matching continuation checkpoints. The scoped workspace check passed all 60 selected tests.
+  The merged tip receives the shared exact-image check. [M5 evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)

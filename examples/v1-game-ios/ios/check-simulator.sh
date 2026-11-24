@@ -1,21 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd -- "$(dirname -- "$0")/../../.."
-if [[ "${1:-}" == "--extent" && "$#" -eq 1 ]]; then
-    export THRUM_V1_ROWS=extent
-elif [[ "${1:-}" == "--transition" && "$#" -eq 1 ]]; then
-    export THRUM_V1_ROWS=transition
-elif [[ "${1:-}" == "--edr" && "$#" -eq 1 ]]; then
-    export THRUM_V1_ROWS=edr
-elif [[ "$#" -ne 0 ]]; then
-    echo "usage: $0 [--extent|--transition|--edr]" >&2
-    exit 2
-fi
+case "${1:-}" in
+    --prepare|--device-worker) ;;
+    *) exec python3 scripts/v1_simulator_route.py "$@" ;;
+esac
 
 # Function check only. Simulator CPU and GPU timings are never gate evidence.
 #
-# The route builds the app, boots a fresh iPhone 18 Pro simulator owned by this
-# run, launches the game with qualification commands enabled and walks the G3b
+# The simulator supervisor clears and boots its owned iPhone 18 Pro. The
+# worker launches the game with qualification commands enabled and walks the G3b
 # rows: startup, a render-owner stall, a hidden view, surface replacement (plain
 # and during a stall), a real background/foreground round trip (plain and during
 # a stall), touch, and rotation (portrait → landscape → portrait, captured to a
@@ -38,13 +32,17 @@ sys.exit(result.returncode)
 PY
 }
 
-thrum_rustc="$(rustup which --toolchain stable rustc)"
-PATH="$(dirname -- "$thrum_rustc"):$PATH" RUSTC="$thrum_rustc" RUSTC_WRAPPER= \
-IPHONEOS_DEPLOYMENT_TARGET="$(plutil -extract MinimumOSVersion raw -expect string examples/v1-game-ios/ios/Info.plist)" \
-    rustup run stable cargo clippy --locked --offline --package v1-game-ios \
-    --target aarch64-apple-ios-sim --all-targets -- -D warnings
-RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh
-examples/v1-game-ios/ios/build-uitest.sh >/dev/null
+if [[ "$1" == "--prepare" ]]; then
+    thrum_rustc="$(rustup which --toolchain stable rustc)"
+    PATH="$(dirname -- "$thrum_rustc"):$PATH" RUSTC="$thrum_rustc" RUSTC_WRAPPER= \
+    IPHONEOS_DEPLOYMENT_TARGET="$(plutil -extract MinimumOSVersion raw -expect string examples/v1-game-ios/ios/Info.plist)" \
+        rustup run stable cargo clippy --locked --offline --package v1-game-ios \
+        --target aarch64-apple-ios-sim --all-targets -- -D warnings
+    RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh
+    examples/v1-game-ios/ios/build-uitest.sh >/dev/null
+    exit 0
+fi
+
 thrum_target="${CARGO_TARGET_DIR:-$PWD/target}"
 thrum_app="$thrum_target/v1-game-ios-sim/ThrumV1.app"
 export THRUM_V1_XCTESTRUN="$thrum_target/v1-game-ios-sim/uitest/ThrumV1UITests.xctestrun"
@@ -53,28 +51,8 @@ if [[ "$(plutil -extract CADisableMinimumFrameDurationOnPhone raw -expect bool "
     exit 1
 fi
 
-# A shared booted simulator can have a wedged app-container service or a live
-# installation. Qualify this build on a fresh device owned by this run.
-thrum_device=$(run_simctl create "Thrum V1 function $$" \
-    com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro \
-    com.apple.CoreSimulator.SimRuntime.iOS-27-2)
-if [[ ! "$thrum_device" =~ ^[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}$ ]]; then
-    echo "simctl create did not return a device UUID: $thrum_device" >&2
-    exit 1
-fi
-cleanup() {
-    local status=$?
-    run_simctl shutdown "$thrum_device" >/dev/null 2>&1 || true
-    if ! run_simctl delete "$thrum_device"; then
-        echo "failed to delete owned simulator $thrum_device" >&2
-        if [[ "$status" -eq 0 ]]; then status=1; fi
-    fi
-    exit "$status"
-}
-trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-run_simctl bootstatus "$thrum_device" -b
+thrum_device=$(python3 scripts/simulator_lifecycle.py worker-device)
+mkdir -- "${THRUM_V1_ROUTE_OUT:?Use a fresh route directory}"
 run_simctl install "$thrum_device" "$thrum_app"
 thrum_container=$(run_simctl get_app_container "$thrum_device" org.thrum.v1 data)
 # A just-booted device can stall its first launch while it finishes setting up.

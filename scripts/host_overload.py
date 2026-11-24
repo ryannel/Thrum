@@ -81,57 +81,61 @@ def check_mac_overload(folder, preset):
     print(f'Mac window overload recovered at epoch {resume[1]}, tick {resume[2]}', flush=True)
 
 
-def check_ios_overload(folder, app):
+def check_ios_overload(folder, app, device):
     def simctl(*args, **kwargs):
         return subprocess.check_output(['xcrun', 'simctl', *args], timeout=90,
                                        text=True, **kwargs).strip()
 
-    device = simctl('create', f'Thrum HOST overload {os.getpid()}',
-                    'com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro',
-                    'com.apple.CoreSimulator.SimRuntime.iOS-27-2')
-    try:
-        simctl('bootstatus', device, '-b')
-        simctl('install', device, str(app))
-        container = Path(simctl('get_app_container', device, 'org.thrum.v1', 'data'))
-        launch = simctl('launch', device, 'org.thrum.v1',
-                        env=dict(os.environ, SIMCTL_CHILD_THRUM_V1_ROUTE='1'))
-        pid = int(re.fullmatch(r'org\.thrum\.v1: (\d+)', launch)[1])
-        state_file = container / 'tmp/thrum-v1-ios-state.txt'
+    # The route just used this boot. Install the overload witness in a fresh
+    # app container while preserving the device identity.
+    subprocess.run(['xcrun', 'simctl', 'terminate', device, 'org.thrum.v1'],
+                   capture_output=True, timeout=15)
+    simctl('uninstall', device, 'org.thrum.v1')
+    simctl('install', device, str(app))
+    container = Path(simctl('get_app_container', device, 'org.thrum.v1', 'data'))
+    launch = simctl('launch', device, 'org.thrum.v1',
+                    env=dict(os.environ, SIMCTL_CHILD_THRUM_V1_ROUTE='1'))
+    pid = int(re.fullmatch(r'org\.thrum\.v1: (\d+)', launch)[1])
+    state_file = container / 'tmp/thrum-v1-ios-state.txt'
 
-        def state():
-            if not state_file.exists():
-                return {}
-            fields = dict(line.split('=', 1) for line in state_file.read_text().splitlines() if '=' in line)
-            if 'fault' in fields:
-                raise RuntimeError(fields['fault'])
-            return fields
+    def state():
+        if not state_file.exists():
+            return {}
+        fields = dict(line.split('=', 1) for line in state_file.read_text().splitlines() if '=' in line)
+        if 'fault' in fields:
+            raise RuntimeError(fields['fault'])
+        return fields
 
-        def number(fields, key):
-            return int(fields.get(key, '0'))
+    def number(fields, key):
+        return int(fields.get(key, '0'))
 
-        before = wait_for('running iPhone simulator game', state, lambda fields:
-                          fields.get('state') == 'Active' and number(fields, 'pid') == pid
-                          and number(fields, 'presented') > 10 and fields.get('world_paused') == 'false',
-                          seconds=90)
-        force_scheduling_gap(pid)
+    before = wait_for('running iPhone simulator game', state, lambda fields:
+                      fields.get('state') == 'Active' and number(fields, 'pid') == pid
+                      and number(fields, 'presented') > 10 and fields.get('world_paused') == 'false',
+                      seconds=90)
+    force_scheduling_gap(pid)
 
-        def recovered(fields):
-            return (number(fields, 'overloads') > number(before, 'overloads')
-                    and number(fields, 'pause_replies') > number(before, 'pause_replies')
-                    and number(fields, 'resume_replies') > number(before, 'resume_replies')
-                    and fields.get('world_paused') == 'false'
-                    and number(fields, 'world_tick') > number(fields, 'resume_tick'))
+    def recovered(fields):
+        return (number(fields, 'overloads') > number(before, 'overloads')
+                and number(fields, 'pause_replies') > number(before, 'pause_replies')
+                and number(fields, 'resume_replies') > number(before, 'resume_replies')
+                and fields.get('world_paused') == 'false'
+                and number(fields, 'world_tick') > number(fields, 'resume_tick'))
 
-        after = wait_for('iPhone overload, confirmed drain and resumed authority', state, recovered)
-        if (after['pause_epoch'], after['pause_tick']) != (after['resume_epoch'], after['resume_tick']):
-            raise RuntimeError('iPhone overload changed the drained world endpoint')
-        if number(after, 'pid') != pid or number(after, 'refused_ticks') <= number(before, 'refused_ticks'):
-            raise RuntimeError('iPhone overload did not recover in the original game with recorded refusals')
-        record = dict(device=device, binary_sha256=hashlib.sha256((app / 'ThrumV1').read_bytes()).hexdigest(),
-                      before=before, after=after)
-        (folder / 'overload.json').write_text(json.dumps(record, indent=2) + '\n')
-        print(f'iPhone simulator overload recovered at epoch {after["resume_epoch"]}, '
-              f'tick {after["resume_tick"]} (function only)', flush=True)
-    finally:
-        subprocess.run(['xcrun', 'simctl', 'shutdown', device], check=False, timeout=90)
-        simctl('delete', device)
+    after = wait_for('iPhone overload, confirmed drain and resumed authority', state, recovered)
+    if (after['pause_epoch'], after['pause_tick']) != (after['resume_epoch'], after['resume_tick']):
+        raise RuntimeError('iPhone overload changed the drained world endpoint')
+    if number(after, 'pid') != pid or number(after, 'refused_ticks') <= number(before, 'refused_ticks'):
+        raise RuntimeError('iPhone overload did not recover in the original game with recorded refusals')
+    record = dict(device=device, binary_sha256=hashlib.sha256((app / 'ThrumV1').read_bytes()).hexdigest(),
+                  before=before, after=after)
+    (folder / 'overload.json').write_text(json.dumps(record, indent=2) + '\n')
+    print(f'iPhone simulator overload recovered at epoch {after["resume_epoch"]}, '
+          f'tick {after["resume_tick"]} (function only)', flush=True)
+
+
+if __name__ == '__main__':
+    import sys
+    from simulator_lifecycle import worker_device
+
+    check_ios_overload(Path(sys.argv[1]), Path(sys.argv[2]), worker_device())

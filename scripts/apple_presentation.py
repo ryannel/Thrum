@@ -10,6 +10,8 @@ import subprocess
 import tempfile
 from statistics import median
 
+import v1_simulator_route
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RECIPE = {"portable": "Ok(Portable)", "apple-tile": "Ok(AppleTile)"}
@@ -333,8 +335,7 @@ def mac_configure_fault(output):
 
 def ios_extent(output):
     route = output / "rotation"
-    build = ROOT / "examples/v1-game-ios/ios/check-simulator.sh"
-    run(str(build), "--extent", env=dict(os.environ, THRUM_V1_ROUTE_OUT=str(route)), timeout=1500)
+    v1_simulator_route.presentation("extent", route)
     rows = [
         json.loads((route / f"extent-{name}-extent.json").read_text())
         for name in ("portrait", "landscape", "return-portrait")
@@ -348,8 +349,7 @@ def ios_extent(output):
 
 def ios_transition(output):
     route = output / "rotation"
-    build = ROOT / "examples/v1-game-ios/ios/check-simulator.sh"
-    run(str(build), "--transition", env=dict(os.environ, THRUM_V1_ROUTE_OUT=str(route)), timeout=1500)
+    v1_simulator_route.presentation("transition", route)
     rows = []
     for name in ("transition-landscape", "transition-portrait"):
         state = dict(line.split("=", 1) for line in (route / f"{name}.txt").read_text().splitlines()
@@ -558,8 +558,7 @@ def mac_scale_costs(output):
 
 def ios_edr(output):
     route = output / "route"
-    build = ROOT / "examples/v1-game-ios/ios/check-simulator.sh"
-    run(str(build), "--edr", env=dict(os.environ, THRUM_V1_ROUTE_OUT=str(route)), timeout=1500)
+    v1_simulator_route.presentation("edr", route)
     return dict(target="ios-sim", scope="simulator function only",
                 before=str(route / "edr-before.txt"), after=str(route / "edr-after.txt"))
 

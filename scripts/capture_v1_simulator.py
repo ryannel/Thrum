@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Capture actual iOS simulator submissions with bounded lossless output.
 
-Run under agent_loop.py lock gpu. Console state is a witness. Attributed denied
+Uses the simulator lock through verified shutdown. Console state is a witness. Attributed denied
 Screen Recording preflights are required by the actual parent launcher.
 """
 import argparse
@@ -17,7 +17,7 @@ import sys
 import time
 
 from cooked_draw_ios_sim import console_witness
-from cooked_draw_sim_launcher import REPORT_ENV, launch
+from cooked_draw_sim_launcher import REPORT_ENV, attributed_device, launch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -76,19 +76,19 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--case', choices=['all', 'off', 'pan', 'running', 'stall', 'surface', 'background', 'loss', 'saturation', 'slow', 'ui-regression', 'host-lifecycle'], default='all')
-    parser.add_argument('--device', help='continue this task’s already owned simulator boot')
+    parser.add_argument('--device', help='require this Thrum-owned simulator UDID for the fresh turn')
     parser.add_argument('--no-build', action='store_true', help='use the current local app and cooker')
     args = parser.parse_args()
     os.chdir(ROOT)
     if REPORT_ENV not in os.environ:
-        launch(sys.argv[1:], args.output, driver=Path(__file__).resolve())
+        launch(sys.argv[1:], args.output, driver=Path(__file__).resolve(), requested=args.device)
         return
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     report = {'target': 'ios-sim', 'scope': 'simulator function only', 'harness_pid': os.getpid(),
               'launcher_pid': os.getppid(), 'commands': [], 'sessions': [], 'route_pass': False,
               'session_output_allowance_bytes': 20 * 1024**3}
-    device = None
+    device = attributed_device()
 
     def run(command, env=None, timeout=180):
         print(' '.join(command), flush=True)
@@ -140,10 +140,7 @@ def main():
                                     for p in store.rglob('*') if p.is_file()}
         app = Path('target/v1-game-ios-sim/ThrumV1.app').resolve()
         report['binary_sha256'] = hashlib.sha256((app / 'ThrumV1').read_bytes()).hexdigest()
-        device = args.device or run(['xcrun', 'simctl', 'create', 'Thrum T2 capture owned',
-                      'com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro', 'com.apple.CoreSimulator.SimRuntime.iOS-27-2'])
         report['device'] = device
-        run(['xcrun', 'simctl', 'bootstatus', device, '-b'], timeout=600)
         report['simulators'] = json.loads(run(['xcrun', 'simctl', 'list', 'devices', '-j']))
         run(['xcrun', 'simctl', 'install', device, str(app)])
         # A sampled fresh-device launch blocked in SpringBoard's synchronous IconServices request.
@@ -405,16 +402,6 @@ def main():
         report['failure'] = str(error)
         raise
     finally:
-        if device:
-            for command in [['terminate', device, 'org.thrum.v1'], ['shutdown', device], ['delete', device]]:
-                try:
-                    result = subprocess.run(['xcrun', 'simctl', *command], capture_output=True, text=True, timeout=90)
-                    report.setdefault('cleanup', []).append({'argv': command, 'exit': result.returncode, 'stderr': result.stderr})
-                    if result.returncode and command[0] != 'terminate':
-                        report['route_pass'] = False
-                except subprocess.SubprocessError as error:
-                    report.setdefault('cleanup', []).append({'argv': command, 'error': str(error)})
-                    report['route_pass'] = False
         (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
 
 

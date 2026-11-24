@@ -1,20 +1,24 @@
-use std::{
-    cell::{Cell, RefCell},
-    time::Instant,
-};
+use std::cell::{Cell, RefCell};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 use crowd_2d::{Candidate, Crowd, Simulation};
 use thrum_core::{
     profile::StateBytes,
-    sim::{GameRuntime, HistoryGame, InputFrame, RuleSetIdentity},
+    sim::{GameRuntime, HistoryGame, InputFrame, PublicationMode, RuleSetIdentity, RuntimeUndo},
 };
 use thrum_network::{
     input_batch::{ActionView, ActionWire, InputCodecError},
     session::{RosterEvents, SLOTS, World},
 };
 
+#[cfg(not(target_arch = "wasm32"))]
 pub(super) struct NoActions;
 
+#[cfg(not(target_arch = "wasm32"))]
 impl ActionWire<()> for NoActions {
     fn encode(&self, (): &(), _: &mut [u8]) -> Result<(u32, usize), InputCodecError> {
         Err(InputCodecError::InvalidAction)
@@ -38,6 +42,7 @@ impl Time {
         self.max = self.max.max(value);
         self.last = value;
     }
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn json(&self) -> serde_json::Value {
         serde_json::json!({"samples": self.count, "total": self.total, "max": self.max})
     }
@@ -57,6 +62,7 @@ pub(super) struct CrowdWorld {
     barrier: Option<(u64, Instant)>,
     count: u32,
     epoch: u128,
+    headless: Option<Box<[RuntimeUndo; 2]>>,
 }
 
 impl CrowdWorld {
@@ -86,7 +92,25 @@ impl CrowdWorld {
             barrier: None,
             count,
             epoch,
+            headless: None,
         }
+    }
+
+    pub(super) fn without_publication(mut self) -> Self {
+        self.configure_headless();
+        self
+    }
+
+    fn configure_headless(&mut self) {
+        // On the Mac several proof processes share the machine. Keep each
+        // step on its own thread so a paused worker cannot hold up the next
+        // socket poll.
+        #[cfg(not(any(target_arch = "wasm32", target_os = "macos")))]
+        if self.count == 10_000 {
+            self.runtime
+                .set_execution_mode(thrum_core::sim::ExecutionMode::Rayon);
+        }
+        self.headless = Some(Box::new(std::array::from_fn(|_| self.runtime.new_undo())));
     }
 
     pub(super) fn digest_value(&self) -> u64 {
@@ -95,8 +119,32 @@ impl CrowdWorld {
             .expect("registered crowd schema")
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn epoch(&self) -> u128 {
         self.epoch
+    }
+}
+
+impl CrowdWorld {
+    fn step_runtime(&mut self) -> Result<(), String> {
+        if let Some(undo) = &mut self.headless {
+            // A deferred endpoint keeps the last preimages leased. The other
+            // record can be reused without allocation on this tick.
+            let current = usize::from(!self.runtime.tick().is_multiple_of(2));
+            self.runtime
+                .step_recording(
+                    &mut self.game,
+                    &mut self.candidate,
+                    &mut undo[current],
+                    PublicationMode::Defer,
+                )
+                .map_err(|error| error.to_string())?;
+            return Ok(());
+        }
+        self.runtime
+            .step(&mut self.game, &mut self.candidate)
+            .map_err(|error| error.to_string())?;
+        Ok(())
     }
 }
 
@@ -121,9 +169,7 @@ impl World for CrowdWorld {
         self.game
             .prepare_history_tick(&self.runtime, self.tick() + 1, frames)
             .map_err(|error| error.to_string())?;
-        self.runtime
-            .step(&mut self.game, &mut self.candidate)
-            .map_err(|error| error.to_string())?;
+        self.step_runtime()?;
         if let Some(start) = start {
             self.engine.add(elapsed(start));
         }
@@ -159,6 +205,9 @@ impl World for CrowdWorld {
         }
         runtime.publish_initial(&mut game, &mut candidate);
         self.runtime = runtime;
+        if self.headless.is_some() {
+            self.configure_headless();
+        }
         self.game = game;
         self.candidate = candidate;
         self.restored = Some((tick, self.digest_value(), image.len()));
@@ -181,21 +230,24 @@ impl World for CrowdWorld {
 }
 
 pub(super) mod fault_world {
+    use super::Instant;
     use super::{
         ActionView, ActionWire, CrowdWorld, InputCodecError, InputFrame, RefCell, RosterEvents,
         RuleSetIdentity, SLOTS, World,
     };
     use crowd_2d::{Body, PlayerController, PlayerMovement};
-    use std::{cell::Cell, rc::Rc, time::Instant};
+    use std::{cell::Cell, rc::Rc};
+    #[cfg(not(target_arch = "wasm32"))]
+    use thrum_core::profile::Vector;
     use thrum_core::{
-        profile::{Digest, Number, StateBytes, StateEncode, Vector},
+        profile::{Digest, Number, StateBytes, StateEncode},
         sim::SystemId,
     };
     use thrum_network::session::{ControllerInput, DigestPart, PredictedController};
 
     pub(crate) struct PlayerRule {
         pub(crate) movement: PlayerMovement,
-        pub(in crate::memory) timing: Option<Rc<Cell<super::Time>>>,
+        pub(crate) timing: Option<Rc<Cell<super::Time>>>,
     }
 
     pub(crate) struct CrowdController;
@@ -260,19 +312,24 @@ pub(super) mod fault_world {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) const COMPONENT: u128 = 1;
     pub(crate) const FREE_LIST: u128 = 2;
     pub(crate) const RESOURCE: u128 = 3;
 
     #[derive(Clone, Copy, Debug)]
     pub(crate) enum Fault {
+        #[cfg(not(target_arch = "wasm32"))]
         Component,
+        #[cfg(not(target_arch = "wasm32"))]
         FreeList,
         Resource,
+        #[cfg(not(target_arch = "wasm32"))]
         StepRefused,
     }
 
     impl Fault {
+        #[cfg(not(target_arch = "wasm32"))]
         pub(crate) fn part(self) -> Option<u128> {
             match self {
                 Self::Component => Some(COMPONENT),
@@ -290,9 +347,11 @@ pub(super) mod fault_world {
     }
 
     pub(crate) struct Witness {
-        pub(in crate::memory) crowd: CrowdWorld,
+        pub(crate) crowd: CrowdWorld,
         pub(crate) steps: Vec<Step>,
         pub(crate) restores: Vec<(u64, u64, usize)>,
+        #[cfg(feature = "sockets")]
+        pub(crate) images: Option<RefCell<Vec<(u64, u64, usize)>>>,
     }
 
     // Session and harness share a game-owned runtime. Only the harness uses
@@ -300,16 +359,19 @@ pub(super) mod fault_world {
     pub(crate) struct Shared(pub(crate) Rc<RefCell<Witness>>);
 
     impl Shared {
-        pub(in crate::memory) fn new(crowd: CrowdWorld) -> Self {
+        pub(crate) fn new(crowd: CrowdWorld) -> Self {
             Self(Rc::new(RefCell::new(Witness {
                 crowd,
                 steps: Vec::new(),
                 restores: Vec::new(),
+                #[cfg(feature = "sockets")]
+                images: None,
             })))
         }
     }
 
     impl Witness {
+        #[cfg(not(target_arch = "wasm32"))]
         pub(crate) fn position(&self, slot: usize) -> Vector {
             self.controller(slot)
                 .expect("valid registered crowd witness")
@@ -331,6 +393,7 @@ pub(super) mod fault_world {
                 .map(Body::controller)
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
         pub(crate) fn page(&self) -> Option<(u64, u64)> {
             let page = self.crowd.runtime.latest()?;
             let mut fingerprint = Digest::default();
@@ -361,7 +424,9 @@ pub(super) mod fault_world {
             let before = self.crowd.digest_value();
             match fault {
                 Fault::Resource => self.crowd.game.resources.hits += 1,
+                #[cfg(not(target_arch = "wasm32"))]
                 Fault::StepRefused => self.crowd.game.resources.sequences[0] = u64::MAX,
+                #[cfg(not(target_arch = "wasm32"))]
                 Fault::FreeList | Fault::Component => {
                     self.change_image(fault)?;
                 }
@@ -372,6 +437,7 @@ pub(super) mod fault_world {
             Ok(())
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
         fn change_image(&mut self, fault: Fault) -> Result<(), String> {
             let mut image = Vec::new();
             self.crowd
@@ -469,7 +535,17 @@ pub(super) mod fault_world {
             digest
         }
         fn image(&self, destination: &mut StateBytes) -> Result<(), String> {
-            self.0.borrow().crowd.image(destination)
+            let world = self.0.borrow();
+            world.crowd.image(destination)?;
+            #[cfg(feature = "sockets")]
+            if let Some(images) = &world.images {
+                images.borrow_mut().push((
+                    self.tick(),
+                    world.crowd.digest_value(),
+                    destination.len(),
+                ));
+            }
+            Ok(())
         }
         fn restore(&mut self, tick: u64, image: &[u8]) -> Result<(), String> {
             let mut world = self.0.borrow_mut();

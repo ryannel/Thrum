@@ -527,10 +527,10 @@
           "check": "python3 scripts/session_match.py sockets steady",
           "ask": "Read the harness. Is each peer a separate process that reaches the others only through thrum-transport's sockets and the relay, with the relay's forwarded and dropped counts in the record? Is each client the session and the reference crowd built for its target, with its platform, target triple and browser or runtime version in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests, and does the harness compare them without supplying any?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.1-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.2",
@@ -538,30 +538,30 @@
           "check": "python3 scripts/session_match.py sockets faults --target mac-metal",
           "ask": "Does the record hold, for each event, its time, the link identifiers and epochs before and after, the baseline's tick and size, and the reason each surviving end reported? Is the harness's own note of the kill and the cut kept apart from what the sessions reported?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.2-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.3",
           "statement": "With a Chrome page as the subject, over sockets through the relay under A0's profile: it joins a 10,000-body match after tick 3,600; its link is cut for longer than the idle timeout and it returns to its slot with its token; it is reloaded and comes back with its saved token; and one value the rules carry forward is changed in its world and it is repaired. After each, its digest equals the host's at every digest tick, the other players' never differ, and the host commits every tick of the run.",
           "check": "python3 scripts/session_match.py sockets faults --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.3-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.4",
           "statement": "With a client in the iPhone simulator as the subject, over sockets through the relay under A0's profile: it joins a 10,000-body match after tick 3,600; its link is cut for longer than the idle timeout and it returns to its slot with its token; it is killed and started again and comes back with its saved token; and one value the rules carry forward is changed in its world and it is repaired. After each, its digest equals the host's at every digest tick, the other players' never differ, and the host commits every tick of the run.",
           "check": "python3 scripts/session_match.py sockets faults --target ios-sim",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.4-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.5",
@@ -569,30 +569,30 @@
           "check": "python3 scripts/session_match.py sockets slow --target mac-metal",
           "ask": "Does the host in this run make its sends from its tick, so that a send that waited on the stalled client would show as a late tick? Is the longest gap between two host commits on record, with and without the stalled client?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.5-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.6",
           "statement": "Over sockets, a Chrome page is frozen twice. Frozen for longer than the held-control expiry, its slot gets neutral axes at one tick on every peer, and thawed it catches up or is repaired on the same link. Frozen for longer than the absence limit, it is closed, and thawed it returns to its slot on a new link with its token. Throughout, the host commits every tick and the other players' digests stay equal to its own. What the host saw during each freeze is on record.",
           "check": "python3 scripts/session_match.py sockets slow --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.6-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.7",
           "statement": "A Mac process that hosts and plays, with a Chrome page and an iPhone-simulator client joined to it over sockets through the relay, holds the same digests as its clients for 3,600 ticks.",
           "check": "python3 scripts/session_match.py sockets listen",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.7-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.8",
@@ -600,39 +600,39 @@
           "check": "python3 scripts/session_match.py sockets costs --target mac-metal",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.8-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.9",
           "statement": "With a Chrome client, the same rows as the Mac's are on record from two separate runs through the relay under A0's profile, each with BBR and with Cubic on the host, with the browser's version. What Chrome cannot report is marked absent, never zero. The figures are baselines: none decides the result.",
           "check": "python3 scripts/session_match.py sockets costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M5/M5.9-verified/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.11",
           "statement": "An iOS device turn takes one simulator lock or reuses the simulator lock held by an ancestor. A caller under the GPU lock alone is refused before device use. Two operations in one turn share the owned UDID. Two independent cases take separate turns, each ending in verified shutdown before unlock. The worker deadline reserves time for cleanup within the outer timeout. Completion, worker failure, deadline expiry and worker cancellation verify shutdown before unlock. A failed shutdown check fails the run. The next turn recovers the stranded Thrum device and leaves the unrelated device alone. Guard: fast lifecycle tests with simulated device state and time in ./dev check.",
           "check": "PYTHONPATH=scripts python3 -m unittest test_simulator_lifecycle",
-          "ask": "Trace HOST M4.5, APPLE-PRESENTATION D6.7, CULLING M2.2, COOKED-DRAW M1.7\u2013M1.9, PLATFORM-RUNTIME-IOS M7.2 and the published T2 capture command. Does each hold exactly one simulator lock from selection through boot and verified shutdown? Does the outer lock holder wait on the supervisor's PID, including across the attributed launcher handoff? On outer termination, can child termination and fresh shutdown verification finish within the runner's ten-second grace? If verification is interrupted or fails, does the next holder verify the stranded device is shut down before starting new device work?",
+          "ask": "Trace HOST M4.5, APPLE-PRESENTATION D6.7, CULLING M2.2, COOKED-DRAW M1.7–M1.9, PLATFORM-RUNTIME-IOS M7.2 and the published T2 capture command. Does each hold exactly one simulator lock from selection through boot and verified shutdown? Does the outer lock holder wait on the supervisor's PID, including across the attributed launcher handoff? On outer termination, can child termination and fresh shutdown verification finish within the runner's ten-second grace? If verification is interrupted or fails, does the next holder verify the stranded device is shut down before starting new device work?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/SESSION/M5/simulator-lifecycle/cpu.log",
           "verdict": "",
           "review": ""
         },
@@ -643,8 +643,8 @@
           "ask": "Does the real proof query CoreSimulator independently while its outer admission is still held? Do the SESSION socket and TRANSPORT iOS paths use the shared lifecycle? Do the SESSION live-peer restart, the HOST route and overload, and the V1 rotation path each preserve one booted UDID within their respective runs? At route startup, does the reused device meet the clean app, proof and XCTest state specified in the design, including after cancellation?",
           "lock": "simulator",
           "target": "ios-sim",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/SESSION/M5/simulator-lifecycle/device.json",
           "verdict": "",
           "review": ""
         },
@@ -653,8 +653,8 @@
           "statement": "The iOS image command completes the Crowd and Mixed proofs across eight separate simulator turns. Each turn verifies shutdown before release within the 30-minute hold limit. The six simulator images equal the Mac's bytes and the six fresh-process restores match all 1,000 retained continuation checkpoints. The SIM-2D iOS conformance command keeps its registered comparisons and gives the vector case and each trace and wire case a separate bounded turn. Record the M1.3 image command's comparison output and the admission, verified shutdown and release for all eight turns.",
           "ask": "Read the M5 record of `python3 scripts/session_match.py image --target ios-sim`. Is there one writer turn and a separate restore turn at each of ticks 0, 18,000 and 30,000 for each trace, with shutdown before release on each turn and all byte and checkpoint comparisons present? Trace `python3 scripts/sim2d_conformance.py run --target ios-sim` from the vector case and each independent trace and wire case to its own bounded turn, verified shutdown and registered comparison.",
           "target": "ios-sim",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/SESSION/M5/image-ios-audit.json",
           "verdict": "",
           "review": ""
         },
@@ -663,8 +663,8 @@
           "statement": "With simulated devices and the installed runner, cancelling the outer locked HOST M4.5 and APPLE-PRESENTATION D6.7 checks leaves a queued simulator contender waiting until shutdown has been verified inside the ten-second termination grace. Expiring the presentation route deadline also keeps the contender waiting through verified shutdown. The checks report cancellation or timeout, and an early-exiting shell control fails the release-order assertion. Record: the two item commands, termination or deadline event, shutdown verification, first check result and contender admission for each case.",
           "check": "python3 .orchestrate/evidence/SESSION/M5/simulator-lifecycle/check-outer.py",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/SESSION/M5/simulator-lifecycle/outer.json",
           "verdict": "",
           "review": ""
         }
@@ -672,7 +672,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired."
     },
     {

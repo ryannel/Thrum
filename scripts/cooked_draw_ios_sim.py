@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Qualify cooked content through the ordinary iOS simulator route (function only).
 
-Run under agent_loop.py lock gpu. Owns and deletes a fresh simulator. Never skips.
+Uses the simulator lock and verifies shutdown before release.
 """
 import argparse
 import hashlib
@@ -16,7 +16,7 @@ import subprocess
 import sys
 import time
 
-from cooked_draw_sim_launcher import REPORT_ENV, launch
+from cooked_draw_sim_launcher import REPORT_ENV, attributed_device, launch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -47,7 +47,7 @@ def main():
     out.mkdir(parents=True, exist_ok=False)
     report = {'target': 'ios-sim', 'scope': 'simulator function only', 'commands': [], 'samples': []}
     report.update(harness_pid=os.getpid(), launcher_pid=os.getppid())
-    device = None
+    device = attributed_device()
     lifecycle_video = None
 
     def run(command, env=None, timeout=180):
@@ -90,9 +90,7 @@ def main():
         else:
             run(['cargo', 'run', '--locked', '--offline', '-p', 'thrum-cook', '--', 'cook', 'examples/v1-game/assets/showcase', str(store)], env, 300)
         report['content_hashes'] = {str(p.relative_to(store)): hashlib.sha256(p.read_bytes()).hexdigest() for p in store.rglob('*') if p.is_file()}
-        device = run(['xcrun', 'simctl', 'create', 'Thrum COOKED-DRAW owned', 'com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro', 'com.apple.CoreSimulator.SimRuntime.iOS-27-2'])
         report['device'] = device
-        run(['xcrun', 'simctl', 'bootstatus', device, '-b'])
         report['simulators'] = json.loads(run(['xcrun', 'simctl', 'list', 'devices', '-j']))
         app = Path('target/v1-game-ios-sim/ThrumV1.app').resolve()
         report['binary_sha256'] = hashlib.sha256((app / 'ThrumV1').read_bytes()).hexdigest()
@@ -265,10 +263,6 @@ def main():
         if lifecycle_video and lifecycle_video.poll() is None:
             lifecycle_video.send_signal(signal.SIGINT)
             lifecycle_video.wait(timeout=30)
-        if device:
-            subprocess.run(['xcrun', 'simctl', 'terminate', device, 'org.thrum.v1'], capture_output=True, timeout=30)
-            run(['xcrun', 'simctl', 'shutdown', device])
-            run(['xcrun', 'simctl', 'delete', device])
         (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run a requested Occlusion scene on an owned iPhone simulator (function only).
 
-Run under the repository GPU lock. No desktop capture permission is needed.
+Uses the simulator lock and verifies shutdown before release.
 """
 import argparse
 import hashlib
@@ -10,6 +10,9 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+
+import simulator_lifecycle as simulator
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,13 +54,21 @@ def complete_scene(container, out, report, run):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--simulator-worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     os.chdir(ROOT)
+    if not args.simulator_worker:
+        simulator.admission()
+        subprocess.run(['examples/v1-game-ios/ios/build-simulator.sh'],
+                       env=dict(os.environ, RUSTC_WRAPPER=''), check=True, timeout=900)
+        simulator.exec_with_admission([sys.executable, simulator.__file__, 'fresh', '--',
+                                        sys.executable, __file__, *sys.argv[1:], '--simulator-worker'])
     out = args.output or Path('tmp/culling-m2') / f'sim-{time.time_ns()}'
     out = out.resolve()
     out.mkdir(parents=True, exist_ok=False)
     report = {'target': 'ios-sim', 'scope': 'function only', 'commands': [], 'samples': []}
-    device = None
+    device = simulator.worker_device()
+    report['device'] = device
 
     def run(command, env=None, timeout=300):
         result = subprocess.run(command, env=env, text=True, capture_output=True, timeout=timeout)
@@ -68,9 +79,6 @@ def main():
     try:
         report['commit'] = run(['git', 'rev-parse', 'HEAD'])
         report['diff_sha256'] = hashlib.sha256(run(['git', 'diff', 'HEAD']).encode()).hexdigest()
-        run(['examples/v1-game-ios/ios/build-simulator.sh'], dict(os.environ, RUSTC_WRAPPER=''), 900)
-        device = run(['xcrun', 'simctl', 'create', 'Thrum CULLING owned', 'com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro', 'com.apple.CoreSimulator.SimRuntime.iOS-27-2'])
-        run(['xcrun', 'simctl', 'bootstatus', device, '-b'])
         app = ROOT / 'target/v1-game-ios-sim/ThrumV1.app'
         report['binary_sha256'] = hashlib.sha256((app / 'ThrumV1').read_bytes()).hexdigest()
         run(['xcrun', 'simctl', 'install', device, str(app)])
@@ -100,9 +108,6 @@ def main():
         report.update({'pass': False, 'failure': str(error)})
         raise
     finally:
-        if device:
-            subprocess.run(['xcrun', 'simctl', 'shutdown', device], capture_output=True, timeout=60)
-            subprocess.run(['xcrun', 'simctl', 'delete', device], capture_output=True, timeout=60)
         (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
         print(out / 'report.json', flush=True)
 

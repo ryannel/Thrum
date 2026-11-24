@@ -10,6 +10,9 @@ autotests = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+sockets = ["thrum-transport/native", "thrum-transport/browser"]
+
 [lints]
 workspace = true
 

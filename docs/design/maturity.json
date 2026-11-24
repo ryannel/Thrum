@@ -70,6 +70,18 @@
     },
     "evidence": ".orchestrate/evidence/SESSION/M4/README.md"
   },
+  "session_m5": {
+    "scope": "Headless reference crowd over real Quinn and WebTransport connections",
+    "implementation": "The Mac authority and four independent target replicas run the shared session through A0 relays. A shared iPhone simulator lifecycle owns device selection, boot and verified shutdown across the iOS proof harnesses.",
+    "functional_validation": "Four replicas each matched all 1,200 authority digests across 36,000 committed ticks. Separate target runs exercised late joins, link loss, reconnection, process or page restart and repair. The simulator proof independently checked shutdown after completion, failure and cancellation. Six simulator images matched Mac bytes, and six fresh-process restores matched 1,000 retained checkpoints across eight separate simulator turns.",
+    "experienced_quality": "Headless reference crowd comparisons on Mac, Chrome and the iPhone simulator.",
+    "platform_cost_baselines": {
+      "mac-metal": "Two release runs per Quinn controller at 2,000 and 10,000 bodies record join phases, application and wire bytes, playout, corrections and host commit gaps under load.",
+      "chrome-webgpu": "Two release runs per host controller and crowd size record the same phases and costs under load, with wire bytes observed at the relay.",
+      "ios-sim": "Simulator function on the Mac processor."
+    },
+    "evidence": ".orchestrate/evidence/SESSION/M5/README.md"
+  },
   "execution_plan": {
     "milestone": "V1: one beautiful single-player 10k scene on this Mac at 120 Hz with physical sky, cooked assets, shadows, MetalFX and EDR; Chrome portable at showcase quality; demo controls; headless multiplayer fitness; labelled iPhone proxies, physical iPhone pending",
     "active": [

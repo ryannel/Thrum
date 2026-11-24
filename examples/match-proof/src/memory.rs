@@ -1,7 +1,7 @@
 mod allocation;
 mod faults;
+use crate::world;
 pub use faults::{run_fault, run_prediction};
-mod world;
 
 use std::time::Instant;
 
@@ -202,7 +202,7 @@ impl Player {
         let [link, authority] = memory.connect().map_err(|error| error.to_string())?;
         host.connect(authority.clone(), 0)
             .map_err(|error| error.to_string())?;
-        let world = CrowdWorld::new(run.bodies, 100 + index as u128, false, run.costs);
+        let world = memory_world(run, 100 + index as u128, false);
         let repeats = if run.costs {
             [1, 2, 4, 8][index]
         } else {
@@ -461,12 +461,21 @@ impl std::fmt::Display for MemoryProofError {
 
 impl std::error::Error for MemoryProofError {}
 
+fn memory_world(run: MemoryRun<'_>, epoch: u128, authority: bool) -> CrowdWorld {
+    let world = CrowdWorld::new(run.bodies, epoch, authority, run.costs);
+    if run.costs {
+        world
+    } else {
+        world.without_publication()
+    }
+}
+
 fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
     let settings = Settings {
         repeats: if run.costs { 8 } else { run.repeats },
         ..Settings::default()
     };
-    let world = CrowdWorld::new(run.bodies, 37, true, run.costs);
+    let world = memory_world(run, 37, true);
     let baseline_digest = world.digest_value();
     let mut host = Host::new(
         world, NoActions, settings, [13; 16], run.seed, run.listen, 0,
@@ -483,7 +492,9 @@ fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let pool = (run.ticks >= 3_000)
+    // Each replica owns its world. Dispatch the 2,000-body deterministic
+    // fixture independently too so the full five-world check fits the fast tier.
+    let pool = (run.ticks >= 3_000 || run.bodies >= 2_000)
         .then(|| rayon::ThreadPoolBuilder::new().num_threads(4).build())
         .transpose()
         .map_err(|error| error.to_string())?;

@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, num::NonZeroUsize};
 
-use thrum_transport::{DATAGRAM_LIMIT, Lane, Link, LinkError, RELIABLE_LIMIT};
+use thrum_transport::{CloseReason, DATAGRAM_LIMIT, Event, Lane, Link, LinkError, RELIABLE_LIMIT};
 
 use super::{
     CHUNK, Close, DigestPart, Divergence, EndReason, MATCH_EPOCH, PROTOCOL, PlayerToken, Refusal,
@@ -42,6 +42,7 @@ enum Phase {
 
 struct Peer<A> {
     link: Link,
+    local_close: Option<u32>,
     connection: Connection,
     slot: Option<usize>,
     phase: Phase,
@@ -75,6 +76,13 @@ struct Peer<A> {
 }
 
 impl<A> Peer<A> {
+    fn close(&mut self, code: u32) {
+        if self.link.is_open() {
+            self.local_close.get_or_insert(code);
+        }
+        self.link.close(code);
+    }
+
     fn sent(
         &mut self,
         lane: Lane,
@@ -92,13 +100,13 @@ impl<A> Peer<A> {
             Err(LinkError::Full) => {
                 let since = *self.reliable_blocked.get_or_insert(now);
                 if now - since >= blocked_limit {
-                    self.link.close(Close::Synchronization as u32);
+                    self.close(Close::Synchronization as u32);
                 }
                 false
             }
             Err(LinkError::NotOpen) => false,
             Err(_) => {
-                self.link.close(wire::PROTOCOL_CLOSE);
+                self.close(wire::PROTOCOL_CLOSE);
                 false
             }
         }
@@ -138,6 +146,10 @@ struct StoredSet {
 /// Per-peer observations made at the authority's link boundary.
 #[derive(Clone, Debug)]
 pub struct PeerStream {
+    /// Assigned player slot, once hello succeeds.
+    pub slot: Option<usize>,
+    /// Session connection epoch, zero before welcome.
+    pub epoch: u64,
     /// Timed records in old datagrams that were refused by tick.
     pub late_frames: u64,
     /// Sets offered on the reliable lane.
@@ -164,6 +176,19 @@ pub struct PeerStream {
     pub last_staged: u64,
 }
 
+/// A transport close observed by the authority.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PeerDisconnect {
+    /// Identifier of the closed link.
+    pub link: u64,
+    /// Session connection epoch, zero before welcome.
+    pub epoch: u64,
+    /// Most recently committed authority tick when the close was observed.
+    pub tick: u64,
+    /// Reason reported by the link.
+    pub reason: CloseReason,
+}
+
 /// An authority that owns one world and commits through a single input barrier.
 pub struct Host<W: World, Codec> {
     world: W,
@@ -181,6 +206,7 @@ pub struct Host<W: World, Codec> {
     events: RosterEvents,
     history: VecDeque<DigestEndpoint>,
     divergences: VecDeque<Divergence>,
+    disconnects: VecDeque<PeerDisconnect>,
     staging: FutureInputWindow<W::Action>,
     axes: [[f32; 3]; SLOTS],
     neutral: u8,
@@ -240,6 +266,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             },
             history: VecDeque::with_capacity(usize::from(settings.digest_history)),
             divergences: VecDeque::with_capacity(usize::from(settings.digest_history)),
+            disconnects: VecDeque::with_capacity(usize::from(settings.link_cap)),
             staging,
             axes: [[0.0; 3]; SLOTS],
             neutral: 0,
@@ -277,6 +304,11 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         self.divergences.pop_front()
     }
 
+    /// Take the oldest observed close. The most recent link-cap closes are retained.
+    pub fn take_disconnect(&mut self) -> Option<PeerDisconnect> {
+        self.disconnects.pop_front()
+    }
+
     /// Own-frame admissions at the last committed tick.
     pub fn admissions(&self) -> [bool; SLOTS] {
         self.admitted
@@ -305,6 +337,8 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
     pub fn stream(&self, link_id: u64) -> Option<PeerStream> {
         let peer = self.peers.iter().find(|peer| peer.link.id() == link_id)?;
         Some(PeerStream {
+            slot: peer.slot,
+            epoch: peer.connection.epoch,
             late_frames: peer.late,
             reliable_sets: peer.reliable_sets,
             datagram_sizes: peer.datagram_sizes,
@@ -365,6 +399,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         }
         self.peers.push(Peer {
             link,
+            local_close: None,
             connection: Connection::default(),
             slot: None,
             phase: Phase::Hello,
@@ -387,8 +422,8 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             input_sequence: 0,
             last_staged: self.world.tick(),
             staged_sequence: 0,
-            input_credit: self.input_burst(),
-            credit_tick: self.world.tick(),
+            input_credit: self.settings.input_burst(),
+            credit_tick: now / u64::from(self.settings.tick_us),
             progress_sequence: None,
             last_command_committed: 0,
             reliable_blocked: None,
@@ -547,7 +582,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                             peer.reliable_blocked = None;
                         }
                         Phase::Baseline { .. } | Phase::CatchingUp => {
-                            peer.link.close(Close::Synchronization as u32);
+                            peer.close(Close::Synchronization as u32);
                         }
                         _ => {}
                     }
@@ -592,7 +627,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             };
             let idle = tick - peer.last_input;
             if idle >= u64::from(self.settings.absence) {
-                peer.link.close(Close::Absent as u32);
+                peer.close(Close::Absent as u32);
                 self.detach(peer, false);
             } else if tick - peer.last_staged >= u64::from(self.settings.held_expiry) {
                 self.neutral |= 1 << slot;
@@ -643,11 +678,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
     fn receive(&mut self, now: u64) {
         let mut peers = std::mem::take(&mut self.peers);
         for peer in &mut peers {
-            while let Some(event) = peer.link.event() {
-                if matches!(event, thrum_transport::Event::Closed(_)) {
-                    self.detach(peer, false);
-                    peer.deadline = now;
-                }
+            if self.observe_close(peer) {
+                self.detach(peer, false);
+                peer.deadline = now;
+                continue;
             }
             if now >= peer.deadline {
                 let reason = if matches!(peer.phase, Phase::Baseline { .. } | Phase::CatchingUp) {
@@ -655,8 +689,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                 } else {
                     wire::TIMEOUT_CLOSE
                 };
-                peer.link.close(reason);
+                peer.close(reason);
                 self.detach(peer, false);
+                self.observe_removal(peer);
                 continue;
             }
             'lanes: for lane in [Lane::Reliable, Lane::Datagram] {
@@ -665,11 +700,12 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                         break;
                     };
                     if self.message(peer, now, lane, &bytes).is_none() {
-                        peer.link.close(wire::PROTOCOL_CLOSE);
+                        peer.close(wire::PROTOCOL_CLOSE);
                     }
                     if !peer.link.is_open() {
                         self.detach(peer, false);
                         peer.deadline = now;
+                        self.observe_removal(peer);
                         break 'lanes;
                     }
                 }
@@ -677,6 +713,38 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         }
         peers.retain(|peer| peer.deadline > now);
         self.peers = peers;
+    }
+
+    fn observe_close(&mut self, peer: &Peer<W::Action>) -> bool {
+        while let Some(event) = peer.link.event() {
+            if let Event::Closed(reason) = event {
+                self.record_disconnect(peer, reason);
+                return true;
+            }
+        }
+        false
+    }
+
+    fn observe_removal(&mut self, peer: &Peer<W::Action>) {
+        if let Some(code) = peer.local_close {
+            // A Link clone can still collect the terminal event when the
+            // session removes its own handle in this same receive pass.
+            self.record_disconnect(peer, CloseReason::Local(code));
+        } else {
+            self.observe_close(peer);
+        }
+    }
+
+    fn record_disconnect(&mut self, peer: &Peer<W::Action>, reason: CloseReason) {
+        if self.disconnects.len() == usize::from(self.settings.link_cap) {
+            self.disconnects.pop_front();
+        }
+        self.disconnects.push_back(PeerDisconnect {
+            link: peer.link.id(),
+            epoch: peer.connection.epoch,
+            tick: self.world.tick(),
+            reason,
+        });
     }
 
     fn message(
@@ -728,7 +796,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                     && message.payload.is_empty() =>
             {
                 self.detach(peer, true);
-                peer.link.close(wire::RESPONSE_CLOSE);
+                peer.close(wire::RESPONSE_CLOSE);
                 Some(())
             }
             _ => None,
@@ -770,7 +838,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         } else {
             let mut entropy = [0; 16];
             if getrandom::getrandom(&mut entropy).is_err() || entropy == [0; 16] {
-                peer.link.close(wire::RESPONSE_CLOSE);
+                peer.close(wire::RESPONSE_CLOSE);
                 return Some(());
             }
             self.owners[slot] = Slot::Reserved(PlayerToken(entropy));
@@ -797,7 +865,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             .ok()
             .and_then(|()| output.into_bytes());
         let Some(bytes) = bytes.filter(|bytes| bytes.len() <= limit) else {
-            peer.link.close(Close::Synchronization as u32);
+            peer.close(Close::Synchronization as u32);
             return;
         };
         let tick = self.world.tick();
@@ -822,7 +890,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
 
     fn repair(&self, peer: &mut Peer<W::Action>, now: u64) {
         if peer.repairs == self.settings.repairs {
-            peer.link.close(Close::RepairLimit as u32);
+            peer.close(Close::RepairLimit as u32);
         } else {
             peer.repairs += 1;
             self.baseline(peer, now);
@@ -902,11 +970,6 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         Some(())
     }
 
-    fn input_burst(&self) -> u64 {
-        // Accommodate a burst of delayed datagrams, then earn one new frame per tick.
-        u64::from(self.settings.repeats) * 2 + u64::from(self.settings.behind)
-    }
-
     fn input(&mut self, peer: &mut Peer<W::Action>, now: u64, message: Message<'_>) -> Option<()> {
         let header = message.header;
         if header.server_tick != 0 {
@@ -963,9 +1026,13 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                     Err(_) => return None,
                 }
             }
-            let credit = (peer.input_credit + committed - peer.credit_tick).min(self.input_burst());
+            // Independent client and socket clocks continue during a long
+            // authority step. Bound incoming work by elapsed tick periods.
+            let credit_tick = now / u64::from(self.settings.tick_us);
+            let credit = (peer.input_credit + credit_tick.saturating_sub(peer.credit_tick))
+                .min(self.settings.input_burst());
             peer.input_credit = credit.checked_sub(fresh)?;
-            peer.credit_tick = committed;
+            peer.credit_tick = credit_tick;
             for input in decoded.into_iter().flatten() {
                 let sequence = input.origin.sequence;
                 let tick = input.tick;
@@ -1035,7 +1102,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         if matches!(peer.phase, Phase::Playing) && backlog > u64::from(self.settings.behind) {
             let since = peer.behind_since.get_or_insert(committed);
             if committed - *since >= u64::from(self.settings.catch_up_deadline) {
-                peer.link.close(Close::UnableToKeepUp as u32);
+                peer.close(Close::UnableToKeepUp as u32);
             }
         } else {
             peer.behind_since = None;

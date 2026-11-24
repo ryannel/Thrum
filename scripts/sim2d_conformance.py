@@ -10,8 +10,11 @@ import platform
 import re
 import subprocess
 import sys
+import tempfile
 import tomllib
 from copy import deepcopy
+
+import simulator_lifecycle
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRATCH = ROOT / "tmp/sim2d"
@@ -113,7 +116,8 @@ def source_inputs():
     identities = {(packages[p]["name"], packages[p]["version"], packages[p]["source"]) for p in selected}
     settings = build_settings(tomllib.loads((ROOT / "Cargo.toml").read_text()),
                               tomllib.loads((ROOT / "Cargo.lock").read_text()), identities)
-    files = [ROOT / name for name in ["rust-toolchain.toml", "scripts/sim2d_conformance.py", "scripts/sim2d_browser.mjs"]]
+    files = [ROOT / name for name in ["rust-toolchain.toml", "scripts/sim2d_conformance.py", "scripts/sim2d_browser.mjs",
+                                       "scripts/simulator_lifecycle.py"]]
     directories = [ROOT / ".cargo"] + [Path(packages[p]["manifest_path"]).parent
                                        for p in selected if packages[p]["source"] is None]
     for directory in directories:
@@ -149,24 +153,12 @@ def build(target, debug=False):
     return binary, binary
 
 
-def simulator():
-    devices = json.loads(command(["xcrun", "simctl", "list", "devices", "available", "-j"]))
-    matches = [device for group in devices["devices"].values() for device in group if device["name"] == "iPhone 18 Pro"]
-    if not matches:
-        raise RuntimeError("iPhone 18 Pro simulator is unavailable")
-    device = matches[0]
-    if device["state"] != "Booted":
-        device_command("simulator", ["xcrun", "simctl", "boot", device["udid"]])
-        device_command("simulator", ["xcrun", "simctl", "bootstatus", device["udid"], "-b"])
-    return device["udid"]
-
-
 class Runner:
     def __init__(self, target, debug=False):
         self.target = target
         self.program, artifact = build(target, debug)
         self.artifact_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
-        self.device = simulator() if target == "ios-sim" else None
+        self.device = None
         self.user_agent = None
         self.isolated = None
 
@@ -185,9 +177,16 @@ class Runner:
             arguments += [flag for flag, enabled in [("--straight", straight), ("--wire", wire), ("--control", control)] if enabled]
             if method == "trace":
                 arguments += [flag for flag, enabled in zip(["--mixed", "--parallel"], args[5:]) if enabled]
-        prefix = ["xcrun", "simctl", "spawn", self.device] if self.device else []
-        invoke = prefix + [self.program] + arguments
-        return json.loads(device_command("simulator", invoke) if self.device else command(invoke))
+        invoke = [self.program, *arguments]
+        if self.target == "ios-sim":
+            with tempfile.TemporaryDirectory(dir=SCRATCH) as directory:
+                path = Path(directory) / "turn.jsonl"
+                packet = simulator_lifecycle.run_case(invoke, record=path)
+                events = [json.loads(line) for line in path.read_text().splitlines()]
+            boot, = [event for event in events if event["event"] == "booted"]
+            self.device = boot["udid"]
+            return json.loads(packet)
+        return json.loads(command(invoke))
 
     def invoke_many(self, requests, omit_timeline=False):
         """Keep a Chrome conformance run in one queue turn, after compilation."""

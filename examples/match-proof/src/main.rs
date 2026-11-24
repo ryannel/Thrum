@@ -2,6 +2,55 @@
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
+    #[cfg(all(not(target_arch = "wasm32"), feature = "sockets"))]
+    {
+        use match_proof::sockets::native;
+        use std::path::Path;
+        let args: Vec<_> = arguments.iter().map(String::as_str).collect();
+        match args.as_slice() {
+            [
+                "socket-host",
+                bodies,
+                ticks,
+                controller,
+                listen,
+                axes,
+                join_ms,
+                control,
+            ] => {
+                return native::host(
+                    bodies.parse()?,
+                    ticks.parse()?,
+                    controller,
+                    listen.parse()?,
+                    axes.parse()?,
+                    join_ms.parse()?,
+                    Path::new(control),
+                );
+            }
+            [
+                "socket-client",
+                ticket,
+                bodies,
+                controller,
+                control,
+                token,
+                axes,
+            ] => {
+                return native::client(
+                    ticket,
+                    bodies.parse()?,
+                    controller,
+                    Path::new(control),
+                    Path::new(token),
+                    axes.parse()?,
+                    cfg!(target_os = "macos")
+                        && std::env::var_os("THRUM_TRACE_AUTHORED_FRAMES").is_some(),
+                );
+            }
+            _ => {}
+        }
+    }
     let packet = match arguments
         .iter()
         .map(String::as_str)

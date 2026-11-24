@@ -1,6 +1,11 @@
 //! Headless reference crowd proof through the registered session world.
 
 mod image;
+#[cfg(feature = "sockets")]
+pub mod sockets;
+
+#[cfg(any(not(target_arch = "wasm32"), feature = "sockets"))]
+mod world;
 pub use image::{capture, restore};
 
 #[cfg(not(target_arch = "wasm32"))]

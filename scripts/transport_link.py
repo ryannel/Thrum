@@ -14,11 +14,13 @@ import sys
 import time
 import tomllib
 
+import simulator_lifecycle as simulator
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRATCH = ROOT / "tmp/transport"
 RUST_BIN = Path(subprocess.check_output(["rustup", "which", "--toolchain", "stable", "rustc"], text=True).strip()).parent
 ENV = {**os.environ, "PATH": str(RUST_BIN) + os.pathsep + os.environ["PATH"], "RUSTC_WRAPPER": ""}
-SIM = "47494973-E92C-4194-9DE7-3C557951B608"
+SIM = None
 
 
 def run(args, **kwargs):
@@ -64,7 +66,7 @@ def rows(path):
 
 def start(args, path):
     output = path.open("w")
-    process = subprocess.Popen(list(map(str, args)), cwd=ROOT, env=ENV, stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
+    process = subprocess.Popen(list(map(str, args)), cwd=ROOT, env=ENV, stdout=output, stderr=subprocess.STDOUT, start_new_session=SIM is None)
     output.close()
     return process
 
@@ -415,8 +417,6 @@ def chrome_suspend(output):
 
 def session(output):
     """Ten wall-clock minutes, with live sends interrupted by each fault."""
-    for target in ["mac-metal","chrome-webgpu","ios-sim"]:
-        build(target)
     host = start([ROOT / "target/release/link-proof","host","unused",680,"bbr","session",output / "host-control"], output / "host.jsonl")
     processes = [host]
     clients = []
@@ -633,15 +633,26 @@ def closure(output):
 
 
 def main():
+    global SIM
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=["conformance", "closure", "costs", "session", "hostile", "overload", "suspend"])
     parser.add_argument("--target", choices=["mac-metal", "chrome-webgpu", "ios-sim"], default="mac-metal")
+    parser.add_argument("--simulator-worker", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.command == "session" or (args.target == "ios-sim" and args.command in {"conformance", "suspend", "costs"}):
+        if not args.simulator_worker:
+            simulator.admission()
+            targets = ["mac-metal", "chrome-webgpu", "ios-sim"] if args.command == "session" else ["mac-metal", "ios-sim"]
+            for target in targets:
+                build(target)
+            simulator.exec_with_admission([sys.executable, simulator.__file__, "spawn", "--",
+                                            sys.executable, __file__, *sys.argv[1:], "--simulator-worker"])
+        SIM = simulator.worker_device()
     SCRATCH.mkdir(parents=True, exist_ok=True)
     output = SCRATCH / f"{args.command}-{args.target}-{time.time_ns()}"
     output.mkdir()
     record = {"commit": run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(), "source_dirty":bool(run(["git","status","--porcelain"],capture_output=True,text=True).stdout.strip()), "target": args.target, "machine": platform.platform(), "load": os.getloadavg()}
-    if args.target == "ios-sim" or args.command == "session":
+    if SIM:
         record["simulator"] = {"device":SIM,"target_triple":"aarch64-apple-ios-sim","runtimes":json.loads(run(["xcrun","simctl","list","runtimes","--json"],capture_output=True,text=True).stdout)}
     if args.command == "closure":
         record["closure"] = closure(output)
@@ -649,9 +660,10 @@ def main():
         build("mac-metal")
         record[args.command] = in_process(args.command, output / args.command)
     elif args.command == "suspend":
-        build("mac-metal")
-        if args.target != "mac-metal":
-            build(args.target)
+        if not SIM:
+            build("mac-metal")
+            if args.target != "mac-metal":
+                build(args.target)
         if args.target == "chrome-webgpu":
             record["suspend"] = chrome_suspend(output / "suspend")
         else:
@@ -659,7 +671,8 @@ def main():
     elif args.command == "session":
         record["session"] = session(output)
     elif args.command == "costs":
-        build("mac-metal")
+        if not SIM:
+            build("mac-metal")
         if args.target == "chrome-webgpu":
             build(args.target)
         record["runs"] = []
@@ -692,9 +705,10 @@ def main():
                     row["allocation_report"] = str(allocation_path.relative_to(ROOT))
                 record["runs"].append(row)
     else:
-        build("mac-metal")
-        if args.target != "mac-metal":
-            build(args.target)
+        if not SIM:
+            build("mac-metal")
+            if args.target != "mac-metal":
+                build(args.target)
         record["direct"] = exchange(args.target, output / "direct", False)
         record["conditioned"] = exchange(args.target, output / "conditioned", True)
         for conditioned in [False, True]:

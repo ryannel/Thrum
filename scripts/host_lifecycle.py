@@ -15,7 +15,9 @@ import tarfile
 import tempfile
 
 from cooked_draw_fixture import environment
-from host_overload import check_ios_overload, check_mac_overload
+from host_overload import check_mac_overload
+import simulator_lifecycle as simulator
+import v1_simulator_route
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,42 +111,20 @@ def check_web(folder):
                 break
 
 
-def check_ios(folder):
+def check_ios(folder, *, prepared=False):
+    folder.mkdir(parents=True, exist_ok=True)
     env = dict(environment(), CARGO_TARGET_DIR=str(ROOT / 'target'),
                THRUM_V1_ROUTE_OUT=str(folder / 'route'))
-    run('bash', ROOT / 'examples/v1-game-ios/ios/check-simulator.sh', env=env)
-    check_ios_overload(folder, ROOT / 'target/v1-game-ios-sim/ThrumV1.app')
-
-
-def orchestration_script():
-    script = os.environ.get('ORCHESTRATE_SCRIPT')
-    if not script:
-        raise RuntimeError('Set ORCHESTRATE_SCRIPT to agent_loop.py to acquire resource locks')
-    return script
-
-
-def inherits_lock(lock):
-    script = os.environ.get('ORCHESTRATE_SCRIPT')
-    if not script:
-        return False
-    report = subprocess.check_output(
-        [sys.executable, script, 'locks', '--worktree', ROOT, '--json'], text=True)
-    holders = {holder['pid'] for resource in json.loads(report)['locks']
-               if resource['lock'] == lock for holder in resource['holders']}
-    if not holders:
-        return False
-    processes = subprocess.check_output(['ps', '-axo', 'pid=,ppid='], text=True)
-    parents = {int(pid): int(parent) for pid, parent in (line.split() for line in processes.splitlines())}
-    parent = os.getppid()
-    while parent > 1:
-        if parent in holders:
-            return True
-        parent = parents.get(parent, 0)
-    return False
+    with simulator.supervise(fresh=True) as turn:
+        if not prepared:
+            turn.run(['bash', v1_simulator_route.ROUTE, '--prepare'], env=env)
+        v1_simulator_route.worker(turn, None, env)
+        turn.run([sys.executable, ROOT / 'scripts/host_overload.py', folder,
+                  ROOT / 'target/v1-game-ios-sim/ThrumV1.app'], env=turn.worker_env(env))
 
 
 def check_locked(lock, target, output):
-    script = orchestration_script()
+    script = simulator.orchestration_script()
     run(sys.executable, script, 'lock', lock, '--', sys.executable, __file__, 'run-target',
         '--target', target, '--output', output)
 
@@ -155,6 +135,7 @@ def main():
     parser.add_argument('--target', action='append', required=True,
                         choices=['mac-metal', 'chrome-webgpu', 'ios-sim'])
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--ios-build-prepared', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--prepared', action='store_true',
                         help='only run the target checks from a previously prepared output')
     args = parser.parse_args()
@@ -162,10 +143,10 @@ def main():
         # Internal callback for a target protected by check_locked.
         if args.output is None or len(args.target) != 1 or args.target[0] == 'mac-metal':
             parser.error('run-target requires one Chrome or simulator target and --output')
-        if args.target[0] == 'ios-sim' and not inherits_lock('simulator'):
-            parser.error('run-target for ios-sim needs an inherited simulator lock; use check')
-        check = check_web if args.target[0] == 'chrome-webgpu' else check_ios
-        check(args.output)
+        if args.target[0] == 'ios-sim':
+            check_ios(args.output, prepared=args.ios_build_prepared)
+        else:
+            check_web(args.output)
         return
     if args.prepared and (args.output is None or args.action != 'check'):
         parser.error('--prepared requires check and an explicit --output')
@@ -204,12 +185,14 @@ def main():
         if 'chrome-webgpu' in args.target:
             check_locked('chrome', 'chrome-webgpu', output / 'chrome')
         if 'ios-sim' in args.target:
-            # HOST M4.5 already holds the simulator. An unrelated holder cannot
-            # authorize this invocation, even when iOS is the only target.
-            if inherits_lock('simulator'):
+            holder, _ = simulator.admission()
+            if holder:
                 check_ios(output / 'ios')
             else:
-                check_locked('simulator', 'ios-sim', output / 'ios')
+                v1_simulator_route.prepare(dict(environment(), CARGO_TARGET_DIR=str(ROOT / 'target')))
+                simulator.exec_with_admission([sys.executable, __file__, 'run-target',
+                                               '--target', 'ios-sim', '--output', output / 'ios',
+                                               '--ios-build-prepared'])
 
 
 if __name__ == '__main__':

@@ -541,11 +541,15 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         if self.replica.own_present {
             self.send_commands(send_time);
         }
-        if self.baseline.is_none() && !self.awaiting_repair {
-            self.step(now, prior, settings, budget, &mut observe);
-        }
         if self.lead.is_none() && self.newest > self.baseline_tick {
             self.lead = Some(Lead::new(now, self.newest, self.rtt, settings, self.pinned));
+        }
+        // Sample and offer input before stepping the replica. Catch-up can
+        // consume several ticks of work in this poll, even while the input
+        // deadline and the independent socket clock keep moving.
+        self.author_and_report(now, send_time, settings, &mut sample)?;
+        if self.baseline.is_none() && !self.awaiting_repair {
+            self.step(now, prior, settings, budget, &mut observe);
         }
         if let Some(fault) = self.replica.fault.take() {
             self.request_repair(fault);
@@ -575,23 +579,46 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
             return Ok(());
         }
 
-        let pending = self.pending();
-        if self.ending.is_none()
-            && let Some(lead) = &mut self.lead
-            && let Some(target) = lead.author(now, self.newest, settings)
-            && target > self.last_target
-            && pending < MAX_PENDING
-        {
-            self.author(target, sample(target), settings)?;
+        Ok(())
+    }
+
+    fn author_and_report(
+        &mut self,
+        now: u64,
+        send_time: u64,
+        settings: Settings,
+        sample: &mut impl FnMut(u64) -> Controls<W::Action>,
+    ) -> Result<(), SessionError> {
+        let mut authored = false;
+        if self.ending.is_none() {
+            for _ in 0..settings.catch_up {
+                if self.pending() >= MAX_PENDING {
+                    break;
+                }
+                let Some(target) = self
+                    .lead
+                    .as_mut()
+                    .and_then(|lead| lead.author(now, self.newest, settings))
+                    .filter(|target| *target > self.last_target)
+                else {
+                    break;
+                };
+                if authored {
+                    self.send_report(send_time);
+                }
+                self.author(target, sample(target), settings)?;
+                authored = true;
+            }
         }
-        if now >= self.report_at {
+        let report_due = now >= self.report_at;
+        if report_due {
             self.report_at += ((now - self.report_at) / u64::from(settings.tick_us) + 1)
                 * u64::from(settings.tick_us);
-            // During an image transfer, an existing player continues to send
-            // controls. Its old progress is ignored by the new stream generation.
-            if self.installed_generation > 0 {
-                self.send_report(send_time);
-            }
+        }
+        // During an image transfer, an existing player continues to send
+        // controls. Its old progress is ignored by the new stream generation.
+        if (authored || report_due) && self.installed_generation > 0 {
+            self.send_report(send_time);
         }
         Ok(())
     }

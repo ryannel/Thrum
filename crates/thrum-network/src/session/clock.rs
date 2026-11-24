@@ -221,6 +221,9 @@ pub(super) struct Lead {
     adjust_at: u64,
     margin_sequence: u64,
     pinned: Option<u16>,
+    credit: u64,
+    credit_tick: u64,
+    last_authored: u64,
     pub(super) changes: u64,
 }
 
@@ -249,6 +252,9 @@ impl Lead {
             adjust_at: now + 30 * period,
             margin_sequence: 0,
             pinned,
+            credit: settings.input_burst() / 2,
+            credit_tick: held,
+            last_authored: 0,
             changes: 0,
         }
     }
@@ -267,10 +273,24 @@ impl Lead {
             return None;
         }
         let period = u64::from(settings.tick_us);
-        let ticks = (now - self.next) / period + 1;
+        // A slow poll can still fill the future slots for recent authoring
+        // periods. Skip older debt so resuming a suspended client stays bounded.
+        let due = (now - self.next) / period + 1;
+        let ticks = 1 + due.saturating_sub(u64::from(settings.catch_up));
         self.next += ticks * period;
         self.target += ticks;
-        if now >= self.adjust_at && self.samples >= 6 {
+        if self.pinned.is_none() && self.target <= held && self.floor < 0 {
+            // The newest received set already proves this target has passed.
+            // A long authority catch-up burst can overtake many of our frame
+            // periods at once. Re-anchor instead of sending obsolete frames
+            // for several seconds while the ordinary margin correction catches up.
+            self.target = held + 3 * self.half_rtt + 2;
+            self.next = now + period;
+            self.adjust_at = now + 30 * period;
+            self.floor = i16::MAX;
+            self.samples = 0;
+            self.changes += 1;
+        } else if now >= self.adjust_at && self.samples >= 6 {
             let adjustment = if self.floor < 1 {
                 u64::try_from(2 - i32::from(self.floor))
                     .expect("positive adjustment")
@@ -288,8 +308,24 @@ impl Lead {
             self.samples = 0;
             self.changes += u64::from(previous != self.target);
         }
-        let cap = held + self.half_rtt + u64::from(settings.staging);
-        (self.target <= cap).then_some(self.target)
+        // The authority may run slower than our wall clock, including during
+        // a busy tick. Stop advancing at the staging limit until more sets
+        // arrive. A target that advanced past the limit could never produce
+        // the next margin needed to bring itself back.
+        let cap = held + u64::from(settings.staging);
+        self.target = self.target.min(cap);
+        // Pace new input against observed authority progress. Use only half the
+        // host's burst allowance so delivery jitter and outstanding datagrams
+        // do not exhaust the host's elapsed-time credit.
+        let progressed = held.saturating_sub(self.credit_tick);
+        self.credit_tick = self.credit_tick.max(held);
+        self.credit = (self.credit + progressed).min(settings.input_burst() / 2);
+        if self.credit == 0 || self.target <= self.last_authored {
+            return None;
+        }
+        self.credit -= 1;
+        self.last_authored = self.target;
+        Some(self.target)
     }
 }
 
@@ -314,6 +350,57 @@ mod tests {
                 Some(first + 1)
             );
         }
+    }
+
+    #[test]
+    fn a_stalled_authority_does_not_leave_the_next_frame_past_the_staging_window() {
+        let settings = Settings::default();
+        let period = u64::from(settings.tick_us);
+        let held = 50;
+        let mut lead = Lead::new(0, held, 6 * period, settings, None);
+        let cap = held + u64::from(settings.staging);
+        assert_eq!(lead.author(300 * period, held, settings), Some(cap));
+        assert_eq!(lead.author(301 * period, held, settings), None);
+        assert_eq!(lead.author(302 * period, held + 1, settings), Some(cap + 1));
+    }
+
+    #[test]
+    fn negative_feedback_recovers_an_authoring_target_overtaken_by_the_host() {
+        let settings = Settings::default();
+        let period = u64::from(settings.tick_us);
+        let mut lead = Lead::new(0, 50, 6 * period, settings, None);
+        let first = lead.author(0, 50, settings).expect("first frame");
+        lead.observe(1, -100);
+        let recovered = lead
+            .author(period, first + 100, settings)
+            .expect("recovered frame");
+        assert!(recovered > first + 100);
+        assert_eq!(lead.author(period, first + 100, settings), None);
+    }
+
+    #[test]
+    fn a_delayed_poll_can_author_each_recent_future_frame() {
+        let settings = Settings::default();
+        let period = u64::from(settings.tick_us);
+        let mut lead = Lead::new(0, 50, 6 * period, settings, None);
+        let first = lead.author(0, 50, settings).expect("first frame");
+        for offset in 1..=4 {
+            assert_eq!(lead.author(4 * period, 54, settings), Some(first + offset));
+        }
+        assert_eq!(lead.author(4 * period, 54, settings), None);
+    }
+
+    #[test]
+    fn a_faster_client_earns_fresh_frame_credit_from_authority_progress() {
+        let settings = Settings::default();
+        let period = u64::from(settings.tick_us);
+        let mut lead = Lead::new(0, 50, 6 * period, settings, None);
+        let authored = (0..80)
+            .filter(|offset| lead.author(offset * period, 50, settings).is_some())
+            .count();
+        assert_eq!(authored as u64, settings.input_burst() / 2);
+        assert!(lead.author(80 * period, 51, settings).is_some());
+        assert_eq!(lead.author(81 * period, 51, settings), None);
     }
 
     #[test]

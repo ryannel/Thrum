@@ -567,6 +567,32 @@ fn welcomed_peers_cannot_stage_out_of_state_foreign_or_over_rate_input() {
 }
 
 #[test]
+fn elapsed_host_time_earns_input_credit_even_when_the_world_has_not_stepped() {
+    let settings = Settings {
+        behind: 4,
+        ..Settings::default()
+    };
+    let mut game = Match::with_settings(local(), 1, None, false, settings);
+    game.ready();
+    let now = game.now;
+    for first in [1, 3, 5, 7] {
+        to_host(&mut game, Lane::Datagram, &report(first, 2, 1), now, 0);
+    }
+    let later = now + 2 * u64::from(settings.tick_us);
+    to_host(&mut game, Lane::Datagram, &report(9, 2, 1), later, 0);
+    let link = &game.links[0][1];
+    assert!(link.is_open());
+    assert_eq!(game.host.world().tick(), 0);
+    assert_eq!(
+        game.host
+            .stream(link.id())
+            .expect("open peer")
+            .staged_frames,
+        10
+    );
+}
+
+#[test]
 fn an_invalid_complete_image_leaves_the_replica_world_untouched_and_requests_repair() {
     let (_, images) = startup();
     let mut game = Match::new(local(), 1, None, false);

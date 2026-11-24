@@ -21,15 +21,25 @@ do {
         throw NSError(domain: "ThrumCookedDraw", code: 1,
                       userInfo: [NSLocalizedDescriptionKey: "launcher has Screen Recording access"])
     }
+    let permit = output.appendingPathComponent("launcher-go").path
+    let deadline = Date().addingTimeInterval(15)
+    while !FileManager.default.fileExists(atPath: permit) {
+        guard Date() < deadline else {
+            throw NSError(domain: "ThrumCookedDraw", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "missing supervisor permit"])
+        }
+        Thread.sleep(forTimeInterval: 0.05)
+    }
     let logURL = output.appendingPathComponent("harness.log")
     _ = FileManager.default.createFile(atPath: logURL.path, contents: nil)
     let log = try FileHandle(forWritingTo: logURL)
     let child = Process()
     child.executableURL = URL(fileURLWithPath: CommandLine.arguments[2])
     child.currentDirectoryURL = URL(fileURLWithPath: CommandLine.arguments[3])
-    child.arguments = Array(CommandLine.arguments.dropFirst(5))
+    child.arguments = Array(CommandLine.arguments.dropFirst(6))
     var environment = ProcessInfo.processInfo.environment
     environment["PATH"] = CommandLine.arguments[4]
+    environment["THRUM_PROOF_SIMULATOR"] = CommandLine.arguments[5]
     environment["THRUM_COOKED_DRAW_LAUNCHER_REPORT"] = reportURL.path
     child.environment = environment
     child.standardOutput = log

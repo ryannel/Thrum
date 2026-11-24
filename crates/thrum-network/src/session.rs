@@ -8,7 +8,7 @@ mod wire;
 
 pub use client::{Client, ClientState, Controls};
 pub use clock::{Playout, Skip, Stall};
-pub use host::{Host, HostState, PeerStream};
+pub use host::{Host, HostState, PeerDisconnect, PeerStream};
 pub use prediction::{
     ControllerInput, ControllerView, Correction, CorrectionCause, NoPrediction, PREDICTION_TICKS,
     PredictedController, PredictionEvent,
@@ -98,6 +98,10 @@ impl Default for Settings {
 }
 
 impl Settings {
+    fn input_burst(self) -> u64 {
+        u64::from(self.repeats) * 2 + u64::from(self.behind)
+    }
+
     fn valid(self) -> bool {
         (1_000..=100_000).contains(&self.tick_us)
             && (1..=600).contains(&self.digest_interval)
@@ -126,6 +130,22 @@ impl Settings {
 /// Rejoin credential issued by the authority. An absent token uses the zero wire value.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PlayerToken(pub(crate) [u8; 16]);
+
+impl PlayerToken {
+    /// Restore a previously saved rejoin credential. All zeroes represent no token.
+    pub const fn from_bytes(bytes: [u8; 16]) -> Option<Self> {
+        if u128::from_le_bytes(bytes) == 0 {
+            None
+        } else {
+            Some(Self(bytes))
+        }
+    }
+
+    /// Save this rejoin credential for use by a future connection.
+    pub const fn to_bytes(self) -> [u8; 16] {
+        self.0
+    }
+}
 
 /// Roster transitions committed together with the slot frames at one tick.
 /// Each mask uses one bit per player slot.

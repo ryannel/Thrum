@@ -304,15 +304,12 @@ From the repository root, point `ORCHESTRATE_LOOP` to `skills/orchestration/lead
 in the installed orchestrate plugin and use a new output directory.
 
 ```sh
-python3 "${ORCHESTRATE_LOOP:?Set ORCHESTRATE_LOOP to the installed agent_loop.py}" lock simulator --worktree . -- python3 scripts/capture_v1_simulator.py --case all --output tmp/t2-capture-m2/my-route
+ORCHESTRATE_SCRIPT="${ORCHESTRATE_LOOP:?Set ORCHESTRATE_LOOP to the installed agent_loop.py}" python3 "$ORCHESTRATE_LOOP" lock simulator --worktree . -- python3 scripts/capture_v1_simulator.py --case all --output tmp/t2-capture-m2/my-route
 ```
 
 The command takes the exclusive simulator lock for the whole run, including the build and cook. Keep the
-turn within the 30-minute hold limit. The capture records the actual native foreground engine texture. The
-current driver creates a dedicated device and attempts shutdown and deletion on exit.
-
-With [SESSION M5's shared lifecycle](plans/SESSION/DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5),
-each run starts with a fresh app installation and data container, a new proof directory and cleared XCTest
+turn within the 30-minute hold limit. The capture records the actual native foreground engine texture.
+The [shared lifecycle](plans/SESSION/DESIGN.md#simulator-lifecycle-in-the-proof-harnesses-m5) starts each run with a fresh app installation and data container, a new proof directory and cleared XCTest
 runner state. The supervisor holds admission across the LaunchServices handoff and verifies shutdown before
 release on completion, worker failure or cancellation. The owned device stays shut down for reuse.
 
