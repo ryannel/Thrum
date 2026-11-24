@@ -21,7 +21,11 @@
       "output": 3941,
       "turns": 1
     },
-    "at": "2026-11-23T15:00:08Z"
+    "at": "2026-11-23T15:00:08Z",
+    "items_owed": [
+      "WP3",
+      "WP4"
+    ]
   },
   "work_packages": {
     "WP5": {
@@ -427,14 +431,13 @@
       }
     },
     "WP8": {
-      "definitions": "cfa9b94589be9c11b5b35f9945ccfe068976ef893c6a17a3e8efbcf5c27bc42a",
+      "definitions": "46d0f675f6e518d28cd33c99d63d8002ef8cb3cc47ce3e7fbcf26a91dc5e2c29",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:46Z"
-      },
-      "ends_stretch": true
+        "task": "Two things for ATMOSPHERE. First, urgently: docs/plans/ATMOSPHERE/DESIGN.md links ../APPLE-TILE/PLAN.md#wp0-proof-route-",
+        "at": "2026-11-24T20:21:54Z"
+      }
     },
     "WP9": {
       "definitions": "d66983a485411c1c9b8b99a4a26fc2965deb2b06889fffd198edfb7b690110ab",
@@ -655,6 +658,25 @@
         "checked": "662efe320bfe7ac1d761817e640bdcc71e0752dd",
         "at": "2026-11-23T15:44:19Z"
       }
+    },
+    "WP3": {
+      "definitions": "1edb9a558f2f30d8511a4a338023707aaa2a98be6270d270d624d0106f5ee82c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Two things for ATMOSPHERE. First, urgently: docs/plans/ATMOSPHERE/DESIGN.md links ../APPLE-TILE/PLAN.md#wp0-proof-route-",
+        "at": "2026-11-24T20:21:54Z"
+      }
+    },
+    "WP4": {
+      "definitions": "8d0446a72f4442b47bcb73788b98da48973c99b1d9fc02987dcf7f2a93ded709",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Two things for ATMOSPHERE. First, urgently: docs/plans/ATMOSPHERE/DESIGN.md links ../APPLE-TILE/PLAN.md#wp0-proof-route-",
+        "at": "2026-11-24T20:21:54Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -733,11 +755,15 @@
     {
       "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps failing on timeouts. Merges are refused while main fails, so every builder stalls. Most of the failures are CPU tests that sit just under the limit even on a quiet machine. In a passing run at 747909d1c, 42 tests took over 6 s. 19 of them are in thrum-river-model::it, at 9.3 to 9.9 s, and thrum-river-model also times out most often when the Mac is busy. The other slow tests are in v1-game, water-scene, thrum-render, thrum-water, thrum-water-model, thrum-sea, thrum-network, thrum-core and thrum-clouds. The full list, with seconds, is below.\n\nPlan the fix in the module that owns each test's code, as an item on its current milestone or as its next milestone, whichever lets it land soonest. The owner's standing rule is the fastest suite possible: small worlds and CPU-first tests, with soaks and long runs in the long-tests tier on main (`./dev long-tests`), not in the per-merge or workspace runs. Each slow test should either check the same behaviour on a smaller case so it runs well under the limit (a target of 2 s on a quiet machine is my assumption, and the owner can overturn it), or move to the long-tests tier with the reason recorded. thrum-river-model comes first.\n\nDone: each owning module's plan and done-when file carry the item, `./dev check-docs` passes, and the files are left for the plan command to commit.\n\nTests over 6 s (seconds, test):\n9.973  v1-game::it cooked_material_gpu::requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws\n9.643  thrum-sea::it forward_cache_gpu::forward_fields_and_full_lean_pyramids_match_the_model_portable_high_wind\n9.272  thrum-river-model::it flow_bands::with_no_wind_the_riffle_has_the_chop_s_height\n9.200  thrum-render::atmosphere_stage_table every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key\n9.176  water-scene::it inland_floating_gpu::lake_remains_sheltered_in_the_gale_and_settles_in_calm\n9.163  thrum-sea::it forward_cache_gpu::forward_fields_and_full_lean_pyramids_match_the_model_portable_light_wind\n9.102  thrum-network::it reliable_delivery::a_peer_that_drains_the_reliable_lane_returns_to_datagrams_and_stays_in_play\n8.991  v1-game::it cooked_rows_gpu::supersession_discarded_protected_switch_and_retired_space_reuse\n8.859  thrum-water::it query_gpu::chart_queries_keep_both_tick_pages_and_sample_their_own_stage\n8.708  thrum-river-model::it closed_forms::a_slow_flow_with_friction_holds_its_made_depth\n8.611  thrum-river-model::it fall_gauge::a_part_only_the_upper_sample_runs_rises_from_nothing_at_its_lip_s_wetting\n8.596  thrum-river-model::it fall_gauge::no_running_part_lands_on_a_dry_reach_and_the_terrace_waits_for_its_lip\n8.547  thrum-water-model::it shore_basin::enclosed_water_has_finite_lags_turning_and_exposure\n8.477  thrum-river-model::it gauge::a_spring_fed_river_s_gauge_is_its_own_stage\n8.456  water-scene::it inland_floating_gpu::query_current_carries_a_float_and_the_dry_bank_stops_it\n8.235  thrum-river-model::it fall_gauge::a_part_both_samples_run_is_their_mix_and_grows_with_the_gauge\n8.116  thrum-render atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query\n8.104  v1-game::cooked_assets_gpu a_newer_publication_supersedes_an_upload_still_being_filled\n8.048  thrum-water-model::it surf_cut::production_sheets_and_their_own_reach_match_forward_reference\n8.042  thrum-river-model::it gauge::every_chart_of_a_river_takes_the_one_gauge\n7.966  thrum-river-model::it report::doubling_the_rectangle_round_the_valley_barely_changes_its_work\n7.965  v1-game::simulation parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal\n7.892  thrum-river-model::it flow_bands::a_sea_a_basin_and_a_chart_that_is_no_river_s_lie_at_their_level\n7.647  thrum-river-model::it flow_bands::without_the_bands_every_answer_is_what_it_was\n7.579  thrum-river-model::it report::a_solve_stops_on_its_tolerances_and_reports_its_work\n7.514  thrum-river-model::it energy::in_the_valley_the_head_lost_beyond_friction_lies_round_the_rock_and_below_the_narrows_and_ledge\n7.435  thrum-river-model::it store::a_river_file_decodes_to_the_same_bytes_and_the_same_chart\n7.428  thrum-river-model::it valley::the_valley_keeps_its_discharge_fills_its_pool_to_the_weir_and_quickens_in_the_narrows\n7.425  water-scene::it scene_gpu::scene_ticks_and_declares_one_water_contribution\n7.302  thrum-river-model::it chart::the_stored_chart_is_the_solve_and_its_wet_cells_are_the_solvers\n7.251  thrum-river-model::it gauge::the_mixed_row_is_near_a_solve_at_the_level_between_and_one_sample_raised_is_not\n7.226  thrum-render::scene_view_air_shaded_gpu plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches\n7.216  thrum-river-model::it chart::the_map_takes_the_chart_and_joins_it_to_the_lake_at_both_ends_of_its_stage\n7.146  water-scene::foam_scene_gpu lake_beach_births_follow_its_share_of_lost_power\n7.070  thrum-river-model::it samples::a_spring_fed_stream_is_solved_at_its_declared_discharges_and_gauged_at_its_spring\n6.717  thrum-water::it foam_gpu::a_regular_wave_carries_foam_up_a_plane_beach\n6.716  thrum-river-model::it chop::the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the_pool\n6.709  thrum-render atmosphere::gpu::tests::diffuse::analytic_fields_preserve_direction_colour_and_physical_units\n6.403  v1-game::it cooked_material_gpu::a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload\n6.228  v1-game::it cooked_material_gpu::a_hook_that_writes_non_finite_factors_draws_the_placement_material\n6.213  thrum-core::it clock_spans::lane::a_resumed_lane_keeps_one_origin_inside_the_resume_bracket\n6.131  thrum-render synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky",
       "at": "2026-11-23T12:27:04Z"
+    },
+    {
+      "task": "Two things for ATMOSPHERE. First, urgently: docs/plans/ATMOSPHERE/DESIGN.md links ../APPLE-TILE/PLAN.md#wp0-proof-route-counters-and-capture-probe-pending, which is broken (that heading now reads \"WP0 A repeatable offscreen valley proves the comparison path: done\"). The repository guard fails on it, and main stays red until both this and REPO-RULES WP5 land; the REPO-RULES design expects ATMOSPHERE to correct this anchor in a plan-only change. Point the link at the current heading. Second, ATMOSPHERE has one planned work package left (WP8) and its plan names more: plan the next work packages, writing their items in its done-when file. Where the user chose one of a set of options or answered a question in an earlier work package, its User Feedback and the settings References folder hold the answer; write the new items against it.",
+      "at": "2026-11-24T20:21:54Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T12:27:04Z"
+    "at": "2026-11-24T20:21:54Z"
   },
   "design_history": [
     {

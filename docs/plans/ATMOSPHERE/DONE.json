@@ -548,7 +548,9 @@
     {
       "id": "WP8",
       "name": "A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome",
-      "depends_on": ["CLOUDS:WP3"],
+      "depends_on": [
+        "CLOUDS:WP3"
+      ],
       "items": [
         {
           "id": "WP8.1",
@@ -715,7 +717,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP4",
@@ -732,7 +736,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
