@@ -72,6 +72,14 @@ fn cloud_bank_billow(point:vec3<f32>,footprint:f32)->f32 {
     let air=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
     return textureSampleLevel(shape_noise,noise_sampler,air*vec3(2.0,3.0,2.0),erosion_mip(2.0*footprint,50.0)).r;
 }
+fn cloud_bank_floor(point:vec3<f32>,footprint:f32)->f32 {
+    // Hold the broad floor height through each column. Sampling this octave
+    // at a fixed height gives each lobe its own rounded underside.
+    let air=point.xz/6400.0+vec2(cloud.noise.x,cloud.noise.y);
+    let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(2.0*air.x,0.31,2.0*air.y),
+                                 erosion_mip(2.0*footprint,50.0)).r;
+    return 0.64*smoothstep(0.10,0.80,swell);
+}
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f32)->f32 {
     if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
@@ -83,9 +91,9 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     // Erode the underside unevenly inside the mixed bank, where individual
     // lobes have lifted bases. The cloud and the local Sun march see the same
     // relief, and erosion never adds density outside the weather column.
-    let lifted_shape=0.48*shape+0.52*cloud_bank_billow(point,footprint);
-    let lift=0.53*smoothstep(0.14,0.76,lifted_shape);
-    return eroded*mix(1.0,smoothstep(0.60*lift,lift+0.08,height),bank);
+    let floor=cloud_bank_floor(point,footprint);
+    let lift=floor*mix(0.78,1.10,detail);
+    return eroded*mix(1.0,smoothstep(0.85*lift,lift+0.12,height),bank);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
