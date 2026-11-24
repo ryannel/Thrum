@@ -672,7 +672,7 @@
         {
           "verdict": "fail",
           "commit": "ead86f6b4903e428027c2272257ae5928302a2e9",
-          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review-1.md",
           "items": {
             "WP4.2": "pass",
             "WP4.3": "fail",
@@ -725,6 +725,46 @@
             "turns": 1
           },
           "at": "2026-11-24T22:53:57Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "b57647e0eda6144a95de4d4cbd0c5f852e328934",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md",
+          "items": {
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass",
+            "WP4.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Held balloon penumbra retains stationary grain",
+              "item": "WP4.3",
+              "different": "The earlier speckles moved between held frames. The repaired disc sequence stays stable, but the converged shadow still shows spatial grain in a single native-size frame.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 130985,
+            "cached": 7228928,
+            "output": 16461,
+            "turns": 1
+          },
+          "at": "2026-11-24T23:44:18Z"
         }
       ],
       "authorised": {
