@@ -244,6 +244,7 @@ def capture_soft(args):
     if args.route:
         from run_v1_showcase import store_root
 
+        env.pop("THRUM_CAPTURE_FIXED_EYE", None)
         route = json.loads((ROOT / "examples/v1-game/routes/exit-flythrough.json").read_text())
         route["cooked_root"] = store_root(args.store)
         route_file = args.output / f"{args.name}.route.json"
