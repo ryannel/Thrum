@@ -611,3 +611,9 @@
   The cost is the number of full wake-scene submissions. The M13 branch's 50 ms test tick kept all
   five submitted-stock reads through 60.1 s and passed in 1.827 s. M18 brings that fixture forward.
   [Metal trail run](../../../.orchestrate/evidence/WATERS/M13/trail-tick.log).
+
+- 2026-11-24 M18 reduced the craft-trail test from 692 submissions to 182 with a 32 × 24 target and a 50 ms
+  test tick. Metal verified all five submitted stock readings through 60.1 s with zero dropped foam ticks.
+  The unchanged cover, width and peak bounds passed on the first attempt in default Nextest, in 2.532 s
+  alone and 3.405 s within the foam binary under builder load.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/M18/README.md).

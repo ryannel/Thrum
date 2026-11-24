@@ -1056,8 +1056,8 @@
           "ask": "Do the five reads come from submitted Metal stocks with the same elapsed times and bounds, and do the isolated and foam-binary runs pass on the first attempt under normal builder load?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M18/README.md"
         }
       ],
       "failed_reviews": 0,
