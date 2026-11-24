@@ -38,3 +38,12 @@
   crowd trace through their owning packages. Both boundary rules are at zero, nine Metal visibility tests passed,
   and the engine built 214 test and bench executables with both game directories absent. The release Wasm bundle
   emitted the original witness bytes. The shared main-branch check supplies exact images. [Evidence](../../../.orchestrate/evidence/GAME-SPLIT/M2.md)
+
+- 2026-11-24 WP3 put the engine rigs behind the default Cargo `proving` feature. The normal
+  web and iPhone packaging commands build without it. The cooked texture and staging-fault
+  tests now live in `thrum-asset-gpu`. Verified the no-default-features Mac tests and Wasm
+  build, both cooked tests on Metal, the Chrome hooks, the iPhone build variants and the
+  `game-names` rule at zero. The rebase kept the new Sun shadow, cloud capture and
+  atmosphere test bank rigs behind `proving`. The scheduled `exact-images` check
+  continues to verify the Mac and Chrome baselines on main.
+  [WP3 evidence](../../../.orchestrate/evidence/GAME-SPLIT/WP3/README.md)

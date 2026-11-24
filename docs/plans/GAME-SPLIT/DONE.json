@@ -141,7 +141,7 @@
     {
       "id": "WP3",
       "name": "The game builds and passes its own tests with every engine rig compiled out, and a normal build ships no test hooks",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -156,8 +156,8 @@
           "check": "sh -c 'cargo test --locked --offline -p v1-game --no-default-features --test game_alone && cargo build --locked --offline -p v1-game --no-default-features --lib --target wasm32-unknown-unknown'",
           "ask": "With the feature off, does the library export anything that qualifies an engine module? Which tests are the game's own, and do they all run with it off? Is any test target declared with `required-features`, which would let another module's check pass by running nothing?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -167,8 +167,8 @@
           "check": "cargo test --locked --offline -p thrum-asset-gpu --features fault-probe --test cooked_fault_gpu --test cooked_texture_quality",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -177,8 +177,8 @@
           "statement": "A normal web build exports no qualification function and a normal iPhone build accepts no qualification command. The proving builds that other modules' checks run still have them.",
           "ask": "Which exports does the default web bundle hold? Do the browser and simulator checks that other modules pinned still find the hooks they drive, with their check strings unchanged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -187,8 +187,8 @@
           "statement": "No file under `crates/` names a game: `game-names` refuses a game's package name, crate name or control key in engine source, and is at zero.",
           "check": "python3 scripts/shape_rules.py check --rule game-names --zero crates",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -197,8 +197,8 @@
           "statement": "Every check that an open item in another module pins on `v1-game` still finds what it names, under the default features.",
           "ask": "Take the open items in other modules whose checks name `-p v1-game`: does each named test target that existed at the starting commit still exist and run with no extra flag?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/README.md",
           "verdict": "",
           "review": ""
         }
