@@ -431,8 +431,12 @@ impl super::SyntheticTargetInputs {
                 AccessKind::UniformRead,
             ));
         }
-        let exposure_sample =
-            ExposureResolve::append_graph(&mut graph, self.exposure_key(), light.clone(), incident_sun)?;
+        let exposure_sample = ExposureResolve::append_graph(
+            &mut graph,
+            self.exposure_key(),
+            light.clone(),
+            incident_sun,
+        )?;
         accesses.push(Access::new(
             exposure_sample.clone(),
             0..exposure::SAMPLE_BYTES,
