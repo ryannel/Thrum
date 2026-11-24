@@ -307,7 +307,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- T2-CAPTURE's design: Design Changes Requested · [design](T2-CAPTURE/DESIGN.md) · [plan](T2-CAPTURE/PLAN.md)
+- A completed Chrome capture survives slow shutdown and leaves no browser or profile (T2-CAPTURE M4): Not Started · [plan](T2-CAPTURE/PLAN.md)
 - Small hot-reload checks prove which material the device draws (CREATOR M4): Not Started · [plan](CREATOR/PLAN.md)
 - Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6): In Progress · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
@@ -425,7 +425,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Done 14 Nov |
-| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Design Changes Requested |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M4 of 5 · Not Started |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M4 of 4 · Not Started |
