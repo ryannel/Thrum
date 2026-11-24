@@ -103,8 +103,18 @@ impl WeatherSequence {
                 };
                 let a = from.parameters();
                 let b = to.parameters();
+                let coverage = if to == WeatherPreset::Clear {
+                    // Spend most of the minute opening holes in the deck.
+                    // A small coverage change here thins a broad area at once.
+                    let thinning = 0.20 * ease(elapsed / 8.0);
+                    let opening = 0.26 * ease((elapsed - 8.0) / 43.0);
+                    let clearing = 0.54 * ease((elapsed - 51.0) / 9.0);
+                    1.0 - (thinning + opening + clearing)
+                } else {
+                    (b.coverage - a.coverage).mul_add(coverage_blend, a.coverage)
+                };
                 Parameters {
-                    coverage: (b.coverage - a.coverage).mul_add(coverage_blend, a.coverage),
+                    coverage,
                     kind: (b.kind - a.kind).mul_add(kind_blend, a.kind),
                     ..initial
                 }
