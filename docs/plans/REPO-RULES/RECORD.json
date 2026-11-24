@@ -205,6 +205,38 @@
         "by": "plan",
         "task": "Unblock REPO-RULES WP5. The builder wrote: WP5.4 can't be met as written because Orchestrate refuses work-package checks",
         "at": "2026-11-24T20:49:08Z"
+      },
+      "ready_for_review": {
+        "commit": "abffdf2529572eee59a574a5e22d33f8e85c4656",
+        "checked": "abffdf2529572eee59a574a5e22d33f8e85c4656",
+        "at": "2026-11-24T21:12:18Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 168154,
+          "cached": 19214208,
+          "output": 25568,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 168154,
+          "cached": 19214208,
+          "output": 25568,
+          "turns": 3
+        }
+      },
+      "done": {
+        "by": "checks",
+        "commit": "abffdf2529572eee59a574a5e22d33f8e85c4656",
+        "checked": "abffdf2529572eee59a574a5e22d33f8e85c4656",
+        "at": "2026-11-24T21:12:18Z"
       }
     }
   },

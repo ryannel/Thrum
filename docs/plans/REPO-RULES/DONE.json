@@ -154,7 +154,7 @@
     {
       "id": "WP5",
       "name": "The repository gate passes with migrated plans",
-      "status": "not_started",
+      "status": "done",
       "depends_on": [],
       "quality_bar": "The merge gate passes with the existing rule versions and ratchet, and legacy evidence is recoverable from a full clone.",
       "items": [
