@@ -12,7 +12,13 @@ use crate::{placed_fixture, scene_fixture};
 
 // Coverage and type coordinates of a small analytical fixture. The game owns its
 // own type table. Here the low-density rows keep vertical transmission representable.
-const PRESETS: [[f64; 2]; 5] = [[0.0, 1.0], [0.5, 1.0], [0.722, 0.42], [1.0, 0.0], [0.0, 1.0]];
+const PRESETS: [[f64; 2]; 5] = [
+    [0.0, 1.0],
+    [0.5, 1.0],
+    [0.722, 0.42],
+    [1.0, 0.0],
+    [0.0, 1.0],
+];
 const TEXEL: f64 = 10.0;
 const STEP: Duration = Duration::from_millis(100);
 
