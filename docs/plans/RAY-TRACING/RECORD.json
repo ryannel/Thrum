@@ -446,7 +446,7 @@
         {
           "verdict": "fail",
           "commit": "c7cbfaf35537db630fe4cb62596f263eee96ca05",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-5.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -485,6 +485,58 @@
             "turns": 1
           },
           "at": "2026-11-20T11:47:48Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "9d56b7e29f5d39d2d4b31552ced59ab27bb15096",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "fail",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass",
+            "M3.13": "pass",
+            "M3.14": "fail",
+            "M3.15": "pass",
+            "M3.16": "pass"
+          },
+          "findings": [
+            {
+              "name": "A dark facet interrupts the noon rock\u2019s lit surface",
+              "item": "M3.2",
+              "different": "The verified receiver is the cooked rock at noon. The previously named low-Sun balloon edges have distinct distant casters.",
+              "repeat": false
+            },
+            {
+              "name": "The CPU guard passes when host publication discards the prepared list",
+              "item": "M3.14",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 224168,
+            "cached": 12776960,
+            "output": 26718,
+            "turns": 1
+          },
+          "at": "2026-11-24T03:41:31Z"
         }
       ],
       "authorised": {
