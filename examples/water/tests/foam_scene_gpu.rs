@@ -222,16 +222,25 @@ fn craft_trail_outlives_removed_source_and_spreads() {
     )
     .expect("foam course");
     let tap = scene.foam.expect("foam tap");
-    let mut fixture = Fixture::from_game(&gpu, [96, 64], scene.game, scene.report);
-    for tick in (0..=360).step_by(4) {
-        fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+    let tick_duration = std::time::Duration::from_millis(50);
+    let game = scene
+        .game
+        .with_tick_duration(tick_duration)
+        .expect("trail test clock");
+    let mut fixture = Fixture::from_game(&gpu, [32, 24], game, scene.report);
+    // Run the craft for six seconds, then age its film for 60.1 seconds.
+    // The longer test tick reduces submissions within the foam catch-up bound.
+    for tick in (0..=120).step_by(4) {
+        fixture.frame_without_timings((tick_duration * tick).as_secs_f64());
     }
     fixture.parameters(r#"{"craft.present":0}"#);
     let mut readings: Vec<Trail> = Vec::new();
-    for tick in (366..=3966).step_by(6) {
-        fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
-        if [366, 966, 1566, 2166, 3966].contains(&tick) {
+    for tick in (122..=1322).step_by(8) {
+        fixture.frame_without_timings((tick_duration * tick).as_secs_f64());
+        if [122, 322, 522, 722, 1322].contains(&tick) {
             let witness = tap.latest().expect("submitted trail");
+            assert_eq!(witness.report.ticks[1], u64::from(tick), "submitted trail tick");
+            assert_eq!(witness.report.dropped_ticks, 0, "trail ageing at tick {tick}");
             let stocks = support::foam_stocks(&fixture, &witness);
             readings.push(trail(&witness, &stocks));
         }
