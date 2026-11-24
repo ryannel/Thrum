@@ -213,8 +213,8 @@
     {
       "id": "M4",
       "name": "A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -228,8 +228,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m41-game-contract",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -238,8 +238,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m42-browser-controls",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -249,8 +249,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m43-mac-qualification-observer",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -259,8 +259,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m44-second-game",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -271,8 +271,8 @@
           "target": "ios-sim",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m45-iphone-simulator",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.6",
@@ -280,10 +280,10 @@
           "check": "sh -c './dev check-web && python3 scripts/host_lifecycle.py check --target mac-metal --target chrome-webgpu'",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/chrome-shutdown/README.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
         {
           "id": "M4.7",
@@ -292,8 +292,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Chrome lifecycle qualification accepts an exit the inherited check rejects",
+          "item": "M4.6",
+          "repeat": false
         }
       ]
     },

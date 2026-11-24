@@ -516,7 +516,7 @@
         {
           "verdict": "fail",
           "commit": "4b53f13ea44207a5ecbb74b79ce24bbfa792ba06",
-          "review": ".orchestrate/evidence/HOST/M4-review.md",
+          "review": ".orchestrate/evidence/HOST/M4-review-2.md",
           "items": {
             "M4.1": "fail",
             "M4.2": "pass",
@@ -556,6 +556,43 @@
             "turns": 1
           },
           "at": "2026-11-23T17:10:52Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "09eec2d8bcb44a1fab6c7ee0821c7fe34eb0d3b6",
+          "review": ".orchestrate/evidence/HOST/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "pass",
+            "M4.3": "pass",
+            "M4.4": "pass",
+            "M4.5": "pass",
+            "M4.6": "fail",
+            "M4.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Chrome lifecycle qualification accepts an exit the inherited check rejects",
+              "item": "M4.6",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 91231,
+            "cached": 2333184,
+            "output": 6821,
+            "turns": 1
+          },
+          "at": "2026-11-24T05:55:04Z"
         }
       ],
       "authorised": {
