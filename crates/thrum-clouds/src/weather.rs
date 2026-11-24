@@ -43,8 +43,7 @@ struct Uniform {
 }
 
 struct Pending {
-    active: bool,
-    time: f64,
+    stamp: Option<RowStamp>,
     origins: Vec<[f64; 2]>,
     stamps: Vec<Vec<RowStamp>>,
     ranges: Vec<(u32, u32)>,
@@ -70,7 +69,7 @@ pub struct WeatherMap {
     origins: Vec<[f64; 2]>,
     stamps: Vec<Vec<RowStamp>>,
     pending: Pending,
-    last_weather_time: f64,
+    last_stamp: Option<RowStamp>,
 }
 
 impl WeatherMap {
@@ -248,8 +247,7 @@ impl WeatherMap {
                 .collect()
         };
         let pending = Pending {
-            active: false,
-            time: 0.0,
+            stamp: None,
             origins: vec![[0.0; 2]; levels],
             stamps: stamps(),
             ranges: vec![(0, 0); levels],
@@ -269,7 +267,7 @@ impl WeatherMap {
             origins: vec![[0.0; 2]; levels],
             stamps: committed_stamps,
             pending,
-            last_weather_time: 0.0,
+            last_stamp: None,
         })
     }
 
@@ -290,7 +288,7 @@ impl WeatherMap {
         camera: [f64; 2],
     ) -> Result<(), Error> {
         let step = self.clock.begin(time, u64::MAX, [0; 2]);
-        self.pending.active = false;
+        self.pending.stamp = None;
         if step == EffectStep::Keep {
             return Ok(());
         }
@@ -299,6 +297,12 @@ impl WeatherMap {
             time: state.time(),
             parameters: state.parameters(),
         };
+        let previous = self.last_stamp.unwrap_or(stamp);
+        let elapsed = (stamp.time - previous.time).max(0.0);
+        let maximum_age = self
+            .profile
+            .maximum_age
+            .min(ramp_row_age(previous, stamp, elapsed));
         let resolved = resolve_type(&self.types, state.parameters().kind);
         for (level, texel) in self.profile.texels.iter().enumerate() {
             let block = texel * f64::from(self.profile.size) / 4.0;
@@ -317,13 +321,7 @@ impl WeatherMap {
             rows.resize(self.profile.size as usize, stamp);
             // A rotating contiguous strip with at least ceil(dt/age * rows)
             // rows guarantees a weather-time bound independently of frame rate.
-            let (start, count) = update_rows(
-                rows,
-                stamp,
-                (state.time() - self.last_weather_time).max(0.0),
-                self.profile.maximum_age,
-                reset,
-            );
+            let (start, count) = update_rows(rows, stamp, elapsed, maximum_age, reset);
             self.pending.ranges[level] = (start, count);
             let uniform = pack(
                 self.seed,
@@ -341,14 +339,13 @@ impl WeatherMap {
             )?;
             queue.write_buffer(&self.uniforms[level], 0, bytemuck::bytes_of(&uniform));
         }
-        self.pending.active = true;
-        self.pending.time = state.time();
+        self.pending.stamp = Some(stamp);
         Ok(())
     }
 
     /// Record the selected slices, without submission authority.
     pub fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
-        if self.pending.active {
+        if self.pending.stamp.is_some() {
             let pending = &self.pending;
             pass.set_pipeline(&self.pipeline);
             for (group, (_, count)) in self.groups.iter().zip(&pending.ranges) {
@@ -363,17 +360,16 @@ impl WeatherMap {
     /// Commit only after the containing encoder was submitted.
     pub fn submitted(&mut self) {
         self.clock.submitted();
-        if self.pending.active {
+        if let Some(stamp) = self.pending.stamp.take() {
             std::mem::swap(&mut self.origins, &mut self.pending.origins);
             std::mem::swap(&mut self.stamps, &mut self.pending.stamps);
-            self.last_weather_time = self.pending.time;
-            self.pending.active = false;
+            self.last_stamp = Some(stamp);
         }
     }
 
     /// Whether the current recording has selected work.
     pub fn runs(&self) -> bool {
-        self.pending.active && self.pending.ranges.iter().any(|r| r.1 > 0)
+        self.pending.stamp.is_some() && self.pending.ranges.iter().any(|r| r.1 > 0)
     }
     /// Physical columns, optical data, and integer cell identities.
     pub fn textures(&self) -> &[wgpu::Texture; 3] {
@@ -381,7 +377,7 @@ impl WeatherMap {
     }
     /// Air-frame origins used by the current recording, or the committed frame.
     pub fn origins(&self) -> &[[f64; 2]] {
-        if self.pending.active {
+        if self.pending.stamp.is_some() {
             &self.pending.origins
         } else {
             &self.origins
@@ -395,6 +391,20 @@ impl WeatherMap {
     pub fn profile(&self) -> &WeatherProfile {
         &self.profile
     }
+}
+
+fn ramp_row_age(previous: RowStamp, next: RowStamp, elapsed: f64) -> f64 {
+    let change = (next.parameters.coverage - previous.parameters.coverage)
+        .abs()
+        .max((next.parameters.kind - previous.parameters.kind).abs());
+    if change == 0.0 {
+        return f64::INFINITY;
+    }
+    // A global ramp can move the optical edge of a deck much faster than
+    // local cloud evolution. Refresh the strips faster during that ramp so
+    // adjacent rows do not switch wide patches between old and new opacity.
+    const RAMP_CONTROL_CHANGE: f64 = 0.001;
+    RAMP_CONTROL_CHANGE * (elapsed / change)
 }
 
 #[expect(
