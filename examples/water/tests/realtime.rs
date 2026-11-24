@@ -39,7 +39,9 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else {
         super::proof_game(true)
     };
-    let (extent, interval, opportunities, max_submissions) = if whitewater && route == "stop" {
+    let (extent, interval, opportunities, max_submissions) = if surf {
+        ([2560, 1440], 12.0, 10.0, MAX_SUBMISSIONS)
+    } else if whitewater && route == "stop" {
         ([1280, 720], 72.0, 10.0, 740)
     } else if whitewater || wake {
         ([1280, 720], 12.0, 10.0, MAX_SUBMISSIONS)
