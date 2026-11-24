@@ -496,7 +496,7 @@
     {
       "id": "M8",
       "name": "A small in-memory match catches reliable-lane recovery regressions",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
