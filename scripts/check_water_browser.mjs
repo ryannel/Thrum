@@ -405,7 +405,8 @@ try {
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
-  let now=0;
+  const fixedSurf=surfRoute&&mode!=='realtime';
+  let now=fixedSurf ? await evaluate('performance.now()') : 0;
   const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
   const capture=async(name,delta=1000/120,probe=false)=>{
     await until(()=>evaluate('game.frame_ready()'),'free frame slot');
@@ -442,6 +443,15 @@ try {
     result.frames.push(record);return record;
   };
   for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0?0:1000/120);await delay(30);}
+  let surfClockOrigin;
+  if(fixedSurf){
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked surf drawn');
+    const anchor=await capture('surf-clock-anchor',0);
+    surfClockOrigin=now-anchor.observation*1000;
+  }
   if(mode==='foam'){
     const runFoam=async steps=>{
       for(let index=0;index<steps;index++){
@@ -574,7 +584,9 @@ try {
     for(const status of [start,end,hitch]) delete status.replies;
     result.bodies={start,ages:[...ages.values()].slice(0,beforeHitch.size),end,hitch,hitchAges};
   } else if(mode==='surf'){
-    const frame=await capture('surf-trade',500-now);
+    const checkpoint=Math.max(surfClockOrigin+2000,now+250);
+    const frame=await capture('surf-trade',checkpoint-now);
+    assert(frame.tick>0,'surf field checkpoint did not advance');
     await inspectSurf(evaluate,result,frame);
   } else if(mode==='island'){
     await capture('island',10000-now);
@@ -646,8 +658,11 @@ try {
     for(const [index,name] of views.entries()){
       await evaluate(`game.edit_control('camera.island',${index})`);
       for(let phase=0;phase<3;phase++){
-        const timestamp=(16+0.9*(3*index+phase))*1000;
-        await capture(`surf-${name}-${phase}`,timestamp-now);
+        const seconds=16+0.9*(3*index+phase);
+        const timestamp=surfClockOrigin+seconds*1000;
+        assert(timestamp>=now,'surf fixed checkpoint precedes the clock anchor');
+        const frame=await capture(`surf-${name}-${phase}`,timestamp-now);
+        assert(Math.abs(frame.observation-seconds)<0.00005,`${name}: surf checkpoint drifted`);
       }
     }
   } else if(mode==='fixed'){
