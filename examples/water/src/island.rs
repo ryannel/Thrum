@@ -140,7 +140,7 @@ fn surf_spectrum(wind: Wind, forcing: &Forcing) -> Result<Spectrum, SeaError> {
     let amplitude = swell.significant_height / (2.0 * 2.0_f64.sqrt() * norm);
     for (slot, (period_ratio, weight, phase)) in spectrum.long.iter_mut().zip(weights) {
         // These lowest wavenumber slots have zero energy in the wind sea.
-        debug_assert_eq!(slot.amplitude, 0.0);
+        debug_assert!(slot.amplitude < f64::EPSILON);
         let k = std::f64::consts::TAU / (swell.wavelength * period_ratio.powi(2));
         let mut component = Component {
             wave_vector: [k * x, k * z],

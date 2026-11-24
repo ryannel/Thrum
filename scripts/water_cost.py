@@ -16,7 +16,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'island': ROOT / 'tests/fixtures/waters/island-cost.json',
            'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json',
-           'surf': ROOT / '.orchestrate/evidence/WATERS/M13/surf-cost.json'}
+           'surf': ROOT / '.orchestrate/evidence/WATERS/WP13/surf-cost.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
 # which ends in this name.
