@@ -2,7 +2,9 @@
 
 use sha2::{Digest, Sha256};
 use std::{
-    io::Write,
+    error::Error,
+    fmt,
+    io::{self, Write},
     sync::mpsc::{self, Receiver, SyncSender, TrySendError},
     thread::{self, JoinHandle},
     time::{Duration, Instant},
@@ -46,20 +48,52 @@ pub struct WriterReport {
 pub struct ImageWriter<I = SubmittedImage> {
     send: Option<SyncSender<I>>,
     returned: Receiver<I>,
-    outcome: Receiver<Result<WriterReport, String>>,
+    outcome: Receiver<Result<WriterReport, WriterError>>,
     thread: Option<JoinHandle<()>>,
 }
 
-/// Rejected writer limits or failure to start its worker.
+/// A capture writer refused its limits or could not finish the spool.
 #[derive(Debug)]
-pub struct WriterError(String);
+pub enum WriterError {
+    /// The frame limit is outside 1..=4096.
+    FrameLimit,
+    /// The queue capacity is outside 1..=256.
+    Capacity,
+    /// A frame exceeded the record limit or contained no pixels.
+    Record,
+    /// A spool worker could not start.
+    Start(io::Error),
+    /// Encoding, writing or flushing the spool failed.
+    Io(io::Error),
+    /// A worker stopped without returning a result.
+    WorkerStopped,
+    /// The spool did not finish before the deadline.
+    Timeout,
+}
 
-impl std::fmt::Display for WriterError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+impl fmt::Display for WriterError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FrameLimit => formatter.write_str("writer frame limit must be in 1..=4096"),
+            Self::Capacity => formatter.write_str("writer capacity must be in 1..=256"),
+            Self::Record => formatter.write_str("capture record limit or empty record"),
+            Self::Start(error) | Self::Io(error) => error.fmt(formatter),
+            Self::WorkerStopped => {
+                formatter.write_str("capture writer stopped before finalization")
+            }
+            Self::Timeout => formatter.write_str("raw writer finalization timeout"),
+        }
     }
 }
-impl std::error::Error for WriterError {}
+
+impl Error for WriterError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Start(error) | Self::Io(error) => Some(error),
+            _ => None,
+        }
+    }
+}
 
 fn write_records<I: AsRef<[u8]>, W: Write>(
     receive: &Receiver<I>,
@@ -68,14 +102,14 @@ fn write_records<I: AsRef<[u8]>, W: Write>(
     byte_allowance: u64,
     encoding: SpoolEncoding,
     frame_limit: u64,
-) -> Result<WriterReport, String> {
+) -> Result<WriterReport, WriterError> {
     let mut output =
-        spool::Spool::new(output, byte_allowance, encoding).map_err(|e| e.to_string())?;
+        spool::Spool::new(output, byte_allowance, encoding).map_err(WriterError::Io)?;
     let mut report = WriterReport::default();
     while let Ok(image) = receive.recv() {
         let bytes = image.as_ref();
         if report.frames >= frame_limit || bytes.is_empty() {
-            return Err("capture record limit or empty record".to_owned());
+            return Err(WriterError::Record);
         }
         let begin = Instant::now();
         let hash = format!("{:x}", Sha256::digest(bytes));
@@ -83,13 +117,13 @@ fn write_records<I: AsRef<[u8]>, W: Write>(
         let result = output.record(bytes);
         report.write_time += begin.elapsed();
         drop(recycle.try_send(image));
-        result.map_err(|e| e.to_string())?;
+        result.map_err(WriterError::Io)?;
         report.bytes += length;
         report.frames += 1;
         report.frame_hashes.push(hash);
     }
     let begin = Instant::now();
-    let output = output.finish().map_err(|e| e.to_string())?;
+    let output = output.finish().map_err(WriterError::Io)?;
     report.flush_time = begin.elapsed();
     report.encoded_bytes = output.bytes;
     report.io_time = output.io_time;
@@ -107,7 +141,7 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
         capacity: usize,
         byte_allowance: u64,
         encoding: SpoolEncoding,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, WriterError> {
         Self::start_bounded(output, capacity, byte_allowance, encoding, 1024)
     }
 
@@ -123,7 +157,6 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
         frame_limit: u64,
     ) -> Result<Self, WriterError> {
         Self::start_bounded(output, capacity, byte_allowance, encoding, frame_limit)
-            .map_err(WriterError)
     }
 
     fn start_bounded(
@@ -132,12 +165,12 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
         byte_allowance: u64,
         encoding: SpoolEncoding,
         frame_limit: u64,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, WriterError> {
         if !(1..=4096).contains(&frame_limit) {
-            return Err("writer frame limit must be in 1..=4096".to_owned());
+            return Err(WriterError::FrameLimit);
         }
         if !(1..=256).contains(&capacity) {
-            return Err("writer capacity must be in 1..=256".to_owned());
+            return Err(WriterError::Capacity);
         }
         let (send, receive) = mpsc::sync_channel::<I>(capacity);
         let (recycle, returned) = mpsc::sync_channel(capacity);
@@ -156,7 +189,7 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
                     ),
                     SpoolEncoding::ZstdDelta => (|| {
                         let (output, worker) =
-                            io_worker::Output::start(output).map_err(|e| e.to_string())?;
+                            io_worker::Output::start(output).map_err(WriterError::Start)?;
                         let result = write_records(
                             &receive,
                             &recycle,
@@ -168,12 +201,12 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
                         let begin = Instant::now();
                         let io = worker.finish();
                         let tail = begin.elapsed();
-                        let mut report = result.map_err(|error| match &io {
-                            Err(disk) if error.contains("encoded I/O worker stopped") => {
-                                disk.clone()
+                        let mut report = match result {
+                            Err(WriterError::Io(error)) if io_worker::is_stopped(&error) => {
+                                return Err(io.err().unwrap_or(WriterError::Io(error)));
                             }
-                            _ => error,
-                        })?;
+                            other => other?,
+                        };
                         let io = io?;
                         report.flush_time += tail;
                         report.io_time = io.time;
@@ -184,7 +217,7 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
                 };
                 drop(finish.try_send(result));
             })
-            .map_err(|e| e.to_string())?;
+            .map_err(WriterError::Start)?;
         Ok(Self {
             send: Some(send),
             returned,
@@ -212,19 +245,23 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
     /// Close admission and wait only to the explicit finalization deadline.
     /// # Errors
     /// Returns write/flush failure or timeout; no successful manifest may follow.
-    pub fn finish(mut self, timeout: Duration) -> Result<WriterReport, String> {
+    pub fn finish(mut self, timeout: Duration) -> Result<WriterReport, WriterError> {
         self.send = None;
         let deadline = Instant::now() + timeout;
         loop {
             while self.recycled().is_some() {}
-            if let Ok(outcome) = self.outcome.try_recv() {
-                if let Some(thread) = self.thread.take() {
-                    drop(thread.join());
+            match self.outcome.try_recv() {
+                Ok(outcome) => {
+                    if let Some(thread) = self.thread.take() {
+                        drop(thread.join());
+                    }
+                    return outcome;
                 }
-                return outcome;
+                Err(mpsc::TryRecvError::Disconnected) => return Err(WriterError::WorkerStopped),
+                Err(mpsc::TryRecvError::Empty) => {}
             }
             if Instant::now() >= deadline {
-                return Err("raw writer finalization timeout".to_owned());
+                return Err(WriterError::Timeout);
             }
             thread::sleep(Duration::from_millis(1));
         }

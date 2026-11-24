@@ -44,7 +44,9 @@ pub(super) fn record(
             CaptureLimits::default(),
             source,
         )?;
-        let report = driver.step_at(Duration::ZERO)?;
+        let report = driver
+            .step_at(Duration::ZERO)
+            .map_err(|error| error.to_string())?;
         if !report.surface_presented || report.dropped_view {
             return Err(format!("still route refused {name}: {report:?}"));
         }

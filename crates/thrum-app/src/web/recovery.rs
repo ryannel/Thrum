@@ -1,6 +1,7 @@
 //! Platform-owned, detached graphics preparation. The mailbox contains no world
 //! or game reference; dropping the game also abandons late preparation results.
 
+use super::WebHostError;
 use std::{cell::RefCell, rc::Rc};
 
 use wasm_bindgen::{JsCast, JsValue, prelude::wasm_bindgen};
@@ -44,7 +45,7 @@ pub(super) async fn open_canvas_device(
     extent: [u32; 2],
     generation: u64,
     remove_features: wgpu::Features,
-) -> Result<GraphicsDevice, String> {
+) -> Result<GraphicsDevice, WebHostError> {
     let restriction = DeviceRestriction {
         remove_features,
         ..Default::default()
@@ -63,9 +64,9 @@ pub(super) async fn open_canvas_device(
     }
     .open(instance, Some(surface))
     .await
-    .map_err(|error| error.to_string())?;
-    let config = sdr_surface_config(surface, &adapter, extent)
-        .ok_or_else(|| "no compatible SDR canvas configuration".to_owned())?;
+    .map_err(WebHostError::Device)?;
+    let config =
+        sdr_surface_config(surface, &adapter, extent).ok_or(WebHostError::CanvasConfiguration)?;
     let name = capabilities.adapter().name.clone();
     Ok(GraphicsDevice {
         device,
@@ -97,8 +98,9 @@ impl Replacement {
         generation: u64,
         remove_features: wgpu::Features,
     ) -> Result<Box<Self>, String> {
-        let gpu =
-            open_canvas_device(instance, surface, extent, generation, remove_features).await?;
+        let gpu = open_canvas_device(instance, surface, extent, generation, remove_features)
+            .await
+            .map_err(|error| error.to_string())?;
         let prepared = inputs
             .prepare(
                 &gpu.capabilities,
@@ -230,17 +232,15 @@ impl Recovery {
         &mut self,
         host: &FrameHost<W, V>,
         extent: [u32; 2],
-    ) -> Result<(), String> {
+    ) -> Result<(), WebHostError> {
         if self.is_pending() {
-            return Err("graphics recovery is already preparing".to_owned());
+            return Err(WebHostError::RecoveryPending);
         }
         let generation = self
             .last_attempted
             .checked_add(1)
-            .ok_or_else(|| "graphics generation exhausted".to_owned())?;
-        let inputs = host
-            .device_prepare_inputs()
-            .map_err(|error| error.to_string())?;
+            .ok_or(WebHostError::GenerationExhausted)?;
+        let inputs = host.device_prepare_inputs().map_err(WebHostError::Frame)?;
         let pending = Rc::new(RefCell::new(None));
         let destination = Rc::downgrade(&pending);
         let instance = self.instance.clone();

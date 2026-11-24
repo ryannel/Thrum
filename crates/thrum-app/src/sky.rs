@@ -26,7 +26,7 @@
 //!     let game = SkyGame::new(controls, camera, move |controls, sky| {
 //!         sky.sun_elevation_degrees = controls.get(sun);
 //!     });
-//!     Ok(game.with_meshes(vec![rock])?)
+//!     game.with_meshes(vec![rock]).map_err(Into::into)
 //! });
 //! ```
 
@@ -49,7 +49,7 @@ use std::{
 use std::time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_asset_gpu::MaterialOutcome;
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook};
+use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook, MaterialReadError};
 pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
 pub use thrum_controls::{Controls, Display};
 use thrum_core::{
@@ -72,6 +72,8 @@ use thrum_render::{
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Config;
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+use crate::GameError;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 use crate::{Edits, Game, Gpu, Prepared};
 #[cfg(not(target_arch = "wasm32"))]
@@ -90,6 +92,59 @@ pub const STORE_VARIABLE: &str = "THRUM_ASSET_STORE";
 /// Names the cooked meshes' WGSL material hook, which `./dev scene` sets to the folder's
 /// `material.wgsl` when there is one.
 pub const MATERIAL_VARIABLE: &str = "THRUM_MATERIAL";
+
+/// Failure while building a sky kit scene.
+#[derive(Debug)]
+pub enum SkyBuildError {
+    /// A control declaration is invalid.
+    Control(thrum_controls::ControlError),
+    /// A cooked store or placement could not be used.
+    Cooked(CookedSetupError),
+    /// The fixed tick duration is invalid.
+    Clock(WorldClockError),
+    /// The creator's own scene setup failed.
+    Scene(Box<dyn Error>),
+}
+
+impl std::fmt::Display for SkyBuildError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Control(error) => error.fmt(formatter),
+            Self::Cooked(error) => error.fmt(formatter),
+            Self::Clock(error) => error.fmt(formatter),
+            Self::Scene(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl Error for SkyBuildError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(match self {
+            Self::Control(error) => error,
+            Self::Cooked(error) => error,
+            Self::Clock(error) => error,
+            Self::Scene(error) => error.as_ref(),
+        })
+    }
+}
+
+impl From<thrum_controls::ControlError> for SkyBuildError {
+    fn from(error: thrum_controls::ControlError) -> Self {
+        Self::Control(error)
+    }
+}
+
+impl From<CookedSetupError> for SkyBuildError {
+    fn from(error: CookedSetupError) -> Self {
+        Self::Cooked(error)
+    }
+}
+
+impl From<WorldClockError> for SkyBuildError {
+    fn from(error: WorldClockError) -> Self {
+        Self::Clock(error)
+    }
+}
 
 /// Failure before the sky kit can attach its cooked placements.
 #[derive(Debug)]
@@ -538,8 +593,35 @@ type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 type StatusReadouts = Box<dyn FnMut(&mut Controls)>;
 type KeptProbe = Box<dyn FnMut() -> Vec<(u64, String)>>;
-type Reload = Box<dyn FnMut() -> Result<(), String>>;
-type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
+/// A scene file could not be read or its reload was refused.
+#[derive(Debug)]
+pub enum ReloadError {
+    /// The material hook could not be read.
+    Material(MaterialReadError),
+    /// The scene kept its previous file because the replacement was refused.
+    Refused(String),
+}
+
+impl std::fmt::Display for ReloadError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Material(error) => error.fmt(formatter),
+            Self::Refused(message) => formatter.write_str(message),
+        }
+    }
+}
+
+impl Error for ReloadError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Material(error) => Some(error),
+            Self::Refused(_) => None,
+        }
+    }
+}
+
+type Reload = Box<dyn FnMut() -> Result<(), ReloadError>>;
+type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, ReloadError>>>;
 
 /// A still scene under the sky, hosted by the app shell. See the [module](self) example.
 pub struct SkyGame {
@@ -734,9 +816,8 @@ impl SkyGame {
     /// # Errors
     /// The variable is unset or names a store nothing was cooked into, or a placement's
     /// transform is not rigid with one uniform scale; each message says what to do.
-    pub fn with_meshes(self, meshes: Vec<MeshPlacement>) -> Result<Self, String> {
+    pub fn with_meshes(self, meshes: Vec<MeshPlacement>) -> Result<Self, CookedSetupError> {
         self.with_meshes_and_material(meshes, None)
-            .map_err(|error| error.to_string())
     }
 
     /// Draw cooked meshes with an optional initial WGSL material hook on both platforms.
@@ -833,7 +914,7 @@ impl SkyGame {
             };
             let game = game.with_reload(
                 move || {
-                    reload.request(MaterialHook::read(&path).map_err(|error| error.to_string())?);
+                    reload.request(MaterialHook::read(&path).map_err(ReloadError::Material)?);
                     Ok(())
                 },
                 report,
@@ -886,8 +967,8 @@ impl SkyGame {
     #[must_use]
     pub fn with_reload(
         mut self,
-        reload: impl FnMut() -> Result<(), String> + 'static,
-        report: impl FnMut() -> Vec<Result<String, String>> + 'static,
+        reload: impl FnMut() -> Result<(), ReloadError> + 'static,
+        report: impl FnMut() -> Vec<Result<String, ReloadError>> + 'static,
     ) -> Self {
         self.reload = Some((Box::new(reload), Box::new(report)));
         self
@@ -903,7 +984,8 @@ impl SkyGame {
         if let Some((_, report)) = self.reload.as_mut() {
             for line in report() {
                 match line {
-                    Ok(line) | Err(line) => eprintln!("{}: {line}", self.name),
+                    Ok(line) => eprintln!("{}: {line}", self.name),
+                    Err(error) => eprintln!("{}: {error}", self.name),
                 }
             }
         }
@@ -992,9 +1074,9 @@ impl SkyGame {
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         config: FrameConfig,
-    ) -> Result<FrameHost<StillWorld, SkyScene>, String> {
+    ) -> Result<FrameHost<StillWorld, SkyScene>, GameError> {
         let _ = self.update();
-        self.sky.check()?;
+        self.sky.check().map_err(GameError::InvalidScene)?;
         let world = self.take_world();
         let mut host = FrameHost::new(
             capabilities,
@@ -1011,8 +1093,7 @@ impl SkyGame {
             ground_scene(self.ground, &self.local_lights)?,
             FALLBACK_EXPOSURE,
         )
-        .await
-        .map_err(|error| error.to_string())?;
+        .await?;
         if let Some(contribution) = self.contribution.take() {
             host.set_scene_contribution(contribution)?;
         }
@@ -1031,7 +1112,7 @@ impl Game for SkyGame {
         &'a mut self,
         gpu: Gpu<'a>,
         _world_advanced: Box<dyn Fn() + Send>,
-    ) -> Result<Prepared<StillWorld, SkyScene>, String> {
+    ) -> Result<Prepared<StillWorld, SkyScene>, GameError> {
         let host = self
             .build_host(
                 gpu.capabilities,
@@ -1098,7 +1179,7 @@ impl Game for SkyGame {
         SkyEdits(Some(self.sky))
     }
 
-    fn apply(host: &mut FrameHost<StillWorld, SkyScene>, edits: SkyEdits) -> Result<(), String> {
+    fn apply(host: &mut FrameHost<StillWorld, SkyScene>, edits: SkyEdits) -> Result<(), GameError> {
         if let Some(sky) = edits.0
             && host.source().sky != sky
         {
@@ -1123,8 +1204,8 @@ impl Game for SkyGame {
 fn ground_scene(
     ground: Option<[f32; 3]>,
     lights: &[thrum_render::synthetic::SyntheticPointLight],
-) -> Result<SyntheticScene, String> {
-    let mut scene = SyntheticScene::grid(1).map_err(|error| format!("sky scene: {error}"))?;
+) -> Result<SyntheticScene, GameError> {
+    let mut scene = SyntheticScene::grid(1).map_err(FrameError::Render)?;
     scene.sun_shadows = true;
     scene.local_lights.extend_from_slice(lights);
     let Some(colour) = ground else {
@@ -1132,9 +1213,9 @@ fn ground_scene(
         return Ok(scene);
     };
     if !colour.iter().all(|channel| (0.0..=1.0).contains(channel)) {
-        return Err(format!(
+        return Err(GameError::InvalidScene(format!(
             "ground colour {colour:?} must be linear RGB with each channel within 0–1"
-        ));
+        )));
     }
     let [r, g, b] = colour;
     scene.materials = vec![MaterialRecord {
@@ -1181,13 +1262,13 @@ fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String>
 /// What cooked assets show: the drawn generation, or why nothing is drawn yet.
 /// A drawn material hook, or why the previous material still draws.
 #[cfg(not(target_arch = "wasm32"))]
-fn material_drawn(outcome: &MaterialOutcome) -> Result<String, String> {
+fn material_drawn(outcome: &MaterialOutcome) -> Result<String, ReloadError> {
     match outcome {
         MaterialOutcome::Promoted { .. } => Ok(outcome.to_string()),
-        MaterialOutcome::Rejected { .. } => Err(format!(
+        MaterialOutcome::Rejected { .. } => Err(ReloadError::Refused(format!(
             "{outcome}; fix the reported material hook and save it again"
-        )),
-        _ => Err(outcome.to_string()),
+        ))),
+        _ => Err(ReloadError::Refused(outcome.to_string())),
     }
 }
 
@@ -1226,9 +1307,9 @@ fn cooked_status(stats: &Mutex<CookedStats>) -> ContentStatus {
 /// `THRUM_PARAMS` and waiting for cooked meshes to draw. Failures, including an error `game`
 /// returns, are explained on standard error with a nonzero exit.
 #[cfg(target_os = "macos")]
-pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>>) {
+pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, SkyBuildError>) {
     let named = move || {
-        game().map_err(|error| error.to_string()).map(|mut game| {
+        game().map(|mut game| {
             game.name = config.name;
             game
         })
@@ -1254,7 +1335,7 @@ pub use browser::{BrowserScene, create_scene, run};
     clippy::print_stderr,
     reason = "the scene runner explains its supported platforms"
 )]
-pub fn run(config: Config, _game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>>) {
+pub fn run(config: Config, _game: impl FnOnce() -> Result<SkyGame, SkyBuildError>) {
     eprintln!(
         "{}: the native sky window is unavailable on {}; run ./dev scene <folder> --web in Chrome, or run the native scene on macOS",
         config.name,

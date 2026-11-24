@@ -198,9 +198,9 @@ pub fn run_window(
             [1920, 1080]
         },
     };
-    let game = || {
+    let game = || -> Result<_, thrum_controls::ControlError> {
         Ok(HostedGame(WindowGame {
-            demo: GameControls::new().map_err(|error| error.to_string())?,
+            demo: GameControls::new()?,
             world: None,
             held_keys: 0,
             replay_controls: true,

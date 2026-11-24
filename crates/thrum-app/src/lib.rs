@@ -52,7 +52,7 @@ pub use app::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use game::WorldLink;
-pub use game::{Edits, Game, Gpu, InlineWorld, KeyResponse, Prepared};
+pub use game::{Edits, Game, GameError, Gpu, InlineWorld, KeyResponse, Prepared};
 pub use key::KeyCode;
 
 mod config;

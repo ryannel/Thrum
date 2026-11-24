@@ -371,7 +371,10 @@ impl<G: Game> Actor<G> {
             self.host
                 .set_timing_requested(request.platform.timing_requested);
         }
-        G::apply(&mut self.host, request.platform.edits).map_err(FrameError::Scene)?;
+        G::apply(&mut self.host, request.platform.edits).map_err(|error| match error {
+            crate::GameError::Frame(error) => error,
+            other => FrameError::Scene(other.to_string()),
+        })?;
         ensure_device(&self.gpu.watch)?;
         ensure_running(&self.stopped)?;
         let headroom = self

@@ -201,7 +201,7 @@ impl Trace {
         )
         .map_err(|e| e.to_string())?;
         let prime_requested = Instant::now();
-        let primed = driver.step()?;
+        let primed = driver.step().map_err(|error| error.to_string())?;
         if !primed.submitted {
             return Err("initial ordinary submission refused".to_owned());
         }
@@ -234,7 +234,9 @@ impl Trace {
         origin: Instant,
     ) -> Result<(), String> {
         let requested = origin.elapsed();
-        driver.parameters(&json!({"world.paused":paused}).to_string())?;
+        driver
+            .parameters(&json!({"world.paused":paused}).to_string())
+            .map_err(|error| error.to_string())?;
         self.controls
             .push(json!({"kind":"world-pause", "paused":paused,
             "requested_ns":requested.as_nanos(),"accepted_ns":origin.elapsed().as_nanos()}));
@@ -258,7 +260,9 @@ impl Trace {
                 "requested_ns":start.as_nanos(),"start_ns":start.as_nanos(),"end_ns":origin.elapsed().as_nanos()}));
             self.input_delay_finished = true;
         }
-        driver.parameters(&json!({"camera.yaw":yaw}).to_string())?;
+        driver
+            .parameters(&json!({"camera.yaw":yaw}).to_string())
+            .map_err(|error| error.to_string())?;
         Ok(true)
     }
     fn image<G: Game>(
@@ -332,7 +336,9 @@ impl Trace {
             self.drain(driver, Some(&writer), origin, true)?;
             std::thread::sleep(Duration::from_millis(1));
         }
-        Ok(writer.finish(Duration::from_secs(10)))
+        Ok(writer
+            .finish(Duration::from_secs(10))
+            .map_err(|error| error.to_string()))
     }
 
     // The offscreen render owner otherwise sleeps between observations. Give
@@ -525,7 +531,7 @@ fn warmup_checkpoint<G: Game>(
         if warmup.elapsed() >= Duration::from_secs(30) {
             return Err("fixed checkpoint warmup submission timeout".to_owned());
         }
-        driver.step()?;
+        driver.step().map_err(|error| error.to_string())?;
         while driver.completed()?.is_some() {}
         std::thread::sleep(Duration::from_millis(8));
     }
@@ -658,13 +664,17 @@ fn prepare_parameters(
         .transpose()
         .map_err(|error| error.to_string())?;
     if is_route(scenario) || scenario.starts_with("sprites-") {
-        driver.parameters(r#"{"world.paused":true}"#)?;
+        driver
+            .parameters(r#"{"world.paused":true}"#)
+            .map_err(|error| error.to_string())?;
     } else {
-        driver.parameters(
-            parameters
-                .as_deref()
-                .unwrap_or(include_str!("../../params/showcase-noon.params.json")),
-        )?;
+        driver
+            .parameters(
+                parameters
+                    .as_deref()
+                    .unwrap_or(include_str!("../../params/showcase-noon.params.json")),
+            )
+            .map_err(|error| error.to_string())?;
     }
     if let Some(take) = haze_take {
         let pose = take.at(0.0);
@@ -687,7 +697,9 @@ fn settle_placed_capture(
     if driver.host().cloud_placed_input().is_none() {
         return Ok(());
     }
-    driver.parameters(r#"{"world.paused":true}"#)?;
+    driver
+        .parameters(r#"{"world.paused":true}"#)
+        .map_err(|error| error.to_string())?;
     let deadline = Instant::now() + Duration::from_secs(20);
     while !driver
         .host()
@@ -695,26 +707,32 @@ fn settle_placed_capture(
         .iter()
         .any(|(name, _)| name.starts_with("cloud-growth "))
     {
-        driver.step()?;
+        driver.step().map_err(|error| error.to_string())?;
         while driver.completed()?.is_some() {}
         if Instant::now() >= deadline {
             return Err("placed stack did not become resident before capture".to_owned());
         }
     }
     if mode != "realtime" {
-        driver.parameters(r#"{"world.paused":false}"#)?;
+        driver
+            .parameters(r#"{"world.paused":false}"#)
+            .map_err(|error| error.to_string())?;
         let start = driver.host().world().tick();
         while driver.host().world().tick() < start + 300 {
-            driver.step()?;
+            driver.step().map_err(|error| error.to_string())?;
             while driver.completed()?.is_some() {}
             if Instant::now() >= deadline {
                 return Err("placed clouds did not form before the fixed checkpoint".to_owned());
             }
         }
         if let Some(parameters) = parameters {
-            driver.parameters(parameters)?;
+            driver
+                .parameters(parameters)
+                .map_err(|error| error.to_string())?;
         }
-        driver.parameters(r#"{"world.paused":true}"#)?;
+        driver
+            .parameters(r#"{"world.paused":true}"#)
+            .map_err(|error| error.to_string())?;
     }
     while driver.pending_frames() != 0 {
         while driver.completed()?.is_some() {}
@@ -758,7 +776,8 @@ async fn record(
     let (adapter, device, queue, capabilities) =
         metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
     let (game, preview) = capture_game(output, scenario, capture_output)?;
-    let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
+    let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)
+        .map_err(|error| error.to_string())?;
     let haze_take = crate::content::launch_value("THRUM_HAZE_TAKE")
         .ok()
         .map(|text| HazeTake::parse(&text))
@@ -828,7 +847,8 @@ async fn record(
     {
         return Err("governor capture requires a prepared TAAU scene".to_owned());
     }
-    let mut clock = OpportunityClock::new(origin, requested_hz, timebase)?;
+    let mut clock =
+        OpportunityClock::new(origin, requested_hz, timebase).map_err(|error| error.to_string())?;
     let mut running = false;
     let mut night_variant = false;
     let mut stalled = false;
@@ -922,9 +942,11 @@ async fn record(
         let omissions_before = driver.omissions();
         let report = if elapsed_observation {
             // The elapsed-time capture has no future display to target.
-            driver.step()?
+            driver.step().map_err(|error| error.to_string())?
         } else {
-            driver.step_for(&opportunity)?
+            driver
+                .step_for(&opportunity)
+                .map_err(|error| error.to_string())?
         };
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
@@ -1149,15 +1171,17 @@ fn enable_stage_capture<G: Game>(
     let capacity = (allowance / image_bytes).saturating_sub(7);
     let requested = if source == CaptureSource::Sdr { 96 } else { 32 };
     let cpu_buffers = usize::try_from(capacity.min(requested)).map_err(|e| e.to_string())?;
-    driver.enable_capture_from(
-        session,
-        thrum_render::runtime::CaptureLimits {
-            staging_slots: 6,
-            cpu_buffers,
-            byte_allowance: allowance,
-        },
-        source,
-    )
+    driver
+        .enable_capture_from(
+            session,
+            thrum_render::runtime::CaptureLimits {
+                staging_slots: 6,
+                cpu_buffers,
+                byte_allowance: allowance,
+            },
+            source,
+        )
+        .map_err(String::from)
 }
 
 fn reset_native_capture<G: Game>(driver: &mut Offscreen<G>) {
@@ -1253,7 +1277,9 @@ fn lighting_edits(
         None
     };
     if let Some(solar) = solar {
-        driver.parameters(&json!({"sky.solar_time":solar}).to_string())?;
+        driver
+            .parameters(&json!({"sky.solar_time":solar}).to_string())
+            .map_err(|error| error.to_string())?;
         trace.controls.push(json!({"kind":if scenario == "variants" {"prepared-star-variant-switch"} else {"solar-scrub"},"scenario_ns":scenario_time.as_nanos(),"accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar}));
     }
     Ok(())

@@ -15,16 +15,16 @@ use std::{error::Error, fmt, rc::Rc, time::Duration};
 
 use thrum_core::sim::{WorldLifecycle, WorldLifecyclePolicy};
 use thrum_render::{
-    capabilities::{DeviceWatch, SurfaceConfigError, configure_surface},
+    capabilities::{DeviceWatch, HardwareLaunchError, SurfaceConfigError, configure_surface},
     contribution::SceneContribution,
     governor::{DisplayRecord, ThermalState},
     present::SurfaceProfile,
-    runtime::{FrameHost, FrameSample, PendingCapture, SceneSource, SurfaceOutput},
+    runtime::{FrameError, FrameHost, FrameSample, PendingCapture, SceneSource, SurfaceOutput},
 };
 use web_sys::HtmlCanvasElement;
 
 use crate::{
-    Game, Gpu, InlineWorld,
+    Game, GameError, Gpu, InlineWorld,
     game::apply_frame_edits,
     surface::{SurfaceAction, surface_action},
     web_clock::PageClock,
@@ -46,18 +46,28 @@ pub const SAMPLES: usize = 600;
 pub enum WebHostError {
     /// The browser canvas could not be turned into a graphics surface.
     Surface(wgpu::CreateSurfaceError),
-    /// No compatible device or canvas configuration was available.
-    Device(String),
+    /// The browser device recipe could not open a compatible device.
+    Device(HardwareLaunchError),
+    /// The surface offers no compatible SDR canvas configuration.
+    CanvasConfiguration,
     /// The device refused to configure the canvas surface.
     Configure(SurfaceConfigError),
     /// The game could not prepare its runtime.
-    Prepare(String),
+    Prepare(GameError),
     /// The game refused presentation edits.
-    Edit(String),
+    Edit(GameError),
     /// The world refused a pause or resume.
-    Lifecycle(String),
+    Lifecycle(GameError),
     /// A browser frame could not advance or present.
-    Frame(String),
+    Frame(FrameError),
+    /// The browser timestamp cannot be represented on the page clock.
+    Timestamp(&'static str),
+    /// Graphics replacement was requested while the device is healthy.
+    DeviceAvailable,
+    /// A replacement is already being prepared.
+    RecoveryPending,
+    /// All graphics generation identifiers have been used.
+    GenerationExhausted,
 }
 
 impl fmt::Display for WebHostError {
@@ -65,11 +75,18 @@ impl fmt::Display for WebHostError {
         match self {
             Self::Surface(error) => error.fmt(formatter),
             Self::Configure(error) => error.fmt(formatter),
-            Self::Device(message)
-            | Self::Prepare(message)
-            | Self::Edit(message)
-            | Self::Lifecycle(message)
-            | Self::Frame(message) => formatter.write_str(message),
+            Self::Prepare(error) | Self::Edit(error) | Self::Lifecycle(error) => {
+                error.fmt(formatter)
+            }
+            Self::Frame(error) => error.fmt(formatter),
+            Self::Device(error) => error.fmt(formatter),
+            Self::CanvasConfiguration => {
+                formatter.write_str("no compatible SDR canvas configuration")
+            }
+            Self::Timestamp(message) => formatter.write_str(message),
+            Self::DeviceAvailable => formatter.write_str("graphics device is still available"),
+            Self::RecoveryPending => formatter.write_str("graphics recovery is already preparing"),
+            Self::GenerationExhausted => formatter.write_str("graphics generation exhausted"),
         }
     }
 }
@@ -79,6 +96,9 @@ impl Error for WebHostError {
         match self {
             Self::Surface(error) => Some(error),
             Self::Configure(error) => Some(error),
+            Self::Device(error) => Some(error),
+            Self::Prepare(error) | Self::Edit(error) | Self::Lifecycle(error) => Some(error),
+            Self::Frame(error) => Some(error),
             _ => None,
         }
     }
@@ -197,8 +217,7 @@ where
         generation,
         remove_features,
     )
-    .await
-    .map_err(WebHostError::Device)?;
+    .await?;
     configure_surface(&surface, &gpu.device, &gpu.config).map_err(WebHostError::Configure)?;
     let prepared = game
         .prepare(
@@ -260,8 +279,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         let (edits, paused) = game.take_edits();
         G::apply(&mut self.host, edits).map_err(WebHostError::Edit)?;
         if let Some(paused) = paused {
-            self.set_paused(paused, timestamp_ms)
-                .map_err(WebHostError::Lifecycle)?;
+            self.set_paused(paused, timestamp_ms)?;
             game.observe_paused(self.paused());
         }
         Ok(())
@@ -314,9 +332,8 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// drawable, submit and present. After loss it only advances authority.
     /// # Errors
     /// Returns a timestamp, authoritative tick or GPU host fault.
-    pub fn frame(&mut self, timestamp_ms: f64) -> Result<(), String> {
+    pub fn frame(&mut self, timestamp_ms: f64) -> Result<(), WebHostError> {
         self.frame_with_edits(timestamp_ms, |_, _| Ok(()))
-            .map_err(|error| error.to_string())
     }
 
     fn frame_with_edits(
@@ -327,7 +344,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         let now = self
             .clock
             .now(timestamp_ms)
-            .map_err(|error| WebHostError::Frame(error.to_owned()))?;
+            .map_err(WebHostError::Timestamp)?;
         if !self.clock.visible() {
             return Ok(());
         }
@@ -361,10 +378,10 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             }
         }
         apply(&mut self.host, replaced)?;
-        self.present_frame(now, extent).map_err(WebHostError::Frame)
+        self.present_frame(now, extent)
     }
 
-    fn present_frame(&mut self, now: Duration, extent: [u32; 2]) -> Result<(), String> {
+    fn present_frame(&mut self, now: Duration, extent: [u32; 2]) -> Result<(), WebHostError> {
         if self.graphics.is_lost() {
             self.recovery.awaiting_first_present = false;
             self.unavailable += 1;
@@ -373,7 +390,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             let report = self
                 .host
                 .advance_without_rendering(now)
-                .map_err(|error| error.to_string())?;
+                .map_err(WebHostError::Frame)?;
             return self.observe_world(report, now);
         }
         let mut resize = extent != [self.config.width, self.config.height];
@@ -387,14 +404,16 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
                 && !self
                     .host
                     .resize_scene_surface(extent)
-                    .map_err(|error| error.to_string())?
+                    .map_err(WebHostError::Frame)?
             {
-                return Err("canvas resize deferred with a free target ring".to_owned());
+                return Err(WebHostError::Frame(FrameError::InvalidState(
+                    "canvas resize deferred with a free target ring",
+                )));
             }
             self.config.width = extent[0];
             self.config.height = extent[1];
             configure_surface(&self.surface, &self.device, &self.config)
-                .map_err(|error| error.to_string())?;
+                .map_err(WebHostError::Configure)?;
             if resize {
                 self.resize_prepare = Some(Duration::from_secs_f64(
                     (js_sys::Date::now() - start).max(0.0) / 1000.0,
@@ -426,14 +445,14 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
                 }
             }
         }
-        let advanced = self.host.advance(now).map_err(|error| error.to_string())?;
+        let advanced = self.host.advance(now).map_err(WebHostError::Frame)?;
         let can_acquire = advanced.can_acquire_serial()
             && extent[0] > 0
             && extent[1] > 0
             && !resize
             && !self.needs_reconfigure;
         let report = if can_acquire {
-            let encoded = advanced.encode_scene().map_err(|error| error.to_string())?;
+            let encoded = advanced.encode_scene().map_err(WebHostError::Frame)?;
             let frame = if encoded.can_acquire_surface() {
                 match surface_action(self.surface.get_current_texture()) {
                     SurfaceAction::Draw { frame, reconfigure } => {
@@ -462,7 +481,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
                         view: &view,
                         extent: [self.config.width, self.config.height],
                     }))
-                    .map_err(|error| error.to_string())?;
+                    .map_err(WebHostError::Frame)?;
                 if report.surface_presented {
                     self.queue.present(frame);
                     self.presented += 1;
@@ -473,7 +492,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
                 encoded.skip()
             }
         } else {
-            advanced.submit(None).map_err(|error| error.to_string())?
+            advanced.submit(None).map_err(WebHostError::Frame)?
         };
         if let Some(cadence) = &mut self.governor
             && report.surface_presented
@@ -495,7 +514,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             }
         }
         self.observe_world(report, now)?;
-        self.collect_completed()
+        self.collect_completed().map_err(WebHostError::Frame)
     }
 
     /// Collect GPU completions between callbacks without admitting time, and report
@@ -504,7 +523,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// view. Nothing is polled while the device is lost.
     /// # Errors
     /// Returns a device polling fault.
-    pub fn poll_completed(&mut self) -> Result<bool, String> {
+    pub fn poll_completed(&mut self) -> Result<bool, FrameError> {
         if self.graphics.is_lost() {
             return Ok(false);
         }
@@ -512,12 +531,8 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         Ok(self.host.has_free_slot())
     }
 
-    fn collect_completed(&mut self) -> Result<(), String> {
-        while let Some(mut sample) = self
-            .host
-            .poll_completed()
-            .map_err(|error| error.to_string())?
-        {
+    fn collect_completed(&mut self) -> Result<(), FrameError> {
+        while let Some(mut sample) = self.host.poll_completed()? {
             if self.samples.len() < SAMPLES || self.profile.is_enabled() {
                 sample.detach_gpu_timing();
             }
@@ -533,20 +548,26 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Queued accepted ticks drain before resume; hidden wall time is not admitted.
     /// # Errors
     /// Returns a timestamp, retained-update or clock restart failure.
-    pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), String> {
+    pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), WebHostError> {
         if let Some(cadence) = &mut self.governor {
             cadence.previous = None;
             cadence.previous_present = None;
         }
-        let now = self.clock.now(timestamp_ms)?;
+        let now = self
+            .clock
+            .now(timestamp_ms)
+            .map_err(WebHostError::Timestamp)?;
         self.set_play(visible, self.clock.user_paused(), now)
     }
 
     /// Stop admitting world time at the person's request. Visibility cannot override it.
     /// # Errors
     /// Returns a timestamp, retained-update or clock restart failure.
-    pub fn set_paused(&mut self, paused: bool, timestamp_ms: f64) -> Result<(), String> {
-        let now = self.clock.now(timestamp_ms)?;
+    pub fn set_paused(&mut self, paused: bool, timestamp_ms: f64) -> Result<(), WebHostError> {
+        let now = self
+            .clock
+            .now(timestamp_ms)
+            .map_err(WebHostError::Timestamp)?;
         self.set_play(self.clock.visible(), paused, now)
     }
 
@@ -568,9 +589,9 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Start detached device replacement without borrowing the running world.
     /// # Errors
     /// Refuses a healthy device, a duplicate attempt or invalid retained inputs.
-    pub fn request_graphics_recovery(&mut self) -> Result<(), String> {
+    pub fn request_graphics_recovery(&mut self) -> Result<(), WebHostError> {
         if !self.graphics.is_lost() {
-            return Err("graphics device is still available".to_owned());
+            return Err(WebHostError::DeviceAvailable);
         }
         self.recovery
             .request(&self.host, [self.config.width, self.config.height])
@@ -611,7 +632,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     pub fn set_render_scale(
         &mut self,
         scale: thrum_render::synthetic::RenderScale,
-    ) -> Result<(), thrum_render::runtime::FrameError> {
+    ) -> Result<(), FrameError> {
         self.host.set_render_scale(scale)
     }
 
@@ -641,15 +662,13 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     pub fn set_scene_contribution(
         &mut self,
         contribution: Box<dyn SceneContribution>,
-    ) -> Result<(), String> {
+    ) -> Result<(), FrameError> {
         if self.graphics.is_lost() {
             self.held_contribution = Some(contribution);
             return Ok(());
         }
         self.held_contribution = None;
-        self.host
-            .set_scene_contribution(contribution)
-            .map_err(String::from)
+        self.host.set_scene_contribution(contribution)
     }
 
     /// The refusal of a held contribution attached on a replacement device, once.
@@ -660,11 +679,11 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Submit a capture of the committed endpoint. Refused while the device is lost.
     /// # Errors
     /// Refuses a lost device, or returns a recording failure.
-    pub fn begin_capture(&mut self) -> Result<PendingCapture, String> {
+    pub fn begin_capture(&mut self) -> Result<PendingCapture, FrameError> {
         if self.graphics.is_lost() {
-            return Err("graphics device is lost".to_owned());
+            return Err(FrameError::DeviceLost("graphics device is lost".to_owned()));
         }
-        self.host.begin_capture().map_err(|error| error.to_string())
+        self.host.begin_capture()
     }
 
     /// The capture's sRGB RGBA8 pixels once ready. A capture outstanding at loss is refused.
@@ -673,13 +692,13 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     pub fn try_finish_capture(
         &mut self,
         pending: &mut PendingCapture,
-    ) -> Result<Option<Vec<u8>>, String> {
+    ) -> Result<Option<Vec<u8>>, FrameError> {
         if self.graphics.is_lost() {
-            return Err("graphics device was lost before the capture finished".to_owned());
+            return Err(FrameError::DeviceLost(
+                "graphics device was lost before the capture finished".to_owned(),
+            ));
         }
-        self.host
-            .try_finish_capture(pending)
-            .map_err(|error| error.to_string())
+        self.host.try_finish_capture(pending)
     }
 
     /// Counters and state for the game's report.
@@ -717,7 +736,12 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         self.samples.retain(|sample| sample.tick >= tick);
     }
 
-    fn set_play(&mut self, visible: bool, user_paused: bool, now: Duration) -> Result<(), String> {
+    fn set_play(
+        &mut self,
+        visible: bool,
+        user_paused: bool,
+        now: Duration,
+    ) -> Result<(), WebHostError> {
         self.lifecycle.request(!visible || user_paused);
         self.reconcile_world(now)?;
         self.clock.set_play(visible, user_paused, now);
@@ -728,7 +752,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         &mut self,
         report: thrum_render::runtime::DriveReport,
         now: Duration,
-    ) -> Result<(), String> {
+    ) -> Result<(), WebHostError> {
         self.queued_ticks = report.queued_ticks;
         if let Some(refused) = report.overload {
             self.lifecycle.overloaded(refused);
@@ -736,12 +760,13 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         self.reconcile_world(now)
     }
 
-    fn reconcile_world(&mut self, now: Duration) -> Result<(), String> {
+    fn reconcile_world(&mut self, now: Duration) -> Result<(), WebHostError> {
         let world = self.host.world_mut();
         self.lifecycle
             .drive_inline(self.queued_ticks, |request| match request {
                 WorldLifecycle::Pause => world.pause(),
                 WorldLifecycle::Resume => world.resume(now),
             })
+            .map_err(WebHostError::Lifecycle)
     }
 }

@@ -32,6 +32,6 @@ fn main() {
     }
     thrum_app::sky::run(
         thrum_app::Config::new("mirror-scene", "Mirror pool"),
-        mirror_scene::build,
+        || mirror_scene::build().map_err(thrum_app::sky::SkyBuildError::Scene),
     );
 }

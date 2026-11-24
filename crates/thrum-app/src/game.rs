@@ -1,6 +1,8 @@
 //! The boundary between the platform adapters and one game.
 
 use std::{
+    error::Error,
+    fmt,
     future::Future,
     time::{Duration, Instant},
 };
@@ -11,8 +13,43 @@ use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
-    runtime::{FrameHost, FrameWorld, SceneSource},
+    runtime::{FrameError, FrameHost, FrameWorld, SceneSource},
 };
+
+/// Failure a game reports to its host while preparing or handling a request.
+#[derive(Debug)]
+pub enum GameError {
+    /// Authored scene values are invalid.
+    InvalidScene(String),
+    /// The frame runtime refused the operation.
+    Frame(FrameError),
+    /// The game refused a request with its own diagnostic.
+    Rejected(String),
+}
+
+impl fmt::Display for GameError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidScene(message) | Self::Rejected(message) => formatter.write_str(message),
+            Self::Frame(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl Error for GameError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Frame(error) => Some(error),
+            _ => None,
+        }
+    }
+}
+
+impl From<FrameError> for GameError {
+    fn from(error: FrameError) -> Self {
+        Self::Frame(error)
+    }
+}
 
 /// The platform's first device, queue and configured surface, lent to [`Game::prepare`].
 pub struct Gpu<'a> {
@@ -47,11 +84,11 @@ pub trait InlineWorld: FrameWorld {
     /// Stop admitting wall time, keeping accepted ticks.
     /// # Errors
     /// Returns a world lifecycle refusal.
-    fn pause(&mut self) -> Result<(), String>;
+    fn pause(&mut self) -> Result<(), GameError>;
     /// Resume from `now` after the accepted ticks have drained.
     /// # Errors
     /// Returns a clock state or timestamp refusal.
-    fn resume(&mut self, now: Duration) -> Result<(), String>;
+    fn resume(&mut self, now: Duration) -> Result<(), GameError>;
 }
 
 /// Lifecycle control of a world that runs on its own lane, used for pause and overload.
@@ -121,7 +158,7 @@ pub trait Game {
         &'a mut self,
         gpu: Gpu<'a>,
         world_advanced: Box<dyn Fn() + Send>,
-    ) -> impl Future<Output = Result<Prepared<Self::World, Self::Scene>, String>> + 'a;
+    ) -> impl Future<Output = Result<Prepared<Self::World, Self::Scene>, GameError>> + 'a;
     /// Lifecycle control of a resident world, once prepared; `None` disables pause.
     #[cfg(not(target_arch = "wasm32"))]
     fn world(&self) -> Option<&dyn WorldLink> {
@@ -146,7 +183,7 @@ pub trait Game {
     fn apply(
         host: &mut FrameHost<Self::World, Self::Scene>,
         edits: Self::Edits,
-    ) -> Result<(), String>;
+    ) -> Result<(), GameError>;
     /// Read back a value on the render owner thread after each job.
     fn readback(host: &FrameHost<Self::World, Self::Scene>) -> Self::Readback;
     /// Observe a readback on the main thread. Replies to frames requested before the latest
@@ -168,13 +205,13 @@ pub trait Game {
     /// Handle a game key.
     /// # Errors
     /// A refused input, which ends the run.
-    fn key(&mut self, _code: crate::KeyCode, _pressed: bool) -> Result<KeyResponse, String> {
+    fn key(&mut self, _code: crate::KeyCode, _pressed: bool) -> Result<KeyResponse, GameError> {
         Ok(KeyResponse::Ignored)
     }
     /// Release held input when the host loses focus.
     /// # Errors
     /// A refused input, which ends the run.
-    fn focus_lost(&mut self) -> Result<(), String> {
+    fn focus_lost(&mut self) -> Result<(), GameError> {
         Ok(())
     }
 }
@@ -184,7 +221,7 @@ pub(crate) fn apply_frame_edits<G: Game>(
     game: &mut G,
     host: &mut FrameHost<G::World, G::Scene>,
     replay: bool,
-) -> Result<(), String> {
+) -> Result<(), GameError> {
     let replay = replay.then(|| game.replay());
     let frame = game.frame_edits();
     G::apply(host, replay.map_or(frame, |edits| edits.merge(frame)))

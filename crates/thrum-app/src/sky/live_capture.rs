@@ -30,7 +30,11 @@ const IDLE_FRAME: Duration = Duration::from_millis(20);
     clippy::print_stderr,
     reason = "capture failures are explained to the person who asked for them"
 )]
-pub(super) fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, String>, path: &Path) {
+pub(super) fn run(
+    config: Config,
+    game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
+    path: &Path,
+) {
     if let Err(error) = live(config, game, path) {
         eprintln!(
             "{}: live capture to {}: {error}",
@@ -43,7 +47,7 @@ pub(super) fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, String>
 
 fn live(
     config: Config,
-    game: impl FnOnce() -> Result<SkyGame, String>,
+    game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
     path: &Path,
 ) -> Result<(), String> {
     let seconds: f64 = std::env::var(LIVE_VARIABLE)
@@ -51,7 +55,7 @@ fn live(
         .and_then(|value| value.parse().ok())
         .filter(|seconds: &f64| seconds.is_finite() && *seconds > 0.0 && *seconds <= 3600.0)
         .ok_or_else(|| format!("{LIVE_VARIABLE} must be a number of seconds up to 3600"))?;
-    let game = game()?;
+    let game = game().map_err(|error| error.to_string())?;
     let (device, queue, capabilities) =
         pollster::block_on(capture::headless_device()).map_err(|error| error.to_string())?;
     let extent = config.window_size;
@@ -77,7 +81,8 @@ fn live(
             render_extent: extent,
             surface: None,
         },
-    ))?;
+    ))
+    .map_err(|error| error.to_string())?;
     capture::wait_drawn(&mut live.game, &mut host)?;
     live.host = Some(host);
     live.reload_game();
@@ -246,7 +251,7 @@ impl Reload for Live {
                 let _ = write!(self.outcome, "; params: {report}");
                 let (edits, _) = self.game.take_edits();
                 if let Some(host) = self.host.as_mut() {
-                    SkyGame::apply(host, edits)?;
+                    SkyGame::apply(host, edits).map_err(|error| error.to_string())?;
                 }
             }
             Err(error) => {

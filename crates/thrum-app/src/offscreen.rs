@@ -3,9 +3,13 @@
 //! The output texture substitutes for an OS drawable. This adapter proves no
 //! window, compositor, display-link or physical-display behavior.
 
-use std::time::{Duration, Instant};
+use std::{
+    error::Error,
+    fmt,
+    time::{Duration, Instant},
+};
 
-use thrum_core::sim::{WorldLaneFault, WorldLifecyclePolicy};
+use thrum_core::sim::{UnexpectedLifecycleReply, WorldLaneFault, WorldLifecyclePolicy};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
@@ -16,11 +20,63 @@ use thrum_render::{
     synthetic::{CaptureSource, OUTPUT_FORMAT},
 };
 
-use crate::{Game, Gpu, WorldLink, game::apply_frame_edits};
+use crate::{Game, GameError, Gpu, WorldLink, game::apply_frame_edits};
 
 pub mod clock;
 pub mod thread_policy;
 pub use crate::capture_writer as writer;
+
+/// Failure to prepare or drive an offscreen game.
+#[derive(Debug)]
+pub enum OffscreenError {
+    /// The output dimensions contain a zero axis.
+    EmptyExtent,
+    /// The parameter file is invalid.
+    Parameters(thrum_controls::ControlError),
+    /// The file contains entries that were refused.
+    RefusedParameters(thrum_controls::FileReport),
+    /// The game has no world lifecycle to drive.
+    MissingLifecycle,
+    /// The world did not acknowledge a lifecycle request before the deadline.
+    LifecycleTimeout,
+    /// The world lane refused a request or failed.
+    World(WorldLaneFault),
+    /// The world acknowledged a different transition than the one requested.
+    LifecycleReply(UnexpectedLifecycleReply),
+    /// The game could not prepare or apply an edit.
+    Game(GameError),
+    /// The frame runtime failed.
+    Frame(FrameError),
+}
+
+impl fmt::Display for OffscreenError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::EmptyExtent => formatter.write_str("offscreen output extent must be nonzero"),
+            Self::Parameters(error) => error.fmt(formatter),
+            Self::RefusedParameters(report) => write!(formatter, "offscreen controls: {report}"),
+            Self::MissingLifecycle => formatter.write_str("game has no world lifecycle"),
+            Self::LifecycleTimeout => formatter.write_str("world lifecycle timeout"),
+            Self::World(error) => error.fmt(formatter),
+            Self::LifecycleReply(error) => error.fmt(formatter),
+            Self::Game(error) => error.fmt(formatter),
+            Self::Frame(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl Error for OffscreenError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Parameters(error) => Some(error),
+            Self::World(error) => Some(error),
+            Self::LifecycleReply(error) => Some(error),
+            Self::Game(error) => Some(error),
+            Self::Frame(error) => Some(error),
+            _ => None,
+        }
+    }
+}
 
 /// A prepared game on the calling render-owner thread, with its ordinary
 /// autonomous world lane and an engine texture replacing the OS surface.
@@ -161,7 +217,7 @@ impl<G: Game> Offscreen<G> {
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         extent: [u32; 2],
-    ) -> Result<Self, String> {
+    ) -> Result<Self, OffscreenError> {
         Self::with_surface(
             game,
             device,
@@ -184,10 +240,10 @@ impl<G: Game> Offscreen<G> {
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         surface: SurfaceProfile,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, OffscreenError> {
         let SurfaceProfile { format, extent } = surface;
         if extent.contains(&0) {
-            return Err("offscreen output extent must be nonzero".to_owned());
+            return Err(OffscreenError::EmptyExtent);
         }
         let prepared = pollster::block_on(game.prepare(
             Gpu {
@@ -197,7 +253,8 @@ impl<G: Game> Offscreen<G> {
                 surface,
             },
             Box::new(|| {}),
-        ))?;
+        ))
+        .map_err(OffscreenError::Game)?;
         let output = presenter_output(capabilities.site(), extent, format);
         let view = output.create_view(&wgpu::TextureViewDescriptor::default());
         Ok(Self {
@@ -233,19 +290,19 @@ impl<G: Game> Offscreen<G> {
     /// handler. Pause/resume acknowledges the existing world-lane barrier.
     /// # Errors
     /// Refuses invalid controls or a lifecycle acknowledgement timeout.
-    pub fn parameters(&mut self, json: &str) -> Result<(), String> {
+    pub fn parameters(&mut self, json: &str) -> Result<(), OffscreenError> {
         let report = self
             .game
             .controls_mut()
             .apply_file(json)
-            .map_err(|e| e.to_string())?;
+            .map_err(OffscreenError::Parameters)?;
         if !report.problems.is_empty() {
-            return Err(format!("offscreen controls: {report}"));
+            return Err(OffscreenError::RefusedParameters(report));
         }
         let (edits, paused) = self.game.take_edits();
-        G::apply(&mut self.host, edits)?;
+        G::apply(&mut self.host, edits).map_err(OffscreenError::Game)?;
         if let Some(paused) = paused {
-            let world = self.game.world().ok_or("game has no world lifecycle")?;
+            let world = self.game.world().ok_or(OffscreenError::MissingLifecycle)?;
             self.lifecycle.request(paused);
             settle_world_lifecycle(world, &mut self.lifecycle)?;
             self.game.observe_paused(paused);
@@ -257,16 +314,13 @@ impl<G: Game> Offscreen<G> {
     /// A render report can outlive an overload, so the current world status decides.
     /// # Errors
     /// Returns a world fault, refused transition or acknowledgement timeout.
-    pub fn recover_world_overload(&mut self) -> Result<Option<u64>, FrameError> {
-        let world = self
-            .game
-            .world()
-            .ok_or(FrameError::InvalidState("game has no world lifecycle"))?;
+    pub fn recover_world_overload(&mut self) -> Result<Option<u64>, OffscreenError> {
+        let world = self.game.world().ok_or(OffscreenError::MissingLifecycle)?;
         let (episodes, refused) = (
             self.lifecycle.overload_count(),
             self.lifecycle.refused_ticks(),
         );
-        settle_world_lifecycle(world, &mut self.lifecycle).map_err(FrameError::World)?;
+        settle_world_lifecycle(world, &mut self.lifecycle)?;
         Ok((self.lifecycle.overload_count() != episodes)
             .then_some(self.lifecycle.refused_ticks() - refused))
     }
@@ -274,10 +328,8 @@ impl<G: Game> Offscreen<G> {
     /// Enable the renderer's three-slot tap without creating another GPU owner.
     /// # Errors
     /// Returns an already-enabled capture error.
-    pub fn enable_capture(&mut self, session: u64) -> Result<(), String> {
-        self.host
-            .enable_submitted_capture(session)
-            .map_err(|e| e.to_string())
+    pub fn enable_capture(&mut self, session: u64) -> Result<(), FrameError> {
+        self.host.enable_submitted_capture(session)
     }
 
     /// Enable capture with a measured, explicitly bounded working-set profile.
@@ -287,10 +339,9 @@ impl<G: Game> Offscreen<G> {
         &mut self,
         session: u64,
         limits: CaptureLimits,
-    ) -> Result<(), String> {
+    ) -> Result<(), FrameError> {
         self.host
             .enable_submitted_capture_with_limits(session, limits)
-            .map_err(|e| e.to_string())
     }
 
     /// Enable the same submitted-image tap at a declared prepared engine stage.
@@ -302,16 +353,15 @@ impl<G: Game> Offscreen<G> {
         session: u64,
         limits: CaptureLimits,
         source: CaptureSource,
-    ) -> Result<(), String> {
+    ) -> Result<(), FrameError> {
         self.host
             .enable_submitted_capture_from(session, limits, source)
-            .map_err(|error| error.to_string())
     }
 
     /// Submit from actual elapsed host time through the ordinary surface gate.
     /// # Errors
     /// Returns the ordinary world/render failure; no capture admission bypass.
-    pub fn step(&mut self) -> Result<DriveReport, String> {
+    pub fn step(&mut self) -> Result<DriveReport, OffscreenError> {
         self.host.set_presentation_lead(Duration::ZERO);
         self.drive(self.origin.elapsed())
     }
@@ -320,7 +370,10 @@ impl<G: Game> Offscreen<G> {
     /// Expired targets have zero lead; controls/render delay is included.
     /// # Errors
     /// Returns the ordinary world/render failure.
-    pub fn step_for(&mut self, opportunity: &clock::Opportunity) -> Result<DriveReport, String> {
+    pub fn step_for(
+        &mut self,
+        opportunity: &clock::Opportunity,
+    ) -> Result<DriveReport, OffscreenError> {
         let observation = self.origin.elapsed();
         let lead = thrum_render::frame::display_target_lead(
             opportunity
@@ -337,8 +390,9 @@ impl<G: Game> Offscreen<G> {
         self.drive(observation)
     }
 
-    fn drive(&mut self, observation: Duration) -> Result<DriveReport, String> {
-        apply_frame_edits(&mut self.game, &mut self.host, self.replay_pending)?;
+    fn drive(&mut self, observation: Duration) -> Result<DriveReport, OffscreenError> {
+        apply_frame_edits(&mut self.game, &mut self.host, self.replay_pending)
+            .map_err(OffscreenError::Game)?;
         self.replay_pending = false;
         let report = self
             .host
@@ -349,7 +403,7 @@ impl<G: Game> Offscreen<G> {
                     extent: self.extent,
                 }),
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(OffscreenError::Frame)?;
         self.game.observe(G::readback(&self.host));
         Ok(report)
     }
@@ -358,7 +412,7 @@ impl<G: Game> Offscreen<G> {
     /// surface gate, for a capture that steps a fixed clock itself.
     /// # Errors
     /// Returns the ordinary world/render failure.
-    pub fn step_at(&mut self, observation: Duration) -> Result<DriveReport, String> {
+    pub fn step_at(&mut self, observation: Duration) -> Result<DriveReport, OffscreenError> {
         self.host.set_presentation_lead(Duration::ZERO);
         self.drive(observation)
     }
@@ -381,8 +435,8 @@ impl<G: Game> Offscreen<G> {
     /// Drain one normal completed frame, driving nonblocking device polling.
     /// # Errors
     /// Returns a GPU completion failure.
-    pub fn completed(&mut self) -> Result<Option<FrameSample>, String> {
-        self.host.poll_completed().map_err(|e| e.to_string())
+    pub fn completed(&mut self) -> Result<Option<FrameSample>, FrameError> {
+        self.host.poll_completed()
     }
 
     /// Number of ordinary GPU frames still in flight.
@@ -421,8 +475,8 @@ impl<G: Game> Offscreen<G> {
     /// Drain one submitted image, without a GPU wait or endpoint redraw.
     /// # Errors
     /// Returns a mapping or old-session error.
-    pub fn image(&mut self) -> Result<Option<SubmittedImage>, String> {
-        self.host.try_submitted_image().map_err(|e| e.to_string())
+    pub fn image(&mut self) -> Result<Option<SubmittedImage>, FrameError> {
+        self.host.try_submitted_image()
     }
 
     /// Explicitly omitted readbacks; any omission invalidates continuous proof.
@@ -454,17 +508,17 @@ impl<G: Game> Offscreen<G> {
 fn settle_world_lifecycle(
     world: &dyn WorldLink,
     lifecycle: &mut WorldLifecyclePolicy,
-) -> Result<(), String> {
+) -> Result<(), OffscreenError> {
     wait_for_lifecycle(world, lifecycle)?;
     match world.check_health() {
         Ok(_) => {}
         Err(WorldLaneFault::Overload(refused)) => lifecycle.overloaded(refused),
-        Err(error) => return Err(error.to_string()),
+        Err(error) => return Err(OffscreenError::World(error)),
     }
     while let Some(request) = lifecycle.next_request() {
         world
             .request_lifecycle(request)
-            .map_err(|error| error.to_string())?;
+            .map_err(OffscreenError::World)?;
         lifecycle.accepted(request);
         wait_for_lifecycle(world, lifecycle)?;
     }
@@ -474,19 +528,19 @@ fn settle_world_lifecycle(
 fn wait_for_lifecycle(
     world: &dyn WorldLink,
     lifecycle: &mut WorldLifecyclePolicy,
-) -> Result<(), String> {
+) -> Result<(), OffscreenError> {
     let deadline = Instant::now() + Duration::from_secs(5);
     while lifecycle.needs_reply() {
         if let Some(reply) = world
             .poll_lifecycle_reply()
-            .map_err(|error| error.to_string())?
+            .map_err(OffscreenError::World)?
         {
             return lifecycle
                 .acknowledge(reply.request)
-                .map_err(|error| error.to_string());
+                .map_err(OffscreenError::LifecycleReply);
         }
         if Instant::now() >= deadline {
-            return Err("world lifecycle timeout".to_owned());
+            return Err(OffscreenError::LifecycleTimeout);
         }
         std::thread::sleep(Duration::from_millis(1));
     }

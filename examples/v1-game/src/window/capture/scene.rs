@@ -170,7 +170,8 @@ pub(in crate::window) async fn run(
         }),
         hardware: Vec::new(),
     });
-    let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)?;
+    let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)
+        .map_err(|error| error.to_string())?;
     if let Some(eye) = request.fixed_eye {
         if moving_route.is_some() || motion_frames.is_some() {
             return Err("a fixed eye requires a still capture".to_owned());

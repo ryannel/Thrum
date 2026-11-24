@@ -61,11 +61,11 @@ pub(crate) fn set_haze_eye(shell: &mut Shell, eye: [f32; 3], cut: bool) -> Resul
 }
 
 impl thrum_app::InlineWorld for GameWorld {
-    fn pause(&mut self) -> Result<(), String> {
-        GameWorld::pause(self)
+    fn pause(&mut self) -> Result<(), thrum_app::GameError> {
+        GameWorld::pause(self).map_err(thrum_app::GameError::Rejected)
     }
-    fn resume(&mut self, now: Duration) -> Result<(), String> {
-        GameWorld::resume(self, now)
+    fn resume(&mut self, now: Duration) -> Result<(), thrum_app::GameError> {
+        GameWorld::resume(self, now).map_err(thrum_app::GameError::Rejected)
     }
 }
 
@@ -247,7 +247,7 @@ pub(crate) fn route_step_ms(shell: &Shell, phi: f64) -> f64 {
 
 /// Collect GPU completions without admitting time; whether a frame slot is free.
 pub(crate) fn route_slot_ready(shell: &mut Shell) -> Result<bool, String> {
-    shell.poll_completed()
+    shell.poll_completed().map_err(String::from)
 }
 
 /// Latest committed authority tick.

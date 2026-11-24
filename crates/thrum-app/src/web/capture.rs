@@ -7,12 +7,11 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Begin a bounded submitted-output session on the healthy canvas device.
     /// # Errors
     /// Refuses a lost device, an active session or a resource allocation failure.
-    pub fn begin_submitted_capture(&mut self, session: u64) -> Result<(), String> {
+    pub fn begin_submitted_capture(&mut self, session: u64) -> Result<(), FrameError> {
         self.begin_submitted_capture_with_limits(
             session,
             thrum_render::runtime::CaptureLimits::default(),
         )
-        .map_err(|error| error.to_string())
     }
 
     /// Begin a submitted-output session with an explicit bounded observer allowance.
@@ -24,7 +23,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         limits: thrum_render::runtime::CaptureLimits,
     ) -> Result<(), FrameError> {
         if self.graphics.is_lost() {
-            return Err(FrameError::InvalidState("graphics device is lost"));
+            return Err(FrameError::DeviceLost("graphics device is lost".to_owned()));
         }
         self.host
             .enable_submitted_capture_with_limits(session, limits)
@@ -33,29 +32,29 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Begin scene-linear capture through the same bounded submitted-image tap.
     /// # Errors
     /// Refuses loss, an active session or resources that cannot be prepared.
-    pub fn begin_linear_capture(&mut self, session: u64) -> Result<(), String> {
+    pub fn begin_linear_capture(&mut self, session: u64) -> Result<(), FrameError> {
         if self.graphics.is_lost() {
-            return Err("graphics device is lost".to_owned());
+            return Err(FrameError::DeviceLost("graphics device is lost".to_owned()));
         }
         self.collect_completed()?;
-        self.host
-            .enable_submitted_capture_from(
-                session,
-                thrum_render::runtime::CaptureLimits::default(),
-                thrum_render::synthetic::CaptureSource::SceneLinear,
-            )
-            .map_err(|e| e.to_string())
+        self.host.enable_submitted_capture_from(
+            session,
+            thrum_render::runtime::CaptureLimits::default(),
+            thrum_render::synthetic::CaptureSource::SceneLinear,
+        )
     }
 
     /// Poll one exact submitted image without advancing time or redrawing.
     /// # Errors
     /// Refuses loss, a retired generation or a failed mapping.
-    pub fn next_submitted_image(&mut self) -> Result<Option<SubmittedImage>, String> {
+    pub fn next_submitted_image(&mut self) -> Result<Option<SubmittedImage>, FrameError> {
         if self.graphics.is_lost() {
-            return Err("graphics device was lost before the capture finished".to_owned());
+            return Err(FrameError::DeviceLost(
+                "graphics device was lost before the capture finished".to_owned(),
+            ));
         }
         self.collect_completed()?;
-        self.host.try_submitted_image().map_err(|e| e.to_string())
+        self.host.try_submitted_image()
     }
 
     /// Return the exported image's CPU lease to its generation-bound pool.

@@ -17,8 +17,9 @@ fn main() {}
 
 #[cfg(target_os = "macos")]
 mod scene {
-    use std::error::Error;
-    use thrum_app::sky::{Camera, Controls, CookedMaterial, Display, MeshPlacement, SkyGame};
+    use thrum_app::sky::{
+        Camera, Controls, CookedMaterial, Display, MeshPlacement, SkyBuildError, SkyGame,
+    };
 
     /// Radius of the circle in metres, and the number of standing stones in it.
     const RING_RADIUS: f32 = 6.0;
@@ -29,7 +30,7 @@ mod scene {
         metalness: 0.0,
     };
 
-    pub(crate) fn build() -> Result<SkyGame, Box<dyn Error>> {
+    pub(crate) fn build() -> Result<SkyGame, SkyBuildError> {
         let mut controls = Controls::new();
         let mut degrees = |key: &str, label: &str, range, default| {
             let slider = controls.slider(key, label, range).default(default);
@@ -59,7 +60,7 @@ mod scene {
             sky.sun_azimuth_degrees = controls.get(azimuth);
             sky.camera = orbit_camera(controls.get(orbit));
         });
-        Ok(game.with_meshes(stones)?)
+        game.with_meshes(stones).map_err(Into::into)
     }
 
     /// The starter's rock in granite, resting on the ground.
