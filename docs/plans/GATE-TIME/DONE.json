@@ -840,7 +840,7 @@
     {
       "id": "M5",
       "name": "The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -869,7 +869,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The M5 plan directs a median above five minutes back to planning, so M5.1 needs a revised plan before it can close.",
+        "work": {
+          "commit": "674021276bca399946ab8a5b0fb03393b0fe2df1",
+          "branch": "build/gate-time",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/GATE-TIME/M5-handoff.md"
+      }
     }
   ]
 }
