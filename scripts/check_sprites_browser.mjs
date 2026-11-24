@@ -277,7 +277,7 @@ function movesDiagonally(positions) {
   return positions.slice(1).every((point, i) => point.every((axis, j) => axis > positions[i][j]));
 }
 
-export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, existingGame, waitFor, commit }) {
+export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, existingGame, waitFor, unloadGamePage, commit }) {
   const rows = [];
   for (const dpr of [1, 2]) {
     const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
@@ -419,6 +419,7 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
         await retireCanvas(game);
       }
       const receipt = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
+      await unloadGamePage(cdp, sessionId, timeout);
       rows.push({ dpr, card: cardRows, sweeps, receipt });
       console.log(`sprites-crisp: DPR ${dpr}, two CSS grids and 3 × 256 submitted camera poses passed`);
     } finally {
