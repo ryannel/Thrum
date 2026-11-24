@@ -272,6 +272,7 @@ fn measure_cache(
                 ..=0.5 => 64.0,
                 1.0 => 80.0,
                 2.0 => 48.0,
+                8.0 => 40.0,
                 _ => 32.0,
             };
             if (x.abs().max(z.abs()) / spacing) >= half_width {

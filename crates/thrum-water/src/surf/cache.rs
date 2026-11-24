@@ -251,6 +251,7 @@ impl Cache {
         let fine_radius = crate::prepare::SURF_FINE_RING_HALF_WIDTH;
         let metre_radius = crate::prepare::SURF_METRE_RING_HALF_WIDTH;
         let two_metre_radius = crate::prepare::SURF_TWO_METRE_RING_HALF_WIDTH;
+        let eight_metre_radius = crate::prepare::SURF_EIGHT_METRE_RING_HALF_WIDTH;
         format!(
             "const SURF_CACHE_ENABLED: bool = {enabled};\nconst SURF_GRID_RADIUS = {radius}u;\n\
              fn sea_grid_radius(spacing: f32) -> u32 {{
@@ -258,6 +259,7 @@ impl Cache {
                      if spacing <= 0.5 {{ return {fine_radius}u; }}
                      if spacing == 1.0 {{ return {metre_radius}u; }}
                      if spacing == 2.0 {{ return {two_metre_radius}u; }}
+                     if spacing == 8.0 {{ return {eight_metre_radius}u; }}
                  }}
                  return SURF_GRID_RADIUS;
              }}\n"

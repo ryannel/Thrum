@@ -20,6 +20,7 @@ pub(crate) const SEA_RING_HALF_WIDTH: i32 = 32;
 pub(crate) const SURF_FINE_RING_HALF_WIDTH: i32 = 64;
 pub(crate) const SURF_METRE_RING_HALF_WIDTH: i32 = 80;
 pub(crate) const SURF_TWO_METRE_RING_HALF_WIDTH: i32 = 48;
+pub(crate) const SURF_EIGHT_METRE_RING_HALF_WIDTH: i32 = 40;
 
 pub(super) struct Prepared {
     pub(super) ambient: thrum_sea::Ambient,
@@ -616,6 +617,8 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
                     (true, 0 | 1) => SURF_FINE_RING_HALF_WIDTH,
                     (true, 2) => SURF_METRE_RING_HALF_WIDTH,
                     (true, 3) => SURF_TWO_METRE_RING_HALF_WIDTH,
+                    // Keep the mesh transition apart from the coarse foam window's edge.
+                    (true, 5) => SURF_EIGHT_METRE_RING_HALF_WIDTH,
                     _ => SEA_RING_HALF_WIDTH,
                 };
                 geometry.grid(

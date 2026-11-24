@@ -259,13 +259,13 @@ pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0
 pub const SURF_VIEWS: [Camera; 8] = [
     CAMERAS[0],
     Camera::look_at([-90.0, 40.0, 34.0], [-174.0, 0.0, 1.0], 81.0),
-    Camera::look_at([-1106.0, 40.0, 8.0], [-106.0, 0.0, 8.0], 20.0),
+    Camera::look_at([-1106.0, 40.0, 8.0], [-106.0, 0.0, 8.0], 10.0),
     Camera::look_at([253.0, 40.0, 171.0], [237.0, 0.0, 154.0], 59.0),
     Camera::look_at([-101.0, 40.0, -94.0], [-127.0, 0.0, -98.0], 79.0),
     Camera::look_at([110.0, 300.0, 85.0], [110.0, 0.0, 84.9], 92.0),
     Camera::look_at([-112.0, 2.0, 30.0], [-158.0, 0.0, 15.0], 65.0),
     // The 2 m coarse cells put the near window edge at z = 8 m here.
-    Camera::look_at([-240.0, 40.0, 264.0], [-125.0, 0.0, 12.0], 58.0),
+    Camera::look_at([-240.0, 40.0, 264.0], [-125.0, 0.0, 12.0], 17.0),
 ];
 
 /// Build the island with its cooked ground and the mapped water contribution.
