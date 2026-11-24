@@ -116,43 +116,7 @@ impl Fixture {
             )
             .expect("direct shape");
         state.step(1, 1.0).expect("form");
-        let kind = Type {
-            base: 80.0,
-            depth: [80.0, 160.0],
-            liquid_water: 0.0001,
-            droplet_radius: 0.00001,
-            deck: 0.0,
-            profile: [0.2, 0.3],
-        };
-        let config = ShadeConfig {
-            seed: 7,
-            model: Profile {
-                pitch: 600.0,
-                turret_pitch: 300.0,
-                turret_least: 0.2,
-                turret_fade: 0.2,
-                period: 1800.0,
-                detail_mean: 0.5,
-                erosion: 0.0,
-            },
-            types: vec![kind; 2],
-            weather: WeatherProfile {
-                size: 16,
-                texels: vec![10.0, 20.0, 40.0, 80.0],
-                maximum_age: 0.5,
-            },
-            sun: SunProfile {
-                size: 32,
-                levels: [10.0, 30.0, 80.0].map(|texel| SunLevel {
-                    texel,
-                    slices: 32,
-                    maximum_age: 0.5,
-                }),
-                ground_size: GROUND,
-                lowest_elevation: 2.0_f64.to_radians(),
-                border_fraction: 0.1,
-            },
-        };
+        let config = weather_config();
         Self {
             store,
             config,
@@ -270,6 +234,46 @@ impl Fixture {
         });
         frame(gpu, &mut host, &output, now + Duration::from_millis(16));
         (host, input)
+    }
+}
+
+pub(super) fn weather_config() -> ShadeConfig {
+    let kind = Type {
+        base: 80.0,
+        depth: [80.0, 160.0],
+        liquid_water: 0.0001,
+        droplet_radius: 0.00001,
+        deck: 0.0,
+        profile: [0.2, 0.3],
+    };
+    ShadeConfig {
+        seed: 7,
+        model: Profile {
+            pitch: 600.0,
+            turret_pitch: 300.0,
+            turret_least: 0.2,
+            turret_fade: 0.2,
+            period: 1800.0,
+            detail_mean: 0.5,
+            erosion: 0.0,
+        },
+        types: vec![kind; 2],
+        weather: WeatherProfile {
+            size: 16,
+            texels: vec![10.0, 20.0, 40.0, 80.0],
+            maximum_age: 0.5,
+        },
+        sun: SunProfile {
+            size: 32,
+            levels: [10.0, 30.0, 80.0].map(|texel| SunLevel {
+                texel,
+                slices: 32,
+                maximum_age: 0.5,
+            }),
+            ground_size: GROUND,
+            lowest_elevation: 2.0_f64.to_radians(),
+            border_fraction: 0.1,
+        },
     }
 }
 
