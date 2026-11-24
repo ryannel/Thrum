@@ -87,7 +87,8 @@ fn main() {
         window_transition_proof().unwrap_or_else(|error| report_capture_failure(&error));
     let qualification =
         window_qualification().unwrap_or_else(|error| report_capture_failure(&error));
-    let display = window_display_options().unwrap_or_else(|error| report_capture_failure(&error));
+    let display =
+        window_display_options().unwrap_or_else(|error| report_capture_failure(&error.to_string()));
     let governor = v1_game::WindowGovernor {
         enabled: governor_enabled().unwrap_or_else(|error| report_capture_failure(&error)),
         route: std::env::var_os("THRUM_GOVERNOR_ROUTE")
@@ -106,7 +107,8 @@ fn main() {
 }
 
 #[cfg(target_os = "macos")]
-fn window_display_options() -> Result<Option<thrum_app::WindowDisplayOptions>, String> {
+fn window_display_options()
+-> Result<Option<thrum_app::WindowDisplayOptions>, thrum_app::DisplayOverrideError> {
     let Ok(forced) = std::env::var("THRUM_MAC_EDR") else {
         return Ok(None);
     };

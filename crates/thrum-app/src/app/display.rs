@@ -68,10 +68,27 @@ pub enum DisplayOverride {
     },
 }
 
-impl std::str::FromStr for DisplayOverride {
-    type Err = String;
+/// An invalid macOS display override.
+#[derive(Debug)]
+pub enum DisplayOverrideError {
+    /// The supplied text has an unsupported form, headroom or tick.
+    InvalidValue(String),
+}
 
-    fn from_str(value: &str) -> Result<Self, String> {
+impl std::fmt::Display for DisplayOverrideError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidValue(value) => write!(formatter, "invalid display override {value:?}"),
+        }
+    }
+}
+
+impl std::error::Error for DisplayOverrideError {}
+
+impl std::str::FromStr for DisplayOverride {
+    type Err = DisplayOverrideError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         let number = |text: &str| {
             text.parse::<f32>()
                 .ok()
@@ -93,7 +110,7 @@ impl std::str::FromStr for DisplayOverride {
             [headroom] => number(headroom).map(Self::Constant),
             _ => None,
         };
-        forced.ok_or_else(|| format!("invalid display override {value:?}"))
+        forced.ok_or_else(|| DisplayOverrideError::InvalidValue(value.to_owned()))
     }
 }
 

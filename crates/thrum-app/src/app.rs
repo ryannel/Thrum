@@ -12,7 +12,7 @@ mod qualification_signpost;
 mod recovery;
 mod render_actor;
 
-pub use display::{DisplayOverride, WindowDisplayOptions};
+pub use display::{DisplayOverride, DisplayOverrideError, WindowDisplayOptions};
 pub use qualification::{
     ExtentWindow, GovernorProof, TransitionArm, WindowExtentCapture, WindowQualification,
     WindowTransitionProof,

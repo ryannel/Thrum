@@ -21,12 +21,44 @@ fn exported_errors_support_standard_reporting() {
     assert_error::<thrum_app::capture_writer::WriterError>();
     #[cfg(target_os = "macos")]
     {
+        assert_error::<<thrum_app::DisplayOverride as std::str::FromStr>::Err>();
         assert_error::<thrum_app::offscreen::OffscreenError>();
         assert_error::<thrum_app::offscreen::clock::OpportunityRateError>();
         assert_error::<thrum_app::sky::HeadlessDeviceError>();
     }
     #[cfg(target_arch = "wasm32")]
     assert_error::<thrum_app::web::WebHostError>();
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn display_parser_returns_a_matchable_error_and_preserves_its_diagnostic() {
+    use thrum_app::{DisplayOverride, DisplayOverrideError};
+
+    assert!(matches!("sdr".parse(), Ok(DisplayOverride::Sdr)));
+    assert!(matches!("2".parse(), Ok(DisplayOverride::Constant(2.0))));
+    assert!(matches!(
+        "promote:7".parse(),
+        Ok(DisplayOverride::Promote { tick: 7 })
+    ));
+    assert!(matches!(
+        "step:1:2:7:4".parse(),
+        Ok(DisplayOverride::Step {
+            before: 1.0,
+            after: 2.0,
+            tick: 7,
+            potential: 4.0,
+        })
+    ));
+
+    for value in ["0", "17", "NaN", "promote:-1", "step:1:2:7", "sdr:1"] {
+        let error = value.parse::<DisplayOverride>().unwrap_err();
+        assert!(matches!(&error, DisplayOverrideError::InvalidValue(input) if input == value));
+        assert_eq!(
+            error.to_string(),
+            format!("invalid display override {value:?}")
+        );
+    }
 }
 
 #[test]
