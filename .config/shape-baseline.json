@@ -203,7 +203,7 @@
         "examples/v1-game/tests/clouds_selection_gpu.rs": 1,
         "examples/v1-game/tests/cooked_assets_gpu.rs": 12,
         "examples/v1-game/tests/cooked_fault_gpu.rs": 1,
-        "examples/v1-game/tests/cooked_material_gpu.rs": 7,
+        "examples/v1-game/tests/cooked_material_gpu.rs": 5,
         "examples/v1-game/tests/cooked_rows_gpu.rs": 7,
         "examples/v1-game/tests/effect_display_phase_gpu.rs": 3,
         "examples/v1-game/tests/effect_resume_gpu.rs": 2,
