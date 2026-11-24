@@ -199,12 +199,12 @@
       "ends_stretch": true
     },
     "WP5": {
-      "definitions": "cb3b241796d0fef86609364c36eb2eb8943e93f95497dd0d2ace9ca161d95488",
+      "definitions": "ad7daa7a5574c9dda8dfb0783e5e8f78621fd74fd8c142a5c946490df2eacd96",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with its 1 Must ",
-        "at": "2026-11-24T20:12:34Z"
+        "task": "Unblock REPO-RULES WP5. The builder wrote: WP5.4 can't be met as written because Orchestrate refuses work-package checks",
+        "at": "2026-11-24T20:49:08Z"
       }
     }
   },
@@ -240,11 +240,15 @@
     {
       "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.\n\nMain fails ./dev check until WP5 lands, so every merge in the project is held; keep WP5 the smallest change that turns main green and lands ahead of WP3 and WP4.",
       "at": "2026-11-24T20:12:34Z"
+    },
+    {
+      "task": "Unblock REPO-RULES WP5. The builder wrote: WP5.4 can't be met as written because Orchestrate refuses work-package checks that call `main-check`. The planner must remove or replace the item. The builder's handoff, .orchestrate/evidence/REPO-RULES/WP5-handoff.md, says what is finished; its fix is already on main (6e9f47d93, 5b4f32110) and scripts/repo_check.py passes there. Replace WP5.4 with a check the work package can show before the merge, or drop it if the other items already cover it. A plan you keep ends with `KEEP REPO-RULES WP5: builder: <where the plan provides it>`.",
+      "at": "2026-11-24T20:49:08Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T20:12:34Z"
+    "at": "2026-11-24T20:49:08Z"
   },
   "design_history": [
     {
