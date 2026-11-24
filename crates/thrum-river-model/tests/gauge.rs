@@ -18,8 +18,10 @@ use support::fall_samples;
 use support::lake::{
     CENTRE, HIGH, WATER, bed_of, chart_body, lake, sampled, solve_at_gauges, water,
 };
-use thrum_river_model::{Profile, Samples, key, key_for_samples, solve, solve_samples};
-use thrum_water_model::{Body, Gauge, Map, RiverFile, Stage};
+use thrum_river_model::{Declaration, Grid, Manning, Profile, Receiver, Source, key, solve};
+use thrum_water_model::{
+    Body, Chart, ChartSamples, FlowSample, Gauge, Map, River, RiverFile, Stage,
+};
 
 const DX: f64 = 0.25;
 const RANGE: [f64; 2] = [3.1, 3.7];
@@ -37,7 +39,7 @@ fn level(file: &RiverFile, k: usize, i: usize) -> f64 {
 /// stored level: those no join blends there.
 fn unjoined(
     map: &mut Map,
-    grid: &thrum_river_model::Grid,
+    grid: &Grid,
     file: &RiverFile,
     gauges: [f64; 2],
     samples: [usize; 2],
@@ -324,235 +326,222 @@ fn a_spring_fed_river_s_gauge_is_its_own_stage() {
     assert_eq!(map.clamped_stages, 1);
 }
 
-/// How far across the bed the second valley lies from the first.
-const ACROSS: f64 = 16.0;
+const SOURCE_CHART: usize = 3;
+const PLACE: [f64; 2] = [5.25, 2.75];
+// Bilinear weights at PLACE, in the row-major order of the four pool cells.
+const POOL_WEIGHTS: [f64; 4] = [3.0 / 16.0, 1.0 / 16.0, 9.0 / 16.0, 3.0 / 16.0];
+const LAKE_GAUGES: [f64; 3] = [RANGE[0], 3.4, RANGE[1]];
+const POOL_LEVELS: [f64; 3] = [10.14, 10.30, 10.50];
+const POOL_OFFSETS: [f64; 4] = [-0.05, 0.03, -0.01, 0.07];
 
-/// A cell's level in sample `k` of a reach.
-fn reach_level(reach: &thrum_water_model::RiverReach, k: usize, i: usize) -> f64 {
-    if k == 0 {
-        reach.levels[i]
-    } else {
-        reach.upper[k - 1].levels[i]
-    }
-}
-
-/// Two solved rivers on one bed: the lake's outlet, and a river whose source body is the
-/// outlet's pool.
-struct Two {
-    up_samples: Samples,
-    up: RiverFile,
-    /// The upper river's reach that holds the pool, and the four cells round the place.
-    pool: usize,
-    cells: Vec<usize>,
-    place: [f64; 2],
-    /// The levels the pool takes at the place over the lake's range.
-    range: [f64; 2],
-    low: thrum_river_model::Grid,
-    declaration: thrum_river_model::Declaration,
-    down_samples: Samples,
-    down: RiverFile,
-    bed: thrum_water_model::Bed,
-    map: Map,
-    source_chart: usize,
-    up_charts: Vec<usize>,
-    down_charts: Vec<usize>,
-}
-
-/// The pool's level at the place at a lake level, from the upper river's stored samples alone.
-fn pool_level(
-    samples: &Samples,
-    reach: &thrum_water_model::RiverReach,
-    cells: &[usize],
-    lake: f64,
-) -> f64 {
-    let k = usize::from(lake > samples.gauges[1]);
-    let w = (lake - samples.gauges[k]) / (samples.gauges[k + 1] - samples.gauges[k]);
-    cells
+/// Prepared upper pool on the map's grid. Its four wet cells surround the
+/// gauge place, with distinct levels along both axes at all three samples.
+fn upper_pool(grid: &Grid, cells: [usize; 4]) -> (Body, River) {
+    let n = grid.heights().len();
+    let samples: Vec<_> = POOL_LEVELS
         .iter()
-        .map(|&i| 0.25 * ((1.0 - w) * reach_level(reach, k, i) + w * reach_level(reach, k + 1, i)))
-        .sum::<f64>()
-}
-
-fn two_rivers() -> Two {
-    // The river above: the lake's outlet, whose gauge is the lake's level.
-    let (grid, up_samples, up) = sampled(HIGH);
-    let nx = grid.size()[0];
-    // The place the river below leaves it: mid-pool, between four cell centres.
-    let place = [15.0, CENTRE];
-    let cells: Vec<usize> = [-0.125, 0.125]
-        .into_iter()
-        .flat_map(|dz| [-0.125, 0.125].map(|dx| grid.cell([place[0] + dx, place[1] + dz]).unwrap()))
+        .map(|&level| {
+            let mut levels: Vec<_> = grid.heights().iter().map(|h| h - 0.05).collect();
+            for (i, offset) in cells.into_iter().zip(POOL_OFFSETS) {
+                levels[i] = level + offset;
+            }
+            FlowSample {
+                levels,
+                currents: vec![[0.0; 2]; n],
+                loss: vec![0.0; n],
+                gains: vec![[0.0; 2]; n],
+            }
+        })
         .collect();
-    let pool = up
-        .reaches
-        .iter()
-        .position(|r| cells.iter().all(|&i| r.footprint[i]))
-        .unwrap();
-    let range = RANGE.map(|lake| pool_level(&up_samples, &up.reaches[pool], &cells, lake));
-    assert!(range[1] - range[0] > 0.2, "{range:?}");
-    // The river below: the same valley beside the first, lowered so its sill lies 0.1 m under
-    // the pool's lowest level, and solved at the pool's levels across their range. The two are
-    // not joined in space: this is the gauge alone, read through the shared map. A still pond
-    // stands at the second valley's head for the map's join there; nothing moves it.
-    let drop = SILL_OVER - range[0];
-    let (g0, mut declaration) = lake(DX, HIGH, [range[0] + drop, range[1] + drop]);
-    let low = thrum_river_model::Grid::new(
-        [g0.origin()[0], g0.origin()[1] + ACROSS],
-        DX,
-        g0.size(),
-        g0.heights().iter().map(|h| h - drop).collect(),
+    let pool = chart_body(
+        "outlet pool",
+        Chart {
+            levels: samples[0].levels.clone(),
+            currents: samples[0].currents.clone(),
+            footprint: (0..n).map(|i| cells.contains(&i)).collect(),
+            ends: vec![],
+        },
+    );
+    let river = River {
+        name: "outlet".into(),
+        gauges: LAKE_GAUGES.to_vec(),
+        gauge: Gauge::Body(0),
+        charts: vec![ChartSamples {
+            body: SOURCE_CHART,
+            samples,
+            wetting: vec![vec![None; n]; 2],
+        }],
+    };
+    (pool, river)
+}
+
+/// The lower reach has a pond at its source join and a cliff into the tarn.
+/// The pond supplies the solver's boundary level. The map reads the moving
+/// gauge independently, from the upper pool across the bank.
+fn branch() -> (Grid, Declaration) {
+    let grid = Grid::new(
+        [0.0, 6.0],
+        1.0,
+        [25, 10],
+        (0..250)
+            .map(|i| match (i % 25, i / 25) {
+                (3..=5, 3..=6) => 9.0,
+                (6..=13, 3..=6) => 10.0,
+                (14..=21, 3..=6) => 7.0,
+                _ => 15.0,
+            })
+            .collect(),
     )
     .unwrap();
-    declaration.name = "branch".into();
-    let source = &mut declaration.sources[0];
-    source.name.clone_from(&up.reaches[pool].name);
-    source.seed[1] += ACROSS;
-    source.extent[0][1] += ACROSS;
-    source.extent[1][1] += ACROSS;
-    source.level = range[0];
-    source.range = range;
-    let tarn = &mut declaration.receivers[0];
-    tarn.name = "low tarn".into();
-    tarn.seed[1] += ACROSS;
-    tarn.extent[0][1] += ACROSS;
-    tarn.extent[1][1] += ACROSS;
-    tarn.level -= drop;
-    let profile = Profile::default();
-    let down_samples = solve_samples(&low, &declaration, &profile, &[]).unwrap();
-    let down = down_samples
-        .file(key_for_samples(&low, &declaration, &profile, &[]))
-        .unwrap();
-    assert_eq!(down.gauge_range(), range);
-    assert!(down_samples.gauges.len() >= 2);
+    let declaration = Declaration {
+        name: "branch".into(),
+        springs: vec![],
+        sources: vec![Source {
+            name: "pond".into(),
+            seed: [4.0, 10.0],
+            extent: [[2.5, 8.5], [5.5, 12.5]],
+            level: POOL_LEVELS[0],
+            range: [POOL_LEVELS[0], POOL_LEVELS[2]],
+        }],
+        receivers: vec![Receiver {
+            name: "tarn".into(),
+            seed: [19.0, 10.0],
+            extent: [[13.5, 8.5], [21.5, 12.5]],
+            level: 8.0,
+        }],
+        manning: Manning::Uniform(0.04),
+    };
+    (grid, declaration)
+}
 
-    // One bed and one map hold both.
-    let mut heights = grid.heights().to_vec();
+fn chained_map(
+    low: &Grid,
+    declaration: &Declaration,
+    down: &RiverFile,
+) -> (Map, River, Vec<usize>) {
+    let [nx, nz] = low.size();
+    let mut heights = vec![15.0; nx * 6];
+    let pool_cells = [2 * nx + 5, 2 * nx + 6, 3 * nx + 5, 3 * nx + 6];
+    for i in pool_cells {
+        heights[i] = 9.0;
+    }
+    heights[2 * nx + 2] = 2.0;
     heights.extend_from_slice(low.heights());
-    let bed =
-        thrum_water_model::Bed::new(grid.origin(), DX, [nx, 2 * grid.size()[1]], heights.clone())
-            .unwrap();
-    let still = Stage {
-        min: 0.0,
-        max: 0.0,
-        value: 0.0,
+    let grid = Grid::new([0.0; 2], 1.0, [nx, 6 + nz], heights).unwrap();
+    let bed = bed_of(&grid);
+    let (pool, upper) = upper_pool(&grid, pool_cells);
+    let stage = |[min, max]: [f64; 2]| Stage {
+        min,
+        max,
+        value: min,
     };
     let mut bodies = vec![
-        support::lake::basin(
-            "lake",
-            [3.5, CENTRE],
-            0.0,
-            Stage {
-                min: RANGE[0],
-                max: RANGE[1],
-                value: RANGE[0],
-            },
-        ),
-        support::lake::basin("tarn", [30.0, CENTRE], support::lake::TARN, still),
-        support::lake::basin(
-            "low tarn",
-            [30.0, CENTRE + ACROSS],
-            support::lake::TARN - drop,
-            still,
-        ),
+        support::lake::basin("lake", [2.0; 2], 0.0, stage(RANGE)),
         support::lake::basin(
             "pond",
-            [3.5, CENTRE + ACROSS],
+            declaration.sources[0].seed,
             0.0,
-            Stage {
-                min: range[0],
-                max: range[1],
-                value: range[0],
-            },
+            stage(down.gauge_range()),
         ),
+        support::lake::basin("tarn", declaration.receivers[0].seed, 8.0, stage([0.0; 2])),
+        pool,
     ];
-    let first = bodies.len();
-    for r in &up.reaches {
-        let chart = r
+    for reach in &down.reaches {
+        let chart = reach
             .chart(&bed, |name| match name {
-                "lake" => Some(0),
-                "tarn" => Some(1),
+                "pond" => Some(1),
+                "tarn" => Some(2),
                 _ => None,
             })
             .unwrap();
-        bodies.push(chart_body(&r.name, chart));
+        bodies.push(chart_body(&reach.name, chart));
     }
-    let up_charts: Vec<usize> = (first..bodies.len()).collect();
-    let source_chart = first + pool;
-    let pool_name = up.reaches[pool].name.clone();
-    for r in &down.reaches {
-        let chart = r
-            .chart(&bed, |name| {
-                if name == pool_name {
-                    Some(3)
-                } else {
-                    (name == "low tarn").then_some(2)
-                }
-            })
-            .unwrap();
-        bodies.push(chart_body(&format!("low {}", r.name), chart));
-    }
-    let down_charts: Vec<usize> = (first + up.reaches.len()..bodies.len()).collect();
-    let map = Map::prepare(bed.clone(), bodies, WATER).unwrap();
-    Two {
-        up_samples,
-        up,
-        pool,
-        cells,
-        place,
-        range,
-        low,
-        declaration,
-        down_samples,
-        down,
-        bed,
-        map,
-        source_chart,
-        up_charts,
+    let down_charts = (SOURCE_CHART + 1..bodies.len()).collect();
+    (
+        Map::prepare(bed, bodies, WATER).unwrap(),
+        upper,
         down_charts,
+    )
+}
+
+fn assert_chart_mix(
+    map: &Map,
+    file: &RiverFile,
+    grid: &Grid,
+    charts: &[usize],
+    gauge: f64,
+) -> usize {
+    let gauges = file.gauges();
+    let k = support::lake::lower_sample(&gauges, gauge);
+    let w = (gauge - gauges[k]) / (gauges[k + 1] - gauges[k]);
+    let mut total = 0;
+    for (r, &body) in charts.iter().enumerate() {
+        let mut checked = 0;
+        for (i, &bed) in grid.heights().iter().enumerate() {
+            let p = grid.point(i);
+            let (a, ca) = support::lake::stored(file, r, k, i);
+            let (b, cb) = support::lake::stored(file, r, k + 1, i);
+            if a > bed && b > bed && support::lake::unjoined(file, r, p) {
+                let row = map.row(body, p);
+                assert!((row.level - ((1.0 - w) * a + w * b)).abs() < 1e-9, "{p:?}");
+                for axis in 0..2 {
+                    assert!(
+                        (row.current[axis] - ((1.0 - w) * ca[axis] + w * cb[axis])).abs() < 1e-9,
+                        "{p:?}"
+                    );
+                }
+                checked += 1;
+            }
+        }
+        assert!(checked > 0, "chart {body} has no wet, unblended cells");
+        total += checked;
     }
+    total
 }
 
 #[test]
 fn a_river_whose_source_is_another_river_s_chart_follows_that_chart_s_level() {
-    let Two {
-        up_samples,
-        up,
-        pool,
-        cells,
-        place,
-        range,
-        low,
-        declaration,
-        down_samples,
-        down,
-        bed,
-        mut map,
-        source_chart,
-        up_charts,
-        down_charts,
-    } = two_rivers();
-    let n = low.heights().len();
-    let profile = Profile::default();
-    let pool_level = |lake: f64| pool_level(&up_samples, &up.reaches[pool], &cells, lake);
+    let (low, declaration) = branch();
+    let profile = Profile {
+        threads: 1,
+        ..Profile::default()
+    };
+    let (samples, down) = solve_at_gauges(&low, &declaration, &profile);
+    let gauges = &samples.gauges;
+    assert_eq!(gauges.len(), 3);
+    println!(
+        "lower flow samples at {gauges:?} m take {:?} steps",
+        samples
+            .solutions
+            .iter()
+            .map(|s| s.report.steps)
+            .collect::<Vec<_>>(),
+    );
+    let (mut map, outlet, down_charts) = chained_map(&low, &declaration, &down);
+    let bed = map.bed().clone();
     let chart_gauge = Gauge::Chart {
-        body: source_chart,
-        place,
+        body: SOURCE_CHART,
+        place: PLACE,
     };
     let branch = |gauge| down.river(&bed, "branch", &down_charts, gauge).unwrap();
-
-    // Before the river above is in the map its chart is one sample, the lowest: a gauge that
-    // reads it is refused only where it could not be read at all.
     let refused = |map: &mut Map, gauge, reason: &str| {
         let error = map.add_river(branch(gauge)).unwrap_err();
-        assert!(format!("{error:?}").contains(reason), "{error:?}");
+        assert!(error.reason.contains(reason), "{error:?}");
     };
-    refused(&mut map, Gauge::Body(source_chart), "needs a place");
-    refused(&mut map, Gauge::Chart { body: 0, place }, "not a chart");
+    refused(&mut map, Gauge::Body(SOURCE_CHART), "needs a place");
     refused(
         &mut map,
         Gauge::Chart {
-            body: source_chart,
-            place: [15.0, CENTRE + 6.0],
+            body: 0,
+            place: PLACE,
+        },
+        "not a chart",
+    );
+    refused(
+        &mut map,
+        Gauge::Chart {
+            body: SOURCE_CHART,
+            place: [5.5, 3.5],
         },
         "footprint",
     );
@@ -560,145 +549,98 @@ fn a_river_whose_source_is_another_river_s_chart_follows_that_chart_s_level() {
         &mut map,
         Gauge::Chart {
             body: down_charts[0],
-            place: [15.0, CENTRE + ACROSS],
+            place: [8.0, 10.0],
         },
         "river's own",
     );
-    let upper = map
-        .add_river(
-            up.river(&bed, "outlet", &up_charts, Gauge::Body(0))
-                .unwrap(),
-        )
-        .unwrap();
-    // A river whose samples do not cover the levels the pool can take is refused.
+    let upper = map.add_river(outlet.clone()).unwrap();
     let mut short = branch(chart_gauge);
     short.gauges.pop();
-    for c in &mut short.charts {
-        c.samples.pop();
-        c.wetting.pop();
+    for chart in &mut short.charts {
+        chart.samples.pop();
+        chart.wetting.pop();
     }
     let error = map.add_river(short).unwrap_err();
-    assert!(
-        format!("{error:?}").contains("outside the samples"),
-        "{error:?}"
-    );
+    assert!(error.reason.contains("outside the samples"), "{error:?}");
     let lower = map.add_river(branch(chart_gauge)).unwrap();
-    assert!(map.set_gauge(lower, range[0]).is_err());
+    let error = map.set_gauge(lower, POOL_LEVELS[0]).unwrap_err();
+    assert!(error.reason.contains("source"), "{error:?}");
+    let error = map.add_river(outlet).unwrap_err();
+    assert!(error.reason.contains("already in a river"), "{error:?}");
 
-    // Cells of the river below that no join blends, and that every sample wets.
-    let z = low.heights();
-    let cell_of = |i: usize| i;
-    let samples_of = |r: usize, k: usize, i: usize| reach_level(&down.reaches[r], k, i);
-    let count = down_samples.gauges.len();
-    let mut seen = Vec::new();
+    let mut last_gauge = 0.0;
     let mut last_fall = 0.0;
-    for step in 0..=12 {
-        let lake_level = RANGE[0] + (RANGE[1] - RANGE[0]) * f64::from(step) / 12.0;
-        map.set_stage(0, lake_level).unwrap();
-        assert_eq!(map.gauge(upper), lake_level);
-        // The gauge of the river below is the pool's level there: the map's own row of the
-        // chart above, and the mix worked out here from the upper river's stored samples.
-        let g = map.gauge(lower);
-        assert_eq!(g, map.row(source_chart, place).level);
-        assert!((g - pool_level(lake_level)).abs() < 1e-9, "{g}");
-        if let Some(&before) = seen.last() {
-            assert!(
-                g > before,
-                "the lower gauge rises with the lake: {before} then {g}"
-            );
+    let mut intervals = [false; 2];
+    for lake in [RANGE[0], 3.25, 3.4, 3.55, RANGE[1]] {
+        map.set_stage(0, lake).unwrap();
+        assert_eq!(map.gauge(upper), lake);
+        let k = support::lake::lower_sample(&LAKE_GAUGES, lake);
+        let w = (lake - LAKE_GAUGES[k]) / (LAKE_GAUGES[k + 1] - LAKE_GAUGES[k]);
+        let expected: f64 = POOL_OFFSETS
+            .iter()
+            .zip(POOL_WEIGHTS)
+            .map(|(&offset, weight)| {
+                weight * ((1.0 - w) * (POOL_LEVELS[k] + offset) + w * (POOL_LEVELS[k + 1] + offset))
+            })
+            .sum();
+        let gauge = map.gauge(lower);
+        assert_eq!(gauge, map.row(SOURCE_CHART, PLACE).level);
+        assert!((gauge - expected).abs() < 1e-9, "{gauge} != {expected}");
+        assert!(gauge > last_gauge, "{last_gauge} then {gauge}");
+        last_gauge = gauge;
+        for (k, interval) in gauges.windows(2).enumerate() {
+            intervals[k] |= gauge > interval[0] + 1e-9 && gauge < interval[1] - 1e-9;
         }
-        seen.push(g);
-        // Every chart of the river below is the mix of its own samples at that gauge.
-        let k = (0..count - 1)
-            .rev()
-            .find(|&k| down_samples.gauges[k] <= g)
-            .unwrap_or(0);
-        let w = ((g - down_samples.gauges[k])
-            / (down_samples.gauges[k + 1] - down_samples.gauges[k]))
-            .clamp(0.0, 1.0);
-        let mut checked = 0;
-        for (r, &body) in down_charts.iter().enumerate() {
-            for i in 0..n {
-                let j = cell_of(i);
-                let p = low.point(i);
-                // Away from the reach's ends, where a join blends the row.
-                if !(10.0..24.0).contains(&p[0]) {
-                    continue;
-                }
-                let (a, b) = (samples_of(r, k, i), samples_of(r, k + 1, i));
-                if a > z[j] && b > z[j] {
-                    let expected = (1.0 - w) * a + w * b;
-                    let row = map.row(body, p);
-                    assert!((row.level - expected).abs() < 1e-9, "{p:?}");
-                    checked += 1;
-                }
-            }
-        }
-        assert!(checked > 300, "{checked}");
-        // Its falls are read at the same gauge, and run harder as the lake rises.
-        let falls = down.falls_at(g);
-        let fall: f64 = falls
+        let checked = assert_chart_mix(&map, &down, &low, &down_charts, gauge);
+        let fall: f64 = down
+            .falls_at(gauge)
             .iter()
             .flat_map(|f| &f.segments)
             .map(|s| s.discharge)
             .sum();
         assert!(fall > last_fall, "{last_fall} then {fall}");
         last_fall = fall;
+        println!(
+            "lake {lake:.2} m: lower gauge {gauge:.3} m, {checked} unblended cells, fall discharge {fall:.4} m³/s"
+        );
     }
-    // Between its samples the river below is near a solve at the level its gauge reads.
-    let lake_level = 3.25;
-    map.set_stage(0, lake_level).unwrap();
-    let g = map.gauge(lower);
+    assert!(intervals.into_iter().all(|seen| seen));
+
+    map.set_stage(0, 3.25).unwrap();
+    let gauge = map.gauge(lower);
     assert!(
-        down_samples.gauges.iter().all(|s| (s - g).abs() > 0.05),
-        "{g} against {:?}",
-        down_samples.gauges
+        gauges.iter().all(|s| (s - gauge).abs() > 0.05),
+        "{gauge} against {gauges:?}"
     );
-    let mut at = declaration.clone();
-    at.sources[0].level = g;
+    let mut at = declaration;
+    at.sources[0].level = gauge;
     let fresh = solve(&low, &at, &profile).unwrap();
-    let sp = |c: [f64; 2]| c[0].hypot(c[1]);
-    let (mut depth, mut speed, mut cells_checked) = (0.0_f64, 0.0_f64, 0);
+    let speed = |v: [f64; 2]| v[0].hypot(v[1]);
+    let (mut depth_error, mut speed_error, mut checked) = (0.0_f64, 0.0_f64, 0);
     for (r, &body) in down_charts.iter().enumerate() {
-        for i in 0..n {
+        for (i, &bed) in low.heights().iter().enumerate() {
             let p = low.point(i);
-            let every = (0..count).all(|k| samples_of(r, k, i) > z[cell_of(i)]);
-            if !every || !fresh.wet[i] || !(10.0..24.0).contains(&p[0]) {
-                continue;
+            let wet = (0..gauges.len()).all(|k| support::lake::stored(&down, r, k, i).0 > bed);
+            if wet && fresh.wet[i] && support::lake::unjoined(&down, r, p) {
+                let row = map.row(body, p);
+                let u = speed(fresh.current(i));
+                assert!(u > 0.0, "{p:?}");
+                depth_error = depth_error.max((row.level - fresh.level(i)).abs());
+                speed_error = speed_error.max((speed(row.current) - u).abs() / u);
+                checked += 1;
             }
-            let row = map.row(body, p);
-            let u = sp(fresh.current(i));
-            depth = depth.max((row.level - fresh.level(i)).abs());
-            speed = speed.max((sp(row.current) - u).abs() / u);
-            cells_checked += 1;
         }
     }
     println!(
-        "a river below a pool: the lake from {:.2} to {:.2} m moves the pool, and so the lower river's \
-         gauge, from {:.3} to {:.3} m; its falls reach {last_fall:.3} m3/s; at a lake of {lake_level} m \
-         (gauge {g:.3} m) {cells_checked} cells of its mix are off a fresh solve by {:.1} mm and {:.1}%",
-        RANGE[0],
-        RANGE[1],
-        seen[0],
-        seen[seen.len() - 1],
-        1000.0 * depth,
-        100.0 * speed
+        "fresh solve at {gauge:.3} m: {} steps, {checked} cells, {:.1} mm depth error and {:.1}% speed error",
+        fresh.report.steps,
+        depth_error * 1000.0,
+        speed_error * 100.0,
     );
-    assert!(cells_checked > 300, "{cells_checked}");
-    assert!(depth <= 0.01, "{depth}");
-    assert!(speed <= 0.25, "{speed}");
-    // A chart an earlier river's gauge reads cannot join a later river.
-    let mut again = up.river(&bed, "again", &up_charts, Gauge::Body(0)).unwrap();
-    again.charts.retain(|c| c.body == source_chart);
-    let error = map.add_river(again).unwrap_err();
-    assert!(
-        format!("{error:?}").contains("already in a river"),
-        "{error:?}"
-    );
+    assert!(checked > 0);
+    assert!(depth_error <= 0.01, "{depth_error}");
+    assert!(speed_error <= 0.25, "{speed_error}");
 }
-
-/// The level of the lowest sample over the second valley's sill, before it is lowered.
-const SILL_OVER: f64 = 3.1;
 
 #[test]
 fn a_refused_river_leaves_the_map_answering_as_before() {
@@ -714,7 +656,7 @@ fn a_refused_river_leaves_the_map_answering_as_before() {
         }
     }
     let bed = thrum_water_model::Bed::new([0.0; 2], 1.0, [7, 7], heights).unwrap();
-    let chart = thrum_water_model::Chart {
+    let chart = Chart {
         levels: vec![1.0; n],
         currents: vec![[0.0; 2]; n],
         footprint,
@@ -731,13 +673,13 @@ fn a_refused_river_leaves_the_map_answering_as_before() {
             .collect()
     };
     let before = answers(&map);
-    let sample = |level: f64| thrum_water_model::FlowSample {
+    let sample = |level: f64| FlowSample {
         levels: vec![level; n],
         currents: vec![[0.0; 2]; n],
         loss: vec![0.0; n],
         gains: vec![[0.0; 2]; n],
     };
-    let river = |upper: thrum_water_model::FlowSample, name: &str| thrum_water_model::River {
+    let river = |upper: FlowSample, name: &str| River {
         name: name.into(),
         gauges: vec![1.0, 3.0],
         gauge: Gauge::Stage(Stage {
@@ -745,7 +687,7 @@ fn a_refused_river_leaves_the_map_answering_as_before() {
             max: 3.0,
             value: 1.0,
         }),
-        charts: vec![thrum_water_model::ChartSamples {
+        charts: vec![ChartSamples {
             body: 0,
             samples: vec![sample(1.0), upper],
             wetting: vec![vec![None; n]],

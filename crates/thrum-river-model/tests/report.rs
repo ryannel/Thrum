@@ -3,7 +3,9 @@
 //! same bytes on one thread and on eight.
 use crate::support;
 use support::valley;
-use thrum_river_model::{Profile, RiverError, key, solve, write};
+use thrum_river_model::{
+    Declaration, Grid, Manning, Profile, Receiver, RiverError, Source, key, solve, write,
+};
 
 #[test]
 fn a_solve_stops_on_its_tolerances_and_reports_its_work() {
@@ -108,15 +110,62 @@ fn doubling_the_rectangle_round_the_valley_barely_changes_its_work() {
     assert!(change.abs() < 0.05);
 }
 
+/// A short reach across a wide channel, with held water at each end. The small
+/// transverse bed change also gives the solver lateral discharge to reproduce.
+fn wide_reach() -> (Grid, Declaration) {
+    const NX: usize = 12;
+    const NZ: usize = 94;
+    let mut heights = vec![2.0; NX * NZ];
+    for z in 1..NZ - 1 {
+        for x in 1..NX - 1 {
+            let cross_slope = if z < NZ / 2 { 0.0 } else { 0.01 };
+            heights[z * NX + x] = -0.01 * x as f64 + cross_slope;
+        }
+    }
+    let grid = Grid::new([0.0; 2], 0.5, [NX, NZ], heights).expect("wide reach grid");
+    let declaration = Declaration {
+        name: "wide reach".into(),
+        springs: vec![],
+        sources: vec![Source {
+            name: "head".into(),
+            seed: [0.5, 1.0],
+            extent: [[0.25, 0.0], [0.75, 47.0]],
+            level: 0.44,
+            range: [0.44; 2],
+        }],
+        receivers: vec![Receiver {
+            name: "pool".into(),
+            seed: [5.0, 1.0],
+            extent: [[4.75, 0.0], [5.25, 47.0]],
+            level: 0.35,
+        }],
+        manning: Manning::Uniform(0.04),
+    };
+    (grid, declaration)
+}
+
 #[test]
 fn the_same_input_gives_the_same_bytes_on_one_thread_and_on_eight() {
-    let (grid, declaration) = valley::valley(0.25);
+    let (grid, declaration) = wide_reach();
     let bytes = |threads| {
         let profile = Profile {
             threads,
             ..Profile::default()
         };
         let s = solve(&grid, &declaration, &profile).unwrap();
+        let r = &s.report;
+        // The report sums the exact active span count of each step. An average
+        // above the stepper's 1,024-cell cutoff proves it took the parallel path
+        // with eight threads. Rayon can bisect the 94 rows into 47-row
+        // chunks (minimum 42), and neither half can contain 1,024 cells.
+        assert!(r.cell_updates > 1_024 * r.steps, "{r:?}");
+        assert!(s.state.qx.iter().any(|q| q.abs() > 1e-6));
+        assert!(s.state.qz.iter().any(|q| q.abs() > 1e-6));
+        assert!(s.loss.iter().any(|&loss| loss > 0.0));
+        println!(
+            "{threads} threads: {} steps, {} cell updates, {} wet cells",
+            r.steps, r.cell_updates, r.wet_cells,
+        );
         let mut out = write(&s.file(key(&grid, &declaration, &profile)).unwrap());
         for v in s
             .state
