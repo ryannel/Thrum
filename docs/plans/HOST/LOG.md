@@ -90,3 +90,10 @@
 - 2026-11-24 Replanned WP5.3 after orchestrate 3.0.6 refused the main-check query inside the item runner.
   The item now checks the reference pins. The shared `exact-images` run compares rendered output on main.
   HOST WP5 waits for the REPO-RULES WP5 plan-reader repair at merge.
+- 2026-11-24 Built WP5's typed game, shell, sky kit and capture writer errors. The Mac string-error check
+  and error-type tests passed, along with the Metal app suite and strict Wasm and iPhone simulator-target
+  Clippy. The branch also passes the exact-baseline reference guard. WP5.3 remains open because
+  orchestrate 3.0.5 refuses its main-branch query in the item runner. The repository check also fails on
+  clean main because its plan reader expects the pre-migration schema.
+  [Proof](../../../.orchestrate/evidence/HOST/WP5/README.md)
+  [Handoff](../../../.orchestrate/evidence/HOST/WP5-handoff.md)
