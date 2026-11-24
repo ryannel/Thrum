@@ -312,7 +312,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - A completed Chrome capture survives slow shutdown and leaves no browser or profile (T2-CAPTURE M4): Ready for Review · [plan](T2-CAPTURE/PLAN.md) · [latest review](../../.orchestrate/evidence/T2-CAPTURE/M4-review.md)
 - Small hot-reload checks prove which material the device draws (CREATOR M4): Not Started · [plan](CREATOR/PLAN.md)
-- Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
+- Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): Ready for Review · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
 - WATERS M13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome: Blocked: Needs Context: The WATERS planner needs to choose how to make two approaching ridges visibly turn, tighten and rise while keeping the pitching crest intact. The lead finds the missing fact, or asks you for it
 - CLOUDS M7 The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin: Blocked: Needs Context: Resolve the Metal render stalls and verify visibly even cloud and shade travel across a full 20-second 60× take. The lead finds the missing fact, or asks you for it
 - RENDER-2D's design: Design Ready for Review · [design](RENDER-2D/DESIGN.md) · [plan](RENDER-2D/PLAN.md)
@@ -419,7 +419,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - From any engine checkout, one command builds and tests a game in a games repository against that checkout (GAME-SPLIT M1), 17 Nov · [review](../../.orchestrate/evidence/GAME-SPLIT/M1-review.md)
 - A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search (SIM-2D M2), 17 Nov · [review](../../.orchestrate/evidence/SIM-2D/M2-review.md)
 - An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh (WATERS M2), 17 Nov · [review](../../.orchestrate/evidence/WATERS/M2-review.md)
-- A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one (EFFECT-GRAPH M4), 17 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M4-review.md)
 
 ## All modules
 
@@ -432,7 +431,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M4 of 4 · Not Started |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M7 of 16 · Blocked: Needs Access |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · In Progress |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Done 24 Nov |
