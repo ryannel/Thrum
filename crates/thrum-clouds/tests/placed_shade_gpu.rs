@@ -70,20 +70,23 @@ thrum_test_support::macos_gpu_test! {
                 fixture.submit_at(&gpu, range, true, true, sun, camera_z),
             );
             let (expected, expected_mapping) = read_ground(&reference);
-            assert!(expected.chunks_exact(8).any(|texel| texel[..2] != [0, 0]));
+            let (texels, _) = expected.as_chunks::<8>();
+            assert!(texels.iter().any(|texel| texel[..2] != [0, 0]));
             assert!(moves_windows || expected != volume, "the two forms must cast different shade");
             assert!(actual == expected, "stale ground field at fixed tick, camera z={camera_z}");
             assert_eq!(mapping, expected_mapping, "ground mapping at camera z={camera_z}");
             // The far-value slot can change with the density even if the windows stay put.
             assert_eq!(mapping[64..] != previous_mapping[64..], moves_windows);
-            previous_mapping = mapping;
 
             now += Duration::from_millis(16);
             frame(&gpu, &mut host, &output, now);
             let unchanged = input.shapes_report().expect("unchanged report");
             assert_eq!(unchanged.placement_upload_bytes, 0);
             assert!(!unchanged.placed_map_updated);
-            assert!(read_ground(&input) == (actual, previous_mapping.clone()));
+            let (repeated, repeated_mapping) = read_ground(&input);
+            assert!(repeated == actual, "unchanged camera changed ground optical depth");
+            assert_eq!(repeated_mapping, mapping);
+            previous_mapping = mapping;
             now += Duration::from_millis(16);
         }
     }
