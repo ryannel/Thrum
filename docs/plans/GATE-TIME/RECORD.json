@@ -1,30 +1,27 @@
 {
   "module": "GATE-TIME",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/GATE-TIME/design-review.md",
-    "commit": "14bc472aa2c1760b654b29b2c06e62e979de7720",
-    "hash": "fad7580973b14bc7ca32b219625dc4001ae1470a1adebad9eab31ca3818dca76",
+    "commit": "c0979f451edf34fd6cf312da4f05846499a47268",
+    "hash": "41fb404bc3aa581f6bfa5a285295f009596779cd5ac76c2a4624f02433cb3edd",
     "by": "review",
-    "host": "claude",
-    "model": "claude-opus-5-5",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
     "effort": "high",
     "observed": {
-      "model": "claude-opus-5-5"
+      "model": "gpt-6.2-astra",
+      "effort": "high"
     },
-    "cli": "2.1.319 (Claude Code)",
+    "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 64804,
-      "cached": 709600,
-      "output": 11143,
-      "cost_usd": 0.8831,
+      "input": 80967,
+      "cached": 764544,
+      "output": 4848,
       "turns": 1
     },
-    "at": "2026-11-22T14:59:57Z",
-    "items_owed": [
-      "M14"
-    ]
+    "at": "2026-11-24T03:13:05Z"
   },
   "milestones": {
     "M1": {
@@ -1443,6 +1440,32 @@
         "turns": 1
       },
       "at": "2026-11-22T14:51:52Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/GATE-TIME/design-review-9.md",
+      "commit": "14bc472aa2c1760b654b29b2c06e62e979de7720",
+      "hash": "fad7580973b14bc7ca32b219625dc4001ae1470a1adebad9eab31ca3818dca76",
+      "by": "review",
+      "host": "claude",
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "observed": {
+        "model": "claude-opus-5-5"
+      },
+      "cli": "2.1.319 (Claude Code)",
+      "path": "headless",
+      "usage": {
+        "input": 64804,
+        "cached": 709600,
+        "output": 11143,
+        "cost_usd": 0.8831,
+        "turns": 1
+      },
+      "at": "2026-11-22T14:59:57Z",
+      "items_owed": [
+        "M14"
+      ]
     }
   ]
 }
