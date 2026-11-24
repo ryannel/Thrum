@@ -7,10 +7,10 @@ The author inspected current capture code before completing this design; this is
 ## Outcome and proof boundaries
 
 Agents must be able to produce and review the actual engine's images and evolving motion without a visible desktop,
-a person at the keyboard or OS Screen Recording access. All later visual milestones use this contract, including
+a person at the keyboard or OS Screen Recording access. All later visual work packages use this contract, including
 new recipes, scene contributors, temporal effects and engine UI. Operating range: fixed and moving cameras; paused
 and running worlds; day/night and cuts; ordinary and overloaded frames; resize, loss and retirement. Each consuming
-milestone still supplies its own view range and shipped-game quality bar. A technically valid capture cannot judge
+work package still supplies its own view range and shipped-game quality bar. A technically valid capture cannot judge
 whether its sea, sky or motion looks good.
 
 | Evidence mode | Driver and output | What it can establish |
@@ -343,7 +343,7 @@ gate Mac WP2. Mac WP2.3 owns integration/qualification of this same tap on a rea
 CAMetalLayer surface: known-pattern output correspondence, lease lifetime, capture-off direct presentation and
 pending-capture surface loss. It needs attended unlocked setup and does not block unattended WP0. G3t WP0 consumes
 WP0 for shared output capture and adds its own scene-linear comparison cases. WP1 and WP2 of this tooling plan qualify Chrome and iOS simulator respectively;
-new submitted-output/runtime-motion work on each target needs that target's milestone. Until then, existing Chrome
+new submitted-output/runtime-motion work on each target needs that target's work package. Until then, existing Chrome
 canvas endpoint captures remain valid for fixed-time image/oracle claims with endpoint/no-history provenance;
 `simctl` screenshots/video remain valid for simulator function and visible UI/lifecycle observations within their
 recorded timing limits. Neither substitutes for exact submitted temporal output, elapsed-time engine motion or
@@ -371,14 +371,14 @@ T2 owns this child work of TOOLS-DELIVERY; no new crate. Build sequentially. Exi
 FrameHost, cooked content, platform loss/lease and scene/controls are available now. WP0 must preserve
 `PLATFORM-RUNTIME-MAC:WP1` (done). WP1/M2 here follow WP0; no dependency on G3t/G4 or Mac qualification WP2.
 Mac qualification WP2 needs only `T2-CAPTURE:WP0`; Mac WP3 separately needs `APPLE-TILE:WP3` for post-change requalification.
-Later visual milestones use WP0 on Mac,
+Later visual work packages use WP0 on Mac,
 WP1 on Chrome and WP2 on the simulator at the first proof requiring this tooling. Existing completed evidence is not
 invalidated. Captures cannot close an attended panel item.
 Mac WP2.3 commissions and proves integration of the shared tap on a real CAMetalLayer window; Mac WP2.4 owns bounded
 trace-finalization diagnosis. Neither task is hidden inside unattended WP0, and neither adds a reverse dependency.
 Before Chrome WP1/simulator WP2, existing canvas endpoint images may prove fixed-time endpoint/oracle claims and
 `simctl` captures may prove simulator function/UI/lifecycle within their recorded limits. New submitted-temporal or
-elapsed-time engine-motion claims still need the target's T2 milestone.
+elapsed-time engine-motion claims still need the target's T2 work package.
 
 Implementation ownership: `thrum-render` owns graph tap, targets, staging, fences and generation cancellation;
 `thrum-app` owns headless/windowed scheduling and normal control dispatch; core keeps its existing world clock;
@@ -398,7 +398,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 
 Run `./dev check` for implementation, focused real-device/lifecycle and negative-control checks under `gpu`, and the
 new documented scenario commands. Checks must fail on unavailable required hardware. This planning revision uses
-`./dev check-docs`. Exact source images, sample logs and decisive failure controls live in `tmp/t2-capture-<milestone>/`
+`./dev check-docs`. Exact source images, sample logs and decisive failure controls live in `tmp/t2-capture-<work-package>/`
 with a storage record, byte allowance and closeout condition. Promote compact reproducible proof and selected excerpts
 to `.orchestrate/evidence/render/` under ASSET-LIFECYCLE; ignored scratch alone is not durable selected evidence.
 The default four-second SDR session allowance is 16 GiB including raw/packaged coexistence; run bulk sessions

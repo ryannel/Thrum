@@ -47,9 +47,9 @@
         },
         {
           "id": "WP1.4",
-          "statement": "Every existing 3D scene variant compiles to the same pass order, attachment storage and transient slots as before this milestone, on both recipes.",
+          "statement": "Every existing 3D scene variant compiles to the same pass order, attachment storage and transient slots as before this work package, on both recipes.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_2d",
-          "ask": "Is the 'before' side taken from main at the commit this milestone started from, for the variants the V1 game prepares, and not produced by the changed code?",
+          "ask": "Is the 'before' side taken from main at the commit this work package started from, for the variants the V1 game prepares, and not produced by the changed code?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP1/metal-tests.log",
@@ -104,7 +104,7 @@
         },
         {
           "id": "WP1.9",
-          "statement": "On the Mac, CPU and GPU times for the sprite scene are on record at 1920\u00d71080 and at 3456\u00d72234, with the sprite pass, tone and present apart and the bytes of each target, from two separate runs with build and load. The valley route is timed before and after this milestone with no 2D scene. Each tripwire the design names is flagged. The figures are baselines: no time decides the result.",
+          "statement": "On the Mac, CPU and GPU times for the sprite scene are on record at 1920\u00d71080 and at 3456\u00d72234, with the sprite pass, tone and present apart and the bytes of each target, from two separate runs with build and load. The valley route is timed before and after this work package with no 2D scene. Each tripwire the design names is flagged. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/render2d.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the valley's paired figure from the same route and build settings on both sides?",
           "lock": "gpu",
@@ -127,7 +127,7 @@
         },
         {
           "id": "WP1.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -273,7 +273,7 @@
         },
         {
           "id": "WP2.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -427,7 +427,7 @@
         },
         {
           "id": "WP3.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -596,7 +596,7 @@
         },
         {
           "id": "WP4.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -748,7 +748,7 @@
         },
         {
           "id": "WP5.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",

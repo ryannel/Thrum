@@ -1,12 +1,12 @@
 # Atmosphere for the V1 outdoor scene
 
 [Rendering contract](../../design/RENDER-SPEC.md#5-initial-atmosphere-fog-and-transport-operator) ·
-[Environment source](../../design/modules/ENVIRONMENT.md) · [Milestones](PLAN.md) · [Done when](DONE.json) ·
+[Environment source](../../design/modules/ENVIRONMENT.md) · [Work packages](PLAN.md) · [Done when](DONE.json) ·
 [Module list](../ARCHITECTURE.md)
 
 **The owner's request** for the work added on 10 November (WP5 and WP6), word for word from that day's planning
 task: "The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always
-have a next milestone, and wants water and clouds finished and consolidated ... Decide, with reasons ... where in
+have a next work package, and wants water and clouds finished and consolidated ... Decide, with reasons ... where in
 the build order the port's readiness conditions are met." The exit clause this module closes is "physical sky, Sun
 and aerial perspective with time controls". The readiness condition it meets, from
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november), is "G3s: finish and qualify the one
@@ -22,7 +22,7 @@ defect `SHOWCASE` WP5 found on the populated valley. WP10 is built before WP6 an
 the authored valley: `SHOWCASE` WP9 fixes them, and WP6 waits for it.
 
 **The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
-plausible result as fast as possible, not physical accuracy. For the milestones not yet Done (WP10, WP6, WP7 and WP8) the
+plausible result as fast as possible, not physical accuracy. For the work packages not yet Done (WP10, WP6, WP7 and WP8) the
 look and the speed decide: each is judged against its inspection list at the bar of shipped games, with cost as
 tripwire records. An f64 reference is a diagnostic for a picture that looks wrong, and none is a pass mark.
 [Closing G3s](#closing-g3s) and [How the view volume is proved](#how-the-view-volume-is-proved) apply it; the
@@ -890,7 +890,7 @@ as history and not called paired. The record is a tripwire and sets no budget
 starting commit, is investigated, and the finding is kept beside the record. WP6.5's check passes the record: it
 fails on an arm, a named pass or the load that is missing, on a run that did not complete, on a record that
 does not say whether a hitch was seen in the scrub, and on a tripped wire with no investigation, and on no
-figure. The reviewer's question on the module's timing is WP8.9's, in the last milestone, where the qualified
+figure. The reviewer's question on the module's timing is WP8.9's, in the last work package, where the qualified
 numbers are taken.
 
 **What is out.** The west-lookout shadow crossing (WP3) stays a parked spike and the exact finite-disk match (WP4)
@@ -1088,7 +1088,7 @@ jointly by one owner; the aerial product is already that owner's, so the joint i
   the air is lit sample by sample, through the scene's shadows and the cloud factor. The scalar stays for a
   scene without the view volume.
 - **`CLOUDS`' builder builds what clouds need here** (the module list's rulings 1 to 4). Those stand. The view
-  volume is larger and is judged by its own inspections, so it is this module's own milestones.
+  volume is larger and is judged by its own inspections, so it is this module's own work packages.
 - **[RENDER-SPEC §5](../../design/RENDER-SPEC.md#5-initial-atmosphere-fog-and-transport-operator)'s joint froxel
   integrator** was a proposal with no owner or plan. This is it, for the Sun and the sky; its participating
   local lights are not built.
@@ -1157,7 +1157,7 @@ dry, fine aerosol or smoke, which an amount alone cannot. It does not, in genera
 thesis review that raised it supposed. A type chosen from a list (continental, maritime, smoke) was rejected: it
 steps where the weather moves smoothly, and it ties the albedo and the phase to the exponent without a measurement
 that they show. A tint in three channels was rejected because the weather knows a particle size and not a colour,
-and the air has eight bands. The albedo and the phase can join the same input later if a milestone measures a need.
+and the air has eight bands. The albedo and the phase can join the same input later if a work package measures a need.
 
 The kind thickens the air in the short bands: at `α = 1.3` the 429 nm band of a 3 km haze holds 1.38 times
 the aerosol of the 550 nm one. On the grid part III proposes, 64 slices with 48 inside 500 m, that band's

@@ -12,7 +12,7 @@ The owner's planning task of 11 November 2026, word for word:
 > Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and
 > done-when file. Both depend on APPLE-TILE WP2, which is in its second review now, so builders can start them once
 > it passes. Everything else is waiting on APPLE-TILE WP2 or WP3, so these are the next work. Keep each first
-> milestone small enough to start right after APPLE-TILE WP2 lands. Also: APPLE-PRESENTATION WP1's jitter change broke
+> work package small enough to start right after APPLE-TILE WP2 lands. Also: APPLE-PRESENTATION WP1's jitter change broke
 > APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged
 > (.orchestrate/evidence/APPLE-TILE/WP2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
 > that alters another module's exact baselines gets caught before landing.
@@ -76,7 +76,7 @@ are compiled only for native targets, so Chrome has none; preparation takes no r
 leaves the host's retained scene on the old one; and publication rebuilds the cooked contribution's pipelines
 synchronously, where a failure detaches the cooked scene after the switch has been committed. A switch that works
 is a transaction across the frame runtime, the browser host and the contribution seam, which this module does not
-own and the gate does not need. If the owner asks for one, it is planned as its own milestone with those owners.
+own and the gate does not need. If the owner asks for one, it is planned as its own work package with those owners.
 The mechanism to cost first is preparing a requested set of modes inside one prepared scene, as the day and night
 graphs are prepared today, so a switch selects a prepared variant and no republication, pipeline rebuild or new
 browser entry point is involved.
@@ -322,7 +322,7 @@ they were. Three proofs carry the claim. Each is one bounded run, and none waits
    second Direct), two counted render workers and the full exact comparison at every tick. The turns go round
    the eight combinations of the two recipes, the two sources (SDR and scene-linear) and the two entity
    routes: cubes, as WP3.1 draws the valley, and selected meshes, as WP3.4 does. Those are the forward pipelines
-   this milestone qualifies. The campaign ends when the control has differed in five routes and both builds
+   this work package qualifies. The campaign ends when the control has differed in five routes and both builds
    have run every combination. The build with the output must have run at least as many routes as the control
    and differed in none. If the output did nothing, five differences would all fall to the control with a
    chance of 1 in 32; five is the planner's choice of how strong the proof is. A campaign whose control has
@@ -347,9 +347,9 @@ they were. Three proofs carry the claim. Each is one bounded run, and none waits
 <a id="what-a-campaign-stands-for"></a>
 
 **What the campaign stands for.** The commit it names, which is a commit of main that holds the landing and
-every change this milestone has merged to what the game is built from: `crates/`, `examples/v1-game/`,
+every change this work package has merged to what the game is built from: `crates/`, `examples/v1-game/`,
 `.cargo/` and the workspace manifest, lockfile and toolchain file. So it is taken after the merge and never
-before it, and the rebase inside `merge` cannot come between the experiment and the build. If the milestone
+before it, and the rebase inside `merge` cannot come between the experiment and the build. If the work package
 later merges another such change, a fix after a review for example, the campaign is taken once more after it.
 It is not taken again because main moved, and no record relates it path by path to a later commit. What other
 modules merge afterwards is theirs, and for it there is a standing stop, not a standing loaded proof:
@@ -388,7 +388,7 @@ On the branch, once each:
   moved reference until the registry records it. A commit changes, in `.config/exact-baselines.json`, the
   `pin` and the `refresh` of each baseline whose reference moved, and nothing else.
   `python3 scripts/exact_baselines.py guard` prints each pin from the committed files. The refresh names the
-  anchor `ruling-on-culling-m3`, the module `CULLING` and the milestone `WP3`. Only the guard reads those two
+  anchor `ruling-on-culling-m3`, the module `CULLING` and the work package `WP3`. Only the guard reads those two
   fields, so this commit changes nothing that was drawn or compared.
 
 Then the builder runs `merge`, by itself. It rebases, runs `./dev check` with the reference guard, and pushes.
@@ -421,7 +421,7 @@ that target: the builder ends `BLOCKED` with the record, and a planner settles w
 **No landing pipeline.** The builder writes no job that waits for, asserts or follows another job, a merge or
 a verifier run, and installs no Git hook, merge-queue helper or guard of its own around `merge`. Each proof
 above is one command, started once with the script's `background` and collected with `wait`. The builder
-reads the result and decides the next step itself. This milestone's first build enforced an order (qualify,
+reads the result and decides the next step itself. This work package's first build enforced an order (qualify,
 then push, with the campaign standing path by path for the commit pushed and the commit claimed) through a
 chain of such jobs. A job audit of 16 November 2026 traced about 30% of all the project's failed background
 jobs and five failed GPU holds to that chain: every follow-up failed when the job before it did, and each
@@ -432,7 +432,7 @@ withdrawn, not automated better.
 edges, and the driver may test depth later. Nobody has measured it here. WP3.13 records it under
 [Performance](#performance), as paired rows of the claimed shader and the same control, taken once and not
 again for a rebase. The figure is a
-recorded cost. It is not a condition of landing the correction, and no result of it ends the milestone
+recorded cost. It is not a condition of landing the correction, and no result of it ends the work package
 ([the brief](../VISION.md), decision 3;
 [the owner's performance decision](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md)). If the rows
 cross a tripwire, the builder investigates within WP3: which passes carry the cost, from the per-pass rows, and
@@ -440,7 +440,7 @@ what in the output causes it. The finding is recorded with a disposition, one of
 WP3, or the cost is carried, with the reason and what the performance phase should try, as a proposal in the log
 for a planner. Building continues either way. A cheaper form of the output moves the references again, so it
 lands [as above](#how-it-lands), and the campaign is taken again on main after it. Correctness and the
-milestone's quality bar remain requirements whatever the rows say: WP3.7 and WP3.8 judge the captures for popping,
+work package's quality bar remain requirements whatever the rows say: WP3.7 and WP3.8 judge the captures for popping,
 flicker and missing geometry. They do not judge how fast or how evenly the frames arrive, and no item of this
 module does ([Frame cadence](#frame-cadence)).
 
@@ -518,7 +518,7 @@ is caught. For this module:
    comparison that varies under load, which stops the module that meets it.
 8. **The coverage output costs more than expected.** Early sign: WP3.13's paired rows cross a tripwire. Outcome:
    the cause is investigated and given a disposition within WP3, as the Cost paragraph of
-   [the mechanism](#m3-one-image-under-load) says. The figure alone never stops the milestone.
+   [the mechanism](#m3-one-image-under-load) says. The figure alone never stops the work package.
 
 ## Performance
 
@@ -567,18 +567,18 @@ with [the module list](../ARCHITECTURE.md#who-judges-frame-cadence).
 
 ## Proof and builder handoff
 
-- **Targets.** `mac-metal` for every milestone, on both recipes where a recipe is named. `chrome-webgpu` through
+- **Targets.** `mac-metal` for every work package, on both recipes where a recipe is named. `chrome-webgpu` through
   `scripts/check_v1_browser.mjs`, as the existing field cases run. `ios-sim` for function only: the simulator has
   no indirect execution, so it proves the fallback, never a culled mode.
 - **Capture.** Equality is proved in-process by reading back each mode's target in one run. WP3.7 and WP3.8 use
   T2 engine capture and name its modes: `fixed` for stills, `realtime` for the pan, which is read as a sequence of
   submitted frames and [never as a timing](#frame-cadence).
-- **GPU.** Each GPU check holds one lock: `gpu` on the Mac, `chrome` for a run that starts Chrome. Scratch goes in `tmp/culling-<milestone>/`; selected evidence in
+- **GPU.** Each GPU check holds one lock: `gpu` on the Mac, `chrome` for a run that starts Chrome. Scratch goes in `tmp/culling-<work-package>/`; selected evidence in
   `.orchestrate/evidence/CULLING/`.
 - **Once, then `merge`.** Each proof is one run on the branch; the script's run on the merged tip is the proof
   of record, and [no job of the builder's](#no-landing-pipeline) chains proofs, guards the merge or follows it.
   WP3.11's campaign is the one proof the builder takes on main, [after the merge](#what-a-campaign-stands-for).
-- **Maturity.** The `G3c_gpu_culling` row of [the ledger](../../design/maturity.json) is updated at each milestone,
+- **Maturity.** The `G3c_gpu_culling` row of [the ledger](../../design/maturity.json) is updated at each work package,
   with implementation, correctness, visuals and device results kept apart.
 
 ## Open questions

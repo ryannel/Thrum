@@ -77,7 +77,7 @@
         },
         {
           "id": "WP1.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -122,7 +122,7 @@
         {
           "id": "WP2.3",
           "statement": "Every drift the design's table marks WP1 or WP2 is closed: the device request, the fault watch, the surface configure and format list, the first generation, the surface outcome mapping and the pause and overload policy each have one implementation, and the Mac window, the browser page and the iPhone app call it.",
-          "ask": "Take the rows of the design's drift table marked WP1 and WP2 one at a time: where is the one implementation, and does each of the three shells call it? Is any copy of those policies left in a shell, in `examples/v1-game-ios` or in the game? Rows marked WP3, WP4 or Not here are not this milestone's.",
+          "ask": "Take the rows of the design's drift table marked WP1 and WP2 one at a time: where is the one implementation, and does each of the three shells call it? Is any copy of those policies left in a shell, in `examples/v1-game-ios` or in the game? Rows marked WP3, WP4 or Not here are not this work package's.",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/WP2/README.md#m23-policy-ownership-after-review",
@@ -143,7 +143,7 @@
         },
         {
           "id": "WP2.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -200,7 +200,7 @@
         },
         {
           "id": "WP3.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -287,7 +287,7 @@
         },
         {
           "id": "WP4.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -335,7 +335,7 @@
         },
         {
           "id": "WP5.3",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

@@ -5,12 +5,12 @@ without it. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the c
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any work package.
 
 ## Open for the human
 
 - Assumption: the game moves out after the V1 exit closes (`SHOWCASE` WP8), not before. Until then it is separated inside this repository: no engine code reaches it, the engine's host code is out of it, and it builds alone. The other choice moves it as soon as that is true and builds the rest of the showcase across two repositories, on the road every V1 module closes through.
-- Assumption: Thrum keeps a frozen copy of the V1 scenes, and of the presets, routes and valley sources its reference images are drawn from, as engine test content, because those images and 54 approved checks in other modules' open milestones use them. It is not the game and does not change with it; the game takes its own copies and is free to change them. It keeps the name `v1-game` until the last check that names it is Done, then is renamed.
+- Assumption: Thrum keeps a frozen copy of the V1 scenes, and of the presets, routes and valley sources its reference images are drawn from, as engine test content, because those images and 54 approved checks in other modules' open work packages use them. It is not the game and does not change with it; the game takes its own copies and is free to change them. It keeps the name `v1-game` until the last check that names it is Done, then is renamed.
 - Assumption: the game's plans, reviews and evidence stay in Thrum's `docs/`, because the build loop runs in one repository. Only code and content move.
 - Assumption: `thrum-games` has no remote and no backup beyond this Mac until you ask for one.
 
@@ -44,7 +44,7 @@ their checks run as written.
 
 ## WP4 The showcase game lives in `thrum-games`, builds against the engine through its public API alone, and passes the V1 exit check from there
 
-This is the one milestone that works outside this repository: create `/Users/ryannel/Workspace/thrum-games`, and
+This is the one work package that works outside this repository: create `/Users/ryannel/Workspace/thrum-games`, and
 nothing else outside Thrum. Do not add a remote or push it. The exit record is `SHOWCASE`'s; add the dated note and
 change nothing else in it. `AGENTS.md` says to work only in this repository: it gains the games repository as the
 one named exception for a game module's builder. Copy to the game; do not move out of Thrum anything on

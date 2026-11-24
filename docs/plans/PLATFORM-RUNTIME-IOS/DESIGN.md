@@ -14,7 +14,7 @@ current full-bounds pixel surface with a correctly projected scene. Internal ren
 with a full-surface viewport. Rotation changes the camera aspect and visible field, preserving vertical field of
 view; it never stretches or crops a stale 16:9 image to hide borders. OS status overlays and rounded corners are
 outside the engine image. The bar is the undistorted, edge-filling orientation behaviour of a shipped Unity iOS
-player using its native-resolution camera viewport. This milestone qualifies function only.
+player using its native-resolution camera viewport. This work package qualifies function only.
 
 **G3b / PLATFORM-RUNTIME-IOS owns this work**, spanning its existing UIKit adapter and shared render-owner
 implementation. UIKit produces the one authoritative oriented full-bounds pixel extent and surface epoch. The

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SEA/design-review.md",
     "commit": "7e2cc31dc0477855a47e698cc4d588a297432ebe",
-    "hash": "9982be8d763a120bc5eff6236e580e6655981a9a3cbf21e0570b7fab344bc014",
+    "hash": "e7829b35be05af6909c4f8fdfcdbacb930c39f0644abf8fc0021f79278bfaea9",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "0e5a30c3bcaed6580c3b8f38fc50221c1a3f6cac4a15659b97d473ed56363d40",
+      "definitions": "4066743fa2e00cd0fb8c4a5ac2a1a2fc56ad600bfe0dd5ce6a90197d9b3c5e1d",
       "reviews": [
         {
           "verdict": "pass",
@@ -104,7 +104,7 @@
       }
     },
     "WP2": {
-      "definitions": "3b3a969f4473f908e0782c6deba35a07492dc5665d67aa6bd252d375f5a0e1d8",
+      "definitions": "8aec94002e4f0ddf6b9a6ce2925aaf20d01c796eb0d6665a8d3bb4ceea144db0",
       "reviews": [
         {
           "verdict": "pass",

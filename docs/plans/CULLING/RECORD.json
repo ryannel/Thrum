@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/CULLING/design-review.md",
     "commit": "390abd364e08c6f1471075f5904836623f0090bf",
-    "hash": "4255a90217cb711306d3ef163ac14ce02ad68beb1c8c0efdce39e1968cc6c4dc",
+    "hash": "d5f19536300fdf323a9dace3f7547419f4c6be2f4c6b0849200f8af569103dce",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "2853a76f1b1aeb66aa097b5533e6341856d4e51a7ce9e88b450855e8e6cdf305",
+      "definitions": "381737b303387753617881b81e473c48ebdb1ef985f2c03b219b1cff2e9602dc",
       "reviews": [
         {
           "verdict": "fail",
@@ -136,7 +136,7 @@
       }
     },
     "WP2": {
-      "definitions": "9f801e369a5e14de3e0c923693306fe6248caf32d6f4613bff4e280a23448907",
+      "definitions": "78a0737de4b7e7ab41038bcdc8a1f963e2d964be61ebfc9a929a330766521639",
       "reviews": [
         {
           "verdict": "fail",
@@ -249,7 +249,7 @@
       ]
     },
     "WP3": {
-      "definitions": "8e0b38e2d480a2d676ed709d50518d528e00a469c0311e0a04f74ee091f08ebd",
+      "definitions": "3ce2c6ad364bbc5689c85bac298af56cf2b3d525eaf9c92f081f649d43061b3b",
       "reviews": [
         {
           "verdict": "fail",

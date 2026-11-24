@@ -28,7 +28,7 @@
           "id": "WP1.2",
           "statement": "A world steps to the same state: every test of `thrum-core`, `thrum-sim2d` and `thrum-network` that passed at the starting commit passes, and no expected digest, hash or state in a test was edited.",
           "check": "cargo test --locked --offline -p thrum-core -p thrum-sim2d -p thrum-network",
-          "ask": "Read the milestone's diff of test files with `git diff` from the commit it started from: is any expected digest, hash, count or state literal changed? Is any test of kept behaviour removed?",
+          "ask": "Read the work package's diff of test files with `git diff` from the commit it started from: is any expected digest, hash, count or state literal changed? Is any test of kept behaviour removed?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "Item check run by agent_loop.py check on the WP1 branch; core, sim2d and network tests pass; no test expected value edited (git diff of tests: one removed assertion on a deleted query in g2_runtime).",
@@ -49,7 +49,7 @@
         },
         {
           "id": "WP1.5",
-          "statement": "The long tests that run what this milestone changed pass on main with its commit in, in the main-branch check `long-tests`: the exit scene's stepped hour, which steps the simulation through the tick path the ring was written on, and the ten-minute gale, which renders the sea's graph every frame.",
+          "statement": "The long tests that run what this work package changed pass on main with its commit in, in the main-branch check `long-tests`: the exit scene's stepped hour, which steps the simulation through the tick path the ring was written on, and the ten-minute gale, which renders the sea's graph every frame.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -59,7 +59,7 @@
         },
         {
           "id": "WP1.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -106,7 +106,7 @@
         },
         {
           "id": "WP2.4",
-          "statement": "The tests that no merge check runs, and that reach a contribution this milestone edited, pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is WP2.5's.",
+          "statement": "The tests that no merge check runs, and that reach a contribution this work package edited, pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is WP2.5's.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -116,9 +116,9 @@
         },
         {
           "id": "WP2.5",
-          "statement": "The main-branch check `long-tests` skips a test binary that the main-tier list, `.config/long-tests.txt`, marks not-run, so one that holds a contribution this milestone edited is proved here: its tests pass on main with this milestone's commit in, run one test at a time with a GPU required. One binary is in that position, the game's `mesh_stage_gpu`, where the milestone removed the stub bodies of `SelectionView`. Run whole, its tests fail on state they share. That fault was listed before this milestone and is `MESH-SHADING`'s to fix, so the binary's tests keep every assertion and the not-run line stays as it is.",
+          "statement": "The main-branch check `long-tests` skips a test binary that the main-tier list, `.config/long-tests.txt`, marks not-run, so one that holds a contribution this work package edited is proved here: its tests pass on main with this work package's commit in, run one test at a time with a GPU required. One binary is in that position, the game's `mesh_stage_gpu`, where the work package removed the stub bodies of `SelectionView`. Run whole, its tests fail on state they share. That fault was listed before this work package and is `MESH-SHADING`'s to fix, so the binary's tests keep every assertion and the not-run line stays as it is.",
           "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --features draw-probe --test mesh_stage_gpu -- --test-threads=1 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
-          "ask": "Compare the not-run lines of `.config/long-tests.txt` at the claimed commit with the files this milestone changed since `f5d7c5bba`: is `mesh_stage_gpu` the only not-run binary among them? In that binary, did the milestone change anything but the removed stub bodies, and did it change the list?",
+          "ask": "Compare the not-run lines of `.config/long-tests.txt` at the claimed commit with the files this work package changed since `f5d7c5bba`: is `mesh_stage_gpu` the only not-run binary among them? In that binary, did the work package change anything but the removed stub bodies, and did it change the list?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
@@ -128,7 +128,7 @@
         },
         {
           "id": "WP2.3",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -193,7 +193,7 @@
         },
         {
           "id": "WP3.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -266,7 +266,7 @@
         },
         {
           "id": "WP5.3",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -305,7 +305,7 @@
           "id": "WP6.2",
           "statement": "A graph access that stores with no view is written with `Access::new`, and a graph resource that mirrors a `wgpu` texture is declared from the texture by one function, which declares a 2D texture with the texture's own layers, mips and samples. Every compiled graph is what it was: no graph snapshot was edited.",
           "check": "sh -c 'git grep -q \"fn of_texture\" -- crates/thrum-render/src && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --test graph_kinds --test scene_2d'",
-          "ask": "Does the function ever declare a cube or a 3D texture? Read the milestone's diff of snapshot and expected-graph files with `git diff` from the starting commit: is any changed?",
+          "ask": "Does the function ever declare a cube or a 3D texture? Read the work package's diff of snapshot and expected-graph files with `git diff` from the starting commit: is any changed?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
@@ -315,7 +315,7 @@
         },
         {
           "id": "WP6.4",
-          "statement": "The tests that no merge check runs, and that build layouts or graphs through the converted code, pass on main with this milestone's commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through a converted file, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is WP6.5's.",
+          "statement": "The tests that no merge check runs, and that build layouts or graphs through the converted code, pass on main with this work package's commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through a converted file, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is WP6.5's.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -325,9 +325,9 @@
         },
         {
           "id": "WP6.5",
-          "statement": "The game's `mesh_stage_gpu` tests draw through bind-group layouts this milestone converts, in `crates/thrum-asset-gpu/src/mesh_stages.rs` among others, and they pass on main with its commit in, run one test at a time with a GPU required. At this plan's writing the main-tier list, `.config/long-tests.txt`, marks that binary not-run, so the main-branch check `long-tests` skips it: run whole, its tests fail on state they share, which is `MESH-SHADING`'s to fix. This milestone changes neither that binary's tests nor its line in the list, and the item holds the same once the line has gone.",
+          "statement": "The game's `mesh_stage_gpu` tests draw through bind-group layouts this work package converts, in `crates/thrum-asset-gpu/src/mesh_stages.rs` among others, and they pass on main with its commit in, run one test at a time with a GPU required. At this plan's writing the main-tier list, `.config/long-tests.txt`, marks that binary not-run, so the main-branch check `long-tests` skips it: run whole, its tests fail on state they share, which is `MESH-SHADING`'s to fix. This work package changes neither that binary's tests nor its line in the list, and the item holds the same once the line has gone.",
           "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --features draw-probe --test mesh_stage_gpu -- --test-threads=1 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
-          "ask": "At the claimed commit, does the main-tier list mark not-run any other binary whose tests build a layout or a graph through a file this milestone converted? Did the milestone change `mesh_stage_gpu`'s tests or the list?",
+          "ask": "At the claimed commit, does the main-tier list mark not-run any other binary whose tests build a layout or a graph through a file this work package converted? Did the work package change `mesh_stage_gpu`'s tests or the list?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
@@ -337,7 +337,7 @@
         },
         {
           "id": "WP6.3",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",

@@ -4,7 +4,7 @@
 [the brief](../VISION.md). C02, C04, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), the
 [graph decision](../../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) and
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) govern. Revised 16 November 2026: a fourth
-milestone gives effects [the display phase](#the-display-phase-m4). Revised again that day after
+work package gives effects [the display phase](#the-display-phase-m4). Revised again that day after
 that revision's review (finding MF5; `git show 8ed45fc5b:.orchestrate/evidence/EFFECT-GRAPH/design-review.md`): the
 phase describes the target the clock consumes, and a prediction is carried a tick at a time. Revised a third
 time that day, after WP4's first review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review-1.md)): which
@@ -19,7 +19,7 @@ The owner's planning task of 11 November 2026, word for word:
 > Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and
 > done-when file. Both depend on APPLE-TILE WP2, which is in its second review now, so builders can start them once
 > it passes. Everything else is waiting on APPLE-TILE WP2 or WP3, so these are the next work. Keep each first
-> milestone small enough to start right after APPLE-TILE WP2 lands. Also: APPLE-PRESENTATION WP1's jitter change broke
+> work package small enough to start right after APPLE-TILE WP2 lands. Also: APPLE-PRESENTATION WP1's jitter change broke
 > APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged
 > (.orchestrate/evidence/APPLE-TILE/WP2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
 > that alters another module's exact baselines gets caught before landing.
@@ -41,7 +41,7 @@ The builder's diagnosis (`.orchestrate/evidence/CLOUDS/WP2-temporal-blocker.md` 
 "HOST/EFFECT-GRAPH, with their clock/platform consumers", that it "preserve enough target information and
 endpoint history, or explicitly define a bounded prediction coordinate for presentation-only advection", and that
 authoritative weather stay unchanged. The time a frame gives an effect is this module's interface, so the change
-is [WP4](#the-display-phase-m4) here. `HOST` waits on seven milestones and changes none of this.
+is [WP4](#the-display-phase-m4) here. `HOST` waits on seven work packages and changes none of this.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `graph.rs`, `graph_record.rs`,
 `contribution.rs`, `synthetic/{scene_graph,contributed}.rs`, `atmosphere/graph.rs`, the [SEA](../SEA/BRIEF.md) and
@@ -88,7 +88,7 @@ where a picture is the evidence.
 
 N5 stops at the inputs. This module proves that an effect's motion, reactive coverage and reset reach the targets
 reconstruction reads. How an effect looks after reconstruction, with no shimmer or ghost, is accepted in `SEA`'s
-and `CLOUDS`' own milestones on `APPLE-PRESENTATION:WP3`'s reconstructor; the diagnostic slab is not a product and
+and `CLOUDS`' own work packages on `APPLE-PRESENTATION:WP3`'s reconstructor; the diagnostic slab is not a product and
 this module does not wait for that reconstructor.
 
 ## Research and selection
@@ -507,7 +507,7 @@ under a lead.
 a game's camera and entities stay on alpha: under a lead they step unevenly by the same arithmetic, which has
 not been captured. Each is its owner's to plan, and the game-facing half belongs with the contract `HOST` WP4
 writes. The window hosts' two reads are their owners' too. `HOST` WP2 to WP5 and `SESSION` WP7 rework the files
-this milestone touches and keep its tests passing.
+this work package touches and keep its tests passing.
 
 **Check that it can work.**
 
@@ -753,7 +753,7 @@ on the valley route with no effect attached.
   `fixed` stills for the slab in WP3. The stills prove composition. No item here judges reconstructed motion.
 - **Timing.** WP2 reads per-pass GPU time from the executor's named pass timings (`PassTiming` in `timing.rs`),
   which exist today, in its own test or bench. It does not change the host's frame-sample fields, which
-  `APPLE-TILE:WP3` moves to pass names. WP3 here needs that milestone and reports a skipped pass through its
+  `APPLE-TILE:WP3` moves to pass names. WP3 here needs that work package and reports a skipped pass through its
   schema.
 - **WP4.** `mac-metal` only: Chrome gives no lead and runs its world inline, so nothing there can differ, and
   the exact baselines cover it. Its tests script the observations, the leads, the start and each resume, so
@@ -766,7 +766,7 @@ on the valley route with no effect attached.
   6, expired targets included, and counts the frames at the bound, the frames whose clock was stopped and
   each change of origin instead of failing on them. No WP4 item drives a window, so none needs an attended
   display.
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<milestone>/`; selected evidence
+- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<work-package>/`; selected evidence
   in `.orchestrate/evidence/EFFECT-GRAPH/`.
 - **Maturity.** A ledger row for the seam is added at WP3, with implementation, correctness and device results kept
   apart.

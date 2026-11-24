@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SCENE-VIEWS/design-review.md",
     "commit": "8c19984d9ef3504a9b00403f500a43900d3e26bb",
-    "hash": "95656a4b360b02b106e21686597c82029e22c4113b46dd55fd7231a946f5c4ef",
+    "hash": "dedbbd37e066bf57e65a530270203b6f3898a40815884742c3aeca8b1073735c",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "dc1164946ee3c689c8065e174162f321980124c1ef88ca81742e09914fd5a468",
+      "definitions": "122703f3c83cdb682840805c7f841c2a0ecbda58d8d7b43d67dc6feaaad2e7d1",
       "reviews": [
         {
           "verdict": "fail",
@@ -135,7 +135,7 @@
       }
     },
     "WP2": {
-      "definitions": "2979a1a80b7505aa8345fc2a1d649b94c6657e9fac525b4edd36640428434e76",
+      "definitions": "7281661ba34ace5cbaa538070753201b9ec8797ea68877436b3638b1ba176df8",
       "reviews": [
         {
           "verdict": "fail",
@@ -258,7 +258,7 @@
       }
     },
     "WP3": {
-      "definitions": "7106f475b2193356c216e0bf1d5b6fd34624feff1367bd364377c17d0fd571d8",
+      "definitions": "d12d303263808568b2c04a762e3dbc9fa69c1b09c4d60d08875736224e33848e",
       "reviews": [
         {
           "verdict": "fail",

@@ -1,6 +1,6 @@
 # ATMOSPHERE plan
 
-Closes gate G3s at WP6. WP7 and WP8 are track 2. Milestones run in the order below.
+Closes gate G3s at WP6. WP7 and WP8 are track 2. Work packages run in the order below.
 [Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
@@ -14,7 +14,7 @@ Closes gate G3s at WP6. WP7 and WP8 are track 2. Milestones run in the order bel
 - Assumption: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show.
 - Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference, and under the owner's bar of 17 November no accuracy campaign is planned. The referees P1–P11, and the five comparisons in H1–H4 that repeat one through the lent library, stay as regression guards, which a deliberate change to the look gives new expected values. The handoff's contract comparisons, which read the stored product, stay fixed. H5's reflection-model differences are only recorded.
 - Assumption: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step, because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image, and WP6 judges by eye whether a step shows.
-- Assumption: "top quality atmosphere" (the owner, 14 November) gives this module two milestones after G3s closes, WP7 and WP8: haze the weather sets, shafts of light, and fog near the camera, integrated jointly with the air in one view volume. They gate nothing in the V1 exit, and the exit scene does not declare the view volume.
+- Assumption: "top quality atmosphere" (the owner, 14 November) gives this module two work packages after G3s closes, WP7 and WP8: haze the weather sets, shafts of light, and fog near the camera, integrated jointly with the air in one view volume. They gate nothing in the V1 exit, and the exit scene does not declare the view volume.
 - Assumption: WP7 and WP8 wait for WP6, so fog's first frame waits for TAAU and for G3s to close.
 - Assumption: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do.
 - Assumption: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before.

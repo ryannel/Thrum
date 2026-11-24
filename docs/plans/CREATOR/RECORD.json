@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/CREATOR/design-review.md",
     "commit": "50b3e01fcf91dabd2e2fe7e0fcd4e85cd668b6c3",
-    "hash": "429bc5edb05578c748ad649ae44af87a2f71f50c5cc3d85fbd080989e518632d",
+    "hash": "a38b19b860559f3c9d8dd6fbdf32d99dfd1f1f90ad0d470b8aa8d96a1ab92bd7",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",

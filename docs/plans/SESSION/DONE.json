@@ -97,7 +97,7 @@
           "id": "WP1.9",
           "statement": "SIM-2D's two retained traces reproduce their retained digests on the Mac at the claimed commit, by the local and the wire route, with the retained files unchanged. Every test SIM-2D was accepted with makes the assertions it made then, on the same inputs and expected values.",
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
-          "ask": "Are the retained files byte for byte the ones SIM-2D was accepted with, by git history? Did this milestone change any item or trace comparison of SIM-2D's? In the tests SIM-2D was accepted with, is every change since then either the decoding half of a fixture's type or a signature the state encoding's interface now has, as seam ruling 1 allows, with no test, assertion, input or expected value removed or altered?",
+          "ask": "Are the retained files byte for byte the ones SIM-2D was accepted with, by git history? Did this work package change any item or trace comparison of SIM-2D's? In the tests SIM-2D was accepted with, is every change since then either the decoding half of a fixture's type or a signature the state encoding's interface now has, as seam ruling 1 allows, with no test, assertion, input or expected value removed or altered?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP1/recheck/sim2d-mac-metal.json",
           "verdict": "pass",
@@ -106,7 +106,7 @@
         },
         {
           "id": "WP1.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -229,7 +229,7 @@
         },
         {
           "id": "WP2.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -370,7 +370,7 @@
         },
         {
           "id": "WP3.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -478,7 +478,7 @@
         },
         {
           "id": "WP4.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP4/exact-images.json",
@@ -617,7 +617,7 @@
         },
         {
           "id": "WP5.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -751,7 +751,7 @@
         },
         {
           "id": "WP6.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -860,7 +860,7 @@
         },
         {
           "id": "WP7.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",

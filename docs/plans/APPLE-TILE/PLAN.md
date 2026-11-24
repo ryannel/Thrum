@@ -5,9 +5,9 @@ The Apple tile recipe and backend dataflow (gate G3t), governed by
 [Design](DESIGN.md) · [brief](BRIEF.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
-Milestones run in the order WP0, WP1, WP2, WP3, WP10, WP11, WP12; the IDs are kept for consumers, and M4–M9 were removed
+Work packages run in the order WP0, WP1, WP2, WP3, WP10, WP11, WP12; the IDs are kept for consumers, and M4–M9 were removed
 as deferred work. Read [Sequence and dependencies](DESIGN.md#sequence-and-dependencies) and
-[Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) before starting any milestone.
+[Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) before starting any work package.
 
 <a id="m0-proof-route-counters-and-capture-probe-pending"></a>
 
@@ -58,7 +58,7 @@ Criteria: D12.1–D12.6 in the done-when file.
 - [ ] Rerun retained mechanisms and full workload, actual final Mac window, exact Chrome baseline, and COOKED-DRAW-dependent simulator function; record sustained costs and owed qualifications.
 - [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
-Stop rules, for every milestone:
+Stop rules, for every work package:
 - D2.5, D3.5 and D12.3 need attended setup: an unlocked active Mac session and Screen Recording permission for the
   OS capture process. Missing setup leaves those rows open while unblocked work proceeds; never automate a grant.
 - WP12's cooked simulator scene waits on `COOKED-DRAW`; never build a substitute.

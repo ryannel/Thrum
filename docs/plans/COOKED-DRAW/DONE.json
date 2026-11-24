@@ -44,7 +44,7 @@
         },
         {
           "id": "WP1.4",
-          "statement": "The indirect path's output on this Mac is byte-identical before and after the change: the WP1.3 views rendered by the recorded pre-change base (the main commit immediately before this milestone's first implementation commit, stored in docs/evidence/render/cooked-draw/BASE) and by the claimed commit, from one cooked store, with the indirect arm's visible-meshlet counts unchanged and a same-build rerun control.",
+          "statement": "The indirect path's output on this Mac is byte-identical before and after the change: the WP1.3 views rendered by the recorded pre-change base (the main commit immediately before this work package's first implementation commit, stored in docs/evidence/render/cooked-draw/BASE) and by the claimed commit, from one cooked store, with the indirect arm's visible-meshlet counts unchanged and a same-build rerun control.",
           "check": "python3 scripts/cooked_draw_parity.py indirect --base \"$(cat docs/evidence/render/cooked-draw/BASE)\" --target mac-metal --output tmp/cooked-draw/indirect-mac-$(date +%s)",
           "lock": "gpu",
           "target": "mac-metal",

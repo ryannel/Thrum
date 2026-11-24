@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/GAME-UI/design-review.md",
     "commit": "04ecff7932b4939f52ca742a0b8bb17d7ecad9e9",
-    "hash": "a117c5b3cf1ec64320976f85372cd1915ad69f20b257edf43ff94eb39146029f",
+    "hash": "05425976e9285ca83cbb0cb9d1c48092a77a605c9eeeb2cad772eb05376c7afe",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "8f091a6a7efe1ac1a5188cdb360996da989d9841ff0b79103ac03ea5db242c71",
+      "definitions": "dd2227aeb8613aee8355c88a47d7c4fa9b8ce5f26ef02fe4832c60d629c4efb0",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -41,7 +41,7 @@
       ]
     },
     "WP2": {
-      "definitions": "25b35fc086cb7b033a5926a4901c7634ecfa87462548f30f61b47d1866a9cbf6",
+      "definitions": "695011a770f84f3281f292108d9ea5f33ca0479cfcc08bbd6e1d11fd6a0772ae",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -57,7 +57,7 @@
       ]
     },
     "WP3": {
-      "definitions": "97f895820d3132a6e178fc882a4271337c5f5764827e62a43127a3ed2385e383",
+      "definitions": "4f7621888d26a544fa441615443b52a075bc8d7613b5ce63683f1bb3689f5dad",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -73,7 +73,7 @@
       ]
     },
     "WP4": {
-      "definitions": "8f0a56801e1f755967ef6040a58f81b5f61be45c115174dab28317cd2c27bed4",
+      "definitions": "5f3efe3322a4c075dc87447917fb72c1a7a72d2ae218759885cb426757d2b0c1",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -89,7 +89,7 @@
       ]
     },
     "WP5": {
-      "definitions": "7e0aa7e8fc5246aae9f23ec0a9ef601a6270f9b3127d2963a4ec9ccabd0ede5e",
+      "definitions": "40d1008836dd5a5d2f8cbc3727b7ca719c96c592bf324215eb47d182ee93ba70",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -105,7 +105,7 @@
       ]
     },
     "WP6": {
-      "definitions": "cefd79ad87c39abb7152328e25b54d820e264fd513c62e83314549127db2443b",
+      "definitions": "c8033a784c6d55017563a1fa5de5e5acde6cd7205eb2fa03cedfb646932e27de",
       "reviews": [],
       "authorised": {
         "by": "plan",

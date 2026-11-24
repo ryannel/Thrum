@@ -4,8 +4,8 @@ Engine code that nothing calls is gone, and small APIs stop asking for stubs. [D
 [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november)
 
-Read [Mechanisms](DESIGN.md#mechanisms), [the files each milestone touches](DESIGN.md#files-each-milestone-touches)
-and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone. Every file here is another module's,
+Read [Mechanisms](DESIGN.md#mechanisms), [the files each work package touches](DESIGN.md#files-each-work-package-touches)
+and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before any work package. Every file here is another module's,
 and most have a builder at work: keep each commit small, rebase often, and change nothing you are not deleting
 or converting. The sites of each finding are listed in the cleanup review's `findings/` and `verified/` folders, at
 the path the design gives. Main moves, so search for callers again on the commit you start from.
@@ -39,7 +39,7 @@ them.
 
 The trait's defaults, the stub removal and the probe test in `contribution::list` are on main, from `b57808ace`
 and `8956287dd`, which started from `f5d7c5bba`. A review of them found the work sound and failed only an item
-that named a run which skips one binary, so this milestone is most likely proved on main's tip as it stands:
+that named a run which skips one binary, so this work package is most likely proved on main's tip as it stands:
 change code only where a check fails. The trait is in `crates/thrum-render/src/contribution.rs`, and the one
 wrapper outside tests is `SceneContributions` in `contribution/list.rs`. The fixtures that forward are `Fault` in
 the game's ray-tracing proof tests, `Observed` in `crates/thrum-clouds/src/shade/tests.rs` and `PoolWitness` in
@@ -62,7 +62,7 @@ The two parsers are `examples/water/src/main.rs` and the proof tests' support. T
 log. The window reads its variables through a helper, `option(key, "THRUM_WATER_X")`, and the tests read theirs
 with `std::env::var`. Leave `Fixture` in `tests/support.rs` as it is: the gale and the foam's moored run build
 their hosts through it, and they run only on main. If the parse cannot land without changing it, write the
-proposal in the log and end `BLOCKED`, because the milestone would then need the `long-tests` item. This milestone comes before WP5 and WP6 because `WATERS` WP7, which it waits for, is the
+proposal in the log and end `BLOCKED`, because the work package would then need the `long-tests` item. This work package comes before WP5 and WP6 because `WATERS` WP7, which it waits for, is the
 nearest of the three waits to clearing; if that changes, the lead asks a planner to reorder them.
 
 ## WP5 The game's unread state projection and the content crate with no producer are gone

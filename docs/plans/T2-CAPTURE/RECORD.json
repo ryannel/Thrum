@@ -5,7 +5,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/T2-CAPTURE/design-review.md",
     "commit": "018954f3d38a53f1ce3a8397465e1c4e5c8ced90",
-    "hash": "f2dd481a4a7b2b55ae7c021aad10e3086cbf86c2e6f53be6041479cebe708c88",
+    "hash": "5b90826da165c8d265978f5acec6507d86e330fa2cafd8248684354eb7b282b6",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -26,7 +26,7 @@
   },
   "work_packages": {
     "WP0": {
-      "definitions": "1eba61424e6f25bdf30dfdd56117bcf4a02d78a84cd2e74f87ce1da53c5359a2",
+      "definitions": "db8d789004741b26a9d21cd95475fabc1da9e7ba0546c90dad59606e483b48a0",
       "authorised": {
         "by": "adopted"
       },
@@ -36,7 +36,7 @@
       }
     },
     "WP1": {
-      "definitions": "8119e649bdaab964aa5f5aadb36a3e695cea99b8eeafa88fa433d101096e709a",
+      "definitions": "ccb06de6fea20b3fbea8e6596b38559785bac3fa104bd359a08585c2bb6f8318",
       "authorised": {
         "by": "adopted"
       },
@@ -91,7 +91,7 @@
       }
     },
     "WP3": {
-      "definitions": "4c454435857c686de29d1d46c39652c41376063d2fa9a7f19d5e6b1af0abbead",
+      "definitions": "efff744c9ec81d3f9b3001834e5e13852df0d1dda5e7d6e9d31c8b1e11e56e8d",
       "reviews": [
         {
           "verdict": "pass",

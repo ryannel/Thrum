@@ -107,7 +107,7 @@ go onto the game contract here.
 | The iPhone app's owner thread, UIKit lifecycle, surface lease, touch and command table | Stay in the iPhone app; `GAME-UI` WP6 moves them to `thrum-app` | Not here |
 | The display link: Swift on iPhone, `objc2` on the Mac | A fact of the platform | Not a drift |
 
-A milestone is judged on its own rows. WP2 closes the device, fault, surface and lifecycle policies; the contract
+A work package is judged on its own rows. WP2 closes the device, fault, surface and lifecycle policies; the contract
 and the render owner's types are WP4's, and a review of WP2 does not ask for them.
 
 ## Interfaces
@@ -138,4 +138,4 @@ game's control, scene or type in an engine crate; read the environment in a libr
 Unit tests hold the recipe, the fault watch, the policy and the outcome mapping, each with a case that fails
 without the fix. Each target then runs its own lifecycle: a real window, a real Chrome and the iPhone simulator,
 through the checks the platform modules left, unedited. The simulator proves function only. The verifier holds the
-image in every milestone.
+image in every work package.

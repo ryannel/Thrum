@@ -37,7 +37,7 @@ This design reconciles the code on main at `8f038dec`; it is not a blind study. 
 
 **This module is planned before the code it builds on exists.** `RENDER-2D` is not built, and neither are
 `APPLE-TILE` WP10 to M12, `APPLE-PRESENTATION` WP3 to M11 or `CONTENT-LOOP` WP1 to WP3. So this design names the
-behaviour it needs from them and never one of their APIs, and the builder of each milestone first reads what was
+behaviour it needs from them and never one of their APIs, and the builder of each work package first reads what was
 actually built ([handoff](#proof-and-builder-handoff)).
 
 ## Purpose and scope
@@ -500,7 +500,7 @@ to copy all of it.
 So the parts of `examples/v1-game-ios` that name nothing of the V1 game move into `thrum-app`, generic over a
 game as the Mac shell is: the UIKit lifecycle, touch delivery, the render owner and its surface lease, rotation,
 device-loss recovery, and the reports this module added. The V1 game's app becomes the shell's first user and
-passes every simulator check other milestones left for it, unchanged. A second copy was not chosen:
+passes every simulator check other work packages left for it, unchanged. A second copy was not chosen:
 [two copies of platform policy drift](../PLATFORM-RUNTIME-WEB/DESIGN.md), which is why the browser shell was
 lifted the same way.
 
@@ -694,7 +694,7 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
   by the builder. Nothing is lifted from another game or from Broadsides.
 - **Display modes in proofs.** WP1 proves the stage in every mode the output half offers, each read in its own
   encoding ([mechanism 2](#2-colour-and-blending)); the float mode is run with its headroom forced to 1 and
-  above 1. What later milestones add (glyphs, layout, routing) is decided before the stage, so their exact
+  above 1. What later work packages add (glyphs, layout, routing) is decided before the stage, so their exact
   comparisons and their inspected captures run in the 8-bit mode, forced on this Mac where the host would select
   the float one. A float frame is compared as stored half-floats and never through a converted preview. How
   the interface looks on an EDR panel is not judged here, and the ledger says so.
@@ -707,13 +707,13 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
   and 3 are all seen on this Mac.
 - **Costs never stop the build.** A row that trips a tripwire is recorded as measured, with what was found.
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,
-  and moves no retained image. Each milestone carries the verifier.
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/game-ui-<milestone>/`; selected evidence
+  and moves no retained image. Each work package carries the verifier.
+- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/game-ui-<work-package>/`; selected evidence
   in `.orchestrate/evidence/GAME-UI/`.
 - **Maturity.** Ledger rows for the interface are added in WP5, with implementation, correctness, visuals and
   device results kept apart.
 
-## Limits on every milestone
+## Limits on every work package
 
 Each has its reason beside it.
 

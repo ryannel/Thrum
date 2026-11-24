@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/design-review.md",
     "commit": "8c9daaf399df16a4fe8dabe777a3c017285e5862",
-    "hash": "0e0cddabf75b1d42967bb771547353d416cb27a558314c2d8c744c9516806a44",
+    "hash": "f104db411b30a6ec5181606c88a4af7a942b6bbb7a610733887a8c4567ab7d84",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",

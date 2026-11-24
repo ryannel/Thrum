@@ -5,7 +5,7 @@ bodies each tick. [Design](DESIGN.md) · [done-when file](DONE.json), which owns
 [module list](../ARCHITECTURE.md)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any work package.
 [The planning probe](../../../.orchestrate/evidence/SIM-2D/planning-probe.md) says what was measured before the design was written;
 its code was thrown away on purpose, so build from the design.
 
@@ -36,7 +36,7 @@ reproduce them while rewinding. Record costs last, at the commit being claimed.
 Criteria: WP2.1–WP2.12 in the done-when file.
 
 WP1 left circle overlap and nearest-k in `thrum-sim2d`, and the Crowd trace with its retained file, which this
-milestone does not touch. The Mixed trace is new and has its own retained file.
+work package does not touch. The Mixed trace is new and has its own retained file.
 
 ## WP3 A rule that would make devices disagree fails the project's check, and a game maker can write and prove rules from the guide
 
@@ -45,7 +45,7 @@ Criteria: WP3.1–WP3.9 in the done-when file.
 The repository guard is `scripts/repo_check.py`, which reads `.config/architecture.toml`; rule packages are a new
 kind of entry in it. The maturity ledger is `docs/design/maturity.json`.
 
-Stop rules, for every milestone:
+Stop rules, for every work package:
 - If the three targets cannot be made equal inside the profile's operations, keep the first differing tick, the component and both values, and end `BLOCKED`. Do not widen the profile, compare fewer values or drop a target.
 - A difference that comes from `thrum-core`'s own tick is fixed in place only when G2S's tests and every existing configuration still pass unchanged. Otherwise write the proposal in the log and end `BLOCKED needs_dependency`.
 - The V1 game stays outside the profile. Leave its rules, tests and exact comparisons as they are.

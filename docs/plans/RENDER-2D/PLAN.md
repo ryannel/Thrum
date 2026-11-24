@@ -40,7 +40,7 @@ Then tune the [spatial filter](DESIGN.md#6-sampling-two-kinds-of-sheet) for the 
 full off-grid 2× transition in the Metal pan. Keep the authored patterns, camera paths and backing extents for
 comparison. Reuse the camera-sweep proof on Metal and Chrome, and verify bleed neighbours in the uploaded
 atlas. Retire the exact-box checks and their tracked tolerance fixtures when the replacement proofs are ready.
-Close WP3 with the shared `long-tests` result covering the merged milestone (WP3.13). [WP3 items](DONE.json)
+Close WP3 with the shared `long-tests` result covering the merged work package (WP3.13). [WP3 items](DONE.json)
 
 ## WP4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
 

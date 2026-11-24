@@ -6,7 +6,7 @@
 [C06](../../design/CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) ·
 [C07](../../design/CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4) ·
 [C12](../../design/CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
-[Render spec](../../design/RENDER-SPEC.md) · [Apple tile (G3t)](../APPLE-TILE/DESIGN.md) · [Milestones](PLAN.md)
+[Render spec](../../design/RENDER-SPEC.md) · [Apple tile (G3t)](../APPLE-TILE/DESIGN.md) · [Work packages](PLAN.md)
 
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
 [the loop's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
@@ -21,13 +21,13 @@ proposals.
 **The owner's request.** The V1 exit in [the build plan](../VISION.md#goal-and-exit-rule) asks for "MetalFX,
 EDR and a quality governor" and gate G4 for "No pipeline compilation during play." The 10 November planning task
 that put this module on the loop says, word for word: "The owner wants work lined up continuously toward the V1
-exit in docs/BUILD-PLAN.md, so builders always have a next milestone". The task for this revision says, word for
+exit in docs/BUILD-PLAN.md, so builders always have a next work package". The task for this revision says, word for
 word: "Revise APPLE-PRESENTATION's design and plan as .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asks".
 The task for the 14 November revision says, word for word: "APPLE-PRESENTATION WP4 to WP11 have no done-when
 entries, so no builder can be given them, and SHOWCASE WP7-M8 (the V1 exit) sit behind them [...]. Write their
 done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION WP3,
 which a builder holds."
-[The module list](../ARCHITECTURE.md) places this module and settles seams 1–9 below; every milestone is in
+[The module list](../ARCHITECTURE.md) places this module and settles seams 1–9 below; every work package is in
 [the done-when file](DONE.json).
 
 **What a design approval covers.** A Design Approved result for this revision approves the whole module. WP1–WP3
@@ -411,7 +411,7 @@ parallel. WP12 adds the archive. WP11 remains the final paired proof. The parame
 drafted values unless specified.
 
 Put new native proof arms in `scripts/apple_presentation.py` and browser cases in
-`scripts/check_v1_browser.mjs`. Keep window, Chrome and simulator proofs in milestone or main-branch checks.
+`scripts/check_v1_browser.mjs`. Keep window, Chrome and simulator proofs in work package or main-branch checks.
 
 ### Extent on three targets (WP4)
 
@@ -699,7 +699,7 @@ Engine capture proves the values the surface was given, never the light the pane
 the panel. So the look of EDR on the built-in display is the owner's **observation**: experienced quality under
 C12, which never gates ([brief](../VISION.md#decisions), decision 4). WP11's evidence page asks for it and says
 how to see it, and the ledger carries its status, outstanding or answered in the owner's words, apart from what
-was proved. No milestone, G4's close included, waits for the reply. A reply that reports a defect is new work.
+was proved. No work package, G4's close included, waits for the reply. A reply that reports a defect is new work.
 The physical iPhone and external-display rows stay owed in the same way.
 
 ## The system as it runs
@@ -940,7 +940,7 @@ Review order:
 
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
-| G4 milestone | Can start when | Runs in parallel with |
+| G4 work package | Can start when | Runs in parallel with |
 |---|---|---|
 | WP1 jitter, matrices, motion | G3t M0, atmosphere checkpoint, seams 2 and 4 | G3t WP1–WP3 |
 | WP2 temporal inputs, history protocol | WP1, G3t WP1 (eligibility report), G3t WP2 (shares `runtime.rs`), seams 1 and 3 | G3t WP3/M10–WP11 (sequential integration for shared files) |
@@ -955,7 +955,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | WP12 local archive | WP10 (the pinned backend) | none |
 | WP11 paired proof | WP1–WP10 and WP12, G3t WP12 | none |
 
-The loop runs this module's milestones one at a time in [plan order](PLAN.md). The done-when file records
+The loop runs this module's work packages one at a time in [plan order](PLAN.md). The done-when file records
 the outside waits for WP8 and WP11 on `APPLE-TILE:WP11` and `APPLE-TILE:WP12`, respectively.
 
 **Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
@@ -972,7 +972,7 @@ waits for G4. G4's paired proof reruns eligibility with WP2's real reconstructio
 scale steps; these are G4 integration obligations, not backward G3t prerequisites.
 
 WP1–WP3 are the early in-game work on portable through public interfaces. They need G3t's proof tooling and graph
-milestones, not the boundary ruling.
+work packages, not the boundary ruling.
 
 ## Twilight exposure regression (WP13)
 

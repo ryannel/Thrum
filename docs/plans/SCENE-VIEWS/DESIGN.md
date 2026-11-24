@@ -560,17 +560,17 @@ Estimates, unmeasured. A view is the scene's opaque draw again at its extent, le
 no view asked, one and two, with each view pass's GPU time by name beside the main view's, the bytes of each
 resource and the load on the machine. A wire trips when the whole frame is over the refresh interval, when a
 pass is about 25% over its last comparable record, or when a view costs more than the main view's opaque
-draw at the same pixel count. A tripped wire is investigated in the milestone that tripped it. **No timing
+draw at the same pixel count. A tripped wire is investigated in the work package that tripped it. **No timing
 figure decides whether an item passes.**
 
 **Taken under load, with no quiet sitting** (18 November 2026). The record is taken while other builders
 work, under the shared `gpu` lock, and keeps the machine's load average and its busiest processes beside the
 figures. Its check fails only on a missing measurement. This module claims no figure for a quiet machine and
-asks for no sitting with the other builders paused, in its last milestone as in any other: the evidence, the
+asks for no sitting with the other builders paused, in its last work package as in any other: the evidence, the
 author guide and the maturity ledger call the record's figures taken under load. WP3's record is the first
 paired one, so it is the record a later one is compared with, and it has none before it to be compared with.
 If figures for a quiet machine are wanted later, the collector's one command retakes the record in a window
-the lead batches for every module. No milestone waits for that window.
+the lead batches for every module. No work package waits for that window.
 
 ## Risks
 
@@ -606,7 +606,7 @@ the lead batches for every module. No milestone waits for that window.
   the Codex sandbox, granted per run; if one is refused, leave the item open and say so.
 - **Capture.** Inspected items use T2 engine capture in the mode they name, at 2560×1440. The route, framing
   and length are the builder's and the reviewer's to choose; frames are judged whole and at native size.
-- **Exact baselines.** Every milestone edits covered paths and carries the verifier
+- **Exact baselines.** Every work package edits covered paths and carries the verifier
   ([rules](../ARCHITECTURE.md#exact-baselines)). No retained image moves.
 - **Engine tests hold no game content.** The tests of `thrum-render` and `thrum-asset-gpu` make their own
   scenes. The pool, the tower and the lamp are the example's.
@@ -623,7 +623,7 @@ the lead batches for every module. No milestone waits for that window.
   horizon control and the casters that shade before and beyond the plane. The acceptance run covers all
   cases in the existing `scene_view_air_shaded_gpu` test binary. The fixture may split those cases into
   separately named tests in that binary.
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/scene-views-<milestone>/`, selected
+- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/scene-views-<work-package>/`, selected
   evidence in `.orchestrate/evidence/SCENE-VIEWS/`.
 - **Dependencies.** The example's package is registered in `.config/architecture.toml`.
 - **Maturity.** A ledger row for secondary views is added in WP3, with implementation, correctness, visuals

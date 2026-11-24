@@ -40,9 +40,9 @@
         },
         {
           "id": "WP1.3",
-          "statement": "A host prepared with no interface compiles the same pass order, attachment storage and transient slots as before this milestone, for the 2D scene and for every 3D variant the V1 game prepares, on both recipes, and creates no pipeline, buffer, texture or view for an interface.",
+          "statement": "A host prepared with no interface compiles the same pass order, attachment storage and transient slots as before this work package, for the 2D scene and for every 3D variant the V1 game prepares, on both recipes, and creates no pipeline, buffer, texture or view for an interface.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test interface_absent",
-          "ask": "Is the 'before' side taken from main at the commit this milestone started from, and not produced by the changed code? Does a host prepared with an interface serve as a control that the creation counts do tell apart?",
+          "ask": "Is the 'before' side taken from main at the commit this work package started from, and not produced by the changed code? Does a host prepared with an interface serve as a control that the creation counts do tell apart?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -121,7 +121,7 @@
         },
         {
           "id": "WP1.10",
-          "statement": "On the Mac, CPU and GPU times for the interface stage are on record over the sprite scene at 1920\u00d71080 and at 3456\u00d72234, with no interface, an empty one and one of 2,000 rows, in each display mode: the stage's work alone, whether the float mode's rows share the present pass, the bytes it loads and stores, and the bytes uploaded for an unchanged and for a wholly changed list, from two separate runs with build and load. The valley route and the sprite field are timed with no interface before and after this milestone, as paired runs. No time is a pass mark.",
+          "statement": "On the Mac, CPU and GPU times for the interface stage are on record over the sprite scene at 1920\u00d71080 and at 3456\u00d72234, with no interface, an empty one and one of 2,000 rows, in each display mode: the stage's work alone, whether the float mode's rows share the present pass, the bytes it loads and stores, and the bytes uploaded for an unchanged and for a wholly changed list, from two separate runs with build and load. The valley route and the sprite field are timed with no interface before and after this work package, as paired runs. No time is a pass mark.",
           "check": "python3 scripts/game_ui.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Are the before and after runs paired and alternated, and is any tripwire of the design's cost account that tripped written in the log with what was found?",
           "lock": "gpu",
@@ -144,7 +144,7 @@
         },
         {
           "id": "WP1.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -307,7 +307,7 @@
         },
         {
           "id": "WP2.14",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -460,7 +460,7 @@
         },
         {
           "id": "WP3.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -622,7 +622,7 @@
         },
         {
           "id": "WP4.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -715,7 +715,7 @@
         },
         {
           "id": "WP5.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -743,10 +743,10 @@
         },
         {
           "id": "WP6.2",
-          "statement": "The V1 game's iPhone app passes every simulator check that other milestones left for it, unchanged, now that both apps use one shell.",
+          "statement": "The V1 game's iPhone app passes every simulator check that other work packages left for it, unchanged, now that both apps use one shell.",
           "check": "sh -c 'python3 scripts/render2d_sim.py && python3 scripts/game_ui_sim.py layout && python3 scripts/game_ui_sim.py touch'",
           "lock": "simulator",
-          "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `T2-CAPTURE`, `RENDER-2D` and this module name for the V1 app? Does each pass at the claimed commit, and was any of those scripts or tests edited by this milestone?",
+          "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `T2-CAPTURE`, `RENDER-2D` and this module name for the V1 app? Does each pass at the claimed commit, and was any of those scripts or tests edited by this work package?",
           "target": "ios-sim",
           "evidence": "",
           "verdict": "",
@@ -807,7 +807,7 @@
         },
         {
           "id": "WP6.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",

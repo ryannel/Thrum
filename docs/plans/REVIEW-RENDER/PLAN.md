@@ -6,14 +6,14 @@ pass identities, string errors and wasted work, with no retained pixel moved. [D
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone. Exact images are proved once, on main
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any work package. Exact images are proved once, on main
 after the merge, by [the shared run](../ARCHITECTURE.md#proofs-run-once-on-main): don't run the verifier yourself.
-Set each milestone's verifier item `pass` with the evidence `main-branch check exact-images`.
+Set each work package's verifier item `pass` with the evidence `main-branch check exact-images`.
 
 ## Open for the human
 
 - Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
-- Assumption: nothing here starts until the five milestones other builders hold in the renderer are Done, so the renderer's confirmed bugs are fixed after them, not at once. The other choice interrupts those builders.
+- Assumption: nothing here starts until the five work packages other builders hold in the renderer are Done, so the renderer's confirmed bugs are fixed after them, not at once. The other choice interrupts those builders.
 - Assumption: two cost findings wait: many local lights built on the CPU each frame (M24), for the performance phase after the V1 exit, and the sky rebuilt on every Sun change (M31), for the quality governor's cadence controls.
 
 ## WP1 Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised

@@ -64,7 +64,7 @@ change, so no product, content address or baseline moves. `examples/asset-loop`,
 edit-to-visible test and tripwire measure, goes: the test and bench drive `thrum-asset-gpu`'s loader, and the
 profile preference both copies held becomes one function in `thrum-asset`. The tripwire then measures other code,
 so its history breaks once: the old and new figures are recorded side by side and the new one is the baseline.
-This milestone starts before [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine exists, so that the cooker reaches
+This work package starts before [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine exists, so that the cooker reaches
 no example is proved here by a search of the cooker's manifest and sources; `GAME-SPLIT` WP2 later holds it, with
 every other reach, by rule.
 

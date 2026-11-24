@@ -12,7 +12,7 @@ On the M3 Max with Metal and the built-in 120 Hz ProMotion display, the same coo
 controls survive graphics loss. A slow noon camera pan retains coherent rock/ridge placement, the authored sphere
 sweep and exit, and yaw-consistent settled endpoints. Inspect full-resolution images, native-size crops and motion
 at 1× for cuts, snaps, reversals, repeats and local holds. The Ground E view identifies scene and framing. The
-milestone's worded inspection list and shipped high-end game quality bar govern visual acceptance.
+work package's worded inspection list and shipped high-end game quality bar govern visual acceptance.
 
 WP0/M1 retain their accepted plan/recovery evidence. WP2 qualifies the current surface path through elapsed-time
 engine motion, real-window tap correspondence and OS-reported presented times for the game's drawables on the
@@ -128,21 +128,21 @@ regressions under the existing performance policy. Timing figures remain observa
 WP2 needs only `T2-CAPTURE:WP0` and can complete on the current path. In module order WP3 follows Mac WP2 and needs
 `APPLE-TILE:WP3`, then reruns motion, window-tap/tooling validation and all cadence arms on the integrated build.
 It gets one recording per traced arm and no diagnostic recordings. COOKED-DRAW and T2 simulator WP2 retain their
-separate ownership and qualification. Independent review of every required item closes each qualification milestone.
+separate ownership and qualification. Independent review of every required item closes each qualification work package.
 
 ## WP2 and WP3 qualification protocol
 
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
-The WP2 and WP3 work lists with their protocol detail. The plan carries a short list for each milestone and points
+The WP2 and WP3 work lists with their protocol detail. The plan carries a short list for each work package and points
 here. The cadence witness was revised on 11 November 2026 after both commissioned traces returned empty display
 tables.
 
 ### WP2 The cooked valley presents smoothly on built-in ProMotion
 
-Uses [T2 capture](../T2-CAPTURE/DESIGN.md); `needs: T2-CAPTURE:WP0`. This is milestone WP2 on the M3 Max.
+Uses [T2 capture](../T2-CAPTURE/DESIGN.md); `needs: T2-CAPTURE:WP0`. This is work package WP2 on the M3 Max.
 Scene/framing identity only: [Ground E noon tile](../../../.orchestrate/evidence/v1-workload/g7-showcase/route-ground-e.png).
-Its owner image review is not an acceptance gate. Judge quality against the JSON worded list and milestone bar:
+Its owner image review is not an acceptance gate. Judge quality against the JSON worded list and work package bar:
 rock/ridge coherence, authored sphere sweep/exit, yaw-consistent settled endpoints, and no cut, snap or reversal;
 record repeats, local holds and pauses at actual elapsed time. Use the same noon view and slow normal-control pan.
 Preserve the historical `0d53d3aa` motion pass and decoded
@@ -221,7 +221,7 @@ real-panel cadence nor extends any earlier verdict.
 
 ### WP3 The post-G3t Mac surface path requalifies runtime motion and built-in cadence
 
-Delivery prerequisite: `APPLE-TILE:WP3`; module ordering also requires Mac WP2 done. This milestone is split from the
+Delivery prerequisite: `APPLE-TILE:WP3`; module ordering also requires Mac WP2 done. This work package is split from the
 former post-G3t WP2 obligation, with `replans: 4`, and preserves the complete acceptance bar. WP3 cannot start on T2 completion alone. Its transitive chain is delivered T2 Mac WP0/Chrome WP1 then G3t WP0–WP3,
 including attended D2.5/D3.5 OS-window evidence (unlocked session and Screen Recording permission for that observer)
 and diagnostic simulator endpoint/function checks. It does not wait on cooked simulator COOKED-DRAW WP1 or T2 WP2.
@@ -237,7 +237,7 @@ requires the full requalification. Mac cadence continues to use capture OFF with
   WP2.4's command and all WP2.2 arms on WP3.1's build: ON untraced, ON traced and OFF traced. Fresh presented times from the
   qualified witness, covering the full interval, qualify cadence only in OFF. Keep the unlocked active panel
   reason explicit. Functional window logs alone cannot pass. A tooling regression requires a scoped re-plan;
-  this milestone grants one recording per traced arm and no diagnostic recordings.
+  this work package grants one recording per traced arm and no diagnostic recordings.
 
 Both items need fresh independent review before final Mac qualification of the changed V1 path. Historical WP2
 verdicts remain attached to their build. This split does not waive cadence.

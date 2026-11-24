@@ -37,12 +37,12 @@ the designs of `APPLE-TILE`, `EFFECT-GRAPH`, `CONTENT-LOOP` and `SIM-2D`; and
 
 **This module is planned before the code it builds on is finished.** `APPLE-TILE` WP10 to M12,
 `APPLE-PRESENTATION` WP3 to M11, `CONTENT-LOOP` WP1 to WP3 and `EFFECT-GRAPH` WP3 are still to be built. So this design
-names the behaviour it needs from them and never one of their APIs, and the builder of each milestone first reads
+names the behaviour it needs from them and never one of their APIs, and the builder of each work package first reads
 what was actually built ([handoff](#proof-and-builder-handoff)).
 
 **Built beside V1 (14 November 2026).** The owner said: "Let's move the 2d engine side of things to before v1
 and decouple them. But we don't want to start working on the swarm game till v1 lands." So this module no
-longer waits for the V1 exit. A milestone waits only for what it uses: WP1 for `EFFECT-GRAPH:WP3`, whose
+longer waits for the V1 exit. A work package waits only for what it uses: WP1 for `EFFECT-GRAPH:WP3`, whose
 after-opaque stage it refuses in a 2D scene, and `APPLE-PRESENTATION:WP3`, whose reconstruction a 2D scene
 declares none of; WP4 for `CONTENT-LOOP:WP1`, whose lease and publication a sheet uses; WP5 for `SIM-2D:WP1`, whose
 crowd it draws. `APPLE-TILE` WP10 to M12, `APPLE-PRESENTATION` WP4 to M12 and `CONTENT-LOOP` WP2 and WP3 are built
@@ -551,7 +551,7 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
   32-byte frame record. Keep the existing 64×48 Metal witness and 3D control. The device run observes live
   allocations, actual pipeline creation and submitted pass timings at the point this test guards.
   The checkpoint uses the focused inventory check. WP3.13 uses the shared `long-tests` result on main
-  covering the completed milestone, including the test-only checkpoint.
+  covering the completed work package, including the test-only checkpoint.
 - **Exact sprite checks.** The aligned image, resize, tile and mip witnesses use expectations taken from
   the source texels and this design's rules. No sprite image is registered as an exact baseline. These tests
   are this module's under [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines).
@@ -567,11 +567,11 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 - **Cost records.** Record the revision and machine load. Keep the specified crowd size and backing extent
   when investigating a tripwire. Record the observed cost and finding, then continue the build.
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,
-  and moves no retained image. Each milestone uses the shared main-branch verifier. Diagnose a failed
+  and moves no retained image. Each work package uses the shared main-branch verifier. Diagnose a failed
   source-texel comparison against its original expectation. If another module owns a failing test, baseline
   or witness that requires a change, retain it and log the proposed fix before ending `BLOCKED`.
   [Project proof rules](../../../ORCHESTRATE.md#targets)
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/render-2d-<milestone>/`; selected evidence
+- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/render-2d-<work-package>/`; selected evidence
   in `.orchestrate/evidence/RENDER-2D/`.
 - **Creator guide and maturity.** WP5 updates [the creator guide](../../design/ENGINE-EXPERIENCE.md) and adds
   2D rows to [the maturity ledger](../../design/maturity.json) for implementation, correctness, visuals and

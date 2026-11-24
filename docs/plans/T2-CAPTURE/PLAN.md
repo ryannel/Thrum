@@ -1,6 +1,6 @@
 # T2-CAPTURE plan
 
-Engine capture for every visual milestone. [Design](DESIGN.md) · [brief](BRIEF.md) · [done-when file](DONE.json) ·
+Engine capture for every visual work package. [Design](DESIGN.md) · [brief](BRIEF.md) · [done-when file](DONE.json) ·
 [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
 ## Open for the human

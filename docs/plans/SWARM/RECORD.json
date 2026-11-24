@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SWARM/design-review.md",
     "commit": "68ac79706e7730b7abc1aa64753dacd1849cc6a5",
-    "hash": "d34526bcd83a0d368670103817544c628b63805326bd73a875e3de93f0e64b7d",
+    "hash": "d83385b0fb8d00258681045249de19570ecaefb161ab02d3bcecd82411d091ee",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "afecdab1892057a9d0853a6b7ddfa5839dd7dd7d8c26212d0554bf7e2de9d5ab",
+      "definitions": "ebda9a689ca58d39edc0dc4b1d23301cdbec4b378d255eff352a79fe9b927048",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -34,7 +34,7 @@
       }
     },
     "WP2": {
-      "definitions": "4630de6c17d872a05886c30dcef5b82bbc96f61e250b7455d592adbc732aaaee",
+      "definitions": "1b624bee5becb225b29bbd57b491083dd95494402d6a3088a4dc635898f98742",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -50,7 +50,7 @@
       ]
     },
     "WP3": {
-      "definitions": "0630527467d00416b1cdb5a0938604af2fd6c476fb018bf271db23ba510a79c4",
+      "definitions": "cd002a61ca6e674e42160e8a3a5d605e768dd29ccbd275d80a2543c5a969971c",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -66,7 +66,7 @@
       ]
     },
     "WP4": {
-      "definitions": "7c20b7692134b490f3b3b35a55b9e342df0e344a6b57fba134037a8b3fe82b47",
+      "definitions": "fc28249c89c19d4f9c269248c5871e528f5c760b9a02ae4d7c17fe0d15686908",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -82,7 +82,7 @@
       ]
     },
     "WP5": {
-      "definitions": "f14229ff89bd83ab74185d1e5a01e4f001eb05dc55102d7121afd20eda2c0a3a",
+      "definitions": "029b34a6881224d328aa29d2686d6e095dc17ee7338eff061f4711427c7411b7",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -98,7 +98,7 @@
       ]
     },
     "WP6": {
-      "definitions": "70e22b013a0b4d31eb8d2e4cc0010fffa3f9ff1767ac08558b9c26783acc9190",
+      "definitions": "456812567bed144d9432d2b716ff537a59e84965a63d096398cd28d4a0165b61",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -114,7 +114,7 @@
       ]
     },
     "WP7": {
-      "definitions": "dcd29064c14a3c2c528c0c46947574e367a6ce1009fc37b4260c7c36c620a849",
+      "definitions": "d2e57b5411c30d5d0419166608139b23edba96a92dccfd463286830610c62f6d",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -130,7 +130,7 @@
       ]
     },
     "WP8": {
-      "definitions": "63165482e7f5e058bb878a62fc1a97a4d3ad225d3437a22025e2f19142d9acfb",
+      "definitions": "ebf8e9ce6b94890f4e1375728341466f013def9d8beebd2d1cb5354234059123",
       "reviews": [],
       "authorised": {
         "by": "plan",

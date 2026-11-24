@@ -157,7 +157,7 @@ As [RAY-TRACING defines it](../RAY-TRACING/DESIGN.md#hardware-features-at-launch
 makes the device for every host. A required name is enabled or the launch is refused by name. A preferred
 name never fails a launch: where the adapter does not offer it, or the device request with it fails, the
 launch gets the device it gets today and the registry records why the name is not enabled. With no request
-the device is the one made today. Whichever module's first milestone lands second extends what the first
+the device is the one made today. Whichever module's first work package lands second extends what the first
 built.
 
 The request for `mesh-stages` also raises any ordinary limit the stage pipelines need, such as storage buffers
@@ -447,7 +447,7 @@ This module builds in `thrum-asset-gpu` and, in `thrum-render` and the hosts, at
 [the seam rulings for track 5](../ARCHITECTURE.md#seam-rulings-for-track-5) name: the launch function, the
 creation ledger, the visibility of the view, light and caster view layouts, the timing record's span and the
 recipe preference. With no request, on the portable recipe, and on the direct and indirect paths, every byte
-on main is unchanged, and each milestone proves it through
+on main is unchanged, and each work package proves it through
 [the exact baselines](../ARCHITECTURE.md#exact-baselines). No baseline is added for the mesh-stage path: its
 proofs are [the comparisons above](#what-is-proved-and-how-hard).
 
@@ -472,7 +472,7 @@ about 25% worse than its last record, growth that is not linear in what it shoul
 ## Risks
 
 1. **wgpu's mesh shading is experimental.** A defect a builder cannot work around inside Thrum ends the
-   milestone `BLOCKED` with the smallest program that shows it. Nothing is posted upstream without the owner.
+   work package `BLOCKED` with the smallest program that shows it. Nothing is posted upstream without the owner.
 2. **The stages may not be faster on this GPU.** Then the record says so, the path stays a choice a launch
    can make, and the next plan has its answer about entities. That is a result, not a failure of the module.
 3. **The two paths differ by more than rounding.** The early sign is a pixel that differs away from an edge
@@ -480,7 +480,7 @@ about 25% worse than its last record, growth that is not linear in what it shoul
 4. **A hook validates for the indexed pipeline and not for the stage pipeline.** The reload is refused whole
    with the stage pipeline's diagnostics. If the cause is wgpu's, it is risk 1.
 5. **Other builders are in `thrum-asset-gpu`.** `SCENE-VIEWS` WP2, `CONTENT-LOOP` WP3, `RAY-TRACING` WP2 and
-   `REVIEW-ENGINE` work there. This module adds a path; it rewrites nothing another milestone holds.
+   `REVIEW-ENGINE` work there. This module adds a path; it rewrites nothing another work package holds.
 
 ## Proof and builder handoff
 
@@ -500,8 +500,8 @@ about 25% worse than its last record, growth that is not linear in what it shoul
   proved from its report (WP3.2), not from pictures.
 - Every timing of this module is a tripwire taken under load, WP3's pair included: it records the load and
   fails only on a missing measurement. No sitting with other builders paused is asked for.
-- Scratch goes in `tmp/mesh-shading-<milestone>/`, selected evidence in `.orchestrate/evidence/MESH-SHADING/`.
+- Scratch goes in `tmp/mesh-shading-<work-package>/`, selected evidence in `.orchestrate/evidence/MESH-SHADING/`.
 
 ## Open questions
 
-None that blocks a milestone. What the owner may want decided is in [the plan](PLAN.md#open-for-the-human).
+None that blocks a work package. What the owner may want decided is in [the plan](PLAN.md#open-for-the-human).

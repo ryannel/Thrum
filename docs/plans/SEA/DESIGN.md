@@ -47,7 +47,7 @@ The owner, 14 November 2026, later the same day:
 So water is now designed as one system, in [`WATERS`' design](../WATERS/DESIGN.md), and this module is the part of
 it that was always the sea's own: the wind's waves. Everything else the earlier design held (the surface, bodies
 and the query, the wake, foam, optics, controls and the close) moved to `WATERS`, generalised to every body of
-water, and its milestones M3 to M10 moved with it. WP1 and WP2 are unchanged, word for word.
+water, and its work packages M3 to M10 moved with it. WP1 and WP2 are unchanged, word for word.
 
 ## Purpose and scope
 
@@ -191,7 +191,7 @@ evaluated, so it needs no wrapping history. It is a display cache: nothing that 
 - **Limits are inputs.** Transform length, workgroup memory, storage formats and counts are read from the
   capability record and refused at preparation when exceeded.
 - **Recipes.** Both recipes run the portable kernels first. An Apple-tile variant is promoted only by a paired
-  measured win with the oracle still inside tolerance, in `WATERS`' closing milestone.
+  measured win with the oracle still inside tolerance, in `WATERS`' closing work package.
 - **Knobs** are declared in `WATERS`, with the rest of water's: field-cache reach, and the cadence of the field
   cache and of cascades below the profile's smallest force wavelength. A layer evaluated less often than every
   frame is carried between evaluations by its rate of change, with its slopes held.
@@ -252,10 +252,10 @@ the cadence knobs lower the field's rate if a record favours that. No timing fig
 
 ## Proof and builder handoff
 
-- **Target.** `mac-metal`. Every GPU check holds the `gpu` lock. Scratch goes in `tmp/sea-<milestone>/`, selected
+- **Target.** `mac-metal`. Every GPU check holds the `gpu` lock. Scratch goes in `tmp/sea-<work-package>/`, selected
   evidence in `.orchestrate/evidence/SEA/`.
 - **Exact baselines.** The sea adds crates beside the existing scenes and moves no retained image. Every
-  milestone carries the verifier as its claim-time check ([rules](../ARCHITECTURE.md#exact-baselines)).
+  work package carries the verifier as its claim-time check ([rules](../ARCHITECTURE.md#exact-baselines)).
 - **Broadsides, dependencies and provenance** are as [`WATERS`' handoff](../WATERS/DESIGN.md#proof-and-builder-handoff)
   says, with this module's provenance file.
 - **For `WATERS`.** Keep the passes declarable from another crate's contribution, and the spectrum's band

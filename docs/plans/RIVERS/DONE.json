@@ -70,7 +70,7 @@
           "id": "WP1.6",
           "statement": "The solve writes each reach as a chart `thrum-water-model` declares: level over the whole footprint, lying under the bed in every cell the solve left dry, current, loss, footprint, ends and join lengths. The stored chart's level and current at every wet cell's centre are the solver's, and the chart's wet cells, where its level is over the bed inside its footprint, are exactly the solver's: on the WP1.1 valley the hollow cut off by ground is dry in the chart and in the map. With a basin at its mouth and a spring at its head, `thrum-water-model` prepares it with no refusal. The map's level and current are the stored chart's wherever the join's weight is nothing. Inside the mouth's join they are `WATERS`' mix of the chart's row and the basin's at that cell's weight, backwater included, with the basin's stage at both ends of its range; the row meets the basin's across the mouth with no step; and the waterline is where the level meets the bed.",
           "check": "cargo test --locked --offline -p thrum-river-model --test chart",
-          "ask": "Is the chart declared only through `thrum-water-model`'s public interface, with no change to that crate in this milestone? Does the test work the expected joined row out from the join's documented weight and the two rows, with no joined cell skipped? Would a chart that gave a dry cell the nearest wet level fail the hollow?",
+          "ask": "Is the chart declared only through `thrum-water-model`'s public interface, with no change to that crate in this work package? Does the test work the expected joined row out from the join's documented weight and the two rows, with no joined cell skipped? Would a chart that gave a dry cell the nearest wet level fail the hollow?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP1.md#item-by-item",
@@ -91,7 +91,7 @@
           "id": "WP1.8",
           "statement": "`scripts/river_cost.py` records a solve of the WP1.1 valley at 0.25 m cells on this Mac: wet cells, steps, cell updates and seconds, with the commit, the load on the machine and a release build. `check` fails only when the solve cannot be measured or the committed record lacks one of those. No figure in the record decides this item.",
           "check": "python3 scripts/river_cost.py check",
-          "ask": "Was the record taken on this milestone's solver, in a release build, and does it say how its cell updates compare with part 5's count?",
+          "ask": "Was the record taken on this work package's solver, in a release build, and does it say how its cell updates compare with part 5's count?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/river-cost.json",
@@ -111,7 +111,7 @@
         },
         {
           "id": "WP1.10",
-          "statement": "Every file in this milestone that is copied or translated from elsewhere is listed in `docs/evidence/RIVERS/PROVENANCE.md` with its source and licence. None is GPL or share-alike.",
+          "statement": "Every file in this work package that is copied or translated from elsewhere is listed in `docs/evidence/RIVERS/PROVENANCE.md` with its source and licence. None is GPL or share-alike.",
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -121,7 +121,7 @@
         },
         {
           "id": "WP1.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -207,7 +207,7 @@
         },
         {
           "id": "WP2.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -303,7 +303,7 @@
         },
         {
           "id": "WP3.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -382,7 +382,7 @@
           "id": "WP4.1",
           "statement": "Ruling 6 is built: `examples/water` has a river selection, off by default. With it off the island's ground, bodies and tick page are what they were and the hand-made channel is as `WATERS` built it. With it on the island has a valley above the lake with a spring, a riffle, a pool behind a sill, a narrows with rocks and a cliff of about 4 m over a plunge pool, and both its rivers are declared and solved. The game loads each river file by its key; a native game with none solves and writes it and says so, and its next preparation solves nothing.",
           "check": "cargo test --locked --offline -p water-scene --test river_store",
-          "ask": "With the selection off, does any code path of the game or of `thrum-water` differ from before this milestone? Is the valley's ground reached only with the selection on?",
+          "ask": "With the selection off, does any code path of the game or of `thrum-water` differ from before this work package? Is the valley's ground reached only with the selection on?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -467,7 +467,7 @@
         },
         {
           "id": "WP4.9",
-          "statement": "The maturity ledger has a row for `E1.rivers` with implementation, correctness, visuals and device apart, and it claims no more than this milestone proved.",
+          "statement": "The maturity ledger has a row for `E1.rivers` with implementation, correctness, visuals and device apart, and it claims no more than this work package proved.",
           "ask": "Does the row keep the four apart, and does any entry claim visuals or device results that no item here judged?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -477,7 +477,7 @@
         },
         {
           "id": "WP4.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -499,9 +499,9 @@
       "items": [
         {
           "id": "WP5.1",
-          "statement": "Ruling 3 is built on the GPU. With the wind at nothing, the drawn surface over the riffle carries chop; over the pool its rms height is under a tenth of the riffle's; on the lake and the sea it is flat. A scene whose profile does not name the flow bands compiles to the shader text, passes and storage it had before this milestone.",
+          "statement": "Ruling 3 is built on the GPU. With the wind at nothing, the drawn surface over the riffle carries chop; over the pool its rms height is under a tenth of the riffle's; on the lake and the sea it is flat. A scene whose profile does not name the flow bands compiles to the shader text, passes and storage it had before this work package.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test flow_bands_gpu",
-          "ask": "Is the comparison of shader text, passes and storage made against the commit before this milestone?",
+          "ask": "Is the comparison of shader text, passes and storage made against the commit before this work package?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -600,7 +600,7 @@
         },
         {
           "id": "WP5.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -622,7 +622,7 @@
       "items": [
         {
           "id": "WP6.1",
-          "statement": "Ruling 7's sheet is built. Each fall is drawn along its record's paths from the lip to the level of the body below, with the gauge at each end of its range and the pool's stage at each end of its own, and the depth it writes lies along those paths. The sheet never shows through the rock it falls past. A scene whose profile does not name falls compiles to the shader text, passes and storage it had before this milestone.",
+          "statement": "Ruling 7's sheet is built. Each fall is drawn along its record's paths from the lip to the level of the body below, with the gauge at each end of its range and the pool's stage at each end of its own, and the depth it writes lies along those paths. The sheet never shows through the rock it falls past. A scene whose profile does not name falls compiles to the shader text, passes and storage it had before this work package.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu",
           "ask": "Is the sheet's pass before the water's gather, so that the pool's surface reads it as it reads the land?",
           "lock": "gpu",
@@ -733,7 +733,7 @@
         },
         {
           "id": "WP6.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -845,7 +845,7 @@
           "id": "WP7.9",
           "statement": "With everything this module adds in view the paired cost record is taken at 2560\u00d71440 on tick frames and repeat frames, beside WP6's, and the island's solve is recorded again with `scripts/river_cost.py`. Each tripwire tripped has its investigation beside it. No figure decides this item.",
           "check": "python3 scripts/water_cost.py check --scene river-all && python3 scripts/river_cost.py check --scene island",
-          "ask": "Are both records taken on this milestone's work with the load on the machine, and does each tripped wire's investigation say what was measured and what was fixed or logged?",
+          "ask": "Are both records taken on this work package's work with the load on the machine, and does each tripped wire's investigation say what was measured and what was fixed or logged?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -875,7 +875,7 @@
         },
         {
           "id": "WP7.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

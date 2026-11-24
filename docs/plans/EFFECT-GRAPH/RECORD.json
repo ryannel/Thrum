@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
     "commit": "b67c49cfec853ba86d6027c904893e13cbf05914",
-    "hash": "1b83a26b22627ffcbd04b8566e2e5ac23f766d849d07b1eb8be99f23a5c77f72",
+    "hash": "92100c789fb5d9c591e48e3780dfa883e025243f17abdb8e9c22ecf3724eec61",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "e4c883937bb6ce2fb564330b88b24f1fb9a18546cbc66c7b26fe2369b4de5cf3",
+      "definitions": "7283bf0ca9ea79f8ca449c6bff5bc38cd6e91d59f6268c885ba2200ba1973e23",
       "reviews": [
         {
           "verdict": "pass",
@@ -96,7 +96,7 @@
       }
     },
     "WP2": {
-      "definitions": "dfdb4a56044e26fe348d12b9eeeaacc90cca1c268b14443ce30ae5d609610cb5",
+      "definitions": "3e0e60c9c8c312141f10bd4f9afe0ab035da00841c9822c79d560ce153dab1fc",
       "reviews": [
         {
           "verdict": "pass",
@@ -176,7 +176,7 @@
       }
     },
     "WP3": {
-      "definitions": "1a94a6c4570e31d58e989e260941d9dbe92b7347f51154460b70723dee065eeb",
+      "definitions": "2f7eaa5a50732acd8c6055bcfb4f235a5baca98e0367dbbb00b272458511ce98",
       "reviews": [
         {
           "verdict": "pass",
@@ -262,7 +262,7 @@
       }
     },
     "WP4": {
-      "definitions": "c4ffc44dbe8ce24aa57311bcb57f6967c185dc32470a130da2a793889f8a1c1e",
+      "definitions": "ac3396b9e09c5a742b4fbb566ccf2c0dc73c0136e6299c8a20c88ad78bd5fe81",
       "reviews": [
         {
           "verdict": "fail",

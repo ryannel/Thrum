@@ -58,7 +58,7 @@
         {
           "id": "WP1.5",
           "statement": "The counts the rules found are on record for each rule marked WP1, in each crate and example, at the commit the build started from. Every difference between that record and the baseline at the claimed commit names the commit on the main branch that made it.",
-          "ask": "Does the record give a count for every rule and package, taken from the rules' own output at a named commit? Where a total differs from what the review reported for string errors, reaches across packages or environment reads, does the record say why? Is every violation the baseline holds beyond the starting record the work of a commit that reached the main branch before the rules did, and none of them this milestone's own?",
+          "ask": "Does the record give a count for every rule and package, taken from the rules' own output at a named commit? Where a total differs from what the review reported for string errors, reaches across packages or environment reads, does the record say why? Is every violation the baseline holds beyond the starting record the work of a commit that reached the main branch before the rules did, and none of them this work package's own?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REPO-RULES/WP1.md; .orchestrate/evidence/REPO-RULES/WP1-main-differences.json; .orchestrate/evidence/REPO-RULES/WP1-starting-inventory.json",
@@ -67,7 +67,7 @@
         },
         {
           "id": "WP1.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -112,7 +112,7 @@
           "id": "WP2.3",
           "statement": "Every link in tracked Markdown still resolves, to a tracked file or to a path the manifest lists, whether or not a restored copy is on disk, and no review, record or `DESIGN.md` was edited to make it so. A link to a path that is neither tracked nor listed is still refused.",
           "check": "sh -c 'python3 scripts/evidence_store.py check && python3 scripts/repo_check.py'",
-          "ask": "Does the milestone's diff change any file under `docs/plans/`, or the text of any review or record under `docs/evidence/`? Pick three links from reviews to files that left: does each resolve through the manifest, and does `restore` bring the file back?",
+          "ask": "Does the work package's diff change any file under `docs/plans/`, or the text of any review or record under `docs/evidence/`? Pick three links from reviews to files that left: does each resolve through the manifest, and does `restore` bring the file back?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REPO-RULES/WP2.md; .orchestrate/evidence/REPO-RULES/WP2/item-checks.json; .orchestrate/evidence/REPO-RULES/WP2/audit.json; .orchestrate/evidence/REPO-RULES/WP2/store-tests.log",
@@ -132,7 +132,7 @@
         {
           "id": "WP2.5",
           "statement": "The tracked tree's size before and after is on record, with the count and bytes that left by file type, and what a cap of 1 MiB and of 0.5 MiB would remove.",
-          "ask": "Are the figures taken from `git ls-files` at named commits? How large is `docs/evidence` in a fresh checkout after this milestone?",
+          "ask": "Are the figures taken from `git ls-files` at named commits? How large is `docs/evidence` in a fresh checkout after this work package?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REPO-RULES/WP2.md; .orchestrate/evidence/REPO-RULES/WP2/size.json; .orchestrate/evidence/REPO-RULES/WP2/audit.json; scripts/evidence_inventory.py",
@@ -141,7 +141,7 @@
         },
         {
           "id": "WP2.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -153,7 +153,7 @@
     },
     {
       "id": "WP3",
-      "name": "Names say what things do: the scene renderer is called the scene renderer, milestone codes are out of file names, and the renderer's layers point one way",
+      "name": "Names say what things do: the scene renderer is called the scene renderer, work package codes are out of file names, and the renderer's layers point one way",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -182,7 +182,7 @@
         },
         {
           "id": "WP3.2",
-          "statement": "No file, bench, script, environment variable or Cargo description under `crates/`, `examples/`, `tools/` or `scripts/` is named for a milestone or gate: `history-names` is at zero over file names, environment variable names in source, Cargo target names and Cargo descriptions. The only names left are those an open item's check, `./dev` or the baseline registry uses, which the rule finds itself and lists with what pins each.",
+          "statement": "No file, bench, script, environment variable or Cargo description under `crates/`, `examples/`, `tools/` or `scripts/` is named for a work package or gate: `history-names` is at zero over file names, environment variable names in source, Cargo target names and Cargo descriptions. The only names left are those an open item's check, `./dev` or the baseline registry uses, which the rule finds itself and lists with what pins each.",
           "check": "python3 scripts/shape_rules.py check --rule history-names --zero .",
           "ask": "Run the rule's list of pinned names: is each really named by an open item's check, by `./dev` or by the registry, and is any exception written by hand? Is `THRUM_G5_CAPTURE_DIR`, or any other environment variable with a gate code, still read anywhere? Pick five renamed test files: does each new name say what the test covers?",
           "target": "mac-metal",
@@ -235,7 +235,7 @@
         },
         {
           "id": "WP3.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -293,7 +293,7 @@
         },
         {
           "id": "WP4.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

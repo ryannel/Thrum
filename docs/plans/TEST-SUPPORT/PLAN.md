@@ -4,8 +4,8 @@ Engine tests get a GPU device from one place, and a test that needs a GPU says s
 where there is none. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
-Read [Mechanisms](DESIGN.md#mechanisms), [the files each milestone touches](DESIGN.md#files-each-milestone-touches)
-and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone. The milestones are in build order:
+Read [Mechanisms](DESIGN.md#mechanisms), [the files each work package touches](DESIGN.md#files-each-work-package-touches)
+and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before any work package. The work packages are in build order:
 M5 and WP6 were added after WP3 and WP4 and are built before them.
 
 ## Open for the human

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/PUDDLES/design-review.md",
     "commit": "0ae50f8e7114928352bcc3bd1f0a46f87183ed5c",
-    "hash": "80213a5a95afb6499f5c0261af4599ed482eaa1a6c20bbc8cc35370512a2414a",
+    "hash": "90d296bb8c5fa49458d8bf2d0a8aa17a8643d74cf3ca93ad395fd7758f2b12e4",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "ebac69cb58b70adb5301dabdf1cc2e06fe72f61d54e8cbb7808966704feb50f8",
+      "definitions": "1fdd76e42f9e0f53efefadf32ce9ccaf5f964e9c08622de41a15078cb47d8433",
       "reviews": [
         {
           "verdict": "fail",
@@ -160,7 +160,7 @@
       }
     },
     "WP2": {
-      "definitions": "d19bd6c0ddbcf61a4d23c9ed73b346a9f5ec5d823200d23014185620cf3a9816",
+      "definitions": "a0cdface53b644c18daf54677247ea2cc2484ab02b54faf742c3e107679b89f8",
       "reviews": [
         {
           "verdict": "fail",
@@ -371,7 +371,7 @@
       }
     },
     "WP3": {
-      "definitions": "d469ebad0e203aa0e0e2a9e440c93e002c5babf6d4be09fbee1b1b54bcf14b2a",
+      "definitions": "3b95c0fe99528f1977657dbf887357b620e2acd2fa1ab54d1e444fd48bb6c553",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -380,7 +380,7 @@
       }
     },
     "WP4": {
-      "definitions": "103ae6feec4e2d3a8abe7c7381715304532b0504d0f7e30063a4e2894e0a94fd",
+      "definitions": "a0e61f5d725034320046f55badbb8e11858e4b67a3138e6122042b9411af2aa2",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -389,7 +389,7 @@
       }
     },
     "WP5": {
-      "definitions": "f4641c694d590c330fc7aea2dc6dadff677fb66a2e47e1d41801c9642b018eff",
+      "definitions": "4f05f70d8226425658cb711a25a159f27a94513a4ba1a4f4444467ca880f3ea9",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -398,7 +398,7 @@
       }
     },
     "WP6": {
-      "definitions": "72077657556f2e2999f6f92af1ff5975f4b9a2b6caf898b211e59a5ebb2ca403",
+      "definitions": "0ad044d1a9a347cf65d0b68cfaa3460ef0b83ba688c5682d6754d984fbe38a27",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -407,7 +407,7 @@
       }
     },
     "WP7": {
-      "definitions": "ceb4f4f65b96ecd3b2c05ea8687b23f7db30a5fda3be22195619c0675bb80e51",
+      "definitions": "86e80d870df91e9146e2243c5f679ba09bb350066a3d5286e3395b4dd1152981",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -416,7 +416,7 @@
       }
     },
     "WP8": {
-      "definitions": "e04ece16f01d1422e866a7be2e9d9bd28c142300ed12b9cc6dceac362593afa9",
+      "definitions": "f6284fd2737edb7a1a9783070e5e401a51cae3303fe0f50d635953ed21ae694e",
       "reviews": [],
       "authorised": {
         "by": "plan",

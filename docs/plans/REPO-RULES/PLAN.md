@@ -5,7 +5,7 @@ and layout are put right once. [Design](DESIGN.md) · [done-when file](DONE.json
 [log](LOG.md) · [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
 Read [Mechanisms](DESIGN.md#mechanisms) and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before any
-milestone. `scripts/` is a covered path, so every landing here needs a verifier proof.
+work package. `scripts/` is a covered path, so every landing here needs a verifier proof.
 
 ## Open for the human
 
@@ -14,9 +14,9 @@ milestone. `scripts/` is a covered path, so every landing here needs a verifier 
 - Assumption: the cap on an evidence file is 2 MiB, the review's figure. About 2.3 GiB of 3.7 GiB leaves the checkout and about 1.4 GiB of smaller files stays. A lower cap removes more; say so and WP2's cap changes.
 - Assumption: files that leave stay recoverable from Git history on this Mac and on the remote, by one command. New large captures go to one folder beside the main checkout, `/Users/ryannel/Workspace/thrum-evidence-store`, shared by every worktree, with no remote copy and no service, so a lost disk loses them.
 - Assumption: a rule counts a kind of violation across the whole repository and that count can only go down. A change that removes one violation and adds another of the same kind passes, because the repository is no worse; that is what lets a file be moved or split without an exception.
-- Assumption: `thrum-render` stays one crate, and its frame runtime and presenter go on naming the scene renderer's types. The review wanted that dependency turned round and the crate split in three. A rename cannot do it and no module plans the interface it needs, so a rule stops the dependency growing and holds the graph and timing clean. Say so and the interface is planned as its own milestone.
-- Assumption: nothing is built now to stop a stalled browser tick from changing one record's identity in a Chrome capture, which is what stopped WP1. It is known twice, each costing one more verifier run of about 17 minutes, and no image is wrong. The fix changes a covered path, so landing it alone makes every builder with an open proof run the verifier again. Say so and it becomes an item of `HOST` WP2, which rewrites that policy, or a milestone of its own now.
-- Assumption: three of the review's themes get no fix milestone now, because its order of attack does not schedule them: shader source assembled four ways (T7), environment variables read as configuration (T8, beyond a rule that stops new reads in libraries) and mechanisms built several times (T11).
+- Assumption: `thrum-render` stays one crate, and its frame runtime and presenter go on naming the scene renderer's types. The review wanted that dependency turned round and the crate split in three. A rename cannot do it and no module plans the interface it needs, so a rule stops the dependency growing and holds the graph and timing clean. Say so and the interface is planned as its own work package.
+- Assumption: nothing is built now to stop a stalled browser tick from changing one record's identity in a Chrome capture, which is what stopped WP1. It is known twice, each costing one more verifier run of about 17 minutes, and no image is wrong. The fix changes a covered path, so landing it alone makes every builder with an open proof run the verifier again. Say so and it becomes an item of `HOST` WP2, which rewrites that policy, or a work package of its own now.
+- Assumption: three of the review's themes get no fix work package now, because its order of attack does not schedule them: shader source assembled four ways (T7), environment variables read as configuration (T8, beyond a rule that stops new reads in libraries) and mechanisms built several times (T11).
 
 ## WP1 A change that adds a string error, a hidden reach across packages, an environment read in a library or a copied device request is refused by `./dev check`
 
@@ -45,7 +45,7 @@ about the manifest so that nothing needs editing. `.gitignore` already ignores a
 `.orchestrate/evidence/`. A check must leave the loop's clean checkout unchanged, so tests work in scratch. `docs/ASSET-LIFECYCLE.md` and `CONTRIBUTING.md` gain the rule for
 new captures. Measure the tree before and after.
 
-## WP3 Names say what things do: the scene renderer is called the scene renderer, milestone codes are out of file names, and the renderer's layers point one way
+## WP3 Names say what things do: the scene renderer is called the scene renderer, work package codes are out of file names, and the renderer's layers point one way
 
 This lands as one change so other builders rebase once. Take the list of names that open checks use from every
 `docs/plans/*/DONE.json` at the commit you start from, and again before you land, because other modules' plans move

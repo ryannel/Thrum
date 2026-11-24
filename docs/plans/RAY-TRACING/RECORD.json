@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "by": "review_limit",
-    "hash": "ca5baba64d05b8aed8469116092146249980797327608163568b07d11b3ded2c",
+    "hash": "22b5f3f8c05051ea2ed9a653661040339386f6405043fcb80d9fca6305f94f71",
     "after": [
       ".orchestrate/evidence/RAY-TRACING/design-review-7.md",
       ".orchestrate/evidence/RAY-TRACING/design-review.md"

@@ -12,14 +12,14 @@ and again that day when WP1's first landing was refused ([log](LOG.md)).
 The owner asked for the 14 November code review's fixes to be planned and driven ("can you not just plan and drive
 that work?"). The lead's task for this module: add the review's mechanical `repo_check` rules beside the canonical
 shapes already written in the patterns reference; plan renames and splits (themes T9 and T10) "as one planned
-architecture milestone"; plan hygiene (T13) last. On finding H03 the decision is made: "no Git history rewrite …
+architecture work package"; plan hygiene (T13) last. On finding H03 the decision is made: "no Git history rewrite …
 bulk media and archives leave the tracked tree under docs/ASSET-LIFECYCLE.md's storage rules (untrack at HEAD, keep
 selected small evidence), and repo_check stops new bulk binaries being committed. Keep evidence links that reviews
 depend on resolvable."
 
 ## Purpose and who it is for
 
-The review's root cause is that nothing named or checked the shape of recurring code, so each milestone copied the
+The review's root cause is that nothing named or checked the shape of recurring code, so each work package copied the
 nearest example and forked a variant. The patterns reference now names the shapes. This module makes `./dev check`
 hold them, so a builder who copies an old shape is told at once, by name, with the section to read. Its users are
 every builder and reviewer in the repository, and the owner, whose checkouts and worktrees stop carrying gigabytes
@@ -37,7 +37,7 @@ of media.
 - Worktrees of this repository share one Git directory (`git rev-parse --git-common-dir` gives
   `/Users/ryannel/Workspace/thrum/.git` from a builder's worktree and from the loop's clean checkout alike) and
   nothing else: a path relative to a checkout names a different folder in each.
-- Names that carry a milestone or gate code today, under `crates/`, `examples/`, `tools/` and `scripts/`: 28
+- Names that carry a work package or gate code today, under `crates/`, `examples/`, `tools/` and `scripts/`: 28
   files, 19 environment variables (`THRUM_G5_CAPTURE_DIR` and the like), two Cargo descriptions and one bench
   target. The codes in use are `g<n>` with an optional letter (`g2`, `g2r`, `g2s`, `g3b`, `g3s`, `g3t`, `g5`,
   `g6`), `t2`, `a1` and `m<n>` (`m0` to `m12`, `m3b`).
@@ -94,14 +94,14 @@ every fix is kept.
 | `library-env` | `std::env::var`, `var_os` or `vars` in a library crate's non-test source. One exemption: a package registered in `.config/architecture.toml` with `test_role = "support"`, which is a process edge ([TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#mechanisms)'s GPU gate reads `THRUM_REQUIRE_GPU`). No other package and no other role is exempt | T8 | WP1 |
 | `device-request` | A call to `request_adapter` or `request_device` outside the modules [HOST](../HOST/DESIGN.md) and [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md) register as the owners | T4, T6 | WP1 |
 | `whole-file-gpu-gate` | A file-level `#![cfg(target_os = …)]` on a test file | T6 | WP1 |
-| `history-names` | A name that carries a milestone or gate code, in any of the places such names live: a path segment of a tracked file under `crates/`, `examples/`, `tools/` or `scripts/`; an environment variable name in source; a Cargo target name; a Cargo `description`. A code is one of the measured families (`g<n>` with an optional letter, `t2`, `a1`, `m<n>` with an optional letter) standing as a whole word or segment | T9 | WP1 |
+| `history-names` | A name that carries a work package or gate code, in any of the places such names live: a path segment of a tracked file under `crates/`, `examples/`, `tools/` or `scripts/`; an environment variable name in source; a Cargo target name; a Cargo `description`. A code is one of the measured families (`g<n>` with an optional letter, `t2`, `a1`, `m<n>` with an optional letter) standing as a whole word or segment | T9 | WP1 |
 | `evidence-size` | A tracked file under `.orchestrate/evidence/` over the cap, unless it is a registered exact-baseline reference. Added with the store that gives a refused file somewhere to go | T13 | WP2 |
 | `layering` | In `thrum-render`, an import from the scene renderer or the atmosphere in the graph or timing, and a new one in the frame runtime or the presenter (mechanism 5) | T10 | WP3 |
 
 WP1 proves the rules marked WP1. The names that exist when `history-names` is registered are its baseline, like any
 other rule's; WP3 takes it to zero.
 
-Other modules add rules through the same engine, each in the milestone that first needs it: `test-crate-edges`
+Other modules add rules through the same engine, each in the work package that first needs it: `test-crate-edges`
 (`TEST-SUPPORT`) and `game-names` (`GAME-SPLIT`). A rule is added only with its fixtures.
 
 **3. One command, two uses.** `python3 scripts/shape_rules.py check` runs every rule against the baseline, and
@@ -139,13 +139,13 @@ committed stays in the object store. That makes Git history the durable store fo
 
 The cap is 2 MiB a file, the review's figure. At that cap 2.32 GiB of 3.71 GiB leaves.
 
-**5. Names and layout, once.** Renames spread conflicts across every builder, so they land in one milestone, at a
+**5. Names and layout, once.** Renames spread conflicts across every builder, so they land in one work package, at a
 point where the review's other fixes are in. It is a move with no change of behaviour: the exact baselines and
 every test hold it.
 
 - `thrum-render`'s `synthetic` module becomes `scene`, with its types, shader files, labels and docs, because it
   is the production scene renderer.
-- Files, benches, scripts, environment variables and Cargo descriptions named for a milestone or gate take the
+- Files, benches, scripts, environment variables and Cargo descriptions named for a work package or gate take the
   name of what they do. `history-names` is what proves it, over every place it counts, contents included: a
   renamed test file that still reads `THRUM_G5_CAPTURE_DIR` is not done.
 - A name that an open item's `check`, `./dev` or the baseline registry uses does not change. Where a file behind
@@ -170,8 +170,8 @@ every test hold it.
 - `thrum-render` is not split into crates, for the same reason: a crate boundary between the frame runtime and
   the scene renderer cannot be drawn while one names the other's types.
 
-No other module's `DESIGN.md` is edited by any milestone here. Stale paths in approved designs are covered by the
-"where things are" table in `thrum-engineering`, which the rename milestone updates.
+No other module's `DESIGN.md` is edited by any work package here. Stale paths in approved designs are covered by the
+"where things are" table in `thrum-engineering`, which the rename work package updates.
 
 **6. Hygiene** (T13, last): `scripts/` keeps at its top level only what `./dev`, an open check or the baseline
 registry names, with everything else in named subfolders and an index; superseded documents under `docs/design/`

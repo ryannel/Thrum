@@ -6,7 +6,7 @@ build on. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the cri
 
 Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselines),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any work package.
 
 ## Open for the human
 
@@ -15,8 +15,8 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: the atmosphere's existing passes and textures are not moved onto the new seam or the new texture kinds. They keep their exact output, and move later only for a measured reason.
 - Assumption: the diagnostic effect stays in the V1 game example behind a selection that is off by default, as a test fixture; it is never part of the showcase.
 - Assumption: WP1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` WP1. Until that gate exists, WP1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:WP1` to WP1's `needs`, which holds WP1 until the gate is built. WP2 and WP3 do wait for it.
-- Assumption: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own milestones.
-- Assumption: WP3 does not wait for `CULLING` WP3 to stop the game's image varying under GPU load. Until then an exact-image run that fails only along triangle edges is recorded, checked by a reviewer and run again, and WP3 lands on a complete pass. The other choice adds `CULLING:WP3` to WP3's `depends_on`, which holds WP3 and the six modules waiting on it until that milestone is Done.
+- Assumption: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own work packages.
+- Assumption: WP3 does not wait for `CULLING` WP3 to stop the game's image varying under GPU load. Until then an exact-image run that fails only along triangle edges is recorded, checked by a reviewer and run again, and WP3 lands on a complete pass. The other choice adds `CULLING:WP3` to WP3's `depends_on`, which holds WP3 and the six modules waiting on it until that work package is Done.
 - Assumption: WP4 gives effects the display phase and leaves the sea's waves, 2D sprites and a game's camera and entities on the interpolation alpha. Under a display lead those step unevenly by the same arithmetic, which nobody has captured yet. Each is its owner's to plan, the camera and entities with the game contract in `HOST` WP4.
 - Assumption: a frame on a world with its own thread shows a tick that was due by the frame's observation. So a delayed frame in the Mac window, a Mac capture or the iPhone app shows an earlier tick than it did before WP4, with a lead or without, where WP4's first plan said no frame without a lead would change. The other choice keeps every frame's tick and leaves those frames' display time wrong by up to the delay.
 - Assumption: the phase describes the target the clock consumes, which is the frame's observed time plus its lead. WP4 makes the offscreen capture runner measure that lead from the same clock read it gives the world, so its captures consume the platform's target exactly. The Mac window and the iPhone keep reading two clocks a frame, so there the two targets differ by the time between the reads, which nobody has measured. The other choice pairs the two clocks once in both platforms' frame loops, with no WP4 item able to prove it.

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/REPO-RULES/design-review.md",
     "commit": "238fe9d01fc7966aa6ea5f67d899d69fe2205c45",
-    "hash": "3c613ee90ef4dece690d36b9312d3a4a17d888ee381831b82abcf2e32278e1ae",
+    "hash": "699e399e6e706f46a3923d7fd7373ed8b6b5bc078259025c2f1480e95b60dcd0",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "c75280930863f43a4a61969f4945c028babe0887d9cf5a670aab88e37918bc6c",
+      "definitions": "d2e2933ee72939fd88c5e5d5135333848c62ec625efbd7d3a13451fc49870493",
       "reviews": [
         {
           "verdict": "pass",
@@ -107,7 +107,7 @@
       }
     },
     "WP2": {
-      "definitions": "aa468f8164d67a4ca4dc0021883aa026d6061e84a24f7711cd1a854b484eaa77",
+      "definitions": "6b29af717f8d605dec47954ac25c73fc587131bd7916a252b2d7b24351b7441c",
       "reviews": [
         {
           "verdict": "pass",
@@ -186,7 +186,7 @@
       }
     },
     "WP3": {
-      "definitions": "7e9dd13583a0d1fe768247a59dcdf844892d70783087c7dc97d557d4021a5cdf",
+      "definitions": "682e81594959f1b1629c61928329c1152c31dd8fa132d097b02e3e761c5f3f59",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -195,7 +195,7 @@
       }
     },
     "WP4": {
-      "definitions": "000f0fc338922f9abe4d1aea44c6a7a82bed4303d303b4ab99874659d0268eb9",
+      "definitions": "b970ab8ac930fc77add165be471043a7ec4fba6063a0bcf08f49d000f0773bef",
       "reviews": [],
       "authorised": {
         "by": "plan",

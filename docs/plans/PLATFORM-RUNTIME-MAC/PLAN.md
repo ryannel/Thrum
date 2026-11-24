@@ -71,6 +71,6 @@ present path; [the design](DESIGN.md#m2-and-m3-qualification-protocol) has the p
       command rerun, and all three WP2.2 arms on WP3.1's build.
 
 Stop rules:
-- A tooling regression needs a scoped re-plan; this milestone grants one recording per traced arm and no
+- A tooling regression needs a scoped re-plan; this work package grants one recording per traced arm and no
   diagnostic recordings.
 - Window logs that only show function cannot pass. Both items need a fresh independent review.

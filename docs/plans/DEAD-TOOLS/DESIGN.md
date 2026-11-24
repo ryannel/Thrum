@@ -43,7 +43,7 @@ commit, and claims nothing as present.
 
 **3. Script deletions land once, and the pinned comparison files are never touched.** `scripts/` is a covered
 path of the exact baselines, so each landing there asks the main-branch check `exact-images` for a run. WP1 deletes
-every dead script in one landing. The registry pins seven comparison files by content, and no milestone edits
+every dead script in one landing. The registry pins seven comparison files by content, and no work package edits
 one: `exact_baselines.py`, `exact_baselines_native.py`, `apple_tile_m0.py`, `apple_tile_m1.py`,
 `apple_tile_m2.py`, `compare_v1_pixels.py` and `apple_tile_m1_compare_browser.py`. A script one of them imports,
 directly or through another script, is not pinned and may be edited, but it keeps its name and everything the
@@ -57,7 +57,7 @@ What WP1 deletes, each the owner's call where the plan says so:
 | What | Finding | Size |
 |---|---|---|
 | The headless release-trust toolchain, written 1 to 3 November to prepare and verify a sealed release build for an example since deleted, run by nothing, compiled by every check. Fifteen scripts: `prepare_headless_cargo_home`, `prepare_macos_tool_root_clone`, `inventory_headless_tool_roots`, `run_bounded_native_build`, `qualify_held_macos_native_ab`, `release_cargo_selection`, the three `hold_macos_*` and the six `verify_*`. Their thirteen `test_*` suites, and the binary `tools/xtask/src/bin/rustc_receipt.rs` | P1-01, P2-01, L5-01 | 8,500 lines |
-| Thirteen one-shot milestone proof scripts and `creator_profile_probe.rs`, each written for one milestone of `APPLE-TILE`, `APPLE-PRESENTATION`, `COOKED-DRAW`, `CREATOR` or `TRANSPORT`. WP1.2's check lists them | P1-03 | 1,650 lines |
+| Thirteen one-shot work package proof scripts and `creator_profile_probe.rs`, each written for one work package of `APPLE-TILE`, `APPLE-PRESENTATION`, `COOKED-DRAW`, `CREATOR` or `TRANSPORT`. WP1.2's check lists them | P1-03 | 1,650 lines |
 | Three files that only one of those scripts, `reconstruction_motion.py`, runs: `capture_mac_m2_ungranted.py`, `mac_m2_capture_launcher.swift` and `review_v1_playback.mjs`. Deleting their one caller leaves them dead, and the rule `script-caller` of mechanism 8 would count them | P1-02 and L5-02, in their verifiers' notes | 210 lines |
 | `culling_campaign.py` and its suite. `CULLING` is Done and its plan says no loaded campaign repeats | G2-05 | 350 lines with WP4's half |
 
@@ -113,7 +113,7 @@ there.
   is tracked: `docs/provenance/<MODULE>.md`, beside the record of the 1 November import that Git already holds
   there. The merge accepts it, because its guard covers only the two evidence folders. Five modules have one
   today, in the working folder only: `SEA`, `WATERS`, `CLOUDS`, `PUDDLES` and `RIVERS` (L8-08). Each says nothing
-  has been copied yet. WP5 tracks them, and `CLOUDS` WP6, the first milestone that copies a library, waits for it.
+  has been copied yet. WP5 tracks them, and `CLOUDS` WP6, the first work package that copies a library, waits for it.
 
 The 373 unread records are deleted in one commit that only deletes. Each has a copy in the working folder. For
 some the copy differs from the bytes Git holds, because a later run rewrote it or its links were rewritten when
@@ -130,10 +130,10 @@ run them.
 
 **8. Each shape this module removes is frozen first, then counted down.** Scripts under `scripts/` went from 94
 files to 185 in a week, and shader text edits in engine code from 7 to 24, while the plan waited to add each
-rule until its cleanup had landed. So WP6, the second milestone built, adds four rules through
+rule until its cleanup had landed. So WP6, the second work package built, adds four rules through
 [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine, each entered at the count of the commit it lands on. The
 engine holds a count that can only fall, so from then on a landing that adds one more fails `./dev check`, and
-each later milestone here lowers a count as it deletes.
+each later work package here lowers a count as it deletes.
 
 | Rule | What it counts | Who lowers it |
 |---|---|---|
@@ -145,12 +145,12 @@ each later milestone here lowers a count as it deletes.
 **`script-caller` is the merge's gate, and it is looser than mechanism 1 on purpose.** Mechanism 1 is the test a
 person applies before deleting, and asks what runs a tool today. The rule asks only whether anything names the
 script, and takes as naming it two things mechanism 1 does not: a document that merely mentions it, and a
-done-when item's check whether its milestone is open or Done. Each keeps the count from moving at a time no
-builder controls. A count that followed open checks only would rise on the day a milestone closed and fail the
+done-when item's check whether its work package is open or Done. Each keeps the count from moving at a time no
+builder controls. A count that followed open checks only would rise on the day a work package closed and fail the
 next unrelated merge. So the rule refuses a script that nothing names at all, and its message says what to do:
 name it from what runs it.
 
-**A proof tool is tracked.** A script that only its own milestone's check runs lives under `scripts/`, at the
+**A proof tool is tracked.** A script that only its own work package's check runs lives under `scripts/`, at the
 path its item names. By the owner's rule that
 [a file a check reads is test data, not evidence](../../../ORCHESTRATE.md#starting-from-a-clean-clone), it is
 not kept in the evidence folder: there no reviewer would read it in the merge, and it could change after the
@@ -165,10 +165,10 @@ open items name and nobody has written yet land that way:
 | `view_volume.py`, `atmosphere_cost.py` | `ATMOSPHERE` |
 | `repo_layout.py`, `open_check_names.py` | `REPO-RULES`, `GAME-SPLIT` |
 
-When its milestone is Done a proof tool is history. Nothing runs it again, mechanism 1 calls it dead unless
+When its work package is Done a proof tool is history. Nothing runs it again, mechanism 1 calls it dead unless
 something else has come to run it, and any landing may delete it, as
 [ruling 1](../ARCHITECTURE.md#seam-rulings-for-track-6) allows and as WP1 does for the thirteen there are today.
-Nothing deletes it on the day its milestone closes, so such tools stay until a cleanup landing takes them. That
+Nothing deletes it on the day its work package closes, so such tools stay until a cleanup landing takes them. That
 is the cost of tracking them, and an assumption in [the plan](PLAN.md).
 
 **A deletion must not raise a count.** Deleting a script's last caller, or a bench's, leaves it counted where it
@@ -203,17 +203,17 @@ hook shape the engineering patterns already ask for. A rule's message always say
 | A module's provenance record, tracked at `docs/provenance/<MODULE>.md` | Every module that copies or translates a file from elsewhere, and whoever publishes the code |
 | The evidence manifest under `.config/`, with `evidence_store.py check` and `restore` as they were | Every builder and reviewer. It changes [REPO-RULES](../REPO-RULES/DESIGN.md) WP2's interface only in where the manifest is kept |
 
-## Files each milestone touches
+## Files each work package touches
 
-The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
+The lead confirms these against the builders at work before it starts a work package. A work package touches nothing
 outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`.
 Three files are everyone's: `.config/shape-baseline.json`, `docs/design/maturity.json` and `Cargo.lock`. Change
 them when your landing moves them, whatever your row says; a landing that meets a conflict there rebases and
 makes the same edit again. The rows are in build order, so WP5 is first and WP6 second.
 
-| Milestone | Files | Waits for | Who else is near |
+| Work package | Files | Waits for | Who else is near |
 |---|---|---|---|
-| WP5 | Five new files, `docs/provenance/SEA.md`, `WATERS.md`, `CLOUDS.md`, `PUDDLES.md` and `RIVERS.md`; the `docs/provenance/` row of `docs/REPOSITORY.md`; one line at the head of each module's `PROVENANCE.md` in the working folder, which Git does not hold | Nothing | `CLOUDS` WP6 waits for this milestone. Nobody else writes under `docs/provenance` |
+| WP5 | Five new files, `docs/provenance/SEA.md`, `WATERS.md`, `CLOUDS.md`, `PUDDLES.md` and `RIVERS.md`; the `docs/provenance/` row of `docs/REPOSITORY.md`; one line at the head of each module's `PROVENANCE.md` in the working folder, which Git does not hold | Nothing | `CLOUDS` WP6 waits for this work package. Nobody else writes under `docs/provenance` |
 | WP6 | The four rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`, and the sections of the engineering patterns their messages point at | Nothing | `TEST-SUPPORT` WP5 adds two rules to the same files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
 | WP1 | The deleted files under `scripts/`, with any file there that a deletion leaves with no caller; `tools/xtask/src/bin/rustc_receipt.rs`; the script-suite step of `tools/xtask/src/main.rs`; the three F4 and T2 headless-build designs under `docs/design/` and the research notes that link the toolchain; the toolchain's rows of `docs/design/maturity.json`, and its entries in `.config/shape-baseline.json` and `.config/architecture.toml` | Nothing | No builder is in these scripts. `CLOUDS` works in `scripts/reference/cloud/`, which is not touched. `GATE-TIME` WP1 adds a command to the same `main.rs` |
 | WP2 | `crates/thrum-render/benches/` and the `[[bench]]` tables and bench dependency of `crates/thrum-render/Cargo.toml`, with the `Cargo.lock` entries that follow from it; `examples/v1-game/benches/field_culling.rs`, `material_reload.rs`, `g2r.rs` and `frame.rs`, and the `[[bench]]` tables of `examples/v1-game/Cargo.toml`; the `baseline-inventory` command in `tools/xtask/src/main.rs`; its row in `CONTRIBUTING.md` | Nothing | `HOST` edited `field_culling.rs` seven times in three days and its WP3.2 asks about benches, so deleting first saves it work: tell its builder. `GATE-TIME` WP2 edits the `[[test]]` tables of the same game manifest |

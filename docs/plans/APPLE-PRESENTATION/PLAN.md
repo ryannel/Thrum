@@ -55,7 +55,7 @@ The aerial lookup's cadence knob is built in `ATMOSPHERE`'s files under the ruli
 not declared one; its items do not change. `WATERS` and `CLOUDS` register their own knobs later through the same
 interface, so keep it free of any module's name. Frame samples and pass timing are the frame runtime's feed
 (`timing.rs`), which `CREATOR`'s profiler also reads: leave its timing-demand switch working. The generation
-build's lifecycle in the frame host is WP4's; marking held frames on it is this milestone's, and D4.5's test
+build's lifecycle in the frame host is WP4's; marking held frames on it is this work package's, and D4.5's test
 already forces the failed build D7.9 needs.
 
 ## WP8 MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback

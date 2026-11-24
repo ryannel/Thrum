@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/CLOUDS/design-review.md",
     "commit": "6896d70c083e554f23910331774455a6221b1464",
-    "hash": "d9b358e5fa7f52b15cab5fb8b7193456e34f4cc0cb5ce07845bf8adc3ee79c26",
+    "hash": "84912432fc2e889f873d6ab6d6f63cdeb6aec719ec4a833c934ed111ef4da976",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "187b827f7222320f0ed5fc86f39374d7cde01489091ddfb5440bf0c396638d68",
+      "definitions": "26cf8bbf45917ecd4cff352929625d7cff3731b600b425480455990500cada56",
       "reviews": [
         {
           "verdict": "fail",
@@ -159,7 +159,7 @@
       }
     },
     "WP2": {
-      "definitions": "7853656bc943bc389a9f96a659f717b7a775b3027f8b7735019e7aaa5fad1ae4",
+      "definitions": "2f76ae6ca69145eb528c2d11bd494b1b16eb24db7848a835d49ca204f0e09911",
       "reviews": [
         {
           "verdict": "pass",
@@ -238,7 +238,7 @@
       }
     },
     "WP3": {
-      "definitions": "d7407d99c94115e6248df991b3bd80f3fc571da44b843d219d163dbe6ec8447d",
+      "definitions": "2d8547640c7aecf33dcd26e1ed0bdb90b04876db0ef33fe4a795ea33bd7db43d",
       "reviews": [
         {
           "verdict": "fail",
@@ -363,7 +363,7 @@
       }
     },
     "WP4": {
-      "definitions": "44dd75ee2ec19253e912fa56901a1a6f897be818740b9c57b157b481971206e9",
+      "definitions": "12268b5f3267f1a5ce15d51d1bd5d7828bcf115fb4bd7c1183d5cfb79b77f9f2",
       "reviews": [
         {
           "verdict": "fail",
@@ -472,7 +472,7 @@
       }
     },
     "WP5": {
-      "definitions": "79c39616cb06d50056477a726092efbe3df76063d43ffe2474321a1db8b375dd",
+      "definitions": "90cae890990734d993242364b9bdf166775895fc101dd4e72af2bc339e4c3ddf",
       "reviews": [
         {
           "verdict": "fail",
@@ -594,7 +594,7 @@
       }
     },
     "WP6": {
-      "definitions": "77d21912bfe76d5eb651f9327b995a0a1db28883033847006935bfb4737cd6cc",
+      "definitions": "6342edf9463b651923d44005c7a90c166654f8ce3ed293cbcf029b2af66dd06e",
       "reviews": [
         {
           "verdict": "fail",
@@ -831,7 +831,7 @@
       }
     },
     "WP7": {
-      "definitions": "4ef76962c945e7bbdc2ba185f098536d049cde5c4477fb857deb8ccd396c8a21",
+      "definitions": "2e76e7c4485d13b03b702be3808a8fbc4d39075b8b386359e2c1cc026d5b9c91",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -840,7 +840,7 @@
       }
     },
     "WP8": {
-      "definitions": "e1d99a48949ca91b31d8ac0079f7870aa348ec744bc497e4396bbc6357193187",
+      "definitions": "b6dd1c127076bf9da79f206179721e3a03144fb79de66ca52c8602136a23ed33",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -849,7 +849,7 @@
       }
     },
     "WP9": {
-      "definitions": "e88d75bcaaf06f3047ab16f8f01bdb5876846c9443f7c583db6a0e8a6a4660f5",
+      "definitions": "4a14c57242bb4dca7bbb9cbf0057434fac46c21451dfea7a37da08a6a8708d1b",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -858,7 +858,7 @@
       }
     },
     "WP10": {
-      "definitions": "765b0ea2f5e4dfc11475f9512318dbc4718cb5c6623d663d8baf24f1520e0b9d",
+      "definitions": "1db4c837fc1334bf8bc3b49f0456462a6dd07d81ba7b06f85808ac18297e7523",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -867,7 +867,7 @@
       }
     },
     "WP11": {
-      "definitions": "9128fb546ac8fef703a7e89acaf1e49f23f505f87e9ca8b144e0636c2405f947",
+      "definitions": "d62e050a18ee9691cf5f109e274fd40dbcc6355262569967cb708f02858292a5",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -876,7 +876,7 @@
       }
     },
     "WP12": {
-      "definitions": "b303da25fafe5c92e14508a6ae51e99ed13c501b93f8ceadedbd522b08dee5ae",
+      "definitions": "412f00931883e3c742e24fc3a91927d9d337c639a09c8e24356705b4e782c467",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -886,7 +886,7 @@
       "ends_stretch": true
     },
     "WP13": {
-      "definitions": "1ea97319bbc3e27ffa7fabfdbc246f23a26697441ac8fbb9187a540964ce1154",
+      "definitions": "eacf6e86c21eb631106b40d1e67e6f40c9f2095b50f4577b298c2d85fdafcdeb",
       "reviews": [
         {
           "verdict": "fail",
@@ -1057,7 +1057,7 @@
       }
     },
     "WP14": {
-      "definitions": "b9b19b9a3f9d56d4b78f9102887ec2a77590c24e27dda448fa7148ed4ee6af81",
+      "definitions": "0eb1ed13256bc52c9ac1515964fa70b6d3ba3b8d9c5bf3a781f6dcc03833f5a3",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1066,7 +1066,7 @@
       }
     },
     "WP15": {
-      "definitions": "74b53fdf5f275d5023d17908079486d5179fa80c465dcf111d433c5ea235867b",
+      "definitions": "a83137e5b94daa9e2886b08d2f0e50b3dc4164d559ce0f239ca964c89b9aa930",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1075,7 +1075,7 @@
       }
     },
     "WP16": {
-      "definitions": "7bbb576aff10aca2609eab9fdfd8ba8e427ffbeeee75a527c48aac46540a1d6d",
+      "definitions": "cc15efb291ac4a24f6a0fb2ce899c7bc69a1d8470391ca01362ebc9ab4bc6194",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1084,7 +1084,7 @@
       }
     },
     "WP17": {
-      "definitions": "cc87cd92183dbfb72af36467700174e94fab6597e634f342ca782a1e1efa4b27",
+      "definitions": "f75b0a61557e25e614a624ea696e862ec6eacea2e5985542a6a4dc2fa49a8774",
       "reviews": [],
       "authorised": {
         "by": "plan",

@@ -230,7 +230,7 @@ reads the engineering skill. So the skill carries the habits, and the settings s
   engine's clock by ticks or frames, and never sleeps or polls the wall clock for it. A test that waits on the
   device, for a readback or a submission, uses the kit's `wait::until`, which `test-deadline` already holds.
 
-WP6 is built before WP3, as WP5 was: it converts no test, so it can run beside any milestone, and `GATE-TIME` WP12
+WP6 is built before WP3, as WP5 was: it converts no test, so it can run beside any work package, and `GATE-TIME` WP12
 waits for it.
 
 ## Interfaces
@@ -247,19 +247,19 @@ waits for it.
 | The block on writing a test in the engineering skill, and the five pattern entries under the anchors `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test` | Every builder who writes a test. `GATE-TIME` WP12, whose rule messages link to the entries and which adds each rule's name to its entry |
 | The cross-target type-check, `scripts/check_cross_target.sh`, and the main-branch check `cross-target` that runs it | Every module that writes a test: a change that breaks the Linux or Windows build of one is its module's to fix. `GATE-TIME`, which owns the tiers, names the check with the main tier's others |
 
-## Files each milestone touches
+## Files each work package touches
 
-The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
+The lead confirms these against the builders at work before it starts a work package. A work package touches nothing
 outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`. Three files are
 everyone's: `.config/shape-baseline.json`, `docs/design/maturity.json` and `Cargo.lock`. Change them when your
 landing moves them, whatever your row says. The rows are in build order: WP5 and WP6 are built before WP3.
 
-| Milestone | Files | Waits for | Who else is near |
+| Work package | Files | Waits for | Who else is near |
 |---|---|---|---|
 | WP2 | Besides the conversion, which is in the tree: the type-check's script and its stand-in compilers, under `scripts/`; the test files and dev-dependencies of whichever package the type-check or WP2's questions name, which today are `crates/thrum-asset-gpu` and `examples/water/tests/`; one line of `ORCHESTRATE.md` | Nothing more | `GATE-TIME` WP1 edits `examples/water/tests/floating_gpu.rs` and the same list in `ORCHESTRATE.md`, and `WATERS` builds in the water scene's tests: whichever lands second rebases |
-| WP5 | `crates/thrum-test-support/` (the kit's functions, their tests, the manifest); `crates/thrum-render/src/test_device.rs`; the two rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`; the Tests section of the engineering patterns | Nothing outside this module | It converts no test, so it can run beside any milestone. `DEAD-TOOLS` WP6 adds four rules to the same rule files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
-| WP6 | The new `target` module of `crates/thrum-test-support/` with its test; the adopted-shapes table and the new block of `.agents/skills/thrum-engineering/SKILL.md`; the Tests section of that skill's `references/patterns.md` | Nothing | It converts no test, so it can run beside any milestone. `GATE-TIME` WP12 edits the same Tests section after it, and WP5 of that module the contributor guide, which says the same things for a person |
-| WP3 | Test files only: the integration tests and unit-test modules of every crate under `crates/`, and the `tests/` folders of the kit scenes (`examples/water`, `mirror`, `starter`, `lighthouse` and `stones`); `crates/thrum-test-support/` and `crates/thrum-render/src/test_device.rs` where a conversion needs the kit extended; the exemptions of `test-readback` in `scripts/shape_matchers.py` with their fixtures | `GATE-TIME` WP2 and `DEAD-CODE` WP2, which delete tests and stubs in these files; `GATE-TIME` WP6, because some of these files hold tests behind a Cargo feature that no merge compiled before it | The widest set in track 6, so it runs beside milestones that touch no test file (`DEAD-TOOLS` WP1, WP2 and WP4, `DEAD-CODE` WP5, `GATE-TIME` WP5 and M7) and not, where the lead can choose, beside one whose row names test files: `GATE-TIME` WP3 (`foam_scene_gpu.rs`, `support/island.rs`) and WP4 (the mirror's pool tests, `draw/tests.rs`, `scene_view_absent_gpu.rs`), `DEAD-TOOLS` WP3 (`atmosphere/gpu/tests/aerial_ground.rs`, a readback site), `DEAD-CODE` WP3 (two renderer test files), WP4 (the water scene's proof tests) and WP6. Where one of those is building anyway, whichever lands second rebases. `REVIEW-RENDER` and `HOST` build in the renderer's tests |
+| WP5 | `crates/thrum-test-support/` (the kit's functions, their tests, the manifest); `crates/thrum-render/src/test_device.rs`; the two rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`; the Tests section of the engineering patterns | Nothing outside this module | It converts no test, so it can run beside any work package. `DEAD-TOOLS` WP6 adds four rules to the same rule files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
+| WP6 | The new `target` module of `crates/thrum-test-support/` with its test; the adopted-shapes table and the new block of `.agents/skills/thrum-engineering/SKILL.md`; the Tests section of that skill's `references/patterns.md` | Nothing | It converts no test, so it can run beside any work package. `GATE-TIME` WP12 edits the same Tests section after it, and WP5 of that module the contributor guide, which says the same things for a person |
+| WP3 | Test files only: the integration tests and unit-test modules of every crate under `crates/`, and the `tests/` folders of the kit scenes (`examples/water`, `mirror`, `starter`, `lighthouse` and `stones`); `crates/thrum-test-support/` and `crates/thrum-render/src/test_device.rs` where a conversion needs the kit extended; the exemptions of `test-readback` in `scripts/shape_matchers.py` with their fixtures | `GATE-TIME` WP2 and `DEAD-CODE` WP2, which delete tests and stubs in these files; `GATE-TIME` WP6, because some of these files hold tests behind a Cargo feature that no merge compiled before it | The widest set in track 6, so it runs beside work packages that touch no test file (`DEAD-TOOLS` WP1, WP2 and WP4, `DEAD-CODE` WP5, `GATE-TIME` WP5 and M7) and not, where the lead can choose, beside one whose row names test files: `GATE-TIME` WP3 (`foam_scene_gpu.rs`, `support/island.rs`) and WP4 (the mirror's pool tests, `draw/tests.rs`, `scene_view_absent_gpu.rs`), `DEAD-TOOLS` WP3 (`atmosphere/gpu/tests/aerial_ground.rs`, a readback site), `DEAD-CODE` WP3 (two renderer test files), WP4 (the water scene's proof tests) and WP6. Where one of those is building anyway, whichever lands second rebases. `REVIEW-RENDER` and `HOST` build in the renderer's tests |
 | WP4 | The reflection check in `crates/thrum-test-support/`; `crates/thrum-render/tests/wgsl_records.rs`; the `wgsl_records` tests and bound-struct walks of `thrum-sea`, `thrum-asset-gpu`, `thrum-water` and `thrum-clouds`; `examples/v1-game/tests/cooked_assets_gpu.rs`, `cooked_material_gpu.rs` and the test support they share | `REVIEW-RENDER` WP2, which owns the renderer's checker | `GATE-TIME` WP5 narrows the draw-probe pass that runs `cooked_assets_gpu`, in the check command only. `DEAD-CODE` WP5 edits `cooked_rows_gpu.rs`, which this leaves alone |
 
 ## Not built here
@@ -287,7 +287,7 @@ Both comparisons span other modules' commits, and the cleanup deletes tests on p
 the earlier run and is missing from the later one counts against WP3 unless a commit of another module took it
 out of the run, by deleting it, renaming it or taking it off what the command runs. WP3's record names that commit
 for each such test, and a reviewer confirms from its diff that it removes the test and that it is another
-module's. Whether the removal was right is a question for the review of the milestone that made it, so WP3's
+module's. Whether the removal was right is a question for the review of the work package that made it, so WP3's
 review does not ask it again, and WP3 never restores such a test. A test that is missing with no such commit to
 name is WP3's loss.
 

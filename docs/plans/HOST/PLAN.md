@@ -5,7 +5,7 @@ and a game is hosted through one contract. [Design](DESIGN.md) · [done-when fil
 criteria · [log](LOG.md) · [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone. Chrome and the simulator start outside
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any work package. Chrome and the simulator start outside
 the Codex sandbox; if a launch is refused, leave the item open and say so, and do not substitute another target's
 result.
 

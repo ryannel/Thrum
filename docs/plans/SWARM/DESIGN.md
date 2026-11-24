@@ -594,7 +594,7 @@ socket adapters and the relay (`TRANSPORT`); the session, the connection state, 
 the match proof (`SESSION`); the app runner and typed controls (`CREATOR`); engine capture (`T2-CAPTURE`).
 
 **Asked of other modules.** The two [seam rulings](../ARCHITECTURE.md#seam-rulings-for-swarm) of
-[mechanism 11](#11-three-targets-one-game). No milestone is added to another module.
+[mechanism 11](#11-three-targets-one-game). No work package is added to another module.
 
 **Contracts.** No contract's text changes. C13's rule-set addition is `SESSION`'s, and this game is its first
 user: it declares its rule set, its action wire and which actions are commands.
@@ -657,7 +657,7 @@ in the closing record as not run.
    are presentation only and can be retuned without touching a rule.
 9. **The shared iOS shell does not fit a third app.** Early sign: WP6.4's question, and WP6.3, which runs the
    simulator checks the other modules left for the first two.
-10. **The engine modules land differently from their designs.** Early sign: each milestone's first reading.
+10. **The engine modules land differently from their designs.** Early sign: each work package's first reading.
     The builder writes the difference in the log, and ends `BLOCKED` if a mechanism here cannot stand.
 11. **The simulator cannot keep the pace of a match at the cap.** It proves function only, and a peer too slow
     is dropped by design. WP8 records what happened; a slow simulator is no defect.
@@ -671,7 +671,7 @@ in the closing record as not run.
 - **Targets.** `mac-metal`, `chrome-webgpu` and `ios-sim`, the last for function only. The host is always
   native on the Mac.
 - **Order between modules.** WP1 waits for `SHOWCASE:WP8`: the game starts when V1 has landed, by the owner's
-  word of 14 November, and every later milestone follows WP1. WP2 waits for `SIM-2D:WP3`;
+  word of 14 November, and every later work package follows WP1. WP2 waits for `SIM-2D:WP3`;
   for `SESSION:WP1`, after which every rule package supplies both halves of the state encoding, so the game's
   components are written once; and for `RENDER-2D:WP5`, which leaves the crowd view and the sprite scene in the
   shells. WP2 draws no interface, so it does not wait for `GAME-UI`, whose builder may be in the shells at the
@@ -696,8 +696,8 @@ in the closing record as not run.
   [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines). A change to a rule refreshes them on
   purpose, with a line in the log. No image baseline is registered.
 - **Exact baselines.** This module edits `crates/`, `scripts/`, the workspace manifest and the lockfile, which
-  are covered paths, and moves no retained image. Every milestone but WP1 carries the verifier.
-- **GPU.** Every check that draws holds the `gpu` lock. Scratch goes in `tmp/swarm-<milestone>/`; selected
+  are covered paths, and moves no retained image. Every work package but WP1 carries the verifier.
+- **GPU.** Every check that draws holds the `gpu` lock. Scratch goes in `tmp/swarm-<work-package>/`; selected
   evidence in `.orchestrate/evidence/SWARM/`.
 - **The closing record,** `.orchestrate/evidence/SWARM/TRACK-3-RECORD.md`, written in WP8: what each of the five engine
   modules proved in the game and on which targets, and what was not run. It says track 3 is closed only once
@@ -710,7 +710,7 @@ in the closing record as not run.
 - **Stopping.** If peers cannot be held equal with the game's rules, the builder keeps the first differing
   tick, the component and both digests, and ends `BLOCKED`.
 
-## Limits on every milestone
+## Limits on every work package
 
 Each has its reason beside it.
 

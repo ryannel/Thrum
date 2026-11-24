@@ -133,7 +133,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This milestone holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS WP2, which waits for it.",
+      "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This work package holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS WP2, which waits for it.",
       "items": [
         {
           "id": "WP9.1",
@@ -149,10 +149,10 @@
         },
         {
           "id": "WP9.2",
-          "statement": "Nothing above the ground moved. For frames recorded at the commit this milestone started from, every texel of a line that never meets the ground, and every layer that ends before its line meets the ground, holds the bytes that commit stored. Past the ground every stored value is finite, and each layer's stored transmittance lies between 0 and 1 and is no higher than the layer's before it. Two layers may store the same transmittance, zero included, because half-float storage rounds a value that is still falling to the same step. On a line with two or more layers past the ground, the last layer's stored transmittance is lower than that of the first layer past the ground.",
+          "statement": "Nothing above the ground moved. For frames recorded at the commit this work package started from, every texel of a line that never meets the ground, and every layer that ends before its line meets the ground, holds the bytes that commit stored. Past the ground every stored value is finite, and each layer's stored transmittance lies between 0 and 1 and is no higher than the layer's before it. Two layers may store the same transmittance, zero included, because half-float storage rounds a value that is still falling to the same step. On a line with two or more layers past the ground, the last layer's stored transmittance is lower than that of the first layer past the ground.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib aerial_ground::above_ground_bytes 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "lock": "gpu",
-          "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on? Past the ground, does the test accept equal stored transmittance in neighbouring layers and refuse a rise, and does it compare the values read back, not a model of the air?",
+          "ask": "Were the retained values stored by the commit before this work package, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on? Past the ground, does the test accept equal stored transmittance in neighbouring layers and refuse a rise, and does it compare the values read back, not a model of the air?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-numerical.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
@@ -164,7 +164,7 @@
           "statement": "On Metal the preserved referees P1-P11 and the handoff rows H1-H5 of the design's numerical acceptance table pass against the production producers with no reference, case or bound changed, and the all-orders solar grid still reports all 198 rows.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
+          "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this work package? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-resume.md; .orchestrate/evidence/ATMOSPHERE/WP9-resume/checks.json.gz; .orchestrate/evidence/ATMOSPHERE/WP9-continuation/all-orders.tsv.gz",
           "verdict": "pass",
@@ -184,7 +184,7 @@
         },
         {
           "id": "WP9.5",
-          "statement": "The registered exact baselines are refreshed in the landing that changes the pass, as the module list's ruling on this milestone allows. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. In `.config/exact-baselines.json` that landing changed the `pin` and the `refresh` of each baseline whose reference moved, each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `WP9`, and nothing else; the comparisons, their sampling and every script are as they were. The verifier passed at the commit this milestone started from, before any change. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
+          "statement": "The registered exact baselines are refreshed in the landing that changes the pass, as the module list's ruling on this work package allows. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. In `.config/exact-baselines.json` that landing changed the `pin` and the `refresh` of each baseline whose reference moved, each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `WP9`, and nothing else; the comparisons, their sampling and every script are as they were. The verifier passed at the commit this work package started from, before any change. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `WP9`? Did the landing leave the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
@@ -226,8 +226,8 @@
         },
         {
           "id": "WP9.9",
-          "statement": "The maturity ledger's atmosphere rows say what this milestone proved, implementation, correctness, visuals and device apart: the aerial product's read near the ground against its own column, on Metal. They still name solar aerial transport as not qualified against an independent reference, and the look at sea level as not yet judged.",
-          "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
+          "statement": "The maturity ledger's atmosphere rows say what this work package proved, implementation, correctness, visuals and device apart: the aerial product's read near the ground against its own column, on Metal. They still name solar aerial transport as not qualified against an independent reference, and the look at sea level as not yet judged.",
+          "ask": "Do the rows claim only what this work package proved, on the targets it ran on?",
           "target": "mac-metal",
           "evidence": "docs/design/maturity.json; .orchestrate/evidence/ATMOSPHERE/WP9-numerical.md; .orchestrate/evidence/ATMOSPHERE/WP9-images.md; .orchestrate/evidence/ATMOSPHERE/WP9-cost.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
@@ -243,7 +243,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "Far shadows as over Red Dead Redemption 2's New Austin or Forza Horizon 5's Mexico seen from high ground: ridges and mesas shade the far ground steadily, and nothing in the air draws a hard bar across it or blinks one on and off. This milestone judges that one defect on the exit camera. The stepped edge of far terrain shadows and the finished image are judged in SHOWCASE WP8.",
+      "quality_bar": "Far shadows as over Red Dead Redemption 2's New Austin or Forza Horizon 5's Mexico seen from high ground: ridges and mesas shade the far ground steadily, and nothing in the air draws a hard bar across it or blinks one on and off. This work package judges that one defect on the exit camera. The stepped edge of far terrain shadows and the finished image are judged in SHOWCASE WP8.",
       "items": [
         {
           "id": "WP10.1",
@@ -327,9 +327,9 @@
         },
         {
           "id": "WP6.4",
-          "statement": "In Chrome on hardware WebGPU, on the final build, a contribution with its own pipeline, using only the lent layout and library, receives each of the five lent operations as the atmosphere stores it, in physical units and with the exposure scale not applied. Every contract comparison of H1-H5 passes, the reflection cube's probe and the split-sum pair's stored-table rule among them. H5 passes or fails on no comparison with the reflection model: its differences from P7's closed forms and P8's quadrature are in the run's report as records. Each of the five guards made through the library in H1-H4 passes against the expected values the Metal test holds, and every expected value this milestone changed is in the log with the change to the look that moved it.",
+          "statement": "In Chrome on hardware WebGPU, on the final build, a contribution with its own pipeline, using only the lent layout and library, receives each of the five lent operations as the atmosphere stores it, in physical units and with the exposure scale not applied. Every contract comparison of H1-H5 passes, the reflection cube's probe and the split-sum pair's stored-table rule among them. H5 passes or fails on no comparison with the reflection model: its differences from P7's closed forms and P8's quadrature are in the run's report as records. Each of the five guards made through the library in H1-H4 passes against the expected values the Metal test holds, and every expected value this work package changed is in the log with the change to the look that moved it.",
           "check": "node scripts/check_v1_browser.mjs --case environment",
-          "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this milestone started from. In H1-H4, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. In H5, are the changes only the ones the design names: the stored-cube probe and the stored-table rule added, and the closed-form and quadrature comparisons kept as recorded differences with no assertion on them, while the night term, the agreement across edges and corners, the furnace and the source scaling stand as they were? Is every changed expected value one of the design's five guards, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
+          "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this work package started from. In H1-H4, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. In H5, are the changes only the ones the design names: the stored-cube probe and the stored-table rule added, and the closed-form and quadrature comparisons kept as recorded differences with no assertion on them, while the night term, the agreement across edges and corners, the furnace and the source scaling stand as they were? Is every changed expected value one of the design's five guards, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP6/integrated/chrome/environment.json",
@@ -363,7 +363,7 @@
         },
         {
           "id": "WP6.5",
-          "statement": "The route's cost is on record: on the Mac, the whole frame's GPU time and each atmosphere pass's GPU time by name on the six-stop route, on the final build and, in the same session and configuration (extent, TAAU on, load class, order alternated), on the commit this milestone started from, with the load on the machine. The record says whether a hitch was seen in the scrub. A visible hitch, or a pass about 25% over its arm on the starting commit, has its investigation beside it. The WP1 and WP2 records are quoted as history only, and none is called paired. No figure in the record decides this item.",
+          "statement": "The route's cost is on record: on the Mac, the whole frame's GPU time and each atmosphere pass's GPU time by name on the six-stop route, on the final build and, in the same session and configuration (extent, TAAU on, load class, order alternated), on the commit this work package started from, with the load on the machine. The record says whether a hitch was seen in the scrub. A visible hitch, or a pass about 25% over its arm on the starting commit, has its investigation beside it. The WP1 and WP2 records are quoted as history only, and none is called paired. No figure in the record decides this item.",
           "check": "python3 scripts/atmosphere_cost.py check --scene route",
           "lock": "gpu",
           "target": "mac-metal",
@@ -384,9 +384,9 @@
         },
         {
           "id": "WP6.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit. If this milestone changed the look of the sky or the sunlight, each reference that moved was regenerated by `APPLE-TILE`'s own scripts in the landing that made the change, the registry changed only in the `pin` and the `refresh` of each baseline that moved, each refresh naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `WP6`, and `APPLE-TILE`'s log and this module's each record the change to the look and every moved reference's old and new SHA-256. The valley's source is as `SHOWCASE` WP9 left it.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit. If this work package changed the look of the sky or the sunlight, each reference that moved was regenerated by `APPLE-TILE`'s own scripts in the landing that made the change, the registry changed only in the `pin` and the `refresh` of each baseline that moved, each refresh naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `WP6`, and `APPLE-TILE`'s log and this module's each record the change to the look and every moved reference's old and new SHA-256. The valley's source is as `SHOWCASE` WP9 left it.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "ask": "Read this milestone's own commits with `git diff`. Do they leave `examples/v1-game/assets/showcase/` and the stop presets as they were? If they change `.config/exact-baselines.json`, is every change a `pin` or a `refresh` naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `WP6`, does the log name the change to the look that moved each reference with its old and new SHA-256, and are the comparison scripts and their sampling as they were?",
+          "ask": "Read this work package's own commits with `git diff`. Do they leave `examples/v1-game/assets/showcase/` and the stop presets as they were? If they change `.config/exact-baselines.json`, is every change a `pin` or a `refresh` naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `WP6`, does the log name the change to the look that moved each reference with its old and new SHA-256, and are the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "builder_result": "pass",
@@ -410,10 +410,10 @@
       "items": [
         {
           "id": "WP7.1",
-          "statement": "A scene that declares no view volume is untouched: its composed shader text, passes, resources and submitted frames are what they were before this milestone, on the Mac and in Chrome.",
+          "statement": "A scene that declares no view volume is untouched: its composed shader text, passes, resources and submitted frames are what they were before this work package, on the Mac and in Chrome.",
           "check": "python3 scripts/view_volume.py off-parity",
           "lock": "gpu",
-          "ask": "Is the base the commit this milestone started from, recorded before any change, and does the Chrome arm run the same comparison?",
+          "ask": "Is the base the commit this work package started from, recorded before any change, and does the Chrome arm run the same comparison?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/off-parity.json",
           "verdict": "pass",
@@ -521,7 +521,7 @@
         {
           "id": "WP7.11",
           "statement": "The maturity ledger's atmosphere rows state implementation, correctness, visuals and device apart for the view volume and the haze input, and name what is not qualified: the joint volume against an all-orders reference, and local lights in the air.",
-          "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
+          "ask": "Do the rows claim only what this work package proved, on the targets it ran on?",
           "target": "mac-metal",
           "evidence": "docs/design/maturity.json",
           "verdict": "pass",
@@ -530,7 +530,7 @@
         },
         {
           "id": "WP7.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -635,7 +635,7 @@
         {
           "id": "WP8.8",
           "statement": "The number of sampled textures each forward pipeline and the view volume's passes bind, with a ground band and a medium provider registered, is on record against the capability record and WebGPU's default limits, and every count is within its limit.",
-          "ask": "Does this milestone's evidence give the count for each pipeline and the limit it was checked against?",
+          "ask": "Does this work package's evidence give the count for each pipeline and the limit it was checked against?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -647,7 +647,7 @@
           "statement": "With the test bank, the paired cost record is taken again on the Mac and in Chrome beside WP7's, with the medium's passes timed by name. Each tripped wire has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/view_volume.py cost --scene medium",
           "lock": "gpu",
-          "ask": "Is the record paired, with load and order, on this milestone's work, with the Chrome record beside it?",
+          "ask": "Is the record paired, with load and order, on this work package's work, with the Chrome record beside it?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -657,7 +657,7 @@
         {
           "id": "WP8.10",
           "statement": "The maturity ledger's atmosphere rows are current, with the test medium named as a stand-in that `CLOUDS` replaces.",
-          "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
+          "ask": "Do the rows claim only what this work package proved, on the targets it ran on?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -666,7 +666,7 @@
         },
         {
           "id": "WP8.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",

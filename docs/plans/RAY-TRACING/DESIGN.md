@@ -165,7 +165,7 @@ Read for this design, 17 and 18 November 2026:
 
 ## Proof
 
-Each cue is judged by eye, in the running proving ground, against its milestone's inspection list and the bar
+Each cue is judged by eye, in the running proving ground, against its work package's inspection list and the bar
 above. Each cost is a tripwire record. Tests hold the contracts, where a failure would be silent:
 
 - **What the structure holds.** The instance list is compared with the scene's own records on the CPU: which
@@ -210,7 +210,7 @@ The registry already records the features a device generation enabled. This modu
 - No host adds `ray-query` by itself, on any adapter. The Mac window asks for it only when its launch names
   it. Chrome has no request route and the iPhone app does not ask.
 
-`MESH-SHADING` adds its feature to the same function and the same list. Whichever module's first milestone
+`MESH-SHADING` adds its feature to the same function and the same list. Whichever module's first work package
 lands second extends what the first built.
 
 ### The structure (WP1, WP2)
@@ -816,7 +816,7 @@ Defined here, listed in [the module list](../ARCHITECTURE.md#interfaces-track-5)
 This module builds inside state other modules own, under
 [the seam rulings for track 5](../ARCHITECTURE.md#seam-rulings-for-track-5). Its own files are a `raytrace`
 module in `thrum-render` and its tests. With no request and no selection every byte on main is unchanged,
-the recipe a launch resolves to included, and each milestone
+the recipe a launch resolves to included, and each work package
 proves it through [the exact baselines](../ARCHITECTURE.md#exact-baselines). No baseline is added for a traced
 frame: it is judged by inspection.
 
@@ -871,7 +871,7 @@ that moved, through a third mask bit.
 ## Risks
 
 1. **wgpu's ray tracing is experimental.** A defect a builder cannot work around inside Thrum ends the
-   milestone `BLOCKED` with the smallest program that shows it. No pinned copy of wgpu exists before
+   work package `BLOCKED` with the smallest program that shows it. No pinned copy of wgpu exists before
    `APPLE-PRESENTATION` WP10, and nothing is posted upstream without the owner.
 2. **The rebuild grows with the scene, not the view.** Recorded from WP1. The candidate is a second structure
    for still geometry.
@@ -896,7 +896,7 @@ that moved, through a third mask bit.
 6. **Other builders are in the same files.** `SCENE-VIEWS`, `ATMOSPHERE`, `APPLE-PRESENTATION`, `HOST`,
    `REVIEW-RENDER` and `MESH-SHADING` all work in `thrum-render`, `thrum-app` or `thrum-asset-gpu`. This
    module's changes add to those files; a builder integrates on what has landed and rewrites nothing another
-   milestone holds.
+   work package holds.
 
 ## Proof and builder handoff
 
@@ -922,8 +922,8 @@ that moved, through a third mask bit.
   settle length and one more. The reviewer is given those frames at native size.
 - Every timing of this module is a tripwire taken under load, WP6's pair included: it records the load and
   fails only on a missing measurement. No sitting with other builders paused is asked for.
-- Scratch goes in `tmp/ray-tracing-<milestone>/`, selected evidence in `.orchestrate/evidence/RAY-TRACING/`.
+- Scratch goes in `tmp/ray-tracing-<work-package>/`, selected evidence in `.orchestrate/evidence/RAY-TRACING/`.
 
 ## Open questions
 
-None that blocks a milestone. What the owner may want decided is in [the plan](PLAN.md#open-for-the-human).
+None that blocks a work package. What the owner may want decided is in [the plan](PLAN.md#open-for-the-human).

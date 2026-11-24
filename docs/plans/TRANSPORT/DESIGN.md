@@ -27,7 +27,7 @@ WebTransport crate, where the network's thread sits beside the world lane, and w
 built.
 
 **When it is built.** Before or after the V1 exit, whenever a builder slot is free: WP1 waits for no other
-module's milestone. The owner, 15 November 2026, on transport's timing: "it can come before V1 if we have space
+module's work package. The owner, 15 November 2026, on transport's timing: "it can come before V1 if we have space
 for it, but it's not urgent". So this module is last in line for a builder, and the lead starts one only when a
 slot is free. The ruling replaces "transport stays after V1", which decision 1 of
 [the brief](../VISION.md#goal-and-exit-rule) carried until that day; transport is still no part of the V1 exit
@@ -509,7 +509,7 @@ each application byte that grow with the length of a run.
   who stands still while the host shows the link open. `SESSION` times out silent input; this module records what
   the host sees.
 - **The lockfile.** New dependencies must not move the version of a crate already locked, or an exact image
-  baseline may move. Each milestone carries the verifier.
+  baseline may move. Each work package carries the verifier.
 
 ## Proof and builder handoff
 

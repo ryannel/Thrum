@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SIM-2D/design-review.md",
     "commit": "f6f6aa5ab5321740a0b3225891f2c098606dc78c",
-    "hash": "ded913915a1209d66bdd7e6617b6c5798ec82dce7c198720768cfb72b3eacec8",
+    "hash": "5d09fc243763da5d5dd4fd36a5d49eb0f39d081b1070ff7e2bf841a7fb324e83",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "06bc19ad120141c89c1dfe116ae138ac51893a894d828acaa7b9afc62508c746",
+      "definitions": "9c157228190f360469be9ad5f1466ef5c815e28ba05e4093040e6e1aabba4dc1",
       "reviews": [
         {
           "verdict": "fail",
@@ -167,7 +167,7 @@
       }
     },
     "WP2": {
-      "definitions": "cbacce22747766d39cb82334d8ba0672acca82942b049ebf37eb9ad983de7a92",
+      "definitions": "ed2d90cd4d8a85d2daacfa6f5da170b2ffbaa87ec168737e048c386e83da5515",
       "reviews": [
         {
           "verdict": "fail",
@@ -349,7 +349,7 @@
       }
     },
     "WP3": {
-      "definitions": "236d46690ea5009d9b5ca419e73bb74d03994da2ff6427ad5e640b2e537eb3c5",
+      "definitions": "8f28280481d7f6ef27886294119532727e4e1fd0e6aec20ab8b377ed89f519e4",
       "reviews": [
         {
           "verdict": "fail",

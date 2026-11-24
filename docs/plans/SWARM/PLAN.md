@@ -4,14 +4,14 @@ The swarm-survival game itself: its name, rules, characters and art. [Design](DE
 [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
-[Limits on every milestone](DESIGN.md#limits-on-every-milestone) and
-[the seam rulings](../ARCHITECTURE.md#seam-rulings-for-swarm) before starting any milestone, and
+[Limits on every work package](DESIGN.md#limits-on-every-work-package) and
+[the seam rulings](../ARCHITECTURE.md#seam-rulings-for-swarm) before starting any work package, and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing. The design was written before any of the
-five engine modules was built, so start each milestone by reading what they left.
+five engine modules was built, so start each work package by reading what they left.
 
 ## Open for the human
 
-- Assumption: SWARM waits for the V1 exit, as you said on 14 November, and that includes its first milestone, your pick of a concept. The engine modules it stands on no longer wait.
+- Assumption: SWARM waits for the V1 exit, as you said on 14 November, and that includes its first work package, your pick of a concept. The engine modules it stands on no longer wait.
 - Assumption: "upgrades between waves" means upgrades are chosen only in the break between two waves, as in Brotato. Nothing pauses in the middle of a wave, and there is no Vampire Survivors style level-up during play.
 - Assumption: "thousands on screen at once" means at least 2,000 enemies and projectiles inside one player's view at the run's peak. That makes a common enemy small: about a fiftieth of the screen's height, 22 pixels at 1080p. The concepts in WP1 show this at real size, and you can trade count for size there. A window of another shape shows less of the field, never more.
 - Assumption: the game is one arena and one run of about ten minutes, with four heroes, six kinds of enemy and a boss, six weapons and about twenty upgrades. A run is won by killing the last wave's boss or by outlasting that wave. Nothing is kept between runs: no unlocks, no currency, no saved progress.
@@ -33,7 +33,7 @@ Criteria: WP1.1–WP1.4 in the done-when file.
 
 No engine code is involved and no package is added: the concepts, their sprite sources, the script that
 composes the mock arenas and the check live in `examples/swarm/concepts/`, which is not a covered path, so this
-milestone needs no verifier run. [The planning probe](../../../.orchestrate/evidence/SWARM/planning-probe.md) gives the body
+work package needs no verifier run. [The planning probe](../../../.orchestrate/evidence/SWARM/planning-probe.md) gives the body
 size the mocks use. Give each concept one attempt: most will be turned down. Do every other item before
 stopping for the owner's pick.
 
@@ -47,7 +47,7 @@ with its runners in `crowd-2d-run`, and `scripts/sim2d_conformance.py` and `scri
 `RENDER-2D` left the crowd view in `examples/crowd-2d-view`, a second program on `thrum-app`'s window and page:
 it is the nearest thing to this game's shell. The repository guard is `scripts/repo_check.py` with
 `.config/architecture.toml`, changed under seam ruling 1; `thrum-app` and the capture and packaging scripts are
-changed under ruling 2 only where a game with no sky kit cannot run. Art in this milestone is the first set in
+changed under ruling 2 only where a game with no sky kit cannot run. Art in this work package is the first set in
 the chosen look: one hero, two enemies, a shot, a pick-up and the ground.
 
 ## WP3 A player plays a whole run alone on the Mac or in Chrome: waves that grow, upgrades chosen between them, a win or a loss, with the status display and menus

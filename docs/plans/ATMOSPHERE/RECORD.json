@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
     "commit": "d1ef5f9187923b8a6632497f0f9021f6be95cf64",
-    "hash": "887478f0e1cde2eb748530a8729847a8c70e883e88882a05e4c70bd6a6ef6067",
+    "hash": "3d0f7bf4ff67aef68e625d44481f485e0bfd9b7ccab00e3f5a6de28a8abf6539",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -103,7 +103,7 @@
       }
     },
     "WP6": {
-      "definitions": "46c2e3705c1c749bed2c08a93c779fe77d35d1fb0f6ab014ecc7d2664e309fdb",
+      "definitions": "2e94509836f10231bd86434fc0756caa578e5394d8022e9465f556b75d767dcf",
       "reviews": [
         {
           "verdict": "pass",
@@ -164,7 +164,7 @@
       }
     },
     "WP7": {
-      "definitions": "554d286465863a145bd3afc8c2c243e163fda6df5320ba3797f670f6000316ef",
+      "definitions": "8e1ce87488fced622d584a458e57518f2298c5a48f45a5d1aeb00068fcbcb098",
       "reviews": [
         {
           "verdict": "fail",
@@ -385,7 +385,7 @@
       }
     },
     "WP8": {
-      "definitions": "5c44d81faddf08352f19adcbc9a8f0f69d55062981bd757f8a4aa9ad8415b8e1",
+      "definitions": "cfa9b94589be9c11b5b35f9945ccfe068976ef893c6a17a3e8efbcf5c27bc42a",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -395,7 +395,7 @@
       "ends_stretch": true
     },
     "WP9": {
-      "definitions": "a981304fa2e0906f5537fdb83fd2f41ddca1fa88343b8fe3973e94946c89f2f5",
+      "definitions": "d66983a485411c1c9b8b99a4a26fc2965deb2b06889fffd198edfb7b690110ab",
       "reviews": [
         {
           "verdict": "pass",
@@ -473,7 +473,7 @@
       }
     },
     "WP10": {
-      "definitions": "2be6aed6b4ec18daed9dc85ff5b7080aca202af4264f22ac7e506302a2ec379f",
+      "definitions": "363a49c039c035e660e2351f8547acfb0fab55fd43adf974a8f30a2cd8e108b4",
       "reviews": [
         {
           "verdict": "pass",

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/GAME-SPLIT/design-review.md",
     "commit": "50d57a11fcdae9e5fa2e0b51976d0656d803ab93",
-    "hash": "58baf5e9063cb6d536f1b1b489400528b8e0d736ef66c8e7a9a9b757d369edcf",
+    "hash": "98f0bea8290b0ef1cf16ff69d308f2ffbb249e62bf7b67e17375120df7688b80",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "6b22d7c84354a5a84eb7b0f5c13e46f5c55558bd67d33d35a0f67e8ffd3e0c34",
+      "definitions": "d23aa29360141d0734ba0cb7550bf5b5270a6989d38e04878c35c2ffbc343c0c",
       "reviews": [
         {
           "verdict": "pass",
@@ -107,7 +107,7 @@
       }
     },
     "WP2": {
-      "definitions": "d6e64ac399390cc60532dc75ecab8fe00451cc52d0e75ccceaf33b6e9d272a7a",
+      "definitions": "86c84e42792ae34826644a22f2343eeac5965ea805fc0de6edef8474192b3098",
       "reviews": [
         {
           "verdict": "pass",
@@ -188,7 +188,7 @@
       }
     },
     "WP3": {
-      "definitions": "ba147f6a3f4a449895041cc72a05479c4d7cce43d48a1fda5cd6f637e86a1df4",
+      "definitions": "c063213c6b0b811b556f7c704ecff004003b0893f4fec4b79361f123e05054d5",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -204,7 +204,7 @@
       ]
     },
     "WP4": {
-      "definitions": "25571378eaa7a71d07c683eecb5c32a0c665f307cb2b77302144dd4b03c2cd36",
+      "definitions": "56d5445c827b9cdbcb856197aaf6eb1d1b76a05718a0536cccefd6464e6eb428",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -213,7 +213,7 @@
       }
     },
     "WP5": {
-      "definitions": "49d13e9134f54bb7c93bcb6f400e8d390f833d193a482c7079d1187a6d5abce7",
+      "definitions": "fdfb1067724fc4fd69ae5345f93334662616e9a277fccc9eb41d61a52dc32503",
       "reviews": [],
       "authorised": {
         "by": "plan",

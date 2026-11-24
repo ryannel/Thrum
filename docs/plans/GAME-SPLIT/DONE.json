@@ -57,7 +57,7 @@
         },
         {
           "id": "WP1.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -128,7 +128,7 @@
         },
         {
           "id": "WP2.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -204,7 +204,7 @@
         },
         {
           "id": "WP3.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -284,7 +284,7 @@
         },
         {
           "id": "WP4.6",
-          "statement": "The repository guard knows that games live outside: `.config/architecture.toml` declares no game in this workspace and the guard refuses a package that declares itself one. README, AGENTS, REPOSITORY and `thrum-engineering` say where the game is, how to build it against a checkout, and that an engine milestone proves itself in its own crate or the proving ground.",
+          "statement": "The repository guard knows that games live outside: `.config/architecture.toml` declares no game in this workspace and the guard refuses a package that declares itself one. README, AGENTS, REPOSITORY and `thrum-engineering` say where the game is, how to build it against a checkout, and that an engine work package proves itself in its own crate or the proving ground.",
           "check": "sh -c 'python3 scripts/repo_check.py && python3 scripts/test_repo_check.py && ! grep -q external_game .config/architecture.toml'",
           "ask": "Does the guard's self-test declare a game package in a scratch registry and see the guard refuse it?",
           "target": "mac-metal",
@@ -295,7 +295,7 @@
         },
         {
           "id": "WP4.7",
-          "statement": "The engine qualifies itself with the games repository unavailable: every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit with `THRUM_GAMES` pointing at nothing, and the verifier hands that variable on to every command it starts. This milestone moved no retained image, and the verifier reads no input from outside Thrum.",
+          "statement": "The engine qualifies itself with the games repository unavailable: every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit with `THRUM_GAMES` pointing at nothing, and the verifier hands that variable on to every command it starts. This work package moved no retained image, and the verifier reads no input from outside Thrum.",
           "check": "sh -c 'THRUM_GAMES=/var/empty/no-games-repository python3 scripts/exact_baselines.py verify --full'",
           "lock": "gpu",
           "ask": "The verifier starts its commands with `THRUM_` variables removed: does `THRUM_GAMES`, and no other, now reach them, so that a command which looked for the games repository in this run would have found none? Does the verifier, either native matrix, the Chrome capture or the web build read any file outside this repository, or call the gate? Is there any route but `THRUM_GAMES` and the gate by which a script in Thrum finds the games repository?",
@@ -362,7 +362,7 @@
         },
         {
           "id": "WP5.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

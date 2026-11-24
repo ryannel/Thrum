@@ -80,7 +80,7 @@
           "statement": "With reconstruction enabled, depth and motion are stored and sampleable, and APPLE-TILE's eligibility report shows them stored; with it disabled nothing extra is stored.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Does the eligibility report from APPLE-TILE WP1 list depth and motion as stored only when a reader exists, and is the disabled path's attachment storage unchanged from before this milestone?",
+          "ask": "Does the eligibility report from APPLE-TILE WP1 list depth and motion as stored only when a reader exists, and is the disabled path's attachment storage unchanged from before this work package?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",

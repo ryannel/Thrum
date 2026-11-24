@@ -12,7 +12,7 @@ The owner's words weren't passed on; this design answers the lead's planning tas
 word:
 
 > Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear
-> in the running game without a stall; needs APPLE-PRESENTATION WP2). Write its design, milestones and done-when
+> in the running game without a stall; needs APPLE-PRESENTATION WP2). Write its design, work packages and done-when
 > file so WP1 is buildable as soon as APPLE-PRESENTATION WP2 passes review. SEA, CLOUDS and RENDER-2D depend on it;
 > account for what they will need from it.
 
@@ -39,7 +39,7 @@ WP4 answers the lead's task of 16 November 2026, about `thrum-cook`'s
 > the fleet keeps the machine busy. Do not weaken what the test proves.
 
 It is a defect in the watcher ([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/WP4-diagnosis.md)), so it is this
-module's next milestone, and the test stays as it is.
+module's next work package, and the test stays as it is.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-asset`, `thrum-cook`,
 `thrum-asset-gpu` (`lib.rs`, `load.rs`, `staging.rs`), `thrum-render`'s `contribution.rs`, `synthetic.rs` and
@@ -455,7 +455,7 @@ new set to leases and switches the rows, and the switch commits for all of them 
 | `SHOWCASE` | Placements, and cooked mesh rows for its entities | Nothing more |
 | `CREATOR` | Unchanged placements | The sky kit passes a lease through, when a sea or cloud demo scene needs one |
 
-Each ask becomes a milestone here, planned with the module that needs it.
+Each ask becomes a work package here, planned with the module that needs it.
 
 **Held open for cluster level of detail (18 November 2026; nothing to build).** Nanite-class geometry is left
 until after V1 ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md),
@@ -545,7 +545,7 @@ route with nothing attached.
   not depend on it.
 - **Fixtures.** Tests cook their own products with `thrum-cook`, as the in-game G5 tests do. The twelve-volume
   fixture is generated. Nothing is lifted from Broadsides: its cloud library waits on the owner's licence.
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/content-loop-<milestone>/`; selected
+- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/content-loop-<work-package>/`; selected
   evidence in `.orchestrate/evidence/CONTENT-LOOP/`.
 - **WP4.** Proved on the CPU: no GPU lock, no browser launch and no capture. Its checks name tests by words in
   their names, which the plan's note lists.

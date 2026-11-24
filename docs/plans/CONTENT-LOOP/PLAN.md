@@ -4,11 +4,11 @@ Closes gate G5 and serves sea, clouds and 2D: edited meshes, textures and volume
 without a stall. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
-Milestones run in the order below.
+Work packages run in the order below.
 
 Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselines),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone. Follow the [builder rules](DESIGN.md#builder-rules).
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any work package. Follow the [builder rules](DESIGN.md#builder-rules).
 
 ## Open for the owner
 

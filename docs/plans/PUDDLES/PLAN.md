@@ -3,7 +3,7 @@
 Rain, puddles and wet ground in the one water system. [Design](DESIGN.md) · [done-when file](DONE.json) ·
 [log](LOG.md) · [module list](../ARCHITECTURE.md) · [`WATERS`](../WATERS/DESIGN.md)
 
-Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
+Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
 [the rulings](../ARCHITECTURE.md#seam-rulings-for-puddles) and [Exact baselines](../ARCHITECTURE.md#exact-baselines).
 
 ## Open for the human

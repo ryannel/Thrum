@@ -147,7 +147,7 @@
           "id": "WP1.9",
           "statement": "A contribution declares slots, asks in its upload and reads its own slot's colour, depth and record in its own pass, through the public seam alone. A declaration over the profile's count or the capability record's limits is refused when the scene is prepared, by name. An improper camera is refused when it is asked for, and so is air from a plane that is not level.",
           "check": "cargo test --locked --offline -p thrum-render --test scene_view_seam",
-          "ask": "Could `WATERS`' builder write its mirror from the seam's documentation and types without reading `thrum-render`'s internals? Does any other module's item, test, bound or reference differ from before this milestone?",
+          "ask": "Could `WATERS`' builder write its mirror from the seam's documentation and types without reading `thrum-render`'s internals? Does any other module's item, test, bound or reference differ from before this work package?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
@@ -168,7 +168,7 @@
         },
         {
           "id": "WP1.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -255,7 +255,7 @@
         },
         {
           "id": "WP2.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -310,9 +310,9 @@
         },
         {
           "id": "WP3.4",
-          "statement": "The paired cost record is retained with the load it was taken under. On the mirror scene, and on a scene of 100,513 entity instances with one view (the count of the V1 field flythrough), on both of the Mac's recipes at 2560\u00d71440 with capture off, it holds no view asked, one and two, and each knob at both ends: each view pass's GPU time by name beside the main view's, with the machine's load average and busiest processes. It is of the view code this milestone leaves, was taken while other builders worked, and the evidence, the author guide and the maturity ledger call its figures taken under load and claim none for a quiet machine. The logical bytes of each resource a prepared slot owns are listed beside it, and each tripwire it trips has its investigation there. No figure in the record decides this item, and it needs no sitting with other builders paused.",
+          "statement": "The paired cost record is retained with the load it was taken under. On the mirror scene, and on a scene of 100,513 entity instances with one view (the count of the V1 field flythrough), on both of the Mac's recipes at 2560\u00d71440 with capture off, it holds no view asked, one and two, and each knob at both ends: each view pass's GPU time by name beside the main view's, with the machine's load average and busiest processes. It is of the view code this work package leaves, was taken while other builders worked, and the evidence, the author guide and the maturity ledger call its figures taken under load and claim none for a quiet machine. The logical bytes of each resource a prepared slot owns are listed beside it, and each tripwire it trips has its investigation there. No figure in the record decides this item, and it needs no sitting with other builders paused.",
           "check": "python3 scripts/scene_view_cost.py check",
-          "ask": "Is the record of the view code this milestone leaves: has no commit of the milestone since the record's changed what a view draws or what the collector times? Do the evidence, the author guide and the ledger call the record's figures taken under load, with each tripped wire's investigation beside the record?",
+          "ask": "Is the record of the view code this work package leaves: has no commit of the work package since the record's changed what a view draws or what the collector times? Do the evidence, the author guide and the ledger call the record's figures taken under load, with each tripped wire's investigation beside the record?",
           "reads": [
             "scripts/scene_view_cost.py",
             "docs/evidence/SCENE-VIEWS/WP3/cost.json.gz"
@@ -345,7 +345,7 @@
         },
         {
           "id": "WP3.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",

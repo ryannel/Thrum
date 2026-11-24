@@ -43,7 +43,7 @@ reasonable." They are: a merge-tier test proves its behaviour on the smallest wo
 runs belong to the main tier; logic is tested without a device, and a GPU test covers only what a GPU alone can
 show, at a small target; the 265 test binaries go towards one a package, to cut link and first-run time; and where
 a builder's session goes is measured before any rule about it changes. The lead's task from it: place each in a
-milestone with items a builder can prove, as a standing rule for new tests where it is a rule, and plan the last
+work package with items a builder can prove, as a standing rule for new tests where it is a rule, and plan the last
 as "a measurement, not a rule". Guard text for the skills and lint rules were being agreed with the owner apart
 from that plan.
 
@@ -189,7 +189,7 @@ check (`.git/orchestrate/checks/c6c57db52a584b5183371f69-97fbad59fed9d769.stderr
   `thrum-render` 59, the game 33, the cloud model 24, the river model 19. Open items name 29 of them with
   `--test`. Open items also name 147 binaries that nobody has written yet, in 17 modules.
 - **Not measured: where a builder's session goes.** Builder sessions ran 40 to 210 minutes for each cleanup
-  milestone, and nothing splits that between the model's own time, test runs and waits. WP10 measures it.
+  work package, and nothing splits that between the model's own time, test runs and waits. WP10 measures it.
 
 For the guard rules the planner read the 18 whole-workspace checks the script saved in the 30 hours to 09:45
 that day, and counted at main `469a28671`, after WP2 landed.
@@ -409,17 +409,17 @@ by package. `./dev check-all` runs everything, whatever changed, and a main-bran
   reverted the script counts main as passing, because the merge that broke it passed its own check, and two
   things fail for a fault they did not cause:
   - a later merge whose selection holds the failing test;
-  - every milestone's Ready for Review. After a builder merges, the script runs the test command once more on
+  - every work package's Ready for Review. After a builder merges, the script runs the test command once more on
     main's tip in its own checkout, before it sets Ready for Review. That checkout does not differ from the main
     branch, so the run is the whole workspace. A pass on the same files is reused, so the run costs nothing
-    when no other merge has landed since the milestone's own, and with several builders one usually has.
+    when no other merge has landed since the work package's own, and with several builders one usually has.
 
-  So no merge waits for the whole run, but a milestone's Ready for Review does run it, and a fault on main holds
-  every module's milestones there, not only the module that caused it. A builder whose merge or Ready for Review
+  So no merge waits for the whole run, but a work package's Ready for Review does run it, and a fault on main holds
+  every module's work packages there, not only the module that caused it. A builder whose merge or Ready for Review
   fails in a test its change cannot reach reads `python3 "$ORCHESTRATE_SCRIPT" main-check workspace-tests`
   before it debugs. Where that shows the test failing on main, the builder leaves the test alone and ends
   `BLOCKED main_broken:` with the test's name, and the lead has the commit fixed or reverted. Selecting the
-  Ready for Review run by the milestone's own change is the script's to offer, because only the script knows
+  Ready for Review run by the work package's own change is the script's to offer, because only the script knows
   that range; it is an assumption in [the plan](PLAN.md) and a change to raise with the orchestrate skill.
 - *Finer than a package is not built.* Nothing says which test binary of a package a source file reaches without
   a coverage map, and a wrong map misses edges silently. The game's package is a third of what is left and
@@ -438,9 +438,9 @@ nothing objecting. Four things now notice, and [the guard rules](#the-guard-rule
   [mechanism 13](#the-stop-at-ten-seconds) lowers it.
 - A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration. WP8 writes
   the list from its own measurement: every test that takes over ten seconds alone at its starting commit, each
-  with the milestone that removes it, which is WP2 for a test WP2 deletes, WP3 for a test of the water scene and WP9
-  for any other. So the list is also the work those milestones have left. It is empty when WP3 is Done, apart
-  from a test that mechanism 9 leaves to its own module's planner, and no milestone of any module adds a name to
+  with the work package that removes it, which is WP2 for a test WP2 deletes, WP3 for a test of the water scene and WP9
+  for any other. So the list is also the work those work packages have left. It is empty when WP3 is Done, apart
+  from a test that mechanism 9 leaves to its own module's planner, and no work package of any module adds a name to
   it: a module with a slow test makes it fast or makes it a long test.
 - `./dev check-docs` fails when a test marked `long:` sits in a binary the main-tier list does not name, so a
   test cannot be marked and then run in no tier.
@@ -573,7 +573,7 @@ reads) are the last to move: one is marked as a long test only when the log says
 Two of mechanism 9's routes, the smallest world and without a device, are also standing rules for every test
 written or changed from 21 November 2026, in any module, and [the test tiers](../../../ORCHESTRATE.md#test-tiers)
 state them. WP9 and WP3 apply them to the tests over ten
-seconds that exist. No milestone sweeps the tests under ten seconds: [Not built here](#not-built-here) says why.
+seconds that exist. No work package sweeps the tests under ten seconds: [Not built here](#not-built-here) says why.
 
 <a id="one-test-binary-a-package"></a>
 
@@ -585,7 +585,7 @@ rust-analyzer keep their integration tests this way. The files stay where they a
 allow, because a mass move would collide with every builder.
 
 - *What stays a target of its own.* A file whose binary something names, or that has to run apart:
-  - a binary an open item's check names with `--test`, in any module, until that item's milestone is Done;
+  - a binary an open item's check names with `--test`, in any module, until that item's work package is Done;
   - a binary the main-tier list names, and any file that holds a long test or a test behind a Cargo feature.
     `./dev long-tests` runs those through `cargo test`, where the tests of one binary share a process, and
     folding them would make tests share statics, creation counters and device mutexes they never shared;
@@ -606,12 +606,12 @@ allow, because a mass move would collide with every builder.
   `test = false`, so the runner does not build and start it.
 - *From WP11 on.* A new test file is a module of its package's `it`. A planner's new item runs it as
   `cargo test -p <package> --test it <file>::`, and a planner who re-plans a module writes the checks of its
-  unstarted milestones the same way. An item approved before WP11 keeps its check: its builder adds the file as a
-  target of its own, and the file joins `it` in the first landing that edits it after the item's milestone is
+  unstarted work packages the same way. An item approved before WP11 keeps its check: its builder adds the file as a
+  target of its own, and the file joins `it` in the first landing that edits it after the item's work package is
   Done. So the count goes towards one a package as the open items are built, and no item is changed for it.
 
 **11. Where a builder's session goes is measured before any rule about it changes.** WP10 makes a record and
-changes nothing else. For each builder session of track 6's milestones it splits the wall time into the model's
+changes nothing else. For each builder session of track 6's work packages it splits the wall time into the model's
 own time, the commands the builder ran by kind, and waits: for a lock, behind another merge, and in a command
 that only sleeps or polls. The sources exist today. Each session's transcript gives the time of every tool call
 and of its result (`~/.claude/projects/` for a Claude builder, `~/.codex/sessions/` for a Codex one, with the
@@ -620,7 +620,7 @@ asked for, got and released, and each merge's check (`jobs.jsonl`, `locks.jsonl`
 under `.git/orchestrate`). The record ends with what it shows and proposes no rule: which rule to change, if
 any, is the owner's to decide from it. It is built straight after WP2 and ahead of WP9, where the lead asked for
 new work to go last: it touches no tracked file but this module's records, it needs none of the later
-milestones, three of which wait for other modules, and the owner asked for it before any rule changes.
+work packages, three of which wait for other modules, and the owner asked for it before any rule changes.
 
 WP11 is likewise built ahead of WP3 and WP4, which wait for `WATERS` WP7 and `REVIEW-RENDER` WP2. It needs neither,
 the binaries their items name stay targets of their own, and every merge pays the first-run cost until it lands.
@@ -654,11 +654,11 @@ enters at the count of the commit it lands on, that count can only fall, and a l
   in its module's log for a planner. A wrongly added long test costs minutes of a four-hourly run and nothing
   in a merge, which is why a visible raise is enough and no check ties a line of the list to an item.
 - *`test-binary`: the test binaries no plan names.* The whole number cannot be frozen: approved open items
-  name 147 binaries that nobody has written yet, and each will be a new target when its milestone is built. So
+  name 147 binaries that nobody has written yet, and each will be a new target when its work package is built. So
   the rule holds the others. A plan names an integration test target, which is a `[[test]]` entry or a file
   Cargo finds under `tests/`, when a done-when item's check runs it with `--test`, in any module, open or Done,
   or when the main-tier list names it. Open and Done items both count, as the rule `script-caller` already
-  reads them, so closing a milestone changes nothing. The targets no plan names are written once, by package
+  reads them, so closing a work package changes nothing. The targets no plan names are written once, by package
   and name, in a new tracked list, `.config/unplanned-test-binaries.txt`: 43 of the 275 today. Two things then
   hold. Every target is named by a plan or is on the list, so a new test file that makes a target nobody
   planned fails, with a message that says to add the test to a test file that exists. And the list only
@@ -820,25 +820,25 @@ One change is to the engine and not to a test: the wait in `FrameHost::capture_p
 `APPLE-TILE`'s frame host. The lead gave it to WP8 on 21 November, because it is about ten lines that change
 nothing drawn or timed, no builder was at work in `thrum-render`'s runtime, and starting a finished module for it
 would cost more. `APPLE-TILE`'s log records the hand-over, its design stays the authority for the frame host, and
-the test belongs to it once landed. Any other engine fault a milestone here finds is still a proposal to its
+the test belongs to it once landed. Any other engine fault a work package here finds is still a proposal to its
 owner.
 
-## Files each milestone touches
+## Files each work package touches
 
-The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
+The lead confirms these against the builders at work before it starts a work package. A work package touches nothing
 outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`. Four files are
 everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`, `docs/design/maturity.json` and
 `Cargo.lock`. Change them when your landing moves them, whatever your row says. The rows are in build order.
 
-| Milestone | Files | Waits for | Who else is near |
+| Work package | Files | Waits for | Who else is near |
 |---|---|---|---|
 | WP1 | `examples/water/tests/floating_gpu.rs`; `examples/v1-game/tests/exit_scene.rs`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`; `crates/thrum-water-model/tests/shore_blend.rs`; the new command and the help text in `tools/xtask/src/main.rs` and its line in `dev`; the new `.config/long-tests.txt`; the listed-binary check in `scripts/repo_check.py` with its suite; the one settings line in `ORCHESTRATE.md` | Nothing. It merges first in wave 1 | No open item runs any of these tests. `DEAD-TOOLS` WP1 and WP2 edit other arms of `tools/xtask/src/main.rs` and the same help text. `scripts/repo_check.py` is imported by a pinned comparison file: it keeps its name and what that file uses. The check keeps a checkout and a release build of its own, so the lead checks free disk first: builders stall below about 16 GiB |
 | WP6 | The lint step and the long-test command in `tools/xtask/src/main.rs`; `.config/long-tests.txt`; the feature check in `scripts/repo_check.py`, which already tells a test file from production code, with its suite; the timeout of the settings line | Nothing | `DEAD-CODE` WP2 and WP6 and `TEST-SUPPORT` WP3 wait for it. `DEAD-TOOLS` WP1 edits the script-suite step of the same `main.rs` |
-| WP8 | The check command in `tools/xtask/src/` (how it runs tests and the draw-probe pass, the step times, the cargo-nextest version it asks for) and its tests; the new `.config/nextest.toml`; the `[profile]` tables of the root `Cargo.toml`; the install step of `.github/workflows/ci.yml`; the line of `CONTRIBUTING.md` that says what `./dev check` needs installed. Where a test fails only because it now has a process to itself, that test file. The wait in `FrameHost::capture_pixels`, in `crates/thrum-render/src/runtime.rs`, and its test under `crates/thrum-render/src/runtime/tests/`: no other line of the engine's source | Nothing | `REVIEW-RENDER` and `HOST` build in `thrum-render`'s runtime too, so the lead starts neither beside this. `DEAD-TOOLS` WP2 edits the `baseline-inventory` command and the help text of the same `main.rs`, and other rows of `CONTRIBUTING.md`. `DEAD-CODE` WP5 edits the workspace list of the root `Cargo.toml`, a different table. A changed test profile rebuilds the test artifacts of every worktree once, so the lead checks free disk first. `TEST-SUPPORT`'s design says `GATE-TIME` WP5 narrows the draw-probe pass: that is this milestone now, in the check command only |
+| WP8 | The check command in `tools/xtask/src/` (how it runs tests and the draw-probe pass, the step times, the cargo-nextest version it asks for) and its tests; the new `.config/nextest.toml`; the `[profile]` tables of the root `Cargo.toml`; the install step of `.github/workflows/ci.yml`; the line of `CONTRIBUTING.md` that says what `./dev check` needs installed. Where a test fails only because it now has a process to itself, that test file. The wait in `FrameHost::capture_pixels`, in `crates/thrum-render/src/runtime.rs`, and its test under `crates/thrum-render/src/runtime/tests/`: no other line of the engine's source | Nothing | `REVIEW-RENDER` and `HOST` build in `thrum-render`'s runtime too, so the lead starts neither beside this. `DEAD-TOOLS` WP2 edits the `baseline-inventory` command and the help text of the same `main.rs`, and other rows of `CONTRIBUTING.md`. `DEAD-CODE` WP5 edits the workspace list of the root `Cargo.toml`, a different table. A changed test profile rebuilds the test artifacts of every worktree once, so the lead checks free disk first. `TEST-SUPPORT`'s design says `GATE-TIME` WP5 narrows the draw-probe pass: that is this work package now, in the check command only |
 | WP7 | The check command in `tools/xtask/src/` (the selection with its path rules and declared edges, `check-all`) and its tests; one settings line in `ORCHESTRATE.md` | Nothing | `DEAD-TOOLS` WP2 edits the `baseline-inventory` command and the help text of the same `main.rs`. The main-branch check keeps a fourth checkout with a debug build of the whole workspace, 8 to 16 GiB in the checkouts that hold one today, so the lead checks free disk first |
 | WP2 | `crates/thrum-water/tests/query_gpu.rs`, `swash_gpu.rs` and `crates/thrum-water/Cargo.toml`; the four conformance files, `support.rs` and `Cargo.toml` of `crates/thrum-clouds/tests`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`, `examples/v1-game/tests/clouds_display_time_gpu.rs`, and the `[[test]]` tables of `examples/v1-game/Cargo.toml`; `.config/long-tests.txt`; the names of deleted tests in `.config/nextest.toml`; `crates/thrum-render/src/atmosphere/gpu/tests.rs` and `tests/reference*` | `TEST-SUPPORT` WP2, which rewrote these test files | `CLOUDS` builds in `thrum-clouds`. No open item names any of these test binaries. `DEAD-TOOLS` WP2 edits the `[[bench]]` tables of the same `Cargo.toml`, and its WP3 edits `atmosphere/gpu/tests/aerial_ground.rs`, which `atmosphere/gpu/tests.rs` declares |
-| WP10 | No tracked file but this module's log and done-when file: the record and its script are this milestone's evidence. It reads, and changes nothing in, the builders' transcripts under `~/.claude/projects/` and `~/.codex/sessions/` and the orchestrate script's logs under `.git/orchestrate` | Nothing | It can run beside any milestone |
-| WP12 | The three rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, with their fixtures in `scripts/test_shape_rules.py`; the new list `.config/unplanned-test-binaries.txt`, with a path rule in the selection if it needs one to select no Rust test; `scripts/repo_check.py` only where the limit's own value is checked; the rules' sentences in the Tests section of the engineering patterns; the closing lines of the check command in `tools/xtask/src/` and its tests. It changes no test, no manifest, and neither the exempt list nor the main-tier list: the counts enter as they stand | `TEST-SUPPORT` WP6, whose pattern entries the messages link to | `TEST-SUPPORT` WP3 edits the exemptions of `test-readback` in `scripts/shape_matchers.py`: whichever lands second rebases. Both rule scripts are imported through a pinned comparison file, so each keeps its name and what that file uses. Every landing that lowers a count rewrites `.config/shape-baseline.json`, and from this milestone a module that deletes a test file, a long test or an exempt name does too |
+| WP10 | No tracked file but this module's log and done-when file: the record and its script are this work package's evidence. It reads, and changes nothing in, the builders' transcripts under `~/.claude/projects/` and `~/.codex/sessions/` and the orchestrate script's logs under `.git/orchestrate` | Nothing | It can run beside any work package |
+| WP12 | The three rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, with their fixtures in `scripts/test_shape_rules.py`; the new list `.config/unplanned-test-binaries.txt`, with a path rule in the selection if it needs one to select no Rust test; `scripts/repo_check.py` only where the limit's own value is checked; the rules' sentences in the Tests section of the engineering patterns; the closing lines of the check command in `tools/xtask/src/` and its tests. It changes no test, no manifest, and neither the exempt list nor the main-tier list: the counts enter as they stand | `TEST-SUPPORT` WP6, whose pattern entries the messages link to | `TEST-SUPPORT` WP3 edits the exemptions of `test-readback` in `scripts/shape_matchers.py`: whichever lands second rebases. Both rule scripts are imported through a pinned comparison file, so each keeps its name and what that file uses. Every landing that lowers a count rewrites `.config/shape-baseline.json`, and from this work package a module that deletes a test file, a long test or an exempt name does too |
 | WP9 | The test files that hold a test on the exempt list outside `examples/water`, or one that [the table](#every-test-over-about-ten-seconds) names as over ten seconds in the check, with the support files those tests use. By the planner's measurement: `lent_products_gpu.rs`, `cooked_rows_gpu.rs`, `cooked_assets_gpu.rs` and `frame_alloc.rs` under `examples/v1-game/tests`; `report.rs` under `crates/thrum-river-model/tests`; `shore_basin.rs` and `shore_island.rs` under `crates/thrum-water-model/tests`; `forward_cache_gpu.rs`, `portable_limits_gpu.rs`, `frames_gpu.rs` and `ambient_gpu.rs` under `crates/thrum-sea/tests`. Also `.config/nextest.toml` and `.config/long-tests.txt` | Nothing | Open items run four of these binaries by name and need them to keep passing: `DEAD-CODE` WP5.2 (`cooked_rows_gpu`), `HOST` WP3.2 and `REVIEW-RENDER` WP5.1 (`frame_alloc`), `TEST-SUPPORT` WP4.2 (`cooked_assets_gpu`). `DEAD-CODE` WP5 edits `cooked_rows_gpu.rs` and `TEST-SUPPORT` WP4 `cooked_assets_gpu.rs`. `TEST-SUPPORT` WP3 converts the test files of every crate under `crates/`, so the lead does not run it beside this where it can choose |
 | WP13 | The check command in `tools/xtask/src/` (the second run of a stopped test, the closing lines, the help text) and its tests; the default limit in `.config/nextest.toml`, and a group or a heavy count there for a test the record finds stopped in every run; the limit's value in the rule `limit-exempt` | Nothing | `.config/nextest.toml` is a shared input, so this landing's own check runs the whole workspace. WP11 writes the same file's filters again, after it |
 | WP11 | The `[[test]]` tables, the `autotests` line and the `test` keys of each workspace package's manifest; one new root file in each package's `tests/` folder; in each test file it folds, the lines that declare or import shared helpers, and a test's own name where the test starts itself again by name; the root file of a folder-style target, where it has to be renamed to stay a module; `.config/nextest.toml` and `.config/long-tests.txt`, for the names that moved; the lines of `.config/unplanned-test-binaries.txt` for the targets it folds; the new guard in the repository guards under `scripts/`, with its suite; the check command in `tools/xtask/src/` only where it names a test binary | Nothing | The widest set in this module. Every module that adds a test adds a file or a `[[test]]` table in these folders and manifests, so the lead starts it when few builders are in test files, and whichever lands second rebases. `TEST-SUPPORT` WP3 converts the test files of every crate and WP4 edits the cooked tests: the lead does not run either beside this where it can choose. `REVIEW-RENDER` and `HOST` build in the renderer's tests, and `DEAD-CODE` WP5 edits `cooked_rows_gpu.rs`. The binaries this module's own open items name stay targets of their own: `foam_scene_gpu` (WP3.1), `pool_gpu` (WP4.1) and `scene_view_absent_gpu` (WP4.4). A changed set of test targets links every worktree's tests again once, so the lead checks free disk first |
@@ -846,7 +846,7 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 | WP4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` WP2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
 | WP14 | The check runner, its tests and help in `tools/xtask/src/`, `.config/nextest.toml`, and the corresponding timeout text in `ORCHESTRATE.md` and `CONTRIBUTING.md`. Load evidence in the working folder | The landed WP13 runner | `REPO-RULES` owns the check command outside the test runner. WP5 uses the contributor guide's merge timing |
 | WP15 | `dev` and its merge-verification helper and tests under `scripts/`, the check entry point and selection inputs in `tools/xtask/src/` if needed, the test-command line in `ORCHESTRATE.md`, the cache operation notes in `CONTRIBUTING.md`, and the test-profile debug-info setting in `Cargo.toml` only if the paired proof needs it | The landed WP14 check runner | `REPO-RULES` owns the check command. Its guards and callers keep their contracts. The lead coordinates the test-command cutover and verifier cleanup |
-| WP5 | The commands table and test-command text of `CONTRIBUTING.md`, plus the closing record in the working folder | WP15 and `DEAD-TOOLS` WP2 | `DEAD-TOOLS` WP3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` WP3, the one rename, waits for this milestone |
+| WP5 | The commands table and test-command text of `CONTRIBUTING.md`, plus the closing record in the working folder | WP15 and `DEAD-TOOLS` WP2 | `DEAD-TOOLS` WP3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` WP3, the one rename, waits for this work package |
 
 ## Not built here
 
@@ -886,7 +886,7 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 - **A shorter main tier.** The long tests take about 26 minutes in release and run every four hours, by the
   owner's decision of 21 November. Nobody waits for them.
 - **Two changes to the orchestrate script**, which the lead can raise with the skill: the Ready for Review run
-  selected by the milestone's own change, and a "was main already broken" run that does not reuse a selected
+  selected by the work package's own change, and a "was main already broken" run that does not reuse a selected
   pass, so that a failure outside a merge's selection is not blamed on the incoming branch.
 
 ## What it must not do

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SHOWCASE/design-review.md",
     "commit": "99f8033a017ade4e5ff7a8c1689f66dab8f7961e",
-    "hash": "d8fb5d00e7cc1976560bd00c0686f3daeae580388371f80f62fcbecfc9616d28",
+    "hash": "a48ab34277eaea9bd6bb709ae2732a57a3aa34ec1984b1c14cc30b687dcc8a86",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP5": {
-      "definitions": "6e14e63e02678c78a022ae18f6a248b58348ff2413acf764be9678e9f6473293",
+      "definitions": "1e0ffd8470064c3522ea64cdecdefdc5777376442299eec158acd49be9d0b9f6",
       "reviews": [
         {
           "verdict": "fail",
@@ -189,7 +189,7 @@
       }
     },
     "WP6": {
-      "definitions": "3e521777bc17f6575990043f9c5d2b2a46087c67f5a8c84e046292a382ff3a33",
+      "definitions": "14600610810bbe51f529e697572278612e218c99d625bc98804c5f7d21746a76",
       "reviews": [
         {
           "verdict": "pass",
@@ -271,7 +271,7 @@
       }
     },
     "WP7": {
-      "definitions": "03d14a6a7de27b0e79e3e6cace07dbd3be80b057f41e76236a1179ef548bdd80",
+      "definitions": "3b5ccdf777f1b922f57cbbede59ffe269e165f20f808c71bf1cfafaadff423c0",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -280,7 +280,7 @@
       }
     },
     "WP8": {
-      "definitions": "792ec4d94250882d033b08eb2287067a5bfd7ea65a8eede4e70271c1c1aa3531",
+      "definitions": "94fba531299424e8d37760ded17fa4ce5ebe9890ad530700fedb60c35ae6f9bb",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -289,7 +289,7 @@
       }
     },
     "WP9": {
-      "definitions": "71863a1709e9481228134e830296968b44374d8150899474087042411531cf3f",
+      "definitions": "40267a4a7266f66852736864d90cbf305f15ed9badc5e187c67938a3ce8eb8de",
       "reviews": [
         {
           "verdict": "fail",

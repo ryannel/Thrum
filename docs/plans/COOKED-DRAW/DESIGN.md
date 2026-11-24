@@ -384,4 +384,4 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 
 Ask for these agreements before the builder starts. The builder may build against them as proposed. If an owner
 objects, the change returns here as a re-plan. The builder never redesigns another owner's interface inside this
-milestone.
+work package.

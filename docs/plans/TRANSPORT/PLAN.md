@@ -5,7 +5,7 @@ Two processes exchange messages over real internet protocols, and one of them ma
 [module list](../ARCHITECTURE.md)
 
 Read [Mechanisms](DESIGN.md#mechanisms) and [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) before
-starting either milestone, and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
+starting either work package, and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
 [The planning probe](../../../.orchestrate/evidence/TRANSPORT/planning-probe.md) says what was measured before the design was
 written, and [the second probe](../../../.orchestrate/evidence/TRANSPORT/design-review-response.md#the-probe) how Quinn opens a
 stream and treats datagrams on a stalled path. The code of both was thrown away on purpose, so build from the
@@ -25,9 +25,9 @@ Criteria: WP1.1–WP1.12 in the done-when file.
 
 [The first builder's handoff](../../../.orchestrate/evidence/TRANSPORT/WP1-handoff.md) says what is on branch `build/transport`,
 what was tried and what to do first; start there and keep that work. The only sockets outside this module are the
-cooker's loopback dev-server tests, which are `CONTENT-LOOP`'s, run in `./dev check` and are not this milestone's
+cooker's loopback dev-server tests, which are `CONTENT-LOOP`'s, run in `./dev check` and are not this work package's
 to move or to answer for. `thrum-network` holds byte codecs that belong to `SESSION`; this
-milestone neither edits it nor depends on it, and the link carries opaque bytes. Its `MAX_MESSAGE_BYTES` and A5's
+work package neither edits it nor depends on it, and the link carries opaque bytes. Its `MAX_MESSAGE_BYTES` and A5's
 1,000-byte datagram budget are where the two limits come from. `thrum-asset`'s `remote/browser.rs` shows the
 hand-written `wasm_bindgen` imports the browser adapter follows, and `thrum-network/examples/` shows the stdin
 targets WP2 follows. The tick-quantised `LinkConditioner` in `crates/thrum-core/tests/support/v1_workload.rs` stays
@@ -45,7 +45,7 @@ WP1 left the adapters, the relay, the proof command and the session run, which W
 transport section of `docs/design/modules/NETWORKING.md` is the owning design WP2.7 brings up to date, and the
 maturity ledger is `docs/design/maturity.json`.
 
-Stop rules, for both milestones:
+Stop rules, for both work packages:
 - If the engine's Chrome adapter cannot hold datagrams to the local host, or the simulator cannot reach it, keep the measurements and end `BLOCKED`. Do not move a lane onto the stream, drop a target or shorten the script.
 - Never relax a certificate check to make a client connect: no Chrome flag that touches certificates, QUIC or origins, and no option that skips the hash.
 - Nothing this module adds that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`. Those proofs go through the proof command. If a launch fails, leave the item open and say so; do not substitute the in-memory link, Node or another target's result.

@@ -6,7 +6,7 @@ owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone. Every crate here is a covered path.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any work package. Every crate here is a covered path.
 
 ## Open for the human
 

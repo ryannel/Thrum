@@ -604,7 +604,7 @@ What that delivers, from part 7, from 0.3 m, 1.7 m and 15 m up:
   the first.
   The look of the wet ground and of the film is unrun; WP5 is the first.
 - **P8.** The wave support is `WATERS`'. Unrun.
-- **Cost.** Unrun. Each milestone records its own.
+- **Cost.** Unrun. Each work package records its own.
 
 ## The system as it runs
 
@@ -708,7 +708,7 @@ decides an item ([brief](../VISION.md#goal-and-exit-rule), decision 3).
 8. **Too many puddles for the fine level's solves.** Early sign: WP8's record. Regions are admitted by their
    latest source, so a walked path is solved and the rest lie at rest.
 9. **`WATERS` and `RIVERS` move under this module's changes**, since three builders edit the same crates.
-   Each ruling keeps its change behind a declaration that existing scenes do not make, and each milestone
+   Each ruling keeps its change behind a declaration that existing scenes do not make, and each work package
    runs their tests.
 10. **A puddle without falling rain looks unexplained.** Early sign: WP4's review. Rain in the air is the
     remedy this plan does not have ([plan](PLAN.md#open-for-the-human)).
@@ -732,7 +732,7 @@ decides an item ([brief](../VISION.md#goal-and-exit-rule), decision 3).
 cost records, looks, the `gpu` lock, exact baselines, tests that hold no game content, Broadsides and
 dependencies. In addition:
 
-- **Scratch and evidence.** `tmp/puddles-<milestone>/` and `.orchestrate/evidence/PUDDLES/`. Copies are listed in
+- **Scratch and evidence.** `tmp/puddles-<work-package>/` and `.orchestrate/evidence/PUDDLES/`. Copies are listed in
   `.orchestrate/evidence/PUDDLES/PROVENANCE.md`; none is expected, and Barnes's code is not copied.
 - **Other modules' files.** A change inside a file another module wrote is one a ruling names, behind a
   declaration no existing scene makes. Anything else it needs is a proposal in this module's log.

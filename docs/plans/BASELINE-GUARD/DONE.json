@@ -20,7 +20,7 @@
         {
           "id": "WP1.2",
           "statement": "The Chrome comparison covers all 481 records of each of the four retained sets (day and night, submitted SDR and scene-linear): the identity fields are equal, and each fresh frame's decoded bytes hash to the retained digest. Every retained reference file is unchanged, and the owner's byte comparison behaves as before.",
-          "ask": "Read the comparison and one verifier record. Is each fresh frame's hash computed again from its bytes, not copied from the candidate's manifest? Are all four sets and all 481 records of each compared? Did this milestone's diff leave every file under the registered baselines byte-identical?",
+          "ask": "Read the comparison and one verifier record. Is each fresh frame's hash computed again from its bytes, not copied from the candidate's manifest? Are all four sets and all 481 records of each compared? Did this work package's diff leave every file under the registered baselines byte-identical?",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP1.md",
           "verdict": "pass",
@@ -75,7 +75,7 @@
       "items": [
         {
           "id": "WP2.1",
-          "statement": "The registry lists each registered baseline's comparison files as the design's table names them, the verifier and `scripts/compare_v1_pixels.py` among them. For each baseline it holds a pin over the baseline's definition and the path and Git object ID of every protected file, and the refresh that last set the pin: the ruling's anchor in the module list, the module and the milestone. One command computes every pin at the current commit, passes when each equals the registry's, and prints them.",
+          "statement": "The registry lists each registered baseline's comparison files as the design's table names them, the verifier and `scripts/compare_v1_pixels.py` among them. For each baseline it holds a pin over the baseline's definition and the path and Git object ID of every protected file, and the refresh that last set the pin: the ruling's anchor in the module list, the module and the work package. One command computes every pin at the current commit, passes when each equals the registry's, and prints them.",
           "check": "python3 scripts/exact_baselines.py guard",
           "ask": "Read the guard and the registry. Is each pin computed from the commit's tree, over every field of the entry but the pin and the refresh, every tracked file of the reference and every comparison file? Does each baseline list every comparison file the design's table names for it? Does the first refresh of each baseline name an anchor that the module list holds?",
           "target": "mac-metal",
@@ -119,14 +119,14 @@
         },
         {
           "id": "WP2.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes on a main commit that contains the claimed one: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes on a main commit that contains the claimed one: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md",
-          "ask": "Read this milestone's diff. Is every file under the registered references unchanged, and does the registry still hold the same five baselines with their earlier fields as they were?"
+          "ask": "Read this work package's diff. Is every file under the registered references unchanged, and does the registry still hold the same five baselines with their earlier fields as they were?"
         },
         {
           "id": "WP2.6",

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/BASELINE-GUARD/design-review.md",
     "commit": "2ee92707ea6d8a7261c12b92f2a2fe7524a44b85",
-    "hash": "1a94493e716fa972011ecfd10655ce71f5d70531e168a0d3a92430a0eb712319",
+    "hash": "cfb4d273980bf8f7b0cb124d3ece1ec3fdbd82e1cfbbe1335e570b1ea772a1ea",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "5ac7b729378cfb947ff18339a6aabec9aa312c3dfae5fad4fb761633931167fe",
+      "definitions": "78f7cc504f954a5754ee4cfc405d5ceb099ddc3706d2b13fe32a2845b4382c40",
       "reviews": [
         {
           "verdict": "pass",
@@ -98,7 +98,7 @@
       }
     },
     "WP2": {
-      "definitions": "ca0b12a3ebfe6b7e7bcdb6978ae8ebfca93cad3cb90a9f81df56df7e77f43249",
+      "definitions": "96852d13c93cb44d8c4663d2c70d8e5fb4d1cd298b9924116e0f054bba2b5399",
       "reviews": [
         {
           "verdict": "pass",

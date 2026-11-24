@@ -15,7 +15,7 @@
       "items": [
         {
           "id": "WP1.1",
-          "statement": "At least three concepts each have a name, a paragraph of premise, one hero sprite, two enemy sprites, a palette, and a mock arena of 1920\u00d71080 pixels in which 2,000 enemies surround the hero, a common enemy's body being no more than a fiftieth of the image's height. Every sprite's source, a script or an image file, is in `examples/swarm/concepts/`. One image in this milestone's evidence lays the concepts side by side with each sprite at game size and enlarged.",
+          "statement": "At least three concepts each have a name, a paragraph of premise, one hero sprite, two enemy sprites, a palette, and a mock arena of 1920\u00d71080 pixels in which 2,000 enemies surround the hero, a common enemy's body being no more than a fiftieth of the image's height. Every sprite's source, a script or an image file, is in `examples/swarm/concepts/`. One image in this work package's evidence lays the concepts side by side with each sprite at game size and enlarged.",
           "check": "python3 examples/swarm/concepts/check.py",
           "ask": "Read the check and the script that composes the mocks. Is the count of enemies taken from the placements the composer drew, and the body size from the sprites it used? Is each mock composed with premultiplied alpha in linear light, as the design says the engine draws?",
           "target": "stand_in:mac-metal",
@@ -27,7 +27,7 @@
         {
           "id": "WP1.2",
           "statement": "The concepts differ in kind: each has its own premise and its own way of drawing, and no two are one idea in other colours. In each mock arena the hero can be found among the 2,000 and the two enemies can be told apart at the size shown.",
-          "inspect": "Open the side-by-side image in this milestone's evidence and each mock arena at 1920\u00d71080. Judge each mock whole, at the size it is shown, and in native-size crops around the hero and of a patch of crowd. Judge only whether the concepts differ in kind and whether each reads at game size; which is best is the owner's.",
+          "inspect": "Open the side-by-side image in this work package's evidence and each mock arena at 1920\u00d71080. Judge each mock whole, at the size it is shown, and in native-size crops around the hero and of a patch of crowd. Judge only whether the concepts differ in kind and whether each reads at game size; which is best is the owner's.",
           "target": "stand_in:mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -46,7 +46,7 @@
         },
         {
           "id": "WP1.4",
-          "statement": "The owner has picked one concept. The pick, and anything the owner asked to change, is written in `examples/swarm/CONCEPT.md` as the reference later milestones are judged against: the name, the premise, and the qualities of the look in words.",
+          "statement": "The owner has picked one concept. The pick, and anything the owner asked to change, is written in `examples/swarm/CONCEPT.md` as the reference later work packages are judged against: the name, the premise, and the qualities of the look in words.",
           "inspect": "Read the recorded Human Feedback beside `examples/swarm/CONCEPT.md`. Does the file say what the owner chose and every change they asked for, and nothing they did not say?",
           "needs": {
             "type": "human_feedback",
@@ -77,7 +77,7 @@
       "items": [
         {
           "id": "WP2.1",
-          "statement": "Chrome's cost at each crowd size is on record before the cap is chosen. In Chrome at 1920\u00d71080, with this milestone's rules and drawing and a crowd packed as the slice's late crowd packs, the record holds the median tick, the median frame's CPU work and their sum at each thousand bodies from 2,000 to 10,000, the cap the rule set uses, and each tripwire the design names that a row trips. The figures are baselines: none sets the cap and none decides the result.",
+          "statement": "Chrome's cost at each crowd size is on record before the cap is chosen. In Chrome at 1920\u00d71080, with this work package's rules and drawing and a crowd packed as the slice's late crowd packs, the record holds the median tick, the median frame's CPU work and their sum at each thousand bodies from 2,000 to 10,000, the cap the rule set uses, and each tripwire the design names that a row trips. The figures are baselines: none sets the cap and none decides the result.",
           "check": "python3 scripts/swarm.py cap",
           "ask": "Were the figures taken in the game itself (its rules, row extraction, ordering and draw submission) as release Wasm on the page's one thread in Chrome, at the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete and made at the claimed commit, and never on a figure?",
           "lock": "chrome",
@@ -228,7 +228,7 @@
         {
           "id": "WP2.15",
           "statement": "No engine crate names anything of the game, the game reaches the engine through public items alone, and nothing the game draws is written to the world.",
-          "ask": "Does any crate under `crates/` name a type, constant, string or file of the game? Does `swarm` or `swarm-rules` use a non-public item of an engine crate? Does any code outside `swarm-rules` write a component or resource the digest covers? What did this milestone change in `thrum-app` and the capture and packaging scripts under seam ruling 2, and does each change serve any game?",
+          "ask": "Does any crate under `crates/` name a type, constant, string or file of the game? Does `swarm` or `swarm-rules` use a non-public item of an engine crate? Does any code outside `swarm-rules` write a component or resource the digest covers? What did this work package change in `thrum-app` and the capture and packaging scripts under seam ruling 2, and does each change serve any game?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -237,7 +237,7 @@
         },
         {
           "id": "WP2.16",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -442,7 +442,7 @@
         },
         {
           "id": "WP3.16",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -617,7 +617,7 @@
         },
         {
           "id": "WP4.15",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -735,7 +735,7 @@
         },
         {
           "id": "WP5.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -782,9 +782,9 @@
         },
         {
           "id": "WP6.3",
-          "statement": "The V1 game's and the crowd view's iPhone apps still pass the simulator checks other milestones left for them, unchanged, now that a third app uses the shared shell.",
+          "statement": "The V1 game's and the crowd view's iPhone apps still pass the simulator checks other work packages left for them, unchanged, now that a third app uses the shared shell.",
           "check": "sh -c 'python3 scripts/render2d_sim.py && python3 scripts/game_ui_sim.py layout && python3 scripts/game_ui_sim.py touch && python3 scripts/game_ui_sim.py second-app'",
-          "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `RENDER-2D` and `GAME-UI` name for the V1 app and the crowd view's? Does each pass at the claimed commit, and was any of those scripts or tests edited by this milestone?",
+          "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `RENDER-2D` and `GAME-UI` name for the V1 app and the crowd view's? Does each pass at the claimed commit, and was any of those scripts or tests edited by this work package?",
           "lock": "simulator",
           "target": "ios-sim",
           "builder_result": "open",
@@ -795,7 +795,7 @@
         {
           "id": "WP6.4",
           "statement": "The game's iPhone app is a user of the shared iOS shell that `GAME-UI` WP6 left in `thrum-app`. It keeps no lifecycle, touch delivery, surface lease, rotation or recovery code of its own, and the shell still names nothing of any game.",
-          "ask": "Does anything iOS-specific in `swarm-ios` repeat policy the shared shell holds? Did this milestone add a type, string or file of the game to `thrum-app`?",
+          "ask": "Does anything iOS-specific in `swarm-ios` repeat policy the shared shell holds? Did this work package add a type, string or file of the game to `thrum-app`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -814,7 +814,7 @@
         },
         {
           "id": "WP6.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -840,7 +840,7 @@
           "id": "WP7.1",
           "statement": "The game's host and client worlds are driven by their sessions through the engine's driven world. With a scripted session in virtual time they commit exactly the ticks it names at each advance (none, one, or several up to the cap on catch-up) and draw at its playout interpolation, and a game played alone still steps on the fixed clock. No engine crate was changed for it.",
           "check": "cargo test --locked --offline -p swarm --test driven_world",
-          "ask": "Are the host's and the client's drivers the game's own code, on the public driven-world interface `SESSION` WP7 left? Did this milestone change `thrum-core`, `thrum-render` or `thrum-app`?",
+          "ask": "Are the host's and the client's drivers the game's own code, on the public driven-world interface `SESSION` WP7 left? Did this work package change `thrum-core`, `thrum-render` or `thrum-app`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -947,7 +947,7 @@
         },
         {
           "id": "WP7.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1065,8 +1065,8 @@
         },
         {
           "id": "WP8.10",
-          "statement": "A closing record in this milestone's evidence closes track 3: for each of `SIM-2D`, `RENDER-2D`, `GAME-UI`, `TRANSPORT` and `SESSION` it says what the game proved of it and on which targets, with links to the evidence, it lists what was not run, and it says track 3 is closed by quoting the owner's acceptance.",
-          "ask": "Does the record name as not run: a second machine or an internet path, a public host, a physical iPhone, motion on the built-in panel itself, the game's look on an EDR panel, Safari and Firefox, key and pointer events delivered by the system to the Mac window, sound and a gamepad? Does each claim it makes link to evidence from the claimed commit or name the milestone that recorded it? Is the acceptance it quotes in the script's record of the owner's words?",
+          "statement": "A closing record in this work package's evidence closes track 3: for each of `SIM-2D`, `RENDER-2D`, `GAME-UI`, `TRANSPORT` and `SESSION` it says what the game proved of it and on which targets, with links to the evidence, it lists what was not run, and it says track 3 is closed by quoting the owner's acceptance.",
+          "ask": "Does the record name as not run: a second machine or an internet path, a public host, a physical iPhone, motion on the built-in panel itself, the game's look on an EDR panel, Safari and Firefox, key and pointer events delivered by the system to the Mac window, sound and a gamepad? Does each claim it makes link to evidence from the claimed commit or name the work package that recorded it? Is the acceptance it quotes in the script's record of the owner's words?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1099,7 +1099,7 @@
         },
         {
           "id": "WP8.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

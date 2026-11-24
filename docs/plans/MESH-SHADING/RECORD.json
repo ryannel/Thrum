@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/MESH-SHADING/design-review.md",
     "commit": "0fbfce6f0d39ba49f82529cdc3f4d477955e4029",
-    "hash": "86cbda785e8dfd307afd9c032cae1c9d6226d2526eb4d5f82244eb8fe5054d06",
+    "hash": "3a38db66b8487ca71d34b4000e1551adf48ba65974d012a5ef409f95ea8e0646",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",

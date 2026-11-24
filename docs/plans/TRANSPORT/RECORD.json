@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/TRANSPORT/design-review.md",
     "commit": "5495de2c26c898f65b0c6a4963651bb803163d83",
-    "hash": "e97e1824c938880e4fe3add744a77787f4be25e5dec3f42e421419a964efa71c",
+    "hash": "fc9879ff1410528d0c48c5495b5bece5b8ac02aecb1fc4a4abe0faa6bd8ddeee",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "aca0b785371f8cbf2065f5499eb6d8fbd892765efff3caaea00b465521bca911",
+      "definitions": "90cf25d813ea5883d12b2d6e5230d2c4957c758eb4bd9e828b86ae81ed7f4dce",
       "reviews": [
         {
           "verdict": "fail",
@@ -153,7 +153,7 @@
       }
     },
     "WP2": {
-      "definitions": "647a99f73e1a507d8d256f8ce5e1ef6ab31d89de9ddf05a5d5a5d9655b982592",
+      "definitions": "c71789525251cdd1ebc3690ac843c6452baef571b26e0f657c42bb9beae576fc",
       "reviews": [
         {
           "verdict": "pass",

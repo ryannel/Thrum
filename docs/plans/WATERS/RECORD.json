@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/WATERS/design-review.md",
     "commit": "8939bdf4a4151d1c4304b18438d4e50e686817a4",
-    "hash": "376747fb76552623d2d0b044045f255fdc164756552ccab88e6f9ec31612b5c2",
+    "hash": "b4e3b29bf52adff75fc03f49930e29867aaf523434e8d6d58a182c984d593463",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "28c7411d6e1211056e43c758d59c48f49882b4c98ea0c9117951c89941dc17dd",
+      "definitions": "5891ec73190cf7753e286b965e9391a6b8bf2b58e30c38ad33484cbf01b6353d",
       "reviews": [
         {
           "verdict": "fail",
@@ -210,7 +210,7 @@
       }
     },
     "WP2": {
-      "definitions": "4e2e81b0e5b1435a08d8e774ed9f91342f500f73ec27da97dd56de9f970d95a8",
+      "definitions": "412ad972969247a2e26f99c31aff319b4b1e86e830914006cdb29e9c4c3c84bc",
       "reviews": [
         {
           "verdict": "fail",
@@ -326,7 +326,7 @@
       }
     },
     "WP3": {
-      "definitions": "1bc68414b5ffff36869c4dab3eb49c00cc85446958801fa5146c689ba861e3b6",
+      "definitions": "27ba477012eae33f7922ec6980f2c3d028bd84d86e83edc94da70f581834cd32",
       "reviews": [
         {
           "verdict": "fail",
@@ -473,7 +473,7 @@
       }
     },
     "WP4": {
-      "definitions": "80182ecf615275056586f144e8d18e803db53dbbc8fc47e02974f82381f73460",
+      "definitions": "f56598315cdad710fc3dbd38a78c69e089820271a0253e7f9ce51d1ef00eefce",
       "reviews": [
         {
           "verdict": "fail",
@@ -597,7 +597,7 @@
       }
     },
     "WP5": {
-      "definitions": "d9933fcc58d85ef92f7dd10490ab62b3e2af976c7e2e0774b6092b6f9f4ed7b4",
+      "definitions": "76242c4844846191ba4c5e666e6dc5ead03ab669aee5e313fe6002db206fa2ff",
       "reviews": [
         {
           "verdict": "fail",
@@ -793,7 +793,7 @@
       }
     },
     "WP6": {
-      "definitions": "52044df4951389b98236fc7a22c2425f828028af8d95058abdace1ccae1a4491",
+      "definitions": "3e3bfb8cce5f7ff30be9d08fe676df9e7dc6357f5ca4866fadae9ba41cfaf6a4",
       "reviews": [
         {
           "verdict": "fail",
@@ -987,7 +987,7 @@
       }
     },
     "WP7": {
-      "definitions": "40c1e25f90a058078a8a07fb98635ab7d19008b691966dfa67f1f8e97e9062d4",
+      "definitions": "d1a4bbc5786678563655b23844923d7f6169f9c8767923286420e4d27496bd3f",
       "reviews": [
         {
           "verdict": "fail",
@@ -1288,7 +1288,7 @@
       }
     },
     "WP8": {
-      "definitions": "3b9d0e01c19fe679b7d7693a7c9923fd15d582a20a146a26135d141e73a52dcb",
+      "definitions": "1e32916e6dc58889d4736ff99a440a10d77fa4790b6ef78fb43ead149623f103",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1297,7 +1297,7 @@
       }
     },
     "WP9": {
-      "definitions": "6df4a031394c1681e3036cd3b92679f2032ca9c50f45c2d8d0d68263c6cdb7cf",
+      "definitions": "45719f63e69f82242e48cfeb0521917fb4d3c4f60516ac3ffc4273498e8e30a3",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1306,7 +1306,7 @@
       }
     },
     "WP10": {
-      "definitions": "7714f193766adeca72f8e7ec3ffcfac9da3224ee51212ca53ab194b1d146f918",
+      "definitions": "8ad43e66b59e514fd0a34dae2382e2a8c441292ecca1c190b7318f758ffec4ba",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1315,7 +1315,7 @@
       }
     },
     "WP11": {
-      "definitions": "0eb4cf580b2eec3594b5d2e2546183bf711d3a3f341877e99974e4e84084fd56",
+      "definitions": "26397966d945bbcf18b29dbda8e08688fb8365f2a6e792b212fcb37397f4455a",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1325,7 +1325,7 @@
       "ends_stretch": true
     },
     "WP12": {
-      "definitions": "74c535972bd4c946a5937d773e57a90639a0f6aef8a02dc9210fba3c0117b17c",
+      "definitions": "1c81dca11c35fa2459b1848bb449ea7ae6faa9943c92ea8ad4a163b65b9cc9dd",
       "reviews": [
         {
           "verdict": "pass",
@@ -1413,7 +1413,7 @@
       }
     },
     "WP13": {
-      "definitions": "f1099dbb460e3f239a71c60e57839296202ac77b713795795f2edcae2b6a1fad",
+      "definitions": "2c39650b5e36ed5c02b87eaa2e5464d39712c8faf0b32256904b5aaa857431d7",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1422,7 +1422,7 @@
       }
     },
     "WP15": {
-      "definitions": "527a1229028ec6daeca4688ba0c6b168b6bf835dc39ddb0d5da406db8a447d23",
+      "definitions": "74b2dece5fdc0245d25fa3499d27120e38f99dfadad417910ebc432de721ae91",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1431,7 +1431,7 @@
       }
     },
     "WP14": {
-      "definitions": "f69ee17d1cc6d39734d47e89459c573c1c1b60c40d4c11fae5c47b29384cb219",
+      "definitions": "e7ccdb3e89d1925c6e2df537a30bcef51445f1b93349655f618d89b0e46ef985",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1440,7 +1440,7 @@
       }
     },
     "WP16": {
-      "definitions": "ce2d2c3b1c686b1e79a1cc1a1f147a96186ea283c6480cb6bc99def6d758918e",
+      "definitions": "ad1594b0260ce1479db528fb5f00c786470aa9fe8df87914598298f13b66799e",
       "reviews": [],
       "authorised": {
         "by": "plan",

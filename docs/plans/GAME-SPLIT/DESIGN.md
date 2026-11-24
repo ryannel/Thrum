@@ -23,7 +23,7 @@ The lead's task carries the decisions already made:
   a later step once the engine has releases. The last stage creates that repository, moves the game with its
   history-free copy, and leaves Thrum with no game code. The upcoming swarm game follows the same shape from the
   start."
-- "V1 still exits through the showcase game, so keep its milestones buildable throughout and say how the V1 gate
+- "V1 still exits through the showcase game, so keep its work packages buildable throughout and say how the V1 gate
   is verified once the game lives outside."
 
 ## What `examples/v1-game` is today
@@ -36,7 +36,7 @@ One package of about 26,000 lines that is three things at once:
    10,000-entity workload, rigs for `EFFECT-GRAPH`, `CONTENT-LOOP`, `COOKED-DRAW` and `APPLE-TILE`, and selections
    that other modules add (`CLOUDS`, `PUDDLES`, `RENDER-2D`, `GAME-UI`). The five registered exact baselines are
    drawn through it, and 67 approved checks in other modules run `cargo test -p v1-game`, 54 of them in
-   milestones not yet Done.
+   work packages not yet Done.
 3. **The showcase game**: what `SHOWCASE` owns, the exit scene with its content, routes, exit configuration,
    launcher and exit record.
 
@@ -61,7 +61,7 @@ thrum-games/                 a sibling Git repository, local, no remote
   engine's. It holds what a second game would not copy: scenes, rules, controls, content, entry points.
 - **The proving ground** is engine test content. It keeps a frozen copy of everything the engine's baselines and
   approved checks draw and read ([the frozen qualification content](#the-frozen-qualification-content)), the
-  workload, the rigs and the modules' selections. From the move on, an engine milestone proves itself in its own
+  workload, the rigs and the modules' selections. From the move on, an engine work package proves itself in its own
   crate or in the proving ground, never in a game.
 - **The engine is checked alone.** `./dev check` and the exact-baseline verifier build no game and read nothing
   from a games repository.
@@ -87,12 +87,12 @@ engine commit in question, when the game's manifests say `../../thrum/crates/…
   packages under the engine's `crates/`, nothing reaches out of the game by any other route, and
   [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md)'s `test-crate-edges` holds, so a game may use the engine's test
   packages in its tests and ship neither. The gate has no rule of its own for this. The rule and the registration
-  it reads are `TEST-SUPPORT` WP1's, so WP1 waits for that milestone as well as for `REPO-RULES` WP1.
+  it reads are `TEST-SUPPORT` WP1's, so WP1 waits for that work package as well as for `REPO-RULES` WP1.
 - With no games repository it says so and exits with its own code.
 
 **2. No hidden reach** (WP2). `package-reach` goes to zero.
 
-- The mixed-mesh field becomes the first fixture in `crates/thrum-fixtures`, which this milestone creates under
+- The mixed-mesh field becomes the first fixture in `crates/thrum-fixtures`, which this work package creates under
   [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#mechanisms)'s interface: plain data with no engine or game type, and no
   dependency. That design owns the package and the rule on who may depend on it; it is the one authority, and the
   field's data is defined there and nowhere else.
@@ -122,7 +122,7 @@ engine's are the fixture and the game's are its own source from the first commit
 on the fixtures package.
 
 **5. The name** (WP5). The proving ground keeps the folder and package name `v1-game` while any approved open
-check names it, because a builder cannot edit a pinned check. When the last such milestone is Done it is renamed
+check names it, because a builder cannot edit a pinned check. When the last such work package is Done it is renamed
 to `examples/proving-ground`, package `proving-ground`,
 the registry's covered paths follow with no reference changed, and the game's iPhone app, by then on the shared
 shell `GAME-UI` WP6 builds, follows the game.
@@ -206,7 +206,7 @@ with it.
 |---|---|
 | **Game gate**: `game_gate.py <game> test`, `boundary`, `exit`, `ios-sim`, and a game's own commands; the record with both revisions | `SHOWCASE` after the move, `SWARM`, reviewers |
 | **Games repository layout**: one folder a game, path dependencies on `../../thrum/crates/…`, no remote | `SWARM` |
-| **Proving ground**: where an engine milestone's hosted proof lives, and the frozen qualification content | Every engine module, `BASELINE-GUARD`'s verifier |
+| **Proving ground**: where an engine work package's hosted proof lives, and the frozen qualification content | Every engine module, `BASELINE-GUARD`'s verifier |
 | The mixed-mesh field, in `thrum-fixtures` (the package and its rule are [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#interfaces)'s) | `CULLING`'s visibility tests, the proving ground |
 
 ## What it must not do

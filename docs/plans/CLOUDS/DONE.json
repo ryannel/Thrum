@@ -120,7 +120,7 @@
         },
         {
           "id": "WP1.11",
-          "statement": "Every file in this milestone that is copied or translated from Broadsides does what the design states, and `docs/evidence/CLOUDS/PROVENANCE.md` lists it with its source commit and path. Nothing GPL or share-alike is among them.",
+          "statement": "Every file in this work package that is copied or translated from Broadsides does what the design states, and `docs/evidence/CLOUDS/PROVENANCE.md` lists it with its source commit and path. Nothing GPL or share-alike is among them.",
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the files added? For each copied file, do the tests that prove it take their expected values from somewhere other than the copy?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -141,7 +141,7 @@
         },
         {
           "id": "WP1.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
@@ -243,7 +243,7 @@
           "id": "WP13.6",
           "statement": "The model's Sun-path reference runs from any point to the top of the weather through ground sources and cloud alike, in the full and the coarse density, and reports apart from it whether the surface field blocks the ray. Through a bank at a 30\u00b0, a 10\u00b0 and a 4\u00b0 Sun, a ground band of the first profile's columns and heights, filled from that reference and read by interpolation, is inside the design's ceiling at every probe, with a node's allowance. A level-layer rule and the band's value counted twice, run through the same assertion, are outside it. The worst and the RMS error are on record beside the design proof's 0.006 to 0.011 RMS in transmittance and decide nothing.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_sun_path",
-          "ask": "Is the ceiling the design's, unchanged, with no bound taken from this milestone's own measurement? Do the probe points include the ground beside the bank on its far side from the Sun at 10\u00b0 and at 4\u00b0, where a level-layer rule gives no shade, and does the test show each wrong substitute fail there?",
+          "ask": "Is the ceiling the design's, unchanged, with no bound taken from this work package's own measurement? Do the probe points include the ground beside the bank on its far side from the Sun at 10\u00b0 and at 4\u00b0, where a level-layer rule gives no shade, and does the test show each wrong substitute fail there?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP13.md; .orchestrate/evidence/CLOUDS/WP13-verification.json",
@@ -284,7 +284,7 @@
         },
         {
           "id": "WP13.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -322,7 +322,7 @@
         },
         {
           "id": "WP2.2",
-          "statement": "On every level of the GPU weather map, each texel names the same cells as the CPU field and matches its column, at the tick its part of the map was last written, within the bound this milestone measured first and recorded. No part is older than its cadence allows in weather time, at 1x and at 60x. That holds after a day of travel at 40 m/s, and after repeated ticks, a pause, a hitch, a backward tick and a replaced device.",
+          "statement": "On every level of the GPU weather map, each texel names the same cells as the CPU field and matches its column, at the tick its part of the map was last written, within the bound this work package measured first and recorded. No part is older than its cadence allows in weather time, at 1x and at 60x. That holds after a day of travel at 40 m/s, and after repeated ticks, a pause, a hitch, a backward tick and a replaced device.",
           "check": "cargo test --locked --offline -p thrum-clouds --test weather_map_gpu",
           "ask": "Is the bound the measured one in `docs/evidence/CLOUDS/WP2-conformance.md`, with the arithmetic that explains it? Does the test compare cell identities as integers, and not only values that happen to be close?",
           "lock": "gpu",
@@ -403,7 +403,7 @@
           "id": "WP2.9",
           "statement": "The shade's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with clouds absent gives the whole frame, each cloud pass's GPU time by name at 1x, 8x and 60x, the cost of one full refill of the Sun-path product and the bytes of each resource, beside the design's estimates. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene shade",
-          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up? Does the shadow-only profile declare no trace, layer, detail noise or overlay?",
+          "ask": "Is the record paired and taken on this work package's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up? Does the shadow-only profile declare no trace, layer, detail noise or overlay?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -414,7 +414,7 @@
         {
           "id": "WP2.10",
           "statement": "The maturity ledger's `E1.clouds` row keeps implementation, correctness, visuals and device apart.",
-          "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
+          "ask": "Does the row claim only what this work package proved, on the targets it ran on?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP2.md",
@@ -435,7 +435,7 @@
         },
         {
           "id": "WP2.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -580,7 +580,7 @@
         {
           "id": "WP3.11",
           "statement": "The maturity ledger's `E1.clouds` row is current.",
-          "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
+          "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/design/maturity.json",
@@ -589,7 +589,7 @@
         },
         {
           "id": "WP3.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -665,7 +665,7 @@
         },
         {
           "id": "WP4.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -748,7 +748,7 @@
         },
         {
           "id": "WP5.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -905,7 +905,7 @@
         },
         {
           "id": "WP6.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -1022,7 +1022,7 @@
         },
         {
           "id": "WP7.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1079,7 +1079,7 @@
           "id": "WP8.3",
           "statement": "Under a closed deck the incident-light meter reads what a horizontal receiver at its metering point gets: the diffuse light with the overlay, and the Sun with the cloud factor.",
           "check": "cargo test --locked --offline -p v1-game --test clouds_meter_gpu",
-          "ask": "Did the meter already see cloud shade, or did this milestone add it under ruling 3? Either way, does the record say which?",
+          "ask": "Did the meter already see cloud shade, or did this work package add it under ruling 3? Either way, does the record say which?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1152,7 +1152,7 @@
         },
         {
           "id": "WP8.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1261,7 +1261,7 @@
         },
         {
           "id": "WP9.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1334,7 +1334,7 @@
         },
         {
           "id": "WP10.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1358,7 +1358,7 @@
       "items": [
         {
           "id": "WP14.1",
-          "statement": "With the Ground capability the cloud selection in `examples/v1-game` gives the field the valley's surface field and a fog table and declares `ATMOSPHERE`'s view volume, and the labelled test medium is not used. Without Ground the effect declares no ground band, medium-coefficient pass or surface texture, and its other products hold the same bytes as before this milestone.",
+          "statement": "With the Ground capability the cloud selection in `examples/v1-game` gives the field the valley's surface field and a fog table and declares `ATMOSPHERE`'s view volume, and the labelled test medium is not used. Without Ground the effect declares no ground band, medium-coefficient pass or surface texture, and its other products hold the same bytes as before this work package.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_ground_selection_gpu",
           "ask": "Does the test count creations by name with and without Ground, and compare the cloud band's ground field byte for byte?",
           "lock": "gpu",
@@ -1469,7 +1469,7 @@
         {
           "id": "WP14.11",
           "statement": "The maturity ledger's `E1.clouds` row is current.",
-          "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
+          "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1478,7 +1478,7 @@
         },
         {
           "id": "WP14.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1511,9 +1511,9 @@
       "items": [
         {
           "id": "WP15.1",
-          "statement": "The trace marches each ray once over the design's interval and keeps a stop at every pixel depth in its texel. In one texel whose pixels lie at three depths, a bank between the first and second depths leaves the nearest pixel clear and covers the two behind it, and the same bank between the second and third covers only the farthest; a pixel nearer than all the condensate takes none. Under a cloud band that clears all geometry, with no ground condensate, the composed frame holds the same bytes as before this milestone.",
+          "statement": "The trace marches each ray once over the design's interval and keeps a stop at every pixel depth in its texel. In one texel whose pixels lie at three depths, a bank between the first and second depths leaves the nearest pixel clear and covers the two behind it, and the same bank between the second and third covers only the farthest; a pixel nearer than all the condensate takes none. Under a cloud band that clears all geometry, with no ground condensate, the composed frame holds the same bytes as before this work package.",
           "check": "cargo test --locked --offline -p thrum-clouds --test trace_depth_gpu",
-          "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases? Is the unchanged frame compared with one from the commit this milestone started at, or with a retained image?",
+          "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases? Is the unchanged frame compared with one from the commit this work package started at, or with a retained image?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1607,7 +1607,7 @@
         {
           "id": "WP15.11",
           "statement": "The maturity ledger's `E1.clouds` row is current.",
-          "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
+          "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1616,7 +1616,7 @@
         },
         {
           "id": "WP15.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1733,7 +1733,7 @@
         {
           "id": "WP16.9",
           "statement": "The maturity ledger's `E1.clouds` row is current.",
-          "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
+          "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1742,7 +1742,7 @@
         },
         {
           "id": "WP16.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1832,7 +1832,7 @@
         },
         {
           "id": "WP11.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1916,8 +1916,8 @@
         },
         {
           "id": "WP17.4",
-          "statement": "What a game reads from the weather holds under the changed form. The tests that hold the GPU weather map, the turret clearing, the shade with visible clouds off and the drawn column to the CPU query (WP2.2's, WP3.8's, WP3.15's and WP7.6's) assert what those milestones left and pass in the project's test command.",
-          "ask": "In this milestone's changes, did those tests move only in expected values, probe points and a stated tolerance, with every assertion and every wrong version they reject kept?",
+          "statement": "What a game reads from the weather holds under the changed form. The tests that hold the GPU weather map, the turret clearing, the shade with visible clouds off and the drawn column to the CPU query (WP2.2's, WP3.8's, WP3.15's and WP7.6's) assert what those work packages left and pass in the project's test command.",
+          "ask": "In this work package's changes, did those tests move only in expected values, probe points and a stated tolerance, with every assertion and every wrong version they reject kept?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1926,7 +1926,7 @@
         },
         {
           "id": "WP17.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1983,7 +1983,7 @@
         {
           "id": "WP12.4",
           "statement": "Each Apple-tile variant of a cloud kernel that was tried is on record as a paired run against the portable kernel, with stills of the same views that show no visible difference. One is in use only if its win is beyond the spread of repeated runs.",
-          "ask": "Does this milestone's evidence give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
+          "ask": "Does this work package's evidence give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2048,7 +2048,7 @@
         },
         {
           "id": "WP12.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

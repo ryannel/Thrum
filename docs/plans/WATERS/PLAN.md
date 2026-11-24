@@ -2,8 +2,8 @@
 
 [Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
-Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines). Milestones are built in the order below.
+Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
+[Exact baselines](../ARCHITECTURE.md#exact-baselines). Work packages are built in the order below.
 
 ## Open for the human
 
@@ -18,13 +18,13 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
 - Assumption: the view from under water has no drops on the lens, particles or bubbles, and its picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
 - Assumption: only WP14 and the close wait for `SCENE-VIEWS`: surf's model follows WP1, surf follows foam, the view from under water follows the channel, then its light.
-- Assumption: the owner's "it should start from first principles", said of clouds, governs water too, and "bring that across when it makes sense" (13 November) means milestones start when their dependencies are Done, which can be before G7.
+- Assumption: the owner's "it should start from first principles", said of clouds, governs water too, and "bring that across when it makes sense" (13 November) means work packages start when their dependencies are Done, which can be before G7.
 - Assumption: "you can copy that code out and reuse as is if it's useful" is the owner's licence for what Broadsides' authors wrote; third-party material keeps its own, and nothing GPL or share-alike is copied.
 - Assumption: every part beyond open water (surf, the mirror, the view from under water) is a capability a scene can leave out at no cost.
 - Assumption: the three sea cues the 10 November spikes left open stay parked.
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind it, longer ones to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists, and no timing figure decides an item (brief decision 3).
-- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones.
+- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
 - Assumption: under the owner's bar of 17 November, tests stay on what a game reads, the frame contract and what one pass hands another; the look of wakes, foam and underwater light is judged by eye.
 
 ## WP1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point

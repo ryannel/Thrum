@@ -5,8 +5,8 @@ everything else runs on main after the merge. [Design](DESIGN.md) · [done-when 
 [test tiers](../../../ORCHESTRATE.md#test-tiers)
 
 Read [the goal](DESIGN.md#the-goal), [Mechanisms](DESIGN.md#mechanisms) and
-[the files each milestone touches](DESIGN.md#files-each-milestone-touches) before any milestone. Every file here is
-another module's: change nothing those tests assert about the engine. The milestones are in build order.
+[the files each work package touches](DESIGN.md#files-each-work-package-touches) before any work package. Every file here is
+another module's: change nothing those tests assert about the engine. The work packages are in build order.
 
 ## Open for the user
 
@@ -17,9 +17,9 @@ another module's: change nothing those tests assert about the engine. The milest
 - Assumption: "the number of test binaries can only go down" counts the binaries no plan names, 43 of 275 today, because approved open items name 147 not yet written; WP11 takes the whole number from 263 to about 110. The other choice rewrites the 176 binary names in 17 modules' open items now, and freezes the whole number.
 - Assumption: the stepped hour, the foam's ten-minute moored run, the three field flythroughs and the shore-blend solve run whole on main after merges, like the gale. The other choice keeps a short run of any in every merge's check.
 - Assumption: the whole workspace's tests run on main at most once an hour, with no `gpu` lock, which would hold a GPU slot through the build. The other choice is every four hours under the lock, like the long tests and exact images.
-- Assumption: a milestone's Ready for Review still runs the whole workspace's tests, so a missed edge on main holds every module's until it is fixed or reverted. The other choice selects that run by the milestone's own change, a change to the orchestrate script.
+- Assumption: a work package's Ready for Review still runs the whole workspace's tests, so a missed edge on main holds every module's until it is fixed or reverted. The other choice selects that run by the work package's own change, a change to the orchestrate script.
 - Assumption: the tests behind a Cargo feature run on main with the long tests, and every merge compiles them. The other choice runs them only in the item checks that name them.
-- Assumption: a release point is the V1 exit's closing record or anything published, and every tier runs there on one commit; `SHOWCASE`'s next re-plan adds the long tests to its closing milestone. The other choice names other release points.
+- Assumption: a release point is the V1 exit's closing record or anything published, and every tier runs there on one commit; `SHOWCASE`'s next re-plan adds the long tests to its closing work package. The other choice names other release points.
 - Assumption: the atmosphere's Monte Carlo reference is deleted, about 2,200 lines; the night checks and the twilight guard stay in the check. The other choice keeps it as an ignored diagnostic.
 - Assumption: three more tests that hold GPU output to a reference are replaced by short tests of the behaviour, about 1,400 lines: the mirror pool's rounding-allowance proof, the cooked cloud march's f64 reference and the scene-view shader hashes. The other choice keeps any of the three.
 - Assumption: the smallest world and no device for logic bind tests written or changed from 21 November, and WP9 and WP3 apply them to the tests over ten seconds. The other choice also sweeps the 1,290 faster tests, for at most 141 s summed.
@@ -75,7 +75,7 @@ the runs, including the reruns, the core and builder counts, and the overlapping
 Have `check_loaded.py` read the retained records for the passing full check, the six incident case results and
 the load evidence. Accept the over-ten-second recovery from either run when the record ties the first-attempt
 timeout, passing serial retry within thirty seconds and production verdict to the same real case and fixed
-revision. Keep the checker cheap so milestone checks can rerun from the records.
+revision. Keep the checker cheap so work package checks can rerun from the records.
 
 ## WP15 Merge verification reuses a bounded local Cargo cache
 

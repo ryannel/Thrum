@@ -141,7 +141,7 @@ reference path, candidate, comparison, record count and list of comparison files
 - a **pin**: a SHA-256 over the definition and over the path and Git object ID of every protected file, at the
   commit;
 - a **refresh**: the ruling in the module list that allowed the last change, by its anchor, and the module and
-  milestone that made it.
+  work package that made it.
 
 A baseline that a ruling ends leaves the list of baselines and enters the registry's **retired** list, as its
 identity, its owner and a refresh.
@@ -169,7 +169,7 @@ names a ruling, which is one place for a reviewer to look and an edit rule 1 all
 - *The culprit that regenerates.* Main fails, and the named module regenerates the reference to pass.
   `./dev check` fails at its merge: the pin differs. To merge it must write a refresh that names a ruling. If
   there is none, it has no anchor to name. Writing one into the module list is a builder changing a planner's
-  file, in plain sight of the milestone's reviewer.
+  file, in plain sight of the work package's reviewer.
 - *The culprit that unregisters.* It removes `chrome-night-scene-linear` and leaves the rest alone. Every
   remaining pin is still right, so checks 1 to 4 pass. Check 5 fails and names the baseline: the merge base
   registers it and the commit neither registers nor retires it.
@@ -242,7 +242,7 @@ guard in `./dev check`, a tree read and two reads of the registry. The times are
 ## Risks
 
 1. **The run on main fails for a cause that is not a commit** (a flake that holds twice, low disk, a Chrome
-   update). Every milestone's verifier item then fails at its claim until a run passes. The lead reads the
+   update). Every work package's verifier item then fails at its claim until a run passes. The lead reads the
    run's log first; the script retries once and the scratch rule keeps disk from being the cause.
 2. **Two regressions overlap while main is red.** The second shows only after the first is fixed, on the next
    run.
@@ -272,7 +272,7 @@ guard in `./dev check`, a tree read and two reads of the registry. The times are
 ## Limits on builders
 
 - Never refresh, regenerate or edit a file under a registered baseline, except under a ruling in the module list
-  that names your milestone.
+  that names your work package.
 - No tolerance, nearest-frame search, retry inside a run or skipped record, for any reason.
 - Do not change `scripts/apple_tile_m0.py`, `apple_tile_m1.py` or `apple_tile_m2.py`,
   `scripts/compare_v1_pixels.py`, the byte mode of the Chrome comparator, `scripts/capture_v1_browser.mjs` or

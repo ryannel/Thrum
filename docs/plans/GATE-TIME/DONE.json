@@ -12,7 +12,7 @@
       "items": [
         {
           "id": "WP1.1",
-          "statement": "`./dev check` runs none of the six long tests the design's table names for this milestone: the ten-minute gale on Metal, the exit scene's stepped hour, the three field flythroughs and the shore-blend solve. Each is an ignored test whose reason starts `long:` and names the command that runs it, with the body and every assertion it had. The other tests of those binaries run in `./dev check` as they did.",
+          "statement": "`./dev check` runs none of the six long tests the design's table names for this work package: the ten-minute gale on Metal, the exit scene's stepped hour, the three field flythroughs and the shore-blend solve. Each is an ignored test whose reason starts `long:` and names the command that runs it, with the body and every assertion it had. The other tests of those binaries run in `./dev check` as they did.",
           "check": "sh -c 'test \"$(cargo test --locked --offline -p water-scene -p v1-game -p thrum-water-model --tests -- --list --ignored 2>/dev/null | grep -cE \"(^|::)(actual_gale_keeps_the_fleet_in_contact_on_metal|movers_keep_their_authored_loops_after_a_stepped_hour|field_culling_matches_direct_along_the_flythrough|mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough|mixed_mesh_occlusion_matches_bucket_direct_through_first_cut|both_blends_against_component_own_solve_and_nearest_negative_control): test$\")\" -eq 6'",
           "ask": "Compare the six tests with the starting commit: is anything changed but the ignore attribute? Does each reason start `long:` and name the command that runs the test? Is any other test of those files ignored, shortened or removed?",
           "target": "mac-metal",
@@ -25,7 +25,7 @@
           "id": "WP1.2",
           "statement": "`./dev long-tests` runs every long test and no other ignored test, on the toolchain `./dev check` uses, and a GPU test that finds no adapter fails in it where it would have skipped. It reads the main-tier list, `.config/long-tests.txt`, which names each test binary with its package and its build: release with overflow checks on, or the debug build for a test that failed in release at the starting commit, where the log gives that failure and names the module that owns the test. The list names the foam scene's test binary too. `./dev help` lists the command, and `ORCHESTRATE.md` declares the main-branch check `long-tests` in the design's words, with the timeout set as the design says.",
           "check": "sh -c './dev help | grep -q long-tests && grep -q \"Main-branch check long-tests:\" ORCHESTRATE.md && git ls-files --error-unmatch .config/long-tests.txt >/dev/null'",
-          "ask": "Read the command and the list. Does it run each of the six tests of WP1.1, and can it run an ignored test that is not a long test, such as the cooked valley route's? Does it set what makes a GPU test fail where no adapter is found, and use the toolchain `./dev check` uses? Does this milestone's evidence hold one run of the six in release with its wall time? Is any test listed for the debug build, and does the log give its release failure and name its owner? Is the settings line the design's, word for word but for the timeout?",
+          "ask": "Read the command and the list. Does it run each of the six tests of WP1.1, and can it run an ignored test that is not a long test, such as the cooked valley route's? Does it set what makes a GPU test fail where no adapter is found, and use the toolchain `./dev check` uses? Does this work package's evidence hold one run of the six in release with its wall time? Is any test listed for the debug build, and does the log give its release failure and name its owner? Is the settings line the design's, word for word but for the timeout?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/WP1/release-run.log and release-run-gpu.log (release run of the six at 79b1fcb7f, wall times)",
@@ -54,7 +54,7 @@
         },
         {
           "id": "WP1.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -106,7 +106,7 @@
         },
         {
           "id": "WP6.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -158,8 +158,8 @@
         },
         {
           "id": "WP8.4",
-          "statement": "`./dev check` reports each test that runs for over ten seconds, and stops and fails one that runs for over sixty. The failure names the test and says what to do: make it fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration, which gives each name the milestone that removes it: WP2, WP9 or WP3. The list holds every test the record shows over ten seconds alone, and no other.",
-          "ask": "In a scratch copy, add a test that sleeps for seventy seconds to a fast binary: does `./dev check` stop it, fail, name it and say what to do? Does one that sleeps for fifteen pass and show as slow? Compare the exempt list with the record's times alone: is every test over ten seconds on it with its milestone, and is any test on it that the record shows at ten seconds or under?",
+          "statement": "`./dev check` reports each test that runs for over ten seconds, and stops and fails one that runs for over sixty. The failure names the test and says what to do: make it fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration, which gives each name the work package that removes it: WP2, WP9 or WP3. The list holds every test the record shows over ten seconds alone, and no other.",
+          "ask": "In a scratch copy, add a test that sleeps for seventy seconds to a fast binary: does `./dev check` stop it, fail, name it and say what to do? Does one that sleeps for fifteen pass and show as slow? Compare the exempt list with the record's times alone: is every test over ten seconds on it with its work package, and is any test on it that the record shows at ten seconds or under?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.4 and Round 2; round2/ctd-relative-sleep.log, round2/default-sleep.log)",
@@ -168,8 +168,8 @@
         },
         {
           "id": "WP8.5",
-          "statement": "`./dev check` ends, whether it passes or fails, with the wall time of each of its steps, the tests' among them, and the ten slowest tests with their times. The log gives this milestone's own merge check by those lines: its wall time and its tests' time.",
-          "ask": "Read the saved output of this milestone's own merge check, under `.git/orchestrate/checks`: does it end with a time for every step the check ran and the ten slowest tests, and do the log's two figures match it? In a scratch copy, make one step fail: are the times of the steps that ran still printed?",
+          "statement": "`./dev check` ends, whether it passes or fails, with the wall time of each of its steps, the tests' among them, and the ten slowest tests with their times. The log gives this work package's own merge check by those lines: its wall time and its tests' time.",
+          "ask": "Read the saved output of this work package's own merge check, under `.git/orchestrate/checks`: does it end with a time for every step the check ran and the ten slowest tests, and do the log's two figures match it? In a scratch copy, make one step fail: are the times of the steps that ran still printed?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.5 and Round 2; round2/ctd-clean.log, round2/ctd-relative-sleep.log, probes/failing-step.log; the merge check named in LOG.md)",
@@ -198,7 +198,7 @@
         },
         {
           "id": "WP8.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -208,9 +208,9 @@
         },
         {
           "id": "WP8.9",
-          "statement": "`FrameHost::capture_pixels` returns its pixels when another thread's poll of the same device takes the readback's completion and delivers it late, as the cooked loader's poll can. After its submission completes it keeps polling until its own readback arrives, and fails only when `GPU_WAIT` has passed. The test `gpu_capture_pixels_waits_for_a_readback_another_thread_delivers`, among `thrum-render`'s library tests, captures while other threads poll the host's device. It fails on the code before the change in each of ten runs and passes in each of ten after it, well inside the ten seconds a merge-tier test may take. The wait and its test are the only change this milestone makes under `crates/`.",
+          "statement": "`FrameHost::capture_pixels` returns its pixels when another thread's poll of the same device takes the readback's completion and delivers it late, as the cooked loader's poll can. After its submission completes it keeps polling until its own readback arrives, and fails only when `GPU_WAIT` has passed. The test `gpu_capture_pixels_waits_for_a_readback_another_thread_delivers`, among `thrum-render`'s library tests, captures while other threads poll the host's device. It fails on the code before the change in each of ten runs and passes in each of ten after it, well inside the ten seconds a merge-tier test may take. The wait and its test are the only change this work package makes under `crates/`.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --lib gpu_capture_pixels_waits_for_a_readback_another_thread_delivers",
-          "ask": "Does the record show the test failing with `capture readback incomplete` on the code before the change in each of ten runs, and passing in each of ten after it, with its time? Read the test: do its other threads poll the same device the host captures on? Is the wait in `capture_pixels`, with its test, the only change the milestone makes under `crates/`, and can it change a pixel a capture returns or anything a frame records?",
+          "ask": "Does the record show the test failing with `capture readback incomplete` on the code before the change in each of ten runs, and passing in each of ten after it, with its time? Read the test: do its other threads poll the same device the host captures on? Is the wait in `capture_pixels`, with its test, the only change the work package makes under `crates/`, and can it change a pixel a capture returns or anything a frame records?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
@@ -282,7 +282,7 @@
         },
         {
           "id": "WP7.5",
-          "statement": "`./dev check-all` runs everything `./dev check` ran before this milestone, the whole workspace's tests included, whatever changed. `./dev help` lists it, and `ORCHESTRATE.md` declares the main-branch check `workspace-tests` in the design's words, with the timeout set as the design says.",
+          "statement": "`./dev check-all` runs everything `./dev check` ran before this work package, the whole workspace's tests included, whatever changed. `./dev help` lists it, and `ORCHESTRATE.md` declares the main-branch check `workspace-tests` in the design's words, with the timeout set as the design says.",
           "check": "sh -c './dev help | grep -q check-all && grep -q \"Main-branch check workspace-tests:\" ORCHESTRATE.md'",
           "ask": "Compare the steps of `./dev check-all` with the steps of `./dev check` at the starting commit: is any step or test binary missing? Is the settings line the design's, word for word but for the timeout?",
           "target": "mac-metal",
@@ -303,7 +303,7 @@
         },
         {
           "id": "WP7.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -382,7 +382,7 @@
         },
         {
           "id": "WP2.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -403,7 +403,7 @@
       "items": [
         {
           "id": "WP10.1",
-          "statement": "The record splits the wall time of every builder session of track 6's milestones, from 20 November 2026 to this milestone's starting commit, into three kinds of part: the model's own time; commands, by what they ran (a build or lint, tests the builder chose, `./dev check`, an item's check, the merge, anything else); and waits (for a lock, behind another merge, and a command that only sleeps or polls). It gives each part for each milestone and for all of them together, and gives the time between one milestone's sessions apart from the sessions themselves. The parts of a session add up to its wall time, and time the sources cannot place is a part of its own.",
+          "statement": "The record splits the wall time of every builder session of track 6's work packages, from 20 November 2026 to this work package's starting commit, into three kinds of part: the model's own time; commands, by what they ran (a build or lint, tests the builder chose, `./dev check`, an item's check, the merge, anything else); and waits (for a lock, behind another merge, and a command that only sleeps or polls). It gives each part for each work package and for all of them together, and gives the time between one work package's sessions apart from the sessions themselves. The parts of a session add up to its wall time, and time the sources cannot place is a part of its own.",
           "ask": "Take two sessions of your choice, one of them the longest. Run the record's script on them: do its figures match the record, and do the parts add up to each session's wall time? Read twenty minutes of one transcript beside the script's output for that span: is each interval in the part you would put it in? Is a wait inside a command counted as the wait and not as the command?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -413,7 +413,7 @@
         },
         {
           "id": "WP10.2",
-          "statement": "The record is made by a script kept with it in this milestone's evidence, from sources the record names: each session's transcript, which gives the time of every tool call and its result, and the orchestrate script's own logs of jobs, locks and merge checks. It runs again on a later session with no edit.",
+          "statement": "The record is made by a script kept with it in this work package's evidence, from sources the record names: each session's transcript, which gives the time of every tool call and its result, and the orchestrate script's own logs of jobs, locks and merge checks. It runs again on a later session with no edit.",
           "ask": "Run the script on a builder session that ended after the record was made: does it give the same parts with no edit to the script? Does the record say where each source is and which sessions it could not read?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -423,8 +423,8 @@
         },
         {
           "id": "WP10.3",
-          "statement": "The record ends with what it shows, and proposes no rule: the largest parts overall, how the shortest and the longest sessions differ, and the most that a faster check, shorter waits or less of the model's own time could each take off a session. This milestone changed no setting, plan, skill or check.",
-          "ask": "Does each closing statement follow from the record's tables? Does the record propose a rule, or did the milestone's commits change any file but this module's log and done-when file?",
+          "statement": "The record ends with what it shows, and proposes no rule: the largest parts overall, how the shortest and the longest sessions differ, and the most that a faster check, shorter waits or less of the model's own time could each take off a session. This work package changed no setting, plan, skill or check.",
+          "ask": "Does each closing statement follow from the record's tables? Does the record propose a rule, or did the work package's commits change any file but this module's log and done-when file?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/WP10/record.md#what-it-shows (second fix round: the savings sentences state what their median, mean and largest are of)",
@@ -501,7 +501,7 @@
       "items": [
         {
           "id": "WP9.1",
-          "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every test this milestone took off the runner's exempt list and for every other test that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median, and the ten slowest tests now. The list names only tests of the water scene, which WP3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
+          "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every test this work package took off the runner's exempt list and for every other test that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median, and the ten slowest tests now. The list names only tests of the water scene, which WP3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
           "ask": "Read the record and the exempt list. Is every test the list held at the starting commit, and every other test the saved checks showed over ten seconds, outside the water scene, now under about ten seconds alone and in the record's three runs, or a long test, or named in the log for its module's planner with what was tried? Run three of the tests made fast, alone: do their times match the record? Does the list name a test that does not exist?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -512,7 +512,7 @@
         {
           "id": "WP9.2",
           "statement": "A test made fast asserts what it asserted. Where one test ran several cases in turn, each case is now a test and none is dropped. Where a world, a fixture or a run was made smaller, the log gives the old and new size and why each assertion still means what it meant. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two, and the log says what the GPU test still shows that only a device can. No test binary changed its name.",
-          "ask": "For each test this milestone changed, compare it with the starting commit: is every case and every assertion still there, in that test or in the device-free test the log names for it? For each world, fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
+          "ask": "For each test this work package changed, compare it with the starting commit: is every case and every assertion still there, in that test or in the device-free test the log names for it? For each world, fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/WP9/record.md#what-each-change-keeps-m92 (each split, smaller world and removed duplicate, with old and new sizes); no binary renamed",
@@ -522,7 +522,7 @@
         {
           "id": "WP9.3",
           "statement": "A test that could not be made fast is a long test: marked `#[ignore]` with a reason that starts `long:`, its body unchanged, in a binary the main-tier list names, with the fault that now reaches main unseen written beside that line. This item asks for each of them, so from WP12 the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on. Where one is a proof of a cooked format, a lease or recovery, transport, determinism, or GPU state held to the CPU query a game reads, the log says what was tried to make it fast.",
-          "ask": "For each test marked in this milestone: is its body as it was, is its binary listed, and does the list say what fault now reaches main unseen? Search the open items of every module for its binary: does any item that runs it depend on what this test asserts? For a marked test of a kind the statement names, does the log say what was tried, and would you have tried something else first?",
+          "ask": "For each test marked in this work package: is its body as it was, is its binary listed, and does the list say what fault now reaches main unseen? Search the open items of every module for its binary: does any item that runs it depend on what this test asserts? For a marked test of a kind the statement names, does the log say what was tried, and would you have tried something else first?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal at 87e326a66: no test was marked long; .orchestrate/evidence/GATE-TIME/WP9/record.md#long-tests-m93",
@@ -531,7 +531,7 @@
         },
         {
           "id": "WP9.4",
-          "statement": "The long tests, with any this milestone added, pass in the main-branch check `long-tests`, on main at the claimed commit.",
+          "statement": "The long tests, with any this work package added, pass in the main-branch check `long-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -541,7 +541,7 @@
         },
         {
           "id": "WP9.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -655,7 +655,7 @@
         },
         {
           "id": "WP11.7",
-          "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests`, on main at the claimed commit, and that run ran every test its last run before this milestone started ran.",
+          "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests`, on main at the claimed commit, and that run ran every test its last run before this work package started ran.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Compare the test names in the log of the main-branch run that covers this commit with those of its last run before the starting commit: is any test missing, or ignored where it ran?",
           "target": "mac-metal",
@@ -666,7 +666,7 @@
         },
         {
           "id": "WP11.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -724,7 +724,7 @@
         {
           "id": "WP3.4",
           "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. This item and WP3.1 ask for each of them, so the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on.",
-          "ask": "For each water-scene test this milestone changed or marked, compare it with the starting commit: is every case and assertion still there, in that test or in the device-free test the log names for it, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
+          "ask": "For each water-scene test this work package changed or marked, compare it with the starting commit: is every case and assertion still there, in that test or in the device-free test the log names for it, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/WP3/record.md#what-each-change-keeps-m34",
@@ -795,7 +795,7 @@
         },
         {
           "id": "WP4.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",

@@ -43,10 +43,10 @@
         },
         {
           "id": "WP1.4",
-          "statement": "Every existing scene variant compiles to the same pass order, attachment storage and transient slots as before this milestone.",
+          "statement": "Every existing scene variant compiles to the same pass order, attachment storage and transient slots as before this work package.",
           "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
           "lock": "gpu",
-          "ask": "Which test pins the compiled pass names, order and attachment storage of the day, night and capture variants, and did any of them change in this milestone's diff?",
+          "ask": "Which test pins the compiled pass names, order and attachment storage of the day, night and capture variants, and did any of them change in this work package's diff?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP1-proof.md",
           "verdict": "pass",
@@ -55,7 +55,7 @@
         },
         {
           "id": "WP1.5",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained Mac image. Chrome's baseline is not checked here; the design says when it is.",
+          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this work package moved no retained Mac image. Chrome's baseline is not checked here; the design says when it is.",
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
@@ -149,7 +149,7 @@
         {
           "id": "WP2.7",
           "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time, read from the executor's named pass timings, and bytes per effect are recorded on the valley route.",
-          "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE WP3 owns?",
+          "ask": "Do the frame records with no effect attached list exactly the passes they listed before this work package? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE WP3 owns?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
@@ -158,7 +158,7 @@
         },
         {
           "id": "WP2.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
@@ -262,7 +262,7 @@
         },
         {
           "id": "WP3.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -272,7 +272,7 @@
         },
         {
           "id": "WP3.9",
-          "statement": "Every verifier run that failed an image comparison during this milestone from 15 November 2026 on, the run at `324586ee` included, was load variation by the four tests of the module list's ruling on a frame that varies under load, and has the record that ruling asks for.",
+          "statement": "Every verifier run that failed an image comparison during this work package from 15 November 2026 on, the run at `324586ee` included, was load variation by the four tests of the module list's ruling on a frame that varies under load, and has the record that ruling asks for.",
           "inspect": "For each record, make the difference image yourself from its two lossless frames (`docs/evidence/EFFECT-GRAPH/WP3-replan/difference.py` is one way) and judge it whole and in a native-size crop of its densest part, beside the failed frame: thin lines along the triangle edges of opaque geometry, no patch filled, and none in the sky, among the stars or in the letterbox bars.",
           "ask": "Does each record show that every identity field matched, that the matching bytes hash to the retained reference, and that a complete, unchanged verifier run then passed on the same content key as the failed run?",
           "target": "chrome-webgpu",
@@ -405,7 +405,7 @@
         },
         {
           "id": "WP4.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",

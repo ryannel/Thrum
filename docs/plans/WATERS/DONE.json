@@ -108,7 +108,7 @@
         },
         {
           "id": "WP1.10",
-          "statement": "Every file in this milestone that is copied or translated from Broadsides is listed in `docs/evidence/WATERS/PROVENANCE.md` with its source commit and path, and the licence of any material that came into Broadsides from elsewhere. None is GPL or share-alike.",
+          "statement": "Every file in this work package that is copied or translated from Broadsides is listed in `docs/evidence/WATERS/PROVENANCE.md` with its source commit and path, and the licence of any material that came into Broadsides from elsewhere. None is GPL or share-alike.",
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -118,7 +118,7 @@
         },
         {
           "id": "WP1.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
@@ -274,7 +274,7 @@
           "id": "WP12.9",
           "statement": "`thrum-water-model` still builds and tests with no graphics device and no dependency on `thrum-render` or `wgpu`, `thrum-sea-model`'s tests pass, and surf brings no preset, island or beach of a game into either crate.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_transform --no-run && cargo test --locked --offline -p thrum-sea-model && cargo tree --locked --offline -p thrum-water-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
-          "ask": "Does any file in the two crates or their tests name a preset, a place or a beach that belongs to a game? Is every file copied or translated from Broadsides in this milestone listed in `docs/evidence/WATERS/PROVENANCE.md`?",
+          "ask": "Does any file in the two crates or their tests name a preset, a place or a beach that belongs to a game? Is every file copied or translated from Broadsides in this work package listed in `docs/evidence/WATERS/PROVENANCE.md`?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP12.md",
@@ -283,7 +283,7 @@
         },
         {
           "id": "WP12.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -380,7 +380,7 @@
           "id": "WP2.7",
           "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with the water absent gives the whole frame on tick frames and on repeat frames, each water and wave pass's GPU time by name, the vertices submitted and the water pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene first-frame",
-          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
+          "ask": "Is the record paired and taken on this work package's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -391,7 +391,7 @@
         {
           "id": "WP2.8",
           "statement": "The maturity ledger has a row for `E1.water` that keeps implementation, correctness, visuals and device apart.",
-          "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
+          "ask": "Does the row claim only what this work package proved, on the targets it ran on?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP2.md",
@@ -400,7 +400,7 @@
         },
         {
           "id": "WP2.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -476,7 +476,7 @@
         },
         {
           "id": "WP3.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -587,7 +587,7 @@
         },
         {
           "id": "WP4.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -597,7 +597,7 @@
         },
         {
           "id": "WP4.10",
-          "statement": "The drawn waterline moves as the model's does. On a plane beach the test makes, under one regular wave at a fixed stage, the line where the water's written depth stands in front of the ground travels in submitted frames between the run-up and rundown lines `thrum-water-model` gives, to within a pixel and the map test's tolerance, and holds still when the swash ratio is zero. Only the sheet writes depth: the film a later milestone draws on bared sand writes none, so it is never on the water's side of this line.",
+          "statement": "The drawn waterline moves as the model's does. On a plane beach the test makes, under one regular wave at a fixed stage, the line where the water's written depth stands in front of the ground travels in submitted frames between the run-up and rundown lines `thrum-water-model` gives, to within a pixel and the map test's tolerance, and holds still when the swash ratio is zero. Only the sheet writes depth: the film a later work package draws on bared sand writes none, so it is never on the water's side of this line.",
           "check": "cargo test --locked --offline -p thrum-water --test swash_gpu",
           "ask": "Is the expected waterline taken from `thrum-water-model` at each frame's display time, and not from the shader's own limit?",
           "lock": "gpu",
@@ -710,7 +710,7 @@
         },
         {
           "id": "WP5.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -866,7 +866,7 @@
         },
         {
           "id": "WP6.14",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -1021,7 +1021,7 @@
         },
         {
           "id": "WP7.14",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -1262,7 +1262,7 @@
         },
         {
           "id": "WP13.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1412,7 +1412,7 @@
         },
         {
           "id": "WP8.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1510,7 +1510,7 @@
         },
         {
           "id": "WP9.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1629,7 +1629,7 @@
         },
         {
           "id": "WP15.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1783,7 +1783,7 @@
         },
         {
           "id": "WP16.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1943,7 +1943,7 @@
         },
         {
           "id": "WP10.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -2076,7 +2076,7 @@
         },
         {
           "id": "WP14.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
@@ -2133,7 +2133,7 @@
         {
           "id": "WP11.4",
           "statement": "Each Apple-tile variant of a water or wave kernel that was tried is on record as a paired run against the portable kernel, with stills of the same views that show no visible difference and the body query's tests still passing. One is in use only if its win is beyond the spread of repeated runs.",
-          "ask": "Does this milestone's evidence give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
+          "ask": "Does this work package's evidence give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2208,7 +2208,7 @@
         },
         {
           "id": "WP11.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

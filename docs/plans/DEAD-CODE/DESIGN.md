@@ -141,17 +141,17 @@ Nothing is removed that a module's design offers to another module, and no delet
 names as an interface, with one exception the plan carries to the owner: the change queries, which the simulation
 decision counts among the core's responsibilities.
 
-## Files each milestone touches
+## Files each work package touches
 
-The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
+The lead confirms these against the builders at work before it starts a work package. A work package touches nothing
 outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`.
 Three files are everyone's: `.config/shape-baseline.json`, `docs/design/maturity.json` and `Cargo.lock`. Change
 them when your landing moves them, whatever your row says; a landing that meets a conflict there rebases and
 makes the same edit again.
 
-| Milestone | Files | Waits for | Who else is near |
+| Work package | Files | Waits for | Who else is near |
 |---|---|---|---|
-| WP1 | `crates/thrum-core/src/sim/` (`registered_world.rs`, `registered_world/image.rs`, `runtime.rs`, `transaction.rs`, `publication/page_tests.rs`) and `crates/thrum-core/tests/g2_runtime.rs`; one line of `docs/design/decisions/G2-GENERIC-SIMULATION.md`, and the row `bounded_structural_growth` of `docs/design/maturity.json` if it describes this ring; `crates/thrum-sea/src/` (`spec.rs`, `ambient.wgsl`, `prepare.rs`, `records.rs`, `lib.rs`), `crates/thrum-sea/tests/support.rs` and the sea's README; `crates/thrum-water/src/surface.wgsl` and `src/records/tests.rs` | `GATE-TIME` WP1, which declares the main-branch check `long-tests`: the stepped hour and the gale run only there, on the paths this milestone changes | `SESSION` builds in `thrum-core`'s runtime files: land the ring as small commits and tell its builder. `WATERS` builds in `thrum-water` |
+| WP1 | `crates/thrum-core/src/sim/` (`registered_world.rs`, `registered_world/image.rs`, `runtime.rs`, `transaction.rs`, `publication/page_tests.rs`) and `crates/thrum-core/tests/g2_runtime.rs`; one line of `docs/design/decisions/G2-GENERIC-SIMULATION.md`, and the row `bounded_structural_growth` of `docs/design/maturity.json` if it describes this ring; `crates/thrum-sea/src/` (`spec.rs`, `ambient.wgsl`, `prepare.rs`, `records.rs`, `lib.rs`), `crates/thrum-sea/tests/support.rs` and the sea's README; `crates/thrum-water/src/surface.wgsl` and `src/records/tests.rs` | `GATE-TIME` WP1, which declares the main-branch check `long-tests`: the stepped hour and the gale run only there, on the paths this work package changes | `SESSION` builds in `thrum-core`'s runtime files: land the ring as small commits and tell its builder. `WATERS` builds in `thrum-water` |
 | WP2 | `crates/thrum-render/src/contribution.rs` and each file with an `impl SceneContribution`, about 32 across `crates` and `examples`, tests among them | `GATE-TIME` WP6: some of these files hold tests behind a Cargo feature, which no merge compiled before it. The gale and the field flythroughs render through edited contributions too | The busiest file in the renderer: `RAY-TRACING`, `WATERS`, `CLOUDS`, `HOST` and `RENDER-2D` all implement the trait. Land the trait's defaults alone first, then the stubs, in one quick pass |
 | WP3 | `crates/thrum-core/src/sim/` (`runtime.rs`, `registered_world.rs`, `schedule.rs`) and `src/sim.rs`, with `tests/g2_runtime.rs`, `g2s_chunked_kernel.rs` and `profile_resources.rs`; `crates/thrum-render/src/capabilities/hardware.rs`; `crates/thrum-rain-model/src/tree.rs`, `tree/encode.rs`, `tree/catchment.rs` and `tests/tree.rs`; the shadowed aerial shader copy in `crates/thrum-render/src/` with `atmosphere/model/tests.rs` and `synthetic/secondary/tests.rs` | Nothing | `SESSION` in `thrum-core`. `REPO-RULES` WP3 later splits these runtime files, so this lands before it |
 | WP4 | `examples/water/src/main.rs` and `lib.rs`; `examples/water/tests/proof_gpu.rs`, `realtime.rs` and `support.rs`; the water example's README | `WATERS` WP7, which is building in these files | `PUDDLES` WP3 and `RIVERS` WP4 add scenes through the parse afterwards. `GATE-TIME` WP1 and WP3 edit other tests of the same package |
@@ -183,14 +183,14 @@ A deletion is proved by the compiler and by a search for the deleted names, and 
 that were already there: simulation determinism and conformance with no expected value edited, the sea's and
 water's GPU tests, and the exact baselines on main. A reviewer answers whether anything kept lost its test. The
 trait's defaults are proved by the probe behind the list of contributions and by a reviewer's list of
-implementations. A milestone that changes what a long test runs, or edits a file holding tests behind a Cargo
+implementations. A work package that changes what a long test runs, or edits a file holding tests behind a Cargo
 feature, is proved there by the main-branch check `long-tests`, because no merge check runs those tests: WP1 for
 the stepped hour and the gale, WP2 and WP6 for the feature tests and for the long tests that render through what
 they edit. That check skips a binary the main-tier list marks not-run, which today is the game's `mesh_stage_gpu`:
 run whole, its tests fail on state they share, a fault that is `MESH-SHADING`'s to fix and was listed before WP2
 began. WP2 edits a contribution in that binary and WP6 converts layouts its tests draw through, so each carries a
 second item whose check runs the binary one test at a time with a GPU required, on main. That shows the edit
-broke none of its tests. It does not show the binary is sound run whole, and neither milestone changes those
+broke none of its tests. It does not show the binary is sound run whole, and neither work package changes those
 tests or the list. WP3 and WP5 delete only what nothing calls on those paths, and WP4 leaves the fixture the gale and the
 foam's moored run build their hosts through as it is, so none of the three carries that item. The settings parse is proved by a reviewer's table of each setting's reading before and after. The two helpers are
 proved by every GPU test passing, by graph snapshots that were not edited, and by the exact baselines.

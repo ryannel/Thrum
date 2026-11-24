@@ -109,7 +109,7 @@
         },
         {
           "id": "WP5.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -119,7 +119,7 @@
         },
         {
           "id": "WP5.11",
-          "statement": "Real-time takes of the build this milestone claims are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. All six arms ran from one commit with nothing uncommitted. The record gives that commit, each program's hash and one digest of every tracked file there that builds, launches, drives or observes an arm (the files under `crates/`, `examples/v1-game/`, `scripts/` and `.cargo/`, and `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`), and for every arm its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only when that digest, computed again from the checkout it runs in, differs from the record's, as it does after a change to one capture script and nothing else; on a missing arm, field or load; on an arm whose world stopped before its route or its twenty seconds ended; or on a capture-on take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/WP5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
+          "statement": "Real-time takes of the build this work package claims are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. All six arms ran from one commit with nothing uncommitted. The record gives that commit, each program's hash and one digest of every tracked file there that builds, launches, drives or observes an arm (the files under `crates/`, `examples/v1-game/`, `scripts/` and `.cargo/`, and `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`), and for every arm its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only when that digest, computed again from the checkout it runs in, differs from the record's, as it does after a change to one capture script and nothing else; on a missing arm, field or load; on an arm whose world stopped before its route or its twenty seconds ended; or on a capture-on take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/WP5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
           "check": "python3 scripts/run_v1_showcase.py motion --check",
           "reads": [
             "scripts/",
@@ -143,7 +143,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This milestone judges content, tick by tick. The finished image, and stutter at 1x, are judged in WP8."
+      "quality_bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This work package judges content, tick by tick. The finished image, and stutter at 1x, are judged in WP8."
     },
     {
       "id": "WP6",
@@ -174,7 +174,7 @@
         {
           "id": "WP6.3",
           "statement": "The exit scene's default culling mode is set by CULLING's rule from paired whole-GPU rows on the exit flythrough at 1920x1080, from two separate runs recorded with their load. The game reports that mode on the Mac and in Chrome.",
-          "ask": "Do the two retained runs support the default the code sets, by the rule in CULLING's design? Do the rows show Occlusion's prepass non-empty and slots hidden, so that a row cannot repeat Frustum? Did this milestone change any culling code or comparison?",
+          "ask": "Do the two retained runs support the default the code sets, by the rule in CULLING's design? Do the rows show Occlusion's prepass non-empty and slots hidden, so that a row cannot repeat Frustum? Did this work package change any culling code or comparison?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/WP6.md#default-by-measurement",
           "verdict": "pass",
@@ -203,7 +203,7 @@
         },
         {
           "id": "WP6.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
@@ -225,7 +225,7 @@
         {
           "id": "WP9.1",
           "statement": "On the Mac, from the lookout at the sunset-clear-sun stop, in views 20 degrees either side of it, and with that view held from 17.2 to 17.8 h, no band of brighter ground lies along the rim of the lookout's ground. Where the ground ends, the valley beyond reads as distant ground past the lookout's edge.",
-          "inspect": "Capture with the Mac's fixed engine capture, TAAU on: the stop's preset, the same hour at yaw -70 and -110, and the stop's view at 17.2, 17.3, 17.5, 17.6, 17.7 and 17.8 h. Judge each frame whole and in a native-size crop of the rim, beside the same crop taken from the commit this milestone started from. Two things in these frames are not the band: a lit lookout in front of a valley floor already in shadow, which is a depth edge, and the edge of the west ridge's shadow where it lies across the lookout after 17.4 h, whose quality `ATMOSPHERE` owns and this item does not judge.",
+          "inspect": "Capture with the Mac's fixed engine capture, TAAU on: the stop's preset, the same hour at yaw -70 and -110, and the stop's view at 17.2, 17.3, 17.5, 17.6, 17.7 and 17.8 h. Judge each frame whole and in a native-size crop of the rim, beside the same crop taken from the commit this work package started from. Two things in these frames are not the band: a lit lookout in front of a valley floor already in shadow, which is a depth edge, and the edge of the west ridge's shadow where it lies across the lookout after 17.4 h, whose quality `ATMOSPHERE` owns and this item does not judge.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/WP9/inspection-list.md",
           "builder_result": "pass",
@@ -236,7 +236,7 @@
           "id": "WP9.2",
           "statement": "On the Mac, at the sunrise stop, the sphere and the rock stand in sunlight and each casts a shadow on the ground several times as long as it is tall. The stop's preset holds the hour, which is later than 6.1 h, and the route decision's table gives the same hour.",
           "inspect": "Capture the sunrise preset with the Mac's fixed engine capture, TAAU on. Judge the frame whole and in a native-size crop of the two props and their shadows.",
-          "ask": "Does the route decision's table give the hour that `examples/v1-game/params/showcase-sunrise.params.json` holds, and is that the only stop preset whose values changed since the commit this milestone started from?",
+          "ask": "Does the route decision's table give the hour that `examples/v1-game/params/showcase-sunrise.params.json` holds, and is that the only stop preset whose values changed since the commit this work package started from?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/WP9/README.md",
           "builder_result": "pass",
@@ -270,7 +270,7 @@
           "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric and with the exit baseline. The thresholds and the baseline were calibrated once for the new exit root by the route decision's fixed rule, and the three controls fail as they must: the diagnostic scene, each frame at its stop's preset hour and pose as in WP9.4, a retinted texture, and the same store drawn with no entities.",
           "check": "python3 scripts/run_v1_showcase.py check --exit",
           "lock": "chrome",
-          "ask": "Read this milestone's diff of `scripts/run_v1_showcase.py` and of the two baseline files, and the record of an exit check at the claimed commit. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the record show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's? Does the log give each baseline file's old and new SHA-256 and the cause?",
+          "ask": "Read this work package's diff of `scripts/run_v1_showcase.py` and of the two baseline files, and the record of an exit check at the claimed commit. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the record show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's? Does the log give each baseline file's old and new SHA-256 and the cause?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/WP9-review/exit-check.json",
           "builder_result": "pass",
@@ -281,7 +281,7 @@
           "id": "WP9.6",
           "statement": "The registered exact baselines are refreshed in the landing that changes the terrain, as the module list's ruling on the valley's lookout rim requires: each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. The landing also keeps the retained references in the game's test fixtures, as the module list's ruling on where retained references are kept allows: each file has its old name under the new folder, and one that was not regenerated has its old bytes. Every comparison compares what it did and decides as it did. In `.config/exact-baselines.json` the landing changed each baseline's `pin` and `refresh`, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `WP9`, and the paths in `reference` and `covered_paths` that say where the references are, and nothing else. In the files the registry lists as comparisons it changed only the path the references are read from. `APPLE-TILE`'s log and this module's each record the cause, every moved reference's old and new SHA-256, and which of the five sets did not move.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "ask": "Read this milestone's diff yourself with `git diff`, from the commit it started from. These are expected in it: regenerated reference images and manifests, their move from `docs/evidence/render/` to `examples/v1-game/tests/fixtures/exact-images/`, the registry's `pin` and `refresh` fields and its reference paths, the folder `scripts/apple_tile_m1.py` reads the native references from, and a new entry in `APPLE-TILE`'s log. In `.config/exact-baselines.json`, is every changed value a `pin`, a `refresh` naming `ruling-on-the-valley-fix`, `SHOWCASE` and `WP9`, or a path in `reference` or `covered_paths` that now names where the same reference is kept? In the files the registry lists under `comparisons` or `comparison_files`, does every changed line only name where the references are read from? Compare the retained files at the starting commit, under their old folders, with those now registered, by name and Git blob: are the names the same, and is every file whose blob differs listed in both logs with its old and new SHA-256? Do both logs say which of the five sets did not move?",
+          "ask": "Read this work package's diff yourself with `git diff`, from the commit it started from. These are expected in it: regenerated reference images and manifests, their move from `docs/evidence/render/` to `examples/v1-game/tests/fixtures/exact-images/`, the registry's `pin` and `refresh` fields and its reference paths, the folder `scripts/apple_tile_m1.py` reads the native references from, and a new entry in `APPLE-TILE`'s log. In `.config/exact-baselines.json`, is every changed value a `pin`, a `refresh` naming `ruling-on-the-valley-fix`, `SHOWCASE` and `WP9`, or a path in `reference` or `covered_paths` that now names where the same reference is kept? In the files the registry lists under `comparisons` or `comparison_files`, does every changed line only name where the references are read from? Compare the retained files at the starting commit, under their old folders, with those now registered, by name and Git blob: are the names the same, and is every file whose blob differs listed in both logs with its old and new SHA-256? Do both logs say which of the five sets did not move?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/WP9/amended/M9.6.md",
           "builder_result": "pass",
@@ -290,9 +290,9 @@
         },
         {
           "id": "WP9.7",
-          "statement": "Every file in `examples/v1-game/routes/` that pinned the old valley root or the old exit root at the commit this milestone started from names the new one, and its generation where that moved, whichever module or milestone added the file. When this was planned those were `moving-v1.json`, `culling-fast-yaw.json`, `effect-state.json`, `effect-after-opaque.json`, `exit-flythrough.json` and `exit-held.json`, and WP6 adds `exit-fast-yaw.json`, pinned to the exit root. In each such file the landing changed the pin and nothing else, so every route's keys, phase and checkpoints are as they were, and no route file names an old root.",
+          "statement": "Every file in `examples/v1-game/routes/` that pinned the old valley root or the old exit root at the commit this work package started from names the new one, and its generation where that moved, whichever module or work package added the file. When this was planned those were `moving-v1.json`, `culling-fast-yaw.json`, `effect-state.json`, `effect-after-opaque.json`, `exit-flythrough.json` and `exit-held.json`, and WP6 adds `exit-fast-yaw.json`, pinned to the exit root. In each such file the landing changed the pin and nothing else, so every route's keys, phase and checkpoints are as they were, and no route file names an old root.",
           "check": "sh -c 'test -n \"$(git ls-files \":(glob)examples/**/routes/*.json\")\" && ! git grep -qE \"70d2baf823d09d85|3083a794f8379630\" -- \":(glob)examples/**/routes/*.json\"'",
-          "ask": "List the files in `examples/v1-game/routes/` at the commit this milestone started from, with each one's `cooked_root`. The old valley root is the one `moving-v1.json` named there and the old exit root the one `exit-flythrough.json` named there; the check greps for the two known at planning. Then read this milestone's diff of that folder against that commit with `git diff`. Does every file that named the old valley root now name the root `moving-v1.json` names, and every file that named the old exit root, `exit-fast-yaw.json` among them, the root `exit-flythrough.json` names? In each of those files, does the diff change only `cooked_root`, and `cooked_generation` where the generation moved?",
+          "ask": "List the files in `examples/v1-game/routes/` at the commit this work package started from, with each one's `cooked_root`. The old valley root is the one `moving-v1.json` named there and the old exit root the one `exit-flythrough.json` named there; the check greps for the two known at planning. Then read this work package's diff of that folder against that commit with `git diff`. Does every file that named the old valley root now name the root `moving-v1.json` names, and every file that named the old exit root, `exit-fast-yaw.json` among them, the root `exit-flythrough.json` names? In each of those files, does the diff change only `cooked_root`, and `cooked_generation` where the generation moved?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/WP9/route-pins.json",
           "builder_result": "pass",
@@ -301,10 +301,10 @@
         },
         {
           "id": "WP9.8",
-          "statement": "In the exit scene cooked from the changed terrain, on the Mac, Frustum and Occlusion with Sun-caster culling equal bucket-ordered Direct at every submitted frame of the exit flythrough, on both native recipes, with the movers moving. This milestone's receipts, the Mac's and Chrome's, are of the new exit root, and WP6's receipts for the old root are as they were.",
+          "statement": "In the exit scene cooked from the changed terrain, on the Mac, Frustum and Occlusion with Sun-caster culling equal bucket-ordered Direct at every submitted frame of the exit flythrough, on both native recipes, with the movers moving. This work package's receipts, the Mac's and Chrome's, are of the new exit root, and WP6's receipts for the old root are as they were.",
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target mac-metal",
           "lock": "gpu",
-          "ask": "Does this milestone's retained Mac receipt name the exit root that `exit-flythrough.json` now pins, and its Chrome receipt that route file's SHA-256? Do the receipts WP6 retained, the ones WP6's review cites, still name the exit root that `exit-flythrough.json` pinned at the commit this milestone started from?",
+          "ask": "Does this work package's retained Mac receipt name the exit root that `exit-flythrough.json` now pins, and its Chrome receipt that route file's SHA-256? Do the receipts WP6 retained, the ones WP6's review cites, still name the exit root that `exit-flythrough.json` pinned at the commit this work package started from?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/WP9/retake/culling-metal/run.json",
           "builder_result": "pass",
@@ -342,7 +342,7 @@
       "items": [
         {
           "id": "WP7.1",
-          "statement": "The milestones this one builds on are Done in the record files: `APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` WP6, `CULLING` WP3 and `CONTENT-LOOP` WP3.",
+          "statement": "The work packages this one builds on are Done in the record files: `APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` WP6, `CULLING` WP3 and `CONTENT-LOOP` WP3.",
           "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"M12\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"WP6\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
@@ -456,7 +456,7 @@
         },
         {
           "id": "WP7.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -589,7 +589,7 @@
         },
         {
           "id": "WP8.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
@@ -599,7 +599,7 @@
         },
         {
           "id": "WP8.12",
-          "statement": "Every milestone the V1 exit rests on is Done in the record files: `PLATFORM-RUNTIME-IOS` WP7, `PLATFORM-RUNTIME-MAC` WP3, `T2-CAPTURE` WP2, `COOKED-DRAW` WP1, `APPLE-TILE` WP12, `CREATOR` WP3, `APPLE-PRESENTATION` WP11, `ATMOSPHERE` WP6, which closes G3s, `BASELINE-GUARD` WP1, `CULLING` WP3 and `CONTENT-LOOP` WP3. `ATMOSPHERE`'s later milestones are track 2 and are not among them.",
+          "statement": "Every work package the V1 exit rests on is Done in the record files: `PLATFORM-RUNTIME-IOS` WP7, `PLATFORM-RUNTIME-MAC` WP3, `T2-CAPTURE` WP2, `COOKED-DRAW` WP1, `APPLE-TILE` WP12, `CREATOR` WP3, `APPLE-PRESENTATION` WP11, `ATMOSPHERE` WP6, which closes G3s, `BASELINE-GUARD` WP1, `CULLING` WP3 and `CONTENT-LOOP` WP3. `ATMOSPHERE`'s later work packages are track 2 and are not among them.",
           "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"PLATFORM-RUNTIME-IOS\",\"WP7\"),(\"PLATFORM-RUNTIME-MAC\",\"M3\"),(\"T2-CAPTURE\",\"M2\"),(\"COOKED-DRAW\",\"M1\"),(\"APPLE-TILE\",\"M12\"),(\"CREATOR\",\"M3\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"WP6\"),(\"BASELINE-GUARD\",\"M1\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",

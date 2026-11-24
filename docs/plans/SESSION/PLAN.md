@@ -4,13 +4,13 @@ Two to four players share one run and keep seeing the same crowd. [Design](DESIG
 [done-when file](DONE.json), which owns the criteria · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[the seam rulings](../ARCHITECTURE.md#seam-rulings-for-session) before starting any milestone, and
+[the seam rulings](../ARCHITECTURE.md#seam-rulings-for-session) before starting any work package, and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing. Follow the [builder rules](DESIGN.md#builder-rules).
 
 ## Open for the human
 
 - Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
-- Assumption: a world that steps when a match says is engine work, so it is built here (WP7) with the reference crowd in a window, and not later inside the game. It is the one milestone of this module that needs the GPU, and it waits for `RENDER-2D` WP5.
+- Assumption: a world that steps when a match says is engine work, so it is built here (WP7) with the reference crowd in a window, and not later inside the game. It is the one work package of this module that needs the GPU, and it waits for `RENDER-2D` WP5.
 - Assumption: when a connection hiccups, the crowd on that player's screen holds still, then carries on from where it stopped, up to a tenth faster than normal until it has caught up. A player more than about half a second behind sees the crowd skip forward once instead, with a notice the game can show. Nothing is drawn ahead of what the host has confirmed.
 - Assumption: each player sees their own character answer at once, and sees the crowd and the other players a little late: about 80 ms behind the host on a 100 ms connection. Rewinding and re-stepping the whole crowd to hide that delay is not built, because at 10,000 enemies one correction costs about six frames. How the delay feels is yours to judge in the game.
 - Assumption: a native process hosts, and the match ends when it stops. Chrome and the iPhone simulator only join. Host migration, matchmaking and accounts are not built.

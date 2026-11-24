@@ -55,7 +55,7 @@ the Mac on the portable recipe, Chrome on the portable recipe.
 **Built before this plan** and kept: the launcher `scripts/run_v1_showcase.py` (`mac`, `chrome`, `check`,
 `startup`, `moving`), the six stop presets, the parity metric with its fixed calibration rule and controls, and the
 valley's terrain and ground material ([route slice record](../../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)). Its
-milestones were numbered M1 to M4, so this plan starts at WP5.
+work packages were numbered M1 to M4, so this plan starts at WP5.
 
 **What the valley is today.** `THRUM_SCENE=valley` draws the cooked terrain, one sphere and one rock. The
 simulation already steps 10,000 entities with 1,500 movers, but they are cubes in a grid 1.8 m across near the
@@ -186,7 +186,7 @@ default so that exact baselines hold. No one place says which of them the showca
   and display range differ by row, and the record says how.
 
 The file's entries for MetalFX, EDR and the governor are written from `APPLE-PRESENTATION`'s closing record, so
-WP7 depends on that module's last milestone, M11, and WP7.1 checks the five milestones WP7 builds on in the record
+WP7 depends on that module's last work package, M11, and WP7.1 checks the five work packages WP7 builds on in the record
 files.
 
 ### The lookout's rim and the sunrise stop
@@ -224,7 +224,7 @@ Where the lookout's ground ends, the valley floor beyond is nearly 2 km farther 
 later in shadow while the lookout is still lit. A difference there is a depth edge, as in any view from a
 ledge, and passes when it reads as the lookout's edge. Between 17.4 and 17.8 h the west ridge's shadow
 crosses the lookout, and its edge on the ground is a shadow and not the band. How that edge moves is
-`ATMOSPHERE`'s parked crossing, which no milestone here judges.
+`ATMOSPHERE`'s parked crossing, which no work package here judges.
 
 **The sunrise stop.** At 6.1 h the Sun is about 1° up and the east ridge, 7 km away, hides its whole disk from
 the lookout. The far ridges are lit and the lookout is in shade, so the sphere and the rock can cast no shadow,
@@ -388,10 +388,10 @@ an 86.31 ms gap on the Mac, and a 92.8 ms gap in Chrome, every submitted image r
 - **Whole-frame gaps, from the machine.** Complete takes still held gaps: 121.8 and 176.1 ms in Chrome, 54 and
   70 ms on the Mac, and gaps with capture off as well. Every arm was taken while other builders compiled and
   tested, at load averages of 4 to 55. Nothing on a shared machine separates the engine's share of such a gap
-  from the scheduler's, and [the project settings](../../../ORCHESTRATE.md) make a timing inside a milestone a
+  from the scheduler's, and [the project settings](../../../ORCHESTRATE.md) make a timing inside a work package a
   tripwire for that reason.
 
-So motion is proved in two parts, and the project's rule for timing decides which part can fail a milestone.
+So motion is proved in two parts, and the project's rule for timing decides which part can fail a work package.
 
 1. **What the engine draws at each tick is judged, and gates.** WP5.8 and WP5.9 judge tick-by-tick sequences.
    On the Mac every world tick is submitted exactly once. In Chrome a due tick can be deferred to the next
@@ -448,7 +448,7 @@ the launcher and the two capture drivers import across it and a list would miss 
 computes that digest again from the checkout it runs in, without building, and fails when it differs. WP5.11's
 `reads` lists exactly those paths and the two records the check compares, so a pass is not reused once one of
 them changes: the digest and the reuse of a pass cover the same files. Other modules land changes to those paths
-most hours, and a record cannot outlive one. So the arms are the milestone's last act, taken on a branch that
+most hours, and a record cannot outlive one. So the arms are the work package's last act, taken on a branch that
 already holds main, and landed with nothing else. If another landing gets in first, the check fails on main and
 the six arms, a few minutes of takes, are taken again. Nothing else is proved twice.
 
@@ -456,9 +456,9 @@ In WP5, WP6 and WP7 a reviewer who sees a step in a real-time take reads the tak
 elapsed time between two submissions accounts for is a recorded gap. A step it does not account for, or
 content that differs from the tick-by-tick capture of the same tick, is a finding. A late frame in WP7's frame
 records is handled as [Frame records, startup and hitches](#frame-records-startup-and-hitches) says. Stutter at
-1x is judged in WP8.2 and WP8.5, and on the built-in display in WP8.6 and WP8.7. WP8 is this module's last milestone,
+1x is judged in WP8.2 and WP8.5, and on the built-in display in WP8.6 and WP8.7. WP8 is this module's last work package,
 so its real-time takes and frame records, the two attended ones included, are made in the sitting the project
-settings give a last milestone, with the other builders paused.
+settings give a last work package, with the other builders paused.
 
 ### Defects found in another module's code
 
@@ -510,9 +510,9 @@ before it trusts any frame.
 - No registered exact baseline moves, except in WP9. There the terrain changes, so all five registered sets are
   expected to move, and WP9 refreshes them in its own landing under
   [the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix), and moves them into the game's test fixtures
-  under [the relocation ruling](../ARCHITECTURE.md#ruling-on-relocated-references). In every other milestone the valley's source
+  under [the relocation ruling](../ARCHITECTURE.md#ruling-on-relocated-references). In every other work package the valley's source
   root, the grid and field contents and the default output stay as they are.
-- Every landing here changes covered paths, so every milestone carries a verifier item. It passes from the
+- Every landing here changes covered paths, so every work package carries a verifier item. It passes from the
   main-branch check `exact-images`, which runs on main after the merge
   ([why](../ARCHITECTURE.md#proofs-run-once-on-main)). No builder runs the verifier before a merge.
 - This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in WP5 and
@@ -521,7 +521,7 @@ before it trusts any frame.
   [the refresh](#the-route-check-sees-a-missing-prop), which keeps its identity and thresholds. WP9 calibrates
   both again for the new roots, and from then the bare valley's canonical check fails without its baseline.
 
-## Limits for every milestone
+## Limits for every work package
 
 - **Nothing that exists changes.** With the exit scene unselected, every existing configuration prepares, steps
   and draws exactly as before, because exact baselines pin them. If one does not, stop and fix that first. WP9
@@ -570,7 +570,7 @@ before it trusts any frame.
   the review moves to Claude.
 - **Attended setup.** Two items in WP8 need the built-in display unlocked and awake. The agent runs and reviews;
   the owner does nothing else. Console state is recorded and is never a pass condition elsewhere.
-- **Storage.** Scratch in `tmp/showcase-<milestone>/`; selected evidence in `.orchestrate/evidence/SHOWCASE/`.
+- **Storage.** Scratch in `tmp/showcase-<work-package>/`; selected evidence in `.orchestrate/evidence/SHOWCASE/`.
 
 ## Open questions
 

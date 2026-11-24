@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md",
     "commit": "7d573e340c8738b9dc40284bdb75ebbab9fc8e10",
-    "hash": "4aa57f15eefe4ad0851d3df85a1f0c756a5634b565f78bacd868929dc2e1e80f",
+    "hash": "d210abea6a8def15d69851b40916afb5f4467fce8468931fbb23b282f01423fe",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -132,7 +132,7 @@
       }
     },
     "WP2": {
-      "definitions": "fd532bb5c98640214514e817424dd22deee46a374268a069459c14bd3c973099",
+      "definitions": "eb2a7cec8f42653931d80510913c8daf120095aef17692c6593e38d3fd31bc33",
       "reviews": [
         {
           "verdict": "fail",

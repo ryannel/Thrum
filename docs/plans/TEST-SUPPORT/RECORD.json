@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/TEST-SUPPORT/design-review.md",
     "commit": "3a6744e9573fa2bacfb6349fa1cd482f1304637a",
-    "hash": "0410d3886e648511520fe8f1839c0d53c8a9fa26f9071b2bf1106224ec29a6c7",
+    "hash": "acb546c007011c54d3f734a94848b636ae1edcfae85e21d879ca079bfbed36a3",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "cb2097c4b89718bdc8fbd32884abf9fbc51c5ee18669426dc32bbfbc835f0ecf",
+      "definitions": "5ea3ba4fa0d16e9ad39b65fbdabb706741b46447231d09dc90e222e02faca476",
       "reviews": [
         {
           "verdict": "pass",
@@ -106,7 +106,7 @@
       }
     },
     "WP2": {
-      "definitions": "d3d033313c7b51c2df143899e0dd33e41dd903171c956f527d39e8a1a7a0f0de",
+      "definitions": "17d1e381ff8dc452a4db82e8d077bdd04810134103e4517644470639f8e5ed9f",
       "reviews": [
         {
           "verdict": "fail",
@@ -328,7 +328,7 @@
       }
     },
     "WP3": {
-      "definitions": "a7678cc1c6c5c43a317366dd53bdcf88bdacd24540069e04d9aeecd4e797c0ba",
+      "definitions": "5bbfea2536db52933e780e17bb86df9f4a8588ca2c0944f856e9ad69ce896466",
       "reviews": [
         {
           "verdict": "fail",
@@ -447,7 +447,7 @@
       }
     },
     "WP4": {
-      "definitions": "8c84fcd86a94619d499f1aa067cbdc3d56ffcc8cb132ad0abfe3deabfb70ab6d",
+      "definitions": "bfba3e7dad2e5e3dac61c5d926f2fe6acf5f37cc0d5fb9a97a4d94533a3d15f9",
       "reviews": [
         {
           "verdict": "pass",
@@ -505,7 +505,7 @@
       }
     },
     "WP5": {
-      "definitions": "c7c083825925f2b259572eddba2008eb37b1884d0be96b38e7a9bdf4e5783c35",
+      "definitions": "7bc2e6bbecf78bf59548837b11c521e1a2af1763378a952d10a95e3343c77245",
       "reviews": [
         {
           "verdict": "pass",
@@ -578,7 +578,7 @@
       }
     },
     "WP6": {
-      "definitions": "cf9ec6787eb03e91d4e2faac5c58e64dd5463602fda5b8f54bf52775bbbd738d",
+      "definitions": "86c58e1bee034a8595a02526bea506a4329cab1586cef88c075657012ab8f3fb",
       "reviews": [
         {
           "verdict": "pass",

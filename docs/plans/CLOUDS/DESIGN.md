@@ -45,7 +45,7 @@ The lead's planning task of 13 November 2026:
 > can bring that across when it makes sense." Lead's reading, to record as an assumption: planning starts now, and
 > the owner leaves to this plan when the Broadsides Rust work is brought across, within
 > docs/design/decisions/SEA-AND-CLOUD-PORT.md (module by module, no wholesale import, Broadsides untouched).
-> Milestones that depend on unfinished modules wait on them as usual.
+> Work packages that depend on unfinished modules wait on them as usual.
 
 The owner, 14 November 2026, through the lead:
 
@@ -334,7 +334,7 @@ this revision replaces.
 | A view ray's media are split by height: air below, cloud above | They are split by distance, at a handover: `ATMOSPHERE`'s view volume integrates air, haze and condensate jointly near the camera, and this module's trace carries condensate beyond | Near the camera fog meets geometry, water and moving props, where a grid aligned to the view is the shipped answer; far off it is a soft shape on the land, which the trace already draws at a finer grain |
 | Haze under cloud is one number a frame, with no shafts | Inside the view volume the air is lit sample by sample through the cloud factor and the scene's shadows, so shafts stand in haze. The one number remains for a scene without the view volume | Shafts are what broken cloud over haze looks like |
 | The trace ignores depth except to skip covered rays | A ray stops at the scene's depth and keeps a stop at each pixel's depth | Far mist lies against hillsides and water |
-| "Atmospheric system" means clouds and weather; `ATMOSPHERE` is not reopened ([plan](PLAN.md#open-for-the-human), until now) | `ATMOSPHERE` gains the view volume and a haze it takes from the weather, as milestones after G3s closes | The owner's words. The V1 exit scene does not change |
+| "Atmospheric system" means clouds and weather; `ATMOSPHERE` is not reopened ([plan](PLAN.md#open-for-the-human), until now) | `ATMOSPHERE` gains the view volume and a haze it takes from the weather, as work packages after G3s closes | The owner's words. The V1 exit scene does not change |
 | The Sun's path ends at the cloud layer's base, and a receiver below it reads one plane | It continues to the ground in a ground band, read at the receiver's own position | Land inside fog must lose its Sun, and a bank must shade the water beside it |
 
 Kept, and now carrying more: the weather field as the one authority, the air frame, one density in m⁻¹, the
@@ -345,7 +345,7 @@ capabilities a scene leaves out at no cost, and light and shade applied by `ATMO
 
 Broadsides code, shaders and assets may be copied into this repository and used as they are, wherever they
 implement a mechanism of this design as this design states it. Where they implement something else they are
-reading matter. The builder of each milestone judges fit file by file; this table says where to look. Paths are in
+reading matter. The builder of each work package judges fit file by file; this table says where to look. Paths are in
 the Broadsides repository at `b4d8250e6` unless a commit is given, and nothing there is ever changed. Of these,
 the planner opened `scatter.rs`, `phase.rs`, the library's licence record and handoff, and the notes named in
 [the request](#the-request); the shaders' fit is expected from their names and the notes, not read.
@@ -1201,7 +1201,7 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
 The owner's bar of 17 November 2026 ([the request](#the-request), and
 [the project settings](../../../ORCHESTRATE.md#what-is-proved-and-how-hard)) decides what an item may ask.
 
-- **The look decides.** Each cue is judged in the running game against its milestone's inspection list, at the
+- **The look decides.** Each cue is judged in the running game against its work package's inspection list, at the
   bar of the skies and mists of Red Dead Redemption 2 and Horizon Forbidden West. Cloud light, the ground band,
   the medium coefficients, the stops, the handover and the far air are all judged this way: by what a sky, a
   bank, a ridge line and a walk through the handover look like.
@@ -1209,7 +1209,7 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   record passes on its check; a reviewer reads the records once, in WP12.
 - **References are diagnostics.** `thrum-cloud-model`'s f64 marches, the retained Python references and the
   proof scripts stay in the repository. A builder whose picture looks wrong compares against them to find the
-  cause. No item holds a GPU product or the Sun term to one within a bound, no milestone measures a bound first
+  cause. No item holds a GPU product or the Sun term to one within a bound, no work package measures a bound first
   and then asserts it, and a miss against a reference neither fails an item nor ends `BLOCKED`.
 - **What a game reads is tested.** The weather field is the game's: it is deterministic, and its CPU query is
   what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
@@ -1231,14 +1231,14 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
 - **A wrong substitute still fails.** Where a test names a plausible wrong version, such as a shore mask that
   drifts or a cloud band's value counted twice, it runs that version through the same assertion and shows it
   fail.
-- **Milestones already Done stand as built.** WP1, WP2 and WP13 were proved against f64 references and the
+- **Work packages already Done stand as built.** WP1, WP2 and WP13 were proved against f64 references and the
   yardstick below, and their tests stay in `./dev check` as regression guards. A builder who changes a model on
   purpose updates its test's expected values in the same landing.
 
 **The yardstick the proofs quote.** Where [Check that it can work](#check-that-it-can-work) and the sections
 above say "the ceiling", they mean `0.05 × expected + 0.005 × F` at a probe, with `F` 1 for a transmittance and
 otherwise the largest expected value among the case's probes. The planner used it to compare mechanisms, and
-WP13's tests assert it. It decides nothing in a milestone that is not yet Done.
+WP13's tests assert it. It decides nothing in a work package that is not yet Done.
 
 ### Check that it can work
 
@@ -1593,12 +1593,12 @@ WP2, takes a paired record of one scene at one view, capture off: the scene with
 giving the whole frame, each cloud pass's GPU time by name, the bytes of each resource and the load on the
 machine. A record trips a wire when the whole frame with clouds is over the display's refresh interval, when a
 pass is about 25% or more over its last comparable record, or when a cost grows faster than the work that was
-added. A tripped wire is investigated in the milestone that tripped it, and the record says what was measured
+added. A tripped wire is investigated in the work package that tripped it, and the record says what was measured
 to find the cause and what was fixed or left as a follow-up in the log. Visible stutter is judged in the
 `realtime` inspections.
 
 The ambition is the display's full refresh, and whole-frame tuning is the later performance phase. **No timing
-figure decides whether an item passes, whether a milestone is Done or whether the next one starts.**
+figure decides whether an item passes, whether a work package is Done or whether the next one starts.**
 `cloud_cost.py check` measures the scene again and fails only on a missing measurement or a missing
 investigation. It holds the committed record and its own fresh measurement to one list: for the scene named,
 a run with clouds absent and a run with clouds visible, at one view; and from the visible run, the cloud
@@ -1634,7 +1634,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in W
    [a sky of weather alone](#placed-volumes) and the sky WP3 stopped on, from 2 m and from 40 m on both
    targets. WP17.3 then looks at the presets as they ship, shapes included.
 
-   The flaws are excused only until WP17 starts. In a milestone built before it (WP3 to WP16, and WP11) the four
+   The flaws are excused only until WP17 starts. In a work package built before it (WP3 to WP16, and WP11) the four
    are known: they fail no inspected item, and a reviewer who sees them says so and judges the item's own
    list. From WP17 on nothing excuses them. One that shows on a procedural fair-weather cloud fails the
    inspected item whose view shows it, in WP17 and in WP12.
@@ -1718,7 +1718,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in W
    sample's depths: that plane drew WP3's bright lip under a dark stripe on turrets, and is the likely cause
    of the level dark band on its domes before them.
 13. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
-   check run in every milestone.
+   check run in every work package.
 
 ## Proof and builder handoff
 
@@ -1729,10 +1729,10 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   browser launch outside the Codex sandbox, granted per run; if one is refused, leave the item open and say so.
   Never substitute a Mac result.
 - **Capture.** Inspected items use T2 engine capture and name their mode.
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/clouds-<milestone>/`, selected evidence in
+- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/clouds-<work-package>/`, selected evidence in
   `.orchestrate/evidence/CLOUDS/`.
 - **Exact baselines.** The module adds crates and a selection that is off by default, and moves no retained
-  image. Every milestone carries the verifier as its claim-time check
+  image. Every work package carries the verifier as its claim-time check
   ([rules](../ARCHITECTURE.md#exact-baselines)).
 - **Broadsides.** Read it at the commits [What Broadsides offers](#what-broadsides-offers) names; never change
   it, and never build against it. A file may be copied or translated where it does what this design states, on
@@ -1746,10 +1746,10 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
 - **Maturity.** The ledger's `E1.clouds` row is kept current from WP2, with implementation, correctness, visuals
   and device apart.
-- **The bar.** [How the module is proved](#how-the-module-is-proved) governs every milestone not yet Done.
+- **The bar.** [How the module is proved](#how-the-module-is-proved) governs every work package not yet Done.
   A builder tunes the look against the inspection list, with a fresh opinion, and records what it changed. A
   reference is there to find a cause, never to pass or fail. Three failed looks on one cue go to the log and
-  end `BLOCKED`. The form flaws [risk 2](#risks) names fail no inspected item of a milestone built before WP17.
+  end `BLOCKED`. The form flaws [risk 2](#risks) names fail no inspected item of a work package built before WP17.
   From WP17 on they fail any inspected item whose view shows one on a procedural fair-weather cloud.
 
 ## Open questions
@@ -1781,7 +1781,7 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 
 ## Ground-condensate integration handoff
 
-`ATMOSPHERE` owns the view volume, its history and the lent aerial operation; this milestone writes the medium
+`ATMOSPHERE` owns the view volume, its history and the lent aerial operation; this work package writes the medium
 coefficients and the ground band it reads and replaces the labelled test medium in `examples/v1-game`. A defect
 in the volume itself goes to `ATMOSPHERE`'s log. WP13 built the model's solar kernel from the four fixed
 orders; WP14.13 removes them, and the kernel the view volume takes is the trace's own shader function.

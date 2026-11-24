@@ -54,7 +54,7 @@
         },
         {
           "id": "WP1.5",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained Mac image. Chrome's baseline is not checked here; the design says when it is.",
+          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this work package moved no retained Mac image. Chrome's baseline is not checked here; the design says when it is.",
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
@@ -123,7 +123,7 @@
         },
         {
           "id": "WP2.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
@@ -254,8 +254,8 @@
         },
         {
           "id": "WP3.11",
-          "statement": "Under GPU load the merged build draws one image on the pipelines WP3.1 and WP3.4 compare. In one interleaved campaign on a build of main, as the design's 'Proof that it is one image' describes it, a control that differs only by leaving out the coverage output differs between hosts in at least five routes, and the build with the output differs in none over at least as many routes, with every combination of the two recipes, the two sources and the two entity routes run by both. The commit the campaign's binaries were built from is on main and holds the landing and every change this milestone merged to what the game is built from.",
-          "ask": "Does the retained campaign record meet the design's rule under 'Proof that it is one image': complete routes taken in turn with the control, four hosts, two counted render workers, the full exact comparison at every tick, every combination of the two recipes, the two sources and the two entity routes (cubes and selected meshes) run by both builds, the control differing in at least five routes and the build with the output in none over at least as many? Does the control's source differ from the campaigned commit's only by the coverage output? Check with git yourself: is the commit the record names an ancestor of main's tip, does it contain the merge that landed the coverage output, and does `git log` from it to the claimed commit, over `crates/`, `examples/v1-game/`, `.cargo/`, `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`, show no commit of this milestone's? A campaign made on the branch before the merge does not answer this item. Commits other modules merged after the campaigned commit are not part of it.",
+          "statement": "Under GPU load the merged build draws one image on the pipelines WP3.1 and WP3.4 compare. In one interleaved campaign on a build of main, as the design's 'Proof that it is one image' describes it, a control that differs only by leaving out the coverage output differs between hosts in at least five routes, and the build with the output differs in none over at least as many routes, with every combination of the two recipes, the two sources and the two entity routes run by both. The commit the campaign's binaries were built from is on main and holds the landing and every change this work package merged to what the game is built from.",
+          "ask": "Does the retained campaign record meet the design's rule under 'Proof that it is one image': complete routes taken in turn with the control, four hosts, two counted render workers, the full exact comparison at every tick, every combination of the two recipes, the two sources and the two entity routes (cubes and selected meshes) run by both builds, the control differing in at least five routes and the build with the output in none over at least as many? Does the control's source differ from the campaigned commit's only by the coverage output? Check with git yourself: is the commit the record names an ancestor of main's tip, does it contain the merge that landed the coverage output, and does `git log` from it to the claimed commit, over `crates/`, `examples/v1-game/`, `.cargo/`, `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`, show no commit of this work package's? A campaign made on the branch before the merge does not answer this item. Commits other modules merged after the campaigned commit are not part of it.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
@@ -287,7 +287,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops, flickers or goes missing at a screen edge or at an occluder's silhouette, in any frame the game submits. The project bar's 'smooth at the display's full refresh' is not judged in this milestone: `SHOWCASE` judges it on the culled exit scene, as the design's 'Frame cadence' section says."
+      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops, flickers or goes missing at a screen edge or at an occluder's silhouette, in any frame the game submits. The project bar's 'smooth at the display's full refresh' is not judged in this work package: `SHOWCASE` judges it on the culled exit scene, as the design's 'Frame cadence' section says."
     }
   ]
 }

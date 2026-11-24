@@ -61,7 +61,7 @@ change to the V1 game's rules, which stay outside the profile; drawing.
 | **N3 Be told when a rule breaks the profile** | The named classes in [mechanism 6](#6-the-check-that-enforces-the-profile) | A lint that passes because it was never switched on for the package. Rejected by one fixture per class that must fail |
 | **N4 Find overlaps, neighbours and the nearest body** | Radii from 0 to the edge of [the query domain](#5-the-index-and-its-queries), 2²⁴ units; a query from one point to wider than the whole crowd; from an empty index to 10,000 bodies packed three deep; anywhere inside the domain; from serial and parallel rules | An index that returns the right set in an order that depends on its internals. Rejected by comparing the whole visit sequence with a brute-force search |
 | **N5 Draw random numbers that need no saved state** | Any tick, entity and stream, in any order, on any thread, before or after a rewind | A generator with a stored cursor, which a rewind or a different thread order moves. Rejected by the rewinding trace |
-| **N6 Know what a tick costs** | 2,000, 5,000 and 10,000 bodies, on the Mac and in Chrome | A figure for bodies spread thinly. The record names the neighbours visited per tick beside each time. The figures are baselines: none decides whether a milestone passes |
+| **N6 Know what a tick costs** | 2,000, 5,000 and 10,000 bodies, on the Mac and in Chrome | A figure for bodies spread thinly. The record names the neighbours visited per tick beside each time. The figures are baselines: none decides whether a work package passes |
 
 ## Mechanisms
 
@@ -435,7 +435,7 @@ What stays required is correctness: equal digests, the oracle, and the runs on t
   and the fallback.
 - **The V1 game** stays outside the profile. Its rules, tests and exact comparisons do not change.
 - **Exact baselines.** This module edits `crates/` and `scripts/`, which are covered paths, and moves no retained
-  image. Each milestone carries the verifier.
+  image. Each work package carries the verifier.
 
 ## Open questions
 

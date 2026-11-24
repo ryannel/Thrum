@@ -677,7 +677,7 @@ module adds, and `scripts/river_cost.py` for the solve. No timing figure decides
    `WATERS`'; the solve gives a level at each end that already matches the body there.
 6. **`WATERS` moves under this module's changes**, since both builders edit its crates. Early sign: a rebase
    that fails `WATERS`' tests. Each ruling keeps its change behind a declaration that existing scenes do not
-   make, and each milestone here runs `WATERS`' tests.
+   make, and each work package here runs `WATERS`' tests.
 7. **A reach's rectangle is mostly ground.** Early sign: WP4's bytes. Remedy: more reaches.
 8. **Samples in the map cost the surface too much.** Early sign: WP4's record. Remedy: mix the two samples into one
    set of layers when the gauge moves, a few times a second, and read one.
@@ -694,7 +694,7 @@ module adds, and `scripts/river_cost.py` for the solve. No timing figure decides
 cost records, looks, the `gpu` lock, exact baselines, tests that hold no game content, Broadsides and
 dependencies. In addition:
 
-- **Scratch and evidence.** `tmp/rivers-<milestone>/` and `.orchestrate/evidence/RIVERS/`. Copies are listed in
+- **Scratch and evidence.** `tmp/rivers-<work-package>/` and `.orchestrate/evidence/RIVERS/`. Copies are listed in
   `.orchestrate/evidence/RIVERS/PROVENANCE.md`; none is expected.
 - **`WATERS`' crates.** A change inside a file `WATERS` wrote is one a ruling names, behind a declaration no
   existing scene makes. Anything else it needs is a proposal in this module's log.

@@ -5,15 +5,15 @@ A game draws health bars, timers, menus and a join screen in its own frame. [Des
 
 Read [Mechanisms](DESIGN.md#mechanisms), [Interfaces](DESIGN.md#interfaces),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
-[Limits on every milestone](DESIGN.md#limits-on-every-milestone) and
-[the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-ui) before starting any milestone, and
+[Limits on every work package](DESIGN.md#limits-on-every-work-package) and
+[the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-ui) before starting any work package, and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
 [The planning probe](../../../.orchestrate/evidence/GAME-UI/planning-probe.md) says what was calculated before the design was
 written; its code was thrown away on purpose, so build from the design.
 
 ## Open for the human
 
-- Assumption: GAME-UI waits for all of `RENDER-2D`, because its first milestone runs the sprite pass a second time and checks itself against the sprite scene `RENDER-2D` WP5 leaves in the shells. It also waits for `APPLE-PRESENTATION` WP6, because the interface is drawn inside the EDR present pass that milestone builds.
+- Assumption: GAME-UI waits for all of `RENDER-2D`, because its first work package runs the sprite pass a second time and checks itself against the sprite scene `RENDER-2D` WP5 leaves in the shells. It also waits for `APPLE-PRESENTATION` WP6, because the interface is drawn inside the EDR present pass that work package builds.
 - Assumption: an iPhone app for a second game is engine work, so it is built here (WP6) with the crowd view, and not later inside the game.
 - Assumption: "2D support in the engine" includes text and interface drawn in the frame, and this module builds the smallest part of that the game uses: text in Latin letters with accents (the languages of Western and Central Europe), bars, panels, buttons, one level of modal, and a join screen. Other scripts (Arabic, Hebrew, Chinese, Japanese, Korean, Indic), right-to-left text, translation tools, typed text, screen readers, scrolling lists and animated transitions are not built.
 - Assumption: keys, pointer and touch only. No gamepad.
@@ -25,7 +25,7 @@ written; its code was thrown away on purpose, so build from the design.
 - Assumption: the interface is proved from 320×320 to 3456×2234 points, at 1×, 2× and 3×, with safe-area insets up to 64 points, and on the iPhone simulator for function only.
 - Assumption: on the Mac, proofs feed key and pointer events to the game's window in code, since posting real ones needs a permission and an unlocked screen. Chrome and the simulator get real events. Real Mac input, and how the menus feel under the hand, are judged when someone plays `SWARM`.
 - Assumption: test panels and menus are plain and made by the builder. The game's look is `SWARM`'s, and your judgement of it is not an item here.
-- Assumption: the four changes GAME-UI needs inside other modules (a stage for the interface in the frame runtime, a second use of the sprite pass, a font product in the content loop, input and an interface scene in the shells and the V1 game) are built by GAME-UI's own builder under rulings in the module list. No milestone is added to those modules.
+- Assumption: the four changes GAME-UI needs inside other modules (a stage for the interface in the frame runtime, a second use of the sprite pass, a font product in the content loop, input and an interface scene in the shells and the V1 game) are built by GAME-UI's own builder under rulings in the module list. No work package is added to those modules.
 
 ## WP1 Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing
 
@@ -38,7 +38,7 @@ ruling 1 and the sprite pass's second use under ruling 2. That is the 8-bit mode
 present pass `APPLE-PRESENTATION` WP6 builds (`present.rs`, `present.wgsl`), which this Mac selects on its
 built-in display; [mechanism 1](DESIGN.md#1-the-interface-stage) says where the stage sits in each, and forcing
 SDR and forcing a headroom are that module's overrides. `thrum-ui` is a new
-crate: register it, and the cooker's new dependencies in WP2, in `.config/architecture.toml`. In this milestone
+crate: register it, and the cooker's new dependencies in WP2, in `.config/architecture.toml`. In this work package
 it only carries a paint list of rows from an embedded sheet; text and the tree come later. The interface scene
 is a new `THRUM_SCENE` selection beside `RENDER-2D`'s sprite scene in `examples/v1-game/src/content.rs`.
 `scripts/game_ui.py` is new and this module's.

@@ -1,22 +1,22 @@
 # SHOWCASE plan
 
 Closes gate G7 and the V1 exit: the exit scene on the Mac's two recipes and in Chrome, reviewed, with its closing
-record. Milestones run in the order WP5, WP6, WP9, WP7, WP8. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
+record. Work packages run in the order WP5, WP6, WP9, WP7, WP8. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
-The launch, the six stops and the route check were built before the loop as milestones M1 to M4
+The launch, the six stops and the route check were built before the loop as work packages M1 to M4
 ([record](../../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)), so this plan starts at WP5. Read
-[Mechanisms](DESIGN.md#mechanisms), [Limits for every milestone](DESIGN.md#limits-for-every-milestone),
+[Mechanisms](DESIGN.md#mechanisms), [Limits for every work package](DESIGN.md#limits-for-every-work-package),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any work package.
 
 ## Open for the human
 
 - Assumption: the exit closes on the agents' reviews and the records taken on the built-in display, as brief decisions 2 and 4 say, and the owner's own acceptance of the showcase's look is not an item. The other choice adds one item to WP8 that waits for the owner to walk the route and say yes.
 - Assumption: the 8,500 still entities are desert props (boulders, scrub, cacti and standing rocks) and the 1,500 movers are hot-air balloons adrift over the valley. No entity is a character or an animal, because an entity cannot turn or animate in V1. The layout is generated data, so another concept that only translates swaps in by regenerating.
 - Assumption: the exit scene holds exactly 10,000 entities and 1,500 movers, the counts the game already steps, inside the brief's "1,000–2,000 movers".
-- Assumption: "MetalFX, EDR and a quality governor" stay in the exit, so WP7 and WP8 wait for `APPLE-PRESENTATION`'s last milestone, M11, and through it for M4 to M12. Closing V1 without them would change the exit, which is the owner's call.
-- Assumption: WP5 and WP6 start as soon as cooked mesh rows (`CONTENT-LOOP:WP2`) and culling (`CULLING:WP3`) are Done, so the scene is built while the other modules finish; WP5 closes after `ATMOSPHERE:WP10`, the shadow fix its review needs. WP7 waits for the milestones it builds on (`APPLE-TILE` WP12, `APPLE-PRESENTATION`'s last, `ATMOSPHERE` WP6 and `CONTENT-LOOP` WP3), and only WP8 for every module's last milestone. The other choice holds all four until then.
+- Assumption: "MetalFX, EDR and a quality governor" stay in the exit, so WP7 and WP8 wait for `APPLE-PRESENTATION`'s last work package, M11, and through it for M4 to M12. Closing V1 without them would change the exit, which is the owner's call.
+- Assumption: WP5 and WP6 start as soon as cooked mesh rows (`CONTENT-LOOP:WP2`) and culling (`CULLING:WP3`) are Done, so the scene is built while the other modules finish; WP5 closes after `ATMOSPHERE:WP10`, the shadow fix its review needs. WP7 waits for the work packages it builds on (`APPLE-TILE` WP12, `APPLE-PRESENTATION`'s last, `ATMOSPHERE` WP6 and `CONTENT-LOOP` WP3), and only WP8 for every module's last work package. The other choice holds all four until then.
 - Assumption: "the same scene in Chrome" means the same cooked publication, layout, route and controls. Texture variant, reconstructor and display range differ by row, and the exit record says how.
 - Assumption: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing.
 - Assumption: before WP8 the movers' motion is judged tick by tick, from captures of every tick, and real-time takes are a tripwire record labelled with the machine's load (the lead's reading of the owner's bar of 17 November). Stutter at 1x is judged in WP8, with the other builders paused. A late frame in WP7's records that the load makes impossible to explain is listed as unresolved and answered in that WP8 sitting. The other choice judges real-time takes in WP5 and wants a cause for every late frame in WP7, and each waits for a quiet machine.
@@ -47,7 +47,7 @@ only, and refuses a baseline that exists.
 
 ## WP6 The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome
 
-`CULLING` owns the equality command, its comparisons and the rule that sets the default. This milestone runs
+`CULLING` owns the equality command, its comparisons and the rule that sets the default. This work package runs
 them on the exit scene and changes none of them. If equality fails, stop and diagnose.
 
 ## WP9 From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows
@@ -62,7 +62,7 @@ against WP9.6 as it now stands before claiming it. Change the terrain, a preset,
 if a check fails, and then read
 [The lookout's rim and the sunrise stop](DESIGN.md#the-lookouts-rim-and-the-sunrise-stop) and
 [the valley ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) first, because everything that moves with the
-terrain lands together. Keep this milestone's receipts under a name of their own, and WP6's as they are.
+terrain lands together. Keep this work package's receipts under a name of their own, and WP6's as they are.
 
 ## WP7 One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran
 
@@ -74,7 +74,7 @@ investigation may end in, and each entry carried to WP8.13 keeps its row and its
 
 ## WP8 The showcase passes review on the Mac and in Chrome, its motion on the built-in display is on record, and the V1 exit record is written
 
-The order is part of this milestone. First do everything that needs neither a quiet machine nor the display.
+The order is part of this work package. First do everything that needs neither a quiet machine nor the display.
 Then end `BLOCKED` asking the lead for the sitting with the other builders paused, as the project settings say.
 In that one sitting take the real-time captures of WP8.2, WP8.3 and WP8.5, the two attended records of WP8.6 and
 WP8.7 on the unlocked built-in display, and what WP8.13's carried entries need. Before the first day-cycle take,

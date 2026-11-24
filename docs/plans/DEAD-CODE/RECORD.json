@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/DEAD-CODE/design-review.md",
     "commit": "309d5ee4e14142c11d394b0943a9bf499d54afef",
-    "hash": "f441fb201a3ac2a1107fcc4d792c38e3ed4ff5db5c4d4df245158b6fcf005dd0",
+    "hash": "f04bc47698b881dccf2b3ce2fa17edaf709683d0c208616968b7a1e46a0f498a",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "e584a532bdbbf8f16c9920f13d09bb71ce7401f338e099baaed506f993fb0785",
+      "definitions": "b0ab9b48244b6c7cf05d8ddab63b9638e472829ea6fad717290061645bd0f7d8",
       "reviews": [
         {
           "verdict": "pass",
@@ -100,7 +100,7 @@
       }
     },
     "WP2": {
-      "definitions": "73ad69b5b15a5bf8a5b24bdfdd15c74701bf5889e660671feb220665c287aa50",
+      "definitions": "e30abbdc9547af3e8962d34fb267f65e20e3a7a52685dcbc21098886973f2cce",
       "reviews": [
         {
           "verdict": "fail",
@@ -214,7 +214,7 @@
       }
     },
     "WP3": {
-      "definitions": "b32905f6afe1e2cc91e6b79485dcaf84740bc04f278ac445f1ba12763b3fc775",
+      "definitions": "333ff232d0e67a6cec4648de0b144326ef5ce45d03b0dcf9260b3f2f433a37b3",
       "reviews": [
         {
           "verdict": "pass",
@@ -361,7 +361,7 @@
       }
     },
     "WP5": {
-      "definitions": "5f8f71983a6bdcee9314bbd1370bcf0c6896a8a74874cd00e7336757db892b58",
+      "definitions": "37d59c5d3b391bf4e1726a5f6b99a39709509cfee6d2dd730d55d40347df4a11",
       "reviews": [
         {
           "verdict": "pass",
@@ -436,7 +436,7 @@
       }
     },
     "WP6": {
-      "definitions": "c339a8d2bcce750806129ad7da84801336b33024bdb515409f99914d6413e836",
+      "definitions": "b3b912c45e7bb6cadefc992534c0a9cefef25c5fd3c9d69f061c9604a4d17eee",
       "reviews": [
         {
           "verdict": "pass",

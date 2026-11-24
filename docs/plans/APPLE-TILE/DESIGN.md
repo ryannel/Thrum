@@ -40,7 +40,7 @@ and slot duplication; M6 scratch sharing; M7 compact rows; M8 expanded GPU light
 consolidation. Existing queue-ordered uploads, 192-byte admitted rows, CPU overflow selection and V2 raster/order
 semantics stay in use. These are named later performance candidates, with no completion or gain claimed here.
 The complete Metal recorder, Metal 4 queue, tile shaders, Android recipe and quantization also remain later work.
-Retain milestone IDs WP0–WP3/M10–WP12 so consumer references stay stable; M4–M9 definitions are removed, not accepted.
+Retain work package IDs WP0–WP3/M10–WP12 so consumer references stay stable; M4–M9 definitions are removed, not accepted.
 
 ## Research and selection
 
@@ -182,7 +182,7 @@ pipelines ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md), C07, C
   surface's values, the world position, the view direction and the pixel position passing from the first to the
   second. A new light term takes those as arguments and reads no material texture and no `VertexOutput`. A new
   surface effect, wet ground for one, changes the surface before any light is evaluated and reads no light.
-  `sun_visibility` takes `VertexOutput` today; the milestone that first needs the light step alone gives it the
+  `sun_visibility` takes `VertexOutput` today; the work package that first needs the light step alone gives it the
   receiver's values instead, under [the exact-baseline rules](../ARCHITECTURE.md#exact-baselines).
 - **Guide buffers as an optional graph output.** Normals and roughness, when a scene's preparation selects them,
   are written by a depth prepass declared in the one graph, at render extent. Its storage follows its readers, as
@@ -269,7 +269,7 @@ WP0 supplies matched baseline identity, same-target repeats, prepared linear-ima
 motion sequences. Existing G7's coarse-grid comparator stays unchanged and is only a route/content smoke test.
 G3t retains a full-resolution pre-change native portable baseline at WP0 and a Chrome portable baseline after
 `T2-CAPTURE:WP1`, before WP1 changes its rendering, with build/shader/content,
-route/sample, format, exposure and H=1 identity. Later milestones compare against that baseline as well as paired
+route/sample, format, exposure and H=1 identity. Later work packages compare against that baseline as well as paired
 same-build recipes; shared regressions cannot disappear by comparing two changed paths. Chrome is compared to its
 own recorded WebGPU baseline, not expected to be bit-identical to a different backend. Baseline artifacts and the
 comparator are retained under the storage rules; a new baseline cannot silently replace an earlier one.
@@ -323,7 +323,7 @@ record a safe candidate as unpromoted. WP12 also exercises the representative 10
 full/partial visibility and supported direct/culling paths, so a small valley route cannot stand in for scaling.
 Separate display callbacks, submit, GPU completion and physical swaps. Read physical
 per-encoder bytes only by the retained Xcode replay method; without a screen/tool slot mark them unmeasured, and do not
-block the offscreen functional milestones. No numeric performance/allocation gate; visible hitches, about 25%
+block the offscreen functional work packages. No numeric performance/allocation gate; visible hitches, about 25%
 comparable regression and unexpected scaling trigger investigation. Accelerated-path promotion requires a measured
 win with preserved quality; inconclusive candidates remain unpromoted with prepared fallback.
 
@@ -344,7 +344,7 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
 Retained sequence: **WP0 → WP1 → WP2 → WP3 → WP10 → WP11 → WP12**. IDs are kept for consumers. Removed M4–M9
-are deferred work, not completed milestones. One builder integrates sequentially; this task launches no agents.
+are deferred work, not completed work packages. One builder integrates sequentially; this task launches no agents.
 WP0 consumes accepted `T2-CAPTURE:WP0`; WP1 consumes accepted `T2-CAPTURE:WP1`. G3t adds scene-linear checkpoints
 through the shared tap. WP2 also names delivered `PLATFORM-RUNTIME-MAC:WP1`. Before WP1 changes rendering, retain
 Mac and Chrome same-target portable baselines using their qualified target taps and pinned source/cooked inputs.
@@ -393,7 +393,7 @@ windowed-tap integration/correspondence, which this observer does not require or
 proves response only. Agent runs/reviews after setup; do not automate grant changes. Missing setup leaves these rows open
 while unblocked work proceeds. Mac WP3 separately owns attended Instruments/panel qualification with capture OFF.
 
-Use `tmp/g3t-<milestone>/` for scratch and selected `.orchestrate/evidence/render/` records under the storage rules. Retain
+Use `tmp/g3t-<work-package>/` for scratch and selected `.orchestrate/evidence/render/` records under the storage rules. Retain
 lossless sources, provenance, exact diffs and 1x views; inspect full frames and native-size crops for Sun, stars,
 local lights, shadows, mirrors, cut/skip/history and replacement. Exact bytes do not replace visual review.
 Performance baselines use capture OFF, paired capture ON observer-cost arms, A/A and alternating recipes. Any

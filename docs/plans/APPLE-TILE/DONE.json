@@ -146,7 +146,7 @@
           "statement": "Scene and present compile as one graph per generation/variant; scene encoding precedes late acquisition, and an execute-time surface binding gates only present and its dependent epilogue.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/render/apple-tile-m2/README.md",
-          "ask": "Inspect graph/executor tests that reject scene work behind acquisition without a surface dependency, require the surface binding only for phase two and prove graph order. At this milestone retain the tone intermediate to isolate the lifecycle change. Keep the same shader arithmetic, tone intermediate, draw order, graph resource formats and quantization boundary; no deferred optimization is hidden in this scheduling step.",
+          "ask": "Inspect graph/executor tests that reject scene work behind acquisition without a surface dependency, require the surface binding only for phase two and prove graph order. At this work package retain the tone intermediate to isolate the lifecycle change. Keep the same shader arithmetic, tone intermediate, draw order, graph resource formats and quantization boundary; no deferred optimization is hidden in this scheduling step.",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-TILE/WP2-review.md",
           "builder_result": "pass"

@@ -10,7 +10,7 @@
 ## The owner's request
 
 From the 10 November planning task, word for word: "The owner wants work lined up continuously toward the V1 exit
-in docs/BUILD-PLAN.md, so builders always have a next milestone ... each module that can start next has its
+in docs/BUILD-PLAN.md, so builders always have a next work package ... each module that can start next has its
 design, plan and done-when file, so a builder can start it".
 
 The V1 exit this module serves, from [the build plan](../VISION.md#goal-and-exit-rule): "hot reload,
@@ -189,7 +189,7 @@ adds fragment work raises the pass that draws the cooked mesh.
 ### The fresh-agent proof
 
 The fresh agent is a separate new session that the lead commissions for WP3.1 from
-[the brief](../../../.orchestrate/evidence/CREATOR/WP3-fresh-agent-brief.md). It is never the milestone's builder or reviewer, nor a
+[the brief](../../../.orchestrate/evidence/CREATOR/WP3-fresh-agent-brief.md). It is never the work package's builder or reviewer, nor a
 subagent of either. The builder has seen the work. The reviewer cannot be fresh either: the review skill and the
 project's instruction files load engineering guidance before a reviewer reads any item.
 

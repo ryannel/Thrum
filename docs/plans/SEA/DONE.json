@@ -86,7 +86,7 @@
         },
         {
           "id": "WP1.8",
-          "statement": "No file in this milestone is copied or translated from Broadsides unless the owner's licence for it is recorded in the log, and then `docs/evidence/SEA/PROVENANCE.md` lists the file with its source commit, path and licence.",
+          "statement": "No file in this work package is copied or translated from Broadsides unless the owner's licence for it is recorded in the log, and then `docs/evidence/SEA/PROVENANCE.md` lists the file with its source commit, path and licence.",
           "ask": "Does the provenance file exist and say either that nothing was lifted or which files were, and does the log hold the owner's licence if any were?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -96,7 +96,7 @@
         },
         {
           "id": "WP1.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
@@ -200,7 +200,7 @@
         },
         {
           "id": "WP2.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",

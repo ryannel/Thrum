@@ -34,9 +34,9 @@
       "items": [
         {
           "id": "WP6.1",
-          "statement": "Four rules of the shape check each hold a count that can only fall, entered at the count of the commit this milestone lands on: `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, as the design defines them. A landing that adds one more of any of them fails `./dev check`, and the message says what to write instead. A new script that a done-when item's check names is not refused, whether its milestone is open or Done, and no record under `docs/evidence` counts as naming a script or a bench. The log gives each rule's count at landing.",
+          "statement": "Four rules of the shape check each hold a count that can only fall, entered at the count of the commit this work package lands on: `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, as the design defines them. A landing that adds one more of any of them fails `./dev check`, and the message says what to write instead. A new script that a done-when item's check names is not refused, whether its work package is open or Done, and no record under `docs/evidence` counts as naming a script or a bench. The log gives each rule's count at landing.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule evidence-path && python3 scripts/shape_rules.py check --rule script-caller && python3 scripts/shape_rules.py check --rule bench-runner && python3 scripts/shape_rules.py check --rule shader-text-edit && python3 scripts/test_shape_rules.py'",
-          "ask": "Read each rule's fixtures: does each refuse one more of its shape and pass the cases the design leaves out (the evidence store's restore code; a script that `dev`, a tracked document outside the plans or a done-when item's check names, for an open milestone and for a Done one; a suite named for no script; a bench a script runs; a `.replace(` in a test file)? Is a script or bench that only a file under `docs/evidence` names counted? In a scratch copy, add a script nothing names, and a `.replace(` to a non-test Rust file that mentions WGSL: does `./dev check` fail on each and say what to do? Count `shader-text-edit` by hand with `git grep`, and pick three scripts the rule counts and three it does not: do the log's counts and the rule agree with what you find?",
+          "ask": "Read each rule's fixtures: does each refuse one more of its shape and pass the cases the design leaves out (the evidence store's restore code; a script that `dev`, a tracked document outside the plans or a done-when item's check names, for an open work package and for a Done one; a suite named for no script; a bench a script runs; a `.replace(` in a test file)? Is a script or bench that only a file under `docs/evidence` names counted? In a scratch copy, add a script nothing names, and a `.replace(` to a non-test Rust file that mentions WGSL: does `./dev check` fail on each and say what to do? Count `shader-text-edit` by hand with `git grep`, and pick three scripts the rule counts and three it does not: do the log's counts and the rule agree with what you find?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP6/NOTES.md",
@@ -45,7 +45,7 @@
         },
         {
           "id": "WP6.2",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -77,7 +77,7 @@
         },
         {
           "id": "WP1.2",
-          "statement": "The thirteen one-shot milestone proof scripts, the profiler probe beside them, and the culling campaign script with its suite are out of the tree, and nothing that is left imports or runs one. So are the three files that only one of them ran: the ungranted Mac capture script, its Swift launcher and the playback review script. No deletion of this milestone left a file under `scripts/` with no caller.",
+          "statement": "The thirteen one-shot work package proof scripts, the profiler probe beside them, and the culling campaign script with its suite are out of the tree, and nothing that is left imports or runs one. So are the three files that only one of them ran: the ungranted Mac capture script, its Swift launcher and the playback review script. No deletion of this work package left a file under `scripts/` with no caller.",
           "check": "sh -c 'test -z \"$(git ls-files scripts/apple_presentation_m1.py scripts/apple_presentation_m1_held.py scripts/apple_tile_m10.py scripts/apple_tile_m1_sim.py scripts/native_provider_recovery.py scripts/recipe_browser.py scripts/capture_effect_composition.py scripts/cooked_draw_seed_history.py scripts/culling_capture.py scripts/reconstruction_motion.py scripts/reconstruction_timing.py scripts/transport_checks.py scripts/check_creator_profiler.py scripts/creator_profile_probe.rs scripts/culling_campaign.py scripts/test_culling_campaign.py scripts/capture_mac_m2_ungranted.py scripts/mac_m2_capture_launcher.swift scripts/review_v1_playback.mjs)\" && ./dev check-docs'",
           "ask": "Take each deleted script's name: does any script, test, `./dev` command, CI workflow or open item's check that is left import or run it? Was any script deleted that something still runs, or that the exact-baseline registry pins or a pinned script imports? Did `script-caller`'s count only fall, with the baseline tightened to it?",
           "target": "mac-metal",
@@ -98,7 +98,7 @@
         },
         {
           "id": "WP1.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -141,7 +141,7 @@
         },
         {
           "id": "WP2.3",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -207,7 +207,7 @@
         },
         {
           "id": "WP3.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -243,7 +243,7 @@
         {
           "id": "WP4.2",
           "statement": "Every command an open item's check runs through a changed script runs as it did and compares with the same prior record: the cost checks of the water, cloud, river, rain and scene-view scripts, the 2D conformance check, the session and ray-tracing proofs and the content tripwire.",
-          "ask": "List each script the milestone changed and the open items whose checks run it. For each, does the command still parse its arguments, read the same prior record bytes, and print and exit as before? Did any command's output shape change?",
+          "ask": "List each script the work package changed and the open items whose checks run it. For each, does the command still parse its arguments, read the same prior record bytes, and print and exit as before? Did any command's output shape change?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP4/NOTES.md (script-by-script table; before/after outputs in WP4/before and WP4/after)",
@@ -263,7 +263,7 @@
         },
         {
           "id": "WP4.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",

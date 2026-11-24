@@ -6,7 +6,7 @@ owns the criteria · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built before the loop; the
 [design](DESIGN.md#purpose-and-scope) lists them with their evidence. Read
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any work package.
 
 ## Open for the owner
 
@@ -17,7 +17,7 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 - Assumption: WP1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` WP1. Until that gate exists, WP1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:WP1` to WP1's `needs`, which holds WP1 until the gate is built. WP2 and WP3 do wait for it.
 - Assumption: the forward pass's coverage output is on in every scene, with no switch, so that the game draws one image under GPU load. It changes pixels along shared triangle edges, so WP3 refreshes `APPLE-TILE`'s reference sets once, in its own landing, and its cost in frame time is measured there, not known today. The other choice keeps today's output as the default behind a selection, and leaves the variation in every scene and every exact test that does not ask.
 - Assumption: after WP3, no loaded campaign is repeated on main. WP3.11's campaign proves the merged build once. Later, the main-branch check guards only the pipelines its references draw, which are Direct's, and a culled or bucket pipeline that lost the correction shows only as some module's exact comparison varying under load, which stops that module. The other choice is a campaign on main on a schedule, at 45 to 90 minutes of loaded GPU each.
-- Assumption: `CULLING` takes no quiet-machine sitting and no attended panel sitting. Gate G3c asks for costs "as tripwires", so WP3.3's and WP3.13's rows are paired, taken once while other builders work, and recorded with their load, and no item judges frame cadence: `SHOWCASE` judges "smooth at the display's full refresh" on the culled exit scene (the design's Frame cadence section). The other choice is one sitting with the other builders paused at the end of WP3, as `ORCHESTRATE.md` offers a module's last milestone; it gives uncontended figures and a cadence record for today's valley, costs every builder that pause, and `SHOWCASE` takes the record again.
+- Assumption: `CULLING` takes no quiet-machine sitting and no attended panel sitting. Gate G3c asks for costs "as tripwires", so WP3.3's and WP3.13's rows are paired, taken once while other builders work, and recorded with their load, and no item judges frame cadence: `SHOWCASE` judges "smooth at the display's full refresh" on the culled exit scene (the design's Frame cadence section). The other choice is one sitting with the other builders paused at the end of WP3, as `ORCHESTRATE.md` offers a module's last work package; it gives uncontended figures and a cadence record for today's valley, costs every builder that pause, and `SHOWCASE` takes the record again.
 
 ## WP1 On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel: done
 [review](../../../.orchestrate/evidence/CULLING/WP1-review.md)
@@ -51,10 +51,10 @@ item.
 
 If you do merge code again: [the design](DESIGN.md#how-it-lands) names what a rebase that moves a registered
 reference repeats, and a merge of yours under `crates/` or `examples/v1-game/` costs WP3.11's campaign again.
-WP3.13's rows never stop the milestone or the merge. The registry is `BASELINE-GUARD`'s: change only the `pin`
+WP3.13's rows never stop the work package or the merge. The registry is `BASELINE-GUARD`'s: change only the `pin`
 and the `refresh` of a baseline whose reference moved.
 
-Stop rules, for every milestone:
+Stop rules, for every work package:
 - If a mode differs from its oracle in any pixel, stop and diagnose. Never widen a comparison, sample fewer frames or change the oracle to pass.
 - If your change fails an exact test or baseline another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`. The one exception is the refresh the module list rules for WP3's coverage output, with its pins.
 - Prove a thing once on your branch and merge. The script's run on the merged tip is the proof of record; run again only the check it says failed, and repeat no proof for a rebase unless the design says so. WP3.11's campaign is the one proof you take on main. `verify` passes from the run on main: set it `pass` with the evidence `main-branch check exact-images`, and never run plain `verify` yourself or under a lock.

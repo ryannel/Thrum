@@ -56,7 +56,7 @@
         },
         {
           "id": "WP1.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -116,7 +116,7 @@
           "statement": "The GPU sea still equals the CPU model: every test `SEA` left passes, unedited.",
           "check": "cargo test --locked --offline -p thrum-sea",
           "lock": "gpu",
-          "ask": "Did the diff change any assertion, bound or reference in a test that existed before this milestone?",
+          "ask": "Did the diff change any assertion, bound or reference in a test that existed before this work package?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP2/README.md",
@@ -125,7 +125,7 @@
         },
         {
           "id": "WP2.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -162,7 +162,7 @@
           "statement": "The cooked draw is unchanged: `COOKED-DRAW`'s parity and the crate's other tests pass, unedited.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu",
           "lock": "gpu",
-          "ask": "Did the diff change any assertion or reference in a test that existed before this milestone?",
+          "ask": "Did the diff change any assertion or reference in a test that existed before this work package?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP3/README.md",
@@ -202,7 +202,7 @@
         },
         {
           "id": "WP3.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -257,7 +257,7 @@
         },
         {
           "id": "WP4.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -313,7 +313,7 @@
         },
         {
           "id": "WP5.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",

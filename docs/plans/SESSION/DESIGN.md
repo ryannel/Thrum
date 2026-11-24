@@ -135,7 +135,7 @@ the player input", and the server's job is "making sure all clients execute the 
 ([Friday Facts 302](https://factorio.com/blog/post/fff-302)). Like Factorio's, this host does not wait for a
 lagging client.
 
-**What would change the decision.** If `SIM-2D`'s first milestone cannot hold the three targets equal,
+**What would change the decision.** If `SIM-2D`'s first work package cannot hold the three targets equal,
 [the module list's fallback](../ARCHITECTURE.md#mechanisms-settled-here) applies and this design is replanned. If
 WP2's record shows the host's tick to be a large part of a client's wait, a later plan can send a set early as a
 proposal and confirm it with a committed tick in the next datagram; that is not built here.
@@ -637,7 +637,7 @@ profile, the digest, the state encoding, the input conversion, the conformance c
 from `SIM-2D`.
 
 **The addition to C13,** to be written into [CONTRACTS](../../design/CONTRACTS.md) by this module's last
-milestone, in these words:
+work package, in these words:
 
 > A game may declare a deterministic rule set under the rules profile. Its gameplay semantic manifest then names
 > the rule set and its build, and a peer whose identity differs is refused at negotiation. Such a match shares
@@ -769,7 +769,7 @@ adapt holds all of them. The floor catches a collapse and is no target.
   both digests, and ends `BLOCKED`. If an image cannot carry something the digest covers without changing
   `SIM-2D`'s retained digests, it stops the same way.
 - **Exact baselines.** This module edits `crates/` and `scripts/`, which are covered paths, and moves no retained
-  image and no retained digest. Each milestone carries the verifier.
+  image and no retained digest. Each work package carries the verifier.
 
 ### Simulator lifecycle in the proof harnesses (WP5)
 

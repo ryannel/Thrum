@@ -189,7 +189,7 @@ read them; the sources for water as a whole follow.
   transitions between them. LEAN mapping (Olano and Baker 2010, from memory) keeps the mean slope and the slopes'
   second moments in mips. These are linear, so any texture filter averages them correctly, anisotropic filtering
   included.
-- **Broadsides**, as what was tried. Its accepted calm and trade-wind sea (WP1), its wake and query milestones WP1
+- **Broadsides**, as what was tried. Its accepted calm and trade-wind sea (WP1), its wake and query work packages WP1
   and WP2, and the foam spike's five changes with blind verdicts are evidence that mechanisms of this kind make
   their cues. Its timings are evidence of where cost went: a fused full-rate surface shader at about 2.35 ns a
   pixel, a whole-scene copy, a full-screen reflection trace of about 3 ms, and world work regrouped per draw. Four
@@ -367,7 +367,7 @@ against the users and cues above. "Keep" means it would be chosen again with the
 
 Broadsides code, shaders and assets may be copied into this repository and used as they are, wherever they
 implement a mechanism of this design as this design states it. Where they implement something else they are
-reading matter. The builder of each milestone judges fit file by file. Paths are in the Broadsides repository at
+reading matter. The builder of each work package judges fit file by file. Paths are in the Broadsides repository at
 `ae8c1ebb7` unless a commit is given, and nothing there is ever changed. The wave kernels are listed in
 [the sea's design](../SEA/DESIGN.md#what-broadsides-offers).
 
@@ -404,7 +404,7 @@ with the split.
 **What would change these selections.** A cost record that shows a representation to be wrong, and not merely
 untuned, reopens it through a proposal in the log ([cost account](#cost-account)). A cue of `RIVERS` or `PUDDLES`
 that a seam here cannot carry reopens that seam in [the module list](../ARCHITECTURE.md#water-as-one-system).
-Neither stops the milestones after it.
+Neither stops the work packages after it.
 
 ### Surf, mirrored scenery and the lens, decided against the cues
 
@@ -1780,7 +1780,7 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 
 | State | Owner |
 |---|---|
-| Spectrum, components, cascades and their f64 evaluators; the wave field's GPU passes | `SEA`: `thrum-sea-model`, `thrum-sea`. After `SEA`'s last milestone is Done they are this module's to extend, with their tests kept passing |
+| Spectrum, components, cascades and their f64 evaluators; the wave field's GPU passes | `SEA`: `thrum-sea-model`, `thrum-sea`. After `SEA`'s last work package is Done they are this module's to extend, with their tests kept passing |
 | The map and its function, joins, shore margins and what preparation refuses; gains and the swash depth; the shore transform's lags and exposures and the breaker section; the labels of a window's regions; the f64 surface model and the conformance model | `thrum-water-model` (this module), no GPU dependency. An f64 reference of the interaction waves or the foam is a diagnostic a builder may add, and is not required |
 | The map on the GPU, the surface from both sides, optics, the mirror lookup, the view from under water, the caustic field and its Sun-path factor, shafts, interaction waves, foam, the query ring | `thrum-water` (this module), one effect on `EFFECT-GRAPH`'s seam, which declares the wave field's passes with its own |
 | Mirror views: the second draw of the scene, its culling, light, air and targets | `SCENE-VIEWS` |
@@ -1836,7 +1836,7 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-waters), built 
 4. A mirror view of the scene, drawn by [`SCENE-VIEWS`](../ARCHITECTURE.md#scene-views), a new module with its
    own design, and not by this module's builder (WP14). The interface is
    [above](#mirror-views-scenery-the-camera-cannot-see): what water asks for, and what the view holds. The
-   rest of the design does not wait for it: WP14 is the only milestone that needs it.
+   rest of the design does not wait for it: WP14 is the only work package that needs it.
 
 5. A Sun-path factor from the water on the forward pass's direct Sun, read at a receiver's own position
    beside the cloud factor, with the point at which a receiver under water reads its Sun visibility (WP16).
@@ -1850,7 +1850,7 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-waters), built 
 every scene composes the shader text and draws the bytes it does today.
 
 `SEA` is asked for nothing. The shore transform extends `thrum-sea`'s field cache and `thrum-sea-model`
-after `SEA`'s last milestone, when both crates are this module's, with `SEA`'s tests kept passing. One change
+after `SEA`'s last work package, when both crates are this module's, with `SEA`'s tests kept passing. One change
 reaches a `SEA` test, and WP2 makes it: [the forward cache](#the-surface-and-the-frame-contract). `SEA`'s
 `ambient_gpu` test compares each cache texel with the model's evaluation at a world point, which inverts the
 map, so it pins the inverted form. The cache's oracle becomes the model's forward evaluation at the texel's rest
@@ -1894,12 +1894,12 @@ created in WP2, takes a paired record of one scene at one view, capture off: the
 absent, on tick frames and on repeat frames, giving the whole frame, each water pass's GPU time by name, the bytes
 of each resource and the load on the machine. A record trips a wire when the whole frame is over the display's
 refresh interval, when a pass is about 25% or more over its last comparable record, or when a cost grows faster
-than the work that was added. A tripped wire is investigated in the milestone that tripped it, and the record
+than the work that was added. A tripped wire is investigated in the work package that tripped it, and the record
 says what was measured to find the cause and what was fixed or left as a follow-up in the log. Visible stutter is
 judged in the `realtime` inspections.
 
 The ambition is the display's full refresh, and whole-frame tuning is the later performance phase. **No timing
-figure decides whether an item passes, whether a milestone is Done or whether the next one starts.**
+figure decides whether an item passes, whether a work package is Done or whether the next one starts.**
 `water_cost.py check` measures the scene again and fails only when the scene cannot be measured, when the
 committed record lacks part of what a paired record holds, or when a wire the record trips has no investigation
 beside it. Presented cadence on the built-in panel is measured once, attended, in WP11.
@@ -1908,7 +1908,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 
 1. **The surface pass costs too much.** Early sign: WP2's record, and WP4's with the map's reads and several
    bodies. The plausible wrong fix is dropping layers from the pixel shader. The designed ones: fewer texture
-   reads through packing, cascades fading to moments sooner, and a coarser mesh. The milestone tries the ones its
+   reads through packing, cascades fading to moments sooner, and a coarser mesh. The work package tries the ones its
    record points at and records what each did. Building goes on either way.
 2. **A 160 m repeat shows from 40 m up.** Early sign: WP2's vista capture. Fallback: a larger first patch under a
    profile the portable limits still admit, designed in `SEA` first.
@@ -2008,8 +2008,8 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 
 - **The bar.** The owner, 17 November 2026: "Ok let's lower the bar." Thrum is a game engine, and the aim is the
   most plausible result as fast as possible, not physical accuracy ([the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard)).
-  For every milestone not yet Done, water passes on its look, judged against the milestone's inspection list at
-  the bar of Sea of Thieves and the shipped games each milestone names, and on its speed, as cost records.
+  For every work package not yet Done, water passes on its look, judged against the work package's inspection list at
+  the bar of Sea of Thieves and the shipped games each work package names, and on its speed, as cost records.
   What a game reads stays tested: the map, the long waves and the body query against `thrum-water-model`, at a
   tolerance each test states, because a float must sit on the water that is drawn and answer the same on every
   device. So do the contracts: the frame contract's depth, motion and reactive coverage; state through pauses,
@@ -2031,16 +2031,16 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   them are the builder's and the reviewer's to choose; frames are judged whole and at native size, and motion as
   consecutive frames at 1x. The example wires the tap as `examples/v1-game` does, under ruling 3 where the tap or
   the shell assumes the V1 game.
-- **Cost records.** Each milestone that adds frame work takes [the paired record](#cost-account) again, beside
+- **Cost records.** Each work package that adds frame work takes [the paired record](#cost-account) again, beside
   the last record for the same view. A tripped wire is investigated and written up there. It never ends a
   session `BLOCKED`.
-- **Looks.** Where a milestone's inspected items judge a look that is tuned, the foam of WP7, the breaker
+- **Looks.** Where a work package's inspected items judge a look that is tuned, the foam of WP7, the breaker
   section of WP13 and the net and shafts of WP16 above all, tune it against those items with a fresh opinion before review. After three looks
   that fail the same cue, record them in the log and end `BLOCKED`.
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/waters-<milestone>/`, selected evidence in
+- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/waters-<work-package>/`, selected evidence in
   `.orchestrate/evidence/WATERS/`.
 - **Exact baselines.** Water adds crates and an example beside the existing scenes and moves no retained image.
-  Every milestone carries the verifier as its claim-time check ([rules](../ARCHITECTURE.md#exact-baselines)).
+  Every work package carries the verifier as its claim-time check ([rules](../ARCHITECTURE.md#exact-baselines)).
 - **Engine tests hold no game content.** `thrum-water` and `thrum-water-model` are tested on beds, bodies and
   pressure patches the tests make. The island, the craft and the channel are the example's.
 - **Broadsides.** A resource, read at the commits in [what Broadsides offers](#what-broadsides-offers) and never
@@ -2067,7 +2067,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | WP13; [risk 20](#risks) |
 | What does the cut for the highest surface cost, in the model and in a tick with every float in the breakers? | WP12 and WP13 record it; the cell is the knob |
 | What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | WP12 records preparation; WP13.1's test states the tolerance, small beside a breaking wave's height |
-| Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first milestone; WP14 records the water's share |
+| Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first work package; WP14 records the water's share |
 | Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in WP16 |
 | What do the caustic field and the shafts cost, and how many rungs does the look need? | WP16 records it; [risk 25](#risks) |
 | What adaptation share reads right from the shallows to 20 m? | WP16.7; the example's 0.75 is a starting value |

@@ -17,9 +17,9 @@ M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), … e
 
 `crates/thrum-render`: the scene renderer (`synthetic/`), the atmosphere, visibility, the frame runtime, graph,
 presenter and timing. Five modules own that code and all five have builders in it, so nothing here starts until
-the milestones they hold are Done (`ATMOSPHERE` WP9, `APPLE-TILE` WP10, `APPLE-PRESENTATION` WP3, `EFFECT-GRAPH` WP3,
+the work packages they hold are Done (`ATMOSPHERE` WP9, `APPLE-TILE` WP10, `APPLE-PRESENTATION` WP3, `EFFECT-GRAPH` WP3,
 `CULLING` WP3). Each change is built here under [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
-belongs to its owner once built. Later milestones of those modules are built on what has landed.
+belongs to its owner once built. Later work packages of those modules are built on what has landed.
 
 Its users are every builder who adds a pass, a record or a stage to the renderer next: `WATERS`, `CLOUDS`,
 `SCENE-VIEWS`, `RENDER-2D`, `GAME-UI`, and the owning modules themselves. Each of them will copy the shape they
@@ -28,7 +28,7 @@ find.
 ## The constraint that shapes everything: no retained pixel moves
 
 Every change here is a change of shape. The renderer's output is pinned by five registered exact baselines, on the
-Mac and in Chrome, and by the owning modules' exact tests. So each milestone must leave every submitted byte as it
+Mac and in Chrome, and by the owning modules' exact tests. So each work package must leave every submitted byte as it
 was, and the verifier is an item in each. A change that cannot keep them is not built here: the builder writes the
 proposal in the log and ends `BLOCKED`, as [the exact-baseline rules](../ARCHITECTURE.md#exact-baselines) say.
 
@@ -123,7 +123,7 @@ stay exported constants: the frame timing feed gives `CREATOR`'s profiler the na
 WP6 checks the stage registry on the smallest production-graph fixture that exposes all fourteen stages. Check
 graph reads, table bindings, distinct roles, validity bits and timing buckets on the CPU wherever the metadata
 can be constructed without a device. Use a tiny target for any prepared timestamp capacity check that needs
-Metal. The milestone runs all cases that together prove the regression.
+Metal. The work package runs all cases that together prove the regression.
 
 **6. Errors (T3).** The render error moves to the crate's own error module with `Display` and `Error`; a bad
 instance transform gets its own variant and the capacity variant is split into the limits it stood for. Leaf
@@ -175,6 +175,6 @@ module; rename `synthetic` or split files (that is one later landing); add a num
 ## Proof
 
 Each fix has a test that fails without it, written by the builder and read by the reviewer. Unchanged output is
-held by the verifier in every milestone and by the owning modules' exact tests, unedited. Two things the verifier
+held by the verifier in every work package and by the owning modules' exact tests, unedited. Two things the verifier
 cannot see have proofs of their own: a photometric scene with no atmosphere, which no registered baseline draws,
 and the validity of GPU timing, which never changes an image.

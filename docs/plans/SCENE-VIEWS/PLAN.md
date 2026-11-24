@@ -4,7 +4,7 @@ The scene drawn a second time from another camera, in the same frame, into a tex
 Water's mirrored scenery is its first use. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the
 criteria · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
-Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
+Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
 [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-scene-views) and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines).
 
@@ -30,7 +30,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## WP3 The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed
 
-The work is on `build/scene-views` at `7a5f2c02b596`, with every item but WP3.4 passed by its builder ([handoff](../../../.orchestrate/evidence/SCENE-VIEWS/WP3-handoff.md), which still asks for a quiet sitting that is no longer wanted). WP3.4 was planned again on 18 November ([design](DESIGN.md#cost-account), [log](LOG.md)): the record that stands is the one on main, taken at `25cfadff5bf44` beside another builder's GPU run, and no new timing run is asked for. Since that commit the milestone has changed tests, one lint attribute in `runtime/tokens.rs` and the layout of `thrum-core`'s random draw, whose results are the same, so the record is still of the view code this milestone leaves; retake it under `lock gpu` only if something a view draws changes before the merge. What is left is words: the evidence's sentence that a qualified sitting is pending, the conditions named by the endpoint table, the author guide and the ledger, and the handoff. The second field slot's excess keeps its follow-up as logged, with no quiet run promised for it. Run `./dev check` without a lock: the last session's ran under `gpu` and was stopped at the 30-minute hold limit.
+The work is on `build/scene-views` at `7a5f2c02b596`, with every item but WP3.4 passed by its builder ([handoff](../../../.orchestrate/evidence/SCENE-VIEWS/WP3-handoff.md), which still asks for a quiet sitting that is no longer wanted). WP3.4 was planned again on 18 November ([design](DESIGN.md#cost-account), [log](LOG.md)): the record that stands is the one on main, taken at `25cfadff5bf44` beside another builder's GPU run, and no new timing run is asked for. Since that commit the work package has changed tests, one lint attribute in `runtime/tokens.rs` and the layout of `thrum-core`'s random draw, whose results are the same, so the record is still of the view code this work package leaves; retake it under `lock gpu` only if something a view draws changes before the merge. What is left is words: the evidence's sentence that a qualified sitting is pending, the conditions named by the endpoint table, the author guide and the ledger, and the handoff. The second field slot's excess keeps its follow-up as logged, with no quiet run promised for it. Run `./dev check` without a lock: the last session's ran under `gpu` and was stopped at the 30-minute hold limit.
 
 `scripts/check_starter_browser.mjs` shows how a creator scene's page is launched and checked, and `scripts/culling_cost.py` how paired pass timings are taken.
 

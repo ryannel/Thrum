@@ -3,7 +3,7 @@
 Streams, rivers and waterfalls in the one water system. [Design](DESIGN.md) · [done-when file](DONE.json) ·
 [log](LOG.md) · [module list](../ARCHITECTURE.md) · [`WATERS`](../WATERS/DESIGN.md)
 
-Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
+Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
 [the rulings](../ARCHITECTURE.md#seam-rulings-for-rivers) and [Exact baselines](../ARCHITECTURE.md#exact-baselines).
 
 ## Open for the human
@@ -17,7 +17,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: a fall is one shape, a sheet that follows the water's free path or the rock's face, from 0.75 m to 12 m high. A lower drop is a chute in the stream. Only the island's fall, about 4 m, is judged by eye.
 - Assumption: the island shows the solved rivers and the waterfall only when a selection is turned on, until `WATERS` closes, so that `WATERS`' own reviews see the island they were written for.
 - Assumption: this module builds inside `WATERS`' crates under seven rulings, and three of them replace what `WATERS`' design expected: a stream's ripples are made by its flow and not by the wind, a reach follows its source's level, and rings are carried at each water's own current where a pool meets a riffle.
-- Assumption: the module closes without waiting for the governor and MetalFX, which `WATERS`' last milestone waits for; its two quality controls are declared for the governor to use.
+- Assumption: the module closes without waiting for the governor and MetalFX, which `WATERS`' last work package waits for; its two quality controls are declared for the governor to use.
 - Assumption: a float does not ground on the bed, and running water makes no sound, because the engine has no physics or audio owner.
 - Assumption: cost is recorded on the Mac only, at 2560×1440, and no timing figure decides an item (brief decision 3).
 - Assumption: the owner's bar of 17 November applies as in `WATERS`: what a game reads stays tested (the river in the map and the query, with the flow bands in its answers), and the look of the sheet, the flow bands and the river's caustics is judged by eye.

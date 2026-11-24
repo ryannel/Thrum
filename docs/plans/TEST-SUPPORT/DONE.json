@@ -59,7 +59,7 @@
         },
         {
           "id": "WP1.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -131,7 +131,7 @@
         },
         {
           "id": "WP2.8",
-          "statement": "The type-check keeps running after this milestone, on main and in no merge's check: `ORCHESTRATE.md` declares the main-branch check `cross-target` in the design's words.",
+          "statement": "The type-check keeps running after this work package, on main and in no merge's check: `ORCHESTRATE.md` declares the main-branch check `cross-target` in the design's words.",
           "check": "grep -q 'Main-branch check cross-target:.*scripts/check_cross_target.sh' ORCHESTRATE.md",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -151,8 +151,8 @@
         },
         {
           "id": "WP2.4",
-          "statement": "This milestone took no test out of a Mac run. Every test that passed before it passed at its first candidate with a GPU required and no skip line, which the recorded comparison of `cargo test --workspace` shows, and no change made since that candidate removes a test, empties one on macOS or lets one skip there.",
-          "ask": "Does the recorded comparison map every test that reported `ok` before to one that reported `ok` at the first candidate, test by test, with no `thrum-gpu-skip:` line in the later run? In the milestone's commits after that candidate, is any test removed, or its body left empty on macOS, without the same test declared again? The proof that none skips now is the merged tree's `./dev check`, which requires a GPU on this Mac.",
+          "statement": "This work package took no test out of a Mac run. Every test that passed before it passed at its first candidate with a GPU required and no skip line, which the recorded comparison of `cargo test --workspace` shows, and no change made since that candidate removes a test, empties one on macOS or lets one skip there.",
+          "ask": "Does the recorded comparison map every test that reported `ok` before to one that reported `ok` at the first candidate, test by test, with no `thrum-gpu-skip:` line in the later run? In the work package's commits after that candidate, is any test removed, or its body left empty on macOS, without the same test declared again? The proof that none skips now is the merged tree's `./dev check`, which requires a GPU on this Mac.",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP2/README.md (recorded comparison); cross-target.md (WP2.4 section)",
@@ -161,7 +161,7 @@
         },
         {
           "id": "WP2.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -194,7 +194,7 @@
         },
         {
           "id": "WP5.2",
-          "statement": "`test-readback` (a buffer mapped for reading in a test file outside the kit) and `test-deadline` (a hand-written deadline assert in a test file) are rules of the shape check, each entered at the count of the commit this milestone lands on. A landing that adds one more fails `./dev check`, and the message names the kit's function to use and the Tests section of the engineering patterns, which describes the kit. The log gives each rule's count at landing.",
+          "statement": "`test-readback` (a buffer mapped for reading in a test file outside the kit) and `test-deadline` (a hand-written deadline assert in a test file) are rules of the shape check, each entered at the count of the commit this work package lands on. A landing that adds one more fails `./dev check`, and the message names the kit's function to use and the Tests section of the engineering patterns, which describes the kit. The log gives each rule's count at landing.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-readback && python3 scripts/shape_rules.py check --rule test-deadline && python3 scripts/test_shape_rules.py'",
           "ask": "Read the two rules' fixtures: does each refuse one more of its shape in a test file, and pass the kit's own readback and wait and the same code in a file that is not a test? In a scratch copy, add a `map_async` readback to a test file: does `./dev check-docs` fail and name the kit's function?",
           "target": "mac-metal",
@@ -205,7 +205,7 @@
         },
         {
           "id": "WP5.3",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -240,7 +240,7 @@
           "id": "WP6.2",
           "statement": "In the engineering skill, one block on writing a test stands where the adopted-shapes table had its \"Unit tests\" and \"GPU tests\" rows. It says, each in a line that links to its entry in the patterns reference: prove a behaviour on the smallest world that shows it; test logic on the CPU and open a device only for what a GPU alone can show, at the test kit's small target; step simulated time, never wait on the clock; add to an existing test binary; a full-size or long run is a main-tier test and needs a plan's say. What the two rows said, the unit-test layout and the GPU gate, is one link from the block. The skill is no more than about forty words longer than its 1,657 of 21 November, and `AGENTS.md` and `CLAUDE.md` are as they were. Record: the check adds nothing to the tree.",
           "check": "sh -c 'f=.agents/skills/thrum-engineering/SKILL.md; ! grep -q \"^| Unit tests |\" $f && ! grep -q \"^| GPU tests |\" $f && test \"$(wc -w < $f)\" -le 1700 && for a in the-smallest-world logic-without-a-device simulated-time an-existing-test-binary a-main-tier-test; do grep -q \"references/patterns.md#$a\" $f || exit 1; done && ./dev check-docs'",
-          "ask": "Does each of the five lines link to its own entry, and is the unit-test layout and the GPU gate, which the two rows gave, one link from the block? Did this milestone's commits change `AGENTS.md` or `CLAUDE.md`, or add test guidance to the skill outside the block?",
+          "ask": "Does each of the five lines link to its own entry, and is the unit-test layout and the GPU gate, which the two rows gave, one link from the block? Did this work package's commits change `AGENTS.md` or `CLAUDE.md`, or add test guidance to the skill outside the block?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "agent_loop check on 59047a2e4: rows gone, five links, 1,695 words, ./dev check-docs pass; AGENTS.md and CLAUDE.md untouched",
@@ -308,7 +308,7 @@
         },
         {
           "id": "WP3.4",
-          "statement": "This milestone stops no test running on this Mac. Every test that reported `ok` in `cargo test --workspace` at the starting commit `4592e88cb` reports `ok` in the same command on the finished tree with `THRUM_REQUIRE_GPU=1`, under its name or a mapped one, and none is skipped. A test missing from the later run that a commit of another module took out is not this milestone's loss: the record names that commit for each. That command runs no long test and no test behind a Cargo feature, which WP3.6 covers.",
+          "statement": "This work package stops no test running on this Mac. Every test that reported `ok` in `cargo test --workspace` at the starting commit `4592e88cb` reports `ok` in the same command on the finished tree with `THRUM_REQUIRE_GPU=1`, under its name or a mapped one, and none is skipped. A test missing from the later run that a commit of another module took out is not this work package's loss: the record names that commit for each. That command runs no long test and no test behind a Cargo feature, which WP3.6 covers.",
           "ask": "Compare the two recorded runs' results, test by test, not their lists. For each test that reported `ok` before and does not after, under its name or a mapped one: which commit took it out of the run, does that commit's diff remove it, and is the commit another module's? Is any test out of the run with no such commit? Does the later run's output hold any `thrum-gpu-skip:` line?",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -318,9 +318,9 @@
         },
         {
           "id": "WP3.6",
-          "statement": "This milestone stops no long test and no test behind a Cargo feature running. The main-branch check `long-tests` passes on main with the milestone's commits in, and every test it reported `ok` in its last run without them, at `0870118d6`, reports `ok` in the run that covers them, under its name or a mapped one. A test missing from the covering run that a commit of another module took out is not this milestone's loss: the record names that commit for each.",
+          "statement": "This work package stops no long test and no test behind a Cargo feature running. The main-branch check `long-tests` passes on main with the work package's commits in, and every test it reported `ok` in its last run without them, at `0870118d6`, reports `ok` in the run that covers them, under its name or a mapped one. A test missing from the covering run that a commit of another module took out is not this work package's loss: the record names that commit for each.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
-          "ask": "Compare the saved log of the main-branch run that covers this milestone's last commit with the run at `0870118d6`, test by test. For each test that reported `ok` before and is missing, ignored or skipped now, under its name or a mapped one: which commit took it out of the run, does that commit's diff remove it, and is the commit another module's? Is any test out of the run with no such commit?",
+          "ask": "Compare the saved log of the main-branch run that covers this work package's last commit with the run at `0870118d6`, test by test. For each test that reported `ok` before and is missing, ignored or skipped now, under its name or a mapped one: which commit took it out of the run, does that commit's diff remove it, and is the commit another module's? Is any test out of the run with no such commit?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP3/long-tests-attribution-d22b9d203.log; covering run: main-branch check long-tests",
@@ -329,7 +329,7 @@
         },
         {
           "id": "WP3.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
@@ -388,7 +388,7 @@
         },
         {
           "id": "WP4.4",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",

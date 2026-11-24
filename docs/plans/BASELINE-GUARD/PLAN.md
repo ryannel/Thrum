@@ -11,7 +11,7 @@ to the commit that made it. [Design](DESIGN.md) · [done-when file](DONE.json), 
 - Assumption: the run on main holds `chrome` as well as `gpu` (the task said `gpu`), because it drives Chrome and the settings give Chrome one run at a time. Chrome items can wait up to 16 minutes behind it.
 - Assumption: `simulator` is declared an exclusive resource, and the 15 `ios-sim` items moved to it from `gpu`. The owner approved `gpu: 2, chrome: 1`; with `gpu` shared, two simulator checks could otherwise run on the one simulator at once.
 - Assumption: when the run on main names a first failing commit and no fix has merged an hour later, the lead reverts that commit, as the approved report says, unless the failure log shows a cause outside the repository.
-- Assumption: no builder is paused for a timing. Every timing is a tripwire taken under load, in a module's last milestone too, and figures for a quiet machine wait for one window batched for every module, if they are still wanted. Only a sitting a design asks for by name, as `SHOWCASE` WP8's for stutter at 1x, pauses the others. From 15 to 18 November every last milestone asked for a paused sitting, and `CULLING` WP3 and `SCENE-VIEWS` WP3 each stopped on it.
+- Assumption: no builder is paused for a timing. Every timing is a tripwire taken under load, in a module's last work package too, and figures for a quiet machine wait for one window batched for every module, if they are still wanted. Only a sitting a design asks for by name, as `SHOWCASE` WP8's for stutter at 1x, pauses the others. From 15 to 18 November every last work package asked for a paused sitting, and `CULLING` WP3 and `SCENE-VIEWS` WP3 each stopped on it.
 - Assumption: the guard stays its own module, so it does not sit on `APPLE-TILE`'s critical path.
 - Assumption: macOS, the GPU driver, Chrome, Node and `wasm-bindgen` stay outside what any check pins. An update that moves an image shows as main failing, and the script may then name the first commit after the last pass, so the name is a lead for whoever reads the failure log.
 - Assumption: the guard pins the files that choose the comparisons and decide equality, listed in the design, and not the PNG decoder they call from `scripts/run_v1_showcase.py`. `SHOWCASE`'s file changed in 19 commits in two weeks, and pinning it would ask a refresh record of each. The design lists it under what the guard does not stop.
@@ -31,7 +31,7 @@ The module list has two rulings that allow a refresh today, for `ATMOSPHERE` WP9
 reference file has changed since 11 November, so the first pins record the references as WP1 found them, and
 their refresh names the section itself, `exact-baselines`.
 
-The verifier is a comparison file of every baseline and this milestone edits it, so the five pins are final only
+The verifier is a comparison file of every baseline and this work package edits it, so the five pins are final only
 after the last edit to `scripts/exact_baselines.py`. The registry has no comparison-file lists, pins, refreshes
 or retired list yet.
 

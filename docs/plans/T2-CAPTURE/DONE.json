@@ -57,7 +57,7 @@
           "ask": "Join every submitted image to requested/accepted/submitted controls in the 1920x1080 0-to-36-degree two-second pan at 120 Hz requested opportunities, with one-second initial and final holds. Show fresh submission IDs while the committed world tick stays paused. Account for all opportunities/submissions; capture omissions make the interval inconclusive. A fixed-step route or endpoint redraw cannot pass.",
           "verdict": "pass",
           "review": ".orchestrate/evidence/T2-CAPTURE/WP0-review.md",
-          "inspect": "At 1x inspect the full noon pan and both one-second holds: rock and ridges retain coherent relative placement; the sphere follows the authored sweep, including its exit from frame; settled endpoints agree with the declared yaw and scene; no cut, snap or reversal. Record repeats, local holds and gross pauses against host time. Inspect native-size full frames and crops. The Ground E PNG identifies scene and framing only; judge quality against this worded list and the milestone bar, never by matching a target image or awaiting owner image approval. This proves engine runtime motion, not built-in-display smoothness.",
+          "inspect": "At 1x inspect the full noon pan and both one-second holds: rock and ridges retain coherent relative placement; the sphere follows the authored sweep, including its exit from frame; settled endpoints agree with the declared yaw and scene; no cut, snap or reversal. Record repeats, local holds and gross pauses against host time. Inspect native-size full frames and crops. The Ground E PNG identifies scene and framing only; judge quality against this worded list and the work package bar, never by matching a target image or awaiting owner image approval. This proves engine runtime motion, not built-in-display smoothness.",
           "builder_result": "pass"
         },
         {
@@ -144,7 +144,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
       "status": "done",
-      "quality_bar": "Portable cooked-scene camera continuity expected of Red Dead Redemption 2, with complete canvas sample identity and explicit browser scheduling and surface limits; scene-specific artistic bars remain with the consuming milestone."
+      "quality_bar": "Portable cooked-scene camera continuity expected of Red Dead Redemption 2, with complete canvas sample identity and explicit browser scheduling and surface limits; scene-specific artistic bars remain with the consuming work package."
     },
     {
       "id": "WP2",
@@ -227,7 +227,7 @@
         {
           "id": "WP3.4",
           "statement": "Nothing that decides an exact comparison moved. The only capture whose default behaviour changes is the realtime motion arms of `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, which select `wait`.",
-          "ask": "Compared with the commit the milestone started from, does the landing change any retained reference, any compared checkpoint or its sampling, any equality rule, the completeness rule (every submission has its image, with no ring or writer omission), or the admission of any capture other than those motion arms? The registry's pins and refreshes for the changed comparison files are expected.",
+          "ask": "Compared with the commit the work package started from, does the landing change any retained reference, any compared checkpoint or its sampling, any equality rule, the completeness rule (every submission has its image, with no ring or writer omission), or the admission of any capture other than those motion arms? The registry's pins and refreshes for the changed comparison files are expected.",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/T2-CAPTURE/WP3/scope-audit.json and README.md: builder inspection against 8a72a0c0 confirms identical references, registry definitions, routes, equality code and completeness predicate; only realtime matrix motion arms select wait. Pins/refreshes follow the T2 WP3 ruling.",
