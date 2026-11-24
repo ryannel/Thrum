@@ -812,8 +812,8 @@
           "ask": "Is the shape asymmetric, so that a dome of the same mean column would fail? At a weight of 1, would a Sun path filled from the footprint alone fail? Is the drawn column summed from the density the trace marches, and compared with the public query's column?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M6/paused-camera/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/M6-review.md"
         },

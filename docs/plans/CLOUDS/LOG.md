@@ -608,3 +608,8 @@
   texels. Drift queued one 80-byte row. Moving the fixture's anchor queued 176 bytes, including both changed
   relative windows. Restoring residency while paused updated the volume weight and preserved column optical
   depth. [Metal test and reproduction](../../../.orchestrate/evidence/CLOUDS/M6/map-refresh/README.md).
+
+- 2026-11-24 M6.2 refreshes the placed cloud's Sun path when a paused camera changes its form or
+  moves a Sun window. Metal readbacks match a fresh host at the same weather tick and 20° Sun for
+  both moves. Repeated destination frames upload zero placement bytes and skip the placed map.
+  [Paused camera proof](../../../.orchestrate/evidence/CLOUDS/M6/paused-camera/README.md).
