@@ -30,7 +30,8 @@ async function poll() {
         pending = [];
         upload(batch).catch(report).finally(() => { uploading = false; });
     }
-    if (player.tick() > before + 1n) nextTurn.port2.postMessage(null);
+    // Yield between steps without adding a nested timer delay to catch-up.
+    if (player.tick() > before) nextTurn.port2.postMessage(null);
     else setTimeout(() => poll().catch(report), 1);
 }
 

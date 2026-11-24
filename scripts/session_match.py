@@ -41,7 +41,10 @@ def build(target, tree=ROOT, output=None, *, sockets=False):
     args = ["rustup", "run", channel, "cargo", "build", "--locked", "--offline", "--release", "-p", PACKAGE,
             "--target-dir", str(output)]
     if sockets:
-        args += ["--features", "sockets"]
+        # The full match keeps five independently scheduled worlds running on
+        # one machine. Optimize across the rule, runtime and session boundaries.
+        args += ["--features", "sockets", "--config", 'profile.release.lto="fat"',
+                 "--config", "profile.release.codegen-units=1"]
     if triple:
         args += ["--target", triple]
     if target == "chrome-webgpu":

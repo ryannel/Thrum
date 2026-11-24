@@ -141,14 +141,12 @@ impl Player {
     fn advance(&mut self) -> ProofResult<Vec<Value>> {
         let now = micros(self.clock.elapsed());
         let mut rows = Vec::new();
-        // Re-poll native input between individual world steps so replica
-        // catch-up cannot keep the latest controls behind a long compute batch.
-        // The page amortizes its browser task dispatch across a short batch.
-        let step_budget = if cfg!(target_arch = "wasm32") { 4 } else { 1 };
+        // Poll input between world steps so catch-up cannot keep controls
+        // behind a compute batch. Chrome yields to WebTransport between turns.
         let trace_authored_frames = self.trace_authored_frames;
         self.client.advance_with_prediction_events(
             now,
-            step_budget,
+            1,
             |tick| {
                 if trace_authored_frames {
                     rows.push(timestamp(json!({"event": "authored_frame", "tick": tick})));
