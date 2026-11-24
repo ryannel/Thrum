@@ -242,7 +242,7 @@
         {
           "verdict": "fail",
           "commit": "ebf29181c91a5b390975a4d982a77a5e5710817d",
-          "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review-3.md",
           "items": {
             "WP4.1": "fail",
             "WP4.2": "fail",
@@ -278,6 +278,32 @@
             "turns": 1
           },
           "at": "2026-11-24T05:55:53Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "e9a3923fa9e7cdde64a40f00ccd52f50b77481d8",
+          "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 67412,
+            "cached": 1120256,
+            "output": 5155,
+            "turns": 1
+          },
+          "at": "2026-11-24T19:33:42Z"
         }
       ],
       "authorised": {
@@ -314,6 +340,13 @@
           "output": 37983,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "e9a3923fa9e7cdde64a40f00ccd52f50b77481d8",
+        "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review.md",
+        "checked": "c8e7a6941a07d2b7ac122d508836b189e88f7529",
+        "at": "2026-11-24T19:33:42Z"
       }
     }
   },

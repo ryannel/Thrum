@@ -249,7 +249,7 @@
     {
       "id": "WP4",
       "name": "A completed Chrome capture survives slow shutdown and leaves no browser or profile",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "The registered Chrome captures retain exact frame identities and decoded digests. A slow shutdown after validation succeeds when cleanup and both denied preflights are confirmed, with the actual termination recorded.",
       "items": [
         {
@@ -260,7 +260,7 @@
           "target": "stand_in:chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/T2-CAPTURE/WP4/profile-ownership.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review.md"
         },
         {
@@ -270,7 +270,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/T2-CAPTURE/WP4/profile-ownership.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review.md"
         },
         {
@@ -285,21 +285,7 @@
         }
       ],
       "failed_reviews": 3,
-      "failed_reviews_with_repeat": 2,
-      "findings": [
-        {
-          "name": "Pre-DevTools launcher timeout leaves the capture profile",
-          "item": "WP4.1",
-          "different": "The previous defect accepted an early browser exit. This startup failure is correctly rejected, but the profile remains before Chrome has even started.",
-          "repeat": false
-        },
-        {
-          "name": "Node transfers profile ownership before Swift accepts admission",
-          "item": "WP4.2",
-          "different": "The earlier shutdown-request write failure stranded a running browser group. This ownership gap occurs during startup with a writable volume and no browser group.",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 2
     }
   ]
 }
