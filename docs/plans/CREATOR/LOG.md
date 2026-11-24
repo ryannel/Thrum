@@ -266,3 +266,8 @@
 - 2026-11-23 M4 design review, Must Fix 2. The design and M4.1 now use three test-name prefixes across the
   workspace so the batch follows split GPU and CPU cases. The disposition record maps the original assertions
   to executed test names for the review.
+
+- 2026-11-24 WP4 replaced three full-scene regressions with one resident cooked rock on direct and indirect Metal
+  submissions and CPU checks for request ordering. The default nextest batch passed eight first attempts under
+  builder load, with individual times of 0.015–2.372 seconds. The longest one-at-a-time result was 1.140 seconds.
+  [Disposition, tolerances and timings](../../../.orchestrate/evidence/CREATOR/WP4/README.md).

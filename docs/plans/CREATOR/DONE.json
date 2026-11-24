@@ -225,7 +225,7 @@
     {
       "id": "WP4",
       "name": "Small hot-reload checks prove which material the device draws",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -235,8 +235,8 @@
           "ask": "Do the executed test names account for every retained and replacement case in the disposition record, including CPU splits, and do they preserve the three originals' assertions, boundary cases and tolerances at the smaller scale? Do the results show individual timings and a first-attempt batch pass with default scheduling, the ten-second limit and concurrent load recorded?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CREATOR/WP4/README.md",
           "verdict": "",
           "review": ""
         }
