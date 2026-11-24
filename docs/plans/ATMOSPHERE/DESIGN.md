@@ -132,72 +132,143 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### WP3 surface Sun visibility
 
-WP3 follows WP8 and addresses the archived in-cascade flash on the authored west-lookout spur. The moving shadow
-edge should stay attached to the terrain through the 17.40–17.80 h crossing and the separate slow ±20° pan, on
-Metal and Chrome. The held 17.4 h route stop and the shipped Ground E lip were judged in WP6 and are controls here.
-Use WP6's Red Dead Redemption 2 shadow bar for a grounded, continuously moving edge with readable terrain texture.
-The archived 1080p pair at frames 226–227 locates the defect on row 665. Use Neutral Highlights for both arms,
-with the existing incident meter and low-light key. [Exposure decision](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#exposure-audit-decision)
+WP3 follows WP8 and screens one surface filter for the in-cascade flash on the authored west-lookout spur.
+The flash and the exact finite-disk match remain open in the [vision](../VISION.md#the-milestones). The
+player-visible bar for a later correction is WP6's Red Dead Redemption 2 shadow reference: a continuously
+moving edge attached to the ground, with readable terrain texture. Compare the 17.40–17.80 h crossing and
+the separate slow ±20° pan on Metal and Chrome. The shipped Ground E pan and six held route stops,
+including 17.4 h at sunset, are separate controls. Keep Neutral Highlights, the incident meter and the
+low-light key. [Exposure decision](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#exposure-audit-decision)
 
-WP3 uses the established combination of stable cascades, overlapping
-handoffs and directional percentage-closer soft shadows (PCSS).
-Guerrilla shipped stable cascades, and Godot and Unreal expose split
-blending and a far fade. Thrum already snaps the cascades and blends
-the supported overlap. The archived row-665 receivers stay inside the
-last map in both frames, so changing split width cannot fix their
-flash. Keep the projection and handoffs fixed for this slice.
-[Guerrilla stable cascades](https://www.guerrilla-games.com/media/News/Files/GDC09_Valient_Rendering_Technology_Of_Killzone_2_Extended_Presenter_Notes.pdf) ·
-[Godot split controls](https://docs.godotengine.org/en/stable/classes/class_directionallight3d.html) ·
-[Unreal directional transitions](https://dev.epicgames.com/documentation/en-us/unreal-engine/directional-lights-in-unreal-engine).
+#### Which inputs survive
 
-The stored field retains a 2.49–3.65% limb after stock reaches zero.
-The archived receivers hold blocker count and filter radius across
-the abrupt step. The matched 32-tap screen keeps the eight blocker
-probes, physical Sun radius, receiver-plane comparison and small
-radius exits. Rotation applies only to the unrestricted last call.
-It substantially reduces the coherent flash, but produces visible
-penumbra crosshatching on Metal and Chrome. The stock shader remains the comparison arm.
-[Unity directional PCSS](https://raw.githubusercontent.com/Unity-Technologies/Graphics/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/PCSS.hlsl) ·
-[Matched screen evidence](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+The historical Metal probe at `ba45ff60c` compared depth and receiver state on authored spur cooked root
+`32ed89be…`. At x=480, 720, 960 and 1200 on row 665 its samples stayed inside the last cascade at both
+submissions 226 and 227. Blocker count stayed at six, the filter radius stayed near 53 texels, and dense
+comparison still found 2.49–3.65% visibility after stock fell to zero. The separate 74–94 extinction
+trajectory exposed the contour query's whole-receiver work-limit switch: 243 of 280 receivers switched at
+77 and the largest step was 8.924 percentage points. The rotated-tap and spatial-resolve screens also left
+visible patterns. These results identify the two failures. The handoff's D32 fields, uniforms, spur source
+and rerun scripts are unavailable at their named paths and have no restore entry.
+[Historical handoff](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
+[Archived D1–D3 criteria](../../../.orchestrate/evidence/ATMOSPHERE/WP1-M4-records.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-parked-spike)
 
-Use the last-cascade stored depth to resolve the remaining fractional coverage as the filter footprint moves.
-The archived merged-interval screen recovers the limb on all eight saved receivers. Its switch between a contour
-answer and a whole-receiver fallback flashes on the separate extinction trajectory. A candidate must preserve
-fractional coverage through extinction and through any change in filter work. Screen against both trajectories
-and the open-Sun, full-occlusion and represented-caster controls before carrying it into the game. Keep the
-bounded work in the shared surface evaluator for synthetic and cooked surfaces, where it applies to direct
-sunlight. The aerial transport keeps its own visibility evaluation and G4 history stays downstream.
+Use this reduced reconstruction to exercise the sampling fault even if the archive stays unavailable. Take
+the 16 odd-index taps and four-texel bilinear depth comparison from `crates/thrum-render/src/synthetic.wgsl`.
+Use a flat receiver at reverse depth 0.25, fixed 52.75-texel radius, and an interior footprint in a last
+cascade. Along its vertical axis (positive opposite to the shader's UV y), set texel-centre signed
+coordinates on half integers from the receiver. Centred at and below the edge are clear depth 0 and above
+it are blocker depth 0.65. For an integer edge offset `e` this yields the bilinear comparison
+`clamp(e + 0.5 - y, 0, 1)` at signed offset `y`. Move the footprint relative to the ridge: the crossing
+samples use `e = −40, −46` texels. The extinction sweep has 21 samples, with `e = −40 − 0.75 i`
+for `i = 0…20`. At each fractional offset use the same fixed depth step and translate the footprint by
+the fractional part. This keeps the coordinate equivalent to the comparison formula above.
+Use uniform clear and uniform blocked fields as endpoint controls.
 
-The previous current-frame receiver-guided resolve introduced ribbing on both targets. A new pass also needs
-cooked receiver coverage that the Occlusion prepass does not supply. A graph change goes through design review
-with the graph and cooked-draw owners. Compare capture-off whole-frame and shadow costs with the starting build
-at the same extent and settings, under recorded load. Use the project tripwires. If a registered image moves,
-the [exact baseline ownership rule](../ARCHITECTURE.md#exact-baselines) governs the landing.
+The CPU reconstruction, using the production taps, gives 12.50% then zero on the crossing while dense
+integration gives 6.87% then 2.70%. On the 21-sample sweep the stock filter reaches zero before the limb
+extinguishes. This isolates the fault with a fixed radius and depth field. An actual replay of the authored
+spur still needs the original mesh or cook and both trajectories' frame inputs.
+[Reconstruction command and results](../../../.orchestrate/evidence/ATMOSPHERE/shadow-review-revision/README.md)
 
-Park 16-ray SMRT and contour-area fallback. The first is too
-coarsely quantized for the saved limb, and the second switches
-243 receivers at once on the broader trajectory. A single
-unresolved 32² region can cover about 12% of the disk. Regional
-accounting by itself does not remove that risk. Filament's
-filterable moments are a production option but lose the
-receiver-relative depth correlation and can leak at overlap.
-The measured failure is in the current filter and does not yet
-establish the need for a novel coverage model.
-[Saved-field evidence](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
-[Filterable shadow-map limits](https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-8-summed-area-variance-shadow-maps).
+#### One bounded filter trial
+
+Keep the stock cascade fit, blocker search, receiver-plane comparison, small-radius exits, overlap, far
+fade and aerial evaluation. For the trial, replace only the unrestricted last-cascade disk-filter answer
+with a normalized quadrature of that same bilinear comparison. Use 64 angular midpoints `θ = π(i+½)/64`
+with rows at `y = −cos θ`. Take the mean at 16 equally spaced midpoints along each row's chord. Weight
+the mean by `sin² θ`, which accounts for chord length and row spacing, then normalize by the sum
+of the weights. This is 1,024 bilinear evaluations
+and at most 4,096 depth loads per query, excluding the unchanged stock search. Run this fixed-cost trial
+on the CPU for both reduced trajectories. Run the same trial on original fields if recovered. A dense
+same-field integral is the comparator. Keep signed residuals against it and the separate historical
+triangle results. Whole-disk work and weights stay fixed even as only a sliver is visible. With a fixed
+set of texel comparisons the bilinear field is continuous under translation and a varying radius; a
+normalized weighted sum preserves that property and tends to zero as its samples lose coverage.
+Re-fitting a map, changing a depth predicate or entering a stock exit can still change the inputs
+abruptly, which is why the fixed trajectories and adjoining frames matter.
+
+Report a single verdict. Park the candidate if it loses the remaining limb on the reduced crossing,
+reaches zero before the dense comparison, rebounds on the reduced extinction sweep, or fails either
+endpoint control. Even if
+it passes, missing original inputs leave the visual verdict open. If the original inputs return, reproduce
+stock there before judging the candidate and compare both original trajectories under the same settings.
+A failed visual or cost screen ends this trial. Record failed or unavailable rows and keep their observed
+scope. Any candidate for a default runtime change needs a later design review; the offline work limit
+establishes a finite trial, and timing still has to show that a proposed runtime evaluation is viable.
+
+#### Fixed witness and motion
+
+For any in-game screen, capture stock and candidate from the same cooked spur and starting cut/reset,
+at 1920×1080 with TAAU on. Use T2 fixed submitted-frame sequences on Metal and Chrome for the
+run-up and consecutive states through 223–231, with 226 and 227 explicitly joined to the archived
+pose, Sun direction, simulation endpoints and alpha. Match jitter phase and the sequence of history
+resets and prior submitted inputs in both arms. Use the archived 74–94 extinction sequence in the
+same way. Retain raw visibility and shaded frames for the pair and adjoining frames. Check the full
+x=480–1200 span on row 665 and adjacent rows for a lost or displaced flash. A new scenario that cannot
+reproduce the stock defect, an endpoint redraw or a clip missing either state leaves that verdict open.
+Keep T2 realtime at 1× for the full crossing and ±20° pan, and fixed for the six held stops. Compare the
+Ground E pan separately. Review near, last and far ranges with open Sun, full occlusion, broad edge,
+close terrain, distant crest, represented compact caster and overlap. Compare the cooked swap to the
+fresh replacement. In any in-game candidate report the first submitted frame after discard and device
+replacement against a fresh render, and paired capture-off whole-frame and shadow timings at the same
+extent and settings.
+
+#### Exact baselines
+
+WP3 lands as an offline diagnostic. Any in-game candidate is built only in scratch. The registered
+`apple-tile-native`, `chrome-day-sdr`, `chrome-day-scene-linear`, `chrome-night-sdr` and
+`chrome-night-scene-linear` sets draw the ordinary production path, which receives no WP3 shader,
+scene, recipe or control change. The existing scheduled verifier continues to guard those bytes. This
+boundary also preserves the six-stop comparison. If a later proposal changes default surface light,
+all five sets are in its ownership review because they draw the shared evaluator. A ruling with
+`APPLE-TILE` must then name the affected sets and the refresh owner before that work is built.
+[Registry](../../../.config/exact-baselines.json) · [Exact baseline ownership](../ARCHITECTURE.md#exact-baselines)
 
 ### WP4 finite-disk shadow diagnostic
 
-WP4 tests one source-side reuse candidate offline against the saved finite-disk reference. Traverse source
-bounds against the bundle of Sun rays swept across a receiver patch and phase interval. Reuse the overlapping
-nodes for each query in that domain, including undecided nodes. At each receiver, refine those candidates to
-the original terrain and detached caster spans, clip to the same solar chord and union them before
-integrating. Compare against the independent original-triangle ray reference. Frozen edge packets agree at the
-saved finite samples, while three conservative omission proofs left moving receivers unresolved. The candidate
-must report unsupported queries as such, with work counted for preparation, receiver queries and detached casters.
-Fix the CPU work limit before the run from the recorded workload. Keep the matched errors, omissions or
-overcoverage and the decision to retain or park the candidate as a diagnostic. The runtime remains on WP3's
-reviewed path. Any later production proposal needs its own review and cost account.
+WP4 tests one source-side reuse candidate offline. Traverse source bounds against the bundle of Sun rays
+swept across a receiver patch and phase interval. Reuse overlapping nodes for each receiver in that
+domain, including undecided nodes. Refine to original terrain and detached-caster spans at each receiver,
+clip to the same solar chord and union before integrating. Keep terrain within 64 m, including faces
+straddling the partition, in the exact complement. Compare with independent direct ray intersections on
+the original triangles. The prior frozen packets agreed at finite samples while three conservative
+omission proofs left moving receivers unresolved. The project bar makes this a diagnostic with no
+continuous-accuracy or runtime claim.
+[Historical cases](../../../.orchestrate/evidence/ATMOSPHERE/WP1-M4-records.md#m4-exact-finite-disk-shadow-reference-match-deferred-bounded-spike)
+
+Use a versioned procedural reconstruction of the original case types. This supplies triangles, receivers,
+phases and detached casters without depending on the lost spur or packet caches. In metres, use +Y up,
+the Sun looking toward −X from the receiver, Sun radius 0.266°, zero azimuth and centre elevations
+0.001, 0.002 and 0.003 radians. For a ridge at distance `d`, put its crest at `x=−d` and its two feet at
+`x=−d±1`, with foot height −2. Extend the profile from negative to positive half-width in Z, and split
+each of the two resulting quads into triangles. Use the following source cases.
+
+| Case | Source |
+|---|---|
+| Open Sun | No blocker triangles |
+| Broad edge | Ridge at 256 m, crest height 0.512 m, half-width 8 m |
+| Distant narrow crest | Ridge at 1,024 m, crest height 3.072 m, half-width 1 m, with the ridge removed as its ablation |
+| Close umbra | Ridge at 63 m, crest height 1 m, half-width 8 m. Its far foot is at 64 m. |
+| Compact caster only | Triangulated 24 cm cube centred at (−160, 0.32, 0.35) |
+| Overlap | Broad ridge and the same cube, considered together and in isolation |
+
+Sample X and Z offsets −2, 0 and 2 on each 4 m receiver patch with Y=0, and also Y=0.15 for the raised
+overlap patch. For the four moving receiver/phase pairs use the broad edge, with X=Y=0 and Z at
+−1.5, −0.5, 0.5 and 1.5 m, each at the two adjacent elevations 0.001 and 0.002. These are reconstructed
+domains for the same comparisons. If the four archived row-665 receiver/phase domains are restored
+with their original triangles, include them in a separate result. The reduced reconstruction's centre
+rays show partial coverage for both the crest and compact caster and nonzero intersection for broad
+ridge plus cube, so the controls can distinguish omission, added cover and double-counting.
+[Independent ray probe](../../../.orchestrate/evidence/ATMOSPHERE/shadow-review-revision/README.md)
+
+Fix ray density and the candidate's work limits before running. Use the historical ceiling of 20 million
+work units per witness as an upper cap for the candidate, counting bounds and triangle visits in
+preparation and receiver work, including detached casters. Report incomplete work as unsupported with
+the work spent to reach the cap. Integrate both arms over the same projected solar disk. State reference
+convergence by refining the independent ray grid at the centre of each case.
+Retain signed coverage errors and the keep-or-park decision for this candidate. A future production
+proposal requires its own review and cost record.
 
 ## Frame and cost
 
@@ -901,7 +972,7 @@ as history and not called paired. The record is a tripwire and sets no budget
 starting commit, is investigated, and the finding is kept beside the record. WP6.5's check passes the record: it
 fails on an arm, a named pass or the load that is missing, on a run that did not complete, on a record that
 does not say whether a hitch was seen in the scrub, and on a tripped wire with no investigation, and on no
-figure. WP8.9 records the paired cost of the fog bank. WP3.3 records the separate shadow comparison.
+figure. WP8.9 records the paired cost of the fog bank. WP3.3 records the separate shadow-screen disposition.
 
 **Scope of the WP6 verdict.** WP6 records the west-lookout shadow crossing and finite-disk comparison as open.
 WP3 and WP4 follow WP8 independently of G3s. WP6's visual exclusion covers the
@@ -1065,8 +1136,7 @@ present make sure the volume does not take it. Record WP7.1's base before changi
 [The look decides](#how-the-view-volume-is-proved): the f64 quadrature is there to find the cause of a
 picture that looks wrong, and no item compares the volume with it. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
 terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind makes its eight band values differ;
-the f64 reference in `atmosphere/gpu/tests/reference/` takes one Mie value per band, and
-[the haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III says which grids band in thick, coloured haze; the builder chooses the grid from the stills.
+[the historical haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md) records the retired f64 probe with one Mie value per band. Part III says which grids band in thick, coloured haze. The builder chooses the grid from the stills.
 
 WP8 extends the cloud-factor function in `crates/thrum-render/src/atmosphere/cloud.rs` and `cloud.wgsl`. Put the
 test medium beside the labelled test cloud field in `examples/v1-game/src/host/scene_source/cloud.rs` until
@@ -1307,10 +1377,9 @@ its speed.
   compose once together, and the lent far lookup preserves the near correction (WP8.2). A provider's medium
   is counted once with the air: the transmittance beyond a slab is the
   air's times the slab's, and a volume that applies either twice fails (WP8.1).
-- **The f64 quadrature is a diagnostic.** The reference in `atmosphere/gpu/tests/reference/` and the proof
-  scripts stay. A builder whose haze bands, steps or sits too bright compares the volume with them to find the
-  cause, and part III says which grids to expect trouble from. No item holds the volume to the quadrature, and
-  a difference from it neither fails an item nor ends `BLOCKED`.
+- **The f64 quadrature is a diagnostic.** The [historical haze-kind measurements](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md)
+  record the reference method and results. Part III gives the grids to investigate if haze bands, steps
+  or sits too bright. Acceptance is based on the visual inspections.
 
 **The yardstick the proofs quote.** Where [Check that it can work](#check-that-it-can-work-2) says "the ceiling",
 it means, per channel at a probe, transmittance within `0.05 × expected + 0.005` and solar in-scatter within

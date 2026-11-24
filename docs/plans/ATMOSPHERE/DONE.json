@@ -670,42 +670,44 @@
     },
     {
       "id": "WP3",
-      "name": "The west lookout\u2019s shadow crosses the ground without a flash",
+      "name": "One surface filter is screened for the west-lookout shadow flash",
       "status": "not_started",
       "depends_on": [
         "T2-CAPTURE:WP1"
       ],
-      "quality_bar": "Low-Sun terrain shadows as in Red Dead Redemption 2 carry a continuous edge across the ground and leave the surface texture readable. Judge the frozen cooked-valley replay and the ordinary Ground E route with the Neutral Highlights display baseline and the existing incident meter and low-light key.",
+      "quality_bar": "For any in-game screen, use the low-Sun terrain shadows in Red Dead Redemption 2 for a continuous edge attached to the ground with readable terrain texture. Judge the authored spur and ordinary Ground E separately with Neutral Highlights and the existing incident meter and low-light key.",
       "items": [
         {
           "id": "WP3.1",
-          "statement": "The west-lookout shadow edge crosses the authored spur smoothly during the frozen 17.40\u201317.80 h crossing and the separate slow \u00b120\u00b0 pan. The shipped Ground E route and held sunset stop retain their reviewed look. Record: matched T2 engine captures on Metal and Chrome.",
-          "inspect": "Compare the starting and claimed builds with TAAU on. Use T2 realtime at 1\u00d7 for the crossing and pan and fixed for the six route stops. Check whole views and native-size crops on each target. 1. At the event marked by the archived 1080p frames 226\u2013227, does the row-665 flash disappear? 2. Does the edge stay attached to the ground through the crossing and pan with terrain texture intact and without flecks, ribbing or a detached bright band? 3. Do the ordinary Ground E pan and the six held stops, including the 17.4 h sunset stop, keep their reviewed appearance?",
+          "statement": "The stock visibility loss is reproducible on the reduced depth crossing. The authored-spur result either includes matched fixed Metal and Chrome captures of the two identified submissions or records the missing inputs and leaves the in-game verdict open. Record: input identities, reduced stock outputs and fixed-frame visibility and shaded comparisons when available.",
+          "inspect": "If the authored-spur replay is available and the candidate reaches the in-game screen, compare the native-size fixed crops in both builds on each target. 1. Does stock reproduce the row-665 flash at 226\u2013227? 2. Does the candidate remove it across x=480\u20131200 without moving it to adjacent rows or frames? 3. Does the fixed 74\u201394 trajectory fade into shadow without a new visible step? If either archived state is absent, record the in-game comparison as unavailable.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "ask": "Can you regenerate the two reduced samples from the design and observe stock falling to zero while dense same-field visibility stays positive? Does the result identify the authored spur and name any unavailable mesh, depth, uniforms or frame inputs? If the in-game screen ran, do both arms on both targets show the stock event and candidate at the 1920\u00d71080 submitted states 226 and 227, with matched camera, Sun, interpolation, jitter and reset history from the same cut? Do consecutive frames 223\u2013231 and the fixed 74\u201394 extinction sequence expose a flash moved in time or into an adjacent row?"
         },
         {
           "id": "WP3.2",
-          "statement": "The shared surface visibility evaluation preserves open Sun, full occlusion and the existing shadows at the broad edge, close terrain, distant crest, represented compact caster and terrain-caster overlap. A cooked asset swap agrees with a fresh run of that asset. Record: matched visibility and shaded controls, including the saved extinction trajectory.",
-          "inspect": "Use the archived D2 receiver and Sun inputs for matched T2 fixed captures on Metal and Chrome. Inspect native-size visibility and shaded crops across the near, last and far shadow ranges, camera and azimuth sweep, and the cooked asset swap. 1. Are open Sun and full occlusion intact? 2. Do the five controls retain their shadow placement without new light leaks or spurious shade? 3. On the extinction trajectory does visibility fade into full shadow without a new step? 4. Does the swapped asset agree with the fresh run at the same pose and time?",
+          "statement": "One fixed-work trial reports stock, candidate and dense stored-depth visibility on the reduced crossing, the 21-sample extinction sweep, uniform clear and uniform occlusion, and on the original trajectories if the fields return. Record: per-sample values, adjacent steps, evaluated work and the keep-or-park verdict.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "ask": "Does the trial use the same 64\u00d716 normalized chord quadrature at every sample, at most 4,096 filter depth loads, with the same receiver comparison as stock? Do the results show whether it retains a visible limb after the stock drop, stays positive up to the last positive reduced dense sample, fades to zero without a rebound and preserves the two uniform controls? Does a failed control park the candidate and does a missing archived replay leave its in-game verdict open?"
         },
         {
           "id": "WP3.3",
-          "statement": "Surface Sun visibility stays in the shared synthetic and cooked lighting path. The aerial owner remains separate. After a discarded encode or device replacement, the next submitted frame matches a fresh render of the same state. Record: matched frame-contract witnesses and paired capture-off whole-frame and shadow timings on Metal and Chrome.",
-          "ask": "Does the patch apply the surface correction once, through both draw paths, with bounded work? Do the first submitted frames after the discard and the replacement match the corresponding fresh renders by bytes? Does the timing record pair the starting and final builds at the same extent and settings, identify the load and order, and account for any project tripwire that fired? Does the maturity ledger describe the visual and device evidence at its observed scope?",
+          "statement": "The trial lands as an offline diagnostic. Its record either closes the screen with the failed or unavailable witness, or includes the motion, surface controls, recovery and cost evidence for a later review. Record: the trial disposition, inspected production diff and, for each target screened in game, matched captures and capture-off timings.",
+          "ask": "Does the landing leave the production shader, scene, recipe and controls, all five registered baseline references, their comparisons and registry entries intact? If an in-game screen ran, does its scratch patch apply the correction once in the shared cooked and synthetic surface path, with the aerial evaluation separate? Do the post-discard and post-replacement submissions match the fresh renders by bytes? Does the timing record pair whole-frame and shadow costs at the same extent and settings, with load, run order and any project tripwire recorded?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "inspect": "If the candidate reaches an in-game screen, compare 1\u00d7 T2 realtime on Metal and Chrome through the 17.40\u201317.80 h crossing and the separate slow \u00b120\u00b0 pan. Use fixed captures for the six stops. 1. Does the moving edge stay attached to the ground with readable texture and without flecks, ribbing or a detached bright band? 2. Do the ordinary Ground E pan and all six stops keep their reviewed appearance? 3. Do open Sun, full occlusion, broad edge, close terrain, distant crest, represented compact caster and overlap keep their expected visibility and placement across the near, last and far ranges? 4. Does the swapped cooked asset agree with the fresh run at the same pose and time? Record which control or cost tripwire parked the candidate if it fails the screen."
         }
       ],
       "failed_reviews": 0,
@@ -713,13 +715,13 @@
     },
     {
       "id": "WP4",
-      "name": "A renderer developer can locate finite-disk shadow errors on the saved terrain and caster cases",
+      "name": "A renderer developer can locate finite-disk shadow errors on reproducible terrain and caster cases",
       "status": "not_started",
       "items": [
         {
           "id": "WP4.1",
-          "statement": "One bounded CPU trial reports where the source-side reuse candidate agrees with the original-triangle finite-disk calculation, where it omits or overcovers the blocked disk, and where it exhausts its work limit. The record covers the frozen broad edge, moving distant crest, 64 m close terrain exclusion, 24 cm caster at 160 m, terrain-caster overlap and open Sun, including the four saved row-665 receiver and phase domains. Record: the command, input identities, matched coverage, unsupported cases and preparation, receiver and caster costs.",
-          "ask": "Can you rerun the saved comparison from its identified inputs and reproduce the verdict? Does the report keep the limit fixed from before the run and count rejected work? Do the crest-only, close umbra, compact-only and overlap controls distinguish missing coverage, added coverage and double-counting? Does the decision to keep or park the diagnostic follow from the reported coverage and work?",
+          "statement": "One bounded CPU trial compares the source-side reuse candidate with independent rays against original triangles of the reconstructed scenes. It reports blocked coverage, omission, overcoverage and refused work for open Sun, broad edge, moving narrow crest and its ablation, the close terrain at the 64 m partition, the 24 cm caster at 160 m, and their overlap, including the four reconstructed receiver/phase pairs. Restored original spur cases, if available, have their own results. Record: rerun command, input identities, reference convergence, signed differences and preparation, receiver and caster work.",
+          "ask": "Can you rerun the reconstructed geometry and phase comparison from its versioned inputs? Do open Sun, crest ablation, close umbra, compact-only and the nonzero terrain\u2013caster intersection expose missing or added occlusion and double counting? Was the limit fixed before the run, is rejected work charged, and does the record show why the candidate was kept or parked as a diagnostic?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

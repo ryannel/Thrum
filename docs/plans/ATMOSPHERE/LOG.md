@@ -755,3 +755,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   terminal correction through 200 km. Fixed and realtime T2 captures show the bank on Metal and Chrome
   WebGPU. The paired capture-off record measures the medium producer under shared load.
   [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP8/README.md)
+
+- 2026-11-24 Revised WP3 and WP4 after the design review at `c5e5290ba96f`, which repeated the [four earlier findings](../../../.orchestrate/evidence/ATMOSPHERE/design-review-17.md).
+  1. The handoff's D32, uniform and spur replay files could not be restored. WP3 now has a verified CPU reconstruction of the sampling fault. WP4 has explicit terrain, caster, receiver and phase inputs with a checked original-triangle control. The exact spur result stays open.
+  2. WP3 screens one constant-work chord quadrature through the crossing and extinction, with a recorded park outcome if it fails.
+  3. WP3.1 requires both archived 1080p states and the same submitted history on both targets for any in-game verdict. WP3.3 keeps realtime motion and the Ground E controls.
+  4. WP3 lands an offline diagnostic. Scratch rendering stays outside the five registered sets. A default correction needs a later ownership ruling.
+  Took the haze suggestion because the retained measurements document the retired reference. Both handoff mentions now use that record.
+  [Reproduction and results](../../../.orchestrate/evidence/ATMOSPHERE/shadow-review-revision/README.md)
