@@ -36,9 +36,10 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     let crossing = closest_shadow_hit(inside, direction, 1e30);
     if crossing.kind == RAY_QUERY_INTERSECTION_NONE { return 1.0; }
     let lift = dot(receiver.position - inside, receiver.normal);
-    // The interpolated tangent plane underestimates the rounded shell on
-    // irregular triangles. Extend the gap allowance, without changing the lift.
-    if crossing.t * cosine > 4.0 * gap + lift { return 0.0; }
+    // On the irregular rock, a small gap near an edge can precede a much
+    // longer diagonal through the mesh. The fixed noon route needs up to
+    // 20 times the tangent-plane gap there. Keep the origin lift unchanged.
+    if crossing.t * cosine > 21.0 * gap + lift { return 0.0; }
 
     let owner = closest_shadow_hit(origin, -receiver.normal, length(origin - inside));
     if owner.kind == RAY_QUERY_INTERSECTION_NONE
