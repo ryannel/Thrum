@@ -100,3 +100,6 @@
 - 2026-11-24 Ran the replanned WP5.3 check on the Mac after rebasing onto the updated plan. The
   reference guard verified all five registered Mac and Chrome baseline pins.
   [Reference guard](../../../.orchestrate/evidence/HOST/WP5/WP5.3-reference-guard.log)
+- 2026-11-24 Fixed the WP5 review findings. The display override parser returns a matchable error
+  and V1 still emits the same invalid-input diagnostic. On the Mac, the shape check, associated error
+  bound, parser regression and V1 rejection passed. [Review-fix evidence](../../../.orchestrate/evidence/HOST/WP5/review-fix/README.md)

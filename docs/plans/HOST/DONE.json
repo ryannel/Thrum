@@ -312,8 +312,8 @@
           "statement": "No public function in `thrum-app` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-app",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/WP5/review-fix/WP5.1-audit.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/WP5-review.md"
         },
@@ -323,8 +323,8 @@
           "check": "cargo test --locked --offline -p thrum-app --test error_types",
           "ask": "Does the closure a creator passes to `run` still return a string error anywhere in the kit scenes or the creator docs? Does the test's list hold every error type the crate exports?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/WP5/review-fix/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/WP5-review.md"
         },
