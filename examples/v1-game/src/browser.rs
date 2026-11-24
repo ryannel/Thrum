@@ -510,11 +510,13 @@ pub async fn create_route_game(
     if diagnostic_clouds == Some(true) || haze.is_some() || capture_weather.is_some() {
         return Err(js_error("diagnostic scenes require the proving build"));
     }
-    let (extent, _overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
+    let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
+    #[cfg(not(feature = "proving"))]
+    let _ = overlay;
     #[cfg(not(feature = "draw-probe"))]
     let valley_stars = true;
     #[cfg(feature = "draw-probe")]
-    let valley_stars = _overlay != crate::RouteOverlay::StarsOff;
+    let valley_stars = overlay != crate::RouteOverlay::StarsOff;
     canvas.set_width(extent[0]);
     canvas.set_height(extent[1]);
     #[cfg(feature = "proving")]
@@ -538,7 +540,7 @@ pub async fn create_route_game(
                 thrum_render::synthetic::Reconstruction::Off
             },
             #[cfg(feature = "proving")]
-            route_overlay: _overlay,
+            route_overlay: overlay,
             #[cfg(feature = "proving")]
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
