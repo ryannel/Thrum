@@ -15,7 +15,7 @@ use crate::{placed_fixture, scene_fixture};
 const PRESETS: [[f64; 2]; 5] = [
     [0.0, 1.0],
     [0.5, 1.0],
-    [0.722, 0.42],
+    [0.712, 0.42],
     [1.0, 0.0],
     [0.0, 1.0],
 ];

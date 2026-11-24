@@ -254,8 +254,25 @@ impl Field {
             ],
             20,
         );
-        let deck =
-            t.deck * smooth((n - (1.0 - 1.3 * smooth((parameters.coverage - 0.45) / 0.55))) / 0.2);
+        let filling = smooth((parameters.coverage - 0.45) / 0.55);
+        let gaps = 6.2 * t.deck.powi(3) * filling * (1.0 - filling);
+        let opening = if gaps > 0.0 {
+            // Separate neighbourhoods within a broken deck open and close as
+            // their own part of the field evolves. The closed sheet keeps the
+            // broad thickness gradient and its full optical depth.
+            n + gaps
+                * (self.noise(
+                    [
+                        air[0] / self.profile.pitch,
+                        air[1] / self.profile.pitch,
+                        time / self.profile.period,
+                    ],
+                    21,
+                ) - 0.5)
+        } else {
+            n
+        };
+        let deck = t.deck * smooth((opening - (1.0 - 1.3 * filling)) / 0.2);
         coverage = coverage.max(deck);
         depth = depth.max(t.depth[0] * deck.powf(0.7) * (0.6 + 0.4 * n));
         if coverage == 0.0 || depth == 0.0 {
