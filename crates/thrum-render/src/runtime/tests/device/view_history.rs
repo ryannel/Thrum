@@ -279,7 +279,7 @@ fn m2_temporal_passes_preserve_named_timing_layout() {
             .expect("resolved batch");
         println!("M2 actual named timings: {passes:?}");
         assert!(
-            crate::synthetic::frame_stats::pass_durations(
+            crate::synthetic::frame_stats::tests::pass_durations(
                 passes,
                 false,
                 slot.timing_layout.expect("3D timing layout"),

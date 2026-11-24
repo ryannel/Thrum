@@ -125,11 +125,6 @@ impl SceneTimingLayout {
     }
 }
 
-/// Named executed scene passes, the optional surface blit and the contribution's
-/// compute pass alone. Summaries never reinterpret an ordinal.
-#[cfg(test)]
-pub(crate) type PassDurations = (crate::timing::SceneGpuTimings, Option<f64>, Option<f64>);
-
 /// Every camera culling pass name, in any layout.
 pub(crate) const CULLING_PASSES: [&str; 5] = [
     crate::visibility::PASS,
@@ -138,20 +133,6 @@ pub(crate) const CULLING_PASSES: [&str; 5] = [
     crate::visibility::PYRAMID_PASS,
     crate::visibility::FINAL_PASS,
 ];
-
-#[cfg(test)]
-pub(crate) fn pass_durations(
-    passes: &[crate::timing::PassTiming],
-    presented: bool,
-    layout: SceneTimingLayout,
-) -> Option<PassDurations> {
-    let (present, contribution) = validate_pass_timings(passes, presented, layout)?;
-    Some((
-        crate::timing::SceneGpuTimings::new(passes),
-        present,
-        contribution,
-    ))
-}
 
 pub(crate) fn validate_pass_timings(
     passes: &[crate::timing::PassTiming],
@@ -271,4 +252,4 @@ pub(crate) fn validate_pass_timings(
 }
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

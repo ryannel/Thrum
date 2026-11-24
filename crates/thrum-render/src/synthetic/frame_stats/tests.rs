@@ -1,5 +1,18 @@
 use super::*;
-use crate::timing::PassTiming;
+use crate::timing::{PassTiming, SceneGpuTimings};
+
+/// Named executed scene passes, the optional surface blit and the contribution's
+/// compute pass alone. Summaries never reinterpret an ordinal.
+type PassDurations = (SceneGpuTimings, Option<f64>, Option<f64>);
+
+pub(crate) fn pass_durations(
+    passes: &[PassTiming],
+    presented: bool,
+    layout: SceneTimingLayout,
+) -> Option<PassDurations> {
+    let (present, contribution) = validate_pass_timings(passes, presented, layout)?;
+    Some((SceneGpuTimings::new(passes), present, contribution))
+}
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,

@@ -128,8 +128,12 @@ fn opaque_depth_store_and_star_pass_follow_the_current_target_view() {
                         wait(&device, queue.submit([resolve.finish()]));
                         let passes = timings.try_collect(41).unwrap().unwrap();
                         assert!(
-                            frame_stats::pass_durations(passes, false, (&prepared, &target).into())
-                                .is_some(),
+                            frame_stats::tests::pass_durations(
+                                passes,
+                                false,
+                                (&prepared, &target).into()
+                            )
+                            .is_some(),
                             "all selected culling and star timestamps resolve"
                         );
                         prepared.commit_frame();
