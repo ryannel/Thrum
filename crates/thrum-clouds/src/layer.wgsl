@@ -66,6 +66,12 @@ fn cloud_billow(point:vec3<f32>,footprint:f32)->f32 {
 fn cloud_bank_weight()->f32 {
     return smoothstep(0.12,0.45,cloud.physical.z)*(1.0-smoothstep(0.73,0.98,cloud.physical.z));
 }
+fn cloud_bank_billow(point:vec3<f32>,footprint:f32)->f32 {
+    // Smaller lobes break up an otherwise continuous underside. The octave
+    // is anchored in the same air coordinates as the parent bank.
+    let air=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
+    return textureSampleLevel(shape_noise,noise_sampler,air*vec3(2.0,3.0,2.0),erosion_mip(2.0*footprint,50.0)).r;
+}
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f32)->f32 {
     if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
@@ -77,7 +83,8 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     // Erode the underside unevenly inside the mixed bank, where individual
     // lobes have lifted bases. The cloud and the local Sun march see the same
     // relief, and erosion never adds density outside the weather column.
-    let lift=0.34*smoothstep(0.14,0.76,shape);
+    let lifted_shape=0.48*shape+0.52*cloud_bank_billow(point,footprint);
+    let lift=0.53*smoothstep(0.14,0.76,lifted_shape);
     return eroded*mix(1.0,smoothstep(0.60*lift,lift+0.08,height),bank);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
@@ -209,8 +216,8 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     let exposed=smoothstep(-0.18,0.78,relative);
     let beam=exp(-0.28*sun_depth);
     let interior=exp(-0.085*sun_depth);
-    let billow=smoothstep(0.22,0.77,cloud_billow(point,footprint));
-    let shade=(0.29+0.36*interior+0.38*exposed)*mix(0.78,1.13,billow);
+    let billow=smoothstep(0.20,0.79,cloud_bank_billow(point,footprint));
+    let shade=(0.29+0.36*interior+0.38*exposed)*mix(0.61,1.18,billow);
     let rim=0.095*beam*exposed*exposed;
     let glare=1.0-0.70*smoothstep(0.72,0.96,sun_alignment);
     return mix(source,source*shade*glare+solar*rim,bank);
