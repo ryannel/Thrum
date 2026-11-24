@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-16 of 36 modules done · 18 in progress · 2 to come
+17 of 36 modules done · 17 in progress · 2 to come
 
 ### Needs you now
 
@@ -318,13 +318,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin (CLOUDS M7): Not Started · [plan](CLOUDS/PLAN.md)
 - Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): In Progress · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/M3-review.md)
 - Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss (SESSION M5): In Progress · [plan](SESSION/PLAN.md)
-- A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph (REVIEW-RENDER M5): Ready for Review · [plan](REVIEW-RENDER/PLAN.md) · [latest review](../../.orchestrate/evidence/REVIEW-RENDER/M5-review.md)
 - A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first (HOST M4): In Progress · [plan](HOST/PLAN.md) · [latest review](../../.orchestrate/evidence/HOST/M4-review.md)
 - The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges (RAY-TRACING M3): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/M3-review.md)
 - Merge verification reuses a bounded local Cargo cache (GATE-TIME M15): Not Started · [plan](GATE-TIME/PLAN.md)
 
 ### Recently done
 
+- A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph (REVIEW-RENDER M5), 24 Nov · [review](../../.orchestrate/evidence/REVIEW-RENDER/M5-review.md)
 - The full workspace check passes when a fast test needs more time on a busy Mac (GATE-TIME M14), 24 Nov · [review](../../.orchestrate/evidence/GATE-TIME/M14-review.md)
 - A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS M6), 24 Nov · [review](../../.orchestrate/evidence/CLOUDS/M6-review.md)
 - The submitted craft trail is checked through a minute of ageing in the fast suite (WATERS M18), 24 Nov · [review](../../.orchestrate/evidence/WATERS/M18-review.md)
@@ -454,10 +454,10 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M5 of 8 · In Progress |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
-| 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, GAME-SPLIT:M3, GATE-TIME:M5 |
+| 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, HOST:M5, GAME-SPLIT:M3, GATE-TIME:M5 |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | Done 24 Nov |
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests; GATE-TIME M2 and M6, DEAD-CODE M2 and REVIEW-RENDER M2 for adopting the test kit; nothing for the small target and the block on writing a test | Done 22 Nov |
-| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | M5 of 6 · Ready for Review |
+| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | Done 24 Nov |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | M4 of 5 · In Progress |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Waiting: On Dependency, HOST:M4 |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | M3 of 6 · In Progress |
