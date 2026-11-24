@@ -672,7 +672,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired.",
       "findings": [
         {
