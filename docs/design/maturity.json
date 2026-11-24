@@ -3034,6 +3034,13 @@
         "device": "At the matched loaded 1440p Metal view, the placed Sky ran at 187.32 ms on the portable device profile and 195.42 ms on the native device profile. The corresponding off arms measured 8.51 and 6.01 ms. Both profiles use the portable frame graph. Native BC4 halves the two stacked payloads to 27.56 MB, and each profile uses a 6.03 MB footprint buffer.",
         "record": "../../.orchestrate/evidence/CLOUDS/M6/recheck/README.md"
       },
+      "weather_presets_evidence": {
+        "implementation": "On the CLOUDS M7 builder branch, V1 authors four weather presets and a tick-driven weather sequence. Metal and Chrome can capture held-Sun weather motion.",
+        "correctness": "Metal proves exact whole-frame equality for clear and clouds absent, as well as CPU/GPU weather and optical depths for cell, deck and placed clouds. Consecutive consumed 120 Hz wind targets advance the correct world distance.",
+        "visuals": "Metal and Chrome fixed captures show clear and fair weather. Broken-bank rim contrast and low-Sun overcast relief still fall short. The Metal sequence shows an abrupt overhead retreat on the return to clear. The visible wind cadence and whole lives in broken weather remain open.",
+        "device": "Apple M3 Max Metal and Chrome WebGPU engine output. Matched loaded 1440p Metal GPU means were 9.47 ms absent, 82.89 ms fair, 84.25 ms broken and 41.55 ms overcast.",
+        "record": "../../.orchestrate/evidence/CLOUDS/M7/README.md"
+      },
       "name": "Cloud fields and projections",
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

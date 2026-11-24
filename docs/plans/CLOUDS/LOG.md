@@ -613,3 +613,8 @@
   moves a Sun window. Metal readbacks match a fresh host at the same weather tick and 20° Sun for
   both moves. Repeated destination frames upload zero placement bytes and skip the placed map.
   [Paused camera proof](../../../.orchestrate/evidence/CLOUDS/M6/paused-camera/README.md).
+
+## M7 builder checkpoint
+
+- 2026-11-24 The V1 valley now has four weather presets, a four-minute weather sequence, and held-Sun captures for wind and cloud life on both targets. Metal tests establish exact zero-coverage identity and CPU/GPU agreement on the weather map and traced columns. The paired capture-off 1440p record measures fair, broken and overcast under the same view. [Builder evidence](../../../.orchestrate/evidence/CLOUDS/M7/README.md).
+- The fixed captures still lack distinct broken-bank gap edges and enough overcast underside relief at a 15° Sun. In consecutive Metal submissions, the return to clear drops part of the overhead bank visibly. The wind receipts establish equal travel across consecutive scheduled targets. The realtime takes leave the visible cadence and the three complete lives in broken weather open. [Handoff](../../../.orchestrate/evidence/CLOUDS/M7-handoff.md).
