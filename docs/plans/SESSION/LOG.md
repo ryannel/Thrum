@@ -237,3 +237,10 @@
   shutdown before the contender entered. The workspace check and branch-runnable milestone checks passed.
   The iPhone image proof matched six images and 1,000 checkpoints across eight separately verified shutdowns.
   [M5 rerun evidence](../../../.orchestrate/evidence/SESSION/M5/README.md)
+
+- 2026-11-24 The WP5 review rerun used the seeded script for each slot. All four replicas matched all
+  1,200 host digests over 36,000 ticks, and the authority committed four distinct sampled inputs at
+  1,180 warm ticks. Both cost campaigns passed all eight rows. The host kept committing through each
+  transfer, and each client replayed through the host's tick at restore. The records retain the first
+  Playing transition, shared interpolation phase, and byte counters with their measurement windows.
+  The simulator proof fixtures now read the migrated plan names. [Target evidence](../../../.orchestrate/evidence/SESSION/WP5/review-fix/README.md)
