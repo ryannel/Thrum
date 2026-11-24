@@ -326,7 +326,7 @@
     {
       "id": "M6",
       "name": "Corrected replay stays fast and the 100,000-entity run stays covered",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {

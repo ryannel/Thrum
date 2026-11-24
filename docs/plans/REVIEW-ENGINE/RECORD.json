@@ -499,7 +499,36 @@
         "task": "The design review of REVIEW-ENGINE at .orchestrate/evidence/REVIEW-ENGINE/design-review.md asked for changes, with its 2",
         "at": "2026-11-23T23:48:42Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "1d8de9d36ce295767f05466bf95b2ebe7a2d496a",
+        "checked": "1d8de9d36ce295767f05466bf95b2ebe7a2d496a",
+        "at": "2026-11-24T02:59:55Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 677581,
+          "cached": 50661504,
+          "output": 68364,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 677581,
+          "cached": 50661504,
+          "output": 68364,
+          "turns": 2
+        }
+      }
     }
   },
   "briefs": [
