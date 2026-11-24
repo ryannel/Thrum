@@ -95,7 +95,10 @@ impl SunProofGeometry {
             );
         }
         let receiver = normal * 15.0_f32.to_radians().cos() + tangent * 0.23;
-        let centre = receiver + sun * 12.0;
+        // The panel is beyond the centre ray's far-face reach even at
+        // the shaded end of the last face. Its larger disc footprint also
+        // gives the two-instance control several native pixels to compare.
+        let centre = receiver + sun * 48.0;
         let across = axis.cross(sun) * 2.0;
         let panel = |mesh: &mut SyntheticMesh| {
             quad(
