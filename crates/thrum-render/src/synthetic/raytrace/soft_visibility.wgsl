@@ -242,21 +242,27 @@ fn filter_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     let pixel_world = length(world_at(pixel + vec2(1, 0), z) - point);
     let variance = centre * (vec2(1.0) - centre);
     let fresh = min(own.w & 31u, (own.w >> 5u) & 31u) < 6u;
-    let step_size = select(1, 2, fresh || max(variance.x, variance.y) > 0.12);
-    var total = centre * 4.0;
-    var weight = 4.0;
+    // A dense footprint pools independent disc sequences without leaving
+    // alternating pixels on different tap grids. Keep the spatial weight
+    // continuous as the estimated visibility crosses mid-penumbra.
+    let spread = mix(0.75, 2.0, smoothstep(0.02, 0.16,
+        select(max(variance.x, variance.y), 0.16, fresh)));
+    var total = centre;
+    var weight = 1.0;
     var votes = sample_votes(own);
-    for (var y = -2; y <= 2; y++) {
-        for (var x = -2; x <= 2; x++) {
-            if (x == 0 && y == 0) || abs(x) + abs(y) == 4 { continue; }
-            let at = pixel + vec2(x, y) * step_size;
+    for (var y = -3; y <= 3; y++) {
+        for (var x = -3; x <= 3; x++) {
+            let distance_squared = x * x + y * y;
+            if distance_squared == 0 || distance_squared > 13 { continue; }
+            let spatial = exp2(-f32(distance_squared) / (spread * spread));
+            if spatial < 1e-4 { continue; }
+            let at = pixel + vec2(x, y);
             if !soft_within(at, frame.extent) { continue; }
             let neighbour = textureLoad(samples, at, 0);
             if neighbour.w == 0u { continue; }
             let neighbour_point = world_at(at, bitcast<f32>(neighbour.z));
             let plane_distance = abs(dot(plane, neighbour_point - point));
-            let tap = exp2(-4.0 * plane_distance / max(pixel_world, 1e-5)) /
-                (1.0 + f32(x * x + y * y));
+            let tap = spatial * exp2(-4.0 * plane_distance / max(pixel_world, 1e-5));
             if tap < 1e-4 { continue; }
             total += tap * sample_mean(neighbour);
             weight += tap;
