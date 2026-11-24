@@ -647,7 +647,7 @@
           "check": "cargo test --locked --offline -p thrum-render --test governor_policy",
           "ask": "Read the test. Is the policy a function of samples, missed ticks, the display record and the host's hold marks alone, with no clock of its own? Is each behaviour a separate case with a control? After a build that ended with no new generation, is scale shown to drop under load with no further change of request?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/rust-items-final.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/span-policy.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -670,10 +670,10 @@
           "check": "python3 scripts/apple_presentation.py governor --target mac-metal --steady",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/span-steady/governor.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D7.4",
@@ -704,7 +704,7 @@
           "check": "python3 scripts/apple_presentation.py governor-thermal --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/thermal/governor-thermal.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/thermal/governor-thermal.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
