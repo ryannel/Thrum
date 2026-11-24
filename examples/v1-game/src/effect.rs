@@ -400,6 +400,7 @@ impl SceneContribution for DiagnosticEffect {
             ));
         }
         EffectGraph {
+            sun_paths: Vec::new(),
             resources,
             passes,
             opaque_reads: if self.slab.is_none() && self.opaque_visual {

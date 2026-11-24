@@ -80,8 +80,8 @@ impl SunOpticalDepth {
         })
     }
     /// Register a provider's GPU-written field and [`GpuSunMapping`]. The provider records
-    /// all writes in the scene's encoder and declares them and opaque reads in
-    /// its effect graph. The true Sun and CPU-fed diagnostic are unchanged.
+    /// all writes in the scene's encoder and declares them, opaque reads and
+    /// target resource indices in its effect graph.
     ///
     /// # Errors
     /// Rejects textures or buffers without the required sampled/uniform usage,
@@ -256,8 +256,13 @@ impl CloudPrepared {
         &self,
         graph: &mut crate::graph::FrameGraph,
         accesses: &mut Vec<crate::graph::Access>,
+        produced: Option<&[crate::graph::Access; 2]>,
     ) -> Result<(), crate::graph::GraphError> {
         use crate::graph::{Access, AccessKind, ResourceDescriptor, ResourceScope};
+        if let Some(produced) = produced.filter(|_| self.field.gpu_written()) {
+            accesses.extend_from_slice(produced);
+            return Ok(());
+        }
         let texture = graph.resource(
             ResourceDescriptor::of_texture(&self.texture),
             ResourceScope::Imported { initialized: true },

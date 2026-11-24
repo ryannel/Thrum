@@ -48,6 +48,15 @@ pub struct EffectPass {
     pub accesses: Vec<EffectAccess>,
 }
 
+/// Effect resource indices for the scene's GPU Sun-path target.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SunPathResources {
+    /// Optical-depth texture sampled by opaque shading.
+    pub optical_depth: usize,
+    /// Mapping buffer read by opaque shading.
+    pub mapping: usize,
+}
+
 /// Resources and simulate passes declared once during preparation.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct EffectGraph {
@@ -57,12 +66,16 @@ pub struct EffectGraph {
     pub passes: Vec<EffectPass>,
     /// Resources read by the fixed opaque draw callback. Late-only outputs stay out of forward.
     pub opaque_reads: Vec<EffectAccess>,
+    /// The provider's Sun-path target, if an effect writes it. At most one pair
+    /// is allowed. Both resources must also have their full opaque read declared.
+    pub sun_paths: Vec<SunPathResources>,
     /// Render passes after the sky and stars, in contribution order.
     pub after_opaque: Vec<super::AfterOpaquePass>,
 }
 
 pub(crate) struct EffectResources {
     pub(crate) opaque_reads: Vec<Access>,
+    pub(crate) sun_path_reads: Option<[Access; 2]>,
     pub(crate) simulate: Vec<usize>,
     pairs: Vec<(ResourceId, ResourceId)>,
 }
@@ -89,6 +102,32 @@ impl EffectResources {
 }
 
 impl EffectGraph {
+    fn sun_path_read_indices(&self) -> Result<Option<[usize; 2]>, crate::error::EffectGraphError> {
+        use crate::error::EffectGraphError as Error;
+        let path = match self.sun_paths.as_slice() {
+            [] => return Ok(None),
+            [path] => path,
+            _ => return Err(Error::DuplicateSunPath),
+        };
+        let read = |resource, kind, range: Range<u64>| {
+            self.opaque_reads
+                .iter()
+                .position(|access| {
+                    access.resource == resource
+                        && access.kind == kind
+                        && access.range == range
+                        && access.view.is_none()
+                        && access.history.is_none()
+                })
+                .ok_or(Error::InvalidSunPathReads)
+        };
+        let mapping_bytes = size_of::<crate::atmosphere::GpuSunMapping>() as u64;
+        Ok(Some([
+            read(path.optical_depth, AccessKind::SampledRead, 0..1)?,
+            read(path.mapping, AccessKind::UniformRead, 0..mapping_bytes)?,
+        ]))
+    }
+
     fn declarations(
         &self,
     ) -> impl Iterator<Item = (Option<&str>, EffectCadence, bool, &[EffectAccess])> {
@@ -123,6 +162,7 @@ impl EffectGraph {
     pub fn validate(&self) -> Result<(), crate::error::EffectGraphError> {
         use crate::error::EffectGraphError as Error;
 
+        self.sun_path_read_indices()?;
         let mut owners = BTreeSet::new();
         for (_, scope) in &self.resources {
             if let ResourceScope::Persistent { owner, .. } | ResourceScope::History { owner, .. } =
@@ -287,6 +327,7 @@ impl EffectGraph {
         let mut resources = EffectResources {
             pairs,
             opaque_reads: Vec::new(),
+            sun_path_reads: None,
             simulate: Vec::new(),
         };
         for (index, pass) in self.passes.iter().enumerate() {
@@ -311,6 +352,9 @@ impl EffectGraph {
             }
         }
         resources.opaque_reads = resources.accesses(&self.opaque_reads);
+        resources.sun_path_reads = self
+            .sun_path_read_indices()?
+            .map(|indices| indices.map(|index| resources.opaque_reads[index].clone()));
         Ok(resources)
     }
 }

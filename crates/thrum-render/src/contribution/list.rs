@@ -134,6 +134,17 @@ impl SceneContributions {
             }
             graph.resources.extend(declaration.resources);
             graph.opaque_reads.extend(declaration.opaque_reads);
+            graph
+                .sun_paths
+                .extend(
+                    declaration
+                        .sun_paths
+                        .into_iter()
+                        .map(|path| super::SunPathResources {
+                            optical_depth: path.optical_depth + offset,
+                            mapping: path.mapping + offset,
+                        }),
+                );
             graph.passes.extend(declaration.passes);
             for pass in &mut declaration.after_opaque {
                 pass.name = format!("effect {member}: {}", pass.name);
@@ -470,6 +481,80 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     type Seen = Arc<Mutex<Vec<&'static str>>>;
+
+    #[test]
+    fn a_nested_list_offsets_sun_path_resources_with_their_opaque_reads() {
+        use crate::{
+            contribution::{EffectAccess, EffectGraph, SunPathResources},
+            graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
+        };
+        let imported = ResourceScope::Imported { initialized: true };
+        let buffer = |bytes| {
+            (
+                ResourceDescriptor::Buffer {
+                    bytes,
+                    usage: wgpu::BufferUsages::UNIFORM,
+                },
+                imported,
+            )
+        };
+        let mapping_bytes = size_of::<crate::atmosphere::GpuSunMapping>() as u64;
+        let read = |resource, kind, range| EffectAccess {
+            resource,
+            kind,
+            range,
+            view: None,
+            history: None,
+        };
+        let prefix = EffectGraph {
+            resources: vec![buffer(4)],
+            ..EffectGraph::default()
+        };
+        let provider = EffectGraph {
+            resources: vec![
+                (
+                    ResourceDescriptor::Texture {
+                        dimension: TextureKind::D2,
+                        width: 2,
+                        height: 2,
+                        layers: 1,
+                        mips: 1,
+                        samples: 1,
+                        format: wgpu::TextureFormat::Rgba16Float,
+                        usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                    },
+                    imported,
+                ),
+                buffer(mapping_bytes),
+            ],
+            opaque_reads: vec![
+                read(0, AccessKind::SampledRead, 0..1),
+                read(1, AccessKind::UniformRead, 0..mapping_bytes),
+            ],
+            sun_paths: vec![SunPathResources {
+                optical_depth: 0,
+                mapping: 1,
+            }],
+            ..EffectGraph::default()
+        };
+        let nested = SceneContributions::combined_graph([prefix.clone(), provider.clone()]);
+        let graph = SceneContributions::combined_graph([prefix, nested]);
+        assert_eq!(
+            graph.sun_paths,
+            [SunPathResources {
+                optical_depth: 2,
+                mapping: 3
+            }]
+        );
+        assert_eq!(graph.opaque_reads[0].resource, 2);
+        assert_eq!(graph.opaque_reads[1].resource, 3);
+        graph.validate().expect("combined Sun path");
+        let duplicate = SceneContributions::combined_graph([provider, graph]);
+        assert_eq!(
+            duplicate.validate(),
+            Err(crate::error::EffectGraphError::DuplicateSunPath)
+        );
+    }
 
     struct Probe(Seen);
 

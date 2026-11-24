@@ -97,15 +97,20 @@ pub(crate) async fn prepare_view(
     sun: [f32; 3],
     source_tick: u64,
     view: &SyntheticView,
+    view_volume: bool,
 ) -> FrameHost<World, Source> {
     let mut scene = SyntheticScene::grid(1).expect("fixture scene");
     scene.view = *view;
     let light = if let Some(ground) = ground {
         scene.sun_optical_depth =
             Some(SunOpticalDepth::gpu_target([ground; 2], 1).expect("ground target"));
-        FrameLighting::Atmosphere(
-            AtmosphereFrame::new(sun, 100_000.0, [1.0; 3], 40.0, 1).expect("physical light"),
-        )
+        let light =
+            AtmosphereFrame::new(sun, 100_000.0, [1.0; 3], 40.0, 1).expect("physical light");
+        FrameLighting::Atmosphere(if view_volume {
+            light.with_view_volume()
+        } else {
+            light
+        })
     } else {
         FrameLighting::Diagnostic(thrum_render::synthetic::SyntheticLight::default())
     };

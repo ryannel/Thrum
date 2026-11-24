@@ -80,6 +80,7 @@ fn run() {
         [0.0, 0.866_025_4, 0.5],
         0,
         &view,
+        false,
     ));
     host.set_scene_contribution(Box::new(assets))
         .expect("attach residency");

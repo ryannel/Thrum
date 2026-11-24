@@ -1,6 +1,6 @@
 use super::Prepared;
 use thrum_render::{
-    contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass},
+    contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources},
     graph::{AccessKind as A, ResourceDescriptor as D, ResourceScope as S, TextureKind as K},
 };
 
@@ -148,6 +148,10 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> (EffectGraph, usize) {
                 access(6, 0..1, A::SampledRead),
                 access(7, 0..gpu.sun.mapping().size(), A::UniformRead),
             ],
+            sun_paths: vec![SunPathResources {
+                optical_depth: 6,
+                mapping: 7,
+            }],
             after_opaque: Vec::new(),
         },
         shape_noise,

@@ -197,6 +197,7 @@ impl AtmospherePrepared {
         uniform: &ResourceId,
         shadow: Option<(&ResourceId, u32, u64)>,
         cloud: Option<&super::CloudPrepared>,
+        sun_path_reads: Option<&[Access; 2]>,
     ) -> Result<(), crate::error::RenderError> {
         use crate::error::RenderError;
         let Some(volume) = &self.view_volume else {
@@ -249,7 +250,7 @@ impl AtmospherePrepared {
             ));
         }
         if let Some(cloud) = cloud {
-            cloud.append_reads(graph, &mut accesses)?;
+            cloud.append_reads(graph, &mut accesses, sun_path_reads)?;
         }
         self.declare_stage(graph, keys, stage, accesses);
         Ok(())

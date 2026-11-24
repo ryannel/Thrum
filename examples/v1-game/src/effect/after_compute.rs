@@ -83,6 +83,7 @@ fn texture() -> D {
 impl SceneContribution for Effect {
     fn effect_graph(&self) -> EffectGraph {
         EffectGraph {
+            sun_paths: Vec::new(),
             resources: vec![
                 (texture(), S::Transient),
                 (

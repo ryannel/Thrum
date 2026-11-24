@@ -56,7 +56,7 @@ mod state;
 mod views;
 pub use after_opaque::{AfterOpaqueKind, AfterOpaquePass};
 pub(crate) use graph::EffectResources;
-pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
+pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources};
 pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
@@ -274,7 +274,7 @@ impl SceneSurface<'_> {
     /// Shared GPU Sun-path target declared by this scene's provider, with its
     /// [`crate::atmosphere::GpuSunMapping`]. Absent for a CPU-fed diagnostic or no provider. A
     /// contribution creates its bindings here at rebuild and declares the
-    /// target's actual writes and opaque reads in its effect graph.
+    /// target's actual writes, opaque reads and resource indices in its effect graph.
     pub fn sun_path_target(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
         self.cloud
             .and_then(crate::atmosphere::CloudPrepared::gpu_target)

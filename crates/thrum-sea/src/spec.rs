@@ -251,6 +251,7 @@ pub(super) fn passes() -> Vec<PassSpec> {
 pub(super) fn declaration(sizes: &[u64]) -> EffectGraph {
     let resources = resources();
     EffectGraph {
+        sun_paths: Vec::new(),
         passes: passes()
             .iter()
             .map(|p| EffectPass {

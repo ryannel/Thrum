@@ -397,6 +397,10 @@ pub enum EffectGraphError {
     UnknownEffectResource,
     /// Opaque effect inputs must declare read access.
     OpaqueReadRequiresReadAccess,
+    /// Only one effect may declare the scene's GPU Sun-path target.
+    DuplicateSunPath,
+    /// The Sun-path target must have its complete texture and mapping reads declared.
+    InvalidSunPathReads,
     /// History write requires the next binding.
     HistoryWriteRequiresNext,
     /// Multiple passes produce the same effect history.
@@ -443,6 +447,12 @@ impl fmt::Display for EffectGraphError {
             Self::UnknownEffectResource => f.write_str("Effect access names an unknown resource"),
             Self::OpaqueReadRequiresReadAccess => {
                 f.write_str("Opaque effect inputs must declare read access")
+            }
+            Self::DuplicateSunPath => {
+                f.write_str("Multiple effects declare the GPU Sun-path target")
+            }
+            Self::InvalidSunPathReads => {
+                f.write_str("GPU Sun-path target is missing a complete opaque read")
             }
             Self::HistoryWriteRequiresNext => {
                 f.write_str("History write requires the next binding")

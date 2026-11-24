@@ -11,6 +11,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
     };
     let mut effect = EffectGraph {
         opaque_reads: vec![access(AccessKind::StorageRead, HistoryBinding::Result)],
+        sun_paths: Vec::new(),
         after_opaque: Vec::new(),
         resources: vec![(
             ResourceDescriptor::Buffer {

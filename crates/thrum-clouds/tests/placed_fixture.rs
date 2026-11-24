@@ -237,6 +237,7 @@ impl Fixture {
             sun,
             1,
             &view,
+            false,
         )
         .await;
         let assets = self.assets();

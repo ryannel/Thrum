@@ -59,6 +59,84 @@ fn shade_config() -> ShadeConfig {
 }
 
 #[test]
+fn view_volume_reads_the_live_sun_path_without_cascades() {
+    let Some(gpu) = thrum_test_support::open(
+        "view volume Sun-path graph",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &Default::default(),
+    ) else {
+        return;
+    };
+    assert_eq!(gpu.gpu.adapter.get_info().backend, wgpu::Backend::Metal);
+    let caps = DeviceCapabilities::capture(&gpu.gpu.adapter, &gpu.device, 1);
+    let shade = Shade::new(shade_config()).expect("Shade");
+    let state = State::new(
+        Parameters {
+            coverage: 0.7,
+            kind: 0.4,
+            wind: [0.0; 2],
+            time_scale: 1.0,
+        },
+        5.0,
+        0,
+    )
+    .expect("weather state");
+    shade
+        .input()
+        .publish(std::sync::Arc::new(state))
+        .expect("publish weather");
+    let host = pollster::block_on(shadow_scene::host(
+        &gpu.device,
+        &caps,
+        &gpu.queue,
+        shade,
+        64,
+        true,
+    ));
+    let graph = host.scene_graph().expect("submitted volume graph");
+    assert!(
+        graph
+            .pass_names()
+            .all(|name| name != "synthetic Sun shadow near" && name != "synthetic Sun shadow far")
+    );
+    let pass = |suffix: &str| {
+        graph
+            .pass_order
+            .iter()
+            .copied()
+            .zip(graph.pass_names())
+            .find(|(_, name)| name.ends_with(suffix))
+            .expect(suffix)
+            .0
+    };
+    let aerial = pass("atmosphere aerial perspective");
+    let forward = pass("synthetic forward opaque");
+    for (name, range) in [
+        ("cloud ground field", 0..1),
+        ("cloud far transmittance", 48..52),
+    ] {
+        let producer = pass(name);
+        let opaque = graph
+            .hazards
+            .iter()
+            .find(|h| h.before == producer && h.after == forward && h.range == range)
+            .expect("production Sun-path writer and opaque share a resource");
+        let shared = graph.hazards.iter().any(|h| {
+            h.before == producer
+                && h.after == aerial
+                && h.resource == opaque.resource
+                && h.range == range
+        });
+        println!("{name}: forward {range:?}, aerial shared hazard {shared}");
+        assert!(
+            shared && graph.dependencies.contains(&(producer, aerial)),
+            "missing {name} hazard to aerial"
+        );
+    }
+}
+
+#[test]
 fn shade_device_limit_keeps_its_error_kind_in_a_contribution_list() {
     use thrum_render::capabilities::{
         DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice,
@@ -96,6 +174,7 @@ fn shade_device_limit_keeps_its_error_kind_in_a_contribution_list() {
             render_extent: [64, 64],
             surface: None,
         },
+        false,
     ));
     let shade = || Box::new(Shade::new(config.clone()).expect("valid Shade settings"));
     let direct: Box<dyn SceneContribution> = shade();
@@ -208,7 +287,7 @@ fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
                 } else {
                     shade
                 };
-                let host = shadow_scene::host(&device, &caps, &queue, shade, 64).await;
+                let host = shadow_scene::host(&device, &caps, &queue, shade, 64, false).await;
                 let graph = host.scene_graph().expect("compiled scene graph");
                 let names = graph.pass_names().collect::<Vec<_>>();
                 if visible {

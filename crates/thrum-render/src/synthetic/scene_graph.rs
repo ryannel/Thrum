@@ -388,6 +388,7 @@ impl super::SyntheticTargetInputs {
                     .as_ref()
                     .map(|maps| (maps, 2, shadow::SAMPLE_BYTES as u64)),
                 self.cloud.as_ref(),
+                effect_resources.sun_path_reads.as_ref(),
             )?;
         }
         let air_shadow = self.append_air_shadow(
@@ -1170,7 +1171,7 @@ impl super::SyntheticTargetInputs {
         environment_light: &ResourceId,
     ) -> Result<Option<(ResourceId, ResourceId)>, RenderError> {
         if let Some(cloud) = &self.cloud {
-            cloud.append_reads(graph, accesses)?;
+            cloud.append_reads(graph, accesses, None)?;
         }
         Ok(self
             .atmosphere

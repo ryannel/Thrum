@@ -12,6 +12,7 @@ pub(super) async fn prepare(
     queue: &wgpu::Queue,
     ground: u32,
     config: FrameConfig,
+    view_volume: bool,
 ) -> FrameHost<World, Source> {
     let view = thrum_render::synthetic::SyntheticView::perspective(
         [0.0, 40.0, 0.0],
@@ -31,6 +32,7 @@ pub(super) async fn prepare(
         [0.0, 0.866_025_4, 0.5],
         0,
         &view,
+        view_volume,
     )
     .await
 }
@@ -41,6 +43,7 @@ pub(super) async fn host(
     queue: &wgpu::Queue,
     shade: Shade,
     ground: u32,
+    view_volume: bool,
 ) -> FrameHost<World, Source> {
     let format = wgpu::TextureFormat::Bgra8Unorm;
     let target = device.create_texture(&wgpu::TextureDescriptor {
@@ -69,6 +72,7 @@ pub(super) async fn host(
                 extent: [64, 64],
             }),
         },
+        view_volume,
     )
     .await;
     host.set_scene_contribution(Box::new(shade))

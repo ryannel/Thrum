@@ -730,3 +730,8 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   field's solar shadow and negative terminal correction above, at and below the geometric horizon. The CPU
   field remains clear below its minimum Sun elevation. The existing forward-decoder, terminal-pair and history
   checks pass on Metal. [Horizon evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/provider-horizon/README.md)
+
+- 2026-11-24 M7's view volume reads Shade's compiled Sun-path texture and mapping resources. A submitted
+  Metal frame with both Sun cascades disabled proves the direct ground-field and far-transmittance hazards
+  on the same resources forward opaque reads. Contribution lists preserve the indices when they combine
+  resources. [Live-producer evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/README.md)
