@@ -7,20 +7,30 @@ struct BankMapping {
 @group(1) @binding(0) var<uniform> bank_mapping: BankMapping;
 @group(1) @binding(1) var bank_out: texture_storage_3d<rgba16float, write>;
 
-const BANK_CENTRE = vec3(-14.0, 242.0, -7.0);
-const BANK_RADIUS = vec3(38.0, 8.0, 34.0);
-const EXTINCTION = 0.12;
+struct BankLobe {
+    centre: vec3<f32>,
+    radius: vec3<f32>,
+    peak_extinction: f32,
+}
+const BANK_BASE = BankLobe(vec3(-14.0, 242.0, -7.0), vec3(38.0, 8.0, 34.0), 0.12);
+// The dense upper part gives a low solar ray a long path through fog while
+// leaving the thinner ground-level layer around the camera and props.
+const BANK_UPPER = BankLobe(vec3(-22.0, 248.0, -4.0), vec3(25.0, 3.5, 20.0), 0.84);
+
+fn lobe_extinction(lobe: BankLobe, point: vec3<f32>) -> f32 {
+    let delta = (point - lobe.centre) / lobe.radius;
+    let core = max(0.0, 1.0 - dot(delta, delta));
+    return lobe.peak_extinction * core * core;
+}
 
 fn bank_extinction(point: vec3<f32>) -> f32 {
-    let delta = (point - BANK_CENTRE) / BANK_RADIUS;
-    let core = max(0.0, 1.0 - dot(delta, delta));
-    return EXTINCTION * core * core;
+    return lobe_extinction(BANK_BASE, point) + lobe_extinction(BANK_UPPER, point);
 }
 
 // Integrate the same quadratic density profile along the actual solar path.
-fn bank_sun_depth(point: vec3<f32>, sun: vec3<f32>) -> f32 {
-    let origin = (point - BANK_CENTRE) / BANK_RADIUS;
-    let velocity = sun / BANK_RADIUS;
+fn lobe_sun_depth(lobe: BankLobe, point: vec3<f32>, sun: vec3<f32>) -> f32 {
+    let origin = (point - lobe.centre) / lobe.radius;
+    let velocity = sun / lobe.radius;
     let speed = length(velocity);
     let direction = velocity / speed;
     let centre = -dot(origin, direction);
@@ -31,7 +41,11 @@ fn bank_sun_depth(point: vec3<f32>, sun: vec3<f32>) -> f32 {
     let near = clamp(-centre, -radius, radius);
     let far = radius;
     let depth = bank_antiderivative(far, remaining) - bank_antiderivative(near, remaining);
-    return max(0.0, EXTINCTION * depth / speed);
+    return max(0.0, lobe.peak_extinction * depth / speed);
+}
+
+fn bank_sun_depth(point: vec3<f32>, sun: vec3<f32>) -> f32 {
+    return lobe_sun_depth(BANK_BASE, point, sun) + lobe_sun_depth(BANK_UPPER, point, sun);
 }
 
 fn bank_antiderivative(t: f32, remaining: f32) -> f32 {
