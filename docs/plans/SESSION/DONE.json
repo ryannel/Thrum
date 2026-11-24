@@ -527,10 +527,10 @@
           "check": "python3 scripts/session_match.py sockets steady",
           "ask": "Read the harness. Is each peer a separate process that reaches the others only through thrum-transport's sockets and the relay, with the relay's forwarded and dropped counts in the record? Is each client the session and the reference crowd built for its target, with its platform, target triple and browser or runtime version in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests, and does the harness compare them without supplying any?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP5/M5.1-circle-query/record.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP5-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.2",
@@ -600,20 +600,20 @@
           "check": "python3 scripts/session_match.py sockets costs --target mac-metal",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP5/M5.8-circle-query/record.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP5-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.9",
           "statement": "With a Chrome client, the same rows as the Mac's are on record from two separate runs through the relay under A0's profile, each with BBR and with Cubic on the host, with the browser's version. What Chrome cannot report is marked absent, never zero. The figures are baselines: none decides the result.",
           "check": "python3 scripts/session_match.py sockets costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP5/M5.9-circle-query/record.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP5-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.10",
