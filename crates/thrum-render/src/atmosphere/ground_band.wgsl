@@ -4,8 +4,8 @@ struct GroundBandMapping {
     border_m: f32,
     padding: vec2<f32>,
 }
-@group(1) @binding(19) var ground_band: texture_3d<f32>;
-@group(1) @binding(20) var<uniform> ground_band_mapping: GroundBandMapping;
+@group(1) @binding(22) var ground_band: texture_3d<f32>;
+@group(1) @binding(23) var<uniform> ground_band_mapping: GroundBandMapping;
 
 // Return the optical-depth factor, the surface visibility, and the band's
 // weight. Ground and height endpoints are at texel centres.

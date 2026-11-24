@@ -13,7 +13,7 @@ use super::{
     packed_light_direction, raytrace, scene_source, shadow, storage_buffer, taau, temporal,
 };
 use crate::abi::AbiError;
-use crate::atmosphere::{AtmospherePrepared, CloudPrepared};
+use crate::atmosphere::{AtmospherePrepared, CloudPrepared, ground_band};
 use crate::binding;
 use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BINDING, ENVIRONMENT_BYTES};
 use crate::pass_key::PipelineRole;
@@ -94,6 +94,7 @@ impl PreparedSynthetic {
         );
         let trace_sun = shadow_enabled && shadow_selection.sun == SunShadowMethod::Traced;
         let trace_lights = trace_sun || shadow_selection.lamps;
+        let soft_sun_enabled = trace_sun && scene.sun_penumbra;
         let gpu_clusters = (1..=cluster::GPU_MAX_SOURCES).contains(&scene.local_lights.len());
         let clusters = if gpu_clusters {
             ClusterTable::build_gpu(&scene.local_lights, &scene.view)?
@@ -107,17 +108,22 @@ impl PreparedSynthetic {
         if scene.sun_optical_depth.is_some() && !matches!(lighting, FrameLighting::Atmosphere(_)) {
             return Err(RenderError::InvalidLighting);
         }
-        if limits.max_bindings_per_bind_group <= ENVIRONMENT_BINDING
+        let has_ground_band = scene
+            .sun_optical_depth
+            .as_ref()
+            .is_some_and(SunOpticalDepth::has_ground_band);
+        let highest_binding = if has_ground_band {
+            ground_band::MAPPING_BINDING
+        } else {
+            ENVIRONMENT_BINDING
+        };
+        if limits.max_bindings_per_bind_group <= highest_binding
             || matches!(lighting, FrameLighting::Atmosphere(_))
                 && (limits.max_sampled_textures_per_shader_stage
                     < 9 + 2 * u32::from(shadow_enabled)
                         + u32::from(scene.sun_optical_depth.is_some())
-                        + u32::from(
-                            scene
-                                .sun_optical_depth
-                                .as_ref()
-                                .is_some_and(SunOpticalDepth::has_ground_band),
-                        )
+                        + u32::from(has_ground_band)
+                        + 2 * u32::from(soft_sun_enabled)
                     || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled))
         {
             return Err(AbiError::DeviceLimits.into());
@@ -334,7 +340,7 @@ impl PreparedSynthetic {
             ));
         }
         if cloud.as_ref().is_some_and(|cloud| cloud.band.is_some()) {
-            light_entries.extend(crate::atmosphere::ground_band::GroundBandPrepared::layout(
+            light_entries.extend(ground_band::GroundBandPrepared::layout(
                 wgpu::ShaderStages::FRAGMENT,
             ));
         }
@@ -345,10 +351,7 @@ impl PreparedSynthetic {
         let lamp_shadows = shadow_selection
             .lamps
             .then(|| raytrace::LampShadows::new(device, queue));
-        let soft_sun = (scene.sun_penumbra
-            && shadow_enabled
-            && shadow_selection.sun == SunShadowMethod::Traced)
-            .then(|| raytrace::soft::SoftSun::new(device));
+        let soft_sun = soft_sun_enabled.then(|| raytrace::soft::SoftSun::new(device));
         let light_layout = if trace_lights {
             light_entries.push(binding::acceleration_structure(
                 15,

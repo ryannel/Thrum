@@ -3,8 +3,9 @@ use std::sync::Arc;
 
 use crate::{binding, error::RenderError};
 
-pub(crate) const TEXTURE_BINDING: u32 = 19;
-pub(crate) const MAPPING_BINDING: u32 = 20;
+// The forward light group uses 19–21 for traced Sun visibility.
+pub(crate) const TEXTURE_BINDING: u32 = 22;
+pub(crate) const MAPPING_BINDING: u32 = 23;
 
 /// Mapping of a ground band whose rows are measured from the local surface.
 #[repr(C)]
