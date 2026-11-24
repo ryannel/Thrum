@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/REVIEW-ENGINE/design-review.md",
     "commit": "df2667cf3dcb41914c580b71051f2f32ddb2eae6",
-    "hash": "3b8affb04182565b611c6def946d2acc8ec63400c7a8fc6694e58d13dcb8a573",
+    "hash": "0b2ca967cac7ac89ad7be3df237484484440ee55df916f4dec7c90ee578365d4",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,20 +23,20 @@
     },
     "at": "2026-11-23T23:50:26Z"
   },
-  "milestones": {
-    "M1": {
+  "work_packages": {
+    "WP1": {
       "definitions": "a64263cfae54ca854155c373b34a976a21e46c64cdf365bca687b405520111bd",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "cb586b873022f333b0a7b0e8fbc13c1abfb687b2",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M1-review.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -100,24 +100,24 @@
       "done": {
         "by": "review",
         "commit": "cb586b873022f333b0a7b0e8fbc13c1abfb687b2",
-        "review": ".orchestrate/evidence/REVIEW-ENGINE/M1-review.md",
+        "review": ".orchestrate/evidence/REVIEW-ENGINE/WP1-review.md",
         "checked": "538a47eec6fdd414473e75c59ab4fb69a1b62a9c",
         "at": "2026-11-16T03:51:57Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "b73d225ec0fe823ce74d21bb3b7e3f6ff6260c35d4e6d7f8f27ce5a1f0cd8a44",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "1c94e359d870eaededca8bf4d9e849f8f8147304",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M2-review.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -181,25 +181,25 @@
       "done": {
         "by": "review",
         "commit": "1c94e359d870eaededca8bf4d9e849f8f8147304",
-        "review": ".orchestrate/evidence/REVIEW-ENGINE/M2-review.md",
+        "review": ".orchestrate/evidence/REVIEW-ENGINE/WP2-review.md",
         "checked": "7cec546038ba716b9f533587f2bf8c79f9a7c17d",
         "at": "2026-11-16T10:17:47Z"
       }
     },
-    "M3": {
+    "WP3": {
       "definitions": "a0177a9591a74bc9e02e329f1e03520a5d4483820dc9e2c6740f74e7839afa57",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "d14c4de23c11dab4bc57a19b85ea81123a00e111",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -263,28 +263,28 @@
       "done": {
         "by": "review",
         "commit": "d14c4de23c11dab4bc57a19b85ea81123a00e111",
-        "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md",
+        "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md",
         "checked": "597a58282def076697dfca223c54ebdd30018587",
         "at": "2026-11-17T09:59:26Z"
       }
     },
-    "M4": {
-      "definitions": "d8732f548e3c56dc0f607b1db9fdafedfcfd3b2e10438fffcc0de31f0fd23c47",
+    "WP4": {
+      "definitions": "d2e5867c2f82288dd94a72cf0533c8397b1fa85ba8f3ec7e26914bd6f775fc40",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "238bd197aedebafdfd6e728c7e2397ecbc064305",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review-1.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review-1.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "fail",
-            "M4.3": "pass",
-            "M4.4": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "fail",
+            "WP4.3": "pass",
+            "WP4.4": "pass"
           },
           "findings": [
             {
               "name": "wrapped errors are still erased",
-              "item": "M4.2",
+              "item": "WP4.2",
               "repeat": false
             }
           ],
@@ -308,17 +308,17 @@
         {
           "verdict": "fail",
           "commit": "212a6c0de0e5e86cef6f8b6522a79be0aafe4911",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review-2.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review-2.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "fail",
-            "M4.3": "pass",
-            "M4.4": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "fail",
+            "WP4.3": "pass",
+            "WP4.4": "pass"
           },
           "findings": [
             {
               "name": "accepted game errors can disable Display and Error on simulation failures",
-              "item": "M4.2",
+              "item": "WP4.2",
               "different": "The prior parser, importer and worker source erasure is resolved. Here the original game value survives, but the public game bounds admit errors for which the returned wrapper lacks the required traits.",
               "repeat": false
             }
@@ -343,12 +343,12 @@
         {
           "verdict": "pass",
           "commit": "66e7e244ef88db8e4a57b816bda1ed281fb8ec4d",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -409,23 +409,23 @@
       "done": {
         "by": "review",
         "commit": "66e7e244ef88db8e4a57b816bda1ed281fb8ec4d",
-        "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review.md",
+        "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review.md",
         "checked": "52f57002a992f17d3275df403bba5e72a7ca3f45",
         "at": "2026-11-18T00:34:42Z"
       }
     },
-    "M5": {
+    "WP5": {
       "definitions": "3115b222efd826162810d6bb15a16f361dd886976d9b7bb496921482e4857eb9",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "dedfdccc3e60e32cb374c5914e2fc68aa417c378",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M5-review.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP5-review.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -486,21 +486,21 @@
       "done": {
         "by": "review",
         "commit": "dedfdccc3e60e32cb374c5914e2fc68aa417c378",
-        "review": ".orchestrate/evidence/REVIEW-ENGINE/M5-review.md",
+        "review": ".orchestrate/evidence/REVIEW-ENGINE/WP5-review.md",
         "checked": "0f7544d36246f637d491d09fb3d4afe6c8018adc",
         "at": "2026-11-18T02:57:43Z"
       }
     },
-    "M6": {
+    "WP6": {
       "definitions": "52ba7bffb3180ec99666ba25b2009ee515eed89ec525d3e437bad3c639c408e1",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "97416b733159cad82b112d24934a32660927c902",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -558,13 +558,13 @@
       "done": {
         "by": "review",
         "commit": "97416b733159cad82b112d24934a32660927c902",
-        "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md",
+        "review": ".orchestrate/evidence/REVIEW-ENGINE/WP6-review.md",
         "checked": "1d8de9d36ce295767f05466bf95b2ebe7a2d496a",
         "at": "2026-11-24T03:02:31Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive that work?\" So the decisions below are made; plan them as buildable milestones, not human decisions.\n\n1) Code review fixes. A whole-repository review is at /Users/ryannel/Workspace/thrum/tmp/code-review-2026-11-14/CODE-REVIEW.md, with slices in sections/ beside it. Copy it into docs/evidence/code-review-2026-11-14/ and plan its fixes. The canonical shapes are already written in .agents/skills/thrum-engineering/references/patterns.md (review step 1); add the review's mechanical repo_check rules. Then follow its order of attack: confirmed bugs first (H01, H09, M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), test support and one GPU gate (T6), one device recipe and host core (T4), error convention (T3), performance (T12), and renames and splits (T9, T10) as one planned architecture milestone, then hygiene (T13). Give each fix to the module that owns the code, or a new module where none does. Modules are cut by isolation and ownership, and each delivers milestone by milestone in order; do not split CLOUDS or WATERS or change their milestones. Sequence work so it does not rewrite files that running builders hold (CULLING M3, APPLE-PRESENTATION M3, APPLE-TILE M10, CREATOR M3, EFFECT-GRAPH M3, ATMOSPHERE M9, CLOUDS M1, WATERS M1); later milestones of those modules may be rebased onto it.\n   H03 decision: no Git history rewrite (it would need a force-push to main under many live worktrees). Plan the forward fix only: bulk media and archives leave the tracked tree under docs/ASSET-LIFECYCLE.md's storage rules (untrack at HEAD, keep selected small evidence), and repo_check stops new bulk binaries being committed. Keep evidence links that reviews depend on resolvable.\n\n2) Separate the game from the engine. Owner: \"it sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as much as we can, it shouldn't even sit in the same code base ideally.\" Today examples/v1-game (26k lines) holds engine host and shell code (host, window, browser, camera, projection, controls), engine qualification rigs (H20), and engine tests compile its source (H02/H13); thrum-cook depends on examples/asset-loop (H19); ARCHITECTURE places CLOUDS and PUDDLES selections in v1-game. Design the end state where the game lives in its own repository and depends only on the engine's public API: engine host/shell code moves into engine crates (also H15/M03), qualification moves into the owning crates or an engine-side harness, shared fixtures move to engine test support, and repo_check enforces the boundary. Stage it: first make the boundary real inside this repository, then move the game out.\n   Repository decision: the game moves to a new local Git repository at /Users/ryannel/Workspace/thrum-games (v1-game now; the swarm game later), with no remote until the owner asks for one. It consumes the engine through Cargo path dependencies on a sibling Thrum checkout, so engine changes surface in the game at once; switching to pinned git revisions is a later step once the engine has releases. The last stage creates that repository, moves the game with its history-free copy, and leaves Thrum with no game code. The upcoming swarm game follows the same shape from the start. V1 still exits through the showcase game, so keep its milestones buildable throughout and say how the V1 gate is verified once the game lives outside.\n\nSay which new milestones can start at once, and which wait for running builders.",
       "at": "2026-11-14T22:15:19Z"
@@ -637,7 +637,7 @@
       },
       "at": "2026-11-14T23:30:01Z",
       "items_owed": [
-        "M6"
+        "WP6"
       ]
     },
     {

@@ -1,9 +1,9 @@
 # Cooked draw path: capability-selected direct fallback
 
-9 November 2026. **M1 claimed; all twelve items pass, independent lead review owed.**
+9 November 2026. **WP1 claimed; all twelve items pass, independent lead review owed.**
 The revised Mac oracle, Mac/Chrome BASE preservation, simulator function/lifecycle/rotation with attributed denied permission preflights and sampled
 cooked visual proof are recorded in the [plan](PLAN.md) and
-[evidence](../../../.orchestrate/evidence/render/cooked-draw/README.md). PLATFORM-RUNTIME-IOS M7 supplies oriented scene sizing.
+[evidence](../../../.orchestrate/evidence/render/cooked-draw/README.md). PLATFORM-RUNTIME-IOS WP7 supplies oriented scene sizing.
 This is a child design of
 [the G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md), owned by G5 (`thrum-asset-gpu`). It sits under
 [C04](../../design/CONTRACTS.md#c04-feature-composition-and-quality--f2), [C06](../../design/CONTRACTS.md#c06-gpu-execution-and-lifetime--v1),
@@ -15,11 +15,11 @@ Plan: [plan](PLAN.md). Done when: [done-when file](DONE.json).
 ## Purpose and scope
 
 The cooked scene must draw on every adapter Thrum runs on. The commissioned gap was its requirement for indirect
-execution: the iOS simulator's Metal adapter lacks it, blocking T2-CAPTURE M2
+execution: the iOS simulator's Metal adapter lacks it, blocking T2-CAPTURE WP2
 ([original evidence](../../../.orchestrate/evidence/render/t2-capture-m2/README.md)). The local builder checkpoint now draws the
-cooked valley on the simulator, but M1 remains unaccepted and T2-CAPTURE M2 stays gated on it.
+cooked valley on the simulator, but WP1 remains unaccepted and T2-CAPTURE WP2 stays gated on it.
 
-The consumers are the V1 game on all three targets, T2-CAPTURE M2, which needs the cooked valley on the simulator,
+The consumers are the V1 game on all three targets, T2-CAPTURE WP2, which needs the cooked valley on the simulator,
 and any later downlevel device.
 
 **Commissioned:**
@@ -40,17 +40,17 @@ and any later downlevel device.
 - **Same scene, both paths.** On this Mac, the production direct path's final submitted image is byte-identical
   to a diagnostic full-range indirect reference with the same draw partition, build, store and fixed-time view.
   The selected meshlet-indirect path also renders the same complete, correctly placed, textured, lit and shadowed
-  content; cross-partition shading differences are recorded and inspected under M1.3, not required to be zero.
+  content; cross-partition shading differences are recorded and inspected under WP1.3, not required to be zero.
 - **The indirect path is untouched.** Its output on Mac Metal and Chrome WebGPU is byte-identical before and after
   the change, and it records the same per-frame commands.
 - **The simulator draws the cooked valley.** It is complete, textured, lit and shadowed. It survives
   background/foreground, device replacement and rotation, and it shows no discontinuity in the sampled frames of a
-  camera pan. This is function only. Complete submitted-frame temporal proof belongs to T2-CAPTURE M2.
+  camera pan. This is function only. Complete submitted-frame temporal proof belongs to T2-CAPTURE WP2.
 - **The record decides.** The path comes from adapter facts in the capability record. No platform, OS, backend or
   adapter-name test is allowed, and no private device query. Unknown facts never enable indirect execution.
 
 Bar: both selected paths render the same correct scene; the direct path has exact parity against a reference
-with matching draw partitions (M1.3). On the simulator, the cooked valley is as complete as on Mac. Shipped engines'
+with matching draw partitions (WP1.3). On the simulator, the cooked valley is as complete as on Mac. Shipped engines'
 compatibility renderers work this way: Unreal's ES3.1 mobile path and Unity's GLES fallback draw the same content with
 less GPU-driven work.
 
@@ -69,7 +69,7 @@ already works this way (G5's "Profile selection" row).
 exposes downlevel flags only on `Adapter`. So its record says the downlevel facts are unknown. It never assumes them
 and never invents support. The public route `FrameHost::new` → `capture_device` → `attach_cooked_scene` therefore
 selects the direct path on every device. The direct path uses only core indexed drawing, so it is valid on any
-adapter, and its whole-range draw is qualified by M1.3's reference and scene checks. An adapter-less host on a capable
+adapter, and its whole-range draw is qualified by WP1.3's reference and scene checks. An adapter-less host on a capable
 device pays the direct path's extra vertex work. Its stats and evidence name the path and the unknown-facts reason.
 
 Refusing to attach cooked content to an adapter-less host was the alternative. It was rejected: it gains nothing over
@@ -108,7 +108,7 @@ These are geometry and visibility arguments, not a guarantee of identical shadin
 At checkpoint `9c230ff4`, Apple M3 Max / Metal produced 1,506 differing final pixels (maximum channel delta 18)
 along terrain triangle edges. Keeping every meshlet left the selected indirect image unchanged, while one full-range
 indirect command per mesh matched direct exactly. Same-path repeats were exact. The
-retained controls (the builder's checkpoint `9c230ff4`, `.orchestrate/evidence/render/cooked-draw/README.md`, integrated with M1) establish partition dependence for that view,
+retained controls (the builder's checkpoint `9c230ff4`, `.orchestrate/evidence/render/cooked-draw/README.md`, integrated with WP1) establish partition dependence for that view,
 not a culling defect or the low-level cause. Pixel-quad derivatives and draw-boundary ordering remain hypotheses.
 
 Research checked 9 November 2026: [WGSL §§15.6.2 and 15.7.4.1](https://www.w3.org/TR/WGSL/#derivatives) describe
@@ -118,7 +118,7 @@ indirect drawing from buffer-supplied arguments. These support matching draw par
 oracle; they do not establish this Metal discrepancy's cause. Equal primitive order alone is insufficient evidence
 for byte equality across different partitions.
 
-**M1.3 parity oracle (selected).** Keep the whole-range production direct strategy and every existing required view:
+**WP1.3 parity oracle (selected).** Keep the whole-range production direct strategy and every existing required view:
 valley noon pan at 0°, 18° and 36°, a low-sun valley view, and the diagnostic scene with its volume, mirrored node
 and edge-straddling mesh. On one build and cooked store, capture final submitted output through the T2 Mac tap:
 
@@ -155,20 +155,20 @@ failure or unclassified scene discrepancy blocks the claim. No byte-equality gat
 between different meshlet-visibility partitions; diagnostic controls are evidence, not new production behaviour.
 
 The reference and negative controls must be opt-in probe facilities, absent from ordinary selection and per-frame
-work. Do not patch production WGSL between arms or leave an override enabled for M1.4–M1.6. Review the probe's command
+work. Do not patch production WGSL between arms or leave an override enabled for WP1.4–WP1.6. Review the probe's command
 witness and independence from D. The production direct path still allocates no indirect/cull/readback resources.
-M1.4/M1.5 still compare **production I before versus after**, byte for byte; M1.6 still audits its unchanged commands,
+WP1.4/M1.5 still compare **production I before versus after**, byte for byte; WP1.6 still audits its unchanged commands,
 resources and writes. The reference cannot satisfy any of those items or substitute for simulator qualification.
 
 **Cause investigation and shader decision.** Identifying the exact derivative, scheduling or ordering cause is not
-a prerequisite for this re-plan or M1 acceptance: the retained controls refute the original oracle's premise, and
+a prerequisite for this re-plan or WP1 acceptance: the retained controls refute the original oracle's premise, and
 the replacement checks production direct execution at matching partitions. This is not a declaration that the driver
 is correct or that every edge difference is harmless. Investigate further if the replacement oracle fails, if scene
 inspection fails or cannot classify a discrepancy, or if validation indicates undefined shader behaviour.
 
-A partition-invariant shared shader change is **not commissioned or worthwhile for M1**. It would broaden work into
-material/derivative semantics, may change filtering, quality and cost, and would threaten M1.4/M1.5's unchanged indirect
-pixels. A direct-only shader would break the shared-pipeline requirement in M1.2. Reconsider only for a demonstrated
+A partition-invariant shared shader change is **not commissioned or worthwhile for WP1**. It would broaden work into
+material/derivative semantics, may change filtering, quality and cost, and would threaten WP1.4/M1.5's unchanged indirect
+pixels. A direct-only shader would break the shared-pipeline requirement in WP1.2. Reconsider only for a demonstrated
 visible defect or a separately commissioned need for partition invariance, with cause isolation and quality/cost proof;
 any change to the preserved indirect output or selection requires a separate scope decision.
 
@@ -202,22 +202,22 @@ console, only the rotation row is recorded with that reason.
 
 Console state is recorded before and after every simulator mode as witness metadata. Locked, unlocked and changed
 states are accepted, and unavailable observations retain their reason. No manual-lock wait or lock state refusal
-belongs in these checks. M1.7/M1.8 prove independence from desktop capture with denied read-only Screen Recording
+belongs in these checks. WP1.7/M1.8 prove independence from desktop capture with denied read-only Screen Recording
 preflights before and after under the identified launcher/harness permission identity. Missing, failed or granted
 preflights leave that proof incomplete. The route continues to use engine state and simulator output; no grant is
 requested. The builder replaces the lock admission in `scripts/cooked_draw_ios_sim.py` and updates the obsolete
 manual-lock regression cases in `scripts/test_t2_capture.py`.
 
-**What the simulator pan can show.** Before T2-CAPTURE M2, simulator frames come only from `simctl` screenshots or a
+**What the simulator pan can show.** Before T2-CAPTURE WP2, simulator frames come only from `simctl` screenshots or a
 `simctl` recording. Both are sampled, and neither is tied to submitted frames. The evidence records the following:
 - the route's presented-frame count over the pan;
 - the samples taken, with their times;
 - the holds;
 - the largest gap between samples.
 
-The M1 conclusion covers only the sampled frames. It can show that content is complete in every sample, that the
+The WP1 conclusion covers only the sampled frames. It can show that content is complete in every sample, that the
 frame edges fill as terrain enters, and that no sample is missing geometry. It cannot rule out a defect confined to
-unsampled frames. Proof over every submitted frame, with exact frame and time identity, stays with T2-CAPTURE M2. The
+unsampled frames. Proof over every submitted frame, with exact frame and time identity, stays with T2-CAPTURE WP2. The
 direct path has no delayed visibility, so no mechanism in it predicts one-frame holes.
 
 ## Alternatives rejected
@@ -228,8 +228,8 @@ direct path has no delayed visibility, so no mechanism in it predicts one-frame 
 | GPU cull, compacted into a per-frame index buffer, then a direct draw of the maximum count | Without indirect execution the count stays CPU-known, so culled meshlets become degenerate triangles that still cost vertex work. It writes about 0.7 MB of indices per frame for the showcase terrain, and needs an index copy per frame in flight. It also adds a compute-to-index hazard. More cost and complexity, and no clear saving. |
 | GPU cull with the visibility read back to the CPU and drawn a frame later | Geometry entering the view would be missing for a frame, which shows as popping. It also adds map synchronization. This is incorrect, not merely slower. |
 | One direct draw per meshlet | Hundreds of draws per mesh and no culling benefit. Matching the production indirect partition does not justify that fallback cost. |
-| Whole-range direct versus selected meshlet indirect, with a pixel-count threshold or ignored edge mask | Conflates command execution with partition-dependent shading; a fitted threshold can conceal a real draw defect. M1.3 instead uses exact equality at matching partitions plus scene inspection. |
-| Change the shared shader to force partition invariance | Low-level cause is unverified, and changing the supported indirect output violates the commissioned invariance. M1.3 needs a valid oracle, not a new shading model. |
+| Whole-range direct versus selected meshlet indirect, with a pixel-count threshold or ignored edge mask | Conflates command execution with partition-dependent shading; a fitted threshold can conceal a real draw defect. WP1.3 instead uses exact equality at matching partitions plus scene inspection. |
+| Change the shared shader to force partition invariance | Low-level cause is unverified, and changing the supported indirect output violates the commissioned invariance. WP1.3 needs a valid oracle, not a new shading model. |
 | Making the simulator report indirect support (patching wgpu or overriding by platform) | It breaks capability selection. Apple's DTS describes the simulator device as [Apple-family-2-like](https://developer.apple.com/forums/thread/776140), and Apple's [feature tables](https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf) put indirect arguments at Apple3. Real downlevel devices would still lack a fallback. |
 
 ## Cost account
@@ -250,7 +250,7 @@ meshlets at 124 triangles each), sphere (2,208 triangles) and rock (224 triangle
 **Tripwires and measurements:**
 - **Indirect path.** It is unchanged by construction. Byte-identical output and a reviewed command diff prove it,
   and the existing G5 tripwires (`scripts/check_g5_tripwires.sh`) watch it.
-- **Direct path on this Mac.** M1 records paired, order-alternated measurements against the indirect path: GPU
+- **Direct path on this Mac.** WP1 records paired, order-alternated measurements against the indirect path: GPU
   forward and contribution time, and render-thread encode time. Each is labelled with its load class. No speed claim
   follows for either path.
 - **Simulator.** Its timing is never recorded as speed.
@@ -258,13 +258,13 @@ meshlets at 124 triangles each), sphere (2,208 triangles) and rock (224 triangle
 The diagnostic reference adds O(P) 20-byte indexed-indirect argument records and O(P) commands per captured
 reference frame, plus submitted-output readback already used by the harness. Repeats and negative controls multiply
 offline proof work only. These controls add no ordinary-frame allocations, writes, dispatches or commands and are
-excluded from M1.6's production-path timings.
+excluded from WP1.6's production-path timings.
 
 Neither path has a cost target. Only the profile tripwires apply: visible hitches, about 25% comparable
 regression and unexpected scaling.
 
 **Observation for the owner.** On Metal, the selected indirect path issues one indirect draw command per meshlet,
-about 480 for the valley terrain. Nobody has measured whether this beats one direct draw on Apple GPUs. M1's paired
+about 480 for the valley terrain. Nobody has measured whether this beats one direct draw on Apple GPUs. WP1's paired
 figures inform that question, but changing the selection needs a measured win and a separate decision.
 
 ## Contracts, interfaces and agreements
@@ -280,7 +280,7 @@ and C06 lifetime keep their meaning on both paths.
 | `SceneSurface` lends the downlevel fact | `thrum-render` contribution seam (V1) | `thrum-asset-gpu` | Render owner |
 | C04 wording, proposed: "features, limits and downlevel execution facts" in the registry list | C04 owner (F2) | All registry readers | C04 owner; the text only clarifies the existing rule |
 | `CookedStats` gains the draw path. `visible_meshlets` is documented as `None` on the direct path | `thrum-asset-gpu` | V1 cooked tests, the [G6 creator note](../../design/decisions/G6-CREATOR-EXPERIENCE.md), T2 evidence | G5 (this module) |
-| The iOS route attaches cooked content via `attach_cooked_scene` | V1 game, iOS route (`examples/v1-game-ios`) | T2-CAPTURE M2 | V1 game and G3b iOS shell owners |
+| The iOS route attaches cooked content via `attach_cooked_scene` | V1 game, iOS route (`examples/v1-game-ios`) | T2-CAPTURE WP2 | V1 game and G3b iOS shell owners |
 
 **Overlap with G4 seam 3.** [APPLE-PRESENTATION-PLAN](../APPLE-PRESENTATION/PLAN.md) seam 3 adds a reactive forward
 target and a mip bias to the pipelines in `draw.rs` and `material.rs`. Both cooked paths share one mesh pipeline, so
@@ -288,9 +288,9 @@ G4 changes it once. G4's "invalid-history objects" reactive write reads the hist
 identical on both paths. Neither work blocks the other. The only overlap is the shared file, which needs a merge.
 G4 M2 has not started.
 
-**T2-CAPTURE dependency.** T2-CAPTURE M2 `needs` `COOKED-DRAW:M1`. M1 delivers the iOS route with the cooked valley
+**T2-CAPTURE dependency.** T2-CAPTURE WP2 `needs` `COOKED-DRAW:WP1`. WP1 delivers the iOS route with the cooked valley
 on the direct path, through background/foreground, device replacement and rotation. M2's capture items then run on
-that route unchanged. M2 also adds the submitted-frame temporal proof that M1's sampled pan cannot give.
+that route unchanged. M2 also adds the submitted-frame temporal proof that WP1's sampled pan cannot give.
 
 ## Risks
 
@@ -308,10 +308,10 @@ that route unchanged. M2 also adds the submitted-frame temporal proof that M1's 
   match. It would pass the simulator rows. The selection test and review questions reject it, and so does the
   masked-record arm on Mac, which must pick the direct path with no platform change.
 - **Plausible wrong substitute: assumed capability.** A record that claims indirect support it never read from an
-  adapter would pass every adapter-backed row, then fail on the first adapter-less host on a downlevel device. M1.1's
+  adapter would pass every adapter-backed row, then fail on the first adapter-less host on a downlevel device. WP1.1's
   adapter-less test rejects it: that route must select the direct path and create no indirect-usage buffer.
 - **A test or bench silently changes path.** A cull-count test or the `cooked_edit` bench still built through
-  `FrameHost::new` would quietly measure or test the direct path. M1.2 and M1.6 require each arm to record its
+  `FrameHost::new` would quietly measure or test the direct path. WP1.2 and WP1.6 require each arm to record its
   selected path.
 - **Plausible wrong substitute: a direct path missing state.** A direct path that draws but skips the history flag,
   discard handling or remote feeds could also look right in stills. Running the whole cooked GPU suite under the
@@ -338,9 +338,9 @@ that route unchanged. M2 also adds the submitted-frame temporal proof that M1's 
 - The simulator's recorded flags lack `INDIRECT_EXECUTION` and `BASE_VERTEX`, and include `COMPUTE_SHADERS` and
   `VERTEX_STORAGE`.
 
-**Assumed, and settled by M1:**
+**Assumed, and settled by WP1:**
 - The M3 Max record reports `INDIRECT_EXECUTION`.
-- Production direct matches the full-range indirect reference exactly across all M1.3 views. The original
+- Production direct matches the full-range indirect reference exactly across all WP1.3 views. The original
   cross-partition exactness assumption is refuted by the checkpoint; the revised oracle is not yet qualified.
 - The simulator draws the rest of the cooked pipelines (ASTC or portable textures, 3D volume, casters) without
   further gaps.
@@ -360,7 +360,7 @@ from the same record fact.
 
 - Should Chrome also run a forced-direct arm, to prove the direct path under WebGPU's validation? It is not
   commissioned, because Chrome always selects indirect.
-- Should the Mac selection change after M1's paired figures? That needs a separate decision and a measured win. This
+- Should the Mac selection change after WP1's paired figures? That needs a separate decision and a measured win. This
   module does not change it.
 
 ## Ownership and agreements
@@ -377,8 +377,8 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
   Neither changes any signature that call sites use.
 - **The V1 game and G3b iOS shell owners** must agree that the iOS route attaches cooked content through
   `attach_cooked_scene`.
-- **G3b / PLATFORM-RUNTIME-IOS M7** owns current-oriented-extent scene sizing, including shared host/prepared-device
-  changes. M1 needs its acceptance. Diagnostic-scene M7 proof does not accept M1.10; G5 reruns cooked visuals after
+- **G3b / PLATFORM-RUNTIME-IOS WP7** owns current-oriented-extent scene sizing, including shared host/prepared-device
+  changes. WP1 needs its acceptance. Diagnostic-scene M7 proof does not accept WP1.10; G5 reruns cooked visuals after
   integration. G4 reconstruction/governor work is not needed for this baseline correction.
 - **G4 seam 3** shares `draw.rs`. There is no sequencing dependency. Merge with care.
 

@@ -1,72 +1,72 @@
 {
   "module": "EFFECT-GRAPH",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "A graph declares 3D, cube and mipped-array textures in transient, persistent and history scopes; on Metal a compute pass writes every texel of each kind and a later pass reads the same values back exactly, across a resize and a device replacement.",
           "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
           "lock": "gpu",
           "ask": "Read the tests this check runs. Is every texel of each kind, every mip included, read back and compared exactly, and are the persistent and history cases rebuilt and compared again after device replacement?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "The compiler refuses each misuse the design lists: layers or multisampling on a 3D texture, a cube that is not six square layers, a storage write to a cube view, an attachment on a 3D texture, and a mip or layer range outside the descriptor. Transient reuse never crosses dimensions.",
           "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
           "lock": "gpu",
           "ask": "Is there one refusal test for each misuse in the design's list, each asserting a named error, and a test that two transients that differ only in dimension never share an allocation?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "Against the capability record of the generation being compiled, the compiler refuses a storage format the record does not allow for that access, more storage textures in one pass than its limit, and an extent above its limit. The limits Chrome reports on this Mac are recorded.",
           "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
           "lock": "gpu",
           "ask": "Does validation read only the capability record, with no device query in a pass? Does the evidence record the storage formats, storage-texture count and 3D extent that Chrome's record reports on this Mac?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "Every existing scene variant compiles to the same pass order, attachment storage and transient slots as before this milestone.",
           "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
           "lock": "gpu",
           "ask": "Which test pins the compiled pass names, order and attachment storage of the day, night and capture variants, and did any of them change in this milestone's diff?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained Mac image. Chrome's baseline is not checked here; the design says when it is.",
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP1-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M2"
+        "APPLE-TILE:WP2"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -75,101 +75,101 @@
       "quality_bar": "A frame graph that validates as Unreal's RDG and Unity's render graph do: a wrong declaration is refused when the graph is prepared, with a named error, and never becomes a wrong frame."
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "A scene holds several contributions in a fixed order: the cooked valley and the diagnostic effect draw together, and with no effect attached every existing scene compiles to the same passes as before.",
           "check": "cargo test --locked --offline -p thrum-render --test effect_state",
           "lock": "gpu",
           "ask": "Does the public seam let a crate outside thrum-render declare resources and passes with no access to renderer internals, and does the cooked contribution compile and draw unchanged?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "After a scripted run that mixes submitted frames, several frames in one tick, a pause, a discarded frame, a capture frame, a stall of many ticks, a backward tick, a timeline change and a resize, the effect's GPU state matches the design's state table bit for bit: a nonempty field is unchanged by the repeated ticks and the pause, and is at its declared reset after the backward tick and after the timeline change. Its wrapping anchor equals the last committed one.",
           "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
           "lock": "gpu",
           "ask": "Read the scripted run. Are the kept-state and reset expectations written from the design's state table, not taken from stepping code the GPU path shares? Is the field nonempty before the repeated ticks and the pause? Are the ticks a stall dropped beyond the declared bound counted?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "A pass's cadence changes at run time with no graph compilation and no pipeline creation. With two ping-pong histories updated at different cadences, a consumer reads each history's newest submitted result on every frame: the tentative side when its producer ran, the committed side when it was skipped, and the committed side again after a frame whose update was discarded. The first frame of an epoch and a reset frame write every texel.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test effect_cadence_gpu",
           "lock": "gpu",
           "ask": "Does the test read back the consumer's own output on each run-to-skip and skip-to-run boundary of both histories and after the discarded update, and every texel after the first frame of an epoch and after a reset? Does the compiler refuse each declaration the design's cadence section lists?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "After device replacement the effect rebuilds on the new generation, re-seeds through its declared reset, uses no resource of the old generation and matches the CPU oracle again.",
           "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "In Chrome the same scripted run ends with the effect's state matching the same expectations, through a device loss and recovery, with the cube, every texel of the volume and every mip of the array read back exactly.",
           "check": "node scripts/check_v1_browser.mjs --case effect-state",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "In real time on the Mac the diagnostic trail persists and fades after its source stops, stays fixed to the ground as the camera pans across the wrapping boundary, and shows no jump when the cadence changes.",
           "inspect": "Capture with T2 engine capture in `realtime` mode: the source moving and then stopping, a pan that carries the anchor across at least one wrap, and a cadence change mid-run. Judge the trail in whole frames and native-size crops as consecutive frames at 1x.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time, read from the executor's named pass timings, and bytes per effect are recorded on the valley route.",
-          "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE M3 owns?",
+          "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE WP3 owns?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.8",
+          "id": "WP2.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP2-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP2-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
-        "BASELINE-GUARD:M1"
+        "BASELINE-GUARD:WP1"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -178,113 +178,113 @@
       "quality_bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate. A repeated tick or a pause changes nothing, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel."
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "An after-opaque pass draws after opaque geometry, sky and stars and before the pre-tone input, and reads this frame's scene depth. Stored depth and the colour copy follow separate requests: a depth-only effect stores depth and adds no copy pass, a refracting effect adds one shared copy, and with no effect nothing is added beyond what other readers, such as reconstruction, already store.",
           "check": "cargo test --locked --offline -p v1-game --test effect_after_opaque_gpu",
           "lock": "gpu",
           "ask": "Does a moving occluder hide the slab in the same frame, proving it reads this frame's depth? Do the compiled graphs for the four cases (no effect with reconstruction off, no effect with reconstruction on, a depth-only effect, a refracting effect) each hold exactly the storage and passes their declared accesses require?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "The slab's pixels carry motion from unjittered positions and reactive coverage in submitted frames, mark history invalid where it has none, and honour the frame's reset flag on a cut, a device replacement and an effect reset. This proves reconstruction's inputs; reconstructed output is not judged here.",
           "check": "cargo test --locked --offline -p v1-game --test effect_after_opaque_gpu",
           "lock": "gpu",
           "ask": "Are the motion and reactive values read from submitted frames and compared with the slab's known displacement, with temporal sampling selected?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "A simulate pass declared async-eligible is checked (compute only, no attachment or surface access) and listed in the compiled graph; the pass order is the same with and without the flag.",
           "check": "cargo test --locked --offline -p thrum-render --test effect_state",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "Each cadence is a listed quality knob with a range and a declared invalidation; a change commits at a frame boundary and applies that invalidation, and a skipped pass is reported as not run under its own pass name.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test effect_cadence_gpu",
           "lock": "gpu",
           "ask": "Can a caller that knows nothing about the effect list its knobs and set one, as the governor will? Does the timing record tell a skipped pass from a pass that took no time?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "In Chrome the slab draws after opaque geometry with the same depth, refraction and motion behaviour, and is cut cleanly by nearer geometry.",
           "check": "node scripts/check_v1_browser.mjs --case effect-after-opaque",
           "lock": "chrome",
           "inspect": "Capture a `fixed` still in Chrome with T2 engine capture, with the slab crossing terrain, a prop and open sky. Judge the whole frame and a native-size crop of each crossing.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3/upload-recovery/README.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3/upload-recovery/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.6",
+          "id": "WP3.6",
           "statement": "On both native recipes the slab is cut cleanly by nearer geometry, refracts the scene behind it, dims the sky and stars behind it once, and leaves no seam where it meets opaque surfaces.",
           "inspect": "Capture `fixed` stills with T2 engine capture at noon and at night, on the portable and Apple tile recipes, with the slab crossing terrain, a prop and open sky. Judge whole frames and native-size crops of each crossing.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.7",
+          "id": "WP3.7",
           "statement": "The seam is documented for the modules that will use it, the cost of the refraction copy and the pass break is recorded on both native recipes, and the maturity ledger has a row for the seam.",
           "ask": "Could the SEA or CLOUDS planner write their passes from the public documentation and this design alone? Are the copy and pass-break costs recorded as paired rows with the load, and does the ledger keep implementation, correctness and device results apart?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.8",
+          "id": "WP3.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.9",
+          "id": "WP3.9",
           "statement": "Every verifier run that failed an image comparison during this milestone from 15 November 2026 on, the run at `324586ee` included, was load variation by the four tests of the module list's ruling on a frame that varies under load, and has the record that ruling asks for.",
-          "inspect": "For each record, make the difference image yourself from its two lossless frames (`docs/evidence/EFFECT-GRAPH/M3-replan/difference.py` is one way) and judge it whole and in a native-size crop of its densest part, beside the failed frame: thin lines along the triangle edges of opaque geometry, no patch filled, and none in the sky, among the stars or in the letterbox bars.",
+          "inspect": "For each record, make the difference image yourself from its two lossless frames (`docs/evidence/EFFECT-GRAPH/WP3-replan/difference.py` is one way) and judge it whole and in a native-size crop of its densest part, beside the failed frame: thin lines along the triangle edges of opaque geometry, no patch filled, and none in the sky, among the stars or in the letterbox bars.",
           "ask": "Does each record show that every identity field matched, that the matching bytes hash to the retained reference, and that a complete, unchanged verifier run then passed on the same content key as the failed run?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3/variation-runs.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP3/variation-runs.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP3-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M3",
-        "APPLE-PRESENTATION:M2"
+        "APPLE-TILE:WP3",
+        "APPLE-PRESENTATION:WP2"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -293,144 +293,144 @@
       "quality_bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here."
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one",
       "depends_on": [],
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: while the world's clock runs, equal steps of display time from frame to frame for equal intervals between consumed targets, no short step followed by a long one, no step when a tick commits, and no frame held on a tick while the world moves on. Display time is the world's time and never shows the time its clock was stopped: after a pause or an overload it goes on from the committed tick and does not go back, and it steps only where the design's table of a span's edges says, by no more than it says. Alpha stays the same function of the clock sample and the consumed target. A frame shows the tick it showed before M4 wherever that tick was due by the frame's observation, which is every frame of an inline world. Only a delayed frame on a world on its own thread shows an earlier one.",
+      "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: while the world's clock runs, equal steps of display time from frame to frame for equal intervals between consumed targets, no short step followed by a long one, no step when a tick commits, and no frame held on a tick while the world moves on. Display time is the world's time and never shows the time its clock was stopped: after a pause or an overload it goes on from the committed tick and does not go back, and it steps only where the design's table of a span's edges says, by no more than it says. Alpha stays the same function of the clock sample and the consumed target. A frame shows the tick it showed before WP4 wherever that tick was due by the frame's observation, which is every frame of an inline world. Only a delayed frame on a world on its own thread shows an earlier one.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "The world's clock gives the phase of a consumed target, which is an observation plus a lead: the fraction of the next tick elapsed at the observation plus the lead in ticks, with no stop at 1. It is never below 0 and never more than 50 ms of ticks above 1. While the clock is paused, overloaded, holding or has ticks queued it is exactly 1, and the clock's sample says it is not interpolating. The interpolation alpha for the same consumed target is unchanged bit for bit and is the phase held to 1. Sampling admits no tick and changes no clock. A world lane and a clocked world give their clock's phase.",
           "check": "cargo test --locked --offline -p thrum-core --test display_phase",
           "ask": "Are the expected phases written in the test from its scripted observations, tick rate and leads, and not computed with the clock's own phase function? Do they include a consumed target past the next tick's due time, one at the bound and one beyond it, a tick rate other than 60 Hz, and each state that gives exactly 1?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.7",
+          "id": "WP4.7",
           "statement": "An interpolating clock sample gives the due time of its tick: the host time at which the newest committed tick fell due. On a clock driven at scripted host times, from a start that is not host time zero on a world that is not on tick 0, through ticks that queue and then commit, a pause partway through a tick, a resume, an overload, and an overload with ticks still queued, at 60 Hz and at one other tick rate: a span begins at the start and at each resume, at host time R with the world on tick C_R, and tick C_R + k is due at R plus k tick durations, so the time the clock was stopped and the part-tick it discarded are in no span; queued ticks move no due time; a resume is refused while ticks are queued and holds until its first tick commits; and every interpolating frame under the phase's bound has a display time (its tick, less one, plus its phase, in tick durations) of the world time of the tick before its own plus its consumed target less its due time. Each holds to the precision the test states. A clocked world and a world lane give their clock sample's due time, and a world whose tick is rewound while its clock runs keeps the due time on the tick it lands on.",
           "check": "cargo test --locked --offline -p thrum-core --test clock_spans",
           "ask": "Is every expected due time and display time worked out in the test from its scripted start, resume and observation times and the tick the world stood on, and never from a phase, an alpha or a due time the clock returned? Does the pause fall partway through a tick, so that a clock which kept the part-tick, or a test which left it out, would fail?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.6",
+          "id": "WP4.6",
           "statement": "A world on its own thread shows each poll a pair, a clock sample with the page committed with it: the newest whose clock is not interpolating or whose tick was due at or before the poll's observation, out of the pair the world has just published, the refused pair and the pair already shown. A published pair it cannot show becomes the refused pair. A delayed poll, one made after the world committed a tick due later than its observation, therefore shows an earlier tick than the world's newest, with a lead or without, and its phase and alpha are that pair's. No poll shows an earlier pair than one already shown. In a run of delayed polls, each observed on the running clock after the poll before it, every poll after the first shows a tick at least as new as the newest the poll before it saw. Each completed tick is counted once across the polls' reports, and the world's thread keeps committing throughout.",
           "check": "cargo test --locked --offline -p thrum-core --test display_phase",
           "ask": "Does the test make every poll of its run a delayed one, by waiting until the world has committed a tick due after the observation it then polls with? Would that run fail on a lane that holds only the pair it shows?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.8",
+          "id": "WP4.8",
           "statement": "A world on its own thread keeps one origin for each span. Started at host time zero on tick 0, paused and resumed through its lane's lifecycle requests while polls read each observation from the running clock, with and without a gap before the poll that is long enough for a tick to commit: every interpolating poll before the pause reports its tick's world time as the due time; every poll made while the world is paused or holding reports a clock that is not interpolating and a phase of exactly 1; the first interpolating poll after the resume shows a tick after the resume's; the due times of the interpolating polls after the resume, each less its tick's world time, agree; and the due time they give the resume's tick lies between the test's request for the resume and the reply it read. Each holds to the precision the test states.",
           "check": "cargo test --locked --offline -p thrum-core --test clock_spans",
           "ask": "Does the test take its bracket from its own reads of the host clock before the request and after the reply, and each due time from the lane and not from a phase? Does at least one arm poll after a gap in which the world committed a tick?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "Each submitted frame gives every effect the display phase beside alpha, and the frame's completed sample reports it with the frame's tick, its observation, its lead, whether the clock was interpolating and, when it was, the due time of the frame's tick. In the V1 game with 60 Hz ticks, whose world starts at host time zero on tick 0, on a world that has not stopped: every interpolating frame under the phase's bound reports its tick's world time as the due time, and its display time (its tick, less one, plus its phase, in ticks) is its consumed target less one tick, to the precision the test states. That holds with leads from zero to 50 ms, at consumed targets 1/120 s apart and again 1/60 s apart, across a tick's commit, on frames whose alpha is 1 and more than one tick past the committed tick; for the inline world at scripted observations and for the world on its own thread; and for a delayed frame there with no lead, which shows an earlier tick than the world's newest, the one the effect and the completed sample both carry. In every frame alpha is the phase held to 1, and the diagnostic effect's state follows the state table as it did. A capture frame and a paused world give exactly 1 and report a clock that was not interpolating.",
           "check": "cargo test --locked --offline -p v1-game --test effect_display_phase_gpu",
           "ask": "Does the test work each frame's expected display time and due time out from its own observations and leads and the world's start, state the precision it holds them to, and read the phase from the effect time a contribution received? Is its delayed frame observed before a tick that the world has committed by the time the frame polls, so that the newest tick would fail it? Does any source that reads a clock, in the engine or the apps, form its phase from an alpha already held at 1, or fall back to one?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.9",
+          "id": "WP4.9",
           "statement": "Submitted frames of the V1 game keep the timing model through a stop. On the inline world at scripted host times, paused partway through a tick and resumed a second later, with leads of zero, 10 and 50 ms: every frame of the pause and of the hold gives a phase and an alpha of exactly 1 and reports a clock that was not interpolating; every interpolating frame after the resume reports the due time the script gives, the resume's time plus one tick duration for each tick since the resume's, and its display time is the world time of the tick before its own plus its consumed target less that due time; and the first of them shows a display time at or after the committed tick's world time, so neither the paused second nor the discarded part-tick is shown. On the world on its own thread, paused and resumed through its lifecycle requests, the frames after the resume report due times that give one origin and put the resume's tick between the test's request and the reply it read, and each has the display time its own record gives. Each holds to the precision the test states. In every frame the effect and the completed sample carry the same tick, phase and alpha.",
           "check": "cargo test --locked --offline -p v1-game --test effect_resume_gpu",
           "ask": "On the inline world, is each expected due time worked out from the script's resume time and the tick the paused frames showed, and never from a phase or a reported due time? Would the test fail if display time held the paused second, or the part of a tick the pause discarded? On the world on its own thread, does the test read its bracket from the host clock itself?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "A submitted capture's time record carries for each frame its observation, its lead and the lead's status, the platform target the runner asked for, its display phase and alpha, whether the clock was interpolating and, when it was, the due time of its tick; `docs/CAPTURE.md` says what each is, which of them are host times, and how a frame's display time and origin are worked out from them. `Offscreen::step_for` measures the lead from the one clock read it hands the world as the observation. In a short `realtime` capture of the V1 game on the Mac at 120 platform targets a second, with a running world and one opportunity held until its target has expired: every `future` frame's consumed target, its observation plus its lead, is its platform target; the held frame is `late` and its consumed target is its observation; every interpolating frame under the phase's bound has the display time its recorded tick, observation, lead and due time give; until the world first stops, every recorded due time is its tick's world time; and between every two such frames whose origins agree, display time differs by the difference of their consumed targets. Each holds to the precision the test states. Frames at the bound, frames whose clock was not interpolating, frames of each lead status and each change of origin are counted in the record and stay in it.",
           "check": "cargo test --locked --offline -p v1-game --test capture_display_phase_gpu",
           "ask": "Does the test take the platform target from the runner's schedule and the observation, lead and due time from each frame's record, and none of them from the phase? Does it pass on a busy machine, holding expired frames to the same identity, and counting frames at the bound, frames whose clock was stopped and a change of origin instead of failing on them?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.10",
-          "statement": "`thrum-app`'s sky world with a tick duration states its own clock's time. Driven at scripted observations with leads from zero to 50 ms, it reports a clock that is interpolating; a phase of the consumed target over the tick duration, less the tick, with no stop at 1 and held at 50 ms of ticks above 1; the alpha it gave before M4, which is that phase held to 1; and a due time of its tick's world time. With no tick duration it gives exactly 1 and reports a clock that is not interpolating.",
+          "id": "WP4.10",
+          "statement": "`thrum-app`'s sky world with a tick duration states its own clock's time. Driven at scripted observations with leads from zero to 50 ms, it reports a clock that is interpolating; a phase of the consumed target over the tick duration, less the tick, with no stop at 1 and held at 50 ms of ticks above 1; the alpha it gave before WP4, which is that phase held to 1; and a due time of its tick's world time. With no tick duration it gives exactly 1 and reports a clock that is not interpolating.",
           "check": "cargo test --locked --offline -p thrum-app --lib sky::tests::a_ticking_sky_world_states_its_clock -- --exact 2>&1 | grep -q 'test result: ok. 1 passed'",
           "ask": "Are the expected phases written in the test from its scripted observations, leads and tick duration, with one past 1 and one at the bound, and is the alpha compared with the value the world gave before this change?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "C02 in `docs/design/CONTRACTS.md` states the timing model as the design's section does: host time and world time kept apart; spans, and what begins and ends one; the due time of a frame's tick, and that an interpolating frame's record carries it; the phase, its bound and that alpha is the phase held to 1; display time, and that it holds no stopped time; that sampling never advances authority; that an interpolating frame's tick was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair and holds the refused pair for a later poll; that a host measures the lead from the observation where one clock gives both; and that a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step. `docs/EFFECTS.md` says the same to an effect's author. Neither gives display time as a time on the host's clock. The maturity ledger's row for the effect seam claims the phase on the Mac only, with implementation and correctness apart, and does not claim that a window's consumed target is its platform target.",
-          "ask": "Do C02's and `docs/EFFECTS.md`'s words say what the design's timing model says, with nothing added that it does not say? Does the ledger row claim only what the other M4 items proved?",
+          "ask": "Do C02's and `docs/EFFECTS.md`'s words say what the design's timing model says, with nothing added that it does not say? Does the ledger row claim only what the other WP4 items proved?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP4-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         },
         {
-          "id": "M4.5",
+          "id": "WP4.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP4-review.md"
         }
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "The world lane\u2019s resume origin is proved without real-time pacing",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "The resume-bracket test stays fast. It still proves the initial origin, the hold without a commit, the first consumed target after resume, and one resumed span origin anchored inside the request and acknowledgment bracket across the three original gap/pause cases. Guard: the CPU world-lane clock regression.",
           "check": "cargo nextest run --locked --offline -p thrum-core --test it -E 'test(=clock_spans::lane::a_resumed_lane_keeps_one_origin_inside_the_resume_bracket)' --no-tests=fail",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M5/M5.1-review-fix.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP5/M5.1-review-fix.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/M5-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP5-review.md"
         }
       ],
       "failed_reviews": 1,

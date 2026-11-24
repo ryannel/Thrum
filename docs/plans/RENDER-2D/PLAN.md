@@ -18,39 +18,39 @@ Before building, read the [module interfaces](DESIGN.md#interfaces),
   highlights above white for EDR.
 - Assumption: Stable overlap matters more than exact height order for sprites within the sort band.
 - Assumption: The lead treats a visible pulse in fine patterns during ordinary scrolling as a shipped-game
-  defect. M3 judges the original patterns at normal viewing size and speed. The owner has yet to rule on this
+  defect. WP3 judges the original patterns at normal viewing size and speed. The owner has yet to rule on this
   specific trade-off.
 
-## M1 A game selects a 2D scene, and sprites reach the screen through the game's own frame with no sky, shadow or light work, on the Mac and in Chrome: done
+## WP1 A game selects a 2D scene, and sprites reach the screen through the game's own frame with no sky, shadow or light work, on the Mac and in Chrome: done
 
-[Review](../../../.orchestrate/evidence/RENDER-2D/M1-review.md)
+[Review](../../../.orchestrate/evidence/RENDER-2D/WP1-review.md)
 
-## M2 Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still: done
+## WP2 Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still: done
 
-[Review](../../../.orchestrate/evidence/RENDER-2D/M2-review.md)
+[Review](../../../.orchestrate/evidence/RENDER-2D/WP2-review.md)
 
-## M3 Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls
+## WP3 Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls
 
-Start with M3.12. Update the `creation-counters` inventory in `crates/thrum-render/tests/scene_2d.rs` for the
-already-landed M3 packing and frame record. Run its focused Metal check and land the test-only fix as a separate
-checkpoint on main before starting any other M3 item. The next green `long-tests` run lets WATERS M17 and
-RAY-TRACING M3 proceed.
+Start with WP3.12. Update the `creation-counters` inventory in `crates/thrum-render/tests/scene_2d.rs` for the
+already-landed WP3 packing and frame record. Run its focused Metal check and land the test-only fix as a separate
+checkpoint on main before starting any other WP3 item. The next green `long-tests` run lets WATERS WP17 and
+RAY-TRACING WP3 proceed.
 
 Then tune the [spatial filter](DESIGN.md#6-sampling-two-kinds-of-sheet) for the existing 1.5× scroll and the
 full off-grid 2× transition in the Metal pan. Keep the authored patterns, camera paths and backing extents for
 comparison. Reuse the camera-sweep proof on Metal and Chrome, and verify bleed neighbours in the uploaded
 atlas. Retire the exact-box checks and their tracked tolerance fixtures when the replacement proofs are ready.
-Close M3 with the shared `long-tests` result covering the merged milestone (M3.13). [M3 items](DONE.json)
+Close WP3 with the shared `long-tests` result covering the merged milestone (WP3.13). [WP3 items](DONE.json)
 
-## M4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
+## WP4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
 
-Start from the lease and content publication delivered by CONTENT-LOOP M1. Build the cooker and residency
+Start from the lease and content publication delivered by CONTENT-LOOP WP1. Build the cooker and residency
 integration under [seam ruling 2](../ARCHITECTURE.md#seam-rulings-for-render-2d).
-[M4.1–M4.11](DONE.json)
+[WP4.1–WP4.11](DONE.json)
 
-## M5 The reference crowd of 10,000 is drawn on the Mac and in Chrome, the sprite scene works on the iPhone simulator, and a game maker can start a 2D scene from the guide
+## WP5 The reference crowd of 10,000 is drawn on the Mac and in Chrome, the sprite scene works on the iPhone simulator, and a game maker can start a 2D scene from the guide
 
 Register `examples/crowd-2d-view` in `.config/architecture.toml`. Use SIM-2D's rule package and reference
 traces from `examples/crowd-2d`. For the simulator, use the V1 scene selection in `examples/v1-game-ios`
 and the runner pattern in `scripts/culling_sim.py`. Update the creator guide and maturity ledger.
-[M5.1–M5.13](DONE.json)
+[WP5.1–WP5.13](DONE.json)

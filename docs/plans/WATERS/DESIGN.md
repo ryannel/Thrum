@@ -78,8 +78,8 @@ material it carries, and one optics. A kind of water is a row of data for those 
 | Wet ground | No body: a wetness the ground's material reads | | | `PUDDLES`. The sheen and foam on sand the waves wash are this module's [film](#the-surface-and-the-frame-contract) |
 
 **Commissioned in this module:** the shared system, and still open water on it: the sea, the shore, and lakes,
-ponds and pools. Cues S1 to S7 of the sea brief and W1 to W12 below, on `mac-metal` and `chrome-webgpu`, lit only by
-`ATMOSPHERE`'s products. The wave field is `SEA`'s, built by its M1 and M2 and unchanged by this design.
+ponds and pools. Cues S1 to S7 of the sea brief and WP1 to WP12 below, on `mac-metal` and `chrome-webgpu`, lit only by
+`ATMOSPHERE`'s products. The wave field is `SEA`'s, built by its WP1 and WP2 and unchanged by this design.
 
 **Planned as later modules**, from [their briefs](../ARCHITECTURE.md#rivers-and-puddles): `RIVERS` (rivers,
 streams and waterfalls) and `PUDDLES` (rain, puddles and wet ground).
@@ -103,14 +103,14 @@ streams and waterfalls) and `PUDDLES` (rain, puddles and wet ground).
 The seams the water decision asks for are kept: causes are plain records with stable IDs, forces never depend on
 the camera, and no water state would cross a network.
 
-**What exists.** `thrum-sea-model`, the CPU wave model, is built by `SEA` M1. Thrum has no water on the GPU.
+**What exists.** `thrum-sea-model`, the CPU wave model, is built by `SEA` WP1. Thrum has no water on the GPU.
 Broadsides has a sea whose surface pass takes 21 ms at 1440p, and lake and coast code that was never accepted:
 its kernels are a resource, and its frame is not.
 
 ## Cues
 
-S1 to S7 are the sea brief's, and each is something a user above needs. W1 to W6 are what water as a whole adds,
-and W7 to W9 are the owner's of 14 November. W10 to W12 bring the view from under water to the bar the owner
+S1 to S7 are the sea brief's, and each is something a user above needs. WP1 to WP6 are what water as a whole adds,
+and WP7 to WP9 are the owner's of 14 November. WP10 to WP12 bring the view from under water to the bar the owner
 set that day. The bar for the sea is the sea and wakes of Sea of Thieves; for
 inland water and for mirrored scenery it is the lakes, shores and streams of Red Dead Redemption 2; for surf it
 is the beaches of Horizon Forbidden West; for the view from under water it is Sea of Thieves again, and for
@@ -131,18 +131,18 @@ contract and what one pass hands another are still tested.
 | **S5** Sea optics: the sky and Sun reflect, colour deepens with depth, the Sun glitters, cloud shade dims it once | G3s sky from dawn to night; screen-space reflection with the environment product as fallback; `CLOUDS` shade when present | A private sky or exposure, or a frame that only looks right at one exposure. Rejected by the waterline seen against terrain-lit ground from dawn to night, and by a reflected panel and a bed under water whose colour over the exposure scale holds at two exposures and carries the camera's air once. The optics equation is a diagnostic |
 | **S6** Stable in motion: no shimmer, ghosting or history smear under reconstruction; cuts and rebuilds reset cleanly | TAAU on portable and Chrome, MetalFX on Apple tile; motion, reactive and reset written per the frame contract | Zero motion on a moving surface. Rejected by motion read from submitted frames against the surface's known displacement |
 | **S7** Controls a visitor can use: wind, swell, time of day and a field overlay, on Mac and in Chrome | The typed controls of `CREATOR` | A control that restarts the sea. Rejected by a wind change in motion with no pop |
-| **W1** Water lies where the land holds it: a level surface that ends in a clean line where the ground rises | A sea, a lake above it and a pond in one view; levels raised and lowered while the scene runs; from the shore and from 40 m up | A water plane drawn through the terrain, or a sheet joining two levels. Rejected by a hollow beyond a ridge that must stay dry, and by a top-down view classified from the CPU model |
-| **W2** Shelter and shallows: a lake is calm while the sea runs, waves fade as water shallows, and on a beach the waterline runs up and back with them | Glassy calm to gale; fetches of 200 m to open sea; depths from 10 m to the waterline; a beach of 1 in 10 at a fixed stage | One wave height for all water, or a waterline pinned to the still level. Rejected by the lake's measured height against its fetch in a gale, by a wave that reaches the beach at full height, and by the waterline's travel under one regular wave |
-| **W3** The ground shows through the shallows and the shore reflects in still water | Depths from the waterline to where the water type hides the bed; calm to breeze; the far shore, hills and a tree on the bank on screen | An opaque sheet with a painted edge, or a sky-only mirror. Rejected by a bed that shows through the shallows and fades with depth into the water's own colour, with the optics equation as a diagnostic, and by a reflection that must join its source at the waterline |
-| **W4** Rings on any water: a dropped stone or a hull raises waves that travel at the speed the depth gives and die at the shore | Depths of 0.25 m to deep; rings and wakes, short waves and long, in one window that holds shallows and deep water; a shore and a bar of dry ground | A deep-water solver everywhere, or one transform over land and water alike. Rejected by rings that slow and bunch toward the shallows, with the depth's wave speed as a diagnostic, and by the water beyond a bar of ground, which must stay at rest |
-| **W5** Running water: where the map has a current, ripples, foam and floats travel with it | Currents to 3 m/s; a channel that narrows; a hand-made chart here, a solved one in `RIVERS` | A texture sliding over still water. Rejected by a float that must be carried, by foam born at a post standing in the current, and by tracked surface detail |
-| **W6** One water: the same light, foam, query and controls on every body, and no seam where two meet | A channel leaving a lake and entering the sea; a swell running; the lake's level and the tide moved through their ranges; a mouth shallow enough for the depth to hold the swell; one craft crossing from one body to another | A renderer for each kind, or a blend drawn over two surfaces that do not meet. Rejected by the surface's height either side of the join, after its depth limit, under a swell and after a stage has moved, and by one query answering across it |
-| **W7** Surf: a swell meets a shore as surf. Its lines turn to face the beach, close up and rise; the largest of a set break furthest out; a crest steepens, pitches forward and breaks into a white front that runs into a connected swash | Trade wind to gale with a swell of 6 s to 14 s; beaches of 1 in 30 to 1 in 5; swell square on and 60° off the beach; a headland and a lee shore; the tide through its range; from the sand at 2 m, from 40 m up and from 1 km off | An independent shore wave train, a wave that only fades, or a bore followed by a detached wet ribbon. Follow the incoming ridges into the break zone, then watch a breaking front lose height and feed the advancing waterline. A float must rise on the crest the viewer sees break |
-| **W8** Scenery the camera cannot see: water mirrors what stands round it, the far shore, hills, trees and the craft, each joined to its foot at the waterline and blurring as the water roughens | Calm to a breeze on the lake and the pond, calm to a trade wind on the sea under the island; camera 1 m to 40 m up, looking down so the source is above the frame and panning so it leaves the side; two levels in one view; dawn to night | A trace of what is on screen, or a probe at the camera. Rejected by a view whose reflected hill is wholly off screen, and by a tree's reflection that must meet its trunk at the waterline, which a probe's parallax misses |
-| **W9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel under water whose light falls with the length of water in front of it once and not twice |
-| **W10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by a net that is sharper on a receiver in the shallows than on one in the deep, with the model's contrast as a diagnostic, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
-| **W11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull, where the water is darker than beside it | The lens from 0.5 m to 20 m under; a breeze to a trade wind; the Sun from 10° up to overhead; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
-| **W12** The camera follows the light down: the picture stays readable from the surface to the deep, deeper water is darker by a share and never black, and crossing the surface makes no jump | The sea to 20 m under and the lake to its bed; dawn, noon and twilight; half in, and crossing both ways | An exposure metered from the sky, which leaves deep water black, or a gain taken from the picture, which pumps as pale sand comes into view. Rejected by the descent, and by the resolved exposure against the model's light at the lens |
+| **WP1** Water lies where the land holds it: a level surface that ends in a clean line where the ground rises | A sea, a lake above it and a pond in one view; levels raised and lowered while the scene runs; from the shore and from 40 m up | A water plane drawn through the terrain, or a sheet joining two levels. Rejected by a hollow beyond a ridge that must stay dry, and by a top-down view classified from the CPU model |
+| **WP2** Shelter and shallows: a lake is calm while the sea runs, waves fade as water shallows, and on a beach the waterline runs up and back with them | Glassy calm to gale; fetches of 200 m to open sea; depths from 10 m to the waterline; a beach of 1 in 10 at a fixed stage | One wave height for all water, or a waterline pinned to the still level. Rejected by the lake's measured height against its fetch in a gale, by a wave that reaches the beach at full height, and by the waterline's travel under one regular wave |
+| **WP3** The ground shows through the shallows and the shore reflects in still water | Depths from the waterline to where the water type hides the bed; calm to breeze; the far shore, hills and a tree on the bank on screen | An opaque sheet with a painted edge, or a sky-only mirror. Rejected by a bed that shows through the shallows and fades with depth into the water's own colour, with the optics equation as a diagnostic, and by a reflection that must join its source at the waterline |
+| **WP4** Rings on any water: a dropped stone or a hull raises waves that travel at the speed the depth gives and die at the shore | Depths of 0.25 m to deep; rings and wakes, short waves and long, in one window that holds shallows and deep water; a shore and a bar of dry ground | A deep-water solver everywhere, or one transform over land and water alike. Rejected by rings that slow and bunch toward the shallows, with the depth's wave speed as a diagnostic, and by the water beyond a bar of ground, which must stay at rest |
+| **WP5** Running water: where the map has a current, ripples, foam and floats travel with it | Currents to 3 m/s; a channel that narrows; a hand-made chart here, a solved one in `RIVERS` | A texture sliding over still water. Rejected by a float that must be carried, by foam born at a post standing in the current, and by tracked surface detail |
+| **WP6** One water: the same light, foam, query and controls on every body, and no seam where two meet | A channel leaving a lake and entering the sea; a swell running; the lake's level and the tide moved through their ranges; a mouth shallow enough for the depth to hold the swell; one craft crossing from one body to another | A renderer for each kind, or a blend drawn over two surfaces that do not meet. Rejected by the surface's height either side of the join, after its depth limit, under a swell and after a stage has moved, and by one query answering across it |
+| **WP7** Surf: a swell meets a shore as surf. Its lines turn to face the beach, close up and rise; the largest of a set break furthest out; a crest steepens, pitches forward and breaks into a white front that runs into a connected swash | Trade wind to gale with a swell of 6 s to 14 s; beaches of 1 in 30 to 1 in 5; swell square on and 60° off the beach; a headland and a lee shore; the tide through its range; from the sand at 2 m, from 40 m up and from 1 km off | An independent shore wave train, a wave that only fades, or a bore followed by a detached wet ribbon. Follow the incoming ridges into the break zone, then watch a breaking front lose height and feed the advancing waterline. A float must rise on the crest the viewer sees break |
+| **WP8** Scenery the camera cannot see: water mirrors what stands round it, the far shore, hills, trees and the craft, each joined to its foot at the waterline and blurring as the water roughens | Calm to a breeze on the lake and the pond, calm to a trade wind on the sea under the island; camera 1 m to 40 m up, looking down so the source is above the frame and panning so it leaves the side; two levels in one view; dawn to night | A trace of what is on screen, or a probe at the camera. Rejected by a view whose reflected hill is wholly off screen, and by a tree's reflection that must meet its trunk at the waterline, which a probe's parallax misses |
+| **WP9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel under water whose light falls with the length of water in front of it once and not twice |
+| **WP10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by a net that is sharper on a receiver in the shallows than on one in the deep, with the model's contrast as a diagnostic, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
+| **WP11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull, where the water is darker than beside it | The lens from 0.5 m to 20 m under; a breeze to a trade wind; the Sun from 10° up to overhead; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
+| **WP12** The camera follows the light down: the picture stays readable from the surface to the deep, deeper water is darker by a share and never black, and crossing the surface makes no jump | The sea to 20 m under and the lake to its bed; dawn, noon and twilight; half in, and crossing both ways | An exposure metered from the sky, which leaves deep water black, or a gain taken from the picture, which pumps as pale sand comes into view. Rejected by the descent, and by the resolved exposure against the model's light at the lens |
 
 ## Research and selection
 
@@ -189,8 +189,8 @@ read them; the sources for water as a whole follow.
   transitions between them. LEAN mapping (Olano and Baker 2010, from memory) keeps the mean slope and the slopes'
   second moments in mips. These are linear, so any texture filter averages them correctly, anisotropic filtering
   included.
-- **Broadsides**, as what was tried. Its accepted calm and trade-wind sea (W1), its wake and query milestones M1
-  and M2, and the foam spike's five changes with blind verdicts are evidence that mechanisms of this kind make
+- **Broadsides**, as what was tried. Its accepted calm and trade-wind sea (WP1), its wake and query milestones WP1
+  and WP2, and the foam spike's five changes with blind verdicts are evidence that mechanisms of this kind make
   their cues. Its timings are evidence of where cost went: a fused full-rate surface shader at about 2.35 ns a
   pixel, a whole-scene copy, a full-screen reflection trace of about 3 ms, and world work regrouped per draw. Four
   cascades cost it about 0.5 ms an evaluation on this Mac.
@@ -347,7 +347,7 @@ against the users and cues above. "Keep" means it would be chosen again with the
 | Inherited choice | Verdict | Why |
 |---|---|---|
 | A module for the open sea, with inland water left to designs nobody builds | **Change** | The sea is the one body with no bed, no shore, no current and one level. A surface, optics, foam and query built for it alone assume all four, and the rest of water is where each fails. One system is designed here, and the sea is its first body |
-| The wave model and its GPU fields (`SEA` M1 and M2) | **Keep**, as built | Wind waves are one field for the world, with their own oracle. Every body reads them, and nothing in them depends on where water lies |
+| The wave model and its GPU fields (`SEA` WP1 and WP2) | **Keep**, as built | Wind waves are one field for the world, with their own oracle. Every body reads them, and nothing in them depends on where water lies |
 | One level, the sea's, everywhere below the horizon | **Change** | Water lies at many levels. A map says where, and the surface is drawn body by body |
 | Inland water as a live generalised shallow-water solver on the GPU (the water decision and the dynamics design) | **Change**: flow is prepared once | A river is steady nearly always. A prepared flow is the same on every machine and readable by a CPU, costs nothing in the frame and exists far from the camera; live solvers are hard to keep stable and to make reach their end. The solver's split is kept: a bulk in the map, waves on it. Whether floods ever move is [open for the owner](PLAN.md#open-for-the-human) |
 | Bodies read the GPU through one batched query, one to two ticks late | **Keep**, for all water | Interaction waves exist nowhere else. The answer gains the body of water, its depth and its current |
@@ -410,28 +410,28 @@ Neither stops the milestones after it.
 
 | Cue | Candidate | Verdict |
 |---|---|---|
-| W7 | Waves that only fade under the depth limit | Fails: nothing turns, closes up, rises or breaks |
-| W7 | A wave train drawn along the shore's distance field | Fails: it is a second sea. The crest that breaks is not the swell's, a float cannot be told which to ride, and its sets are not the wind's |
-| W7 | The local depth's wavenumber and Snell's turn applied at each point (OloEngine) | Fails: phase is not an integral, so crests drift and tear |
-| W7 | Baked simulations placed along drawn fronts (Horizon Forbidden West) | The look to beat. Not selected: the fronts are authored for each beach, apart from the sea state, the tide and the query, and the bake needs an offline fluid pipeline this project does not have. Its one-section breaker is taken |
-| W7 | A live Boussinesq or shallow-water window fed by the wave field | Does shoal, break and run up. Not selected: a second solver whose state must agree with the analytic field at its border, a time step bound to the cell size through every hitch, no far surf outside its window, and the control problems Crest reports. It remains the route if the selected one cannot meet W7 |
-| W7 | **Each long wave carries a phase lag solved over the bed. The crest takes a breaker section by its breaking index and feeds a bounded swash profile** | **Selected.** The swell's own crests turn, close up, rise and break. A localized deformation dissipates the bore and the same incoming swell moves one wet edge. CPU and GPU evaluate the same sheet |
-| W8 | A screen-space trace of the scene (this design's first version) | Fails by construction when the source is off screen. Kept for water that has no mirror view |
-| W8 | A cube probe drawn round the camera, with or without parallax correction | Fails the waterline: a probe is right at one point, so a reflection parts from its foot by the probe's distance from the surface point. Six faces cost more than one mirror |
-| W8 | Ray query against the scene's geometry | Right in principle. Not portable: experimental on Metal in wgpu and absent from WebGPU. A later provider for the Apple recipe, promoted by a measured win |
-| W8 | **A mirror view: the scene drawn again from the camera's mirror image in the water's plane, read with its depth** | **Selected.** Exact on flat water for everything above the plane, on screen or off; what Unreal and GTA V ship; one more view, whose cost its owner controls |
-| W9 | A tint and fog once the camera's centre is under | Fails a lens half under |
-| W9 | **A per-pixel lens test against the surface's own function, the surface drawn two-sided, and the water composed as a medium from the gather** | **Selected** |
-| W10 | A played caustic texture projected along the Sun (Crest; the bar's own, as far as is known) | Fails: the same net in a calm and in a gale, a repeat, and a brightness that is not the light's |
-| W10 | One map made at one depth and read at every depth (HDRP) | Fails the range. A map made at 1 m and read at 0.25 m has nearly three times the contrast of the net there, and read at 4 m and 16 m it correlates 0.30 and 0.07 with the net there (part R5) |
-| W10 | A backward lookup: from the receiver, one sheet's brightness from the surface's curvature above it | Fails past the first focus, where sheets cross and the net's bright lines are. It does not conserve light (a mean of 1.30 at 1 m) and correlates 0.29 there (part R5) |
-| W10 | Rays traced from the Sun through the surface (NVIDIA) | Right. Not portable |
-| W10 | **The surface's light carried down its refracted rays onto a ladder of depths, each cell spread over where it lands** | **Selected.** It conserves light by construction, crossing sheets add, it is made from the waves the surface is drawn from, and it is what Wallace's and HDRP's methods do at one depth |
-| W11 | Streaks blurred outward from the Sun's place on screen | Fails with the Sun out of frame, and knows nothing of a hull |
-| W11 | The water as a medium in `ATMOSPHERE`'s view volume | Not selected. C08 gives water a declared boundary and this design composes the water's segments in its own pass; the volume's Sun path is straight where the water's bends at the surface; and a lens half under would put two media in one volume |
-| W11 | **The beam's once-scattered light, marched through the caustic field and the scene's Sun visibility in the water's own composition** | **Selected** |
-| W12 | A meter on the rendered picture | Not selected: V4's meter is a physical incident meter, and a picture meter pumps |
-| W12 | **The incident meter reads the light at the lens: the game gives its camera the water's factor there** | **Selected** |
+| WP7 | Waves that only fade under the depth limit | Fails: nothing turns, closes up, rises or breaks |
+| WP7 | A wave train drawn along the shore's distance field | Fails: it is a second sea. The crest that breaks is not the swell's, a float cannot be told which to ride, and its sets are not the wind's |
+| WP7 | The local depth's wavenumber and Snell's turn applied at each point (OloEngine) | Fails: phase is not an integral, so crests drift and tear |
+| WP7 | Baked simulations placed along drawn fronts (Horizon Forbidden West) | The look to beat. Not selected: the fronts are authored for each beach, apart from the sea state, the tide and the query, and the bake needs an offline fluid pipeline this project does not have. Its one-section breaker is taken |
+| WP7 | A live Boussinesq or shallow-water window fed by the wave field | Does shoal, break and run up. Not selected: a second solver whose state must agree with the analytic field at its border, a time step bound to the cell size through every hitch, no far surf outside its window, and the control problems Crest reports. It remains the route if the selected one cannot meet WP7 |
+| WP7 | **Each long wave carries a phase lag solved over the bed. The crest takes a breaker section by its breaking index and feeds a bounded swash profile** | **Selected.** The swell's own crests turn, close up, rise and break. A localized deformation dissipates the bore and the same incoming swell moves one wet edge. CPU and GPU evaluate the same sheet |
+| WP8 | A screen-space trace of the scene (this design's first version) | Fails by construction when the source is off screen. Kept for water that has no mirror view |
+| WP8 | A cube probe drawn round the camera, with or without parallax correction | Fails the waterline: a probe is right at one point, so a reflection parts from its foot by the probe's distance from the surface point. Six faces cost more than one mirror |
+| WP8 | Ray query against the scene's geometry | Right in principle. Not portable: experimental on Metal in wgpu and absent from WebGPU. A later provider for the Apple recipe, promoted by a measured win |
+| WP8 | **A mirror view: the scene drawn again from the camera's mirror image in the water's plane, read with its depth** | **Selected.** Exact on flat water for everything above the plane, on screen or off; what Unreal and GTA V ship; one more view, whose cost its owner controls |
+| WP9 | A tint and fog once the camera's centre is under | Fails a lens half under |
+| WP9 | **A per-pixel lens test against the surface's own function, the surface drawn two-sided, and the water composed as a medium from the gather** | **Selected** |
+| WP10 | A played caustic texture projected along the Sun (Crest; the bar's own, as far as is known) | Fails: the same net in a calm and in a gale, a repeat, and a brightness that is not the light's |
+| WP10 | One map made at one depth and read at every depth (HDRP) | Fails the range. A map made at 1 m and read at 0.25 m has nearly three times the contrast of the net there, and read at 4 m and 16 m it correlates 0.30 and 0.07 with the net there (part R5) |
+| WP10 | A backward lookup: from the receiver, one sheet's brightness from the surface's curvature above it | Fails past the first focus, where sheets cross and the net's bright lines are. It does not conserve light (a mean of 1.30 at 1 m) and correlates 0.29 there (part R5) |
+| WP10 | Rays traced from the Sun through the surface (NVIDIA) | Right. Not portable |
+| WP10 | **The surface's light carried down its refracted rays onto a ladder of depths, each cell spread over where it lands** | **Selected.** It conserves light by construction, crossing sheets add, it is made from the waves the surface is drawn from, and it is what Wallace's and HDRP's methods do at one depth |
+| WP11 | Streaks blurred outward from the Sun's place on screen | Fails with the Sun out of frame, and knows nothing of a hull |
+| WP11 | The water as a medium in `ATMOSPHERE`'s view volume | Not selected. C08 gives water a declared boundary and this design composes the water's segments in its own pass; the volume's Sun path is straight where the water's bends at the surface; and a lens half under would put two media in one volume |
+| WP11 | **The beam's once-scattered light, marched through the caustic field and the scene's Sun visibility in the water's own composition** | **Selected** |
+| WP12 | A meter on the rendered picture | Not selected: V4's meter is a physical incident meter, and a picture meter pumps |
+| WP12 | **The incident meter reads the light at the lens: the game gives its camera the water's factor there** | **Selected** |
 
 ## Mechanisms
 
@@ -704,9 +704,9 @@ by a drawn curve. The table is the profile's data, and it is held to these rules
   The shore profile below acts on the resulting sheet, lowering and broadening the front into the swash.
 
 The first profile's table is made from a closed form, a phase skew for the face and a throw in proportion to
-height, and is tuned against the inspected items of M13.
+height, and is tuned against the inspected items of WP13.
 
-**Bore decay and swash.** M13's failed Metal view exposed a dry strip in 30 of 173 cross-shore cuts of the
+**Bore decay and swash.** WP13's failed Metal view exposed a dry strip in 30 of 173 cross-shore cuts of the
 f64 long-wave sheet. A representative cut had about 1 m of bared bed seaward of about 5.5 m of wet swash.
 The summed trough can exceed the regular-wave limit because that limit bounds variance, while the component
 amplitudes add coherently. A finer mesh or a change in opacity leaves the sheet's crossings in place. Use a
@@ -714,7 +714,7 @@ shore-local profile deformation, drawing on [Guerrilla's production breaker](htt
 [XBeach's bore and roller models](https://xbeach.readthedocs.io/en/latest/xbeach_manual.html#dissipation)
 motivate letting the bore lose organized wave motion as it runs in. Thrum approximates that loss with a
 bounded profile driven by the existing swell and reuses the existing foam stocks.
-[M13 handoff](../../../.orchestrate/evidence/WATERS/M13-handoff.md)
+[WP13 handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md)
 
 - On a rising beach, prepare the shore-normal transects with the owning body's bed and sampled stages. Use
   each transect's still-water contour point at the current stage as the phase reference. Evaluate the same
@@ -739,10 +739,10 @@ bounded profile driven by the existing swell and reuses the existing foam stocks
   Near the wet edge, taper resolved short-wave geometry so it cannot change the sign of the thickness or
   move the edge horizontally. Short-wave shading detail and the interaction waves' still-water support
   follow their existing rules.
-- The section shape, bore decay and overlap width are tuned by eye for the M13 crest, bore and swash views.
+- The section shape, bore decay and overlap width are tuned by eye for the WP13 crest, bore and swash views.
   The regular-wave extrema and the one wet edge on a rising transect are properties of the model and query.
   Use the plane-beach regular-wave case and the failed trade-wind cut to diagnose the handoff through advance
-  and retreat. M13 judges the look in submitted motion.
+  and retreat. WP13 judges the look in submitted motion.
 
 **Readers.** The transform, section and swash are one function, in `thrum-water-model` in f64 and in WGSL,
 read by the field cache, the query and the foam's births and carriage. Use the final sheet for wet/dry,
@@ -875,7 +875,7 @@ vertex by the displacement found where it rests. Five rules settle it:
   crest turns over about a texel. At the 4 to 8 m spacings seen from 40 m up, a 53 m wind sea's crests are then
   drawn 8 to 28 times rounder than they are. The forward form draws them within 1.3 to 2.3 times their true width
   (part Z). The forward cache also costs one evaluation a texel, where the inversion iterated. The inverted
-  cache took 3.6 ms a frame in M2's captures, against the sea design's estimate of 0.2–0.3 ms.
+  cache took 3.6 ms a frame in WP2's captures, against the sea design's estimate of 0.2–0.3 ms.
 - *Filtered over the pixel's footprint, not its longest side.* Each layer a pixel reads, the cascades and every
   cache level, is a filterable texture with a full mip chain. Its texels hold the LEAN moments: the mean slope,
   the slopes' second moments and the Jacobian's mean and square. The pixel reads it with trilinear anisotropic
@@ -884,7 +884,7 @@ vertex by the displacement found where it rests. Five rules settle it:
   at any anisotropy (Olano and Baker's LEAN mapping). Under a grazing view the footprint's long side is the
   distance over the height times its short side. Choosing detail by the long side turns every wave under 20 m
   into one mean slope and one variance about 600 m out from 40 m up, 60 pixels under the horizon, and every wave
-  under 160 m by 2.4 km. That is the smooth belt of M2's first build. Read over the ellipse, waves under 20 m stay resolved to about 1.7 km, and the
+  under 160 m by 2.4 km. That is the smooth belt of WP2's first build. Read over the ellipse, waves under 20 m stay resolved to about 1.7 km, and the
   wind sea to the rows where it is under a pixel tall (part Y).
 - *Nothing is dropped.* Whatever a layer stops resolving joins the covariance, whether by its level, its mip or a
   fade with distance. A fade that removes resolved slope and adds no variance leaves the far sea smoother than
@@ -897,11 +897,11 @@ vertex by the displacement found where it rests. Five rules settle it:
   and the sky above it with no step.
 - *Crests read by their light as well as their shape.* The [optics](#optics)' thin-crest term is part of the
   surface from its first frame. In-scatter grows where the surface stands high and is compressed, lit only by
-  the lent Sun and sky, as Sea of Thieves' wave-peak mask does from the same displacement. M8 judges its glow
+  the lent Sun and sky, as Sea of Thieves' wave-peak mask does from the same displacement. WP8 judges its glow
   against a low Sun.
 
 The horizon these rules give is physical. From 40 m up, a wave is under a pixel tall within a few pixels of the
-horizon, so the last rows are statistics and carry no resolved texture. M2.2's "band" is something else: a strip
+horizon, so the last rows are statistics and carry no resolved texture. WP2.2's "band" is something else: a strip
 whose texture stops at an edge, or whose tone steps from the water below it or the sky above.
 
 The water draws in `EFFECT-GRAPH`'s `after-opaque` stage, once for all its bodies, and writes the frame contract for its pixels:
@@ -936,7 +936,7 @@ the answer will be used at, and the body's ID and generation. One compute dispat
 
 The wake's share of an answer is the height the wake's own state holds at that place and tick, which is the
 height the surface draws there, with no gain between them. A float lifted by half a crest would still rise when
-the crest came and lie still after it, so M6 compares the two directly: a query's height against the wake's
+the crest came and lie still after it, so WP6 compares the two directly: a query's height against the wake's
 endpoints read back, at points clear of every footprint, where no dent is added. No second wake solver is needed.
 
 Crests sharpen because displacement is horizontal as well as vertical, so the surface above a world point is
@@ -993,7 +993,7 @@ trains of a 3.2 m sea shoal and turn and the section follows the breaking index.
 columns, 1,062 of which hold three surfaces or more, and at cells of 0.5, 0.25 and 0.125 m, the answer lies
 between the least and the greatest height the fine cut gives within one cell of the point. Of 1,200 rest
 places of known height over their own world place, the 0.25 m cut answers below 28, and each of those stands
-within 46 mm of a lip's edge. The review's own witness is found, to the micrometre. M12.12 holds the model to
+within 46 mm of a lip's edge. The review's own witness is found, to the micrometre. WP12.12 holds the model to
 such a cut on such sheets, written in the test, so the GPU is compared with a model whose branch is
 established. The lens test of [the view from under water](#under-water) reads the same cut, made once for the
 lens: its near plane spans a cell or two, so one set of nodes serves every pixel.
@@ -1003,10 +1003,10 @@ section: about 1,200 for a 1.4 m wave thrown 4.2 m, and 3,500 on average and 5,5
 sea, where a plain point costs a few (part X). That is the price of a surface that is right. The lattice is
 fixed in the world so that points close together share their nodes, as a hull's do. The count falls with the
 square of the cell and with the square of the waves' height, and nothing is paid out of reach of a crest
-that may be thrown. How the dispatch evaluates the nodes is the builder's, held to the model by M13.1: no
+that may be thrown. How the dispatch evaluates the nodes is the builder's, held to the model by WP13.1: no
 long wave is shorter than 7.7 m, a 20 m wave over the lag's floor, so the component sums may be taken on a
 coarser lattice and interpolated, and a cell whose own depth cannot throw as far as the point may be
-skipped. M12 records what the model's cut costs and M13 a tick with every float in the breakers; the cell is
+skipped. WP12 records what the model's cut costs and WP13 a tick with every float in the breakers; the cell is
 the profile's knob, and a larger one widens what a cut can miss.
 
 Each answer is the body of water at the point with its depth and current, the height, the slope, the surface's
@@ -1169,7 +1169,7 @@ ticks has a closed form, and one long step equals many short ones to rounding.
 A step of *n* ticks is the elapsed time, once. Transport keeps what it moves, and that is all that is kept:
 the sinks, the transfers and the births still act for the whole `nΔt`, one time. A patch of aged film that
 drifts through a hitch arrives holding what those ticks stepped one at a time would leave it, less than it
-set out with, its ageing neither frozen nor applied twice. M7 tests a hitch that way.
+set out with, its ageing neither frozen nor applied twice. WP7 tests a hitch that way.
 
 **Births come only from booked causes**, as bounded rates `dc/dt = r(1 − c)` integrated exactly over the tick:
 
@@ -1186,7 +1186,7 @@ set out with, its ageing neither frozen nor applied twice. M7 tests a hitch that
   through the band where waves die, up to the top of the swash. There is no threshold: a lake's small waves
   lose little power and make little foam, in that proportion, and a calm makes none.
 
-**Shore births with surf.** Book each layer's loss across the depth limit on wet support as in M7.5, using
+**Shore births with surf.** Book each layer's loss across the depth limit on wet support as in WP7.5, using
 the transformed long-wave power as the long layer's input to the limit. The short layers keep their
 distributed births. Long-wave loss also feeds distributed births at its wet source cells wherever that wave
 has no resolved wet breaking face nearby. This includes swash where the section has faded and waves that
@@ -1202,9 +1202,9 @@ wet support and the advancing swash carries the stocks the bore leaves there. Th
 comes from wet lost power. Use a bounded local footprint on the existing foam grid and weights that sum
 to one including the share retained at the source. If the face or lip
 is unresolved or dry, keep its share at the wet source. Reuse the surf samples and the existing foam step.
-Each wave keeps the area-integrated birth budget M7.5 assigns to its wet lost power before stock saturation
+Each wave keeps the area-integrated birth budget WP7.5 assigns to its wet lost power before stock saturation
 and ageing. Calm, omitted waves and dry columns contribute zero shore birth. The face width and air split
-are visual tuning for M13.7.
+are visual tuning for WP13.7.
 
 `RIVERS` books two more through the same rule: the height a chart's flow loses, and a fall's plunge.
 
@@ -1223,7 +1223,7 @@ whitecaps continue to the vista without state. A distant beach takes the cover t
 birth would hold in steady state, including long-wave loss below breaking index 1. The estimator uses the
 distributed source and hands over across the window blend, so a distant beach keeps its surf line.
 
-**M13 surf inspection.** Use the island's 1 km offshore view to judge whether the exposed beach still shows
+**WP13 surf inspection.** Use the island's 1 km offshore view to judge whether the exposed beach still shows
 a line of surf entirely beyond the foam windows. For the handoff, choose a separate fixed camera position
 and aim it so the same active breaking front is visible both where simulated foam contributes in the coarse
 window's outer blend and beyond the outer edge, where the distant estimator supplies the foam. Record where
@@ -1395,8 +1395,8 @@ where the gather reads. So where each path first ships a test holds, without the
 - *the exposure scale once:* with only the scale changed, a water pixel's stored colour over the scale does
   not change;
 - *each medium once:* what a gathered surface supplies to a water pixel is dimmed by the camera's air one
-  time, seen from above (M8), and by the water between the lens and that surface one time, seen from under
-  water (M15). The mirror view's two stretches of air are M14's.
+  time, seen from above (WP8), and by the water between the lens and that surface one time, seen from under
+  water (WP15). The mirror view's two stretches of air are WP14's.
 
 ### Mirror views: scenery the camera cannot see
 
@@ -1455,7 +1455,7 @@ or the tree's top (part P).
 Those figures show the correction can work, and diagnose a reflection that looks detached. They gate
 nothing: a count of confused rays can tie while a post visibly leaves its foot. What is tested is the
 flat-water lookup, a projection that must equal itself, on the Mac and in Chrome. Rough water is judged by
-eye in M14, on a tree and a far shore that must stay joined to their feet as the wind rises.
+eye in WP14, on a tree and a far shore that must stay joined to their feet as the wind rises.
 
 Declared approximations: radiance toward the mirrored camera stands in for radiance toward the water, which
 is exact for a matte surface. A level further than the plane tolerance from every plane has no view. A
@@ -1496,7 +1496,7 @@ reach, which the CPU tests from the model each frame, none of its work is done.
 - **How it is drawn.** In the water's own pass. A draw over the pixels under water writes the composition
   for those that see no surface, from the gather, and the two-sided surface then draws over it wherever it
   is nearer. The gather copies the screen while any pixel is under. Nothing is laid over the frame
-  afterwards, so no pixel takes the water twice, which [M15 tests](#optics) on a panel seen through two
+  afterwards, so no pixel takes the water twice, which [WP15 tests](#optics) on a panel seen through two
   lengths of water.
 - **The frame contract.** The underside writes depth, motion and reactive coverage as the upper side does,
   so a cloud march still stops at the water. Crossing the surface is not a reset: each pixel changes side by
@@ -1544,7 +1544,7 @@ carries the first two and one number the third.
   bed, a hull and a sunk float as the Sun's own light is: none inside a shadow, none on a face turned from
   the Sun, and none above the water's level, where the factor is exactly 1. The level is the map's and not
   the displaced surface, a declared approximation: under a trough a receiver below the level and above the
-  water still takes the net, and under a crest one above the level takes none. M16 judges it on a receiver
+  water still takes the net, and under a crest one above the level takes none. WP16 judges it on a receiver
   that crosses the waterline. It reaches the gather inside the
   receiver's colour, so it shows from above through clear shallows as it does from below, and no water pass
   applies it a second time. The depth's own dimming, `exp(−K z)`, stays where the gather applies it.
@@ -1554,7 +1554,7 @@ carries the first two and one number the third.
   theirs there too. So a hull's shadow on the bed, the dark water under the hull and the lean of the beams
   agree, and none of them leans past 48.6°. Both readers take that point from one function. A receiver that
   sampled the shadow along the Sun's direction above the water while the shafts sampled it at the exit point
-  would each draw a dark patch, in two places. M16 tests that the bed's shadow and the dark water over it
+  would each draw a dark patch, in two places. WP16 tests that the bed's shadow and the dark water over it
   meet, on the Mac and in Chrome. The dark water is known there by what the blocker does to it: just above
   the shadowed bed the shaft pass leaves the water darker than it is with the blocker taken away, since
   the marched part, below, is negative under a blocker and not zero. Where Snell's law puts the two
@@ -1612,7 +1612,7 @@ high below it: at 4 m/s the map's is 0.31 at 0.5 m and 0.40 at 8 m (part R2). Wh
 net on a receiver, `D(z) · (C − 1)`, whose contrast there goes from 0.28 to 0.09, together with the blur. So
 nothing asks the field to fade with depth, which would dim the net a second time. The field is tested for
 what it must be whatever its tuning: exactly 1 under flat water, uneven under waves, changing with the
-surface and from rung to rung. The softening is judged by eye on the bed and the hull in M16.
+surface and from rung to rung. The softening is judged by eye on the bed and the hull in WP16.
 
 Declared approximations: the net is no finer than the waves the wave field resolves, 7 cm, and ripples
 below that only soften it. Beyond the window the bed is evenly lit. A blocker shadows the water where its
@@ -1674,15 +1674,15 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   optics and pattern, and a plunge that enters the lower body as impulse records and births. Its solver writes
   a chart's footprint, ends and join weights with its level, current and loss, to [the rules preparation
   holds](#the-water-map). What this module proves for it: a chart is drawn, queried, carries detail, foam and
-  floats, and joins a lake and the sea under a swell and through their stages (M9). What it leaves to `RIVERS`:
+  floats, and joins a lake and the sea under a swell and through their stages (WP9). What it leaves to `RIVERS`:
   how a river's reach answers its source's stage, which here stays as prepared.
 - **`PUDDLES`: rain, puddles and wet ground.** A puddle is a basin whose stage rain raises and drying lowers, in
   hollows found from the bed. Rain rings are one more short wave layer. Wet ground is not a body: it is a wetness
   the ground's material reads, written by rain and by water that has left, which needs a ruling with the forward
   pass's owner. On a shore the waves wash, this module draws the sheen and the foam as its film, and the map
   gives each body's wave support, so the ground's material can darken the same sand and the two agree on one
-  support (C07). What this module proves for it: a basin of any size whose stage moves (M4, M10), rings on water
-  0.25 m deep (M6), and the ground seen through thin water (M8). What it leaves to `PUDDLES`, as a question its
+  support (C07). What this module proves for it: a basin of any size whose stage moves (WP4, WP10), rings on water
+  0.25 m deep (WP6), and the ground seen through thin water (WP8). What it leaves to `PUDDLES`, as a question its
   planner settles here with this module: two basins may not overlap, and a stage that would merge them is
   refused, so how puddles that overflow into each other join and part again, keeping each body's identity,
   stage and the rings and foam on it, with no rebuild or reset a viewer could see.
@@ -1690,18 +1690,18 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 ### Check that it can work
 
 - **S1, S2 and the oracle, and time for the wave field.** In [the sea's design](../SEA/DESIGN.md#check-that-it-can-work).
-- **W1.** A level over a bed, cut by the scene's depth, is how Crest and Unreal place lakes; the hollow round a
-  seed is a flood fill with a closed form on simple beds, which M1 tests. Unrun on the GPU.
-- **W2.** Part I gives the gains above, and part L the waterline's travel under the limit with a swash depth,
+- **WP1.** A level over a bed, cut by the scene's depth, is how Crest and Unreal place lakes; the hollow round a
+  seed is a flood fill with a closed form on simple beds, which WP1 tests. Unrun on the GPU.
+- **WP2.** Part I gives the gains above, and part L the waterline's travel under the limit with a swash depth,
   against its closed form, with the pinned waterline of the limit alone beside it. That a lake reads right with
-  the short layers alone, and a beach with a swash and no shoaling, is unrun on the GPU; M4 is the first look,
+  the short layers alone, and a beach with a swash and no shoaling, is unrun on the GPU; WP4 is the first look,
   and [risk 12](#risks) covers a beach that reads wrong.
-- **W4, and waves at depth.** Part H measures the selected step, the blend of ladder depths, as an operator on
+- **WP4, and waves at depth.** Part H measures the selected step, the blend of ladder depths, as an operator on
   each wave vector and as fields over beds that vary, in steps of 1 and 8 ticks; [its table](#interaction-waves)
   is the envelope. Part J measures dry ground: one transform passes 3.2% of a pulse across a 2 m bar, a solve
   for each region passes nothing, and thin land inside one region passes what that section declares. Both are
   1D sections in f64, so a field constant along a straight shore; neither is a GPU measurement.
-- **W6.** Part K: the map's function with joins, on a grid of an island with a lake, a channel and the sea,
+- **WP6.** Part K: the map's function with joins, on a grid of an island with a lake, a channel and the sea,
   through the lake's and the tide's ranges under a swell crest, against taking one body over another. Then the
   assembled surface, the level plus each layer after its depth limit, either side of ends from 4 m deep to
   none, with the swash depth from the row against one kept for each body, and beside a mouth with backwater
@@ -1716,9 +1716,9 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   birth gave caps at gale, fewer at fresh breeze and none on a glassy sea. Its open defects are the look work
   named above. Part M: the swash's carriage on parcels and on 0.25 m foam cells, on plane beaches under regular
   waves and two trains, against the current's and the wind's drift alone, which moves nothing. It is a 1D
-  section in f64 with no births, ageing or spreading; how the carried foam looks is unrun, and M7 is the first
+  section in f64 with no births, ageing or spreading; how the carried foam looks is unrun, and WP7 is the first
   look ([risk 17](#risks)).
-- **S5.** Every light term reads a product `ATMOSPHERE` M5 lends in physical units, so a seam with terrain can
+- **S5.** Every light term reads a product `ATMOSPHERE` WP5 lends in physical units, so a seam with terrain can
   only come from the sea's own shading. The one input that is not physical, the copied scene colour, is turned
   back with the lookup and scale that wrote it: in part E the converted gather gives the true stored colour,
   1.142, where the copy used as radiance gives 0.354 and the copy with only exposure divided out 1.001. The
@@ -1726,16 +1726,16 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   40 m up, bodies 12 to 100 m off, and seas from flat to 3 m of amplitude with a 20° allowance: in 36 cases, no
   ray that met the body came from outside its receiving rectangle, and in every case some came from outside the
   body's own rectangle, 92 to 2,010 of those sampled. The design review's case, a 2 m body 20 m from a camera 2 m up, is among them.
-- **S6.** Unrun. `EFFECT-GRAPH` M3 proves motion and reactive reach reconstruction; how the sea looks after it is
-  first seen in M10.
+- **S6.** Unrun. `EFFECT-GRAPH` WP3 proves motion and reactive reach reconstruction; how the sea looks after it is
+  first seen in WP10.
 - **Hitches.** Parts A, B and D, reported under
   [time](#time-content-functions-and-state), [interaction waves](#interaction-waves) and
   [whitewater](#whitewater).
-- **W3.** Unrun. Regional copies and screen-space reflection for water are what Unreal, HDRP and Far Cry 5 ship;
-  the units are the sea design's part E. M8 measures the copy and the march where they fill the view.
-- **W5.** Unrun. Two cross-faded samples carried along a flow are Portal 2's and HDRP's; the pulse they can show
+- **WP3.** Unrun. Regional copies and screen-space reflection for water are what Unreal, HDRP and Far Cry 5 ship;
+  the units are the sea design's part E. WP8 measures the copy and the march where they fill the view.
+- **WP5.** Unrun. Two cross-faded samples carried along a flow are Portal 2's and HDRP's; the pulse they can show
   is [risk 13](#risks).
-- **W7.** Part N: the lag from an eikonal solve against Snell's closed form on a plane beach, the blends
+- **WP7.** Part N: the lag from an eikonal solve against Snell's closed form on a plane beach, the blends
   between wavelengths and between stages, and an island, where the transformed wave meets every shore from
   the sea and the exposure calms the lee. Part O: the break point against Komar and Gaughan, sets, a thrown
   section that overhangs without crossing itself, and the swash's closed form with the transform on. All are
@@ -1744,37 +1744,37 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   iteration's misses under a lip. Part W: the two blends together against the dispersion relation and against
   the solve itself. Part X: the cut for the highest surface, on a straight section, on crossing trains and on
   a beach, against a cut eight times finer, with the throw reach held to every throw. That the section reads as a
-  breaking wave is the M13 inspection. The inner swash profile has one zero on a rising transect with
+  breaking wave is the WP13 inspection. The inner swash profile has one zero on a rising transect with
   constant gains: for `d ≥ −s`, its slope in signed depth is `1+c·q ≥ 1−c > 0`. In the overlap both profiles
   have positive thickness, so blending keeps the sign. The model cut and motion inspection cover the joined
-  result ([risk 20](#risks)). The example's lake is too small to raise long waves, so M12 and M13
+  result ([risk 20](#risks)). The example's lake is too small to raise long waves, so WP12 and WP13
   prove it in the model and on the GPU against the model.
-- **W8.** Part P: the mirror lookup against exact reflected rays in a vertical section. A second draw of the
+- **WP8.** Part P: the mirror lookup against exact reflected rays in a vertical section. A second draw of the
   scene is what Unreal and GTA V ship for water. `SCENE-VIEWS`' own design owes the proof that Thrum's
   renderer can draw one; nothing here runs it.
-- **W9.** Part Q: Snell's window and the Fresnel split from beneath, and the scattered light's closed form
+- **WP9.** Part Q: Snell's window and the Fresnel split from beneath, and the scattered light's closed form
   against a numerical integral. The lens test reads the function the surface is drawn from, so the line on
-  the lens and the drawn surface cannot part. The look is unrun; M15 is the first.
-- **W10.** Part R, reported under [light under water](#light-under-water-caustics-shafts-and-the-meter):
+  the lens and the drawn surface cannot part. The look is unrun; WP15 is the first.
+- **WP10.** Part R, reported under [light under water](#light-under-water-caustics-shafts-and-the-meter):
   light conserved, contrast by depth and wind against a reference, the ladder between its rungs, and the
   substitutes. One sinusoid is brightest 12% deeper than the paraxial focus its curvature gives. It is a
   vertical section in f64, so a net of lines and not of cells. That the net reads as sunlight on sand is
-  unrun; M16 is the first look.
-- **W11.** Part S: where shafts stand, and the march against a fine integral. A section with one water
+  unrun; WP16 is the first look.
+- **WP11.** Part S: where shafts stand, and the march against a fine integral. A section with one water
   type and no hull. Under a hull the marched part is the equation's own arithmetic, negative where the
-  beam is blocked ([light under water](#light-under-water-caustics-shafts-and-the-meter)); M16
+  beam is blocked ([light under water](#light-under-water-caustics-shafts-and-the-meter)); WP16
   tests its place against the bed's shadow and not its size. The look, and noise under reconstruction, are
-  unrun; M16 and M10 are the first.
-- **W12.** Part T: the light at the lens by depth for three water types, and how far the picture darkens
+  unrun; WP16 and WP10 are the first.
+- **WP12.** Part T: the light at the lens by depth for three water types, and how far the picture darkens
   for each share. Arithmetic; the descent is unrun.
 - **The surface's read of the field.** Part Y finds where resolved waves become statistics, for a camera 2 m
   and 40 m up under the example's 75° view: by the footprint's longest side, and through a 16x anisotropic
   footprint over full mip chains. The longest-side rule places the change about 600 m out and 61 pixels under the
-  horizon from 40 m up, where M2's first build showed a smooth belt of 50 to 70 pixels. Part Z measures how wide
+  horizon from 40 m up, where WP2's first build showed a smooth belt of 50 to 70 pixels. Part Z measures how wide
   a crest's turn is drawn on one trochoid at the example's contraction of 0.85, from a fixed world grid and from
   rest places moved forward, at texels and vertex spacings of 1 to 8 m. Both are f64 arithmetic on a flat sea in
-  `surface_read_proof.py`. How the sea then looks is unrun, and M2.2 is the first look.
-- **Cost.** M2's first record measured the inverted cache. The forward cache is unmeasured, and M2 records it.
+  `surface_read_proof.py`. How the sea then looks is unrun, and WP2.2 is the first look.
+- **Cost.** WP2's first record measured the inverted cache. The forward cache is unmeasured, and WP2 records it.
 
 ## The system as it runs
 
@@ -1807,10 +1807,10 @@ is. It uses `thrum-controls`, a parameter file and `./dev scene examples/water [
 of about 1 in 10 facing the trade swell, a headland and a lee shore. The bed comes from the opaque terrain's
 triangles. The lake sits about 300 m inland, above the sea and under a ridge, with a second hollow beside it
 and a rim above its highest stage. The example has a pond and adds a tree on the lake's bank for the optics
-views. It enables surf in M13 and uses a labelled cloud-shade stand-in in M8, following
+views. It enables surf in WP13 and uses a labelled cloud-shade stand-in in WP8, following
 `examples/v1-game/src/environment.rs`.
 
-M9's hand-authored channel is the example's stand-in for the `RIVERS` chart. It leaves the lake through an
+WP9's hand-authored channel is the example's stand-in for the `RIVERS` chart. It leaves the lake through an
 outlet cut in ground above the lake's highest stage, quickens in a narrows, and falls below the lowest tide
 at the mouth. At low tide the mouth is shallow enough for the depth limit to hold the swell. The island's
 ground, craft, floats and foam pattern belong to the example, which makes them or copies suitable material
@@ -1825,25 +1825,25 @@ and resets interaction waves and foam.
 ## What WATERS asks of other modules
 
 Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-waters), built by this module's builder after
-`EFFECT-GRAPH:M3` is Done, with `EFFECT-GRAPH`'s items unchanged and its tests kept passing:
+`EFFECT-GRAPH:WP3` is Done, with `EFFECT-GRAPH`'s items unchanged and its tests kept passing:
 
-1. An `after-opaque` pass may write scene depth (M2).
+1. An `after-opaque` pass may write scene depth (WP2).
 2. An effect's own pass may read scene colour and scene depth as textures and write only the effect's targets
-   (M8).
+   (WP8).
 3. Whatever the shell, the page, the scene packaging or the capture tap assume of the V1 game or of the sky
-   kit's still world is made a property of the game (M2 on the Mac, M3 in Chrome).
+   kit's still world is made a property of the game (WP2 on the Mac, WP3 in Chrome).
 
 4. A mirror view of the scene, drawn by [`SCENE-VIEWS`](../ARCHITECTURE.md#scene-views), a new module with its
-   own design, and not by this module's builder (M14). The interface is
+   own design, and not by this module's builder (WP14). The interface is
    [above](#mirror-views-scenery-the-camera-cannot-see): what water asks for, and what the view holds. The
-   rest of the design does not wait for it: M14 is the only milestone that needs it.
+   rest of the design does not wait for it: WP14 is the only milestone that needs it.
 
 5. A Sun-path factor from the water on the forward pass's direct Sun, read at a receiver's own position
-   beside the cloud factor, with the point at which a receiver under water reads its Sun visibility (M16).
+   beside the cloud factor, with the point at which a receiver under water reads its Sun visibility (WP16).
 6. The scene's Sun visibility at a world point, lent with the environment products as one tap, for the
-   shafts' samples (M16).
+   shafts' samples (WP16).
 7. A medium factor on the incident light the camera's meter reads, which the camera request carries, 1 by
-   default (M16).
+   default (WP16).
 
 5 and 6 are settled with `ATMOSPHERE` and 7 with `APPLE-PRESENTATION`, as
 [rulings 5 to 7](../ARCHITECTURE.md#seam-rulings-for-waters). With no water provider and a factor of 1,
@@ -1851,14 +1851,14 @@ every scene composes the shader text and draws the bytes it does today.
 
 `SEA` is asked for nothing. The shore transform extends `thrum-sea`'s field cache and `thrum-sea-model`
 after `SEA`'s last milestone, when both crates are this module's, with `SEA`'s tests kept passing. One change
-reaches a `SEA` test, and M2 makes it: [the forward cache](#the-surface-and-the-frame-contract). `SEA`'s
+reaches a `SEA` test, and WP2 makes it: [the forward cache](#the-surface-and-the-frame-contract). `SEA`'s
 `ambient_gpu` test compares each cache texel with the model's evaluation at a world point, which inverts the
 map, so it pins the inverted form. The cache's oracle becomes the model's forward evaluation at the texel's rest
 place, held to the same 2 mm in height and 0.002 in slope. The query's oracle, its test and every other `SEA`
 bound are unchanged. The cascades and the cache become filterable textures with mips, in place of storage
 buffers, so the sea needs fewer storage buffers a stage.
 
-If `EFFECT-GRAPH` M3 as built already allows 1 or 2, nothing is added. Everything else is used as built: the
+If `EFFECT-GRAPH` WP3 as built already allows 1 or 2, nothing is added. Everything else is used as built: the
 lease of one linear 2D texture, the lent environment products and cloud factor, the temporal contribution, the
 typed controls and parameter files. The map's textures are this module's own resources. Nothing is asked for the
 bed: the game gives it.
@@ -1871,26 +1871,26 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
 | The map | Prepared; read by every water vertex, pixel and query | Level, bed and current on each body's grid: a 1 km square at 1 m cells is about 16 MiB | One more read set in the surface pass | |
-| The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures; for enclosed water the source and the exposure come from rays over the bed at preparation, as the sea's exposure does. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits, and the bed's min-max pyramid about two thirds of the bed's own bytes. Solving them is CPU work at preparation, which M12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; M13 records it | |
-| Bore decay and swash | Field-cache evaluation on frame pages and direct sheet evaluation on query ticks, on supported shores with exposed long waves | Up to one extra long-wave sum at the contour per eligible sample, with reuse where samples share a contour reference at the same time and stage. The overlap adds local arithmetic and a bed lookup if the displaced bed value is unavailable | Use the existing map, surf preparation and field-cache path. Reuse derived samples for surface and foam where their time and footprint coincide. No new solver, per-frame upload or readback. M13.12's paired run covers field-cache and query cost, including any prepared data or sample storage | |
-| Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which M6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
+| The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures; for enclosed water the source and the exposure come from rays over the bed at preparation, as the sea's exposure does. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits, and the bed's min-max pyramid about two thirds of the bed's own bytes. Solving them is CPU work at preparation, which WP12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; WP13 records it | |
+| Bore decay and swash | Field-cache evaluation on frame pages and direct sheet evaluation on query ticks, on supported shores with exposed long waves | Up to one extra long-wave sum at the contour per eligible sample, with reuse where samples share a contour reference at the same time and stage. The overlap adds local arithmetic and a bed lookup if the displaced bed value is unavailable | Use the existing map, surf preparation and field-cache path. Reuse derived samples for surface and foam where their time and footprint coincide. No new solver, per-frame upload or readback. WP13.12's paired run covers field-cache and query cost, including any prepared data or sample storage | |
+| Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which WP6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks. The swash's drift reads the surface's rate and slope at cells on a shore, where births already read the field | Under 0.2 ms | About 2.2 ms for first deposition |
-| Query | Tick | Up to 2,048 points, 48 B each. A point within reach of a crest that may be thrown costs the cut: the nodes of a 0.25 m lattice within its throw reach, about 1,200 for a 1.4 m wave and 3,500 to 5,500 under a 3.2 m sea, shared by points close together, where a plain point costs a few evaluations | Under 0.1 ms with no point in surf; M12 records the model's cut and M13 a tick with every float in the breakers; 96 KiB back | 0.03 ms |
+| Query | Tick | Up to 2,048 points, 48 B each. A point within reach of a crest that may be thrown costs the cut: the nodes of a 0.25 m lattice within its throw reach, about 1,200 for a 1.4 m wave and 3,500 to 5,500 under a 3.2 m sea, shared by points close together, where a plain point costs a few evaluations | Under 0.1 ms with no point in surf; WP12 records the model's cut and WP13 a tick with every float in the breakers; 96 KiB back | 0.03 ms |
 | Gather | Frame | The rectangles its readers need: nothing on an open sea with no body, the screen where see-through or mirror-still water fills it | Proportional to the pixels copied; a whole-screen copy is one pass ended on a tile GPU | A whole-scene copy and a 3 ms trace |
-| Body and scene rays | Frame, inside the surface pass | Water pixels the mask marks: two ray-against-box tests for each marked body; a bounded march where a ray meets a box or the water is mirror-still | Unmeasured; M8 records it on a calm sea and in a gale with zero, one and nine bodies, and at the lake | |
-| Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. M14 records it with no view, one and two | |
+| Body and scene rays | Frame, inside the surface pass | Water pixels the mask marks: two ray-against-box tests for each marked body; a bounded march where a ray meets a box or the water is mirror-still | Unmeasured; WP8 records it on a calm sea and in a gale with zero, one and nine bodies, and at the lake | |
+| Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. WP14 records it with no view, one and two | |
 | The mirror lookup | Frame, inside the surface pass | Water pixels of a body with a view: three reads of the image and its depth | Less than the screen-space march it replaces there | |
-| Under water | Frame, only while a pixel of the lens is under | The lens test for each pixel, one composition for each pixel under water, and a whole-screen gather | Of the order of the surface pass's own pixels; M15 records it half under and wholly under | |
-| The caustic field | Frame, while water with caustics is in the window | 13 rungs of an 18 m window at 3.5 cm cells; the rungs from 2 m down are drawn from coarser grids, since their blur is wider than a cell | About 1.8 million vertices and 13 small passes a frame, then a blur of each. Unmeasured; M16 records it, and the rung count, the window and the cadence are knobs | |
+| Under water | Frame, only while a pixel of the lens is under | The lens test for each pixel, one composition for each pixel under water, and a whole-screen gather | Of the order of the surface pass's own pixels; WP15 records it half under and wholly under | |
+| The caustic field | Frame, while water with caustics is in the window | 13 rungs of an 18 m window at 3.5 cm cells; the rungs from 2 m down are drawn from coarser grids, since their blur is wider than a cell | About 1.8 million vertices and 13 small passes a frame, then a blur of each. Unmeasured; WP16 records it, and the rung count, the window and the cadence are knobs | |
 | The Sun-path factor | Frame, inside the forward pass | One read of the level for every opaque fragment in a scene with caustics, and two rungs for one under water | One texture more in the forward fragment stage, counted against the capability record | |
-| Shafts | Frame, only while a pixel of the lens is under | Pixels under water at half the render extent each way: 16 steps, each two rung reads and one Sun-visibility tap | Unmeasured; M16 records it | |
-| Surface | Frame | Water pixels at the render extent, about 200 k vertices for the sea and tiles for each other body in view; one read set for the map and each wave layer, two for interaction waves and foam | The largest term; M2 measures it | 10.5 ms at 1440p after the copy |
+| Shafts | Frame, only while a pixel of the lens is under | Pixels under water at half the render extent each way: 16 steps, each two rung reads and one Sun-visibility tap | Unmeasured; WP16 records it | |
+| Surface | Frame | Water pixels at the render extent, about 200 k vertices for the sea and tiles for each other body in view; one read set for the map and each wave layer, two for interaction waves and foam | The largest term; WP2 measures it | 10.5 ms at 1440p after the copy |
 | Memory | | Interaction, foam, the query ring, the map | About 20 MiB and the map, and the gather target, whose layout is the builder's: addressed by screen position at 2560×1440 it is about 44 MiB | |
 
 Interaction, foam and query work lands on alternate frames at 120 Hz, so both frame kinds are recorded.
 
-**Records and tripwires, never gates** ([brief](../BRIEF.md#goal-and-exit-rule), decision 3). `scripts/water_cost.py`,
-created in M2, takes a paired record of one scene at one view, capture off: the scene with the water and with it
+**Records and tripwires, never gates** ([brief](../VISION.md#goal-and-exit-rule), decision 3). `scripts/water_cost.py`,
+created in WP2, takes a paired record of one scene at one view, capture off: the scene with the water and with it
 absent, on tick frames and on repeat frames, giving the whole frame, each water pass's GPU time by name, the bytes
 of each resource and the load on the machine. A record trips a wire when the whole frame is over the display's
 refresh interval, when a pass is about 25% or more over its last comparable record, or when a cost grows faster
@@ -1902,105 +1902,105 @@ The ambition is the display's full refresh, and whole-frame tuning is the later 
 figure decides whether an item passes, whether a milestone is Done or whether the next one starts.**
 `water_cost.py check` measures the scene again and fails only when the scene cannot be measured, when the
 committed record lacks part of what a paired record holds, or when a wire the record trips has no investigation
-beside it. Presented cadence on the built-in panel is measured once, attended, in M11.
+beside it. Presented cadence on the built-in panel is measured once, attended, in WP11.
 
 ## Risks
 
-1. **The surface pass costs too much.** Early sign: M2's record, and M4's with the map's reads and several
+1. **The surface pass costs too much.** Early sign: WP2's record, and WP4's with the map's reads and several
    bodies. The plausible wrong fix is dropping layers from the pixel shader. The designed ones: fewer texture
    reads through packing, cascades fading to moments sooner, and a coarser mesh. The milestone tries the ones its
    record points at and records what each did. Building goes on either way.
-2. **A 160 m repeat shows from 40 m up.** Early sign: M2's vista capture. Fallback: a larger first patch under a
+2. **A 160 m repeat shows from 40 m up.** Early sign: WP2's vista capture. Fallback: a larger first patch under a
    profile the portable limits still admit, designed in `SEA` first.
-3. **Chrome refuses a format, count or binding the Mac accepts.** Early sign: M3, the first real Chrome run. The
-   map adds float textures and the surface more reads; both are counted against the capability record in M4.
-4. **Self-interaction through the query.** A body bouncing on its own wake. Early sign: M6's craft at rest must
+3. **Chrome refuses a format, count or binding the Mac accepts.** Early sign: WP3, the first real Chrome run. The
+   map adds float textures and the surface more reads; both are counted against the capability record in WP4.
+4. **Self-interaction through the query.** A body bouncing on its own wake. Early sign: WP6's craft at rest must
    settle. The dent correction is the design's answer; the wrong fix is filtering the craft out of the wake.
-5. **Foam reads as grit or cutouts**, the spike's open defects. Early sign: M7's first captures. The mechanism is
+5. **Foam reads as grit or cutouts**, the spike's open defects. Early sign: WP7's first captures. The mechanism is
    settled; the look is tuned against the inspection list, and three failed looks on one cue go to the log.
 6. **The water writes depth and a later effect disagrees.** `CLOUDS` is planned after this; the ruling fixes the
    order.
-7. **The example's shell glue is larger than the water.** Early sign: M2. A ticking entry in the sky kit is a
+7. **The example's shell glue is larger than the water.** Early sign: WP2. A ticking entry in the sky kit is a
    proposal to `CREATOR` in the log, not built here.
 8. **Rays cost too much where they fill the screen**: receiving rectangles in a gale, or a mirror-still lake.
-   Early sign: M8's record. The designed remedies are a shorter reach, fewer steps and a lower mirror limit as
+   Early sign: WP8's record. The designed remedies are a shorter reach, fewer steps and a lower mirror limit as
    slope variance rises, since rough water blurs a reflection away, and marching at a lower resolution. The wrong
    fixes are a march over every water pixel at every roughness, and a second render of the scene.
 9. **The wave field costs more every frame than the reads it saves.** `SEA`'s risk; its cadence knobs are the
    remedy.
-10. **A whole-screen gather costs a pass on a tile GPU wherever shallow water fills the view.** Early sign: M8's
+10. **A whole-screen gather costs a pass on a tile GPU wherever shallow water fills the view.** Early sign: WP8's
     record at the lake. The designed remedies are a gather at a lower resolution with the full-resolution depth
     kept, and a sight depth that shrinks the see-through region. The wrong fix is dropping the bed from view.
 11. **A reflection whose source is off screen falls to the sky**, and reads as a hole in a lake under a hill.
-    Early sign: M8's pan, which is built before the mirror view. The fade at the screen's edge and the reach
-    are the remedies there; the mirror view of M14 is the real one.
-12. **A beach without surf reads as a pond's edge, or its swash as a tide.** Early sign: M4's and M7's captures,
+    Early sign: WP8's pan, which is built before the mirror view. The fade at the screen's edge and the reach
+    are the remedies there; the mirror view of WP14 is the real one.
+12. **A beach without surf reads as a pond's edge, or its swash as a tide.** Early sign: WP4's and WP7's captures,
     which are built before surf. The designed remedies there are the swash ratio, which sets how far the
     waterline travels, the foam born through the band, and the film's sheen. The wrong fixes are a waterline
     animated apart from the waves, which the query would not know, and foam painted along the shore. Surf, in
-    M13, is the real one.
-13. **The carried detail pulses** at the carriage's period. Early sign: M9. The designed remedies are a period
+    WP13, is the real one.
+13. **The carried detail pulses** at the carriage's period. Early sign: WP9. The designed remedies are a period
     varied from place to place and a longer one where the current is slow. The wrong fix is a single scrolled
     sample, which smears.
-14. **A later module finds a seam wrong.** Early sign: `RIVERS`' or `PUDDLES`' planning. M9 proves the chart on
+14. **A later module finds a seam wrong.** Early sign: `RIVERS`' or `PUDDLES`' planning. WP9 proves the chart on
     a stand-in so that the seam is tried before a solver exists.
-15. **Regions and depths multiply the interaction step.** Early sign: M6's record at the lake's shore, with its
+15. **Regions and depths multiply the interaction step.** Early sign: WP6's record at the lake's shore, with its
     count of solves. The designed remedies are the profile's count of solves and, on the far level, a coarser
     ladder with its measured envelope stated. The wrong fix is one transform over land and water.
-16. **The film fights the ground or floats over it.** Early sign: M7's captures at grazing angles. The designed
+16. **The film fights the ground or floats over it.** Early sign: WP7's captures at grazing angles. The designed
     remedy is its depth bias and a bed built as [the map's](#the-water-map) is, from the highest ground in each
     cell. The wrong fix is drawing foam into the ground's material here, which is `PUDDLES`' seam.
-17. **The swash gathers its foam into one hard line**, or strips the sand behind it bare. Early sign: M7's
+17. **The swash gathers its foam into one hard line**, or strips the sand behind it bare. Early sign: WP7's
     captures of the beach. The designed remedies are the stocks' own spreading, births under the whole sheet,
     and the drift's bound. The wrong fixes are a pattern scrolled up the beach, and foam drawn at the waterline
     from the present wave shape.
 
 18. **A breaking crest tears or stair-steps**, because the section stretches the sheet past what the mesh
-    resolves. Early sign: M13's captures from 40 m and from 1 km. The designed remedies are refinement along
+    resolves. Early sign: WP13's captures from 40 m and from 1 km. The designed remedies are refinement along
     the band where the breaking index passes 1 and the throw's fade with the mesh's spacing. The wrong fix is taking
     the throw out everywhere.
 19. **The lag shows**: a step in the swell where the bed begins, or a jump as the tide crosses a sampled
-    stage. Early sign: M13's tide sequence. The designed remedies are a wider border at the bed's edge and
+    stage. Early sign: WP13's tide sequence. The designed remedies are a wider border at the bed's edge and
     closer stage samples. The wrong fix is holding the lag at one stage. In a lake the same sign is a crease
     downwind of a point on its upwind shore; the designed remedy is the run of deep water at the source that
     part U measures.
 20. **A steep ridge marches ashore or a dry gap opens behind the bore.** Early sign: the front stays high and
-    the cross-shore cut dries and wets again before the final waterline. M13 keeps the offshore pitch and
+    the cross-shore cut dries and wets again before the final waterline. WP13 keeps the offshore pitch and
     tapers the bore into the [bounded swash profile](#surf-the-shore-transform-and-the-breaker). Inspect
     the bed crossing before tuning foam or mesh density. A live window remains the fallback under
     [the candidates](#surf-mirrored-scenery-and-the-lens-decided-against-the-cues) if the shared profile
     cannot deliver the cue after visual review.
-21. **A mirror view costs a second scene.** Early sign: M14's record. The designed remedies are its extent,
+21. **A mirror view costs a second scene.** Early sign: WP14's record. The designed remedies are its extent,
     a shorter view distance and coarser detail, which are `SCENE-VIEWS`' to offer, and one view in place of
     two. Ray query on the Apple recipe is the later one. The wrong fix is dropping the lake back to the
     screen-space trace.
 22. **Reflections swim or ghost under reconstruction**, because the water's motion is its surface's and not
-    its reflection's. Early sign: M14's pan. The designed remedy is reactive coverage where a mirrored
+    its reflection's. Early sign: WP14's pan. The designed remedy is reactive coverage where a mirrored
     reflection is most of a pixel. The wrong fix is taking the water out of reconstruction.
 23. **The line on the lens flickers, or a gap shows where the near plane cuts the surface.** Early sign:
-    M15's crossing. The designed remedies are the meniscus's width and a lens test at each pixel's own point.
+    WP15's crossing. The designed remedies are the meniscus's width and a lens test at each pixel's own point.
     The wrong fix is a camera that is kept from touching the surface.
-24. **Deep water is black**, because the exposure is metered from the sky. Early sign: M15's views at depth,
+24. **Deep water is black**, because the exposure is metered from the sky. Early sign: WP15's views at depth,
     which are built before the meter follows the light. [The meter](#light-under-water-caustics-shafts-and-the-meter),
-    in M16, is the remedy; the wrong fix is brightening the water's own light.
-25. **The caustic field costs too much**: thirteen draws of a fine grid every frame. Early sign: M16's
+    in WP16, is the remedy; the wrong fix is brightening the water's own light.
+25. **The caustic field costs too much**: thirteen draws of a fine grid every frame. Early sign: WP16's
     record. The designed remedies are coarser grids for the deep rungs, rungs a factor of 2 apart, a smaller
     window, and a cadence below the frame's with the field carried between. The wrong fixes are one plane
     for every depth and a played texture.
 26. **The net reads as a pattern laid on the bed and not as light**: too even, too sharp at depth, or
-    crawling under reconstruction. Early sign: M16's first captures. The blur by depth and the beam's share
+    crawling under reconstruction. Early sign: WP16's first captures. The blur by depth and the beam's share
     are the mechanism; the look is tuned against the inspected items, and three failed looks on one cue go
     to the log.
-27. **Shafts boil or band**, because the march is a few jittered steps. Early sign: M16's stills and M10's
+27. **Shafts boil or band**, because the march is a few jittered steps. Early sign: WP16's stills and WP10's
     sequences. The designed remedies are more steps, each step's read of the field's mean, and a march
     resolution nearer the picture's. The wrong fix is a blur of the finished frame.
-28. **The forward pass will not take another texture in Chrome.** Early sign: M16's preparation against the
+28. **The forward pass will not take another texture in Chrome.** Early sign: WP16's preparation against the
     capability record. The designed remedy is the level packed into a layer of the field's array.
 29. **The picture pumps or steps as the lens crosses the surface**, because the light at the lens changes
-    faster than a viewer's eye would. Early sign: M16's crossing. The designed remedies are the mix by the
+    faster than a viewer's eye would. Early sign: WP16's crossing. The designed remedies are the mix by the
     lens's share and the adaptation share; the wrong fix is a gain taken from the picture.
 30. **A device admits less anisotropy than 16.** The smooth belt then comes nearer the camera, where part Y's
-    rule puts it for that anisotropy. Early sign: the capability record, and M3's Chrome stills from 40 m up. The
+    rule puts it for that anisotropy. Early sign: the capability record, and WP3's Chrome stills from 40 m up. The
     designed answer is more taps along the footprint's long side in the shader, counted against the record. The
     wrong fix is lowering the moments' variance, which makes the far sea shimmer.
 
@@ -2015,13 +2015,13 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   device. So do the contracts: the frame contract's depth, motion and reactive coverage; state through pauses,
   hitches and a replaced device; no wave across dry ground; a capability left out costing nothing; and what one
   part hands another, each tested as a property of the frame and not against a light or wave model: the wake a query
-  answers is the wake's state (M6), a hitch is one step of the elapsed time for wake and foam (M6, M7), the
-  exposure scale and each medium reach a gathered surface once (M8, M15, M14), and the Sun's visibility
+  answers is the wake's state (WP6), a hitch is one step of the elapsed time for wake and foam (WP6, WP7), the
+  exposure scale and each medium reach a gathered surface once (WP8, WP15, WP14), and the Sun's visibility
   under water is read at one place by the bed and the shafts, which darken the water over the bed's own
-  shadow (M16). How light,
+  shadow (WP16). How light,
   foam, wakes, caustics and shafts are computed is not held to an f64 reference, a closed form or a bound
   measured first. The equations in the sections above are the mechanism to build and a builder's diagnostic
-  when a look is wrong; a builder may tune their constants by eye and records what changed. M1, M2, M3 and M12
+  when a look is wrong; a builder may tune their constants by eye and records what changed. WP1, WP2, WP3 and WP12
   stand as they were proved.
 - **Targets.** `mac-metal` on both recipes and `chrome-webgpu`. `ios-sim` is not a target. Chrome checks need a
   browser launch outside the Codex sandbox, granted per run; if one is refused, leave the item open and say so.
@@ -2034,8 +2034,8 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 - **Cost records.** Each milestone that adds frame work takes [the paired record](#cost-account) again, beside
   the last record for the same view. A tripped wire is investigated and written up there. It never ends a
   session `BLOCKED`.
-- **Looks.** Where a milestone's inspected items judge a look that is tuned, the foam of M7, the breaker
-  section of M13 and the net and shafts of M16 above all, tune it against those items with a fresh opinion before review. After three looks
+- **Looks.** Where a milestone's inspected items judge a look that is tuned, the foam of WP7, the breaker
+  section of WP13 and the net and shafts of WP16 above all, tune it against those items with a fresh opinion before review. After three looks
   that fail the same cue, record them in the log and end `BLOCKED`.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/waters-<milestone>/`, selected evidence in
   `.orchestrate/evidence/WATERS/`.
@@ -2052,32 +2052,32 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   recorded with it, and none that is GPL or share-alike is copied. A copied kernel is held to this module's
   items like any other code. Scheduling, allocation and host glue are written for Thrum's seam.
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
-- **Maturity.** A ledger row for `E1.water` is added in M2 and kept current, with implementation, correctness,
+- **Maturity.** A ledger row for `E1.water` is added in WP2 and kept current, with implementation, correctness,
   visuals and device apart.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
-| What does the surface pass cost against the refresh interval, with the map and several bodies? | M2 and M4 record it; M11 records it at the showcase extent on both recipes. Tuning is the later performance phase |
-| Do the two endpoints of interaction waves and foam serve `EFFECT-GRAPH`'s cadence rules as built? | M6; a failure is a proposal there |
-| What do the gather and the rays cost where they fill the view? | M8 records it |
-| What tolerance does the map meet against the model on Metal and in Chrome? | M4.1's test states it, small beside what a float or a waterline would show |
-| Does a beach read as a beach with a swash and no surf, and its foam as carried by the uprush alone? | M4 and M7, for a profile without surf; [risks 12 and 17](#risks) |
-| Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | M13; [risk 20](#risks) |
-| What does the cut for the highest surface cost, in the model and in a tick with every float in the breakers? | M12 and M13 record it; the cell is the knob |
-| What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | M12 records preparation; M13.1's test states the tolerance, small beside a breaking wave's height |
-| Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first milestone; M14 records the water's share |
-| Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in M16 |
-| What do the caustic field and the shafts cost, and how many rungs does the look need? | M16 records it; [risk 25](#risks) |
-| What adaptation share reads right from the shallows to 20 m? | M16.7; the example's 0.75 is a starting value |
+| What does the surface pass cost against the refresh interval, with the map and several bodies? | WP2 and WP4 record it; WP11 records it at the showcase extent on both recipes. Tuning is the later performance phase |
+| Do the two endpoints of interaction waves and foam serve `EFFECT-GRAPH`'s cadence rules as built? | WP6; a failure is a proposal there |
+| What do the gather and the rays cost where they fill the view? | WP8 records it |
+| What tolerance does the map meet against the model on Metal and in Chrome? | WP4.1's test states it, small beside what a float or a waterline would show |
+| Does a beach read as a beach with a swash and no surf, and its foam as carried by the uprush alone? | WP4 and WP7, for a profile without surf; [risks 12 and 17](#risks) |
+| Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | WP13; [risk 20](#risks) |
+| What does the cut for the highest surface cost, in the model and in a tick with every float in the breakers? | WP12 and WP13 record it; the cell is the knob |
+| What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | WP12 records preparation; WP13.1's test states the tolerance, small beside a breaking wave's height |
+| Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first milestone; WP14 records the water's share |
+| Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in WP16 |
+| What do the caustic field and the shafts cost, and how many rungs does the look need? | WP16 records it; [risk 25](#risks) |
+| What adaptation share reads right from the shallows to 20 m? | WP16.7; the example's 0.75 is a starting value |
 | How does a river's reach answer a change of its source's stage? | `RIVERS`' planning; here the ends follow and the reach stays as prepared |
 | How do basins that overflow into each other merge and part? | `PUDDLES`' planning, with this module |
-| Does one mean current a window serve interaction waves in running water? | `RIVERS`' planning, on M9's channel |
-| How many sampled textures does the surface need with the map, against sixteen? | M4 counts against the record |
-| Is an Apple-tile kernel variant a measured win? | M11 |
+| Does one mean current a window serve interaction waves in running water? | `RIVERS`' planning, on WP9's channel |
+| How many sampled textures does the surface need with the map, against sixteen? | WP4 counts against the record |
+| Is an Apple-tile kernel variant a measured win? | WP11 |
 
-## Water fixtures and full sea sweeps (M17)
+## Water fixtures and full sea sweeps (WP17)
 
 For the basin oracle, shrink the bed
 around the turning, lag and exposure witnesses. For the surf oracle, keep a genuine overhang and a
@@ -2098,7 +2098,7 @@ Raise the `main-tier` rule version as the settings require. Run these cases in t
 then take the covering `long-tests` record on main. Verify that the normal runner skips the moved cases
 and the long runner executes each once.
 
-## Compact Metal craft trail (M18)
+## Compact Metal craft trail (WP18)
 
 The trail test drives the wake scene through 692 submissions at a 60 Hz simulation tick to read five
 samples of the submitted film stocks. Its witness is the stock left by the same 6 m/s craft on a real

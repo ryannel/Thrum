@@ -1,125 +1,125 @@
 {
   "module": "SHOWCASE",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome",
       "depends_on": [
-        "CONTENT-LOOP:M2",
-        "CULLING:M3",
-        "ATMOSPHERE:M10"
+        "CONTENT-LOOP:WP2",
+        "CULLING:WP3",
+        "ATMOSPHERE:WP10"
       ],
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "The prop meshes were sized from a sweep recorded before they were made: whole-frame GPU time for the exit scene's 10,000 entities at 1920x1080 with Sun shadows, at the stop with the most entities in view, for at least three triangle counts per prop, on both Mac recipes and in Chrome, in two separate runs. The shipped set follows the design's sizing rule, and its rows are kept as this module's cost baseline.",
           "ask": "Do the two retained runs support the shipped mesh set by the design's sizing rule? Was the heaviest stop chosen from the scene's own in-view counts, and is every row labelled with its build, recipe and load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5-sizing-sweep.json; .orchestrate/evidence/SHOWCASE/M5.md#mesh-sizing",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5-sizing-sweep.json; .orchestrate/evidence/SHOWCASE/WP5.md#mesh-sizing",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "The checked-in layout holds exactly 10,000 entities, between 1,000 and 2,000 of them movers. Every still prop rests on the shipped terrain's surface, and none stands inside the lookout or the camera's swept path on the exit flythrough. Every mover's whole loop stays inside the valley and clear of the ground. The generator reproduces the layout byte for byte.",
           "check": "python3 scripts/run_v1_showcase.py layout",
           "ask": "Does the command take heights from the terrain mesh as shipped, not from heights stored in the layout, and does it sample each mover's whole loop?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/M5.md#layout-and-terrain-clearance",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/WP5.md#layout-and-terrain-clearance",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "In the exit scene the simulation steps 10,000 entities with the movers under one registered rule. A corrected-run replay equals the straight run in complete authority state, and after one simulated hour every mover is still on its authored loop.",
           "check": "cargo test --locked --offline -p v1-game --test exit_scene",
           "ask": "Read the test. Is the equality over complete authority state, as gate G2S requires, and not a partial hash? Is the hour stepped tick by tick through the game's own rules?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/M5.md#authoritative-replay-and-drift",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/WP5.md#authoritative-replay-and-drift",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.4",
+          "id": "WP5.4",
           "statement": "On the Mac every entity of the exit scene draws a cooked mesh row on the bucket route, with Sun shadows. At each of the six stops the instance counts the GPU wrote equal a CPU reference of the entities in view, and the resolved culling mode is asserted.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test exit_scene_gpu",
           "lock": "gpu",
           "ask": "Does the CPU reference test each entity's bounds against the view by itself, without reading the GPU's lists? Would the test fail if the scene fell back to cubes or to Direct?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/M5.md#cooked-draw-and-route-comparison",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/WP5.md#cooked-draw-and-route-comparison",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.5",
-          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric, with thresholds set once by the route decision's fixed rule. Three controls fail as they must: the diagnostic scene, a retinted texture, and the same store drawn with no entities. The stop frames are kept as this module's exit baseline. If `ATMOSPHERE` M10's shadow correction moved a stop, the baseline was replaced by the launcher's refresh, which keeps the saved identity and thresholds, passes the three controls and records each moved grid and the cause in the baseline file.",
+          "id": "WP5.5",
+          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric, with thresholds set once by the route decision's fixed rule. Three controls fail as they must: the diagnostic scene, a retinted texture, and the same store drawn with no entities. The stop frames are kept as this module's exit baseline. If `ATMOSPHERE` WP10's shadow correction moved a stop, the baseline was replaced by the launcher's refresh, which keeps the saved identity and thresholds, passes the three controls and records each moved grid and the cause in the baseline file.",
           "check": "python3 scripts/run_v1_showcase.py check --exit",
           "lock": "gpu",
           "ask": "Was each threshold set by the fixed rule from the first run that passed all three controls, and left alone afterwards? Does the no-entities control fail at every stop that has entities in view? If the baseline file changed after its calibration, are its identity and thresholds the calibrated ones, and does its refresh record name the grids that moved and the shadow correction as their cause?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5-exit-baseline.json; .orchestrate/evidence/SHOWCASE/M5-retake/parity.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5-exit-baseline.json; .orchestrate/evidence/SHOWCASE/WP5-retake/parity.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.6",
+          "id": "WP5.6",
           "statement": "In Chrome the exit scene loads from a fetched store: the page reports 10,000 entities on cooked mesh rows, the movers advance with the world's ticks, and pausing holds them.",
           "check": "node scripts/check_v1_browser.mjs --case exit-scene",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/browser-function.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5-retake/browser-function.json",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md"
         },
         {
-          "id": "M5.7",
+          "id": "WP5.7",
           "statement": "On the Mac, at each of the six stops and the flythrough's checkpoints, props sit in the ground: none floats, sinks to its middle or stands inside the lookout, and the scatter shows no grid, row or repeated stamp and no hard edge where it ends.",
           "inspect": "Capture the six stops and the exit flythrough's checkpoints with T2 engine capture in `fixed` mode. Judge each frame whole and in native-size crops of the near ground, the middle distance and the far slopes.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5.md#metal-stops-and-fixed-motion; .orchestrate/evidence/SHOWCASE/M5-metal-fixed.tar.zst",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5.md#metal-stops-and-fixed-motion; .orchestrate/evidence/SHOWCASE/WP5-metal-fixed.tar.zst",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.8",
+          "id": "WP5.8",
           "statement": "On the Mac the movers drift continuously along the exit flythrough and in a held view of the densest group of movers. From one tick to the next none pops in or out, jumps or passes through terrain, each mover's shadow, where it has one, moves with it, and no shadow appears or vanishes.",
           "inspect": "Record the exit flythrough, and a route that holds the held view, with the native route recorder: T2 engine capture in `fixed` mode, one fresh tick for each submission, at least 1,200 consecutive routed ticks each. Read each take's log first: it lists every routed tick once, in order, at the take's phase. Then judge windows of consecutive ticks, with every tick's submitted image retained, whole and in native-size crops of single movers and their shadows. Judge at least committed ticks 228 to 240 of the flythrough, at the route's phase and at phase 0.9999, where the strip was reproduced; the stretch round its `balloons` checkpoint; and windows of your own choosing across both takes.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5.md#metal-stops-and-fixed-motion; .orchestrate/evidence/SHOWCASE/M5-metal-fixed.tar.zst",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5.md#metal-stops-and-fixed-motion; .orchestrate/evidence/SHOWCASE/WP5-metal-fixed.tar.zst",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.9",
+          "id": "WP5.9",
           "statement": "In Chrome the six stops show the same props and movers as the Mac, with none missing, and along the exit flythrough the movers drift from one tick to the next without popping in or out or jumping.",
           "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, every submission of the flythrough retained. Judge the stops whole and in native-size crops beside the Mac's at the same stop. For the flythrough, read each run's source ticks from the capture's records first. A record that repeats a tick, with the next carrying two, is the page deferring a due tick under load: it is noted, and the longer step after it is not counted as a jump. That accounts for how far the scene moves between those frames and for nothing else, so a mover or prop that is missing, new or changed in them is judged like any other. Judge runs of consecutive frames whose ticks advance one at a time, with the stretch round the `balloons` checkpoint among them.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5.md#chrome-fixed-motion; .orchestrate/evidence/SHOWCASE/M5-retake/chrome-half-tick.json; .orchestrate/evidence/SHOWCASE/M5-chrome-half-tick.tar",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5.md#chrome-fixed-motion; .orchestrate/evidence/SHOWCASE/WP5-retake/chrome-half-tick.json; .orchestrate/evidence/SHOWCASE/WP5-chrome-half-tick.tar",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.10",
+          "id": "WP5.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md"
         },
         {
-          "id": "M5.11",
-          "statement": "Real-time takes of the build this milestone claims are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. All six arms ran from one commit with nothing uncommitted. The record gives that commit, each program's hash and one digest of every tracked file there that builds, launches, drives or observes an arm (the files under `crates/`, `examples/v1-game/`, `scripts/` and `.cargo/`, and `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`), and for every arm its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only when that digest, computed again from the checkout it runs in, differs from the record's, as it does after a change to one capture script and nothing else; on a missing arm, field or load; on an arm whose world stopped before its route or its twenty seconds ended; or on a capture-on take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/M5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
+          "id": "WP5.11",
+          "statement": "Real-time takes of the build this milestone claims are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. All six arms ran from one commit with nothing uncommitted. The record gives that commit, each program's hash and one digest of every tracked file there that builds, launches, drives or observes an arm (the files under `crates/`, `examples/v1-game/`, `scripts/` and `.cargo/`, and `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`), and for every arm its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only when that digest, computed again from the checkout it runs in, differs from the record's, as it does after a change to one capture script and nothing else; on a missing arm, field or load; on an arm whose world stopped before its route or its twenty seconds ended; or on a capture-on take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/WP5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
           "check": "python3 scripts/run_v1_showcase.py motion --check",
           "reads": [
             "scripts/",
@@ -129,87 +129,87 @@
             "Cargo.toml",
             "Cargo.lock",
             "rust-toolchain.toml",
-            "docs/evidence/SHOWCASE/M5-motion-record.json",
-            "docs/evidence/SHOWCASE/M5-motion-diagnostics.json"
+            "docs/evidence/SHOWCASE/WP5-motion-record.json",
+            "docs/evidence/SHOWCASE/WP5-motion-diagnostics.json"
           ],
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M5-motion-record.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP5-motion-record.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md"
         }
       ],
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This milestone judges content, tick by tick. The finished image, and stutter at 1x, are judged in M8."
+      "quality_bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This milestone judges content, tick by tick. The finished image, and stutter at 1x, are judged in WP8."
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "In the exit scene on the Mac, Frustum and Occlusion with Sun-caster culling equal bucket-ordered Direct at every submitted frame of the exit flythrough, on both native recipes, with the movers moving.",
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#metal-equality",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP6.md#metal-equality",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md"
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "In the exit scene in Chrome, Frustum and Occlusion equal bucket-ordered Direct at the exit flythrough's checkpoints, with the movers moving.",
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#chrome-equality",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP6.md#chrome-equality",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md"
         },
         {
-          "id": "M6.3",
+          "id": "WP6.3",
           "statement": "The exit scene's default culling mode is set by CULLING's rule from paired whole-GPU rows on the exit flythrough at 1920x1080, from two separate runs recorded with their load. The game reports that mode on the Mac and in Chrome.",
           "ask": "Do the two retained runs support the default the code sets, by the rule in CULLING's design? Do the rows show Occlusion's prepass non-empty and slots hidden, so that a row cannot repeat Frustum? Did this milestone change any culling code or comparison?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#default-by-measurement",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP6.md#default-by-measurement",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.4",
+          "id": "WP6.4",
           "statement": "In real time on the Mac with the default mode, nothing pops, flickers or goes missing at the frame edges in a fast yaw, or at ridge and boulder silhouettes as props and movers come out from behind them.",
           "inspect": "Capture the exit flythrough and a fast yaw across the densest scatter with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and at occluder silhouettes.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#metal-real-time-inspection",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP6.md#metal-real-time-inspection",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.5",
+          "id": "WP6.5",
           "statement": "In real time in Chrome with the default mode, nothing pops, flickers or goes missing at the frame edges or at occluder silhouettes on the exit flythrough.",
           "inspect": "Capture the exit flythrough in Chrome with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and the ridge line.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#chrome-real-time-inspection",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP6.md#chrome-real-time-inspection",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.6",
+          "id": "WP6.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md"
         }
       ],
       "failed_reviews": 0,
@@ -219,131 +219,131 @@
       "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the populated valley, nothing pops at a screen edge or at a ridge or boulder silhouette, with the movers moving."
     },
     {
-      "id": "M9",
+      "id": "WP9",
       "name": "From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows",
       "items": [
         {
-          "id": "M9.1",
+          "id": "WP9.1",
           "statement": "On the Mac, from the lookout at the sunset-clear-sun stop, in views 20 degrees either side of it, and with that view held from 17.2 to 17.8 h, no band of brighter ground lies along the rim of the lookout's ground. Where the ground ends, the valley beyond reads as distant ground past the lookout's edge.",
           "inspect": "Capture with the Mac's fixed engine capture, TAAU on: the stop's preset, the same hour at yaw -70 and -110, and the stop's view at 17.2, 17.3, 17.5, 17.6, 17.7 and 17.8 h. Judge each frame whole and in a native-size crop of the rim, beside the same crop taken from the commit this milestone started from. Two things in these frames are not the band: a lit lookout in front of a valley floor already in shadow, which is a depth edge, and the edge of the west ridge's shadow where it lies across the lookout after 17.4 h, whose quality `ATMOSPHERE` owns and this item does not judge.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/inspection-list.md",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9/inspection-list.md",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.2",
+          "id": "WP9.2",
           "statement": "On the Mac, at the sunrise stop, the sphere and the rock stand in sunlight and each casts a shadow on the ground several times as long as it is tall. The stop's preset holds the hour, which is later than 6.1 h, and the route decision's table gives the same hour.",
           "inspect": "Capture the sunrise preset with the Mac's fixed engine capture, TAAU on. Judge the frame whole and in a native-size crop of the two props and their shadows.",
           "ask": "Does the route decision's table give the hour that `examples/v1-game/params/showcase-sunrise.params.json` holds, and is that the only stop preset whose values changed since the commit this milestone started from?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/README.md",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9/README.md",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.3",
+          "id": "WP9.3",
           "statement": "The layout, regenerated on the changed terrain, holds exactly 10,000 entities, between 1,000 and 2,000 of them movers. Every still prop rests on the shipped terrain's surface, and none stands inside the lookout or the camera's swept path on the exit flythrough. Every mover's whole loop stays inside the valley and clear of the ground. The generator reproduces the layout byte for byte.",
           "check": "python3 scripts/run_v1_showcase.py layout",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/layout.log",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9/layout.log",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.4",
+          "id": "WP9.4",
           "statement": "At the six stops the bare valley drawn natively and in Chrome agree under the route check's metric, and each target's six frames agree with the saved baseline grids: the canonical check fails when the baseline is absent or its identity differs in any part. Each diagnostic control frame is drawn at its stop's preset hour and pose, the sunrise one at the revised hour, and the check fails otherwise. The thresholds and the baseline were calibrated once for the new cooked root by the route decision's fixed rule, and the controls fail as they must.",
           "check": "python3 scripts/run_v1_showcase.py check",
           "lock": "chrome",
           "ask": "Read the bare valley's check in `scripts/run_v1_showcase.py` and the record of a canonical run at the claimed commit. Does the canonical check fail when the baseline file is absent, and when its identity differs in any one part, the frame-source version included? Does the record show the baseline `compared`, with all six stops on each target under the thresholds? Does it show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9-review/valley-check.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9-review/valley-check.json",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.5",
-          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric and with the exit baseline. The thresholds and the baseline were calibrated once for the new exit root by the route decision's fixed rule, and the three controls fail as they must: the diagnostic scene, each frame at its stop's preset hour and pose as in M9.4, a retinted texture, and the same store drawn with no entities.",
+          "id": "WP9.5",
+          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric and with the exit baseline. The thresholds and the baseline were calibrated once for the new exit root by the route decision's fixed rule, and the three controls fail as they must: the diagnostic scene, each frame at its stop's preset hour and pose as in WP9.4, a retinted texture, and the same store drawn with no entities.",
           "check": "python3 scripts/run_v1_showcase.py check --exit",
           "lock": "chrome",
           "ask": "Read this milestone's diff of `scripts/run_v1_showcase.py` and of the two baseline files, and the record of an exit check at the claimed commit. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the record show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's? Does the log give each baseline file's old and new SHA-256 and the cause?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9-review/exit-check.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9-review/exit-check.json",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.6",
-          "statement": "The registered exact baselines are refreshed in the landing that changes the terrain, as the module list's ruling on the valley's lookout rim requires: each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. The landing also keeps the retained references in the game's test fixtures, as the module list's ruling on where retained references are kept allows: each file has its old name under the new folder, and one that was not regenerated has its old bytes. Every comparison compares what it did and decides as it did. In `.config/exact-baselines.json` the landing changed each baseline's `pin` and `refresh`, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`, and the paths in `reference` and `covered_paths` that say where the references are, and nothing else. In the files the registry lists as comparisons it changed only the path the references are read from. `APPLE-TILE`'s log and this module's each record the cause, every moved reference's old and new SHA-256, and which of the five sets did not move.",
+          "id": "WP9.6",
+          "statement": "The registered exact baselines are refreshed in the landing that changes the terrain, as the module list's ruling on the valley's lookout rim requires: each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. The landing also keeps the retained references in the game's test fixtures, as the module list's ruling on where retained references are kept allows: each file has its old name under the new folder, and one that was not regenerated has its old bytes. Every comparison compares what it did and decides as it did. In `.config/exact-baselines.json` the landing changed each baseline's `pin` and `refresh`, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `WP9`, and the paths in `reference` and `covered_paths` that say where the references are, and nothing else. In the files the registry lists as comparisons it changed only the path the references are read from. `APPLE-TILE`'s log and this module's each record the cause, every moved reference's old and new SHA-256, and which of the five sets did not move.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "ask": "Read this milestone's diff yourself with `git diff`, from the commit it started from. These are expected in it: regenerated reference images and manifests, their move from `docs/evidence/render/` to `examples/v1-game/tests/fixtures/exact-images/`, the registry's `pin` and `refresh` fields and its reference paths, the folder `scripts/apple_tile_m1.py` reads the native references from, and a new entry in `APPLE-TILE`'s log. In `.config/exact-baselines.json`, is every changed value a `pin`, a `refresh` naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`, or a path in `reference` or `covered_paths` that now names where the same reference is kept? In the files the registry lists under `comparisons` or `comparison_files`, does every changed line only name where the references are read from? Compare the retained files at the starting commit, under their old folders, with those now registered, by name and Git blob: are the names the same, and is every file whose blob differs listed in both logs with its old and new SHA-256? Do both logs say which of the five sets did not move?",
+          "ask": "Read this milestone's diff yourself with `git diff`, from the commit it started from. These are expected in it: regenerated reference images and manifests, their move from `docs/evidence/render/` to `examples/v1-game/tests/fixtures/exact-images/`, the registry's `pin` and `refresh` fields and its reference paths, the folder `scripts/apple_tile_m1.py` reads the native references from, and a new entry in `APPLE-TILE`'s log. In `.config/exact-baselines.json`, is every changed value a `pin`, a `refresh` naming `ruling-on-the-valley-fix`, `SHOWCASE` and `WP9`, or a path in `reference` or `covered_paths` that now names where the same reference is kept? In the files the registry lists under `comparisons` or `comparison_files`, does every changed line only name where the references are read from? Compare the retained files at the starting commit, under their old folders, with those now registered, by name and Git blob: are the names the same, and is every file whose blob differs listed in both logs with its old and new SHA-256? Do both logs say which of the five sets did not move?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/amended/M9.6.md",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9/amended/M9.6.md",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.7",
-          "statement": "Every file in `examples/v1-game/routes/` that pinned the old valley root or the old exit root at the commit this milestone started from names the new one, and its generation where that moved, whichever module or milestone added the file. When this was planned those were `moving-v1.json`, `culling-fast-yaw.json`, `effect-state.json`, `effect-after-opaque.json`, `exit-flythrough.json` and `exit-held.json`, and M6 adds `exit-fast-yaw.json`, pinned to the exit root. In each such file the landing changed the pin and nothing else, so every route's keys, phase and checkpoints are as they were, and no route file names an old root.",
+          "id": "WP9.7",
+          "statement": "Every file in `examples/v1-game/routes/` that pinned the old valley root or the old exit root at the commit this milestone started from names the new one, and its generation where that moved, whichever module or milestone added the file. When this was planned those were `moving-v1.json`, `culling-fast-yaw.json`, `effect-state.json`, `effect-after-opaque.json`, `exit-flythrough.json` and `exit-held.json`, and WP6 adds `exit-fast-yaw.json`, pinned to the exit root. In each such file the landing changed the pin and nothing else, so every route's keys, phase and checkpoints are as they were, and no route file names an old root.",
           "check": "sh -c 'test -n \"$(git ls-files \":(glob)examples/**/routes/*.json\")\" && ! git grep -qE \"70d2baf823d09d85|3083a794f8379630\" -- \":(glob)examples/**/routes/*.json\"'",
           "ask": "List the files in `examples/v1-game/routes/` at the commit this milestone started from, with each one's `cooked_root`. The old valley root is the one `moving-v1.json` named there and the old exit root the one `exit-flythrough.json` named there; the check greps for the two known at planning. Then read this milestone's diff of that folder against that commit with `git diff`. Does every file that named the old valley root now name the root `moving-v1.json` names, and every file that named the old exit root, `exit-fast-yaw.json` among them, the root `exit-flythrough.json` names? In each of those files, does the diff change only `cooked_root`, and `cooked_generation` where the generation moved?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/route-pins.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9/route-pins.json",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.8",
-          "statement": "In the exit scene cooked from the changed terrain, on the Mac, Frustum and Occlusion with Sun-caster culling equal bucket-ordered Direct at every submitted frame of the exit flythrough, on both native recipes, with the movers moving. This milestone's receipts, the Mac's and Chrome's, are of the new exit root, and M6's receipts for the old root are as they were.",
+          "id": "WP9.8",
+          "statement": "In the exit scene cooked from the changed terrain, on the Mac, Frustum and Occlusion with Sun-caster culling equal bucket-ordered Direct at every submitted frame of the exit flythrough, on both native recipes, with the movers moving. This milestone's receipts, the Mac's and Chrome's, are of the new exit root, and WP6's receipts for the old root are as they were.",
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target mac-metal",
           "lock": "gpu",
-          "ask": "Does this milestone's retained Mac receipt name the exit root that `exit-flythrough.json` now pins, and its Chrome receipt that route file's SHA-256? Do the receipts M6 retained, the ones M6's review cites, still name the exit root that `exit-flythrough.json` pinned at the commit this milestone started from?",
+          "ask": "Does this milestone's retained Mac receipt name the exit root that `exit-flythrough.json` now pins, and its Chrome receipt that route file's SHA-256? Do the receipts WP6 retained, the ones WP6's review cites, still name the exit root that `exit-flythrough.json` pinned at the commit this milestone started from?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/retake/culling-metal/run.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9/retake/culling-metal/run.json",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         },
         {
-          "id": "M9.9",
+          "id": "WP9.9",
           "statement": "In the exit scene cooked from the changed terrain, in Chrome, Frustum and Occlusion equal bucket-ordered Direct at the exit flythrough's checkpoints, with the movers moving.",
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/retake/culling-chrome/run.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP9/retake/culling-chrome/run.json",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
       "status": "done",
-      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` M6, with motion and in Chrome.",
+      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` WP6, with motion and in Chrome.",
       "diagnosed_for_planner_finding": true
     },
     {
-      "id": "M7",
+      "id": "WP7",
       "name": "One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran",
       "depends_on": [
-        "APPLE-TILE:M12",
-        "APPLE-PRESENTATION:M11",
-        "ATMOSPHERE:M6",
-        "CONTENT-LOOP:M3"
+        "APPLE-TILE:WP12",
+        "APPLE-PRESENTATION:WP11",
+        "ATMOSPHERE:WP6",
+        "CONTENT-LOOP:WP3"
       ],
       "items": [
         {
-          "id": "M7.1",
-          "statement": "The milestones this one builds on are Done in the record files: `APPLE-TILE` M12, `APPLE-PRESENTATION` M11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` M6, `CULLING` M3 and `CONTENT-LOOP` M3.",
-          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"M12\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"M6\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"milestones\"]) and bool((L(m,\"RECORD.json\")[\"milestones\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
+          "id": "WP7.1",
+          "statement": "The milestones this one builds on are Done in the record files: `APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` WP6, `CULLING` WP3 and `CONTENT-LOOP` WP3.",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"M12\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"WP6\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",
@@ -351,7 +351,7 @@
           "review": ""
         },
         {
-          "id": "M7.2",
+          "id": "WP7.2",
           "statement": "Launched from a clean checkout with the exit configuration, the Mac's Apple recipe row runs the six stops and the exit flythrough to the end. The game's own report gives the cooked root, recipe, reconstructor, display mode, governor state and culling mode it resolved, and each equals the exit configuration's entry for the row.",
           "check": "python3 scripts/run_v1_showcase.py exit --row mac-apple",
           "lock": "gpu",
@@ -363,7 +363,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M7.3",
+          "id": "WP7.3",
           "statement": "Launched from a clean checkout with the exit configuration, the Mac's portable recipe row runs the six stops and the exit flythrough to the end. The game's own report gives the cooked root, recipe, reconstructor, display mode, governor state and culling mode it resolved, and each equals the exit configuration's entry for the row.",
           "check": "python3 scripts/run_v1_showcase.py exit --row mac-portable",
           "lock": "gpu",
@@ -374,7 +374,7 @@
           "review": ""
         },
         {
-          "id": "M7.4",
+          "id": "WP7.4",
           "statement": "Launched from a clean checkout with the exit configuration, the Chrome row runs the six stops and the exit flythrough to the end. The game's own report gives the cooked root, recipe, reconstructor, display mode, governor state and culling mode it resolved, and each equals the exit configuration's entry for the row.",
           "check": "python3 scripts/run_v1_showcase.py exit --row chrome",
           "lock": "chrome",
@@ -385,7 +385,7 @@
           "review": ""
         },
         {
-          "id": "M7.5",
+          "id": "WP7.5",
           "statement": "At each stop the three rows show the same scene: every pair of rows agrees under the route check's metric with thresholds set by the fixed rule, the three controls fail as they must, and each row's stop frames are kept as its baseline.",
           "check": "python3 scripts/run_v1_showcase.py exit --compare",
           "lock": "gpu",
@@ -397,7 +397,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M7.6",
+          "id": "WP7.6",
           "statement": "The Mac panel and the Chrome page declare the same controls for the exit scene, with the same keys, labels, units and ranges, and each of the six presets applies on every row with nothing refused.",
           "check": "python3 scripts/run_v1_showcase.py exit --controls",
           "lock": "gpu",
@@ -408,7 +408,7 @@
           "review": ""
         },
         {
-          "id": "M7.7",
+          "id": "WP7.7",
           "statement": "In the exit scene on the Mac, on both recipes: the time controls scrub from dawn through night, a saved edit to a prop mesh and to the ground texture appears without a restart, the profiler's rows show current numbers, and no pipeline is created once the scene is ready.",
           "check": "python3 scripts/run_v1_showcase.py exit --clauses --target mac-metal",
           "lock": "gpu",
@@ -420,7 +420,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M7.8",
+          "id": "WP7.8",
           "statement": "In the exit scene in Chrome: the time controls scrub from dawn through night, a saved edit to a prop mesh and to the ground texture appears without a page reload, and the profiler's rows show a number or their reason.",
           "check": "python3 scripts/run_v1_showcase.py exit --clauses --target chrome-webgpu",
           "lock": "chrome",
@@ -431,11 +431,11 @@
           "review": ""
         },
         {
-          "id": "M7.9",
+          "id": "WP7.9",
           "statement": "On the Mac, for both recipes, a whole-frame record covers the exit flythrough and one full day cycle with capture off: each frame's CPU stages, named GPU passes and callback interval from the frame host, with build, recipe and load. Every frame that missed its opportunity is listed with its duration, its place on the route or in the day, and what its investigation found: a cause, or, where the record cannot tell the machine's share of the delay from the engine's, that it is unresolved under the recorded load, with the evidence read. Startup to the first exit-scene frame is recorded as a labelled proxy.",
           "check": "python3 scripts/run_v1_showcase.py frames --target mac-metal",
           "lock": "gpu",
-          "ask": "Does each late frame have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the game, or the mark unresolved under load, with the evidence read, kept for M8.13? Is load alone given as a cause anywhere? Is any row about a quarter slower than M5's baseline at the same stop, and if so is it explained?",
+          "ask": "Does each late frame have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the game, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere? Is any row about a quarter slower than WP5's baseline at the same stop, and if so is it explained?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -443,11 +443,11 @@
           "builder_result": "open"
         },
         {
-          "id": "M7.10",
+          "id": "WP7.10",
           "statement": "In Chrome a whole-frame record covers the exit flythrough and one full day cycle: the page's frame-callback intervals and the GPU pass times the browser allows, with build and load. Every long interval is listed with its duration, its place on the route or in the day, and what its investigation found: a cause, or, where the record cannot tell the machine's share of the delay from the page's, that it is unresolved under the recorded load, with the evidence read. Startup to the first exit-scene frame is recorded as a labelled proxy.",
           "check": "python3 scripts/run_v1_showcase.py frames --target chrome-webgpu",
           "lock": "chrome",
-          "ask": "Does each long interval have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the page, or the mark unresolved under load, with the evidence read, kept for M8.13? Is load alone given as a cause anywhere?",
+          "ask": "Does each long interval have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the page, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere?",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",
@@ -455,7 +455,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M7.11",
+          "id": "WP7.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -472,15 +472,15 @@
       "quality_bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch."
     },
     {
-      "id": "M8",
+      "id": "WP8",
       "name": "The showcase passes review on the Mac and in Chrome, its motion on the built-in display is on record, and the V1 exit record is written",
       "depends_on": [
-        "PLATFORM-RUNTIME-MAC:M3",
-        "CREATOR:M3"
+        "PLATFORM-RUNTIME-MAC:WP3",
+        "CREATOR:WP3"
       ],
       "items": [
         {
-          "id": "M8.1",
+          "id": "WP8.1",
           "statement": "On the Mac's Apple recipe, at each of the six stops the showcase reads as one place under one light: props and movers are lit, shadowed and hazed like the terrain around them, nothing looks pasted on, floats or glows, and no stop shows banding, a highlight clipped flat or a hard edge in the scatter.",
           "inspect": "Capture the six stops on the Apple recipe row with T2 engine capture in `fixed` mode, from the exit configuration. Judge each frame whole and in native-size crops of the near props, a mover, the middle distance, the far slopes and the horizon.",
           "target": "mac-metal",
@@ -490,7 +490,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.2",
+          "id": "WP8.2",
           "statement": "On the Mac's Apple recipe, along the exit flythrough and through one full day cycle the image is stable: no shimmer on distant props, no trail or smear behind a mover, no pop, no flash at a change of hour, and no stutter visible at 1x.",
           "inspect": "Capture the exit flythrough and a held view through one full day cycle on the Apple recipe row with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops of distant props, single movers and shadow edges.",
           "target": "mac-metal",
@@ -500,9 +500,9 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.3",
+          "id": "WP8.3",
           "statement": "The Mac's portable recipe passes the same stills and motion lists, and any difference from the Apple recipe beyond its named features is recorded.",
-          "inspect": "Capture the same stops, flythrough and day cycle on the portable recipe row, in `fixed` and `realtime` mode. Judge the lists of M8.1 and M8.2, then compare crops with the Apple row's at the same stop.",
+          "inspect": "Capture the same stops, flythrough and day cycle on the portable recipe row, in `fixed` and `realtime` mode. Judge the lists of WP8.1 and WP8.2, then compare crops with the Apple row's at the same stop.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -510,7 +510,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.4",
+          "id": "WP8.4",
           "statement": "In Chrome, at each of the six stops the showcase reads as one place under one light: props and movers are lit, shadowed and hazed like the terrain around them, nothing looks pasted on, floats or glows, and no stop shows banding, a highlight clipped flat or a hard edge in the scatter.",
           "inspect": "Capture the six stops in Chrome with T2 engine capture in `fixed` mode, from the exit configuration. Judge each frame whole and in native-size crops of the near props, a mover, the middle distance, the far slopes and the horizon.",
           "target": "chrome-webgpu",
@@ -520,7 +520,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.5",
+          "id": "WP8.5",
           "statement": "In Chrome, along the exit flythrough and through one full day cycle the image is stable: no shimmer on distant props, no trail or smear behind a mover, no pop, no flash at a change of hour, and no stutter visible at 1x.",
           "inspect": "Capture the exit flythrough and a held view through one full day cycle in Chrome with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops of distant props, single movers and shadow edges.",
           "target": "chrome-webgpu",
@@ -530,7 +530,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.6",
+          "id": "WP8.6",
           "statement": "ATTENDED SETUP: on the built-in display the capture-off release game runs the exit flythrough on both recipes with an OS-reported presented interval for every submission. Each missed refresh is listed and investigated, and windowed startup to the first exit-scene frame is recorded.",
           "ask": "Does the presented-time witness, as PLATFORM-RUNTIME-MAC qualified it, cover the whole flythrough on both recipes with capture off? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the game?",
           "target": "mac-metal",
@@ -544,7 +544,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.7",
+          "id": "WP8.7",
           "statement": "ATTENDED SETUP: in a visible Chrome window on the built-in display, the page's frame-callback intervals are recorded over startup and the exit flythrough, with each long interval listed and investigated. The record says this is the page's own clock and not presented time.",
           "ask": "Was Chrome's window visible and unoccluded on the built-in display for the whole record? Is each long interval listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the page?",
           "target": "chrome-webgpu",
@@ -558,7 +558,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.8",
+          "id": "WP8.8",
           "statement": "The V1 exit record names, for each clause of the V1 exit and of gate G7 in the brief, the evidence at the claimed commit, the rows it ran on, and its status as implementation, correctness, visuals and device, kept apart.",
           "ask": "Take the clauses one at a time. Does each have evidence at the claimed commit on the rows it names? Is any clause claimed on a row it did not run on, or from a stand-in not labelled `proxy:iphone`? Does the GPU culling clause cite equality receipts, for both Mac recipes and for Chrome, taken on the exit root the claimed commit cooks?",
           "target": "mac-metal",
@@ -568,7 +568,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.9",
+          "id": "WP8.9",
           "statement": "The visual digest shows the six stops on all three rows and frames from the flythrough as contact sheets, small enough to read inside the owner's report.",
           "ask": "Were the digest's images cut from the captures this review judged, at the claimed commit, and does each name its row and stop?",
           "target": "mac-metal",
@@ -578,7 +578,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.10",
+          "id": "WP8.10",
           "statement": "The record lists the physical-device runs owed and every known defect, and the maturity ledger and the README say what V1 delivered and what it did not.",
           "ask": "Does the list name a physical iPhone, a display other than the built-in panel, a sustained thermal run and hardware that is not Apple's, each with the claim it leaves unqualified? Do the ledger's G7 rows and the README match the record, with nothing claimed for a device that was not run?",
           "target": "mac-metal",
@@ -588,7 +588,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.11",
+          "id": "WP8.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -598,9 +598,9 @@
           "review": ""
         },
         {
-          "id": "M8.12",
-          "statement": "Every milestone the V1 exit rests on is Done in the record files: `PLATFORM-RUNTIME-IOS` M7, `PLATFORM-RUNTIME-MAC` M3, `T2-CAPTURE` M2, `COOKED-DRAW` M1, `APPLE-TILE` M12, `CREATOR` M3, `APPLE-PRESENTATION` M11, `ATMOSPHERE` M6, which closes G3s, `BASELINE-GUARD` M1, `CULLING` M3 and `CONTENT-LOOP` M3. `ATMOSPHERE`'s later milestones are track 2 and are not among them.",
-          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"PLATFORM-RUNTIME-IOS\",\"M7\"),(\"PLATFORM-RUNTIME-MAC\",\"M3\"),(\"T2-CAPTURE\",\"M2\"),(\"COOKED-DRAW\",\"M1\"),(\"APPLE-TILE\",\"M12\"),(\"CREATOR\",\"M3\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"M6\"),(\"BASELINE-GUARD\",\"M1\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"milestones\"]) and bool((L(m,\"RECORD.json\")[\"milestones\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
+          "id": "WP8.12",
+          "statement": "Every milestone the V1 exit rests on is Done in the record files: `PLATFORM-RUNTIME-IOS` WP7, `PLATFORM-RUNTIME-MAC` WP3, `T2-CAPTURE` WP2, `COOKED-DRAW` WP1, `APPLE-TILE` WP12, `CREATOR` WP3, `APPLE-PRESENTATION` WP11, `ATMOSPHERE` WP6, which closes G3s, `BASELINE-GUARD` WP1, `CULLING` WP3 and `CONTENT-LOOP` WP3. `ATMOSPHERE`'s later milestones are track 2 and are not among them.",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"PLATFORM-RUNTIME-IOS\",\"WP7\"),(\"PLATFORM-RUNTIME-MAC\",\"M3\"),(\"T2-CAPTURE\",\"M2\"),(\"COOKED-DRAW\",\"M1\"),(\"APPLE-TILE\",\"M12\"),(\"CREATOR\",\"M3\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"WP6\"),(\"BASELINE-GUARD\",\"M1\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",
@@ -608,8 +608,8 @@
           "review": ""
         },
         {
-          "id": "M8.13",
-          "statement": "Every late frame and long interval that M7.9 and M7.10 carried as unresolved under load is answered from the records and takes of the sitting with the other builders paused, at the place on the flythrough or in the day cycle where it occurred: it did not recur there, or it recurred and has a cause that is fixed, proposed to its owning module, or shown to lie outside the game or the page.",
+          "id": "WP8.13",
+          "statement": "Every late frame and long interval that WP7.9 and WP7.10 carried as unresolved under load is answered from the records and takes of the sitting with the other builders paused, at the place on the flythrough or in the day cycle where it occurred: it did not recur there, or it recurred and has a cause that is fixed, proposed to its owning module, or shown to lie outside the game or the page.",
           "ask": "Take the carried entries one at a time. Does a record or take from the paused sitting cover the place each occurred, on the row it occurred on? Is each answered as not recurring, or with a cause?",
           "target": "mac-metal",
           "evidence": "",

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/REPO-RULES/design-review.md",
     "commit": "238fe9d01fc7966aa6ea5f67d899d69fe2205c45",
-    "hash": "baad289d6b0c3e84abef42043af73d347221ffff4bc7215ef6743139ebc48a7f",
+    "hash": "3c613ee90ef4dece690d36b9312d3a4a17d888ee381831b82abcf2e32278e1ae",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,21 +23,21 @@
     },
     "at": "2026-11-15T05:48:29Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "2bcddd7cd5272205c9397ee6152a47aae5151b37949a4200d52837bd114abace",
+  "work_packages": {
+    "WP1": {
+      "definitions": "c75280930863f43a4a61969f4945c028babe0887d9cf5a670aab88e37918bc6c",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "29b8747f450658519fcbd095b367e6257a93be02",
-          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md",
+          "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -101,25 +101,25 @@
       "done": {
         "by": "review",
         "commit": "29b8747f450658519fcbd095b367e6257a93be02",
-        "review": ".orchestrate/evidence/REPO-RULES/M1-review.md",
+        "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md",
         "checked": "538a47eec6fdd414473e75c59ab4fb69a1b62a9c",
         "at": "2026-11-16T03:49:00Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "aa468f8164d67a4ca4dc0021883aa026d6061e84a24f7711cd1a854b484eaa77",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "0edbf3236c669f46338499088dc6bd71c5cf13a9",
-          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md",
+          "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -180,13 +180,13 @@
       "done": {
         "by": "review",
         "commit": "0edbf3236c669f46338499088dc6bd71c5cf13a9",
-        "review": ".orchestrate/evidence/REPO-RULES/M2-review.md",
+        "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md",
         "checked": "66ae46ae0617f1102a9ce51e92c95a43448b7706",
         "at": "2026-11-16T09:22:40Z"
       }
     },
-    "M3": {
-      "definitions": "34ab1f4e334a90597267e9fddb1042d294c9db9658ab65048885258e6eed3b23",
+    "WP3": {
+      "definitions": "7e9dd13583a0d1fe768247a59dcdf844892d70783087c7dc97d557d4021a5cdf",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -194,7 +194,7 @@
         "at": "2026-11-20T10:12:46Z"
       }
     },
-    "M4": {
+    "WP4": {
       "definitions": "000f0fc338922f9abe4d1aea44c6a7a82bed4303d303b4ab99874659d0268eb9",
       "reviews": [],
       "authorised": {
@@ -211,7 +211,7 @@
       ]
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive that work?\" So the decisions below are made; plan them as buildable milestones, not human decisions.\n\n1) Code review fixes. A whole-repository review is at /Users/ryannel/Workspace/thrum/tmp/code-review-2026-11-14/CODE-REVIEW.md, with slices in sections/ beside it. Copy it into docs/evidence/code-review-2026-11-14/ and plan its fixes. The canonical shapes are already written in .agents/skills/thrum-engineering/references/patterns.md (review step 1); add the review's mechanical repo_check rules. Then follow its order of attack: confirmed bugs first (H01, H09, M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), test support and one GPU gate (T6), one device recipe and host core (T4), error convention (T3), performance (T12), and renames and splits (T9, T10) as one planned architecture milestone, then hygiene (T13). Give each fix to the module that owns the code, or a new module where none does. Modules are cut by isolation and ownership, and each delivers milestone by milestone in order; do not split CLOUDS or WATERS or change their milestones. Sequence work so it does not rewrite files that running builders hold (CULLING M3, APPLE-PRESENTATION M3, APPLE-TILE M10, CREATOR M3, EFFECT-GRAPH M3, ATMOSPHERE M9, CLOUDS M1, WATERS M1); later milestones of those modules may be rebased onto it.\n   H03 decision: no Git history rewrite (it would need a force-push to main under many live worktrees). Plan the forward fix only: bulk media and archives leave the tracked tree under docs/ASSET-LIFECYCLE.md's storage rules (untrack at HEAD, keep selected small evidence), and repo_check stops new bulk binaries being committed. Keep evidence links that reviews depend on resolvable.\n\n2) Separate the game from the engine. Owner: \"it sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as much as we can, it shouldn't even sit in the same code base ideally.\" Today examples/v1-game (26k lines) holds engine host and shell code (host, window, browser, camera, projection, controls), engine qualification rigs (H20), and engine tests compile its source (H02/H13); thrum-cook depends on examples/asset-loop (H19); ARCHITECTURE places CLOUDS and PUDDLES selections in v1-game. Design the end state where the game lives in its own repository and depends only on the engine's public API: engine host/shell code moves into engine crates (also H15/M03), qualification moves into the owning crates or an engine-side harness, shared fixtures move to engine test support, and repo_check enforces the boundary. Stage it: first make the boundary real inside this repository, then move the game out.\n   Repository decision: the game moves to a new local Git repository at /Users/ryannel/Workspace/thrum-games (v1-game now; the swarm game later), with no remote until the owner asks for one. It consumes the engine through Cargo path dependencies on a sibling Thrum checkout, so engine changes surface in the game at once; switching to pinned git revisions is a later step once the engine has releases. The last stage creates that repository, moves the game with its history-free copy, and leaves Thrum with no game code. The upcoming swarm game follows the same shape from the start. V1 still exits through the showcase game, so keep its milestones buildable throughout and say how the V1 gate is verified once the game lives outside.\n\nSay which new milestones can start at once, and which wait for running builders.",
       "at": "2026-11-14T22:15:19Z"

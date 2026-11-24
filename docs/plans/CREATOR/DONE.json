@@ -1,63 +1,63 @@
 {
   "module": "CREATOR",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "The starter scene runs in Chrome from one command, with its controls and live asset edits",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "One documented ./dev command builds a kit scene for wasm32, cooks and serves its assets and prints a URL; in Chrome on hardware WebGPU that URL draws the starter's lit ground, sky and cooked mesh, and moving a Sun slider changes the lit pixels.",
           "check": "node scripts/check_starter_browser.mjs --case scene",
           "lock": "gpu",
           "ask": "Read scripts/check_starter_browser.mjs. Does the scene case run the documented command, drive a real Chrome on hardware WebGPU, and fail on a software adapter, an undrawn cooked generation, a fallback scene, or a slider that changes state but not pixels?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/scene-run.json",
+          "evidence": ".orchestrate/evidence/CREATOR/WP1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/scene-run.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M1-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "The page's controls are the DOM view of the same thrum-controls model as the Mac panel: the same keys, groups, display values and refusals, and a ?params file applies through the same checked path and reports each refusal by key.",
           "check": "node scripts/check_starter_browser.mjs --case controls",
           "lock": "gpu",
           "ask": "Is any control, group, range or refusal text declared separately for the web, or does the page render only what the model reports?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/controls-run.json",
+          "evidence": ".orchestrate/evidence/CREATOR/WP1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/controls-run.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M1-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "An asset saved while the page runs is re-cooked and drawn without reloading the page; an edit the loader refuses keeps the previous generation drawn and the page says why.",
           "check": "node scripts/check_starter_browser.mjs --case edit",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/edit-run.json",
+          "evidence": ".orchestrate/evidence/CREATOR/WP1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/edit-run.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M1-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "A kit scene's game code is one file for both targets: examples/starter/src has no target-specific code and names no engine game types, and the web form adds no game lines.",
           "ask": "Read examples/starter/src and the kit's web runner. Is there any cfg on target, web-only item or engine game type in the scene's source, and does the reported game-line count match the Mac build's?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/source-files.json",
+          "evidence": ".orchestrate/evidence/CREATOR/WP1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/source-files.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M1-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "The page stays legible and explains itself through first load, a missing asset store, a misspelt parameter key, a tab switch and a narrow window.",
           "inspect": "Open the starter's URL in Chrome and capture each state: loading, drawn, missing store, misspelt ?params key, after a tab switch, and a 480 px wide window. Use Chrome fixed capture for the canvas and page screenshots for the DOM. For each, is the scene or the message readable, and does every message name the object, the cause and a next step?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/journey-run.json",
+          "evidence": ".orchestrate/evidence/CREATOR/WP1-r1.md and .orchestrate/evidence/CREATOR/m1-r1/journey-run.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M1-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP1-review.md",
           "builder_result": "pass"
         }
       ],
@@ -68,86 +68,86 @@
       "quality_bar": "As direct as serving a Bevy example with trunk or opening a three.js example: one command, one URL, the scene and its controls, with every failure named by object, cause and next step. Function and legibility only; render quality belongs to the render gates."
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "The demo UI shows where a frame's time goes on Mac and in Chrome",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "With the profiler on, the Mac panel and the Chrome page show the frame-callback interval and present calls, CPU time of world tick, extract, upload and encode + submit, and GPU time per named graph pass, each a median over a stated window of recent completed frames, refreshed a few times a second.",
           "ask": "Does every CPU and GPU number come from the frame host's completed samples through the profile window, and every interval row from the shell's callback record, with no second timer and no row named as display cadence? Do tests in ./dev check cover the window, the median and the refresh rate?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/CREATOR/M2.md; .orchestrate/evidence/CREATOR/m2/native/summary.json; .orchestrate/evidence/CREATOR/m2/native/world/before-0.json.gz",
+          "evidence": ".orchestrate/evidence/CREATOR/WP2.md; .orchestrate/evidence/CREATOR/m2/native/summary.json; .orchestrate/evidence/CREATOR/m2/native/world/before-0.json.gz",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "A number is current or its row says why there is none. In Chrome, after more than 600 completed frames, a load change moves the row that measures it. No timestamp queries, profiler off, a timing fault, no recent frame and coarse browser steps each show their reason, never zero or an old number.",
           "check": "node scripts/check_starter_browser.mjs --case profiler",
           "lock": "gpu",
           "ask": "Read the profiler case and the tests. Does the case change the load only after frame 600 and fail when a row is fed from the shell's first-600 report buffer or shows a number while the adapter reports no timestamp-query feature? Do tests cover each reason, and the window emptying on a device replacement?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M2.md; .orchestrate/evidence/CREATOR/m2/browser-profiler/run.json; .orchestrate/evidence/CREATOR/m2/browser-profiler/profiler-load.png; .orchestrate/evidence/CREATOR/m2/native/profile-window-tests.log",
+          "evidence": ".orchestrate/evidence/CREATOR/WP2.md; .orchestrate/evidence/CREATOR/m2/browser-profiler/run.json; .orchestrate/evidence/CREATOR/m2/browser-profiler/profiler-load.png; .orchestrate/evidence/CREATOR/m2/native/profile-window-tests.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "Timing demand is one switch on the frame host, on by default. A frame encoded with it off writes no timestamp, submits no resolve or readback, and says GPU time was not requested. Switching either way with frames in flight, and across a device replacement, loses no frame sample and frees every slot.",
           "ask": "Read the thrum-render diff and its device tests in ./dev check. Do the tests switch both ways with frames in flight and across a replacement, and does a host that never touches the switch behave as before? Does the diff change anything else in the frame lifecycle?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/CREATOR/M2.md; .orchestrate/evidence/CREATOR/m2/native/timing-switch-test.log; .orchestrate/evidence/CREATOR/m2/native/timing-switch-test.json",
+          "evidence": ".orchestrate/evidence/CREATOR/WP2.md; .orchestrate/evidence/CREATOR/m2/native/timing-switch-test.log; .orchestrate/evidence/CREATOR/m2/native/timing-switch-test.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "On the running Chrome page, switching the profiler off stops timestamp work once the frames in flight have drained and the rows say it is off; switching it on again shows only numbers from frames after the switch. Frames keep presenting throughout.",
           "check": "node scripts/check_starter_browser.mjs --case profiler-switch",
           "lock": "gpu",
           "ask": "Read the profiler-switch case. Does it count real resolve and readback work, not a UI flag, and would it fail if a number from before the switch were shown after it?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M2.md; .orchestrate/evidence/CREATOR/m2/browser-switch/run.json; .orchestrate/evidence/CREATOR/m2/browser-switch/profiler-off-submitted.png",
+          "evidence": ".orchestrate/evidence/CREATOR/WP2.md; .orchestrate/evidence/CREATOR/m2/browser-switch/run.json; .orchestrate/evidence/CREATOR/m2/browser-switch/profiler-off-submitted.png",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "Only the window and page shells turn timing demand off, and only for an app that declared the profiler group, with its toggle off, in a run that writes no frames report. A paired on/off run on the V1 valley records what the profiler costs, with build, load, order and the spread of identical runs.",
           "ask": "Do THRUM_REPORT, the Mac qualification command and the V1 page's 600-sample report still run timed from their first frame, with their output unchanged? Are the paired figures recorded as observations, with no budget claimed?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/CREATOR/M2.md; .orchestrate/evidence/CREATOR/m2/native/summary.json; .orchestrate/evidence/CREATOR/m2/native/pair-0.json.gz; .orchestrate/evidence/CREATOR/m2/native/pair-1.json.gz",
+          "evidence": ".orchestrate/evidence/CREATOR/WP2.md; .orchestrate/evidence/CREATOR/m2/native/summary.json; .orchestrate/evidence/CREATOR/m2/native/pair-0.json.gz; .orchestrate/evidence/CREATOR/m2/native/pair-1.json.gz",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "On the Mac, two known changes each move the row that measures them by more than that row's spread with no change: pausing the valley's world lowers World tick, and a starter material-hook edit that adds fragment work raises the GPU pass that draws the cooked mesh. The panel stays legible at the default window size.",
           "inspect": "With the profiler on, repeat each change and a no-change control at least three times, capturing the panel offscreen before and after. Does the named row move the named way beyond its no-change spread each time, does no row outside the design's coupled list move beyond its spread without a recorded cause, and can every row be read without resizing?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/CREATOR/M2.md; .orchestrate/evidence/CREATOR/m2/native/summary.json; .orchestrate/evidence/CREATOR/m2/native/row-audit.json; .orchestrate/evidence/CREATOR/m2/native/world/; .orchestrate/evidence/CREATOR/m2/native/material/",
+          "evidence": ".orchestrate/evidence/CREATOR/WP2.md; .orchestrate/evidence/CREATOR/m2/native/summary.json; .orchestrate/evidence/CREATOR/m2/native/row-audit.json; .orchestrate/evidence/CREATOR/m2/native/world/; .orchestrate/evidence/CREATOR/m2/native/material/",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "The same profiler rows are present and readable on the starter's page in Chrome, with GPU rows either numeric with their step or showing their reason.",
           "inspect": "Open the starter's URL in Chrome with the profiler on and screenshot the page at the default size and at 480 px wide, then again after switching it off. Are the rows the same set as on the Mac, readable, labelled by their source, and honest about step size or the reason a number is missing?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/CREATOR/M2.md; .orchestrate/evidence/CREATOR/m2/browser-ui/selection.json; .orchestrate/evidence/CREATOR/m2/browser-ui/profiler-wide.png; .orchestrate/evidence/CREATOR/m2/browser-ui/profiler-narrow.png; .orchestrate/evidence/CREATOR/m2/browser-ui/profiler-off.png",
+          "evidence": ".orchestrate/evidence/CREATOR/WP2.md; .orchestrate/evidence/CREATOR/m2/browser-ui/selection.json; .orchestrate/evidence/CREATOR/m2/browser-ui/profiler-wide.png; .orchestrate/evidence/CREATOR/m2/browser-ui/profiler-narrow.png; .orchestrate/evidence/CREATOR/m2/browser-ui/profiler-off.png",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M3"
+        "APPLE-TILE:WP3"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -156,31 +156,31 @@
       "quality_bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or its row says why there is none; the profiler costs what its paired run records while on, and one branch a frame while off."
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "Using only README.md, the creator guide and the starter's README, an agent that has not opened crates/ or any other design document builds a new small scene (not the starter, stones, the sunset or the lighthouse) with lit ground, sky, one cooked mesh of its own, a camera and one slider; it runs on the Mac and in Chrome in about 100 game lines with zero engine game types.",
           "inspect": "The fresh agent is a separate session the lead commissioned for this item, never the builder and not you; you need not be fresh. Its record is the lead-commissioned folder the builder cites, docs/evidence/CREATOR/m3/fresh-lead/ or a later fresh-lead-<date>/. From the record: did the agent stay within the three documents and what they tell a creator to run, copy or edit, and did any step need crates/ or another design document? Such a step fails the item. Does the retained scene meet the statement, counting game lines by the starter README's method, and does it name an engine item that the three documents and the starter folder don't show? Then run that scene yourself from the reviewed checkout, offscreen on the Mac and in Chrome, at two values of its slider: does each frame draw the ground, sky and mesh, and does the slider change the view? If a command, file or key the agent used has changed in the three documents or the scene commands since the record's commit, give could_not_judge and name it, so the lead commissions a new run.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CREATOR/m3/fresh-lead/README.md; .orchestrate/evidence/CREATOR/m3/reclaim/README.md#ziggurat",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M3-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "README.md, the creator guide and the starter's README, read alone, give every command, file and key a creator needs for a Mac and a Chrome scene: assets and placements, controls, the parameter file, the material hook, the web form and the profiler.",
           "ask": "Read only those three documents. Is any step missing, out of date against the commands as they run today, or dependent on reading engine source?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CREATOR/m3/reclaim/README.md#creator-documentation",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M3-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "On the Mac a misspelt control key, a renamed asset, a material compile error and a missing asset store are each reported by object, cause and next step, and the scene keeps running where it can.",
           "check": "python3 scripts/check_starter_live_reload.py tmp/creator/m3-live-reload",
           "lock": "gpu",
@@ -188,17 +188,17 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CREATOR/m3/reclaim/README.md#native-diagnostics; .orchestrate/evidence/CREATOR/m3/reclaim/native-check.json; .orchestrate/evidence/CREATOR/m3/reclaim/native-inspection.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M3-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "In the visible starter window on the built-in display, a Sun slider dragged in the panel moves the light, and saving the parameter file and an asset updates the window without a key press.",
           "inspect": "If the console is unlocked, run the journey yourself on the reviewed checkout with the window driver, docs/evidence/CREATOR/m3/window_journey.py. Read it and window_ui.swift first: the drag must be real pointer events on the slider, with no key press and no value set directly, and each capture an OS capture of the scene or panel window by its id. Computer Use is not a route: it cannot select the unbundled starter or see its panel window. If the console is locked, judge the newest attended run's window captures and records instead, and say so. Did the drag, the parameter save and the asset save each change the visible scene, in order, with no key press? An offscreen frame does not count.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CREATOR/m3/window-attended/README.md; .orchestrate/evidence/CREATOR/m3/window-attended/run.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M3-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review.md",
           "needs": {
             "type": "access",
             "what": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session."
@@ -206,13 +206,13 @@
           "builder_result": "pass"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "The maturity ledger's G6 rows state implementation, correctness, visuals and device separately for Mac and Chrome, and the build plan's G6 line links the evidence and lists what stays unbuilt: the clipping and cascade overlays and parameter files as a cooked product.",
           "ask": "Do the ledger rows and the build plan line match what this module's evidence shows, with nothing claimed for iOS or a physical device?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/CREATOR/M3.md; docs/design/maturity.json; docs/plans/BRIEF.md#active-gate-order-and-budgets",
+          "evidence": ".orchestrate/evidence/CREATOR/WP3.md; docs/design/maturity.json; docs/plans/VISION.md#active-gate-order-and-budgets",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/CREATOR/M3-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review.md",
           "builder_result": "pass"
         }
       ],
@@ -223,13 +223,13 @@
       "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step."
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "Small hot-reload checks prove which material the device draws",
       "status": "not_started",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "The three listed material-hook regressions preserve first-frame coalescing, non-finite fallback and device replacement in the fast tier, with material selection observed on direct and indirect submissions. Every retained or replacement case passes on the first attempt in a focused batch with the workspace's default nextest scheduling and ten-second limit. Guard: compact material-hook regressions in the workspace suite.",
           "check": "CARGO_INCREMENTAL=0 THRUM_REQUIRE_GPU=1 rustup run stable cargo nextest run --locked --offline --workspace --profile default -E 'test(/(^|::)(requests_before_the_first_frame_|a_hook_that_writes_non_finite_factors_|a_replaced_device_draws_the_last_accepted_hook_)/)' --no-tests=fail",
           "ask": "Do the executed test names account for every retained and replacement case in the disposition record, including CPU splits, and do they preserve the three originals' assertions, boundary cases and tolerances at the smaller scale? Do the results show individual timings and a first-attempt batch pass with default scheduling, the ten-second limit and concurrent load recorded?",

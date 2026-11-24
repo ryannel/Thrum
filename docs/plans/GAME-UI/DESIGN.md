@@ -1,7 +1,7 @@
 # GAME-UI: health bars, timers, menus and a join screen drawn in the game's own frame
 
 13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C05, C06, C07, C11 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
+[the brief](../VISION.md). C05, C06, C07, C11 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
 [the U1 design](../../design/modules/AUDIO-UI.md#u1-operating-model) and
 [RENDER-2D](../RENDER-2D/DESIGN.md) govern.
 
@@ -12,7 +12,7 @@ needs: RENDER-2D", which is row 20 of the module list. On 14 November 2026 the o
 engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till
 v1 lands." So this module waits for nothing of V1's but what it uses, and it took over one piece of engine work
 the game's plan had carried: [one shell for every game](#12-one-shell-for-every-game). What the owner asked for is on
-[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../BRIEF.md) carries
+[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../VISION.md) carries
 as decision 7:
 
 > - **A swarm survivor.** One or more players hold out against ever-growing crowds of enemies, with automatic
@@ -36,7 +36,7 @@ This design reconciles the code on main at `8f038dec`; it is not a blind study. 
 [a planning probe](../../../.orchestrate/evidence/GAME-UI/planning-probe.md) run for it.
 
 **This module is planned before the code it builds on exists.** `RENDER-2D` is not built, and neither are
-`APPLE-TILE` M10 to M12, `APPLE-PRESENTATION` M3 to M11 or `CONTENT-LOOP` M1 to M3. So this design names the
+`APPLE-TILE` WP10 to M12, `APPLE-PRESENTATION` WP3 to M11 or `CONTENT-LOOP` WP1 to WP3. So this design names the
 behaviour it needs from them and never one of their APIs, and the builder of each milestone first reads what was
 actually built ([handoff](#proof-and-builder-handoff)).
 
@@ -189,14 +189,14 @@ The output half has two display modes, and the stage has a form for each:
 
 | | The 8-bit mode | The float mode |
 |---|---|---|
-| **Where** | Chrome, the simulator, a Mac with no EDR display, and a Mac with SDR forced. The only mode on main when this was planned | A Mac whose session starts on a display with EDR headroom, as this Mac's built-in display has. [APPLE-PRESENTATION](../APPLE-PRESENTATION/DESIGN.md#techniques-and-evidence) designs it and its M6 builds it |
+| **Where** | Chrome, the simulator, a Mac with no EDR display, and a Mac with SDR forced. The only mode on main when this was planned | A Mac whose session starts on a display with EDR headroom, as this Mac's built-in display has. [APPLE-PRESENTATION](../APPLE-PRESENTATION/DESIGN.md#techniques-and-evidence) designs it and its WP6 builds it |
 | **The transform writes** | Encoded sRGB into an `Rgba8Unorm` display image. Present copies that image to the surface | Linear values from 0 to the headroom H, with 1.0 at SDR white, into an `Rgba16Float` target, in the present pass. The target is the drawable, or the final engine texture that [T2](../T2-CAPTURE/DESIGN.md) has the host make for a captured frame whose drawable cannot be copied |
 | **The stage draws** | Into the display image, between the transform and present | Into that same float target, after the transform's draw and before the frame is tapped or presented. It is recorded in the frame's presentation phase, after the drawable is acquired |
 | **Capture reads** | The display image, after the stage | The float target, after the stage, with its encoding in the capture's record as T2 asks |
 
 In the float mode the stage's rows are drawn in the present pass's own render pass where the pass as built
 allows it, which adds no load and no store; a pass of its own that loads and stores the target is the builder's
-fallback, and M1.10 records which was built. Nothing else about the float mode is the builder's to choose.
+fallback, and WP1.10 records which was built. Nothing else about the float mode is the builder's to choose.
 
 In both modes interface white is SDR white, whatever the display's headroom: the code 255 in the 8-bit mode and
 the value 1.0 in the float mode, which APPLE-PRESENTATION's transform defines as SDR reference white.
@@ -493,7 +493,7 @@ compiles nothing.
 ### 12. One shell for every game
 
 `thrum-app` runs any game in a Mac window and on a page, and `RENDER-2D`'s crowd view is a second program on
-both. The iOS shell is not shared: it lives in `examples/v1-game-ios` and serves that one game, and by M5 it
+both. The iOS shell is not shared: it lives in `examples/v1-game-ios` and serves that one game, and by WP5 it
 also holds this module's event routing and its reports of extent, density and insets. A second game would have
 to copy all of it.
 
@@ -521,12 +521,12 @@ alone.
   whole-pixel pivot and origin is that case.
 - **Linear blending into an encoded image.** Blending through an sRGB view is what the GPU does for any sRGB
   target. WebGPU allows a view that differs from its texture only in being sRGB, when the texture lists it;
-  that is from the planner's reading of the specification before this design, and M1 confirms it in Chrome.
+  that is from the planner's reading of the specification before this design, and WP1 confirms it in Chrome.
   Pixels no row covers are loaded and stored untouched.
 - **The float mode.** The present pass's transform has already written displayed linear values when the stage
   draws, so a row is never tone-mapped and its white is 1.0 by construction. A float target blends in linear
   light with no view. A draw touches only the pixels its rows cover. A 2D scene has no tone curve to betray an
-  interface drawn too early, so the placement is proved over the valley (M1.4). Authored codes and the one-code
+  interface drawn too early, so the placement is proved over the valley (WP1.4). Authored codes and the one-code
   allowance survive half-float storage up to a headroom of 16 (probe 5).
 - **One font in a frame.** The stage chooses a list by its stamp and the sheets the frame is lent, and it
   holds a list for the new sheets before they can be lent, because the publication is not ready without it. So
@@ -602,16 +602,16 @@ Asked of other modules. Each is new work inside state another module owns, settl
 on what the owning module has landed by then, with the behaviour defined here, and it then belongs to the owner.
 
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): the interface stage in both display modes, the
-   float mode's inside the present pass that `APPLE-PRESENTATION` M6 builds. Built in M1.
-2. **The sprite pass** (`RENDER-2D`): its use at the interface stage, with its own sheets and rows. Built in M1.
+   float mode's inside the present pass that `APPLE-PRESENTATION` WP6 builds. Built in WP1.
+2. **The sprite pass** (`RENDER-2D`): its use at the interface stage, with its own sheets and rows. Built in WP1.
 3. **Content** (`CONTENT-LOOP`): the font product, its sheets as leases, and its switch, with the interface as
-   one more reader of a publication under mechanism 11. Built in M2.
+   one more reader of a publication under mechanism 11. Built in WP2.
 4. **The shells and the V1 game** (`CREATOR`, `SHOWCASE`, `T2-CAPTURE`, `PLATFORM-RUNTIME-IOS`): an `interface`
    scene selection, off by default; events, extent, density and insets, text drops and the clipboard from each
-   shell. Built in M1 to M5. The shells' translation of their own events sits behind a feature of `thrum-app`,
+   shell. Built in WP1 to WP5. The shells' translation of their own events sits behind a feature of `thrum-app`,
    so a game with no interface links none of this module.
 5. **The iOS shell for a second game** (`PLATFORM-RUNTIME-IOS`, `CREATOR`): the shell moves into `thrum-app`,
-   generic over a game, as [mechanism 12](#12-one-shell-for-every-game) says. Built in M6.
+   generic over a game, as [mechanism 12](#12-one-shell-for-every-game) says. Built in WP6.
 
 **Contracts.** No contract's text changes. C11 already gives the interface the first chance at an event and
 keeps a global pause the game's. C06 and C07 are met by the stage being a declared stage of the one executor,
@@ -630,8 +630,8 @@ No budget is set (brief, decision 3). Estimates, to be replaced by measurements:
 |---|---|
 | No interface | Nothing: no pass, no resource, no byte |
 | An unchanged interface | One draw of the rows already held. No layout, no list, no upload |
-| The stage's pass, 8-bit mode | It loads and stores the display image, 8.3 MB at 1920×1080 and 30.9 MB at 3456×2234, to draw a few thousand small quads. This is the cost most likely to matter and M1 records it |
-| The stage, float mode | Draws added to the present pass, with no load or store of their own. As a pass of its own it would load and store 16.6 MB at 1920×1080 and 61.8 MB at 3456×2234. M1 records which was built and what it costs |
+| The stage's pass, 8-bit mode | It loads and stores the display image, 8.3 MB at 1920×1080 and 30.9 MB at 3456×2234, to draw a few thousand small quads. This is the cost most likely to matter and WP1 records it |
+| The stage, float mode | Draws added to the present pass, with no load or store of their own. As a pass of its own it would load and store 16.6 MB at 1920×1080 and 61.8 MB at 3456×2234. WP1 records which was built and what it costs |
 | A font or art edit, or a change of scale | Layout twice and two lists of rows from prepare to commit, a few frames. Nothing outside that window |
 | Rows | A status display is about 200 rows and a modal with four cards about 600; capacity for the proof is 2,000, about 128 KB at `RENDER-2D`'s estimated 64 bytes |
 | A value that changes every frame | The tree is laid out again only if a box could move; a counter with tabular digits does not move one. A few dozen rows are rebuilt and uploaded |
@@ -651,19 +651,19 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
 
 ## Risks
 
-1. **The stage moves a pixel of a scene that has no interface.** Early sign: the verifier, or M1.3. The stage is
+1. **The stage moves a pixel of a scene that has no interface.** Early sign: the verifier, or WP1.3. The stage is
    absent unless asked for.
-2. **A GPU's sRGB view does not return an authored code exactly on one target.** Early sign: M1.1 and M1.8. Stop
+2. **A GPU's sRGB view does not return an authored code exactly on one target.** Early sign: WP1.1 and WP1.8. Stop
    and diagnose; the answer is under research. Do not widen the comparison.
-3. **The stage's load and store show in the frame.** Early sign: M1's cost rows. The answer is under research.
+3. **The stage's load and store show in the frame.** Early sign: WP1's cost rows. The answer is under research.
 4. **V1 ends with an output half that is neither of mechanism 1's two modes**, or whose float mode differs
    from APPLE-PRESENTATION's design: a transform outside the present pass, a target that is not linear, a white
-   that is not 1.0. Early sign: M1's first reading, and M1.5's question. The builder writes the difference in
+   that is not 1.0. Early sign: WP1's first reading, and WP1.5's question. The builder writes the difference in
    the log and ends `BLOCKED`; the stage for a third mode is designed here.
-5. **The sprite pass as built cannot run a second time with other sheets.** Early sign: M1's first reading of
-   what `RENDER-2D:M5` left. It is built under ruling 2.
+5. **The sprite pass as built cannot run a second time with other sheets.** Early sign: WP1's first reading of
+   what `RENDER-2D:WP5` left. It is built under ruling 2.
 6. **Light hinting is not offered by the stack as expected, or small text looks soft at scale 1.** Early sign:
-   M2.11's stills. The cooker's hinting is the builder's to tune; the size list is the game's.
+   WP2.11's stills. The cooker's hinting is the builder's to tune; the size list is the game's.
 7. **A convincing fake of U2:** text exact at the Mac's scale of 2 and scaled elsewhere. Scales 1 and 3 are
    compared too.
 8. **A convincing fake of U7:** a test that sends tidy press and release pairs. The proof interleaves at random
@@ -671,7 +671,7 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
 9. **Injected events on the Mac hide a fault in what the system delivers.** They enter where the window's own
    events do, and the ledger names system delivery as not run.
 10. **A convincing fake of mechanism 11:** sheets switched first and text laid out a frame later, which settles
-    on the right picture. M2.8 and M3.14 compare every submitted frame of the change, with a font whose glyphs
+    on the right picture. WP2.8 and WP3.14 compare every submitted frame of the change, with a font whose glyphs
     grow wider at the same cooked size.
 11. **A font's licence.** Many free fonts are under the Open Font License, whose modified versions must keep that
     licence. It is an assumption in the plan that test fonts are public domain, CC0 or Apache-2.0.
@@ -680,7 +680,7 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
 
 - **Targets.** `mac-metal`, on both native recipes where an item says so. `chrome-webgpu` through
   `scripts/check_v1_browser.mjs`, which needs a browser launch the Codex sandbox grants for each run. `ios-sim`
-  for function only, in M5, through the existing iOS shell.
+  for function only, in WP5, through the existing iOS shell.
 - **The interface scene** is a selection in `examples/v1-game`, off by default, over `RENDER-2D`'s sprite scene:
   a status display (a health bar, a timer, three counters), a modal choice of four cards, a join screen, and
   a player row that the game moves from the input it is passed. A second form puts text and a panel over the
@@ -692,7 +692,7 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
 - **Art and fonts.** Panels and marks are generated in code or drawn by the builder, plain and original. The
   outline font and the pixel font are public domain, CC0 or Apache-2.0, kept with their licence text, or drawn
   by the builder. Nothing is lifted from another game or from Broadsides.
-- **Display modes in proofs.** M1 proves the stage in every mode the output half offers, each read in its own
+- **Display modes in proofs.** WP1 proves the stage in every mode the output half offers, each read in its own
   encoding ([mechanism 2](#2-colour-and-blending)); the float mode is run with its headroom forced to 1 and
   above 1. What later milestones add (glyphs, layout, routing) is decided before the stage, so their exact
   comparisons and their inspected captures run in the 8-bit mode, forced on this Mac where the host would select
@@ -710,7 +710,7 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
   and moves no retained image. Each milestone carries the verifier.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/game-ui-<milestone>/`; selected evidence
   in `.orchestrate/evidence/GAME-UI/`.
-- **Maturity.** Ledger rows for the interface are added in M5, with implementation, correctness, visuals and
+- **Maturity.** Ledger rows for the interface are added in WP5, with implementation, correctness, visuals and
   device results kept apart.
 
 ## Limits on every milestone
@@ -744,11 +744,11 @@ Each has its reason beside it.
 
 | Question | Settled by |
 |---|---|
-| Does each target's sRGB view return authored codes exactly? | M1.1 and M1.8 |
-| What does the stage's pass cost on the Mac and in Chrome? | M1 records it |
-| Does the output half, once `APPLE-PRESENTATION` M6 has landed, offer exactly the 8-bit mode and the float mode as designed, for a 2D scene too? | M1's first reading; M1.5's question |
-| Does the present pass as built let the stage's rows share its render pass? | M1; M1.10 records which |
+| Does each target's sRGB view return authored codes exactly? | WP1.1 and WP1.8 |
+| What does the stage's pass cost on the Mac and in Chrome? | WP1 records it |
+| Does the output half, once `APPLE-PRESENTATION` WP6 has landed, offer exactly the 8-bit mode and the float mode as designed, for a 2D scene too? | WP1's first reading; WP1.5's question |
+| Does the present pass as built let the stage's rows share its render pass? | WP1; WP1.10 records which |
 | Can text over a scrim be read over an EDR highlight? | Not judged here; owed with the EDR panel's look, at `SWARM`'s close |
-| Is small text clear at a scale of 1? | M2.11 and M2.12 |
+| Is small text clear at a scale of 1? | WP2.11 and WP2.12 |
 | Does `SWARM` want more sizes, an outline on every size, or more than eight interface sheets? | Its planner asks here |
 | Does the owner want fonts under the Open Font License? | The plan's assumption, for the owner |

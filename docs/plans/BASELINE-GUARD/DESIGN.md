@@ -1,19 +1,19 @@
 # Baseline guard: a change to another module's exact reference images is found on main and traced to its commit
 
 11 November 2026, planned again 15 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
-[module list](../ARCHITECTURE.md#exact-baselines) · [the brief](../BRIEF.md). C12 in
+[module list](../ARCHITECTURE.md#exact-baselines) · [the brief](../VISION.md). C12 in
 [CONTRACTS](../../design/CONTRACTS.md) governs evidence.
 
 ## The requests
 
 The owner's planning task of 11 November 2026 ended:
 
-> APPLE-PRESENTATION M1's jitter change broke APPLE-TILE's exact baseline comparisons, and nothing caught it
-> before it merged (.orchestrate/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs
+> APPLE-PRESENTATION WP1's jitter change broke APPLE-TILE's exact baseline comparisons, and nothing caught it
+> before it merged (.orchestrate/evidence/APPLE-TILE/WP2-review.md MF1). Say in ARCHITECTURE.md or the affected designs
 > how a module's change that alters another module's exact baselines gets caught before landing.
 
-M1 answered it with a verifier and a gate that refused any covered change without a proof of its exact content.
-That gate stalled the build ([the report](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/proof-regime.md)), and on
+WP1 answered it with a verifier and a gate that refused any covered change without a proof of its exact content.
+That gate stalled the build ([the report](../../../.orchestrate/evidence/BASELINE-GUARD/WP2-replan/proof-regime.md)), and on
 15 November 2026 the owner approved the report's regime:
 
 > Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's
@@ -30,7 +30,7 @@ The lead's task for this plan, of 15 November 2026:
 
 > The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD
 > down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what
-> happens to its in-flight M2 on branch build/baseline-guard.
+> happens to its in-flight WP2 on branch build/baseline-guard.
 
 ## Purpose and scope
 
@@ -39,14 +39,14 @@ that are Thrum's own.
 
 **Built:**
 
-1. **The verifier** (M1): `python3 scripts/exact_baselines.py verify --full`. From a clean checkout it draws
+1. **The verifier** (WP1): `python3 scripts/exact_baselines.py verify --full`. From a clean checkout it draws
    fresh output on the Mac and in Chrome and compares it with every registered baseline, byte for byte.
 2. **The answer for a commit** (15 November, with the ruling): `python3 scripts/exact_baselines.py verify`. It
    draws nothing. It asks the main-branch check `exact-images` whether a passing run contains the commit.
 3. **The gate as a notice** (15 November, with the ruling): `./dev check` prints a warning for a covered change
    that no proof names, and never refuses.
 
-**Commissioned (M2):**
+**Commissioned (WP2):**
 
 4. **The reference guard.** `./dev check` refuses a commit that changes a registered reference, its comparison
    or its registration unless the same commit records the refresh in the registry. It needs no GPU.
@@ -101,7 +101,7 @@ runs it on main's tip in a checkout of its own, kept between runs so the builds 
    Wasm hashes and the cooked root.
 
 It takes every input from the checkout and its own fresh outputs. One run takes about 16 minutes
-([58 passing records](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/proof-regime.md#measured-this-session): native
+([58 passing records](../../../.orchestrate/evidence/BASELINE-GUARD/WP2-replan/proof-regime.md#measured-this-session): native
 matrices 410 s and 369 s, the four Chrome sets about 140 s).
 
 ### The answer for a commit
@@ -163,7 +163,7 @@ changes, a baseline is added, a baseline is retired. Each is a commit that edits
 names a ruling, which is one place for a reviewer to look and an edit rule 1 allows only under that ruling.
 `covered_paths` is outside the pins: it selects no comparison, and only keys the verifier's record.
 
-**Check that it can work.** [A model of the pins](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/guard-scope.json) at
+**Check that it can work.** [A model of the pins](../../../.orchestrate/evidence/BASELINE-GUARD/WP2-replan/guard-scope.json) at
 `81138094` has the figures; `guard_scope.py` beside it reproduces them.
 
 - *The culprit that regenerates.* Main fails, and the named module regenerates the reference to pass.
@@ -177,7 +177,7 @@ names a ruling, which is one place for a reviewer to look and an edit rule 1 all
   reference at another file. The definition is in the pin, so that baseline's pin differs and check 1 fails.
 - *The culprit that loosens the comparison.* It edits the equality in `scripts/compare_v1_pixels.py`: the native
   pin differs. It makes the verifier skip an entry: all five pins differ.
-- *A planned refresh* (`ATMOSPHERE` M9, `CULLING` M3). The ruling exists. The builder regenerates, runs
+- *A planned refresh* (`ATMOSPHERE` WP9, `CULLING` WP3). The ruling exists. The builder regenerates, runs
   `verify --full` on the candidate, updates the pin and the refresh, and merges all of it in one landing.
 - *A comparison file edited by its owner* changes the pin, so the owner updates it in the same commit and names
   the ruling or the rule that makes the file its own. The verifier is a comparison file of all five baselines,
@@ -202,13 +202,13 @@ kept are the builder's, set from the measured size of a failed run.
 - `python3 scripts/exact_baselines.py verify`: the answer for a commit. The item text in their done-when files
   does not change.
 - `python3 scripts/exact_baselines.py verify --full`, under the `gpu` lock: a planned refresh's run on its
-  candidate. `GAME-SPLIT` M4 runs it with `THRUM_GAMES` pointing at nothing.
+  candidate. `GAME-SPLIT` WP4 runs it with `THRUM_GAMES` pointing at nothing.
 - A verifier record's `content_key`, `revision` and hashes, which the rulings on a frame that varies under load
   and a fixed capture that stalls compare.
 - The registry's pins and refreshes, which a planned refresh edits for its own baseline under its ruling, and
   which an owner edits when it changes one of its comparison files. Its retired list, for a baseline a ruling
   ends.
-- After M2, `gate`, `proof_path` and the proof file are gone. The scripts that called them
+- After WP2, `gate`, `proof_path` and the proof file are gone. The scripts that called them
   (`.orchestrate/evidence/WATERS/finish_m1.py`, `.orchestrate/evidence/SEA/qualify_m2_baselines.py` and others like them) are
   retained evidence of a procedure the ruling ended, and nothing runs them.
 
@@ -263,11 +263,11 @@ guard in `./dev check`, a tree read and two reads of the registry. The times are
 - **The PNG decoder inside the pins.** Moving `read_png` into the comparison's own file would close the first
   helper listed under [what it does not stop](#what-it-does-not-stop). It changes `APPLE-TILE`'s comparison and
   `SHOWCASE`'s script, so it needs a ruling with both.
-- **The narrower key.** M2 as first planned took the files of crates the game does not link out of the proof's
+- **The narrower key.** WP2 as first planned took the files of crates the game does not link out of the proof's
   key, and nine commits of it are on the branch `build/baseline-guard`, unmerged. It spared 18 of 204 lapses.
   With no proof asked before a merge it saves nothing, so it is not merged. It would matter again only for the
   skip above. Its design is this file at `4101a7cf`, and the fuller derived key it withdrew is recorded there
-  with [the planner's measurements](../../../.orchestrate/evidence/BASELINE-GUARD/M2-plan/README.md).
+  with [the planner's measurements](../../../.orchestrate/evidence/BASELINE-GUARD/WP2-plan/README.md).
 
 ## Limits on builders
 

@@ -10,41 +10,41 @@
     ],
     "at": "2026-11-23T22:16:34Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "dba48701ac4076b505ac4a68262f93b4d93e5af1f3e8eeb8c908de1f49979ab5",
+  "work_packages": {
+    "WP1": {
+      "definitions": "77b2ec690ff9b4b91e9627ac54d82ea40e6a387034a295535b6e9481398f35cb",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "b4b1f1cd52ec4a4b8fd6827c601afab324c9a3f5",
-          "review": ".orchestrate/evidence/RENDER-2D/M1-review-1.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "fail",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "fail",
-            "M1.10": "fail",
-            "M1.11": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "fail",
+            "WP1.10": "fail",
+            "WP1.11": "pass"
           },
           "findings": [
             {
               "name": "Sprite launch silently accepts a traced-geometry view",
-              "item": "M1.3",
+              "item": "WP1.3",
               "repeat": false
             },
             {
               "name": "Metal cost verifier accepts missing target byte counts",
-              "item": "M1.9",
+              "item": "WP1.9",
               "repeat": false
             },
             {
               "name": "Chrome cost verifier accepts missing load measurements",
-              "item": "M1.10",
+              "item": "WP1.10",
               "repeat": false
             },
             {
@@ -72,24 +72,24 @@
         {
           "verdict": "fail",
           "commit": "ac79a564a745550aaee319b30649602952d51402",
-          "review": ".orchestrate/evidence/RENDER-2D/M1-review-2.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP1-review-2.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "fail",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass"
           },
           "findings": [
             {
               "name": "Sprite startup omits the rejected 3D content setting from its error",
-              "item": "M1.3",
+              "item": "WP1.3",
               "different": "The earlier traced-geometry request was accepted and now has a named refusal. The content requests here are refused, but their shared diagnostic drops the identity of the request.",
               "repeat": false
             }
@@ -114,24 +114,24 @@
         {
           "verdict": "fail",
           "commit": "8633c80e867b4ce59dad9ab63ce4ed7ec99c3adc",
-          "review": ".orchestrate/evidence/RENDER-2D/M1-review-3.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP1-review-3.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "fail",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass"
           },
           "findings": [
             {
               "name": "Sprite startup silently ignores the requested native witness provider",
-              "item": "M1.3",
+              "item": "WP1.3",
               "different": "The earlier cloud and content settings now produce named refusals, and traced geometry is refused. The separate THRUM_NATIVE_WITNESS selector is accepted and a frame is submitted without its provider.",
               "repeat": false
             }
@@ -156,19 +156,19 @@
         {
           "verdict": "pass",
           "commit": "6330cbf453f9b58152587a8040bc99f038e3ea3e",
-          "review": ".orchestrate/evidence/RENDER-2D/M1-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -206,9 +206,9 @@
         "at": "2026-11-19T18:55:09Z",
         "reused": [
           "Test command",
-          "M1.3",
-          "M1.4",
-          "M1.11"
+          "WP1.3",
+          "WP1.4",
+          "WP1.11"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -235,41 +235,41 @@
       "done": {
         "by": "review",
         "commit": "6330cbf453f9b58152587a8040bc99f038e3ea3e",
-        "review": ".orchestrate/evidence/RENDER-2D/M1-review.md",
+        "review": ".orchestrate/evidence/RENDER-2D/WP1-review.md",
         "checked": "74f4ffcff4ec8c2ae7894f730b3b9356667f8ae6",
         "at": "2026-11-19T19:28:55Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "49a90d7116bed10af0beabeb884b0d20b00cffcb620d9a665243e8ee53e0fa5e",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "ae407f5b6e8de30f9103f06f27b64bc1b8eae79b",
-          "review": ".orchestrate/evidence/RENDER-2D/M2-review-1.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "fail",
-            "M2.10": "pass",
-            "M2.11": "pass",
-            "M2.12": "pass",
-            "M2.13": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "fail",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass"
           },
           "findings": [
             {
-              "item": "M2.9",
+              "item": "WP2.9",
               "name": "Chrome movers jump after skipped tick publications",
               "repeat": false
             },
             {
-              "item": "M2.9",
+              "item": "WP2.9",
               "name": "Chrome sprite capture verifies downloaded pixels against themselves",
               "repeat": false
             }
@@ -294,21 +294,21 @@
         {
           "verdict": "pass",
           "commit": "f6581e9146d3ab55920971c5e29c2098ab06df43",
-          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass",
-            "M2.11": "pass",
-            "M2.12": "pass",
-            "M2.13": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -346,8 +346,8 @@
         "at": "2026-11-20T08:30:57Z",
         "reused": [
           "Test command",
-          "M2.4",
-          "M2.5"
+          "WP2.4",
+          "WP2.5"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -374,52 +374,52 @@
       "done": {
         "by": "review",
         "commit": "f6581e9146d3ab55920971c5e29c2098ab06df43",
-        "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
+        "review": ".orchestrate/evidence/RENDER-2D/WP2-review.md",
         "checked": "f657d35536520db31a7e431358ac564fc7a54edd",
         "at": "2026-11-20T11:47:23Z"
       }
     },
-    "M3": {
-      "definitions": "320898a9af95b747e7ef99dd1e6f7089e311514dd3670da29119f706691c956f",
+    "WP3": {
+      "definitions": "b157f0f880cc74847fdb5885b2451ac28f9dad47107bea1b5c139208e81b9581",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "8d77229f4b4a8bf571ac9fa13bdecf1ec2ff20ad",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review-1.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "fail",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "fail",
-            "M3.8": "fail",
-            "M3.9": "pass",
-            "M3.10": "fail",
-            "M3.11": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "fail",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "fail",
+            "WP3.8": "fail",
+            "WP3.9": "pass",
+            "WP3.10": "fail",
+            "WP3.11": "pass"
           },
           "findings": [
             {
               "name": "Fine patterns pulse during Metal scroll",
-              "item": "M3.8",
+              "item": "WP3.8",
               "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
               "repeat": false
             },
             {
               "name": "Fine patterns pulse during Chrome scroll",
-              "item": "M3.10",
+              "item": "WP3.10",
               "planner": "Exact box filtering at 1.5\u00d7 forces contrast modulation in the required one-texel patterns. Decide whether the visual bar accepts this or change the sampling design.",
               "repeat": false
             },
             {
               "name": "Bleed witness has no left neighbour in the sampled atlas",
-              "item": "M3.4",
+              "item": "WP3.4",
               "repeat": false
             },
             {
               "name": "Chrome weight check never moves the camera",
-              "item": "M3.7",
+              "item": "WP3.7",
               "repeat": false
             }
           ],
@@ -443,42 +443,42 @@
         {
           "verdict": "fail",
           "commit": "1bdd2e3a25433c139e0e3776dc1feeff36620afe",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
           "items": {
-            "M3.12": "pass",
-            "M3.1": "fail",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "fail",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "fail",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.13": "pass"
+            "WP3.12": "pass",
+            "WP3.1": "fail",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "fail",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "fail",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.13": "pass"
           },
           "findings": [
             {
               "name": "Metal 2\u00d7 checker flashes dark at texel-edge crossings",
-              "item": "M3.8",
+              "item": "WP3.8",
               "different": "The earlier 1.5\u00d7 exact-box washout is resolved. The new 2\u00d7 reconstruction briefly darkens the whole checker at its narrow crossing shoulder.",
               "repeat": false
             },
             {
               "name": "2\u00d7 reconstruction jumps beside a transparent texel",
-              "item": "M3.1",
+              "item": "WP3.1",
               "repeat": false
             },
             {
               "name": "Shaded pixel counts use the old standalone quad margin",
-              "item": "M3.1",
+              "item": "WP3.1",
               "repeat": false
             },
             {
               "name": "Rotated outline skips the declared edge-suite scales",
-              "item": "M3.4",
+              "item": "WP3.4",
               "different": "The uploaded cyan frame now has four neighbours. The rotated white outline is independently drawn at 0.75 times each declared scale.",
               "repeat": false
             }
@@ -512,7 +512,7 @@
         "at": "2026-11-24T08:51:12Z",
         "reused": [
           "Test command",
-          "M3.5"
+          "WP3.5"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -537,8 +537,8 @@
         }
       }
     },
-    "M4": {
-      "definitions": "da96b86845517ef55382bdbdaea827686efcefb16eda1ca78916b75f342c44a3",
+    "WP4": {
+      "definitions": "33be06c60dcf8669705a7d9aeeeb7a5472f36d8ec9e820ecde87e15c4ad074a5",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -553,8 +553,8 @@
         }
       ]
     },
-    "M5": {
-      "definitions": "86d8ca62efaa1810ef707b841738fe68ef941dd7fb83187d2edd59fcc230cb01",
+    "WP5": {
+      "definitions": "58975647c6e55890293017c797953e8ae7e3576b0124dcc814f2a84809235bfa",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -571,7 +571,7 @@
       "ends_stretch": true
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
       "at": "2026-11-13T17:43:28Z"

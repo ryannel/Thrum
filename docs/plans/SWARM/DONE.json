@@ -1,20 +1,20 @@
 {
   "module": "SWARM",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "The owner picks the game's name, premise and look from three or more concepts, each shown with its own art in a crowded arena",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SHOWCASE:M8"
+        "SHOWCASE:WP8"
       ],
-      "quality_bar": "Minimum requirements only, because these options exist for the owner to turn some down: each concept is complete, original, made the way the finished game's art would be made, and different in kind from the others. The full bar starts with the chosen concept, from M2 on.",
+      "quality_bar": "Minimum requirements only, because these options exist for the owner to turn some down: each concept is complete, original, made the way the finished game's art would be made, and different in kind from the others. The full bar starts with the chosen concept, from WP2 on.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "At least three concepts each have a name, a paragraph of premise, one hero sprite, two enemy sprites, a palette, and a mock arena of 1920\u00d71080 pixels in which 2,000 enemies surround the hero, a common enemy's body being no more than a fiftieth of the image's height. Every sprite's source, a script or an image file, is in `examples/swarm/concepts/`. One image in this milestone's evidence lays the concepts side by side with each sprite at game size and enlarged.",
           "check": "python3 examples/swarm/concepts/check.py",
           "ask": "Read the check and the script that composes the mocks. Is the count of enemies taken from the placements the composer drew, and the body size from the sprites it used? Is each mock composed with premultiplied alpha in linear light, as the design says the engine draws?",
@@ -25,7 +25,7 @@
           "review": ""
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "The concepts differ in kind: each has its own premise and its own way of drawing, and no two are one idea in other colours. In each mock arena the hero can be found among the 2,000 and the two enemies can be told apart at the size shown.",
           "inspect": "Open the side-by-side image in this milestone's evidence and each mock arena at 1920\u00d71080. Judge each mock whole, at the size it is shown, and in native-size crops around the hero and of a patch of crowd. Judge only whether the concepts differ in kind and whether each reads at game size; which is best is the owner's.",
           "target": "stand_in:mac-metal",
@@ -35,7 +35,7 @@
           "review": ""
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "Every concept is original. No name, character, sprite or palette is taken from an existing game or from Broadsides, and no file comes from a third party unless it is public domain or CC0 and listed with its source.",
           "ask": "Does `examples/swarm/concepts/SOURCES.md` list, for each concept's name, the search that was made for a shipped game or studio of that name and what it found, and for each image file how it was made? Does any concept's hero, enemy or premise reproduce a character of Vampire Survivors, Brotato, Halls of Torment, Deep Rock Galactic: Survivor or another game you can name?",
           "target": "stand_in:mac-metal",
@@ -45,7 +45,7 @@
           "review": ""
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "The owner has picked one concept. The pick, and anything the owner asked to change, is written in `examples/swarm/CONCEPT.md` as the reference later milestones are judged against: the name, the premise, and the qualities of the look in words.",
           "inspect": "Read the recorded Human Feedback beside `examples/swarm/CONCEPT.md`. Does the file say what the owner chose and every change they asked for, and nothing they did not say?",
           "needs": {
@@ -61,22 +61,22 @@
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "One hero holds out alone against a crowd that grows into the thousands, with attacks that fire on their own, on the Mac and in Chrome",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SIM-2D:M3",
-        "SESSION:M1",
-        "RENDER-2D:M5",
-        "GAME-SPLIT:M4"
+        "SIM-2D:WP3",
+        "SESSION:WP1",
+        "RENDER-2D:WP5",
+        "GAME-SPLIT:WP4"
       ],
       "quality_bar": "A crowd as dense and as legible as Vampire Survivors' or Halls of Torment's late game, at several times their count: the hero is found at a glance, every hit shows, and nothing stutters. The look is the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "Chrome's cost at each crowd size is on record before the cap is chosen. In Chrome at 1920\u00d71080, with this milestone's rules and drawing and a crowd packed as the slice's late crowd packs, the record holds the median tick, the median frame's CPU work and their sum at each thousand bodies from 2,000 to 10,000, the cap the rule set uses, and each tripwire the design names that a row trips. The figures are baselines: none sets the cap and none decides the result.",
           "check": "python3 scripts/swarm.py cap",
           "ask": "Were the figures taken in the game itself (its rules, row extraction, ordering and draw submission) as release Wasm on the page's one thread in Chrome, at the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete and made at the claimed commit, and never on a figure?",
@@ -88,7 +88,7 @@
           "review": ""
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "The slice's rules hold. A hero moves by the frame's axes, clamped to unit length, and stays inside the arena. Enemies seek the nearest hero and push apart, and never move a hero. A weapon fires on its own clock at the nearest enemies, a projectile hits the first enemy its path overlaps, health and damage are integers, a dead enemy despawns, and a hero whose health is spent ends the run. The spawn budget rises with time and the world never holds more bodies than the cap, a constant of the rule set of at most 10,000.",
           "check": "cargo test --locked --offline -p swarm-rules --test slice",
           "ask": "Read the test. Does it step the registered runtime with the real rules, and check each clause from committed state: a hero's position unchanged by any number of enemies in contact, a weapon's hit against a brute-force search over the bodies, and the body count against the cap on every tick of a run that reaches it?",
@@ -99,7 +99,7 @@
           "review": ""
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "On the Mac, the slice's retained trace, a run alone that reaches the cap, steps to its retained digests by the local route and by the wire route.",
           "check": "python3 scripts/swarm.py conformance --target mac-metal",
           "ask": "Does the command run `SIM-2D`'s conformance command on the `swarm-rules` package, with no copy of its comparison? Do the trace's frames hold axes off the wire's 16-bit grid?",
@@ -110,7 +110,7 @@
           "review": ""
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "In Chrome, as Wasm, the same trace steps to the same retained digests.",
           "check": "python3 scripts/swarm.py conformance --target chrome-webgpu",
           "target": "chrome-webgpu",
@@ -120,7 +120,7 @@
           "review": ""
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "On the iPhone simulator the same trace steps to the same retained digests.",
           "check": "python3 scripts/swarm.py conformance --target ios-sim",
           "target": "ios-sim",
@@ -130,7 +130,7 @@
           "review": ""
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "A slice of the trace runs inside the project's test command on the Mac, so a change to any rule's result fails at once.",
           "check": "cargo test --locked --offline -p swarm-proof --test retained_slice",
           "target": "mac-metal",
@@ -140,7 +140,7 @@
           "review": ""
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "`swarm-rules` is registered as a rule package and passes `SIM-2D`'s guard with nothing suppressed. The repository guard admits the game as a second external game: no engine crate may depend on either game, and the V1 game's boundary is as it was.",
           "check": "sh -c 'grep -q swarm-rules .config/architecture.toml && python3 scripts/sim2d_profile.py check'",
           "ask": "Does `.config/architecture.toml` name the game's packages as a second external game, with `swarm-rules` as a rule package? Do the repository guard's own tests refuse an engine crate that depends on either game and a rule package that depends on a package which is not one? Did any line of the V1 game's boundary change?",
@@ -151,7 +151,7 @@
           "review": ""
         },
         {
-          "id": "M2.8",
+          "id": "WP2.8",
           "statement": "In a 16:9 view, during the last quarter of the trace, at least 2,000 enemies and projectiles are inside the player's view at one tick, counted from committed positions against the rectangle the view gives a 16:9 window.",
           "check": "cargo test --locked --offline -p swarm-proof --test in_view",
           "target": "mac-metal",
@@ -161,7 +161,7 @@
           "review": ""
         },
         {
-          "id": "M2.9",
+          "id": "WP2.9",
           "statement": "On the Mac the game runs the trace in its own window through the 2D scene, in a landscape, a portrait and a square window. In each, the world's digests at the trace's checkpoints equal the run with no window, every living body has a row in the frame's record, no enemy the budget spawned has a first row that touches the view of its frame, and the compiled passes are the sprite pass and the output half's and nothing else. The run carries on by digest through a resize from landscape to portrait during a wave and through a replaced device.",
           "check": "python3 scripts/swarm.py slice --target mac-metal",
           "lock": "gpu",
@@ -172,7 +172,7 @@
           "review": ""
         },
         {
-          "id": "M2.10",
+          "id": "WP2.10",
           "statement": "In Chrome the game runs the trace on its page through the 2D scene, in a landscape and a portrait page, with the same digests at the checkpoints, a row for every living body, and no enemy the budget spawned having a first row that touches the view of its frame. The run carries on by digest through a resize between the two shapes during a wave and through a replaced device.",
           "check": "python3 scripts/swarm.py slice --target chrome-webgpu",
           "lock": "chrome",
@@ -183,7 +183,7 @@
           "review": ""
         },
         {
-          "id": "M2.11",
+          "id": "WP2.11",
           "statement": "On the Mac, at the trace's peak, these are on record at 1920\u00d71080 and at 3456\u00d72234 from release builds with the load on the machine: the tick and its parts, with neighbours visited; rows extracted, ordered and uploaded; frame CPU and GPU time; and bodies in view. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
           "check": "python3 scripts/swarm.py costs --target mac-metal",
           "ask": "Does the command succeed or fail on the record being complete and made at the claimed commit, and never on a figure?",
@@ -195,7 +195,7 @@
           "review": ""
         },
         {
-          "id": "M2.12",
+          "id": "WP2.12",
           "statement": "In Chrome, at the trace's peak, the same rows are on record at 1920\u00d71080.",
           "check": "python3 scripts/swarm.py costs --target chrome-webgpu",
           "lock": "chrome",
@@ -206,7 +206,7 @@
           "review": ""
         },
         {
-          "id": "M2.13",
+          "id": "WP2.13",
           "statement": "On the Mac, at the peak of the slice, the player finds the hero at a glance, enemies stand apart from the ground and from each other, each shot and each hit shows, the overlap order of the crowd holds still, and the motion has no visible stutter or hitch.",
           "inspect": "Capture the trace's last quarter at 1920\u00d71080 with T2 engine capture in `realtime` mode, and `fixed` stills of three of its ticks at 3456\u00d72234. Judge consecutive frames at 1x, whole and in native-size crops around the hero and of a packed patch of crowd, against the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
           "target": "mac-metal",
@@ -216,7 +216,7 @@
           "review": ""
         },
         {
-          "id": "M2.14",
+          "id": "WP2.14",
           "statement": "In Chrome, at the peak of the slice, the same qualities hold.",
           "inspect": "Capture the trace's last quarter at 1920\u00d71080 in Chrome with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops around the hero and of a packed patch of crowd.",
           "target": "chrome-webgpu",
@@ -226,7 +226,7 @@
           "review": ""
         },
         {
-          "id": "M2.15",
+          "id": "WP2.15",
           "statement": "No engine crate names anything of the game, the game reaches the engine through public items alone, and nothing the game draws is written to the world.",
           "ask": "Does any crate under `crates/` name a type, constant, string or file of the game? Does `swarm` or `swarm-rules` use a non-public item of an engine crate? Does any code outside `swarm-rules` write a component or resource the digest covers? What did this milestone change in `thrum-app` and the capture and packaging scripts under seam ruling 2, and does each change serve any game?",
           "target": "mac-metal",
@@ -236,7 +236,7 @@
           "review": ""
         },
         {
-          "id": "M2.16",
+          "id": "WP2.16",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -246,7 +246,7 @@
           "review": ""
         },
         {
-          "id": "M2.17",
+          "id": "WP2.17",
           "statement": "Enemies appear only out of sight, by the rules' own figures. On every tick of a run that reaches the cap, with the hero in the open, at a wall and in a corner, every enemy the budget spawns is placed inside the arena and outside the hero's sight square grown by the spawn margin. The spawn rule is given committed state, admitted frames and the rule set's constants, and nothing of any window.",
           "check": "cargo test --locked --offline -p swarm-rules --test spawn",
           "ask": "Read the test and the spawn rule. Is each enemy's place read from committed state at its first tick and compared with the hero's committed place that the rule read? Is there any path by which a window's extent, a scale or a view could reach `swarm-rules`?",
@@ -257,7 +257,7 @@
           "review": ""
         },
         {
-          "id": "M2.18",
+          "id": "WP2.18",
           "statement": "Every view lies inside its hero's sight square. For window shapes from 32:9 to 9:32, the view the game gives shows exactly the sight spans at 16:9 and at 9:16, less along one side and no more along the other at every other shape, and stays inside the committed hero's sight square however far ahead the drawn hero is and wherever in the arena it stands, at a wall included.",
           "check": "cargo test --locked --offline -p swarm --test view_policy",
           "ask": "Is the view the game hands the renderer, in the Mac window and on the page, made by the one function this test calls, with the sight spans and the view slack read from `swarm-rules`?",
@@ -270,19 +270,19 @@
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "A player plays a whole run alone on the Mac or in Chrome: waves that grow, upgrades chosen between them, a win or a loss, with the status display and menus",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "GAME-UI:M4"
+        "GAME-UI:WP4"
       ],
       "quality_bar": "A run with the shape and clarity of Brotato's: a player always knows which wave they are in, how long it has left and what they just chose. Screens as plain and quick as Vampire Survivors' and Brotato's, in the look of the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "The run is a state machine in the world: gathering, wave, intermission, won and lost. A state changes only at a tick or for an admitted action. Each wave's budget is larger than the last, and the last wave has a boss. An action that makes no sense in the state it meets changes nothing. A new run after a win or a loss differs from the last and is the same on any replay of the same inputs.",
           "check": "cargo test --locked --offline -p swarm-rules --test run_states",
           "ask": "Read the test. Is every transition driven through admitted frames and ticks alone, and is each kind of senseless action (a choice not offered, a hero picked twice, ready during a wave) tried in every state with the digest required unchanged?",
@@ -293,7 +293,7 @@
           "review": ""
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "Pick-ups from anyone raise one team level, and each level gives each hero one owed choice. At an intermission each owed choice is an offer of three upgrades held in the world, the same on any replay. A choice is applied once. For every upgrade in the game, a run in which it was chosen differs at a later tick from the same run without it, in something other than the upgrade's own record.",
           "check": "cargo test --locked --offline -p swarm-rules --test upgrades",
           "ask": "Does the test walk every upgrade the content tables declare, and compare state that play depends on (a body's position, health, a hit, a count), not the hero's list of upgrades?",
@@ -304,7 +304,7 @@
           "review": ""
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "A pick-up within a hero's reach flies to it and is collected. Pick-ups left when a wave ends go to the pool. When many lie close they merge into one of their summed worth, the pool's total is unchanged by merging, and the world stays within the cap with pick-ups counted.",
           "check": "cargo test --locked --offline -p swarm-rules --test pickups",
           "target": "mac-metal",
@@ -314,7 +314,7 @@
           "review": ""
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "Over twenty seeds, a hero who never moves or chooses loses every run, and the scripted player wins at least one. How far each got in every seed, and how each run ended, is on record.",
           "check": "python3 scripts/swarm.py balance",
           "ask": "Is the scripted player a fixed policy that reads only the committed page, with no knowledge of a seed? Are the twenty seeds listed in the record and not chosen after the runs?",
@@ -325,7 +325,7 @@
           "review": ""
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "On the Mac a retained trace of a whole winning run, at most 36,000 ticks long, steps to its retained digests by the local and the wire route.",
           "check": "python3 scripts/swarm.py conformance --target mac-metal --trace run",
           "target": "mac-metal",
@@ -335,7 +335,7 @@
           "review": ""
         },
         {
-          "id": "M3.6",
+          "id": "WP3.6",
           "statement": "In Chrome the same trace steps to the same retained digests.",
           "check": "python3 scripts/swarm.py conformance --target chrome-webgpu --trace run",
           "target": "chrome-webgpu",
@@ -345,7 +345,7 @@
           "review": ""
         },
         {
-          "id": "M3.7",
+          "id": "WP3.7",
           "statement": "On the Mac, with events entering where the window's own do, a player goes from the title through a hero pick, a wave, an intermission in which one upgrade is chosen by keys and one by pointer, the pause menu, a win, a second run and a loss. Each activation reaches the rules as exactly one action, nothing the interface consumed moves the hero, a direction held through the end of a wave neither chooses a card nor is lost, and the pause menu holds the world and resumes it. The status display's health, wave, clock, level and count equal the committed world's at each checked frame.",
           "check": "python3 scripts/swarm.py run --target mac-metal",
           "ask": "Are the status display's values read back from the interface tree and compared with the committed page of the same frame? Are the actions counted from what the rules were handed?",
@@ -357,7 +357,7 @@
           "review": ""
         },
         {
-          "id": "M3.8",
+          "id": "WP3.8",
           "statement": "In Chrome, with key, mouse and touch events sent through the browser, the same journey passes, with one upgrade chosen by each of the three means.",
           "check": "python3 scripts/swarm.py run --target chrome-webgpu",
           "lock": "chrome",
@@ -368,7 +368,7 @@
           "review": ""
         },
         {
-          "id": "M3.9",
+          "id": "WP3.9",
           "statement": "On the Mac a run carries on by digest, with the same screen open and focus where it was, through a resize, a device replaced during a wave and during an intermission, and a lost window focus, which releases held movement.",
           "check": "python3 scripts/swarm.py lifecycle --target mac-metal",
           "lock": "gpu",
@@ -379,7 +379,7 @@
           "review": ""
         },
         {
-          "id": "M3.10",
+          "id": "WP3.10",
           "statement": "In Chrome a run carries on by digest, with the same screen open and focus where it was, through a resize, a replaced device and a tab hidden and shown.",
           "check": "python3 scripts/swarm.py lifecycle --target chrome-webgpu",
           "lock": "chrome",
@@ -390,7 +390,7 @@
           "review": ""
         },
         {
-          "id": "M3.11",
+          "id": "WP3.11",
           "statement": "One command starts the game on the Mac and one serves it to Chrome, each cooking the game's sheets and font first.",
           "check": "sh -c './dev help | grep -q swarm'",
           "ask": "Run `./dev swarm` and `./dev swarm --web` as `./dev help` describes them. Does each build, cook and reach the title screen at the claimed commit?",
@@ -401,7 +401,7 @@
           "review": ""
         },
         {
-          "id": "M3.12",
+          "id": "WP3.12",
           "statement": "On the Mac every screen reads plainly in each of its states: the title, the hero pick, the status display over a crowd, the offer of three cards with the focused one unmistakable, the pause menu, and the won and lost screens with the run's figures. No element covers another, no text is cut off, and the status display stays legible over light and dark ground and a packed crowd.",
           "inspect": "Capture `fixed` stills of each screen and state with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2 and at 3456\u00d72234 pixels. Judge each whole, at the size it is shown, and in native-size crops of the text, the focused card and the status display, against the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
           "target": "mac-metal",
@@ -411,7 +411,7 @@
           "review": ""
         },
         {
-          "id": "M3.13",
+          "id": "WP3.13",
           "statement": "In real time on the Mac the end of a wave, the offer opening, a choice, and the next wave starting read as clean and immediate: nothing flickers or is drawn half laid out, the cleared field and the new wave are unmistakable, and the hero does not twitch.",
           "inspect": "Capture a scripted wave end, intermission and wave start at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the event times from the run's record. Judge the consecutive frames around each event at 1x, whole and in native-size crops of the cards and the hero.",
           "target": "mac-metal",
@@ -421,7 +421,7 @@
           "review": ""
         },
         {
-          "id": "M3.14",
+          "id": "WP3.14",
           "statement": "In Chrome, at device pixel ratios of 1 and 2, the status display, the offer and the won screen read as plainly as on the Mac.",
           "inspect": "Capture `fixed` stills of the three screens in Chrome with T2 engine capture at 1280\u00d7720 CSS pixels at both ratios. Judge each whole and in native-size crops of the text.",
           "target": "chrome-webgpu",
@@ -431,7 +431,7 @@
           "review": ""
         },
         {
-          "id": "M3.15",
+          "id": "WP3.15",
           "statement": "The screens are built through `GAME-UI`'s public interface alone, every size of text they use is one the font was cooked at, and the font is the builder's own, public domain, CC0 or Apache-2.0 with its licence text beside it.",
           "ask": "Does the game name its text sizes in one place, and does the font's description cook exactly those? What is the font's licence and where is its text? Does any engine crate name one of the game's screens?",
           "target": "mac-metal",
@@ -441,7 +441,7 @@
           "review": ""
         },
         {
-          "id": "M3.16",
+          "id": "WP3.16",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -451,7 +451,7 @@
           "review": ""
         },
         {
-          "id": "M3.17",
+          "id": "WP3.17",
           "statement": "A run ends at one tick, won or lost, and the commit that carries the deciding event carries the outcome. It is won at the tick the boss dies, or at the tick the last wave's clock ends with a present hero standing, and no intermission follows the last wave. It is lost at the tick a slot is present and no present hero stands. On a shared tick the boss's death beats the loss, and the loss beats the clock of any wave. Waiting spends no wave's clock: a player alone who waits in an intermission for more than 36,000 ticks and then readies meets the next wave with its whole clock.",
           "check": "cargo test --locked --offline -p swarm-rules --test run_endings",
           "ask": "Read the test. Does it reach the last wave's deadline with the boss alive, once with a hero standing and once with the last hero falling on that very tick, and a boss death on the tick the last hero falls, and read each outcome from the state that same tick committed? Does the wait step the real rules for every one of its ticks?",
@@ -464,7 +464,7 @@
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "The whole game is there and looks finished: four heroes, six kinds of enemy and a boss, six weapons and about twenty upgrades, in the chosen look",
       "status": "not_started",
       "failed_reviews": 0,
@@ -473,7 +473,7 @@
       "quality_bar": "A game that would pass beside Vampire Survivors, Brotato, Halls of Torment and Deep Rock Galactic: Survivor: every kind of thing on screen is told apart at game size, every weapon has a look and a hit that reads, and the art is one consistent world, that of the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "The game holds four heroes that differ in first weapon and starting figures, six kinds of enemy that each behave differently, a boss, six weapons that between them use all four patterns of the design, and at least twenty upgrades. Each of them appears in play in at least one of twenty scripted runs.",
           "check": "cargo test --locked --offline -p swarm-proof --test content",
           "ask": "Is 'appears' decided from committed state of real runs (a body of that kind alive, a weapon's hit landed, an upgrade applied), and not from the content tables?",
@@ -484,7 +484,7 @@
           "review": ""
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "Every weapon hits exactly the enemies a brute-force search over the tick's bodies says its shape touches, in the query's stated order, at every level of the weapon, in a packed crowd and against the boss.",
           "check": "cargo test --locked --offline -p swarm-rules --test weapons",
           "target": "mac-metal",
@@ -494,7 +494,7 @@
           "review": ""
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "A direction turned by the rules stays a unit vector to within the profile number's rounding over 36,000 ticks, and no rule stores or computes an angle.",
           "check": "cargo test --locked --offline -p swarm-rules --test turning",
           "target": "mac-metal",
@@ -504,7 +504,7 @@
           "review": ""
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "On the Mac a retained trace of a whole winning run of the finished game, at most 36,000 ticks long, in which every kind of enemy and every weapon appears, steps to its retained digests by both routes.",
           "check": "python3 scripts/swarm.py conformance --target mac-metal --trace full",
           "target": "mac-metal",
@@ -514,7 +514,7 @@
           "review": ""
         },
         {
-          "id": "M4.5",
+          "id": "WP4.5",
           "statement": "In Chrome the same trace steps to the same retained digests.",
           "check": "python3 scripts/swarm.py conformance --target chrome-webgpu --trace full",
           "target": "chrome-webgpu",
@@ -524,7 +524,7 @@
           "review": ""
         },
         {
-          "id": "M4.6",
+          "id": "WP4.6",
           "statement": "On the iPhone simulator the same trace steps to the same retained digests.",
           "check": "python3 scripts/swarm.py conformance --target ios-sim --trace full",
           "target": "ios-sim",
@@ -534,7 +534,7 @@
           "review": ""
         },
         {
-          "id": "M4.7",
+          "id": "WP4.7",
           "statement": "With the finished content, over twenty seeds for each hero, a hero who never moves or chooses loses every run and the scripted player wins at least one with each hero. In a winning run at least 2,000 enemies and projectiles are in the player's 16:9 view at one tick in each of the last three waves, and the world never holds more bodies than the cap.",
           "check": "python3 scripts/swarm.py balance --content full",
           "target": "mac-metal",
@@ -544,7 +544,7 @@
           "review": ""
         },
         {
-          "id": "M4.8",
+          "id": "WP4.8",
           "statement": "On the Mac, for each wave of a winning run, these are on record at 1920\u00d71080 and 3456\u00d72234: the tick and its parts with neighbours visited, rows, frame CPU and GPU time, and bodies in the world and in view. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
           "check": "python3 scripts/swarm.py costs --content full --target mac-metal",
           "lock": "gpu",
@@ -555,7 +555,7 @@
           "review": ""
         },
         {
-          "id": "M4.9",
+          "id": "WP4.9",
           "statement": "In Chrome, for each wave of a winning run, the same rows are on record at 1920\u00d71080.",
           "check": "python3 scripts/swarm.py costs --content full --target chrome-webgpu",
           "lock": "chrome",
@@ -566,7 +566,7 @@
           "review": ""
         },
         {
-          "id": "M4.10",
+          "id": "WP4.10",
           "statement": "Every sprite is finished and belongs to one world: each hero, enemy, the boss, each weapon's shot or effect, the pick-ups and the ground, in every frame of its animation.",
           "inspect": "Lay out every frame of every sheet at game size and enlarged four times. Judge each sprite whole and enlarged, then all of them side by side, against the concept the owner picked, in `examples/swarm/CONCEPT.md`: the palette, the line, the proportions and the amount of detail.",
           "target": "mac-metal",
@@ -576,7 +576,7 @@
           "review": ""
         },
         {
-          "id": "M4.11",
+          "id": "WP4.11",
           "statement": "At the run's peak on the Mac, at the size shown, the player's hero is found at once, each kind of enemy is told from the others, the boss reads as the boss, the player's shots are told from enemy shots and both from pick-ups, and all of it holds over the lightest and the darkest ground.",
           "inspect": "Capture `fixed` stills with T2 engine capture at ticks in each of the last three waves of the retained run, at 1920\u00d71080 and 3456\u00d72234. Judge each whole, at the size it is shown, and in native-size crops around the hero, of each kind of enemy in a crowd, and of the boss.",
           "target": "mac-metal",
@@ -586,7 +586,7 @@
           "review": ""
         },
         {
-          "id": "M4.12",
+          "id": "WP4.12",
           "statement": "In real time on the Mac every weapon's attack reads from start to hit, a hit and a death each show, pick-ups read as they fly in, the crowd's overlap order holds still, and nothing stutters or hitches at the peak.",
           "inspect": "Capture twenty seconds of each of the last three waves at 1920\u00d71080 with T2 engine capture in `realtime` mode, and a short run for each weapon alone. Judge consecutive frames at 1x, whole and in native-size crops around the hero and of each weapon's effect.",
           "target": "mac-metal",
@@ -596,7 +596,7 @@
           "review": ""
         },
         {
-          "id": "M4.13",
+          "id": "WP4.13",
           "statement": "In Chrome the last wave reads as it does on the Mac, with no visible stutter or hitch.",
           "inspect": "Capture twenty seconds of the last wave in Chrome at 1920\u00d71080 with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops around the hero.",
           "target": "chrome-webgpu",
@@ -606,7 +606,7 @@
           "review": ""
         },
         {
-          "id": "M4.14",
+          "id": "WP4.14",
           "statement": "Every name, character and file of the game is original or free to use, and listed.",
           "ask": "Does `examples/swarm/assets/SOURCES.md` list every sheet image and the font with how each was made and, for any that is not the builder's own, its source and its public-domain, CC0 or Apache-2.0 licence text? Does any character, name or sprite reproduce one from a shipped game you can name, or anything from Broadsides?",
           "target": "mac-metal",
@@ -616,7 +616,7 @@
           "review": ""
         },
         {
-          "id": "M4.15",
+          "id": "WP4.15",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -626,7 +626,7 @@
           "review": ""
         },
         {
-          "id": "M4.16",
+          "id": "WP4.16",
           "statement": "With the finished content the spawn margin covers what the design says it must: it is at least half the largest enemy sprite as drawn, the boss included, and a tick's travel of the fastest hero with every speed upgrade taken, added together.",
           "check": "cargo test --locked --offline -p swarm-proof --test spawn_margin",
           "ask": "Does the test take the sprite sizes from the cooked frame table and the speed from the content tables, and not from figures written into the test?",
@@ -639,19 +639,19 @@
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "Four scripted players share one run on a simulated bad connection: every copy of the game stays identical, a player joins mid-run, one drops and returns, and upgrades are chosen together",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SESSION:M4"
+        "SESSION:WP4"
       ],
       "quality_bar": "Co-op rules as forgiving as Vampire Survivors' and Brotato's: nobody waits on anybody, nobody is left behind, and a friend can arrive or vanish at any moment without the run noticing.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "On the in-memory link, in virtual time, a host and four clients each step the game's rules in a world of their own through a wave and an intermission, and each client's digest equals the host's at every digest tick. It runs inside the project's test command.",
           "check": "cargo test --locked --offline -p swarm-proof --test match_short",
           "ask": "Does each peer hold its own registered runtime, reached by the others only through `thrum-network`'s session over the link? Does each peer record its own digests?",
@@ -662,7 +662,7 @@
           "review": ""
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "On the in-memory link under A0's profile and under the harsh one, a host and four scripted players play a whole run at the cap. Each client's digest equals the host's at every digest tick, every peer reaches the run's end at the same tick, and after the first 600 ticks at least 95% of ticks admit each player's own frame.",
           "check": "python3 scripts/swarm.py match memory steady",
           "ask": "Is this `SESSION`'s match harness and its scripted-player seam running the game's rules, with no copy of the session or the link in the game?",
@@ -673,7 +673,7 @@
           "review": ""
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "A player who joins after the first intermission picks a hero, which enters at one tick on every peer and holds one owed choice for each team level. A player whose link is cut has their hero leave the field at one tick on every peer, and returning with their token finds the same hero with everything it had. A slot that has left is free and its hero is gone. The spawn budget follows the number of present heroes from the tick of each event. Through all of it every peer's digest equals the host's at every digest tick.",
           "check": "python3 scripts/swarm.py match memory roster",
           "target": "mac-metal",
@@ -683,7 +683,7 @@
           "review": ""
         },
         {
-          "id": "M5.4",
+          "id": "WP5.4",
           "statement": "The co-op rules hold. A fallen hero stays where it fell, neither moving nor firing, until the wave ends, and stands at the next wave with half its health. The run is lost at the tick a slot is present and no present hero stands. An intermission ends at the tick every present slot is ready, or when its clock runs out while more than one slot is present, and each owed choice then left is made by the rules. With every slot away the wave's clock and the budget hold, and with every slot left the world returns to gathering. With four heroes spread across the arena, every enemy the budget spawns is placed outside the sight square, grown by the spawn margin, of every present hero, standing or down.",
           "check": "cargo test --locked --offline -p swarm-rules --test coop",
           "target": "mac-metal",
@@ -693,7 +693,7 @@
           "review": ""
         },
         {
-          "id": "M5.5",
+          "id": "WP5.5",
           "statement": "Choices issued into loss and into a stalled link happen once, in order, on every peer. A choice made while another player's join is under way is applied at one tick on every peer, the joiner included. A choice that arrives after its intermission has closed changes nothing on any peer.",
           "check": "python3 scripts/swarm.py match memory commands",
           "target": "mac-metal",
@@ -703,7 +703,7 @@
           "review": ""
         },
         {
-          "id": "M5.6",
+          "id": "WP5.6",
           "statement": "The hero's movement is one function that the movement rule and the predicted controller both call, given nothing of the crowd. Over a whole run at the cap in which the hero is in contact with enemies throughout, and falls and stands again while its player keeps steering: on every tick where the host admitted the player's frame and no rule changed the hero's speed or standing, the prediction the client saved before it committed that tick equals the confirmed controller bit for bit. Every correction is on record with its cause: one the session names (a tick the host held, a change of lead, a return from a stall or a repair), or a change the rules made to the hero's speed or standing (a fall, standing again, leaving or entering the field). Each fall and each standing again while the prediction runs corrects once, on its own tick, to the confirmed controller, and from the next tick that equality holds again.",
           "check": "cargo test --locked --offline -p swarm-proof --test prediction",
           "ask": "Does the test's hero spend the run in the crowd, fall in it and stand again, with its player steering while it is down? Is equality judged on the prediction as it stood before the client committed the tick, and never after a restore? Are corrections counted by cause from the session's own report, with a change in speed or standing told from the confirmed controller before and after?",
@@ -714,7 +714,7 @@
           "review": ""
         },
         {
-          "id": "M5.7",
+          "id": "WP5.7",
           "statement": "The game declares its rule set, its action wire and which actions are commands to the session, and movement is the only thing it sends as timed frames.",
           "ask": "Which of the game's actions travel as commands and which as timed frames? Could losing any one timed frame lose a choice? Does the game's rule-set identity change when a constant of `swarm-rules` changes, with no other edit?",
           "target": "mac-metal",
@@ -724,7 +724,7 @@
           "review": ""
         },
         {
-          "id": "M5.8",
+          "id": "WP5.8",
           "statement": "From a whole run at the cap on the in-memory link under A0's profile these are on record: bytes each way for each peer, the lead and the confirmed delay, corrections a minute, the game's world image size at the cap and at a quarter of it, and the time from hello to in step for a join at the peak, split into transfer and catch-up. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
           "check": "python3 scripts/swarm.py match memory costs",
           "target": "mac-metal",
@@ -734,7 +734,7 @@
           "review": ""
         },
         {
-          "id": "M5.9",
+          "id": "WP5.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -746,19 +746,19 @@
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "The game plays alone on the iPhone simulator by touch, in both orientations, clear of the notch and the home indicator",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "GAME-UI:M6"
+        "GAME-UI:WP6"
       ],
       "quality_bar": "A game that sits on a phone as a native one does: steered by a thumb, with cards big enough to tap and nothing under the Dynamic Island, the rounded corners or the home indicator. Function only on the simulator, never speed.",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "On the iPhone simulator the game runs as its own app. With real touches a player picks a hero, steers it with a stick that appears under the thumb, and the hero's position follows the stick; in an intermission a tap chooses each offered card with exactly one action; a touch held on the stick when the offer opens is handed back when it closes; and a short run reaches a win and a loss.",
           "check": "python3 scripts/swarm_sim.py run",
           "ask": "Is the hero's position read from the committed world, and are the touches real ones from a UI test, as `GAME-UI`'s simulator proof makes them?",
@@ -770,7 +770,7 @@
           "review": ""
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "On the simulator the run carries on by digest, with the same screen open, through a rotation during a wave and during an intermission and through background and foreground. After each rotation every status node lies inside the safe area the shell reports, and in neither orientation does an enemy the budget spawned have a first row that touches the view of its frame.",
           "check": "python3 scripts/swarm_sim.py lifecycle",
           "lock": "simulator",
@@ -781,7 +781,7 @@
           "review": ""
         },
         {
-          "id": "M6.3",
+          "id": "WP6.3",
           "statement": "The V1 game's and the crowd view's iPhone apps still pass the simulator checks other milestones left for them, unchanged, now that a third app uses the shared shell.",
           "check": "sh -c 'python3 scripts/render2d_sim.py && python3 scripts/game_ui_sim.py layout && python3 scripts/game_ui_sim.py touch && python3 scripts/game_ui_sim.py second-app'",
           "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `RENDER-2D` and `GAME-UI` name for the V1 app and the crowd view's? Does each pass at the claimed commit, and was any of those scripts or tests edited by this milestone?",
@@ -793,8 +793,8 @@
           "review": ""
         },
         {
-          "id": "M6.4",
-          "statement": "The game's iPhone app is a user of the shared iOS shell that `GAME-UI` M6 left in `thrum-app`. It keeps no lifecycle, touch delivery, surface lease, rotation or recovery code of its own, and the shell still names nothing of any game.",
+          "id": "WP6.4",
+          "statement": "The game's iPhone app is a user of the shared iOS shell that `GAME-UI` WP6 left in `thrum-app`. It keeps no lifecycle, touch delivery, surface lease, rotation or recovery code of its own, and the shell still names nothing of any game.",
           "ask": "Does anything iOS-specific in `swarm-ios` repeat policy the shared shell holds? Did this milestone add a type, string or file of the game to `thrum-app`?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -803,7 +803,7 @@
           "review": ""
         },
         {
-          "id": "M6.5",
+          "id": "WP6.5",
           "statement": "On the simulator's screen, in portrait and in landscape, the game, the stick, the status display and the offer are clear of the Dynamic Island, the rounded corners and the home indicator, the cards are large enough to tap, and text is crisp.",
           "inspect": "Take `simctl` screenshots in both orientations of a wave with the stick held, the offer and the won screen, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the corners, the top and bottom edges and one line of text. Function only.",
           "target": "ios-sim",
@@ -813,7 +813,7 @@
           "review": ""
         },
         {
-          "id": "M6.6",
+          "id": "WP6.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -825,22 +825,22 @@
       ]
     },
     {
-      "id": "M7",
+      "id": "WP7",
       "name": "A player hosting on this Mac and a friend who opens a link in Chrome play a run together over a real connection, each hero answering at once",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SESSION:M7"
+        "SESSION:WP7"
       ],
       "quality_bar": "Joining as plain as Factorio's or Stardew Valley's: a link, a short wait that says what it is doing, and you are in. Play that feels local for your own hero, as Factorio's latency hiding does, with the same crowd on both screens.",
       "items": [
         {
-          "id": "M7.1",
+          "id": "WP7.1",
           "statement": "The game's host and client worlds are driven by their sessions through the engine's driven world. With a scripted session in virtual time they commit exactly the ticks it names at each advance (none, one, or several up to the cap on catch-up) and draw at its playout interpolation, and a game played alone still steps on the fixed clock. No engine crate was changed for it.",
           "check": "cargo test --locked --offline -p swarm --test driven_world",
-          "ask": "Are the host's and the client's drivers the game's own code, on the public driven-world interface `SESSION` M7 left? Did this milestone change `thrum-core`, `thrum-render` or `thrum-app`?",
+          "ask": "Are the host's and the client's drivers the game's own code, on the public driven-world interface `SESSION` WP7 left? Did this milestone change `thrum-core`, `thrum-render` or `thrum-app`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -848,7 +848,7 @@
           "review": ""
         },
         {
-          "id": "M7.2",
+          "id": "WP7.2",
           "statement": "Over real sockets, a Mac process that hosts and plays in its window and a Chrome page that joined by opening the host's link play a scripted whole run, directly and through the relay under A0's profile. Each peer's digest equals the other's at every digest tick and both reach the run's end at the same tick. The two windows differ in shape, one landscape and one portrait, and no enemy the budget spawned first appears inside either peer's view, by each peer's own record of its view.",
           "check": "python3 scripts/swarm.py match sockets pair",
           "ask": "Are the two peers separate processes on `thrum-transport`'s sockets, with the relay's forwarded and dropped counts in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests?",
@@ -860,7 +860,7 @@
           "review": ""
         },
         {
-          "id": "M7.3",
+          "id": "WP7.3",
           "statement": "A second Mac process joins a Mac host by a ticket given as a launch argument, and by a paste where the system lets the shell read the clipboard, and plays the run with equal digests. The host's title shows its ticket and Copy puts it on the clipboard. The run records whether the system allowed each clipboard call and passes on the launch argument alone when it did not.",
           "check": "python3 scripts/swarm.py match sockets join --target mac-metal",
           "lock": "gpu",
@@ -871,7 +871,7 @@
           "review": ""
         },
         {
-          "id": "M7.4",
+          "id": "WP7.4",
           "statement": "In Chrome the join screen shows each state the session reports, in words read back from the interface: connecting, negotiating, synchronising with its progress, playing; refused because the match is full and because the build differs; and closed because the host ended the match. A ticket arrives whole from the page address's fragment.",
           "check": "python3 scripts/swarm.py match sockets join --target chrome-webgpu",
           "lock": "chrome",
@@ -882,7 +882,7 @@
           "review": ""
         },
         {
-          "id": "M7.5",
+          "id": "WP7.5",
           "statement": "A Chrome page reloaded during a wave returns to its own hero with its saved token. A tab hidden until the host marks it away has its hero leave the field, and shown again it returns. When the host's window is closed the page shows that the match ended and why. The host commits every tick throughout.",
           "check": "python3 scripts/swarm.py match sockets drop",
           "lock": "chrome",
@@ -893,7 +893,7 @@
           "review": ""
         },
         {
-          "id": "M7.6",
+          "id": "WP7.6",
           "statement": "On a client under A0's profile the hero first moves in the same number of frames after a key goes down as it does in a run alone, and what the client draws is never written to its world: its digests stay equal to the host's through a run with corrections.",
           "check": "python3 scripts/swarm.py match sockets answer",
           "ask": "Is the frame of first motion found from engine capture or the frame record of the client's own window, with the key's time from the shell? Is the solo figure taken the same way on the same machine?",
@@ -905,7 +905,7 @@
           "review": ""
         },
         {
-          "id": "M7.7",
+          "id": "WP7.7",
           "statement": "In real time on a client under A0's profile the player's hero answers at once, what is attached to it stays on it, its shots leave from it and settle onto their paths without a visible jump, a correction does not jerk the view, and the crowd moves as smoothly as it does alone.",
           "inspect": "Capture twenty seconds of a wave on the Chrome client and on a Mac client at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the key times and the corrections from the run's record. Judge consecutive frames at 1x around each change of direction, each shot and each correction, whole and in native-size crops around the hero.",
           "target": "chrome-webgpu",
@@ -915,7 +915,7 @@
           "review": ""
         },
         {
-          "id": "M7.8",
+          "id": "WP7.8",
           "statement": "The host's and the client's pictures of the same confirmed tick show the same crowd in the same places, each centred on its own hero, with the other hero marked and a pointer to it when it is off screen.",
           "inspect": "Capture `fixed` stills on both peers at the same three confirmed ticks of a wave with T2 engine capture. Set each pair side by side. Compare the positions of a dozen named bodies and of both heroes, and judge the marks and the pointer.",
           "target": "mac-metal",
@@ -925,7 +925,7 @@
           "review": ""
         },
         {
-          "id": "M7.9",
+          "id": "WP7.9",
           "statement": "From a whole run of the pair through the relay under A0's profile these are on record for each peer: bytes each way, the lead, the confirmed delay and playout stalls, corrections a minute, the time from opening the link to playing, and frame CPU and GPU time at the run's peak. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
           "check": "python3 scripts/swarm.py match sockets costs",
           "lock": "gpu",
@@ -936,7 +936,7 @@
           "review": ""
         },
         {
-          "id": "M7.10",
+          "id": "WP7.10",
           "statement": "Nothing that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`.",
           "ask": "Which of the game's tests and commands open a socket, a browser or the simulator, and is each reachable only through `scripts/swarm.py` or `scripts/swarm_sim.py`?",
           "target": "mac-metal",
@@ -946,7 +946,7 @@
           "review": ""
         },
         {
-          "id": "M7.11",
+          "id": "WP7.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -958,7 +958,7 @@
       ]
     },
     {
-      "id": "M8",
+      "id": "WP8",
       "name": "Two to four players on a Mac, in Chrome and on the iPhone simulator play a whole run together through delay and loss, the owner has played and accepted it, and track 3 is closed",
       "status": "not_started",
       "failed_reviews": 0,
@@ -967,7 +967,7 @@
       "quality_bar": "The finished game: it would pass beside Vampire Survivors, Brotato, Halls of Torment and Deep Rock Galactic: Survivor in how it reads and moves, and beside Vampire Survivors' online co-op in how four players share a run. The look is the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
       "items": [
         {
-          "id": "M8.1",
+          "id": "WP8.1",
           "statement": "Over real sockets through the relay under A0's profile, a headless host on the Mac and four players of the game (a Mac window, a second Mac process, a Chrome page and the app in the iPhone simulator) play a whole run. Every peer's digest equals the host's at every digest tick it reached, and every peer still in step sees the run end at the same tick. A peer the host closed as unable to keep up is on record with the reason and counts as no failure for the simulator. No enemy the budget spawned first appears inside any windowed peer's view, by each peer's own record of its view.",
           "check": "python3 scripts/swarm.py match sockets four",
           "ask": "Is each of the four the game itself built for its target, in its own process, with its platform and runtime version in the record? Did the Mac window and the Chrome page stay in step for the whole run?",
@@ -979,7 +979,7 @@
           "review": ""
         },
         {
-          "id": "M8.2",
+          "id": "WP8.2",
           "statement": "Two more mixes play a run with equal digests: two players, a Chrome page and the simulator app, on a headless host; and three, a Mac player who hosts in a window with a Chrome page and the simulator app joined. The simulator app joins from an address it is opened with.",
           "check": "python3 scripts/swarm.py match sockets mixes",
           "lock": "simulator",
@@ -990,7 +990,7 @@
           "review": ""
         },
         {
-          "id": "M8.3",
+          "id": "WP8.3",
           "statement": "With the windowed players under A0's profile: one joins in the third wave and enters beside the others; one loses its link for longer than the idle timeout and returns to its hero; one falls and stands at the next wave; and an intermission ends on its clock with one player's choices made for them. Every peer's digest equals the host's throughout.",
           "check": "python3 scripts/swarm.py match sockets evening",
           "lock": "gpu",
@@ -1001,7 +1001,7 @@
           "review": ""
         },
         {
-          "id": "M8.4",
+          "id": "WP8.4",
           "statement": "With four heroes on screen each player tells their own from the others at a glance, and a fallen hero, an away hero, a hero entering and the other players' progress through an offer each read without explanation.",
           "inspect": "From the four-player run, capture `fixed` stills on the Mac window and the Chrome page with T2 engine capture at a tick of each state: all four in a crowd, one fallen, one away, one entering, an offer with two players ready. Judge each whole, at the size shown, and in native-size crops of each hero and of the status display.",
           "target": "mac-metal",
@@ -1011,7 +1011,7 @@
           "review": ""
         },
         {
-          "id": "M8.5",
+          "id": "WP8.5",
           "statement": "Played alone on the Mac from the title to a win, the game holds its bar the whole way: each wave reads as larger than the last, the late crowd is thousands and stays legible, every weapon and upgrade a player takes shows in play, and nothing stutters, flickers or is left unfinished.",
           "inspect": "Write the inspection list first: each screen, each wave, each weapon and each kind of enemy. Capture a whole scripted winning run at 1920\u00d71080 with T2 engine capture in `realtime` mode, in segments. Judge the first twenty seconds of every wave and every intermission as consecutive frames at 1x, whole and in native-size crops, against the concept the owner picked, in `examples/swarm/CONCEPT.md` and the games the quality bar names.",
           "target": "mac-metal",
@@ -1021,8 +1021,8 @@
           "review": ""
         },
         {
-          "id": "M8.6",
-          "statement": "At the peak of a run alone and of the four-player run, on the Mac at 1920\u00d71080 and 3456\u00d72234, the tick, frame CPU and GPU time, bodies in view and bytes each way are on record beside the records of M2, M4, M5 and M7. The record flags each tripwire the design names that a row trips, and says that motion on the built-in panel itself was not measured.",
+          "id": "WP8.6",
+          "statement": "At the peak of a run alone and of the four-player run, on the Mac at 1920\u00d71080 and 3456\u00d72234, the tick, frame CPU and GPU time, bodies in view and bytes each way are on record beside the records of WP2, WP4, WP5 and WP7. The record flags each tripwire the design names that a row trips, and says that motion on the built-in panel itself was not measured.",
           "check": "python3 scripts/swarm.py costs --close --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1032,7 +1032,7 @@
           "review": ""
         },
         {
-          "id": "M8.7",
+          "id": "WP8.7",
           "statement": "In Chrome at 1920\u00d71080, at the peak of a run alone and of the four-player run, the same rows are on record.",
           "check": "python3 scripts/swarm.py costs --close --target chrome-webgpu",
           "lock": "chrome",
@@ -1043,7 +1043,7 @@
           "review": ""
         },
         {
-          "id": "M8.8",
+          "id": "WP8.8",
           "statement": "The engine holds nothing of the game, and a second 2D scene builds on the same modules without it: the crowd view's and the V1 game's dependency trees hold no package of the game.",
           "check": "sh -c 'cargo tree --locked --offline -p swarm -e normal | grep -q thrum-render && cargo tree --locked --offline -p crowd-2d-view -e normal | grep -q thrum-render && ! cargo tree --locked --offline -p crowd-2d-view -e normal | grep -q swarm && ! cargo tree --locked --offline -p v1-game -e normal | grep -q swarm'",
           "ask": "Does any crate under `crates/` name a type, constant, string, screen or file of the game, anywhere in the module's changes? Does the game use a non-public item of an engine crate?",
@@ -1054,7 +1054,7 @@
           "review": ""
         },
         {
-          "id": "M8.9",
+          "id": "WP8.9",
           "statement": "A page linked from the README tells a player how to start the game alone, host it, send a link, and join from a Mac, Chrome and the simulator, and says what is not built.",
           "ask": "Do the commands the page gives work as written at the claimed commit? Does it name sound, a gamepad, saved progress, a public host and play between two machines as not built or not run?",
           "target": "mac-metal",
@@ -1064,7 +1064,7 @@
           "review": ""
         },
         {
-          "id": "M8.10",
+          "id": "WP8.10",
           "statement": "A closing record in this milestone's evidence closes track 3: for each of `SIM-2D`, `RENDER-2D`, `GAME-UI`, `TRANSPORT` and `SESSION` it says what the game proved of it and on which targets, with links to the evidence, it lists what was not run, and it says track 3 is closed by quoting the owner's acceptance.",
           "ask": "Does the record name as not run: a second machine or an internet path, a public host, a physical iPhone, motion on the built-in panel itself, the game's look on an EDR panel, Safari and Firefox, key and pointer events delivered by the system to the Mac window, sound and a gamepad? Does each claim it makes link to evidence from the claimed commit or name the milestone that recorded it? Is the acceptance it quotes in the script's record of the owner's words?",
           "target": "mac-metal",
@@ -1074,7 +1074,7 @@
           "review": ""
         },
         {
-          "id": "M8.11",
+          "id": "WP8.11",
           "statement": "The maturity ledger says what the game proved and what it did not, with implementation, correctness, visuals and device results kept apart.",
           "ask": "Do the ledger's rows for the game, and the rows of the five engine modules it touched, keep the four kinds of result apart and record simulator results as function only?",
           "target": "mac-metal",
@@ -1084,7 +1084,7 @@
           "review": ""
         },
         {
-          "id": "M8.12",
+          "id": "WP8.12",
           "statement": "The owner has played a run alone and a run with a second player, and has accepted the game as playing well enough to close track 3. Every change the owner asked for is made, or the owner has said in their own words that it may wait until after the close.",
           "inspect": "Read every Human Feedback the script recorded for this item, in order. Is the latest the owner's acceptance, in their words? For each change the owner asked for in any of them: is it made, with evidence from the claimed commit, or did the owner say it may wait? A change only written down as work to do, by a builder or a planner, fails this item, and so does feedback that asks for changes with no acceptance after it.",
           "needs": {
@@ -1098,7 +1098,7 @@
           "review": ""
         },
         {
-          "id": "M8.13",
+          "id": "WP8.13",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",

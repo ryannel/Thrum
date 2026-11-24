@@ -1,126 +1,126 @@
 {
   "module": "MESH-SHADING",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces",
       "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
-        "CONTENT-LOOP:M2",
-        "COOKED-DRAW:M1"
+        "CONTENT-LOOP:WP2",
+        "COOKED-DRAW:WP1"
       ],
       "quality_bar": "A meshlet path as a shipped GPU-driven renderer has one, such as Alan Wake 2's mesh-shader geometry: the player cannot tell it from drawing everything. Held to that literally where it can be: the same bytes with the cull on as with it off, and the frame-contract outputs of the path it replaces.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "A launch that requires `mesh-stages` on this Mac gets a device with the object and mesh stages enabled and the limits the path needs, and the registry reports them. A launch that names nothing gets the device it gets today. An unknown name, and a required `mesh-stages` on an adapter that does not offer the stages or those limits, are each refused by name before a device is made. A preferred `mesh-stages` never fails a launch: on such an adapter, and when the device request with it is made to fail, the launch gets the device it gets today, and the registry reports the name as not enabled and why.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test mesh_stage_request_gpu",
           "ask": "Is there one function in the registry that turns a launch's list into the device, shared with `ray-query`, and do the Mac window, the capture runner and the test gate each make their device through it?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m11-launch-admission",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m11-launch-admission",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "On a cooked mesh that has meshlets facing away, meshlets outside the view and meshlets cut by each frustum plane, the mesh-stage path's submitted bytes with its cull on equal its bytes with the cull off, at every frame of a scripted camera path that turns, passes through the mesh and crosses a cut.",
           "check": "python3 scripts/mesh_stage_proof.py cull-equal",
           "ask": "Does the proof assert that the cull rejected meshlets for each reason (the cone, each plane) on that path, with a count that is not zero, so the equality is not vacuous? Is the cull's rule one function text compiled into both the compute pass and the object stage?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m12-object-stage-culling",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m12-object-stage-culling",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "With its cull off, a mesh-stage frame holds what the path it replaces holds in every output the frame contract carries: colour, depth, motion and reactive coverage, lit, shadowed and textured, with history valid and in the first frame after a cut. Each output agrees at a tolerance the test states with its reason, apart from pixels the proof shows lie on a triangle's edge or a depth tie, which it counts. The difference images are retained.",
           "check": "python3 scripts/mesh_stage_proof.py parity",
           "ask": "Would a mesh stage that wrote a wrong normal, motion delta or history flag across a visible area fail at the stated tolerances? Does the proof show where the pixels it does not judge lie, and not assume it?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m13-frame-contract",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m13-frame-contract",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "The frame reports the recipe, the cooked path that was asked for, the path it resolved to and, where the two differ, why. `Auto` resolves to the path chosen today on every device and recipe. `MeshStages` is met only on a device that enabled the stages and on the Apple tile recipe. On a device that did not enable them, and on the portable recipe with them enabled, it is not refused: it resolves to the path chosen today, the scene submits that path's bytes and records no mesh-stage draw. On the mesh-stage path the forward pass records one mesh draw for each placement, and no cull pass and no indexed indirect draw for it.",
           "check": "python3 scripts/mesh_stage_proof.py selection",
           "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages, the stages cannot draw a portable frame, and a fallback is never silent?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m14-path-selection",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m14-path-selection",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "The stage pipelines and the fallback's are created through the device's creation authority before the scene is ready, and the ledger counts them. A stage pipeline that fails to build resolves the scene to the fallback before it is ready, and the report says so. Recording a frame creates no pipeline. A material reload that was asked for still prepares its candidate off the frame.",
           "check": "python3 scripts/mesh_stage_proof.py prepared",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m15-pipeline-preparation",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m15-pipeline-preparation",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.6",
+          "id": "WP1.6",
           "statement": "On a device whose limits cannot bind one mesh's streams as storage, and on one whose limits cannot dispatch its meshlets in one draw, that mesh draws through the fallback and the mesh beside it through the stages, in the same frame, each whole. Nothing of the excluded mesh is bound to a stage pipeline, no validation error is raised, and the report counts the mesh with the limit that excluded it.",
           "check": "python3 scripts/mesh_stage_proof.py eligibility",
           "ask": "Is eligibility decided when the mesh is staged, before a buffer is made for it, against the limits of the device generation and not the adapter's?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m16-per-mesh-eligibility",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m16-per-mesh-eligibility",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.7",
+          "id": "WP1.7",
           "statement": "In a scene that draws one mesh through the stages and one through the fallback, an accepted material reload shows on both from the submission it reports as installed. A refused reload leaves both drawing the last accepted material and reports its diagnostics. A frame recorded with the candidate and discarded installs nothing, and the next frame draws the candidate on both. No submitted frame draws the two paths with different materials.",
           "check": "python3 scripts/mesh_stage_proof.py material",
           "ask": "Does the proof read the edit from pixels a stage pipeline drew, and not only from the reload's outcome?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m17-material-installation",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m17-material-installation",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.8",
+          "id": "WP1.8",
           "statement": "A scene that did not resolve to the mesh stages uploads no meshlet storage and changes no buffer usage, on a device with the stages as on one without: its resident bytes are those of main. A scene that did holds each eligible mesh's meshlet storage, copied under the upload budget with the mesh and counted in its residency.",
           "check": "python3 scripts/mesh_stage_proof.py residency",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m18-residency-and-upload",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP1.md#m18-residency-and-upload",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         },
         {
-          "id": "M1.9",
+          "id": "WP1.9",
           "statement": "No exact baseline moves: with no request, and on the direct and indirect paths, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "The valley's terrain and cooked meshes draw through the object and mesh stages in the main view and the Sun's shadow maps, through edits and device loss, with the cost of both paths on record",
       "status": "done",
       "failed_reviews": 1,
@@ -129,121 +129,121 @@
       "quality_bar": "The valley as a shipped GPU-driven renderer draws it, such as Alan Wake 2's meshlet geometry: no hole, flicker or popping meshlet anywhere on the route, and the shadows the existing path casts. The cost of both paths is on record line by line, as CULLING's paired rows are.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "In the valley, on the moving route and under snap turns, every cooked placement's mesh-stage bytes with the cull on equal its bytes with the cull off, at every frame.",
           "check": "python3 scripts/mesh_stage_proof.py valley-cull-equal",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2/mac-metal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "Each of the Sun's map passes, the two cascades and the top-down height layer, stores through the stages with its cull on the depth it stores with the cull off, to the byte, at noon and at a low Sun. A pass that a mesh only partly reaches launches fewer mesh workgroups than the mesh has meshlets.",
           "check": "python3 scripts/mesh_stage_proof.py shadow-equal",
           "ask": "Does a diagnostic count show meshlets rejected in a shadow pass on the valley, so the equality is not vacuous? Do the object and mesh stages read each map's matrix from the binding the pass makes at group 0, with the caster view layout unchanged on a device that did not enable the stages?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2/mac-metal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "With its cull off, each of those three maps holds what the existing caster stores for the same scene: the same texels covered and the same depth, at a tolerance the test states with its reason, apart from texels the proof shows lie on a triangle's edge, which it counts. This holds at noon and at a low Sun over the valley's terrain, where the faces turned from the Sun carry the shadow.",
           "check": "python3 scripts/mesh_stage_proof.py shadow-parity",
           "ask": "Would a caster drawn one-sided, or with another placement's transform, fail this proof at the low Sun?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/shadow-parity.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2/shadow-parity.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "On the mesh-stage path the valley is the valley the existing path draws, at rest and in motion, at noon and at a low Sun: it passes this item's inspection list.",
           "inspect": "`fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, on the mesh-stage path, with the same stops on the existing path beside them, both on the Apple tile recipe, whole and as native-size crops. The list: (1) terrain is whole to the screen's border and at the near plane, with no meshlet-sized hole; (2) ridge lines and mesh silhouettes are unbroken; (3) every cooked mesh is whole from inside, beside and far away; (4) terrain and meshes cast the shadows they cast on the existing path, with no hole or light leak at a low Sun, near the camera, in the middle distance and beyond the cascades; (5) materials, lighting and texture read as they do at the existing path's stop; (6) in motion nothing pops, flickers or arrives late at the screen's edge, and no cooked surface smears or trails after a snap turn or a cut.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2.md#m24-visual-inspection",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2.md#m24-visual-inspection",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "An edited cooked mesh switches on the mesh-stage path in the publication's frame, with its placements. No frame draws new meshlet tables against old vertices or old tables against new vertices, and a refused publication changes nothing. An edit that makes a mesh ineligible, or eligible again, moves that mesh alone to the other path in the same frame.",
           "check": "python3 scripts/mesh_stage_proof.py edit",
           "ask": "Is the switch frame the one the content publication names, from the same run that shows the image change?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2/mac-metal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "After a device replacement the path resolves again and draws the bytes it drew before, an accepted material edit draws again on both paths once it has validated there, and a frame that is recorded and discarded leaves the next frame right.",
           "check": "python3 scripts/mesh_stage_proof.py lifecycle",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2/mac-metal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "For both paths on the valley's route on the Apple tile recipe, at 1280\u00d7720 and 1920\u00d71080, with the machine's load, the record holds the design's two figures for each frame, the timed-pass span and frame CPU time, the GPU time of the cull pass, the forward pass and each of the Sun's map passes by name, the draws recorded, the counts of the design's cost account and resident bytes. The span runs from the first timed pass through the pass that consumes the frame's output. The record calls it the timed-pass span and says which queued transfers lie outside it for each path. Each tripwire of the cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/mesh_stage_cost.py valley",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2.md#m27-valley-cost",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2.md#m27-valley-cost",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.8",
+          "id": "WP2.8",
           "statement": "A scene prepared with the Sun's shadows off and `MeshStages` asked draws its forward pass through the stages, makes no shadow pipeline for them and records no shadow draw, and its bytes with the cull on equal its bytes with the cull off.",
           "check": "python3 scripts/mesh_stage_proof.py shadows-off",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/WP2/mac-metal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         },
         {
-          "id": "M2.9",
+          "id": "WP2.9",
           "statement": "No exact baseline moves: with no request, and on the direct and indirect paths, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "A person turns the object and mesh stages on for this Mac with one launch setting, and the record shows how the valley looks and what it costs beside the path it replaces",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
-        "SHOWCASE:M8"
+        "SHOWCASE:WP8"
       ],
       "quality_bar": "An opt-in record a person can decide from, as RAY-TRACING's is: the machine as the OS reports it, the launch line, the look judged on the final build against a shipped GPU-driven renderer's meshlet path, and a paired timing that says no more than its spread allows. Nothing is claimed as a default, or for a Mac, a recipe or a shadow method that was not run.",
       "items": [
         {
-          "id": "M3.1",
-          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the path on, and the design's paired timing. For each of the pair's eight runs it holds the recipe and cooked path the run resolved and M2.7's rows, the timed ones as medians. For each of the two figures at each extent it states the difference between the two paths beside the spread, and says the pair shows no difference where the spread is the larger. It calls the GPU figure the timed-pass span and says which queued transfers lie outside it for each path. It says that the setting also moves a launch with no recipe named to Apple tile, which the pair does not measure. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
+          "id": "WP3.1",
+          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the path on, and the design's paired timing. For each of the pair's eight runs it holds the recipe and cooked path the run resolved and WP2.7's rows, the timed ones as medians. For each of the two figures at each extent it states the difference between the two paths beside the spread, and says the pair shows no difference where the spread is the larger. It calls the GPU figure the timed-pass span and says which queued transfers lie outside it for each path. It says that the setting also moves a launch with no recipe named to Apple tile, which the pair does not measure. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
           "check": "python3 scripts/mesh_stage_cost.py check",
           "ask": "Did every run resolve to the Apple tile recipe, the two arms differing in the cooked path alone, on the final build and in the design's order? Is each sentence the record draws from the pair no stronger than its spread allows, and does none call the span the whole frame's GPU time?",
           "target": "mac-metal",
@@ -253,7 +253,7 @@
           "review": ""
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "From an ordinary launch of the proving ground's Mac window on the final build, on this Mac. With the opt-in selection and no recipe named, the valley reports the Apple tile recipe, `mesh-stages` enabled and the cooked draw path resolved to `MeshStages`, with a count of mesh-stage draws that is not zero. With the selection and `THRUM_RECIPE=portable`, it reports the portable recipe and the path chosen today, with no mesh-stage draw and the recipe as the reason. With the selection, no recipe named and the adapter's facts made not to admit Apple tile, it reports the same, and why Apple tile was not taken. With the selection and the first device request made to fail, the window makes the device it makes today, resolves the recipe and the path of a launch with no selection and reports why. With no selection the device, the recipe and the path are today's. No launch is refused and none fails.",
           "check": "python3 scripts/mesh_stage_proof.py opt-in",
           "ask": "Is each case launched through the Mac window's host as a person would launch it, with only the device request's failure and the adapter's recipe facts injected, and do the first two cases differ in `THRUM_RECIPE` alone?",
@@ -265,9 +265,9 @@
           "review": ""
         },
         {
-          "id": "M3.3",
-          "statement": "With the opt-in selection on the final build, the valley as the V1 exit leaves it passes M2.4's inspection list. The record states the result for each entry of the list.",
-          "inspect": "One capture pass on the final build, launched with the opt-in selection, no recipe named and `mesh-stages` required, so its frames cannot be the fallback's: `fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, whole and as native-size crops, with the capture's own report of the enabled features, the resolved recipe and the resolved cooked path beside them. Judged by M2.4's list.",
+          "id": "WP3.3",
+          "statement": "With the opt-in selection on the final build, the valley as the V1 exit leaves it passes WP2.4's inspection list. The record states the result for each entry of the list.",
+          "inspect": "One capture pass on the final build, launched with the opt-in selection, no recipe named and `mesh-stages` required, so its frames cannot be the fallback's: `fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, whole and as native-size crops, with the capture's own report of the enabled features, the resolved recipe and the resolved cooked path beside them. Judged by WP2.4's list.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -275,7 +275,7 @@
           "review": ""
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "The record says, from its rows, what share of cooked triangles the cone test and the frustum test each removed in each pass, for terrain and for the other cooked meshes apart, and what the pair shows the path saved or cost in the timed-pass span and in frame CPU time. From the shares measured on the other cooked meshes it says what the same tests would be expected to remove from the exit scene's entities, so that the next plan can decide whether entities are drawn this way.",
           "ask": "Is the expectation for entities derived from triangle shares measured on meshes like the exit scene's props, with its assumptions stated, and not asserted?",
           "target": "mac-metal",
@@ -285,7 +285,7 @@
           "review": ""
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "A creator can turn the path on for a scene from the public documentation: the launch's list and what required and preferred mean, the scene's request, that the path draws only on the Apple tile recipe and what the valley's one setting does about the recipe, what a request resolves to on the portable recipe, on a device without the stages and for a mesh the device cannot bind, that nothing selects it unasked, and what this Mac's record shows.",
           "ask": "Could an agent that has read only the public documentation launch a scene on the mesh stages on this Mac and read back that it did?",
           "target": "mac-metal",
@@ -295,9 +295,9 @@
           "review": ""
         },
         {
-          "id": "M3.6",
+          "id": "WP3.6",
           "statement": "The maturity ledger has a row for the mesh-stage path, with implementation, correctness, visuals and device kept apart. It records the path as run on this Mac, not performance-qualified and not a default, and claims nothing for a Mac, a recipe or a target that was not run.",
-          "ask": "Does the row match what M1 to M3 ran, with the physical iPhone recorded as owed?",
+          "ask": "Does the row match what WP1 to WP3 ran, with the physical iPhone recorded as owed?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -305,7 +305,7 @@
           "review": ""
         },
         {
-          "id": "M3.7",
+          "id": "WP3.7",
           "statement": "Every exact baseline holds: the verifier's runs name no hardware feature and ask for no path, and no launch's default has changed.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",

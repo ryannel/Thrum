@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/GAME-UI/design-review.md",
     "commit": "04ecff7932b4939f52ca742a0b8bb17d7ecad9e9",
-    "hash": "854283c3731c1d5a72172948d75de64ddfc61aeb0fb28a66dd0d14f186cfa437",
+    "hash": "a117c5b3cf1ec64320976f85372cd1915ad69f20b257edf43ff94eb39146029f",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,9 +23,9 @@
     },
     "at": "2026-11-14T21:30:10Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "74e6b908efae6090f58ea01be09d48f59fc6665cb7ad0e1d913e5318d06c3e90",
+  "work_packages": {
+    "WP1": {
+      "definitions": "8f091a6a7efe1ac1a5188cdb360996da989d9841ff0b79103ac03ea5db242c71",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -40,7 +40,7 @@
         }
       ]
     },
-    "M2": {
+    "WP2": {
       "definitions": "25b35fc086cb7b033a5926a4901c7634ecfa87462548f30f61b47d1866a9cbf6",
       "reviews": [],
       "authorised": {
@@ -56,7 +56,7 @@
         }
       ]
     },
-    "M3": {
+    "WP3": {
       "definitions": "97f895820d3132a6e178fc882a4271337c5f5764827e62a43127a3ed2385e383",
       "reviews": [],
       "authorised": {
@@ -72,7 +72,7 @@
         }
       ]
     },
-    "M4": {
+    "WP4": {
       "definitions": "8f0a56801e1f755967ef6040a58f81b5f61be45c115174dab28317cd2c27bed4",
       "reviews": [],
       "authorised": {
@@ -88,7 +88,7 @@
         }
       ]
     },
-    "M5": {
+    "WP5": {
       "definitions": "7e0aa7e8fc5246aae9f23ec0a9ef601a6270f9b3127d2963a4ec9ccabd0ede5e",
       "reviews": [],
       "authorised": {
@@ -104,7 +104,7 @@
         }
       ]
     },
-    "M6": {
+    "WP6": {
       "definitions": "cefd79ad87c39abb7152328e25b54d820e264fd513c62e83314549127db2443b",
       "reviews": [],
       "authorised": {
@@ -121,7 +121,7 @@
       ]
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module GAME-UI. It needs: RENDER-2D",
       "at": "2026-11-13T19:21:23Z"

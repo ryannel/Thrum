@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/design-review.md",
     "commit": "8c9daaf399df16a4fe8dabe777a3c017285e5862",
-    "hash": "8e4b686021e2f321a5c9911d5b3570dc7b6e54b5c0689882c98c6fa60a430c55",
+    "hash": "0e0cddabf75b1d42967bb771547353d416cb27a558314c2d8c744c9516806a44",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,14 +23,14 @@
     },
     "at": "2026-11-23T09:29:12Z"
   },
-  "milestones": {
-    "M7": {
-      "definitions": "eef4d76da7f74221c61ace7b3bdaff4aaa7e73e35ca0609800302780062490af",
+  "work_packages": {
+    "WP7": {
+      "definitions": "515f2d85727c170552aa3facf948574b43a73c19a4a6466adc9c1fa8cac69124",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "6eb96528daa668840afb5bfd936db30cfe273e13",
-          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/WP7-review.md",
           "host": "codex",
           "model": "gpt-6.1-sol",
           "effort": "high",
@@ -65,7 +65,7 @@
       "done": {
         "by": "review",
         "commit": "6eb96528daa668840afb5bfd936db30cfe273e13",
-        "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+        "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/WP7-review.md",
         "checked": "6eb96528daa668840afb5bfd936db30cfe273e13",
         "at": "2026-11-09T16:06:43Z"
       },
@@ -98,7 +98,7 @@
       "at": "2026-11-09T15:03:58Z"
     }
   ],
-  "briefs": [
+  "tasks": [
     {
       "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 2 Must Fix findings. The first needs CULLING's, COOKED-DRAW's and PLATFORM-RUNTIME-IOS's files and T2-CAPTURE's guide to align their iOS commands on one simulator lock through verified shutdown (a simulator left booted after Thrum runs storms into ~290 respawning daemons and load 100-422). A previous whole-project planner finished this work but its merge check was interrupted (exit 130, by the lead): its files are in the git stash 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO' (stash@{0}); start from the main branch's tip and reuse what holds up.\n\nYour last turn on this finished, but its files couldn't merge: couldn't merge the plan: it changes the same lines as work that landed meanwhile, in docs/plans/SESSION/PLAN.md. rebase onto origin/main failed: \nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message w. They are kept in the latest stash, 'planner: The design review of SESSION at .orchestrate/evidence/SESSIO'; start from the main branch's tip and reuse what holds up.",
       "at": "2026-11-23T23:18:45Z"

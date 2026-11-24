@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SHOWCASE/design-review.md",
     "commit": "99f8033a017ade4e5ff7a8c1689f66dab8f7961e",
-    "hash": "796763fd5c04f6ed1b9788353afed1eee0998644cfabfe77f52840aaa350bddf",
+    "hash": "d8fb5d00e7cc1976560bd00c0686f3daeae580388371f80f62fcbecfc9616d28",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,35 +23,35 @@
     },
     "at": "2026-11-20T08:01:06Z"
   },
-  "milestones": {
-    "M5": {
-      "definitions": "92ebdd835303714a81b4a4d78889647de7d40b72d8df210de29485629a701e72",
+  "work_packages": {
+    "WP5": {
+      "definitions": "6e14e63e02678c78a022ae18f6a248b58348ff2413acf764be9678e9f6473293",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "59cc8e01a848ed8cbfbcde50110f168125546c00",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review-1.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review-1.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass",
-            "M5.5": "pass",
-            "M5.6": "pass",
-            "M5.7": "pass",
-            "M5.8": "fail",
-            "M5.9": "fail",
-            "M5.10": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "fail",
+            "WP5.9": "fail",
+            "WP5.10": "pass"
           },
           "findings": [
             {
               "name": "Mac balloon motion holds and jumps",
-              "item": "M5.8",
+              "item": "WP5.8",
               "repeat": false
             },
             {
               "name": "Chrome balloon motion stalls during the flythrough",
-              "item": "M5.9",
+              "item": "WP5.9",
               "repeat": false
             }
           ],
@@ -75,24 +75,24 @@
         {
           "verdict": "fail",
           "commit": "cfbbdbb0a88cd9dd5c7829780edd9174519435af",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review-2.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review-2.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass",
-            "M5.5": "pass",
-            "M5.6": "pass",
-            "M5.7": "pass",
-            "M5.8": "pass",
-            "M5.9": "fail",
-            "M5.10": "pass",
-            "M5.11": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "fail",
+            "WP5.10": "pass",
+            "WP5.11": "pass"
           },
           "findings": [
             {
               "name": "Chrome fixed flythrough loses the route\u2019s presentation phase",
-              "item": "M5.9",
+              "item": "WP5.9",
               "different": "The earlier finding concerned a wall-clock stall. Every active submission here advances one tick, but samples phase zero instead of the designed half tick.",
               "repeat": false
             }
@@ -117,19 +117,19 @@
         {
           "verdict": "pass",
           "commit": "3feb8454d46c4840633d2b51514a03accdd5c1eb",
-          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass",
-            "M5.5": "pass",
-            "M5.6": "pass",
-            "M5.7": "pass",
-            "M5.8": "pass",
-            "M5.9": "pass",
-            "M5.10": "pass",
-            "M5.11": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass",
+            "WP5.10": "pass",
+            "WP5.11": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -183,25 +183,25 @@
       "done": {
         "by": "review",
         "commit": "3feb8454d46c4840633d2b51514a03accdd5c1eb",
-        "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
+        "review": ".orchestrate/evidence/SHOWCASE/WP5-review.md",
         "checked": "d958c5714ef97cd4294392f4ab69b2219474c82f",
         "at": "2026-11-18T22:47:40Z"
       }
     },
-    "M6": {
+    "WP6": {
       "definitions": "3e521777bc17f6575990043f9c5d2b2a46087c67f5a8c84e046292a382ff3a33",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "4dd7f3e9a7d5524d0b27f44c1e50acba901f77f8",
-          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.3": "pass",
-            "M6.4": "pass",
-            "M6.5": "pass",
-            "M6.6": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -265,13 +265,13 @@
       "done": {
         "by": "review",
         "commit": "4dd7f3e9a7d5524d0b27f44c1e50acba901f77f8",
-        "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
+        "review": ".orchestrate/evidence/SHOWCASE/WP6-review.md",
         "checked": "f739473c77f0fd71d663660aab8235547dcbb80a",
         "at": "2026-11-19T21:59:09Z"
       }
     },
-    "M7": {
-      "definitions": "2ac212f7fed1c669106c5f49bd931a57c64f11a34b593916dc463300ff231d49",
+    "WP7": {
+      "definitions": "03d14a6a7de27b0e79e3e6cace07dbd3be80b057f41e76236a1179ef548bdd80",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -279,8 +279,8 @@
         "at": "2026-11-18T10:38:55Z"
       }
     },
-    "M8": {
-      "definitions": "72f16f6ce9754beb84460cc82a4472411ecd68e1b638c4eaed5d6fbbdb2dfc36",
+    "WP8": {
+      "definitions": "792ec4d94250882d033b08eb2287067a5bfd7ea65a8eede4e70271c1c1aa3531",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -288,28 +288,28 @@
         "at": "2026-11-19T08:48:43Z"
       }
     },
-    "M9": {
-      "definitions": "57bd26680ab969501650d380dfc052a9ae0b9016437835bc194a5ee8f7b24a7e",
+    "WP9": {
+      "definitions": "71863a1709e9481228134e830296968b44374d8150899474087042411531cf3f",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "3a0aebbcf6e97371be0a9343fec75ad5beb62d6b",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review-1.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review-1.md",
           "items": {
-            "M9.1": "pass",
-            "M9.2": "pass",
-            "M9.3": "pass",
-            "M9.4": "pass",
-            "M9.5": "pass",
-            "M9.6": "fail",
-            "M9.7": "pass",
-            "M9.8": "pass",
-            "M9.9": "pass"
+            "WP9.1": "pass",
+            "WP9.2": "pass",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass",
+            "WP9.6": "fail",
+            "WP9.7": "pass",
+            "WP9.8": "pass",
+            "WP9.9": "pass"
           },
           "findings": [
             {
               "name": "Fixture relocation changes protected registry fields and a comparison file",
-              "item": "M9.6",
+              "item": "WP9.6",
               "planner": "The required fixture relocation changes the registered input locations. M9.6 freezes those fields and the native comparison driver that resolves the old location. Reconcile the permitted path-only migration with the protection of comparison behavior.",
               "repeat": false
             }
@@ -334,17 +334,17 @@
         {
           "verdict": "pass",
           "commit": "5ed438cc15891a22e7f1419b44b47753c9ff189f",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md",
           "items": {
-            "M9.1": "pass",
-            "M9.2": "pass",
-            "M9.3": "pass",
-            "M9.4": "pass",
-            "M9.5": "pass",
-            "M9.6": "pass",
-            "M9.7": "pass",
-            "M9.8": "pass",
-            "M9.9": "pass"
+            "WP9.1": "pass",
+            "WP9.2": "pass",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass",
+            "WP9.6": "pass",
+            "WP9.7": "pass",
+            "WP9.8": "pass",
+            "WP9.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -401,13 +401,13 @@
       "done": {
         "by": "review",
         "commit": "5ed438cc15891a22e7f1419b44b47753c9ff189f",
-        "review": ".orchestrate/evidence/SHOWCASE/M9-review.md",
+        "review": ".orchestrate/evidence/SHOWCASE/WP9-review.md",
         "checked": "fd4db4ae62c7b604cc9ebd93f3c21444b5d2cb73",
         "at": "2026-11-20T12:19:49Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, reviewed, with its closing record). It needs: The last milestone of modules 1 to 10 and 12.",
       "at": "2026-11-13T14:21:37Z"

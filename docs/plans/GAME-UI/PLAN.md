@@ -13,8 +13,8 @@ written; its code was thrown away on purpose, so build from the design.
 
 ## Open for the human
 
-- Assumption: GAME-UI waits for all of `RENDER-2D`, because its first milestone runs the sprite pass a second time and checks itself against the sprite scene `RENDER-2D` M5 leaves in the shells. It also waits for `APPLE-PRESENTATION` M6, because the interface is drawn inside the EDR present pass that milestone builds.
-- Assumption: an iPhone app for a second game is engine work, so it is built here (M6) with the crowd view, and not later inside the game.
+- Assumption: GAME-UI waits for all of `RENDER-2D`, because its first milestone runs the sprite pass a second time and checks itself against the sprite scene `RENDER-2D` WP5 leaves in the shells. It also waits for `APPLE-PRESENTATION` WP6, because the interface is drawn inside the EDR present pass that milestone builds.
+- Assumption: an iPhone app for a second game is engine work, so it is built here (WP6) with the crowd view, and not later inside the game.
 - Assumption: "2D support in the engine" includes text and interface drawn in the frame, and this module builds the smallest part of that the game uses: text in Latin letters with accents (the languages of Western and Central Europe), bars, panels, buttons, one level of modal, and a join screen. Other scripts (Arabic, Hebrew, Chinese, Japanese, Korean, Indic), right-to-left text, translation tools, typed text, screen readers, scrolling lists and animated transitions are not built.
 - Assumption: keys, pointer and touch only. No gamepad.
 - Assumption: nobody types a join ticket, because it is about a hundred characters. It is pasted, or it arrives in a link that opens the game. There is no text field and no on-screen keyboard. On an iPhone it arrives by link only.
@@ -27,43 +27,43 @@ written; its code was thrown away on purpose, so build from the design.
 - Assumption: test panels and menus are plain and made by the builder. The game's look is `SWARM`'s, and your judgement of it is not an item here.
 - Assumption: the four changes GAME-UI needs inside other modules (a stage for the interface in the frame runtime, a second use of the sprite pass, a font product in the content loop, input and an interface scene in the shells and the V1 game) are built by GAME-UI's own builder under rulings in the module list. No milestone is added to those modules.
 
-## M1 Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing
+## WP1 Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing
 
-Criteria: M1.1–M1.12 in the done-when file.
+Criteria: WP1.1–WP1.12 in the done-when file.
 
 Start by reading what V1 and `RENDER-2D` left: the design was written before either was built. When it was
 planned the tone stage wrote an `Rgba8Unorm` image of encoded values (`crates/thrum-render/src/synthetic/display.rs`,
 `synthetic_display.wgsl`), capture read it and `present.wgsl` copied it. The interface stage is built there under
 ruling 1 and the sprite pass's second use under ruling 2. That is the 8-bit mode. The float mode is the EDR
-present pass `APPLE-PRESENTATION` M6 builds (`present.rs`, `present.wgsl`), which this Mac selects on its
+present pass `APPLE-PRESENTATION` WP6 builds (`present.rs`, `present.wgsl`), which this Mac selects on its
 built-in display; [mechanism 1](DESIGN.md#1-the-interface-stage) says where the stage sits in each, and forcing
 SDR and forcing a headroom are that module's overrides. `thrum-ui` is a new
-crate: register it, and the cooker's new dependencies in M2, in `.config/architecture.toml`. In this milestone
+crate: register it, and the cooker's new dependencies in WP2, in `.config/architecture.toml`. In this milestone
 it only carries a paint list of rows from an embedded sheet; text and the tree come later. The interface scene
 is a new `THRUM_SCENE` selection beside `RENDER-2D`'s sprite scene in `examples/v1-game/src/content.rs`.
 `scripts/game_ui.py` is new and this module's.
 
-## M2 Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game
+## WP2 Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game
 
-Criteria: M2.1–M2.14 in the done-when file.
+Criteria: WP2.1–WP2.14 in the done-when file.
 
 The font product is built in `thrum-cook`, `thrum-asset` and `thrum-asset-gpu` under ruling 3, on the sheet
-product, the lease and the one switch that `RENDER-2D:M4` built there; read those first. A font's sheets are
+product, the lease and the one switch that `RENDER-2D:WP4` built there; read those first. A font's sheets are
 ordinary pixel-kind sheets, so nothing in the sprite pass changes for text. Residency's publication gains the
 interface as a reader under [mechanism 11](DESIGN.md#11-a-list-and-its-sheets-change-together); here its
-prepared layout is runs only, since the tree comes in M3.
+prepared layout is runs only, since the tree comes in WP3.
 
-## M3 A status display of a health bar, a timer and counters stays readable and in place at every window size, density and safe area
+## WP3 A status display of a health bar, a timer and counters stays readable and in place at every window size, density and safe area
 
-Criteria: M3.1–M3.14 in the done-when file.
+Criteria: WP3.1–WP3.14 in the done-when file.
 
 The Mac shell reports only an extent to a game today (`crates/thrum-app/src/app.rs`, `game.rs`); density and
-insets are added there and to the page under ruling 4, behind the feature the design names. M3.14 extends M2's
+insets are added there and to the page under ruling 4, behind the feature the design names. WP3.14 extends WP2's
 prepared layout from runs to boxes.
 
-## M4 A modal choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game
+## WP4 A modal choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game
 
-Criteria: M4.1–M4.13 in the done-when file.
+Criteria: WP4.1–WP4.13 in the done-when file.
 
 The Mac shell passes a game key codes and nothing else, and the page keeps its own DOM listeners
 (`examples/v1-game/web/index.html`); pointer, touch, text drops and the clipboard are added under ruling 4.
@@ -71,21 +71,21 @@ The Mac shell passes a game key codes and nothing else, and the page keeps its o
 mouse and touch events. The join screen shows states the scene scripts; it links neither `SESSION` nor
 `TRANSPORT`.
 
-## M5 The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide
+## WP5 The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide
 
-Criteria: M5.1–M5.8 in the done-when file.
+Criteria: WP5.1–WP5.8 in the done-when file.
 
 The iOS shell is `examples/v1-game-ios`: its `gesture.rs` turns touches into one steering gesture, which now
 receives only what the interface passes, and `ios/uitest` holds the UI test that makes real touches.
-`RENDER-2D:M5` left the sprite scene running there and `scripts/render2d_sim.py` to drive it. The creator guide
+`RENDER-2D:WP5` left the sprite scene running there and `scripts/render2d_sim.py` to drive it. The creator guide
 is `docs/design/ENGINE-EXPERIENCE.md` and the ledger is `docs/design/maturity.json`.
 
-## M6 A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses
+## WP6 A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses
 
-Criteria: M6.1–M6.8 in the done-when file.
+Criteria: WP6.1–WP6.8 in the done-when file.
 
 The iOS shell is `examples/v1-game-ios` (`src/ios.rs`, `lease.rs`, `gesture.rs`, `world_policy.rs` and the
 `ios/` scripts), owned by `PLATFORM-RUNTIME-IOS` and extended by `COOKED-DRAW`, `RENDER-2D` and this module. It
-moves into `thrum-app` under seam ruling 5; those modules' simulator checks are M6.2's and stay as they are.
+moves into `thrum-app` under seam ruling 5; those modules' simulator checks are WP6.2's and stay as they are.
 The crowd view is `examples/crowd-2d-view`; give its status display and its iPhone app packages of their own,
 registered in `.config/architecture.toml`.

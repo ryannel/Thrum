@@ -1,158 +1,158 @@
 {
   "module": "WATERS",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point",
       "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SEA:M1"
+        "SEA:WP1"
       ],
       "quality_bar": "A description of water that a GPU, a game and a later river solver can all be held to: every answer follows from the bed and the declared bodies or from a closed form, as the reference queries of a shipped physics library do, and nothing in it needs a graphics device.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "From a bed height grid and declared bodies, `thrum-water-model` answers at any world point: the body of water there or none, its level, the bed, the depth and the current. A sea is level wherever the bed lies below it and beyond the bed's extent. A basin is the connected hollow round its seed below its level, and a second hollow beyond a ridge stays dry. A chart gives its own level and current where its level lies above the bed.",
           "check": "cargo test --locked --offline -p thrum-water-model --test map",
           "ask": "Read the test. Are the expected answers closed forms worked out without the model: a cone-shaped hollow's shoreline radius at a level, a ridge between two hollows, a tilted chart? Would a model that floods every cell below the level, connected or not, fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "Where declarations overlap, a chart is taken over a basin and a basin over the sea, and a basin's fill stops at a chart's footprint. Preparation refuses, by name: two bodies of one kind that overlap; a basin whose fill, anywhere in its stage's declared range, reaches the sea, another basin, the edge of the bed, or a chart other than across its end; and a chart with a cell on its footprint's edge whose neighbour is neither ground above the chart's level there nor a joined body's water at weight 1. Level, bed and current are continuous across the grid's cells.",
           "check": "cargo test --locked --offline -p thrum-water-model --test map",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "Each body has a stage, inside a declared range, that is added to its level; a stage set outside the range is held at the range's end and counted. As a basin's stage rises its shoreline moves up the bed continuously, a neighbouring hollow floods only when the water reaches its sill, and lowering the stage drains it back to what it was.",
           "check": "cargo test --locked --offline -p thrum-water-model --test stage",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "Each body takes four gains, for the long waves and the three cascades, from its declared fetch and the wind through `thrum-sea-model`'s spectrum. The most exposed body's are 1; none exceeds 1; each falls as the fetch shortens; at 10 m/s the long-wave gain is under 0.05 for a fetch of 5 km and the shortest cascade's is over 0.9 at 200 m. A swell adds nothing to a basin's or a chart's own gains: with a swell running and no wind their long-wave gain is zero, and adding a swell to a wind never raises the energy their long waves carry.",
           "check": "cargo test --locked --offline -p thrum-water-model --test gains",
           "ask": "Are the expected gains worked out in the test from fetch-limited growth relations and band integrals of its own, and not from the function under test?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "At any point each wave layer is held, longest first, so that its significant height is at most 0.6 of the depth plus the swash depth there: untouched in deep water, a remainder at the still waterline, nothing where the ground stands a swash depth above the level, and continuous between. The swash depth is the profile's ratio times the significant height the point's row gives the field at its gains, before the limit, never more than the margin height and zero with no waves. It is one value over a body away from a join and follows the mix inside one. The power the limit takes from each layer is reported, and is zero where the limit does not bind.",
           "check": "cargo test --locked --offline -p thrum-water-model --test gains",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.6",
+          "id": "WP1.6",
           "statement": "The f64 surface model gives, for a point and a time, the water's height (the level and each wave layer at its gain), its slope, the surface's velocity (the current and the waves' together) and the time derivative of height, and says the point is dry whenever the surface there does not stand above the bed: on ground beyond the water, and in the swash between waves. On an open sea it equals `thrum-sea-model`'s evaluator, and on a basin whose gains are zero it is the level.",
           "check": "cargo test --locked --offline -p thrum-water-model --test surface",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.7",
+          "id": "WP1.7",
           "statement": "A conformance harness takes any provider of water answers and reports its largest difference from the model in height, slope, velocity, depth and current over a stated set of points and ticks, and every point where the two disagree on the body or on wet and dry. Given the model it reports nothing; given the model with one basin's level moved by a centimetre, it reports that centimetre and the points the shoreline crossed.",
           "check": "cargo test --locked --offline -p thrum-water-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.8",
+          "id": "WP1.8",
           "statement": "A bed grid built from triangles holds in each cell the highest ground over the cell's centre. Built from a tilted plane and from a bowl, it matches their closed forms to within the height the ground spans across one cell.",
           "check": "cargo test --locked --offline -p thrum-water-model --test bed",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.9",
+          "id": "WP1.9",
           "statement": "`thrum-water-model` builds and its tests run with no graphics device and no dependency on `thrum-render` or `wgpu`, and it holds no preset, island, hull or water table.",
           "check": "cargo tree --locked --offline -p thrum-water-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
           "ask": "Does any file in the crate or its tests name a preset, a place, a hull or a water type that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.10",
+          "id": "WP1.10",
           "statement": "Every file in this milestone that is copied or translated from Broadsides is listed in `docs/evidence/WATERS/PROVENANCE.md` with its source commit and path, and the licence of any material that came into Broadsides from elsewhere. None is GPL or share-alike.",
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.11",
+          "id": "WP1.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.12",
+          "id": "WP1.12",
           "statement": "A chart meets the bodies it joins with no step. At every point on a source end's or a mouth's edge the chart's mixed row equals the joined body's row, in level, current and every gain, and so does what follows from the row: the swash depth, the wave support and the surface's height after the depth limit. That holds under a swell and a wind, with the source's stage and the mouth's each at both ends of its range, at an end too deep for the limit to bind and at one 0.25 m deep. Wherever the receiving body's level plus the design's reach, 0.175 of the margin height, stands at or above the chart's own level, the chart's row is that body's, and the weight toward it falls smoothly to nothing over the 0.25 m above. Inside the footprint, away from the ends, the row is the chart's own.",
           "check": "cargo test --locked --offline -p thrum-water-model --test joins",
           "ask": "Read the test. Does it compare the surface after the depth limit either side of each end, for a lake raised and lowered and a tide raised and lowered, under a swell, at a shallow end as well as a deep one? Would taking the chart over its neighbours with one stage of its own fail it, and would a swash depth kept once for each body fail it at the shallow mouth, as part K of `docs/evidence/WATERS/design-proof/water_proof.py` shows for both?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         },
         {
-          "id": "M1.13",
+          "id": "WP1.13",
           "statement": "The map names a body on its still water and on its shore margin: ground that rises from its waterline to the margin height, reached without descending, so a hollow beyond a ridge is never in it. On a plane beach under one regular wave the model's waterline, where its surface meets the bed, runs up and back each period between the heights the design's closed form gives, 0.175 of the swash depth above the level and 0.27 of it below, and does not move when the swash ratio is zero.",
           "check": "cargo test --locked --offline -p thrum-water-model --test swash",
           "ask": "Are the expected heights the closed form, worked out in the test without the model, and would a limit that takes the waves to nothing at the still waterline fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M12",
+      "id": "WP12",
       "name": "On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee",
       "status": "done",
       "failed_reviews": 0,
@@ -162,268 +162,268 @@
       "quality_bar": "Wave theory a coastal engineer would sign: every figure follows from the bed, the dispersion relation and a published breaking rule, held to closed forms on a plane beach as the nearshore models SWAN and XBeach are, and nothing in it needs a graphics device.",
       "items": [
         {
-          "id": "M12.1",
+          "id": "WP12.1",
           "statement": "For a still body over a bed, preparation gives each of the wave lattice's eight directions a lag at wavelengths a factor of two apart from 20 m to 640 m and at stages 0.5 m apart across the body's declared range. For water that reaches the bed's edge the lag is zero on that edge and beyond it. On a plane beach of 1 in 10 on 2 m cells, an 80 m wave's phase at 0\u00b0, 30\u00b0 and 60\u00b0 of incidence is within 0.5 rad of Snell's closed form, where the design measured 0.34, and its crests in 2 m of water lie within 1\u00b0 of Snell's angle.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_transform",
           "ask": "Read the test. Is the expected phase the integral of Snell's law, worked out in the test without the model's solver? Would a wave that keeps its deep-water phase fail it, and one given the local depth's wavenumber at each point with no integral along its path?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.2",
+          "id": "WP12.2",
           "statement": "A component whose wavelength lies between two of those, at a stage between two samples, takes both blends at once. On plane beaches of 1 in 10 and 1 in 30 on 2 m cells, for wavelengths from 20 m to 640 m and every stage in a 2 m range, the gradient of the blended phase is within 7% of the gradient of a lag solved for that wavelength and that stage themselves in a metre of water or more, where the design measured 5.0%, and within 13% between the 0.5 m floor and a metre, where it measured 8.0%. A component given its nearest wavelength and stage with no blend fails the same assertion. Moving the stage through a sample leaves no step in the phase.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_blend",
-          "ask": "Read the test. Does it vary the wavelength and the stage together, between the samples of both, and include a wave of about 113 m in a metre of water halfway between two stages? Is the comparison lag solved in the test's run for the component's own wavelength and stage, on the same grid, so that only the blend's error is left, with M12.1 holding the solve itself to Snell?",
+          "ask": "Read the test. Does it vary the wavelength and the stage together, between the samples of both, and include a wave of about 113 m in a metre of water halfway between two stages? Is the comparison lag solved in the test's run for the component's own wavelength and stage, on the same grid, so that only the blend's error is left, with WP12.1 holding the solve itself to Snell?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.3",
+          "id": "WP12.3",
           "statement": "Ground above the shore margin is closed to the lag, so round an island a wave reaches every shore from the sea: wherever a component's exposure is above zero and the water is under 4 m deep, its direction of travel lies within 75\u00b0 of the shore's inward normal, where the design measured 60\u00b0 at most and the untransformed wave runs out of the land on the lee side. A component's exposure is the share of its 45\u00b0 sector with open water behind it, 1 on the windward shore and 0 in the lee, its energy is scaled by it, and far downwind of the island it returns toward 1.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_island",
           "ask": "Does the test's island have a lee the deep-water wave leaves through, and are the expected exposures worked out in the test from the island's outline?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.11",
+          "id": "WP12.11",
           "statement": "A lake that land encloses takes its own waves. For a bowl the test makes inside ground that stands above its highest stage, whose bed falls to half a wavelength of depth within a fifth of its width, with a declared fetch that gives it a long-wave gain above zero: every wet cell has a finite lag at every direction, wavelength and stage; in water deeper than half a wavelength the wave's length is within 3% of the plain wave's and its direction within 15\u00b0 of it, where the design measured 0.9% and 11\u00b0; in 2 m of water on the downwind shore, 30\u00b0 and 60\u00b0 round from where the wave meets it square on, the wave's direction of travel lies at least 10\u00b0 closer to the shore's normal than the plain wave's, and on the shore the wave runs along it turns in toward the land; and the transformed long waves' energy at a point is the gain's times the share of the declared fetch that lies upwind, under a tenth at the upwind shore and whole where the open water upwind is as long as the declared fetch. With the bed's edge as the only source the same bowl has no finite lag anywhere, which the test shows.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_basin",
           "ask": "Read the test. Is no wet cell of its basin joined to the bed's edge by water, and is the basin's long-wave gain above zero? Are the expected fetch shares worked out in the test from the basin's outline, and does the long-wave surface the model gives there have a height above zero at the downwind shore? A model and a test that agree on a flat lake prove nothing.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.4",
-          "statement": "A transformed component's height follows linear theory's shoaling coefficient at the point's depth, and the long layer is then held by the depth limit as M1.5 holds it. A crest's breaking index is twice the envelope of the transformed long waves, before the limit, over 0.78 of the still depth. On a plane beach a regular wave of 1 m and 8 s reaches a breaking index of 1 in the depth linear shoaling gives, 1.64 m, at a height within 10% of Komar and Gaughan's 1.41 m, where the design measured 9% under. In a sea of two trains the highest crests of a set reach an index of 1 in deeper water than the lowest.",
+          "id": "WP12.4",
+          "statement": "A transformed component's height follows linear theory's shoaling coefficient at the point's depth, and the long layer is then held by the depth limit as WP1.5 holds it. A crest's breaking index is twice the envelope of the transformed long waves, before the limit, over 0.78 of the still depth. On a plane beach a regular wave of 1 m and 8 s reaches a breaking index of 1 in the depth linear shoaling gives, 1.64 m, at a height within 10% of Komar and Gaughan's 1.41 m, where the design measured 9% under. In a sea of two trains the highest crests of a set reach an index of 1 in deeper water than the lowest.",
           "check": "cargo test --locked --offline -p thrum-water-model --test breaking",
           "ask": "Is the expected break depth worked out in the test from the dispersion relation and the group velocity, without the model?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.5",
-          "statement": "The breaker section is the profile's table over phase and breaking index, and the model refuses a table that breaks the design's rules: it adds nothing at index 0; its throw at each index is a function of the section's height that never falls as the height rises; past the bore index it has no throw and its crest and trough stand at the plain wave's heights. With the first profile's table the surface through a breaking crest overhangs near an index of 1 and never crosses itself. Inshore of the depth the waterline draws back to, the surface is the plain limited wave: M1.13's beach gives the same waterline heights with surf in the profile.",
+          "id": "WP12.5",
+          "statement": "The breaker section is the profile's table over phase and breaking index, and the model refuses a table that breaks the design's rules: it adds nothing at index 0; its throw at each index is a function of the section's height that never falls as the height rises; past the bore index it has no throw and its crest and trough stand at the plain wave's heights. With the first profile's table the surface through a breaking crest overhangs near an index of 1 and never crosses itself. Inshore of the depth the waterline draws back to, the surface is the plain limited wave: WP1.13's beach gives the same waterline heights with surf in the profile.",
           "check": "cargo test --locked --offline -p thrum-water-model --test breaker_section",
-          "ask": "Does the test run M1.13's plane beach with surf in the profile and hold the waterline's highest and lowest reach to the closed form? Does it search the thrown curve for a crossing at every index, and not only at 1?",
+          "ask": "Does the test run WP1.13's plane beach with surf in the profile and hold the waterline's highest and lowest reach to the closed form? Does it search the thrown curve for a crossing at every index, and not only at 1?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.6",
-          "statement": "With surf in the profile the f64 surface model gives the height, slope, surface velocity and rate of height of the transformed and shaped surface, and says where a point is dry. Where a crest overhangs it gives the highest surface in the column, which M12.12 holds. Without surf every answer is M1's to the last bit. On a sea with no bed in reach the answers with and without surf are the same. The conformance harness reports a provider that leaves the transform out by the points where it differs.",
+          "id": "WP12.6",
+          "statement": "With surf in the profile the f64 surface model gives the height, slope, surface velocity and rate of height of the transformed and shaped surface, and says where a point is dry. Where a crest overhangs it gives the highest surface in the column, which WP12.12 holds. Without surf every answer is WP1's to the last bit. On a sea with no bed in reach the answers with and without surf are the same. The conformance harness reports a provider that leaves the transform out by the points where it differs.",
           "check": "cargo test --locked --offline -p thrum-water-model --test surf_surface",
-          "ask": "Read the test. Does it compare the answers without surf with M1's bit for bit, and is the harness's provider the model with only the transform left out?",
+          "ask": "Read the test. Does it compare the answers without surf with WP1's bit for bit, and is the harness's provider the model with only the transform left out?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.12",
+          "id": "WP12.12",
           "statement": "The highest surface in a column is found by the design's cut of the sheet within the point's throw reach. On three sheets the test makes, at every point tried, the model's height lies between the least and the greatest height that the test's own cut gives within one cut cell of the point: a straight crest thrown as far as the first profile's table throws one; two trains crossing at a right angle, with heights of two to one, over a level bed shallow enough for their crests to be thrown; and a beach where three trains shoal and turn and the section follows the breaking index. The test's own cut evaluates the sheet forward on a lattice an eighth of the cut cell or finer, with no throw reach, search or inversion of the model's in it. On each sheet no thrown rest place the test evaluates is further from its own world place than the model's throw reach there, and every answer whose refinement converged maps to its point within the column tolerance. The plain iteration on horizontal displacement fails the same assertion under the straight crest's lip, and a scan of the throw along the crest's direction at the point, bounded by the envelope there, fails it on the crossing trains.",
           "check": "cargo test --locked --offline -p thrum-water-model --test surf_cut",
           "ask": "Read the test. Is its reference the sheet's own forward evaluation on a finer lattice, cut by the vertical line over each point, with nothing of the model's search in it? On each sheet do the points include columns that hold three surfaces, and on the crossing trains a rest place set over its own world place, as in part X of `docs/evidence/WATERS/design-proof/surf_cut_proof.py`? Do the two wrong substitutes fail by a large part of a crest's height, and not by a rounding?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.7",
-          "statement": "Inside a chart's join the shore transform is the joined body's, taken at the join's weight, so M1.12 holds with surf in the profile: under a swell and a wind, at each end's edge, the surface after the transform, the section and the depth limit is the same either side, at a deep end and at one 0.25 m deep, with each stage at both ends of its range.",
+          "id": "WP12.7",
+          "statement": "Inside a chart's join the shore transform is the joined body's, taken at the join's weight, so WP1.12 holds with surf in the profile: under a swell and a wind, at each end's edge, the surface after the transform, the section and the depth limit is the same either side, at a deep end and at one 0.25 m deep, with each stage at both ends of its range.",
           "check": "cargo test --locked --offline -p thrum-water-model --test surf_joins",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.8",
-          "statement": "What the transform costs is on record in `docs/evidence/WATERS/M12-preparation.md`: for a 1 km bed on 4 m cells with a 2 m range of stage, on this Mac, the time to solve the lags and exposures and the bytes they and the bed's pyramid occupy; and on each of M12.12's sheets, the nodes the model's cut evaluates for a point and the time it takes. No figure in the record decides this item.",
-          "check": "test -s docs/evidence/WATERS/M12-preparation.md",
+          "id": "WP12.8",
+          "statement": "What the transform costs is on record in `docs/evidence/WATERS/WP12-preparation.md`: for a 1 km bed on 4 m cells with a 2 m range of stage, on this Mac, the time to solve the lags and exposures and the bytes they and the bed's pyramid occupy; and on each of WP12.12's sheets, the nodes the model's cut evaluates for a point and the time it takes. No figure in the record decides this item.",
+          "check": "test -s docs/evidence/WATERS/WP12-preparation.md",
           "ask": "Does the record give the time and the bytes with the commit and the load on the machine, and say how each grows with the bed's cells and the stage's range? Does it give the cut's nodes and time on each sheet?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.9",
+          "id": "WP12.9",
           "statement": "`thrum-water-model` still builds and tests with no graphics device and no dependency on `thrum-render` or `wgpu`, `thrum-sea-model`'s tests pass, and surf brings no preset, island or beach of a game into either crate.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_transform --no-run && cargo test --locked --offline -p thrum-sea-model && cargo tree --locked --offline -p thrum-water-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
           "ask": "Does any file in the two crates or their tests name a preset, a place or a beach that belongs to a game? Is every file copied or translated from Broadsides in this milestone listed in `docs/evidence/WATERS/PROVENANCE.md`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP12.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         },
         {
-          "id": "M12.10",
+          "id": "WP12.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh",
       "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SEA:M2",
-        "EFFECT-GRAPH:M3",
-        "ATMOSPHERE:M5",
-        "ATMOSPHERE:M9",
-        "CREATOR:M1"
+        "SEA:WP2",
+        "EFFECT-GRAPH:WP3",
+        "ATMOSPHERE:WP5",
+        "ATMOSPHERE:WP9",
+        "CREATOR:WP1"
       ],
       "quality_bar": "Open water as in the sea of Sea of Thieves on a fair day: wind waves over a longer swell, sharp crests, a clean horizon, lit by the same sky as everything else, and moving smoothly at the display's full refresh.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "`./dev scene examples/water` opens the water scene on the Mac: a game on the shell with a ticking world of its own, the water contribution with one profile, a sea declared as a body in a trade wind, and sliders for the Sun. `thrum-water` and its tests hold no preset, island, hull or water table.",
           "check": "cargo test --locked --offline -p water-scene --test scene_gpu",
           "ask": "Does the scene reach the water only through `thrum-water`'s public interface, and does the scene's game code name no engine-internal type? Are the wave field's passes declared inside the water's one contribution?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "At noon in a trade wind, from 2 m and from 40 m above the water, the sea reads as open water from the waterline to the horizon: wind waves ride a longer swell, crests are sharper than troughs, the horizon is one clean line with no gap or band under it, and no patch of waves repeats.",
           "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near crests against the troughs, the middle distance, and the rows from about 600 m out to the horizon. A band is a strip whose texture stops at an edge or whose tone steps from the water below it or the sky above. The last few rows, where a wave is under a pixel tall and only the slopes' statistics remain, are not one.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2-reconstruction.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2-reconstruction.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "The sea is lit only by the engine's sky and Sun. At noon, at low Sun and at twilight a sky-lit grey float at the waterline and the water around it sit in one light, the Sun's reflection lies under the Sun, and the far sea takes the sky's haze.",
           "inspect": "`fixed` stills at noon, low Sun and twilight with the grey float in frame: the float against the water beside it, the Sun's reflection and the horizon.",
           "ask": "Does the surface shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "In submitted frames the water's pixels carry the depth of the displaced surface, motion from unjittered positions equal to the surface's displacement between presentations, and reactive coverage. A rebuild of the water and a multi-tick advance mark its history invalid. With the water absent, the compiled graph and its storage are unchanged.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test frame_contract_gpu",
           "ask": "Is the motion compared with a displacement computed from the CPU model, with temporal sampling selected, on tick frames and on repeat frames?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "At 1x, with the camera panning, the surface moves smoothly between ticks: waves do not step at the tick rate against the camera.",
           "inspect": "A `realtime` sequence with the camera panning across the wind: near crests from frame to frame.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "The surface stands at the level the map gives. While the scene runs, raising the sea's stage by 2 m raises every vertex and the depth the water writes by 2 m and leaves the waves as they were, and the surface shader reads the level from the map and from nowhere else.",
           "check": "cargo test --locked --offline -p water-scene --test level_gpu",
           "ask": "Is there a constant sea level anywhere in `thrum-water`'s shaders or its mesh?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with the water absent gives the whole frame on tick frames and on repeat frames, each water and wave pass's GPU time by name, the vertices submitted and the water pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene first-frame",
           "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2-cost.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2-cost.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.8",
+          "id": "WP2.8",
           "statement": "The maturity ledger has a row for `E1.water` that keeps implementation, correctness, visuals and device apart.",
           "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.9",
+          "id": "WP2.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         },
         {
-          "id": "M2.10",
+          "id": "WP2.10",
           "statement": "The drawn sea reads the wave field forward from each rest place. Every field-cache level holds the long waves' displacement in three axes, its derivatives and its rate of change at its texels' rest places, and matches the model's forward evaluation there within 2 mm in height and 0.002 in slope. The cascades and every cache level are textures with full mip chains whose every texel holds the LEAN moments of the texels below it, and the surface reads them through a sampler with anisotropic filtering.",
           "check": "cargo test --locked --offline -p thrum-sea --test forward_cache_gpu",
           "ask": "Does any vertex or pixel path invert the wave map, or choose a mip or cache level by the footprint's longest side? Does whatever a layer stops resolving, by level, mip or fade, join the covariance? Does a reflected lobe from a visible facet read the sky's ground side under the horizon?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M2-forward.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP2-forward.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "The same sea draws in Chrome from one command",
       "status": "done",
       "failed_reviews": 2,
@@ -433,61 +433,61 @@
       "quality_bar": "The Mac's sea, in a browser tab: the same water as in the sea of Sea of Thieves on a fair day, with nothing missing, no validation error and no visible step down.",
       "items": [
         {
-          "id": "M3.1",
-          "statement": "`./dev scene examples/water --web` serves the water scene, and the page reaches its first water frame in Chrome with no validation error. The long waves at scattered points match the CPU model within 2 mm, and the cascades within the bound `SEA` M2 recorded.",
+          "id": "WP3.1",
+          "statement": "`./dev scene examples/water --web` serves the water scene, and the page reaches its first water frame in Chrome with no validation error. The long waves at scattered points match the CPU model within 2 mm, and the cascades within the bound `SEA` WP2 recorded.",
           "check": "node scripts/check_water_browser.mjs --case first-frame",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP3-frame-report.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "In Chrome, through frames between ticks, repeated ticks, a hidden and shown page, a hitch and a lost and recovered device, the long waves and the cascades of each submitted frame are the model's sea at that frame's display time.",
           "check": "node scripts/check_water_browser.mjs --case frames",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP3-frame-report.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP3-review.md"
         },
         {
-          "id": "M3.3",
-          "statement": "In Chrome at noon in a trade wind the sea passes M2.2's list, and any difference from the Mac's portable recipe at the same views is recorded.",
-          "inspect": "`fixed` stills in Chrome at M2.2's views, judged by M2.2's list and against the Mac's portable-recipe stills.",
+          "id": "WP3.3",
+          "statement": "In Chrome at noon in a trade wind the sea passes WP2.2's list, and any difference from the Mac's portable recipe at the same views is recorded.",
+          "inspect": "`fixed` stills in Chrome at WP2.2's views, judged by WP2.2's list and against the Mac's portable-recipe stills.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP3-frame-report.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP3-review.md"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "In Chrome the surface moves smoothly between ticks, and the page's frame-callback intervals over the run are recorded as the page's own clock, not as presented time.",
           "inspect": "A `realtime` sequence in Chrome with the camera panning.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP3-frame-report.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP3-review.md"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand",
       "status": "done",
       "failed_reviews": 1,
@@ -497,120 +497,120 @@
       "quality_bar": "Water that sits in the land as the lakes and shores of Red Dead Redemption 2 do: a level surface that meets the ground in a clean line, calm in shelter while the open sea runs, with no curtain, gap, floating edge or stair-step anywhere.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "On Metal the map the GPU samples is the CPU model's: for a bed the test makes, with a sea, two basins at different levels and a chart, the body, level, bed, depth and current at 4,096 scattered points and along every shoreline agree with `thrum-water-model`, at a tolerance the test states that is small beside what a float or a waterline would show.",
           "check": "cargo test --locked --offline -p thrum-water --test map_gpu",
           "ask": "Does the GPU's sampling read anything of the camera?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "Every pixel of water is shaded by the one body the map names at its rest place. Seen from above with the waves left out, each pixel's water or ground, and its body, is what the CPU model gives for that place, except within a pixel of a shoreline. Where two bodies' tiles overlap there is neither a gap nor a doubled surface, no triangle joins two levels, and a hollow below a lake's level beyond its ridge shows no water.",
           "check": "cargo test --locked --offline -p water-scene --test bodies_gpu",
           "ask": "Does the test classify each pixel of a top-down view from the CPU model, and would a surface drawn across the ridge between the lake and the sea, or a second surface where tiles overlap, fail it?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "The example has an island the example makes: a beach, a lake in the hills above the sea, and a pond. At noon, from each shore at 2 m and from the hill at 40 m, each water lies level in its place and meets the ground in a clean line that follows the terrain: no stair-step from the map's cells, no sliver of water on dry ground, none missing at the edge, and no sheet between the lake and the sea.",
           "inspect": "`fixed` stills of the beach, the lake's shore and the pond from 2 m, and of all three from 40 m on the hill: each waterline, close and at a distance, and the ground between the lake and the sea.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-review-fixes.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-review-fixes.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "The waves a body shows are the wave field at its gains. In a gale the lake's significant height on the GPU is the model's for its fetch and the open sea's is unchanged, and along a line from deep water to the beach each layer's height follows the model's depth limit.",
           "check": "cargo test --locked --offline -p thrum-water --test gains_gpu",
           "ask": "Are the expected heights taken from `thrum-water-model` at the same points, and does the test fail when every body is given the open sea's gains?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.5",
+          "id": "WP4.5",
           "statement": "In a gale the sea runs high while the lake 300 m inland shows only short wind waves and the pond ripples. Toward the beach the swell flattens to a remainder at the waterline. The waterline runs up the sand and draws back with each wave, as one sheet that thins to its edge, further in a gale than in a trade wind and not at all in a calm; the lake's edge laps by centimetres. No wave passes into the ground, and no water shows beyond a ridge the waves did not climb.",
           "inspect": "`fixed` stills and a `realtime` sequence in a trade wind and a gale: the sea off the beach from 2 m and 40 m, the last 30 m of water before the sand, the lake and the pond in the same wind.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-review-fixes.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-review-fixes.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.6",
+          "id": "WP4.6",
           "statement": "While the scene runs, raising the lake's stage by 1 m moves its shoreline up the ground with no pop, floods the hollow beside it only once the water reaches the sill between them, and lowering it drains back. The water's history is marked invalid as the design's reset rule gives and no more often.",
           "check": "cargo test --locked --offline -p water-scene --test stage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-fixes/stage.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-fixes/stage.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.7",
-          "statement": "The surface pass stays inside the sampled textures, storage formats and counts of the recorded Chrome capability record with the map bound. In Chrome the island's sea, lake and pond draw with no validation error, and the map there matches the CPU model as M4.1 holds it.",
+          "id": "WP4.7",
+          "statement": "The surface pass stays inside the sampled textures, storage formats and counts of the recorded Chrome capability record with the map bound. In Chrome the island's sea, lake and pond draw with no validation error, and the map there matches the CPU model as WP4.1 holds it.",
           "check": "node scripts/check_water_browser.mjs --case island",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-chrome.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-chrome.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.8",
+          "id": "WP4.8",
           "statement": "With the island's three bodies in view, the paired cost record is taken again at 2560\u00d71440, beside the first-frame record, with the surface's vertices and pixels given for each body. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene island",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-cost.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.9",
+          "id": "WP4.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         },
         {
-          "id": "M4.10",
+          "id": "WP4.10",
           "statement": "The drawn waterline moves as the model's does. On a plane beach the test makes, under one regular wave at a fixed stage, the line where the water's written depth stands in front of the ground travels in submitted frames between the run-up and rundown lines `thrum-water-model` gives, to within a pixel and the map test's tolerance, and holds still when the swash ratio is zero. Only the sheet writes depth: the film a later milestone draws on bared sand writes none, so it is never on the water's side of this line.",
           "check": "cargo test --locked --offline -p thrum-water --test swash_gpu",
           "ask": "Is the expected waterline taken from `thrum-water-model` at each frame's display time, and not from the shader's own limit?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP4-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md"
         }
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "A float and a small craft ride the waves they sit on, at sea and on the lake, from rest to 15 m/s, and a float in a current is carried by it",
       "status": "done",
       "failed_reviews": 2,
@@ -620,108 +620,108 @@
       "quality_bar": "Boats and barrels as in the sea of Sea of Thieves: they lift as a crest arrives, tilt down its face, and never slide, jitter or lag the water. On the lake they sit as still as the water, and in a current they go with it.",
       "items": [
         {
-          "id": "M5.1",
-          "statement": "One dispatch per tick answers every posted point with height, slope, surface velocity and the time derivative of height, valid at the point's use tick, with that tick, the times its layers were made from and a support flag for each layer. For 2,048 points on a gale the long-wave part matches the model at the use tick within 2 mm, and the cascade part matches the model's cascades at the frame's time, carried to the use tick by their rate of change, within `SEA` M2's bound, with each point's footprint choosing the cascade mip. Each answer also names the body of water at its point with the depth and the current there, as the CPU model gives them, and a point where the surface at the use tick does not stand above the bed says it is dry, on ground beyond the water and in the swash between waves.",
+          "id": "WP5.1",
+          "statement": "One dispatch per tick answers every posted point with height, slope, surface velocity and the time derivative of height, valid at the point's use tick, with that tick, the times its layers were made from and a support flag for each layer. For 2,048 points on a gale the long-wave part matches the model at the use tick within 2 mm, and the cascade part matches the model's cascades at the frame's time, carried to the use tick by their rate of change, within `SEA` WP2's bound, with each point's footprint choosing the cascade mip. Each answer also names the body of water at its point with the depth and the current there, as the CPU model gives them, and a point where the surface at the use tick does not stand above the bed says it is dry, on ground beyond the water and in the swash between waves.",
           "check": "cargo test --locked --offline -p thrum-water --test query_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5-r2-metal-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP5-r2-metal-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "At a 60 Hz tick and 120 Hz frames an answer reaches the game one to two ticks after it was asked for, through discarded frames and a stalled readback. An answer used at another tick than its use tick is moved once, by its time derivative, and counted. An answer older than the declared maximum is unavailable and counted, and the blocking-read counter stays at zero.",
           "check": "cargo test --locked --offline -p thrum-water --test query_gpu",
           "ask": "Is there any map, poll or readback in `thrum-water` or the example that waits for the GPU? Is the counter raised at every place that could?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP5-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "A request over the profile's capacity is refused whole, by body in ID order, counted and shown in the scene's status. A body whose generation changed never receives an answer posted for the old one.",
           "check": "cargo test --locked --offline -p thrum-water --test query_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP5-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.4",
+          "id": "WP5.4",
           "statement": "On a glassy sea the craft and the eight floats settle to their hydrostatic drafts and stay there. Through ten minutes of gale, with the craft held at rest, at 5 m/s and at 15 m/s, no body leaves the surface, sinks, capsizes, or gains energy that the waves and its thrust did not give it.",
           "check": "cargo test --locked --offline -p water-scene --test floating_gpu",
           "ask": "Read the test. Is the energy bound worked out from the wave field and the thrust, and would a body driven by a fixed bobbing schedule fail it?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5-r1-metal-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP5-r1-metal-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.5",
+          "id": "WP5.5",
           "statement": "A float and the craft rise, pitch and roll with the waves under them: a float lifts as a crest reaches it and tilts down its face, the craft pitches into a head sea and rolls in a beam sea, and nothing slides, jitters or lags the water. This holds at rest, at 5 m/s and at 15 m/s, in a trade wind and in a gale.",
           "inspect": "`realtime` sequences from a chase view and a side view, at each speed in each sea: the waterline on the hull and on one float.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5-r2.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP5-r2.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.6",
+          "id": "WP5.6",
           "statement": "On the lake in a gale a float rides only the lake's own small waves, and on a calm day it settles to its draft and stays. A float released in a chart with a uniform current reads that current in every answer and comes to move with it, and one carried onto ground above the water reads dry and comes to rest.",
           "check": "cargo test --locked --offline -p water-scene --test inland_floating_gpu",
           "ask": "Does the float in the current feel it only through the query's answers and the example's own drag, with nothing moving it directly?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP5-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.7",
+          "id": "WP5.7",
           "statement": "In Chrome the same bodies float. The age of each answer in ticks is recorded, late and unavailable uses are counted, and nothing blocks.",
           "check": "node scripts/check_water_browser.mjs --case bodies",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5-r1-chrome.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP5-r1-chrome.json",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.8",
+          "id": "WP5.8",
           "statement": "The engine owns the query and nothing of the bodies: hydrostatics, drag, thrust and the rigid-body step are the example's.",
           "ask": "Does `thrum-water` hold any hydrostatics, drag, thrust or rigid-body step? Does the example reach the water only through the public body record, query points and mailbox?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M5.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP5.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         },
         {
-          "id": "M5.9",
+          "id": "WP5.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/WP5-review.md"
         }
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore",
       "status": "done",
       "failed_reviews": 2,
@@ -731,396 +731,396 @@
       "quality_bar": "A wake made of water, past the foam trail of the sea of Sea of Thieves: arms and crests that spread at the right angle for the speed, stay where they were made through a turn, travel on after the craft stops, and rock a float in their path. On a lake, rings as on any still pond: round, slowing and bunching toward the shallows, gone at the shore.",
       "items": [
         {
-          "id": "M6.3",
+          "id": "WP6.3",
           "statement": "On Metal the two-level wake runs through a straight run, a turn, a coast and a restart. No wave is carried by both levels, and none re-enters a window from its far side.",
           "check": "cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "ask": "Does the test fail when both levels are given the whole source, and when a window wraps?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/interaction.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.4",
+          "id": "WP6.4",
           "statement": "No wave crosses ground between two waters. On Metal, with a 2 m bar of ground across a window and 4 m of water at its foot, a ring raised on one side leaves the height and potential of the water on the other side exactly at rest, where one transform over the whole window carries 3% of the ring's peak across. A ring that reaches a shore dies there, with under a tenth of its energy coming back, where the design measured 2.4%, and a window half on land keeps its waves on the wet half. A region beyond the profile's count of solves is at rest, and its sources are refused in order, counted and shown in the scene's status. In a uniform current a ring's centre moves with the current as the ring spreads.",
           "check": "cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "ask": "Does the test read the state of the water beyond the bar, not of the land, and does it fail when the window is solved as one region?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction-metal-serialized.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/interaction-metal-serialized.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.5",
+          "id": "WP6.5",
           "statement": "An impulse record the game posts raises a ring at its place on the tick it names, larger for a larger impulse, once. Records over the profile's capacity are refused in ID order, counted and shown in the scene's status.",
           "check": "cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction-metal-serialized.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/interaction-metal-serialized.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.6",
+          "id": "WP6.6",
           "statement": "A body's wake comes from the vertical force the water put on it, spread over its footprint. The craft at rest on a glassy sea settles to the same draft with the wake on as with it off, and raises no waves once settled. Body records over the profile's source capacity are refused in ID order, counted and shown in the scene's status.",
           "check": "cargo test --locked --offline -p water-scene --test wake_scene_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/moored-bands-metal.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/moored-bands-metal.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.7",
+          "id": "WP6.7",
           "statement": "A float 20 m to one side of the craft's track on a glassy sea rises and falls as the wake's crests reach it, not before, and is still again when the wake has passed.",
           "check": "cargo test --locked --offline -p water-scene --test wake_scene_gpu",
           "ask": "Does the float feel the wake only through the query, with no access to the wake's state?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/metal.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/metal.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.15",
+          "id": "WP6.15",
           "statement": "The wake a query answers is the wake that is drawn. On Metal, on calm water crossed by a pressure patch the test moves, a public query's height at points in the wake, clear of every body's footprint, is the height the wake's own state holds at that place and tick, at a tolerance the test states that is small beside the wake's crests.",
           "check": "cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "ask": "Is the expected height read back from the wake's endpoints, with no second wake solver, and would a query that returned half the wake's height fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/interaction.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.8",
+          "id": "WP6.8",
           "statement": "On a calm sea the wake reads as water. At 3 m/s two arms spread behind the craft with transverse crests between them; at 12 m/s the wake is narrower; through a turn the old wake stays where it was made and keeps spreading; after the craft stops the waves travel on and fade; a float on the track rocks as they cross.",
           "inspect": "`realtime` sequences of a straight run at each speed, a turn, and a stop and restart, from a chase view and from 40 m above: the wake's shape and how it moves.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.9",
+          "id": "WP6.9",
           "statement": "In a trade wind the wake rides the waves: no window edge shows, no seam shows where the fine wake ends, and nothing pops as the windows move with the craft.",
           "inspect": "A `realtime` sequence following the craft at 6 m/s in a trade wind from 40 m above: the windows' edges, and the water about 30 m behind the craft, where the fine wake ends.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.10",
+          "id": "WP6.10",
           "statement": "A stone dropped into the lake sends round rings that spread, slow and bunch as they reach the shallows and die at the shore. The craft's wake on the lake stays in the lake: nothing shows on the pond beside it or on the sea beyond the ground between them.",
           "inspect": "`realtime` sequences from the lake's shore at 2 m and from 40 m above: a stone's rings from the drop to the shore, and the craft crossing the lake at 3 m/s.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.11",
-          "statement": "In Chrome the craft's wake spreads, outlives it and lifts the float, a stone's rings die at the lake's shore, and a query's height in the wake is the wake's own state, as M6.15 holds it.",
+          "id": "WP6.11",
+          "statement": "In Chrome the craft's wake spreads, outlives it and lifts the float, a stone's rings die at the lake's shore, and a query's height in the wake is the wake's own state, as WP6.15 holds it.",
           "check": "node scripts/check_water_browser.mjs --case wake",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/chrome-review-fixes/run.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/chrome-review-fixes/run.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.12",
+          "id": "WP6.12",
           "statement": "With interaction waves running at sea and at the lake's shore, where the depths and the regions in a window are most, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views, with the count of regions and solves in each step and the CPU time of labelling them. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene wake",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/cost.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.13",
+          "id": "WP6.13",
           "statement": "After every submitted frame the wake's two endpoints hold what the design's endpoint table gives: the committed tick's wake and the wake of the tick committed before it, each with its tick. A hitch of up to eight ticks is one wake step, in which the body's pressure moves along its path, so the wake behind a craft that hitches lies on its track and not in a clump at its last place. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the wake to calm and the scene's status says so. A discarded frame and a capture frame change nothing.",
           "check": "cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "ask": "Does the test's hitch move the body's pressure along its path over the step, and does it fail when the pressure is held at the body's last place? Does the run discard the frame that first writes an endpoint?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction-metal-serialized.txt",
+          "evidence": ".orchestrate/evidence/WATERS/WP6/interaction-metal-serialized.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         },
         {
-          "id": "M6.14",
+          "id": "WP6.14",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md"
         }
       ]
     },
     {
-      "id": "M7",
+      "id": "WP7",
       "name": "Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach",
       "status": "done",
       "failed_reviews": 4,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "CONTENT-LOOP:M1"
+        "CONTENT-LOOP:WP1"
       ],
       "quality_bar": "Foam as in the sea of Sea of Thieves: bright caps with soft edges on breaking crests, streaks left behind them, a white churn at the hull with pale turquoise water under it, a trail that widens to lace and is gone in about a minute, and no stamped or repeated shape anywhere. On the beach, a ragged band of foam where the waves die, washed up the sand as lace.",
       "items": [
         {
-          "id": "M7.2",
+          "id": "WP7.2",
           "statement": "On Metal foam goes where its water goes. A patch drifts downwind under a wind, and up a plane beach the test makes under one regular wave, where the rising sheet carries it. Foam left alone fades to nothing and none appears without a cause. A window shift neither loses nor doubles foam inside the window.",
           "check": "cargo test --locked --offline -p thrum-water --test foam_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.3",
+          "id": "WP7.3",
           "statement": "Foam is carried by the map's current: in a chart with a uniform current a patch moves by the distance the current gives. Foam on ground the water has left stays where it is and ages out.",
           "check": "cargo test --locked --offline -p thrum-water --test foam_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/REVISION.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/REVISION.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.4",
+          "id": "WP7.4",
           "statement": "On a glassy sea with the craft at rest every stock stays at zero for ten minutes, on the sea and on the lake. Mean foam cover on the sea rises with wind across a fresh breeze, a strong breeze and a gale.",
           "check": "cargo test --locked --offline -p water-scene --test foam_scene_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.5",
+          "id": "WP7.5",
           "statement": "Foam is born where the depth takes power from the waves, in proportion to that power, and only where the surface stands above the bed. In a trade wind a band of foam forms along the example's beach, from where the swell is first held to the top of the swash, and more in a gale. On the lake's shore in the same wind the foam born is the share of the beach's that the power its own waves lose gives, which is a small one. None forms in a calm, or anywhere with the waves left out.",
           "check": "cargo test --locked --offline -p water-scene --test foam_scene_gpu",
           "ask": "Is the shore's birth rate taken from the power the depth limit reports, and not from the distance to the shore or the depth alone? Is the lake's foam compared with the share its lost power gives, and not with zero?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/REVISION.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/REVISION.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.6",
+          "id": "WP7.6",
           "statement": "After the craft has passed at 6 m/s and been removed, its trail stays where the water carried it for at least the aged film's lifetime, and is wider and thinner at each later reading.",
           "check": "cargo test --locked --offline -p water-scene --test foam_scene_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.7",
+          "id": "WP7.7",
           "statement": "In a gale, whitecaps form on breaking crests with a bright core and a feathered edge, stay behind the crest as streaks, and fade. A fresh breeze shows fewer and a glassy sea none. No stamp, grid or repeated shape shows from 2 m or from 40 m, and whitecaps thin toward the horizon with no line where the foam's windows end.",
           "inspect": "`fixed` stills and a `realtime` sequence at each wind, from 2 m and 40 m: single caps, the water behind a breaking crest, two places a pattern length apart, and the far sea.",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".claude/worktrees/waters/tmp/waters-m7-r5/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.8",
+          "id": "WP7.8",
           "statement": "The craft's trail is white where the hull meets the water and behind the stern, with pale turquoise water under and beside the foam; it turns to lace as it ages, widens, thins, and is gone in about a minute. At rest there is none.",
           "inspect": "A `realtime` sequence from a chase view and from 40 m above, of the craft at 6 m/s and 12 m/s on a calm sea and then stopping: the hull's waterline, the stern, and the trail over the minute after the craft passes.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/HALO.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/HALO.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.9",
+          "id": "WP7.9",
           "statement": "On the beach in a trade wind and a gale, foam forms through the band where the waves die, rides the sheet of water up the sand, and is left as lace on the wet sand when the sheet draws back, where it thins and fades. The sand the waves wash holds a wet sheen that fades toward their highest reach, with no edge, flicker or floating film at any angle. No stamped line follows the shore, and the lake's shore shows at most a thin broken edge.",
           "inspect": "`fixed` stills and a `realtime` sequence of the beach from 2 m on the sand and from 40 m above, in each wind: the band where waves die, the waterline, and the lake's shore for comparison.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/REVISION.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/REVISION.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.10",
+          "id": "WP7.10",
           "statement": "The foam pattern is a cooked product of the example, lent through a lease. An edit to it shows in the running scene with the water's foam history marked invalid once. Before the lease is resident and after a device loss the water draws without it.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test foam_lease_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.11",
+          "id": "WP7.11",
           "statement": "In Chrome whitecaps form with the wind, and the trail outlives the craft and fades.",
           "check": "node scripts/check_water_browser.mjs --case foam",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/chrome-revision/run.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/chrome-revision/run.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.12",
+          "id": "WP7.12",
           "statement": "With foam running in a gale, at sea and at the beach, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene foam",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/cost.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.13",
+          "id": "WP7.13",
           "statement": "After every submitted frame the foam's two endpoints hold what the design's endpoint table gives. A hitch of up to eight ticks is one foam step of the whole elapsed time. Transport keeps what it moves: a drifting patch ends where the drift carries it over those ticks, and moving it neither loses nor doubles foam. Births, transfers and ageing act once for the elapsed time: a drifting patch of aged film, with births off, holds after the hitch what the same ticks stepped one at a time leave it, at a tolerance the test states, which is less than it held before. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the foam to none. A discarded frame and a capture frame change nothing.",
           "check": "cargo test --locked --offline -p thrum-water --test foam_gpu",
           "ask": "Would a step that froze the foam's ageing through the hitch, one that aged it by a single tick, and one that aged it twice each fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/REVISION.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/REVISION.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.14",
+          "id": "WP7.14",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         },
         {
-          "id": "M7.15",
+          "id": "WP7.15",
           "statement": "The film on sand the waves wash is drawn and is not water. It appears only inside wave support, where the surface stands below the ground, with a weight of 1 at the still waterline that reaches 0 at the height the design gives. A query point under it answers dry, no foam is born on it, and foam the sheet left there ages out. With the waves left out there is no film. It writes no scene depth: under it the depth is the ground's.",
           "check": "cargo test --locked --offline -p water-scene --test foam_scene_gpu",
           "ask": "Does the test read the query's answer, the foam's births and the written depth under the film, and not only the film's drawn weight?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/REVISION.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP7/REVISION.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md"
         }
       ]
     },
     {
-      "id": "M18",
+      "id": "WP18",
       "name": "The submitted craft trail is checked through a minute of ageing in the fast suite",
       "status": "done",
       "quality_bar": "Keep the full elapsed-time trail witness and its original bounds in the default Nextest tier on Metal.",
       "items": [
         {
-          "id": "M18.1",
+          "id": "WP18.1",
           "statement": "The fast Metal trail test reads the submitted stocks at 0.1, 10.1, 20.1, 30.1 and 60.1 seconds after the 6 m/s craft is removed. Peak cover starts above 0.14, total cover at 20.1 seconds exceeds 0.1, width increases and peak falls at each reading, and the final peak is below 0.025.",
           "check": "CARGO_INCREMENTAL=0 THRUM_REQUIRE_GPU=1 rustup run stable cargo nextest run --locked --offline --profile default -p water-scene --test foam_scene_gpu -E 'test(=craft_trail_outlives_removed_source_and_spreads)' --no-tests=fail",
           "ask": "Do the five reads come from submitted Metal stocks with the same elapsed times and bounds, and do the isolated and foam-binary runs pass on the first attempt under normal builder load?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M18/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP18/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M18-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP18-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M17",
+      "id": "WP17",
       "name": "Small water checks leave the full sea grids to the long tier",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M17.1",
+          "id": "WP17.1",
           "statement": "The two listed CPU water-model cases stay in the fast tier. The enclosed basin still shows finite lags, turning and exposure. Each of the three production surf geometries still proves reach, an overhang with multiple cuts, and agreement between the highest cut, the public query and the independent forward reference. Guard: compact basin and surf fixtures in the water model.",
           "check": "cargo nextest run --locked --offline -p thrum-water-model --test it -E 'test(=shore_basin::enclosed_water_has_finite_lags_turning_and_exposure) | test(=surf_cut::production_sheets_and_their_own_reach_match_forward_reference)' --no-tests=fail --test-threads 1",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M17/M17.1-2-fast-tier.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP17/M17.1-2-fast-tier.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M17-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP17-review.md"
         },
         {
-          "id": "M17.2",
+          "id": "WP17.2",
           "statement": "The six listed water and water-scene cases stay in the fast tier. Their compact cases still prove both tick-page stages, a wave carrying foam uphill, the calm and gale difference at a sheltered lake, chart current and dry-bank stopping, a submitted scene with one water contribution, and the lake and beach foam shares against lost power. Guard: CPU checks for logic and small GPU checks for submitted state, wave and foam outputs, and the query path used by the scene.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-water --test it -E 'test(=query_gpu::chart_queries_keep_both_tick_pages_and_sample_their_own_stage) | test(=foam_gpu::a_regular_wave_carries_foam_up_a_plane_beach)' --no-tests=fail && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p water-scene --test it -E 'test(=inland_floating_gpu::lake_remains_sheltered_in_the_gale_and_settles_in_calm) | test(=inland_floating_gpu::query_current_carries_a_float_and_the_dry_bank_stops_it) | test(=scene_gpu::scene_ticks_and_declares_one_water_contribution)' --no-tests=fail && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p water-scene --test foam_scene_gpu -E 'test(=lake_beach_births_follow_its_share_of_lost_power)' --no-tests=fail",
           "ask": "Do the scoped passing nextest runs and timing record cover all six tests named for thrum-water and water-scene, and does the fixture or CPU/GPU split preserve every condition and assertion? Does a real device exercise the mailbox, contribution and film outputs?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M17/M17.1-2-fast-tier.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP17/M17.1-2-fast-tier.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M17-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP17-review.md"
         },
         {
-          "id": "M17.3",
+          "id": "WP17.3",
           "statement": "The two portable forward-cache cases, light and high wind, move from the default selection to the long tier with their early and day-in production-size sweeps intact. Guard: both sweeps compare every base texel and every filtered mip, including high/low carry against direct base-block averages through the mip hierarchy.",
           "ask": "Do both portable cases retain their original dimensions, two time checkpoints, base-texel comparisons and direct base-block averages through the final mip with the original high/low carry tolerances? Does the default runner skip both and does the long-tier list register their binary once, for release with overflow checks, with the production-size fault recorded?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M17/M17.3-long-tier.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP17/M17.3-long-tier.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M17-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP17-review.md"
         },
         {
-          "id": "M17.4",
+          "id": "WP17.4",
           "statement": "Both full portable sea sweeps pass in the main-branch check for the merged repair. Record: the covering long-tests run.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Does the covering log show the light- and high-wind portable sweeps running and passing in the long tier on a main commit that includes this repair?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M17/M17.4-main-long.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP17/M17.4-main-long.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M17-review.md"
+          "review": ".orchestrate/evidence/WATERS/WP17-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M13",
+      "id": "WP13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
       "status": "blocked",
       "failed_reviews": 0,
@@ -1130,7 +1130,7 @@
       "quality_bar": "Surf as on the beaches of Horizon Forbidden West: lines of swell that bend to the shore and stack up, crests that steepen, pitch and go white along their length, a bore of foam that runs in and dies in the swash, the bigger waves of a set breaking further out. No wave walking out of the land, no curtain at the waterline, no torn or stair-stepped crest, no foam stamped along the shore.",
       "items": [
         {
-          "id": "M13.1",
+          "id": "WP13.1",
           "statement": "On Metal the long waves over a bed are the model's. For a bed the test makes, with surf in the profile, with open water and a lake that land encloses whose long-wave gain is above zero, the field cache's displaced surface and the query's answers at 4,096 points from deep water to the swash, on tick frames and repeat frames and at stages between two samples, agree with `thrum-water-model`, at a tolerance the test states that is small beside a wave's height where it breaks.",
           "check": "cargo test --locked --offline -p thrum-water --test surf_gpu",
           "ask": "Does the test fail when the lag is left out, and when the section is?",
@@ -1142,7 +1142,7 @@
           "review": ""
         },
         {
-          "id": "M13.2",
+          "id": "WP13.2",
           "statement": "Surf is a capability. A profile without it creates no lag texture, exposure texture or bed pyramid, makes none of their reads and evaluates no section.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_capability_gpu",
           "lock": "gpu",
@@ -1153,10 +1153,10 @@
           "review": ""
         },
         {
-          "id": "M13.3",
+          "id": "WP13.3",
           "statement": "A float rides the crest the surface shows. In the surf on a plane beach the test makes, under a swell of two trains from different directions, a float's answers are the model's at its use tick, the highest surface where a crest overhangs, and a float carried into the swash reads dry between waves and wet under each. At a point under a thrown lip, where the plain iteration settles on the trough, the float's height is the lip's.",
           "check": "cargo test --locked --offline -p water-scene --test surf_floating_gpu",
-          "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, whose highest surface M12.12 holds to the test's own cut, and would a query that left the transform out fail? Does one probe sit in a column that holds three surfaces, under a crest the two trains make together?",
+          "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, whose highest surface WP12.12 holds to the test's own cut, and would a query that left the transform out fail? Does one probe sit in a column that holds three surfaces, under a crest the two trains make together?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1165,7 +1165,7 @@
           "review": ""
         },
         {
-          "id": "M13.4",
+          "id": "WP13.4",
           "statement": "In a trade wind the island's exposed beach receives a 10 s swell from about 45\u00b0 off the beach. The incoming ridges turn toward the beach, draw closer together and rise before they break. They cross the prepared bed edge smoothly and travel shoreward.",
           "inspect": "Use `fixed` stills and `realtime` sequences at 40 m above the beach and 2 m on the sand. Frame both offshore ridges and the break zone in the elevated view. 1. Follow two adjacent ridges in the elevated sequence. They turn toward the beach and the space between them narrows visibly as they approach the break zone. 2. From the sand, a nearshore crest rises and steepens as it approaches. 3. Across the prepared bed edge the swell has no fixed step. Crests arrive from the sea throughout the sequence.",
           "target": "mac-metal",
@@ -1175,7 +1175,7 @@
           "review": ""
         },
         {
-          "id": "M13.5",
+          "id": "WP13.5",
           "statement": "A crest steepens and pitches forward, and the break travels along it. A larger crest in a set breaks farther out than a smaller neighbour. The broken front lowers and spreads into a connected advancing swash, which retreats to expose the sand again. In the regular-wave case the sheet keeps the existing run-up and draw-back.",
           "inspect": "Use `realtime` sequences in a trade wind and a gale with swell, from 2 m on the sand looking along the break and out to sea, from 40 m above and from 1 km offshore. 1. At 2 m and 40 m a crest pitches forward and the break progresses along its length. It holds together through the pitch, with no tears, fins or stair steps. 2. At 2 m and 40 m follow the broken front into the shallows. Its face lowers into a thin advancing sheet, with no wall or exposed strip between the bore and swash. Sand reappears from the waterline as the sheet drains. 3. At 1 km a larger crest in the visible set breaks farther out than a smaller neighbour, and the fronts still read as surf running in.",
           "ask": "Do the CPU model and GPU paths use the same swell-driven swash in the displaced sheet, with the plane-beach regular-wave extrema preserved and the wet edge used by both drawing and queries? Use the repeated cross-shore cut to locate any break in the sheet that the motion inspection finds.",
@@ -1186,8 +1186,8 @@
           "review": ""
         },
         {
-          "id": "M13.6",
-          "statement": "With surf, a wave that loses power and stays at or below breaking index 1 feeds distributed births on wet support. A wave with a resolved wet face above 1 concentrates part of its long-wave birth on that face and puts submerged air under a resolved lip. Wet loss without an eligible destination keeps its distributed birth, including in the swash. The area-integrated birth budget over either wave matches M7.5 for the same wet lost power before stock updates. A calm, omitted waves and dry columns contribute zero shore birth. A distant beach takes its steady cover from the same wet lost power. Guard: on a small Metal beach, verify the birth rates handed from the shader to the foam stocks for a regular wave below the threshold, a breaking wave, and the calm, omitted-wave and dry controls.",
+          "id": "WP13.6",
+          "statement": "With surf, a wave that loses power and stays at or below breaking index 1 feeds distributed births on wet support. A wave with a resolved wet face above 1 concentrates part of its long-wave birth on that face and puts submerged air under a resolved lip. Wet loss without an eligible destination keeps its distributed birth, including in the swash. The area-integrated birth budget over either wave matches WP7.5 for the same wet lost power before stock updates. A calm, omitted waves and dry columns contribute zero shore birth. A distant beach takes its steady cover from the same wet lost power. Guard: on a small Metal beach, verify the birth rates handed from the shader to the foam stocks for a regular wave below the threshold, a breaking wave, and the calm, omitted-wave and dry controls.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-water --test it -E 'test(/^surf_foam_gpu::/)' --no-tests=fail",
           "ask": "Would the Metal guard fail both if wet long-wave loss below index 1 were discarded and if the breaking wave's share stayed distributed? Does the far estimator use the same wet lost power, including loss below index 1?",
           "lock": "gpu",
@@ -1198,7 +1198,7 @@
           "review": ""
         },
         {
-          "id": "M13.7",
+          "id": "WP13.7",
           "statement": "Whitewater follows the breaking lip and face into the spreading bore and thins as the swash carries it up the sand. The retreat leaves fading lace. Surf remains visible at the exposed beach from 1 km offshore. A breaking front crosses the coarse foam window's outer edge without a visible seam. The calm shoreline makes no surf foam.",
           "inspect": "Use `fixed` stills and `realtime` sequences in trade wind and gale at 2 m on the sand, at 40 m above, at 1 km offshore and at the separate handoff view described in the design. Include a calm control of the same beach. 1. From 2 m and 40 m, whitewater follows the lip and wet breaking face into the lowering bore, with no detached ribbon across dry sand. 2. Foam spreads and thins as the connected swash runs up. Lace stays on the bared sand and fades during retreat. 3. From 1 km offshore, the exposed beach still shows a line of surf beyond the foam windows. 4. In the handoff view, follow one breaking front visible on both sides of the recorded outer edge of the coarse window, through the blend into the distant estimate. There is no seam or abrupt change in foam cover fixed to the grid. 5. The calm shoreline makes no surf foam.",
           "target": "mac-metal",
@@ -1208,7 +1208,7 @@
           "review": ""
         },
         {
-          "id": "M13.8",
+          "id": "WP13.8",
           "statement": "In a trade wind the exposed beach breaks while the sheltered lee laps with short waves. Swell bends around the headland and returns gradually to the ambient sea downwind. As the tide rises and falls the break and connected swash follow the beach waterline smoothly.",
           "inspect": "In trade wind use `fixed` stills from 40 m over the exposed beach, the headland and a lee beach inside the swell shadow, plus a 300 m view of the island and downwind sea. Use `realtime` motion from the lee and from the exposed beach while sweeping the tide up and back. 1. The exposed beach breaks while the sheltered shore laps, with no recurring raised swell front in the lee view. 2. Crests turn around the headland and swell returns downwind without a visible bed-border seam. 3. On the rise and fall, the swash moves with the waterline through the tide samples, with no jumps or detached wet strips.",
           "target": "mac-metal",
@@ -1218,7 +1218,7 @@
           "review": ""
         },
         {
-          "id": "M13.9",
+          "id": "WP13.9",
           "statement": "The breaking crest keeps the frame contract: in submitted frames its pixels carry the depth of the displaced sheet, the nearest surface where a crest overhangs, and motion equal to the model's displacement between presentations through the break. Moving the stage marks the water's history invalid no more often than the design's reset rule gives.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_frame_gpu",
           "lock": "gpu",
@@ -1229,8 +1229,8 @@
           "review": ""
         },
         {
-          "id": "M13.10",
-          "statement": "In Chrome the surf draws with no validation error, inside the sampled textures and storage of the recorded capability record, and the transformed field agrees with the model at M13.1's tolerance.",
+          "id": "WP13.10",
+          "statement": "In Chrome the surf draws with no validation error, inside the sampled textures and storage of the recorded capability record, and the transformed field agrees with the model at WP13.1's tolerance.",
           "check": "node scripts/check_water_browser.mjs --case surf",
           "lock": "chrome",
           "target": "chrome-webgpu",
@@ -1240,9 +1240,9 @@
           "review": ""
         },
         {
-          "id": "M13.11",
+          "id": "WP13.11",
           "statement": "In Chrome, submitted engine time advances during the trade-wind surf inspection. The crests, bore, swash and whitewater pass the same visual checks at matching views on Chrome and portable Metal, including the line of surf at 1 km and the handoff across the coarse foam window's edge.",
-          "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind settings and views of M13.4, M13.5 and M13.7, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The matched views pass M13.4's approach checks and M13.5's crest, bore and connected swash checks. 3. Both targets pass points 1\u20134 of M13.7, including the surf line from 1 km offshore and the separate handoff view across the coarse window's outer edge. Record any visible differences at the matched views.",
+          "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind settings and views of WP13.4, WP13.5 and WP13.7, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The matched views pass WP13.4's approach checks and WP13.5's crest, bore and connected swash checks. 3. Both targets pass points 1\u20134 of WP13.7, including the surf line from 1 km offshore and the separate handoff view across the coarse window's outer edge. Record any visible differences at the matched views.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -1250,7 +1250,7 @@
           "review": ""
         },
         {
-          "id": "M13.12",
+          "id": "WP13.12",
           "statement": "With surf running at the beach in a gale, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views, with the bytes of the lags and exposures and the reads they add to the field cache, and with the query's time and the nodes its cuts evaluate in a tick with every float in the breakers. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
@@ -1261,7 +1261,7 @@
           "review": ""
         },
         {
-          "id": "M13.13",
+          "id": "WP13.13",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -1271,7 +1271,7 @@
           "review": ""
         },
         {
-          "id": "M13.14",
+          "id": "WP13.14",
           "statement": "After the craft is removed, its submitted Metal foam stocks keep the trail through at least the aged film's lifetime, with a wider and thinner trail at later readings and a faded final reading. Guard: the existing craft trail test uses a smaller fixture or fewer submitted steps, keeps those assertions, and passes on the default nextest profile with comfortable headroom under the 10 s per-test limit. Record the isolated time.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p water-scene --test foam_scene_gpu -E 'test(=craft_trail_outlives_removed_source_and_spreads)' --test-threads 1 --no-tests=fail",
           "lock": "gpu",
@@ -1290,11 +1290,11 @@
           "branch": "build/waters",
           "pushed": false
         },
-        "handoff": ".orchestrate/evidence/WATERS/M13-handoff.md"
+        "handoff": ".orchestrate/evidence/WATERS/WP13-handoff.md"
       }
     },
     {
-      "id": "M8",
+      "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
       "status": "not_started",
       "failed_reviews": 0,
@@ -1304,7 +1304,7 @@
       "quality_bar": "Water optics as in the sea of Sea of Thieves and the skies of Red Dead Redemption 2 over it: a glitter path under the Sun, sky colour in the swell, a hull seen green through the water at its waterline, shade that takes the sparkle and leaves the sky's light. On the lake, the still water of Red Dead Redemption 2: the far shore and hills mirrored at dawn, stones on the bed seen through the shallows, deepening to the water's own colour.",
       "items": [
         {
-          "id": "M8.1",
+          "id": "WP8.1",
           "statement": "At dawn, noon, low Sun, twilight and night the sea reflects that hour's sky, the Sun's glitter lies under the Sun and widens as the wind rises, the night sea is dark under the sky's glow, and nothing clips to flat white or black.",
           "inspect": "`fixed` stills at the five hours in a calm, a trade wind and a gale, from 2 m and 40 m: the glitter path, the swell's faces and the horizon.",
           "target": "mac-metal",
@@ -1314,7 +1314,7 @@
           "review": ""
         },
         {
-          "id": "M8.2",
+          "id": "WP8.2",
           "statement": "The craft's hull below its waterline and a sunk float are seen through the water, tinted and fading with depth. The waterline on the hull is a soft edge. Thin crests between the camera and a low Sun glow.",
           "inspect": "`fixed` stills at noon in a calm, from 2 m and 6 m, of the craft at rest and of floats sunk 0.5 m and 2 m; and of crests against a low Sun in a trade wind.",
           "target": "mac-metal",
@@ -1324,7 +1324,7 @@
           "review": ""
         },
         {
-          "id": "M8.3",
+          "id": "WP8.3",
           "statement": "At the lake's edge, the pond and off the beach the ground shows through the shallows, tinted and fading with depth until the water's own colour hides it. The waterline is a soft edge with no bright or dark rim, and the bed moves under passing waves no more than refraction gives.",
           "inspect": "`fixed` stills at noon and low Sun from 2 m on each shore, looking down into the shallows and along the waterline, and a `realtime` sequence of small waves over the lake's shallows.",
           "target": "mac-metal",
@@ -1334,7 +1334,7 @@
           "review": ""
         },
         {
-          "id": "M8.4",
+          "id": "WP8.4",
           "statement": "On calm water the craft and the floats reflect in the sea beside them, each reflection whole from the waterline to the image of the body's top. Where a reflection leaves the screen, passes its reach or meets the sky it falls back to the sky with no hole, streak or edge.",
           "inspect": "`fixed` stills and a `realtime` pan of the craft and floats on a glassy sea at low Sun, from 2 m and 10 m above: each reflection, and the screen's edges during the pan.",
           "target": "mac-metal",
@@ -1344,8 +1344,8 @@
           "review": ""
         },
         {
-          "id": "M8.5",
-          "statement": "On the calm lake the far shore, the hills and a tree on the bank reflect in the water wherever they are on screen, each joined to its foot at the waterline. Until the mirror view of M14, where a reflection's source is off the screen or hidden, or the water is too rough to mirror, the water shows the sky with no hole, streak or stretched edge, and a breeze blurs the reflection away smoothly.",
+          "id": "WP8.5",
+          "statement": "On the calm lake the far shore, the hills and a tree on the bank reflect in the water wherever they are on screen, each joined to its foot at the waterline. Until the mirror view of WP14, where a reflection's source is off the screen or hidden, or the water is too rough to mirror, the water shows the sky with no hole, streak or stretched edge, and a breeze blurs the reflection away smoothly.",
           "inspect": "`fixed` stills of the lake at dawn and noon in a calm from 2 m and 10 m, a `realtime` pan and tilt that takes the far shore off the screen, and a `realtime` sequence as the wind rises from calm to a breeze.",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1354,7 +1354,7 @@
           "review": ""
         },
         {
-          "id": "M8.6",
+          "id": "WP8.6",
           "statement": "With a cloud optical-depth provider present, direct sunlight on the sea is dimmed once by the provider's factor: the glitter, the sunlit water colour and the foam's sunlit part. Sky-lit terms are not dimmed. With no provider the sea's shader and its pixels are unchanged.",
           "check": "cargo test --locked --offline -p water-scene --test cloud_shade_gpu",
           "inspect": "`fixed` stills at noon with a labelled stand-in provider's shade crossing the sea and the grey float: the shade's edge on the water and on the float.",
@@ -1366,7 +1366,7 @@
           "review": ""
         },
         {
-          "id": "M8.7",
+          "id": "WP8.7",
           "statement": "The gather copies opaque colour and depth only inside the rectangles its readers need: registered bodies on screen, water thin enough to see through, and the screen while water still enough to mirror is in view. On an open sea with no body on screen it does not run. Every water pixel that reads the gather reads inside what was copied, and every water pixel whose reflected or refracted ray meets a registered body within the design's reach and slope allowance lies inside that body's receiving rectangle. A scene with no water compiles to the same passes and storage as before.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test gather_gpu",
           "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on flat water and with waves, including a body whose reflection lies wholly outside its own source rectangle? Does it hold the see-through rectangles to the map's depths and the water type's sight depth?",
@@ -1378,7 +1378,7 @@
           "review": ""
         },
         {
-          "id": "M8.12",
+          "id": "WP8.12",
           "statement": "What the gather hands the rays is applied once. On Metal, a water pixel that reflects a matte panel and one that shows a matte bed through shallow water store the same colour over the exposure scale at scales sixteen times apart. Seen across 3 km of air, the part of each pixel's colour that the panel or the bed supplies is dimmed by the camera's air once: against the same view in clear air it falls by the lent transmission from the camera to the water, at a tolerance the test states that tells once from twice.",
           "check": "cargo test --locked --offline -p water-scene --test optics_once_gpu",
           "ask": "Would a gather that left the camera's air in what it copies, a surface pass that left the air off, and one that multiplied the exposure scale a second time each fail?",
@@ -1390,8 +1390,8 @@
           "review": ""
         },
         {
-          "id": "M8.9",
-          "statement": "In Chrome the sea passes M8.1's and M8.2's lists at noon, low Sun and night, and the lake passes M8.3's and M8.5's at noon.",
+          "id": "WP8.9",
+          "statement": "In Chrome the sea passes WP8.1's and WP8.2's lists at noon, low Sun and night, and the lake passes WP8.3's and WP8.5's at noon.",
           "inspect": "`fixed` stills in Chrome at noon, low Sun and night at those items' views, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -1400,7 +1400,7 @@
           "review": ""
         },
         {
-          "id": "M8.10",
+          "id": "WP8.10",
           "statement": "With the optics running, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views: the gather and the rays on a calm sea and in a gale with zero, one and nine bodies on screen, and at the lake with see-through water and the scene's reflection filling the view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene optics",
           "lock": "gpu",
@@ -1411,7 +1411,7 @@
           "review": ""
         },
         {
-          "id": "M8.11",
+          "id": "WP8.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -1423,7 +1423,7 @@
       ]
     },
     {
-      "id": "M9",
+      "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
       "status": "not_started",
       "failed_reviews": 0,
@@ -1433,8 +1433,8 @@
       "quality_bar": "A running stream as in Red Dead Redemption 2: water that visibly moves downstream at its own speed, faster in the narrows, carrying foam and anything afloat, with no sliding sheet, pulse or seam where it joins still water.",
       "items": [
         {
-          "id": "M9.1",
-          "statement": "The example has a channel from the lake to the sea whose chart is made by hand and labelled a stand-in for `RIVERS`' solver, with a source end on the lake and a mouth on the sea. The drawn surface stands at the map's level along its whole fall. In a trade wind with a swell running, and again with the lake's level and the tide each at both ends of its range, the depth the water writes either side of each end's edge differs by no more than `thrum-water-model`'s surface does between those places, beyond the tolerance M4.1's test states: no step, gap or doubled water at either join. That holds at low tide too, when the water at the mouth is shallow enough for the depth limit to hold the swell. At high tide the lower channel is the sea's water.",
+          "id": "WP9.1",
+          "statement": "The example has a channel from the lake to the sea whose chart is made by hand and labelled a stand-in for `RIVERS`' solver, with a source end on the lake and a mouth on the sea. The drawn surface stands at the map's level along its whole fall. In a trade wind with a swell running, and again with the lake's level and the tide each at both ends of its range, the depth the water writes either side of each end's edge differs by no more than `thrum-water-model`'s surface does between those places, beyond the tolerance WP4.1's test states: no step, gap or doubled water at either join. That holds at low tide too, when the water at the mouth is shallow enough for the depth limit to hold the swell. At high tide the lower channel is the sea's water.",
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
           "ask": "Is the channel reached only through the chart a game can declare, with no code path in `thrum-water` that knows it is the example's or a stand-in? Does the test fail when the chart is taken over its neighbours with one stage of its own? At low tide, does the depth limit hold the swell at the mouth in the test's own readings?",
           "lock": "gpu",
@@ -1445,7 +1445,7 @@
           "review": ""
         },
         {
-          "id": "M9.2",
+          "id": "WP9.2",
           "statement": "Surface detail in a current is carried by it. Tracked across submitted frames, the detail moves downstream where the chart's current is 0.5 m/s, moves faster where it is 1.5 m/s, and in still water does not move.",
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
@@ -1456,7 +1456,7 @@
           "review": ""
         },
         {
-          "id": "M9.3",
+          "id": "WP9.3",
           "statement": "The channel reads as running water: ripples and foam move downstream, faster where the channel narrows, with no texture sliding as one sheet and no pulse at the carriage's period. Where it leaves the lake and where it meets the sea there is no seam, step or change of look, in a swell and while the lake's level and the tide are moved.",
           "inspect": "`realtime` sequences from the bank at 2 m, looking across and along the channel, at its narrows and at each end, one of each end while the lake's level and the tide are moved through their ranges in a trade wind with a swell running, the mouth held at low tide among them, and one from 40 m above its whole length.",
           "target": "mac-metal",
@@ -1466,7 +1466,7 @@
           "review": ""
         },
         {
-          "id": "M9.4",
+          "id": "WP9.4",
           "statement": "A float released at the top is carried down the channel and out into the sea, and its answers pass from the chart to the sea with no step in level or current. A post standing in the current trails foam downstream of it, with none upstream and none when the current is set to nothing.",
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
           "lock": "gpu",
@@ -1477,7 +1477,7 @@
           "review": ""
         },
         {
-          "id": "M9.5",
+          "id": "WP9.5",
           "statement": "In Chrome the channel draws, its detail is carried and the float reaches the sea.",
           "check": "node scripts/check_water_browser.mjs --case channel",
           "lock": "chrome",
@@ -1488,7 +1488,7 @@
           "review": ""
         },
         {
-          "id": "M9.6",
+          "id": "WP9.6",
           "statement": "A chart is documented as the seam a river solver writes: its grid and cell size, and the level, current and loss of height with their units, signs and what each reader does with them.",
           "ask": "Could `RIVERS`' planner have a solver write a chart from this documentation and the design alone? Does it say what a chart's stage changes and what it leaves as prepared?",
           "target": "mac-metal",
@@ -1498,7 +1498,7 @@
           "review": ""
         },
         {
-          "id": "M9.7",
+          "id": "WP9.7",
           "statement": "With the channel in view, the paired cost record is taken again at 2560\u00d71440, beside the island's record. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene channel",
           "lock": "gpu",
@@ -1509,7 +1509,7 @@
           "review": ""
         },
         {
-          "id": "M9.8",
+          "id": "WP9.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -1521,17 +1521,17 @@
       ]
     },
     {
-      "id": "M15",
+      "id": "WP15",
       "name": "The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
-      "quality_bar": "Under water as in Sea of Thieves: a clean waterline across the lens with each side right at once, colour that deepens and darkens with depth, hulls and the bed fading into the water's own colour, and overhead a bright disc of sky ringed by the mirrored deep, moving with the waves. The net of light on the bed, the shafts and the meter that follows the light down are M16's, so here the bed is evenly lit and the exposure is the sky's.",
+      "quality_bar": "Under water as in Sea of Thieves: a clean waterline across the lens with each side right at once, colour that deepens and darkens with depth, hulls and the bed fading into the water's own colour, and overhead a bright disc of sky ringed by the mirrored deep, moving with the waves. The net of light on the bed, the shafts and the meter that follows the light down are WP16's, so here the bed is evenly lit and the exposure is the sky's.",
       "items": [
         {
-          "id": "M15.1",
+          "id": "WP15.1",
           "statement": "A pixel is under water exactly when its own point on the near plane lies below the displaced surface there, which under a crest that overhangs is the highest surface in its column. With the lens half under in a swell, the pixels composed as under water in submitted frames are those `thrum-water-model` gives for that camera, to within a pixel of the line, on the sea, on the lake, in the swash and under a lip that a crest of two crossing trains throws. While the whole lens is above the water none of the capability's passes runs.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test lens_gpu",
           "ask": "Is the expected side of each pixel worked out from the model's surface at that pixel's own near-plane point, and would a test of the camera's centre alone fail? Does the lip's case put the lens in a column that holds three surfaces?",
@@ -1543,7 +1543,7 @@
           "review": ""
         },
         {
-          "id": "M15.11",
+          "id": "WP15.11",
           "statement": "Under water the water in front of what the lens sees is applied once. On Metal, from a lens under water looking level at a matte panel at its own depth, the part of a pixel's colour that the panel supplies falls between two lengths of water by the water type's transmission over the difference, at a tolerance the test states that tells once from twice. The pixel's stored colour over the exposure scale is the same at scales sixteen times apart.",
           "check": "cargo test --locked --offline -p water-scene --test under_once_gpu",
           "ask": "Would composing the water over an under-water pixel twice, and multiplying the exposure scale twice, each fail?",
@@ -1555,7 +1555,7 @@
           "review": ""
         },
         {
-          "id": "M15.3",
+          "id": "WP15.3",
           "statement": "Looking up through calm water, the sky, the bank and the craft's hull at its waterline show inside a bright disc about the vertical, squeezed toward its rim, and outside it the surface mirrors the water below. Waves break the rim into moving shards with no hole, streak or hard seam, and foam overhead is a pale ceiling.",
           "inspect": "`fixed` stills and `realtime` sequences from 1 m and 5 m under the lake and the sea, in a calm, a breeze and a trade wind with whitecaps, looking straight up and 45\u00b0 off it: the disc, its rim and the water round it.",
           "target": "mac-metal",
@@ -1565,7 +1565,7 @@
           "review": ""
         },
         {
-          "id": "M15.4",
+          "id": "WP15.4",
           "statement": "Under water the bed, the hull and a sunk float are seen through water that takes their colour toward its own with distance. Deeper water is darker, the lake differs from the sea as their water types do, and nothing clips to flat black or white at dawn, noon or twilight.",
           "inspect": "`fixed` stills from 0.5 m, 3 m and 10 m under the sea and from 0.5 m and 3 m under the lake, looking level and down, at the three hours: the bed near and far, the hull and the open water.",
           "target": "mac-metal",
@@ -1575,7 +1575,7 @@
           "review": ""
         },
         {
-          "id": "M15.5",
+          "id": "WP15.5",
           "statement": "The camera sinks through the surface and rises again. The waterline crosses the lens as one clean line with a thin meniscus, each side of it is right in the same frame, the line follows the waves, and nothing flashes, pops or shows a gap: in a calm, in a trade wind, on the lake and in the swash on the beach.",
           "inspect": "`realtime` sequences of the camera lowered through the surface and raised again in each of those places, and held half under in a trade wind: the line on the lens and both sides of it, frame by frame.",
           "target": "mac-metal",
@@ -1585,7 +1585,7 @@
           "review": ""
         },
         {
-          "id": "M15.6",
+          "id": "WP15.6",
           "statement": "Under water the surface keeps the frame contract: its underside writes depth, motion and reactive coverage as the upper side does, and crossing the surface marks no history invalid. A profile without the underwater view declares none of its passes and creates none of its resources.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_frame_gpu",
           "lock": "gpu",
@@ -1596,8 +1596,8 @@
           "review": ""
         },
         {
-          "id": "M15.7",
-          "statement": "In Chrome the lens test holds as M15.1 holds it, with no validation error.",
+          "id": "WP15.7",
+          "statement": "In Chrome the lens test holds as WP15.1 holds it, with no validation error.",
           "check": "node scripts/check_water_browser.mjs --case under",
           "lock": "chrome",
           "target": "chrome-webgpu",
@@ -1607,8 +1607,8 @@
           "review": ""
         },
         {
-          "id": "M15.8",
-          "statement": "In Chrome the views from under the lake pass M15.3's and M15.5's lists at noon.",
+          "id": "WP15.8",
+          "statement": "In Chrome the views from under the lake pass WP15.3's and WP15.5's lists at noon.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views on the lake at noon, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -1617,7 +1617,7 @@
           "review": ""
         },
         {
-          "id": "M15.9",
+          "id": "WP15.9",
           "statement": "With the lens half under and wholly under, at sea and in the lake, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same places seen from above. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene under",
           "lock": "gpu",
@@ -1628,7 +1628,7 @@
           "review": ""
         },
         {
-          "id": "M15.10",
+          "id": "WP15.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -1640,7 +1640,7 @@
       ]
     },
     {
-      "id": "M16",
+      "id": "WP16",
       "name": "Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down",
       "status": "not_started",
       "failed_reviews": 0,
@@ -1650,8 +1650,8 @@
       "quality_bar": "Light under water as in the shallows of Subnautica and under the hull in Sea of Thieves: a net of sunlight that moves with the waves over sand and timber, fine in the shallows and soft in the deep, with none in a shadow; beams that stand round the Sun and sweep as the swell passes, dark beneath the hull; and a picture a player can read from the waterline to 20 m down, darker with depth and never black.",
       "items": [
         {
-          "id": "M16.1",
-          "statement": "The caustic field is the surface's own light, carried down. Under flat water it is exactly 1 at every rung. Under a rippled surface it is uneven, it changes when the surface does, and the rungs nearest 0.5 m and 8 m hold different patterns. Its mean over the window stays near 1 at every rung, at a tolerance the test states, so the net moves light about and neither brightens nor darkens the bed. How the net sharpens and softens with depth is not this item's: M16.6 judges it on a receiver.",
+          "id": "WP16.1",
+          "statement": "The caustic field is the surface's own light, carried down. Under flat water it is exactly 1 at every rung. Under a rippled surface it is uneven, it changes when the surface does, and the rungs nearest 0.5 m and 8 m hold different patterns. Its mean over the window stays near 1 at every rung, at a tolerance the test states, so the net moves light about and neither brightens nor darkens the bed. How the net sharpens and softens with depth is not this item's: WP16.6 judges it on a receiver.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test caustic_field_gpu",
           "ask": "Would a fixed pattern, and a map made at one depth and read at every depth, each fail?",
           "lock": "gpu",
@@ -1662,7 +1662,7 @@
           "review": ""
         },
         {
-          "id": "M16.2",
+          "id": "WP16.2",
           "statement": "What lies under water takes the net as sunlight. A matte panel facing up under a rippled surface carries the net on its direct Sun alone. A panel in a caster's shadow, a panel facing down and a panel above the water store what they store with caustics left out, the last to the bit. Seen from above through the surface and from under water the panel carries the net once.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test caustic_receivers_gpu",
           "ask": "Would multiplying the panel's whole colour, sky light included, fail it?",
@@ -1674,8 +1674,8 @@
           "review": ""
         },
         {
-          "id": "M16.4",
-          "statement": "The water's scattered light stands as shafts only where the surface breaks it up. In a calm with nothing overhead a path through open water stores the same light with the march on and with it off. With shafts left out the frame is M15's.",
+          "id": "WP16.4",
+          "statement": "The water's scattered light stands as shafts only where the surface breaks it up. In a calm with nothing overhead a path through open water stores the same light with the march on and with it off. With shafts left out the frame is WP15's.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test shafts_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1685,7 +1685,7 @@
           "review": ""
         },
         {
-          "id": "M16.14",
+          "id": "WP16.14",
           "statement": "Under water the Sun's visibility is read at one place by both its readers. On Metal, in a calm, a box floats over a level bed 6 m down with the Sun 20 degrees up. The patch of bed that stores no direct Sun, and the patch over which the shaft pass leaves the water just above the bed darker than it is with the box taken away, are the same, at a tolerance the test states that is small beside the box. Neither lies where the Sun's direction above the water would put the box's shadow.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_sun_path_gpu",
           "ask": "Would it fail if the bed read its shadow along the Sun's direction above the water while the shafts read theirs where the refracted ray leaves the water, or the other way round? Would a march that adds no light under the box, and takes none away, fail?",
@@ -1697,7 +1697,7 @@
           "review": ""
         },
         {
-          "id": "M16.5",
+          "id": "WP16.5",
           "statement": "The camera's meter follows the light at the lens. `thrum-water-model` gives the light factor for a camera from the lens's depth and the body's water type, the example puts it, raised to its adaptation share, in its camera request, and the resolved exposure is the meter's value for the incident light times that factor, to f32 rounding. With a factor of 1 the resolved sample is today's, to the bit. As the lens goes from 0.5 m above the surface to 0.5 m under it in steps of a centimetre, no step changes the factor by more than a twentieth of a stop.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_meter_gpu",
           "ask": "Is the factor a function of the model alone, the same for a given camera on every device? Does anything read the rendered picture to set the exposure?",
@@ -1709,7 +1709,7 @@
           "review": ""
         },
         {
-          "id": "M16.6",
+          "id": "WP16.6",
           "statement": "On the bed, the hull and a sunk float the Sun draws a moving net of light. It is fine and sharp in the shallows and wider and softer in deeper water, it travels with the waves, there is none in a glassy calm, at night or under a cloud's shade, and none inside the hull's shadow. It never repeats, never swims with the camera, and has no edge where the window ends.",
           "inspect": "`fixed` stills and `realtime` sequences at noon and low Sun, in a calm, a breeze and a trade wind: from 0.5 m and 3 m under the lake and the sea looking down and level, and from 2 m above the pond and the beach's shallows looking down through the water. The bed near and far, the hull's side and its shadow, the float, and the place the window ends.",
           "target": "mac-metal",
@@ -1719,7 +1719,7 @@
           "review": ""
         },
         {
-          "id": "M16.7",
+          "id": "WP16.7",
           "statement": "Looking up toward the Sun from under water, beams of light stand in the water round its direction and sweep as the waves pass. They lean with the Sun and stay steep when it is low, the water beneath the hull is dark between them, and away from the Sun's direction and in a calm the water's light is even, with no banding or grain in a still.",
           "inspect": "`fixed` stills and `realtime` sequences from 1 m, 3 m and 10 m under the sea and 1 m under the lake, in a breeze and a trade wind at noon and with the Sun 15 degrees up: looking up toward the Sun, 45 degrees off it and level, and from beside the craft at its keel's depth.",
           "target": "mac-metal",
@@ -1729,7 +1729,7 @@
           "review": ""
         },
         {
-          "id": "M16.8",
+          "id": "WP16.8",
           "statement": "As the camera sinks from the surface to 20 m in the sea and to the lake's bed, the picture stays readable: the bed, the hull and the open water keep their detail, deeper water is darker and bluer or greener and never flat black, and nothing jumps as the lens crosses the surface either way or hangs half under, at dawn, noon and twilight.",
           "inspect": "`realtime` sequences of the descent and the return in the sea and the lake at the three hours, with stills at 0.5 m, 3 m, 10 m and 20 m, and a lens held half under in a trade wind: the brightness of the bed, the hull and the open water at each depth, and both sides of the waterline.",
           "target": "mac-metal",
@@ -1739,7 +1739,7 @@
           "review": ""
         },
         {
-          "id": "M16.9",
+          "id": "WP16.9",
           "statement": "Caustics and shafts are capabilities, and the caustic window's size and cell, its count of rungs, its cadence and the shafts' steps and resolution are named knobs with a declared invalidation. A profile without caustics composes the forward shader's text and draws the bytes of a scene with no water provider, and creates none of the field's resources. Setting each knob to both ends of its range while the scene runs applies its invalidation and creates no pipeline.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_light_capability_gpu",
           "lock": "gpu",
@@ -1750,8 +1750,8 @@
           "review": ""
         },
         {
-          "id": "M16.10",
-          "statement": "In Chrome the caustic field, the receivers, the shafts, the meter and the shared Sun visibility hold as M16.1, M16.2, M16.4, M16.5 and M16.14 hold them, the last by the same darkening of the water over the bed's shadow, with no validation error.",
+          "id": "WP16.10",
+          "statement": "In Chrome the caustic field, the receivers, the shafts, the meter and the shared Sun visibility hold as WP16.1, WP16.2, WP16.4, WP16.5 and WP16.14 hold them, the last by the same darkening of the water over the bed's shadow, with no validation error.",
           "check": "node scripts/check_water_browser.mjs --case under-light",
           "lock": "chrome",
           "target": "chrome-webgpu",
@@ -1761,8 +1761,8 @@
           "review": ""
         },
         {
-          "id": "M16.11",
-          "statement": "In Chrome the lake and the sea pass M16.6's, M16.7's and M16.8's lists at noon.",
+          "id": "WP16.11",
+          "statement": "In Chrome the lake and the sea pass WP16.6's, WP16.7's and WP16.8's lists at noon.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -1771,8 +1771,8 @@
           "review": ""
         },
         {
-          "id": "M16.12",
-          "statement": "From 3 m under the sea and the lake in a trade wind, and from 2 m above the beach's shallows, the paired cost record is taken again at 2560\u00d71440, beside M15's record for the same places, with the caustic field's and the shafts' passes by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "id": "WP16.12",
+          "statement": "From 3 m under the sea and the lake in a trade wind, and from 2 m above the beach's shallows, the paired cost record is taken again at 2560\u00d71440, beside WP15's record for the same places, with the caustic field's and the shafts' passes by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene under-light",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1782,7 +1782,7 @@
           "review": ""
         },
         {
-          "id": "M16.13",
+          "id": "WP16.13",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -1794,19 +1794,19 @@
       ]
     },
     {
-      "id": "M10",
+      "id": "WP10",
       "name": "A visitor takes the water from glassy calm to gale, raises and lowers the lake, and goes from dawn to night with the controls, and it holds up in motion, on the Mac and in Chrome",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "APPLE-PRESENTATION:M3"
+        "APPLE-PRESENTATION:WP3"
       ],
       "quality_bar": "The whole range of the sea of Sea of Thieves: a mirror calm, a working breeze and a gale under any hour's sky, from the deck and from the masthead, with a vista to the horizon, stable under temporal reconstruction as a shipped game's water is. The lake and the channel hold across the same range.",
       "items": [
         {
-          "id": "M10.1",
+          "id": "WP10.1",
           "statement": "Wind speed and direction, swell height, period and direction, the tide and the lake's level, time of day and a field overlay are typed controls with the same keys, labels, units and ranges on the Mac panel and the Chrome page. A parameter file applies them, and five presets from glassy calm to gale apply on both with nothing refused.",
           "check": "cargo test --locked --offline -p water-scene --test controls",
           "target": "mac-metal",
@@ -1816,7 +1816,7 @@
           "review": ""
         },
         {
-          "id": "M10.2",
+          "id": "WP10.2",
           "statement": "In Chrome the page declares the same controls, and each preset and a parameter file apply.",
           "check": "node scripts/check_water_browser.mjs --case controls",
           "lock": "chrome",
@@ -1827,7 +1827,7 @@
           "review": ""
         },
         {
-          "id": "M10.3",
+          "id": "WP10.3",
           "statement": "At each of the five presets, from 1 m, 10 m and 40 m above the water, at noon, low Sun and twilight, the sea reads as that sea: flat and reflective in a calm, wind waves over swell in a trade wind, steep and breaking in a gale, with crests that sharpen as the wind rises.",
           "inspect": "`fixed` stills on the Mac's portable recipe for each preset, height and hour: the near water and the horizon.",
           "target": "mac-metal",
@@ -1837,7 +1837,7 @@
           "review": ""
         },
         {
-          "id": "M10.4",
+          "id": "WP10.4",
           "statement": "At each of the five presets at noon and low Sun the lake reads as a lake in that wind: a mirror in a calm, ruffled in a breeze, short steep waves in a gale and never the sea's swell. Raising and lowering it with the control moves its shore smoothly, and with the tide control moved too, no step opens where the channel leaves the lake or meets the sea.",
           "inspect": "`fixed` stills of the lake for each preset and hour from 2 m and 40 m, and `realtime` sequences of the level and tide controls moved through their ranges, at the lake's shore and at each end of the channel.",
           "target": "mac-metal",
@@ -1847,7 +1847,7 @@
           "review": ""
         },
         {
-          "id": "M10.5",
+          "id": "WP10.5",
           "statement": "From 40 m above, a vista of 1 km to 20 km holds: no tile or repeat, a clean horizon, whitecaps and haze that thin with distance, and no line where a level of detail ends.",
           "inspect": "`fixed` stills from 40 m in a trade wind and a gale at noon and low Sun, and a `realtime` slow pan: the sea at about 1, 5 and 20 km.",
           "target": "mac-metal",
@@ -1857,7 +1857,7 @@
           "review": ""
         },
         {
-          "id": "M10.6",
+          "id": "WP10.6",
           "statement": "As the wind slider moves from calm to gale over 30 seconds in motion, the sea builds with no pop, step or restart, and whitecaps appear as the wind passes a fresh breeze.",
           "inspect": "A `realtime` sequence of the whole change from 10 m above.",
           "target": "mac-metal",
@@ -1867,7 +1867,7 @@
           "review": ""
         },
         {
-          "id": "M10.7",
+          "id": "WP10.7",
           "statement": "Under TAAU on the Mac's portable recipe the water is stable in motion: no shimmer in the distance, no ghost behind the craft or its foam, no smear on the glitter, no crawl along a waterline or in the channel's carried detail. A camera cut and a rebuild of the water each reset in one frame.",
           "inspect": "`realtime` sequences with temporal sampling selected, of a pan across a gale at low Sun, the craft passing at 12 m/s, a walk along the lake's shore and the channel, a cut, and a profile change: the far sea, the craft's edge, the glitter and the waterlines.",
           "target": "mac-metal",
@@ -1877,9 +1877,9 @@
           "review": ""
         },
         {
-          "id": "M10.8",
-          "statement": "In Chrome under TAAU the sea passes M10.7's list, the surf and the lens pass M10.14's, and the five presets pass M10.3's list at noon.",
-          "inspect": "The same `realtime` sequences and the noon stills in Chrome, judged by M10.7's, M10.14's and M10.3's lists.",
+          "id": "WP10.8",
+          "statement": "In Chrome under TAAU the sea passes WP10.7's list, the surf and the lens pass WP10.14's, and the five presets pass WP10.3's list at noon.",
+          "inspect": "The same `realtime` sequences and the noon stills in Chrome, judged by WP10.7's, WP10.14's and WP10.3's lists.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -1887,7 +1887,7 @@
           "review": ""
         },
         {
-          "id": "M10.9",
+          "id": "WP10.9",
           "statement": "The field overlay shows the map (body, depth and current), the shore transform (lag, exposure and a crest's breaking index), height, slope variance, the interaction waves, each foam stock and the query points with their support, on the Mac and in Chrome, and turning it off restores the water exactly.",
           "inspect": "`fixed` stills of each overlay over the craft in a trade wind, over the beach, and over the lake and the channel, on both targets: each shows the field it names, where the water shows its effect.",
           "target": "mac-metal",
@@ -1897,7 +1897,7 @@
           "review": ""
         },
         {
-          "id": "M10.10",
+          "id": "WP10.10",
           "statement": "Each cadence and resolution in the design's list of knobs is a named runtime value with a range and a declared invalidation. Setting each to both ends of its range while the scene runs applies that invalidation, changes no query answer and creates no pipeline.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test knobs_gpu",
           "ask": "Can a caller that knows nothing of water list its knobs and set one, as the governor will? Is any cadence in `thrum-water` or `thrum-sea` a constant that is not in the list?",
@@ -1909,7 +1909,7 @@
           "review": ""
         },
         {
-          "id": "M10.11",
+          "id": "WP10.11",
           "statement": "In a gale with the craft, wake, foam and optics all running, at sea and at the lake, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene gale",
           "lock": "gpu",
@@ -1920,7 +1920,7 @@
           "review": ""
         },
         {
-          "id": "M10.12",
+          "id": "WP10.12",
           "statement": "A water profile that leaves out the waves, surf, the body query, interaction waves, whitewater, see-through water, scene reflection, body optics, the underwater view, caustics or shafts declares none of that capability's passes and creates none of its resources, and the surface's shader makes none of its reads. On a sea with no body and no foam, a profile with open water and waves alone submits the frame the full profile does, to within one step of the 8-bit output.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test capabilities_gpu",
           "ask": "Is each capability left out of the compiled graph, or is its work still done and its output hidden?",
@@ -1932,7 +1932,7 @@
           "review": ""
         },
         {
-          "id": "M10.14",
+          "id": "WP10.14",
           "statement": "Under TAAU on the Mac's portable recipe the surf, the lens and the light under water are stable: no ghost behind a breaking crest or its foam, no crawl on the swell's lines as they close up, no smear along the waterline on the lens or round the window overhead, no crawl or smear in the net of light on the bed as it moves, no boil or banding in the shafts, and going under and coming up resets nothing.",
           "inspect": "`realtime` sequences with temporal sampling selected: the beach from 2 m and 40 m in a trade wind; the camera sinking through the lake's surface, looking up, and rising; and from 3 m under the sea in a breeze at noon, looking down at the bed and up toward the Sun.",
           "target": "mac-metal",
@@ -1942,7 +1942,7 @@
           "review": ""
         },
         {
-          "id": "M10.13",
+          "id": "WP10.13",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -1954,19 +1954,19 @@
       ]
     },
     {
-      "id": "M14",
+      "id": "WP14",
       "name": "Still water mirrors the hills, trees and far shore that the camera cannot see, on the Mac and in Chrome",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SCENE-VIEWS:M3"
+        "SCENE-VIEWS:WP3"
       ],
       "quality_bar": "The lakes of Red Dead Redemption 2 at dawn: the far shore, the ridge and each tree whole in the water whatever the camera does, joined to its foot at the waterline, softening and stretching as a breeze rises, and never cut off at the edge of the screen.",
       "items": [
         {
-          "id": "M14.1",
+          "id": "WP14.1",
           "statement": "On flat water the mirror lookup is a projection, and exact. For a bank, a post and a hill behind flat water, seen from 2 m and 10 m with the view's jitter on, each reflected ray reads the texel of the mirror that the scenery point its ray meets projects to, to a texel.",
           "check": "cargo test --locked --offline -p water-scene --test mirror_lookup_gpu",
           "ask": "Is the expected texel worked out on the CPU by projecting the scenery point through the view's own matrix, and would a lookup that flipped the image or left out the jitter fail?",
@@ -1978,7 +1978,7 @@
           "review": ""
         },
         {
-          "id": "M14.2",
+          "id": "WP14.2",
           "statement": "A mirrored reflection carries the right light. A matte panel of known radiance standing above the frame, 20 m and 3 km from flat water, reflects with the stored colour the optics equation gives, the air between the panel and the water included, at exposure scales sixteen times apart.",
           "check": "cargo test --locked --offline -p water-scene --test mirror_units_gpu",
           "ask": "Is the expected colour worked out on the CPU from the two stretches of the reflected path, camera to water and water to panel, with the Sun off the line of sight? Would a reader that took the camera's air off the mirror image, or applied it to the image a second time, fail it at 3 km?",
@@ -1990,7 +1990,7 @@
           "review": ""
         },
         {
-          "id": "M14.3",
+          "id": "WP14.3",
           "statement": "On the calm lake at dawn and at noon, with the camera looking down so that the far shore, the ridge and the tree are above the frame, and panning so that they leave its side, their reflections stay whole and do not change. Each joins its foot at the waterline, and nothing fades, stretches or ends at the screen's edge.",
           "inspect": "`fixed` stills from 2 m and 10 m looking down at the lake with its far shore out of frame, and a `realtime` pan and tilt that takes the shore, the ridge and the tree on and off the screen: each reflection, the waterline and the screen's edges.",
           "target": "mac-metal",
@@ -2000,7 +2000,7 @@
           "review": ""
         },
         {
-          "id": "M14.4",
+          "id": "WP14.4",
           "statement": "As the wind rises from a calm through a breeze to a trade wind the lake's reflection softens, stretches down the water and passes into the sky's with no step, edge or flicker. While a reflection can still be made out it stays joined to its foot at the waterline, neither sliding off it nor doubling. Under the island in a trade wind the sea carries the island's blurred reflection.",
           "inspect": "A `realtime` sequence of the lake from 2 m as the wind control rises, with the foot of the tree and of the far shore in view, and `fixed` stills of the sea under the island from 2 m and 40 m in a calm and a trade wind.",
           "target": "mac-metal",
@@ -2010,7 +2010,7 @@
           "review": ""
         },
         {
-          "id": "M14.5",
+          "id": "WP14.5",
           "statement": "With the sea, the lake and the pond in one view, the two levels with the most water on screen have mirror views and the third uses the screen-space rays. A level keeps its view until another's area passes it by a quarter, so the choice does not flicker as the camera moves. The lake and the channel that leaves it share one plane, with no seam in the reflection between them.",
           "check": "cargo test --locked --offline -p water-scene --test mirror_views_gpu",
           "inspect": "A `realtime` sequence from the hill with the camera moved so that the ranking of the three waters changes: the frames in which a level gains or loses its view, and the channel's source end.",
@@ -2022,7 +2022,7 @@
           "review": ""
         },
         {
-          "id": "M14.6",
+          "id": "WP14.6",
           "statement": "Under TAAU on the Mac's portable recipe the mirrored reflections are stable: no shimmer on the ridge's reflected skyline, no ghost behind the craft's reflection, no swim as the camera pans, and a camera cut resets in one frame.",
           "inspect": "`realtime` sequences with temporal sampling selected: a pan across the calm lake at dawn, the craft crossing it at 3 m/s, and a cut.",
           "target": "mac-metal",
@@ -2032,7 +2032,7 @@
           "review": ""
         },
         {
-          "id": "M14.7",
+          "id": "WP14.7",
           "statement": "The scene mirror is a capability, and its count of views and their extent are named knobs with a declared invalidation. A profile without it asks for no mirror view and creates none of its resources. Setting each knob to both ends of its range while the scene runs applies its invalidation and creates no pipeline.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test mirror_capability_gpu",
           "lock": "gpu",
@@ -2043,8 +2043,8 @@
           "review": ""
         },
         {
-          "id": "M14.8",
-          "statement": "In Chrome the mirror views draw with no validation error, and on flat water the lookup is exact to a texel of the mirror, as M14.1 holds it.",
+          "id": "WP14.8",
+          "statement": "In Chrome the mirror views draw with no validation error, and on flat water the lookup is exact to a texel of the mirror, as WP14.1 holds it.",
           "check": "node scripts/check_water_browser.mjs --case mirror",
           "lock": "chrome",
           "target": "chrome-webgpu",
@@ -2054,8 +2054,8 @@
           "review": ""
         },
         {
-          "id": "M14.9",
-          "statement": "In Chrome the lake passes M14.3's and M14.4's lists at noon.",
+          "id": "WP14.9",
+          "statement": "In Chrome the lake passes WP14.3's and WP14.4's lists at noon.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -2064,7 +2064,7 @@
           "review": ""
         },
         {
-          "id": "M14.10",
+          "id": "WP14.10",
           "statement": "At the lake and at sea under the island, with no mirror view, one and two, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views, with the mirror views' own draw beside the main view's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene mirror",
           "lock": "gpu",
@@ -2075,7 +2075,7 @@
           "review": ""
         },
         {
-          "id": "M14.11",
+          "id": "WP14.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -2087,22 +2087,22 @@
       ]
     },
     {
-      "id": "M11",
+      "id": "WP11",
       "name": "On the Mac's Apple recipe the water runs with MetalFX and the governor, its cadence on the built-in display is measured, and the module is closed",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "APPLE-PRESENTATION:M7",
-        "APPLE-PRESENTATION:M8"
+        "APPLE-PRESENTATION:WP7",
+        "APPLE-PRESENTATION:WP8"
       ],
       "quality_bar": "A finished sea: the craft driving through a gale at low Sun, wake and foam behind it, as the sea of Sea of Thieves looks at its best, sharp and stable under MetalFX and smooth on the built-in 120 Hz display. And the island seen whole: sea, beach, lake and channel as one water.",
       "items": [
         {
-          "id": "M11.1",
-          "statement": "The governor and the MetalFX reconstructor the water closes on exist: `APPLE-PRESENTATION`'s M7 and M8 are Done.",
-          "check": "python3 -c 'import json,sys; r=json.load(open(\"docs/plans/APPLE-PRESENTATION/RECORD.json\"))[\"milestones\"]; bad=[m for m in (\"M7\",\"M8\") if not (r.get(m) or {}).get(\"done\")]; print(\"not Done:\", bad); sys.exit(1 if bad else 0)'",
+          "id": "WP11.1",
+          "statement": "The governor and the MetalFX reconstructor the water closes on exist: `APPLE-PRESENTATION`'s WP7 and WP8 are Done.",
+          "check": "python3 -c 'import json,sys; r=json.load(open(\"docs/plans/APPLE-PRESENTATION/RECORD.json\"))[\"work_packages\"]; bad=[m for m in (\"WP7\",\"WP8\") if not (r.get(m) or {}).get(\"done\")]; print(\"not Done:\", bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2110,9 +2110,9 @@
           "review": ""
         },
         {
-          "id": "M11.2",
-          "statement": "On the Apple recipe under MetalFX the sea passes M10.7's list, the surf and the lens pass M10.14's, the mirrored lake passes M14.6's, and the five presets pass M10.3's list at noon and low Sun.",
-          "inspect": "M10.7's, M10.14's and M14.6's `realtime` sequences and the stills on the Apple recipe with MetalFX resolved, judged by those lists and against the portable recipe's.",
+          "id": "WP11.2",
+          "statement": "On the Apple recipe under MetalFX the sea passes WP10.7's list, the surf and the lens pass WP10.14's, the mirrored lake passes WP14.6's, and the five presets pass WP10.3's list at noon and low Sun.",
+          "inspect": "WP10.7's, WP10.14's and WP14.6's `realtime` sequences and the stills on the Apple recipe with MetalFX resolved, judged by those lists and against the portable recipe's.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2120,7 +2120,7 @@
           "review": ""
         },
         {
-          "id": "M11.3",
+          "id": "WP11.3",
           "statement": "The governor lists the water's knobs and moves each. When the scene is loaded past the refresh it lowers them, and it restores them when the load is gone, with each knob's declared invalidation applied and no query answer changed.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test governor_gpu",
           "lock": "gpu",
@@ -2131,7 +2131,7 @@
           "review": ""
         },
         {
-          "id": "M11.4",
+          "id": "WP11.4",
           "statement": "Each Apple-tile variant of a water or wave kernel that was tried is on record as a paired run against the portable kernel, with stills of the same views that show no visible difference and the body query's tests still passing. One is in use only if its win is beyond the spread of repeated runs.",
           "ask": "Does this milestone's evidence give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
           "target": "mac-metal",
@@ -2141,7 +2141,7 @@
           "review": ""
         },
         {
-          "id": "M11.5",
+          "id": "WP11.5",
           "statement": "At the showcase's extent on both of the Mac's recipes, capture off, in a gale with everything running, the paired cost record is taken for tick frames and for repeat frames, with each water pass's time beside the water-absent run. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene gale --extent showcase --recipes",
           "ask": "Is the extent the one `SHOWCASE`'s Mac rows use, and are both recipes and both frame kinds in the record, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
@@ -2153,7 +2153,7 @@
           "review": ""
         },
         {
-          "id": "M11.6",
+          "id": "WP11.6",
           "statement": "ATTENDED SETUP: on the built-in display the capture-off release water scene runs the gale route on both recipes with an OS-reported presented interval for every submission. Each missed refresh is listed and investigated.",
           "ask": "Does the presented-time witness, as `PLATFORM-RUNTIME-MAC` qualified it, cover the whole route on both recipes with capture off? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the scene?",
           "target": "mac-metal",
@@ -2167,7 +2167,7 @@
           "review": ""
         },
         {
-          "id": "M11.7",
+          "id": "WP11.7",
           "statement": "The whole scene on the Apple recipe reads as a finished sea: the craft at 12 m/s through a gale at low Sun, pitching on the swell, its wake spreading and its foam trailing, the Sun glittering, whitecaps to the horizon.",
           "inspect": "A `realtime` sequence from a chase view and from 40 m above on the Apple recipe: the hull's waterline, the wake, the trail, the glitter and the horizon.",
           "target": "mac-metal",
@@ -2177,7 +2177,7 @@
           "review": ""
         },
         {
-          "id": "M11.8",
+          "id": "WP11.8",
           "statement": "From the hill on the Apple recipe at low Sun the island reads as one water: the swell breaking on the beach, the lake still above it with the ridge mirrored in it, the channel between them, in one light, with no seam, step or change of look where two meet.",
           "inspect": "`fixed` stills and a `realtime` pan from 40 m on the hill and from 2 m at each join: the channel's two ends and the beach.",
           "target": "mac-metal",
@@ -2187,7 +2187,7 @@
           "review": ""
         },
         {
-          "id": "M11.9",
+          "id": "WP11.9",
           "statement": "A game maker can add water to a scene from the public documentation: the profile and its capabilities, bodies and the bed, stages, surf and its breaker section, mirror views, the view from under water, caustics and shafts, the light factor a camera's meter takes, body records, impulses, the query and its mailbox, the limits, counters and knobs.",
           "ask": "Could a game maker, and the planners of `CLOUDS`, `RIVERS` and `PUDDLES`, use the water from the documentation and the design alone? Does the documentation say what the water writes to scene depth and where an effect after it must stop?",
           "target": "mac-metal",
@@ -2197,7 +2197,7 @@
           "review": ""
         },
         {
-          "id": "M11.10",
+          "id": "WP11.10",
           "statement": "The maturity ledger's `E1.water` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every file copied or translated from Broadsides is named with its source commit and path, with the licence of any material that came into Broadsides from elsewhere.",
           "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance record match the files in the water's packages, and is any listed material GPL or share-alike?",
           "target": "mac-metal",
@@ -2207,7 +2207,7 @@
           "review": ""
         },
         {
-          "id": "M11.11",
+          "id": "WP11.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",

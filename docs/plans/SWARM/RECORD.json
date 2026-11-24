@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SWARM/design-review.md",
     "commit": "68ac79706e7730b7abc1aa64753dacd1849cc6a5",
-    "hash": "589a73719a98438affd4a29eaf7a1e2592dac3674b4f8ab4423efb37ffcd3070",
+    "hash": "d34526bcd83a0d368670103817544c628b63805326bd73a875e3de93f0e64b7d",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,9 +23,9 @@
     },
     "at": "2026-11-14T21:41:33Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "3097948a8238f97a8ea390276cd93c0b35151a983e2410c7059e7e6539f22930",
+  "work_packages": {
+    "WP1": {
+      "definitions": "afecdab1892057a9d0853a6b7ddfa5839dd7dd7d8c26212d0554bf7e2de9d5ab",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -33,8 +33,8 @@
         "at": "2026-11-20T10:12:47Z"
       }
     },
-    "M2": {
-      "definitions": "c0754e9a7b0eb3848d5481fab64c88a547e71ef1fb5d3b84960363da921dd3f7",
+    "WP2": {
+      "definitions": "4630de6c17d872a05886c30dcef5b82bbc96f61e250b7455d592adbc732aaaee",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -49,8 +49,8 @@
         }
       ]
     },
-    "M3": {
-      "definitions": "060ad718f70db1cf666bb45b0eb7bf743653d823c5a4b8e98b8af443125a5bd6",
+    "WP3": {
+      "definitions": "0630527467d00416b1cdb5a0938604af2fd6c476fb018bf271db23ba510a79c4",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -65,7 +65,7 @@
         }
       ]
     },
-    "M4": {
+    "WP4": {
       "definitions": "7c20b7692134b490f3b3b35a55b9e342df0e344a6b57fba134037a8b3fe82b47",
       "reviews": [],
       "authorised": {
@@ -81,8 +81,8 @@
         }
       ]
     },
-    "M5": {
-      "definitions": "d3e30f34b62bca2378ec5506f4cf88e9e4dd6d358e91b084131bf9cba5f11819",
+    "WP5": {
+      "definitions": "f14229ff89bd83ab74185d1e5a01e4f001eb05dc55102d7121afd20eda2c0a3a",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -97,8 +97,8 @@
         }
       ]
     },
-    "M6": {
-      "definitions": "66b2b59561a8ad5d73d9adbbdb6a39dfe6c34f1f2eb4b7ff3f68536d6ffd25de",
+    "WP6": {
+      "definitions": "70e22b013a0b4d31eb8d2e4cc0010fffa3f9ff1767ac08558b9c26783acc9190",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -113,8 +113,8 @@
         }
       ]
     },
-    "M7": {
-      "definitions": "ce6488a3fe4f8698ba7ab6c0f872315429e74af5c6137662961b640999accb88",
+    "WP7": {
+      "definitions": "dcd29064c14a3c2c528c0c46947574e367a6ce1009fc37b4260c7c36c620a849",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -129,8 +129,8 @@
         }
       ]
     },
-    "M8": {
-      "definitions": "2b7d86087b5efa571cc84fe255b0668a101d029ef83146cdaf0c12c209f862a0",
+    "WP8": {
+      "definitions": "63165482e7f5e058bb878a62fc1a97a4d3ad225d3437a22025e2f19142d9acfb",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -139,7 +139,7 @@
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
       "at": "2026-11-13T20:12:27Z"

@@ -1,7 +1,7 @@
 # SIM-2D: a crowd of thousands that steps the same on every device
 
 13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C01, C02, C03 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
+[the brief](../VISION.md). C01, C02, C03 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
 [the G2 decision](../../design/decisions/G2-GENERIC-SIMULATION.md) and
 [the input wire](../../design/decisions/A5-INPUT-WIRE.md) govern.
 
@@ -9,7 +9,7 @@
 
 The owner's words weren't passed on with this task; this design answers the lead's task, "Plan module SIM-2D. It
 needs: SHOWCASE", which is row 16 of the module list. What the owner asked for is on
-[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../BRIEF.md) carries
+[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../VISION.md) carries
 as decision 7:
 
 > - **A swarm survivor.** One or more players hold out against ever-growing crowds of enemies, with automatic
@@ -114,7 +114,7 @@ every page read, to buy a guarantee the language and both platforms already give
 significant bits). With one unit as one metre (C01), that is a millimetre across a 32 km square. Positions beyond
 it still step identically on every device; they only lose resolution. An endless map needs an origin that moves, which is not built.
 
-**What would change the decision.** If M1's three-target run finds a difference that cannot be removed inside
+**What would change the decision.** If WP1's three-target run finds a difference that cannot be removed inside
 these operations, the builder stops ([handoff](#proof-and-builder-handoff)). The profile number's inside is private
 to `thrum-core`, so it can become fixed point without a rule package changing; page readers would gain a
 conversion. If that fails too, [the module list's fallback](../ARCHITECTURE.md#mechanisms-settled-here) applies.
@@ -197,7 +197,7 @@ ascending. The mixing function is the engine's own, integer only, with test vect
 to a tick and a component.
 
 **For `SESSION`.** A baseline that restores less than the digest covers will never match it. The probe's digest
-cost 0.18 ms at 10,000 bodies; M1 records the engine's, and `SESSION` chooses how often to ask.
+cost 0.18 ms at 10,000 bodies; WP1 records the engine's, and `SESSION` chooses how often to ask.
 
 ### 5. The index and its queries
 
@@ -205,7 +205,7 @@ cost 0.18 ms at 10,000 bodies; M1 records the engine's, and `SESSION` chooses ho
 of a tick from X[n] (C03: "Pre-step queries name X[n]"). The game feeds it (slot, centre, radius) in ascending
 slot order from whichever of its components hold them; the engine names no game component. A counting sort puts
 bodies into cells, so a build is linear in the body count. The index keeps its storage between builds, so a
-warmed build and a query are designed to allocate nothing; M2 counts what they do allocate and records it. It needs no declared
+warmed build and a query are designed to allocate nothing; WP2 counts what they do allocate and records it. It needs no declared
 arena: cells are found by hashing their coordinates. A game may keep several indexes, one for enemies and one for
 pick-ups, in place of category masks.
 
@@ -308,8 +308,8 @@ corrected input frame that steers a player differently, so the replayed ticks di
 The trace's frames hold raw axes as a device makes them, most of them off the wire's 16-bit grid, among them 0.1,
 0.5, −0.5 and negative zero.
 
-It has two retained traces. **Crowd** (M1): radii no larger than a cell, at 10,000 bodies for 36,000 ticks and at
-2,000 and 5,000 for 3,600 ticks each. **Mixed** (M2): the same sizes and lengths, with oversize bodies and
+It has two retained traces. **Crowd** (WP1): radii no larger than a cell, at 10,000 bodies for 36,000 ticks and at
+2,000 and 5,000 for 3,600 ticks each. **Mixed** (WP2): the same sizes and lengths, with oversize bodies and
 projectiles fast enough to cross an enemy in one tick. A debug build is far slower, so it runs the 2,000-body
 traces only. Once retained, a trace's digests are an exact comparison owned by this module under
 [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines).
@@ -324,7 +324,7 @@ traces only. Once retained, a trace's digests are an exact comparison owned by t
 | The reference crowd (rule package `crowd-2d`), its traces and retained digests; its runners for the three targets and the input-route test in a package beside it, `crowd-2d-run`, which is not a rule package and also depends on `thrum-network` for the wire's codec | `examples/crowd-2d` (this module) | Game content |
 | The tick, committed state, undo, pages, input admission | `thrum-core`, as G1 and G2S left it | Authority |
 
-The queries sit beside `thrum-core`, not in it: they are scene queries (P3), not world state (W1), and a game
+The queries sit beside `thrum-core`, not in it: they are scene queries (P3), not world state (WP1), and a game
 with no 2D crowd should not compile them.
 
 **A tick, walked.** (1) The game admits the tick's input frames; a rule that reads their axes gets converted
@@ -382,7 +382,7 @@ queries are read-only so the Mac runs them in parallel chunks, and every cost ro
 beside its time, so a slower row can be told from a denser crowd.
 
 **For `SESSION`:** replaying a tick costs a tick. Eight ticks of this crowd at 10,000 would be about 40 ms in the
-probe, which does not fit a frame. M1 records the engine's figure.
+probe, which does not fit a frame. WP1 records the engine's figure.
 
 **Baselines and tripwires.** Every time and every allocation count this module records is a baseline (brief,
 decision 3, and [the owner's decision of 6 November](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md)).
@@ -400,14 +400,14 @@ What stays required is correctness: equal digests, the oracle, and the runs on t
 
 ## Risks
 
-- **The engine's own tick differs between targets**, for example through a width-dependent order. Early sign: M1's
+- **The engine's own tick differs between targets**, for example through a width-dependent order. Early sign: WP1's
   first Wasm run differs before any rule is suspect. The partial digests name the component.
 - **A convincing fake of N1:** digests compared within one process, or only at the final tick. The retained file
   holds checkpoints through the run, and each target is a separate process on a separate runtime.
 - **The simulator row adds little.** It shares the Mac's processor and maths library, so it proves that the rules
   build, link and run there, and nothing about a different processor. A physical iPhone, an x86 PC and Android are
   not run; the profile is designed to hold there and that stays unproved.
-- **A dense crowd in Chrome crowds the frame.** Early sign: M1's Chrome row near the clock's period. That is a
+- **A dense crowd in Chrome crowds the frame.** Early sign: WP1's Chrome row near the clock's period. That is a
   finding to investigate and report, not a stop. If it holds, the game's rules cap density or crowd size for every
   peer, because one match has one crowd; the engine never thins a crowd on one device, which would change the
   result there.
@@ -439,6 +439,6 @@ What stays required is correctness: equal digests, the oracle, and the runs on t
 
 ## Open questions
 
-- Whether the neighbour pass at 10,000 fits beside drawing in Chrome. Settled by M1's and M2's cost rows.
+- Whether the neighbour pass at 10,000 fits beside drawing in Chrome. Settled by WP1's and WP2's cost rows.
 - Whether a game needs an angle or a rotation inside a rule. None is built; if `SWARM` needs one, it is added to
   the profile number as a function written from its own operations, with vectors on the three targets.

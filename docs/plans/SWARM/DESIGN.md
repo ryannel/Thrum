@@ -1,7 +1,7 @@
 # SWARM: the swarm-survival game itself
 
 13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C02, C03, C05, C07, C11 and C13 in [CONTRACTS](../../design/CONTRACTS.md) govern.
+[the brief](../VISION.md). C02, C03, C05, C07, C11 and C13 in [CONTRACTS](../../design/CONTRACTS.md) govern.
 [SIM-2D](../SIM-2D/DESIGN.md), [RENDER-2D](../RENDER-2D/DESIGN.md), [GAME-UI](../GAME-UI/DESIGN.md),
 [TRANSPORT](../TRANSPORT/DESIGN.md) and [SESSION](../SESSION/DESIGN.md) provide what this module stands on.
 
@@ -10,7 +10,7 @@
 The owner's words weren't passed on with this task; this design answers the lead's task, "Plan module SWARM. It
 needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION", which is row 21 of the module list. What the owner asked
 for is on [the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which
-[the brief](../BRIEF.md) carries as decision 7:
+[the brief](../VISION.md) carries as decision 7:
 
 > - **A swarm survivor.** One or more players hold out against ever-growing crowds of enemies, with automatic
 >   attacks and upgrades between waves. It's an original game: its own name, characters, art and rules.
@@ -27,9 +27,9 @@ game, and a world that steps when a session says.
 
 **14 November 2026.** The owner said: "Let's move the 2d engine side of things to before v1 and decouple them.
 But we don't want to start working on the swarm game till v1 lands." The five engine modules no longer wait for
-V1. This module is the game and still does: M1 waits for `SHOWCASE:M8`. Two of the three asks were engine work
-and left this module that day: the iPhone shell for a second game is `GAME-UI` M6, and a world that steps when
-a session says is `SESSION` M7. The guard that admits a second game stays here, since it names the game.
+V1. This module is the game and still does: WP1 waits for `SHOWCASE:WP8`. Two of the three asks were engine work
+and left this module that day: the iPhone shell for a second game is `GAME-UI` WP6, and a world that steps when
+a session says is `SESSION` WP7. The guard that admits a second game stays here, since it names the game.
 
 This design was written after reading the five designs above and the code on main: `thrum-app`'s window and page
 shells, `examples/v1-game-ios`, `thrum-core`'s world lane and `.config/architecture.toml`. None of the five
@@ -47,7 +47,7 @@ crate names anything of it.
 the five engine modules proved in a real game.
 
 **What exists.** Nothing of the game. `examples/v1-game` is a different game. `thrum-app` runs any game in a Mac
-window and on a page, and, once `GAME-UI` M6 is Done, as an iPhone app through one shared shell. The repository
+window and on a page, and, once `GAME-UI` WP6 is Done, as an iPhone app through one shared shell. The repository
 guard names one external game.
 
 **Commissioned.** The twelve mechanisms below: one arena, one run of about ten minutes, four heroes, six kinds
@@ -87,8 +87,8 @@ with its clock running; **waiting** is every other tick of a session.
 | **G10 Smooth.** No visible stutter or hitch at the run's peak | The Mac at 1920×1080 and 3456×2234; Chrome at 1920×1080 | Smooth in the first wave. Rejected by real-time capture and frame records at the peak. Times are baselines ([cost](#cost)) |
 | **G11 Original, and none of it in the engine.** | Every name, sprite, font and rule; every engine crate | A game type or screen named in an engine crate. Rejected by a question on the code |
 
-The bar is Vampire Survivors, Brotato, Halls of Torment and Deep Rock Galactic: Survivor, and from M2 on the
-concept the owner picks in M1. It is judged in words, in the running game.
+The bar is Vampire Survivors, Brotato, Halls of Torment and Deep Rock Galactic: Survivor, and from WP2 on the
+concept the owner picks in WP1. It is judged in words, in the running game.
 
 ## Research and selection
 
@@ -131,7 +131,7 @@ concept the owner picks in M1. It is judged in words, in the running game.
 
 ### 1. The concept is the owner's pick, from options made the way the game will be made
 
-The game's name, premise, characters and look are taste, and no reviewer can settle taste for the owner. M1
+The game's name, premise, characters and look are taste, and no reviewer can settle taste for the owner. WP1
 makes at least three **concepts** that differ in kind: in premise, and in how the art is drawn. Each has a name,
 a paragraph of premise, one hero, two enemies, a palette, and one mock arena at 1920×1080 with 2,000 enemies
 around the hero at the size [the check below](#check-that-it-can-work) derives.
@@ -262,7 +262,7 @@ requirements bound it, and none is a time. It leaves room for G1's 2,000 enemies
 view, beside heroes, pick-ups and what is off screen. Play at it is smooth to the eye on the Mac and in Chrome
 (G10). And peers at it stay in step, since
 [a peer that cannot step at the pace of play is dropped](../SESSION/DESIGN.md#10-slow-silent-and-hostile-peers).
-Chrome is the tight target, because it steps and draws on the page's one thread. So M2 first records Chrome's
+Chrome is the tight target, because it steps and draws on the page's one thread. So WP2 first records Chrome's
 tick and frame CPU work at each thousand bodies from 2,000 to 10,000, and the builder picks the cap with that
 record in hand. The record informs the pick, and explains a failure of one of the three requirements. It
 decides nothing: no time in it sets the cap or stops the build, and a time over the tick period is a tripwire
@@ -375,7 +375,7 @@ arrives in the slot's frame; alone it is put in the frame directly. The rule rea
 **A driven world.** `thrum-app`'s world lane runs a task that advances on a fixed clock and raises an overload
 when it falls behind. A host's and a client's world must commit the ticks the session names, none, one or
 several, and draw at the session's playout interpolation. That is
-[`SESSION`'s driven world](../SESSION/DESIGN.md#12-a-driven-world), which its M7 builds and proves with the
+[`SESSION`'s driven world](../SESSION/DESIGN.md#12-a-driven-world), which its WP7 builds and proves with the
 reference crowd: a driver names how many ticks to commit at each advance and where the presentation stands
 between the last two. The game supplies the Host and Client drivers, which ask their session, and changes no
 engine crate for it.
@@ -445,7 +445,7 @@ Its weapons fire in the confirmed world, from where the hero was. So:
 - a correction is eased over a few frames, and a large one snaps.
 
 All three are presentation memory. Hits are decided by the confirmed world alone. How this feels is the
-owner's to judge in M8, which does not close until the owner accepts it.
+owner's to judge in WP8, which does not close until the owner accepts it.
 
 **The game's sheets** are at most eight in the scene and eight in the interface, `RENDER-2D`'s limits.
 
@@ -479,16 +479,16 @@ fixed here because checks name them; where a file sits inside a package is the b
 Two things the game needs are inside state other modules own, and are built by this module's builder under
 [seam rulings](../ARCHITECTURE.md#seam-rulings-for-swarm):
 
-1. **The repository guard admits a second game** (M2).
-2. **The Mac window and the page run a game that brings no sky kit** (M2): whatever `thrum-app`'s shells and
+1. **The repository guard admits a second game** (WP2).
+2. **The Mac window and the page run a game that brings no sky kit** (WP2): whatever `thrum-app`'s shells and
    the capture and packaging scripts still assume of the V1 game or the sky kit.
 
 Two more are engine work that the game only uses, built before it starts:
 
-- **The iPhone app** (M6) is a user of the shell `GAME-UI` M6 left in `thrum-app`, after the V1 game's app and
+- **The iPhone app** (WP6) is a user of the shell `GAME-UI` WP6 left in `thrum-app`, after the V1 game's app and
   the crowd view's. `swarm-ios` holds the game and nothing of the lifecycle, touch delivery, surface lease,
   rotation or recovery.
-- **A driven world** (M7) is `SESSION` M7's, as [mechanism 7](#7-who-admits-the-frames-alone-and-in-a-match)
+- **A driven world** (WP7) is `SESSION` WP7's, as [mechanism 7](#7-who-admits-the-frames-alone-and-in-a-match)
   says.
 
 ### 12. A run replays from its seed and its inputs
@@ -540,7 +540,7 @@ It makes runs that reach the last wave, so that the late game can be measured an
   period. Chrome is the tight target, which is why its cost is on record before the cap is chosen.
 - **Rows and order.** `RENDER-2D` is designed and costed for 10,000 rows in one draw with a kept order.
 - **A join.** `SESSION` estimates a 10,000-body image at 1.3 MiB; the game's bodies carry more than the
-  reference crowd's, so M5 measures its own.
+  reference crowd's, so WP5 measures its own.
 - **The intermission in a match.** The offer is world state and the answer a command admitted at one tick,
   which is the case [`SESSION`'s mechanism 4](../SESSION/DESIGN.md#4-timed-frames-and-ordered-commands) was
   designed for.
@@ -614,7 +614,7 @@ No budget is set (brief, decision 3). The account, at the cap and four players:
 | Drawing | One draw of the scene and one of the interface | `RENDER-2D` and `GAME-UI`; a crowd packed in view shades about its own area several times |
 | The interface | About 200 rows for the status display, 600 for an offer | `GAME-UI`'s account |
 | A match, each way | One datagram a tick | `SESSION`'s account: 6.5 to 19 KB/s down, 7.6 to 11.3 KB/s up |
-| A join | One world image, then a catch-up | Not measured for the game's bodies; M5 records it |
+| A join | One world image, then a catch-up | Not measured for the game's bodies; WP5 records it |
 
 The cost that matters is Chrome's one thread, which steps and draws. The design meets it by putting Chrome's
 cost at each size on record before the cap is chosen, by keeping enemies' behaviour to one neighbour pass, and
@@ -637,48 +637,48 @@ in the closing record as not run.
 
 ## Risks
 
-1. **Chrome cannot hold a crowd of thousands smoothly.** Early sign: M2.1's record, taken before anything is
+1. **Chrome cannot hold a crowd of thousands smoothly.** Early sign: WP2.1's record, taken before anything is
    built on the cap. No figure in it stops the build. The builder works on the cost and picks the cap that
    meets [the three requirements](#3-waves-and-the-crowd). If no cap meets them, the items that observe them
    stay open (the count in view, the inspection in Chrome, peers in step), and the builder ends `BLOCKED` with
    the record; the choices are under [research](#research-and-selection).
-2. **Small enemies do not read.** Early sign: M1's mock arenas, which show them at game size before any game
+2. **Small enemies do not read.** Early sign: WP1's mock arenas, which show them at game size before any game
    exists. If no concept reads at a fiftieth of the short side, the owner is told with the options, and trades
    count for size.
-3. **Art made by an agent falls short of the bar.** Early sign: M1's options, which are made the same way.
+3. **Art made by an agent falls short of the bar.** Early sign: WP1's options, which are made the same way.
    A paid service is the owner's decision.
 4. **A convincing fake of G1:** bodies outside the view. The count is taken inside the view rectangle.
 5. **A convincing fake of G7:** peers in one process. Digests come from each peer's own record, as `SESSION`'s
    do.
 6. **A convincing fake of G5:** a scripted player tuned to one seed. Twenty seeds, each hero.
 7. **A rule reads something outside the profile,** such as a screen's clock or an unconverted axis. Early sign:
-   the conformance run's wire route, and M5's match.
-8. **The hero's lead over the crowd feels wrong.** Early sign: M7's captures. The three easings of mechanism 9
+   the conformance run's wire route, and WP5's match.
+8. **The hero's lead over the crowd feels wrong.** Early sign: WP7's captures. The three easings of mechanism 9
    are presentation only and can be retuned without touching a rule.
-9. **The shared iOS shell does not fit a third app.** Early sign: M6.4's question, and M6.3, which runs the
+9. **The shared iOS shell does not fit a third app.** Early sign: WP6.4's question, and WP6.3, which runs the
    simulator checks the other modules left for the first two.
 10. **The engine modules land differently from their designs.** Early sign: each milestone's first reading.
     The builder writes the difference in the log, and ends `BLOCKED` if a mechanism here cannot stand.
 11. **The simulator cannot keep the pace of a match at the cap.** It proves function only, and a peer too slow
-    is dropped by design. M8 records what happened; a slow simulator is no defect.
-12. **Balance is tuned for the scripted player and not for a person.** Only the owner's play in M8 settles
-    it, and M8 closes on the owner's acceptance alone.
+    is dropped by design. WP8 records what happened; a slow simulator is no defect.
+12. **Balance is tuned for the scripted player and not for a person.** Only the owner's play in WP8 settles
+    it, and WP8 closes on the owner's acceptance alone.
 13. **A view escapes its sight square,** through a wall clamp, a zoom or a new window shape, and enemies appear
-    in view. Early sign: M2.18 over every shape, and each peer's recorded view in M7.2.
+    in view. Early sign: WP2.18 over every shape, and each peer's recorded view in WP7.2.
 
 ## Proof and builder handoff
 
 - **Targets.** `mac-metal`, `chrome-webgpu` and `ios-sim`, the last for function only. The host is always
   native on the Mac.
-- **Order between modules.** M1 waits for `SHOWCASE:M8`: the game starts when V1 has landed, by the owner's
-  word of 14 November, and every later milestone follows M1. M2 waits for `SIM-2D:M3`;
-  for `SESSION:M1`, after which every rule package supplies both halves of the state encoding, so the game's
-  components are written once; and for `RENDER-2D:M5`, which leaves the crowd view and the sprite scene in the
-  shells. M2 draws no interface, so it does not wait for `GAME-UI`, whose builder may be in the shells at the
-  same time: integrate on top of what has landed. M3 waits for `GAME-UI:M4`, which delivers the status
-  display, the modal choice and event routing on the Mac and in Chrome, and M6 for `GAME-UI:M6`, which
-  delivers them on the iPhone simulator and the shell a second game's app runs in. M5 waits for `SESSION:M4`, which delivers the predicted controller on the
-  in-memory link. M7 waits for `SESSION:M7`, its last, which delivers the driven world and implies `TRANSPORT:M2`.
+- **Order between modules.** WP1 waits for `SHOWCASE:WP8`: the game starts when V1 has landed, by the owner's
+  word of 14 November, and every later milestone follows WP1. WP2 waits for `SIM-2D:WP3`;
+  for `SESSION:WP1`, after which every rule package supplies both halves of the state encoding, so the game's
+  components are written once; and for `RENDER-2D:WP5`, which leaves the crowd view and the sprite scene in the
+  shells. WP2 draws no interface, so it does not wait for `GAME-UI`, whose builder may be in the shells at the
+  same time: integrate on top of what has landed. WP3 waits for `GAME-UI:WP4`, which delivers the status
+  display, the modal choice and event routing on the Mac and in Chrome, and WP6 for `GAME-UI:WP6`, which
+  delivers them on the iPhone simulator and the shell a second game's app runs in. WP5 waits for `SESSION:WP4`, which delivers the predicted controller on the
+  in-memory link. WP7 waits for `SESSION:WP7`, its last, which delivers the driven world and implies `TRANSPORT:WP2`.
 - **One command.** `scripts/swarm.py`, with the scenario as its argument, runs every proof that needs a window,
   Chrome or a socket, and `scripts/swarm_sim.py` those that need the simulator's screen. It reuses `SIM-2D`'s conformance command and `SESSION`'s match harness and
   relay, and copies neither.
@@ -696,13 +696,13 @@ in the closing record as not run.
   [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines). A change to a rule refreshes them on
   purpose, with a line in the log. No image baseline is registered.
 - **Exact baselines.** This module edits `crates/`, `scripts/`, the workspace manifest and the lockfile, which
-  are covered paths, and moves no retained image. Every milestone but M1 carries the verifier.
+  are covered paths, and moves no retained image. Every milestone but WP1 carries the verifier.
 - **GPU.** Every check that draws holds the `gpu` lock. Scratch goes in `tmp/swarm-<milestone>/`; selected
   evidence in `.orchestrate/evidence/SWARM/`.
-- **The closing record,** `.orchestrate/evidence/SWARM/TRACK-3-RECORD.md`, written in M8: what each of the five engine
+- **The closing record,** `.orchestrate/evidence/SWARM/TRACK-3-RECORD.md`, written in WP8: what each of the five engine
   modules proved in the game and on which targets, and what was not run. It says track 3 is closed only once
   the owner has accepted the game, and quotes the acceptance.
-- **The owner's play.** M8.12 passes on the owner's acceptance and on nothing else. If the owner asks for
+- **The owner's play.** WP8.12 passes on the owner's acceptance and on nothing else. If the owner asks for
   changes instead, the item stays open: the builder writes each change in the log, makes it, and asks the owner
   again. A change the design and the items do not cover is a planner's, so the builder ends `BLOCKED`. A change
   may wait until after the close only when the owner says so in their own words. A line in the plan, the log
@@ -736,7 +736,7 @@ Each has its reason beside it.
 - Record only runs of the commit being claimed, with the load on the machine.
 - If a launch outside the sandbox is refused, leave the item open and say so; a Mac result does not stand in
   for Chrome or the simulator.
-- No check waits on a person. Only M1.4 and M8.12 do.
+- No check waits on a person. Only WP1.4 and WP8.12 do.
 - Run the exact-baseline verifier before `land`, and again when `land` refuses a rebased commit for lack of a
   proof.
 
@@ -744,9 +744,9 @@ Each has its reason beside it.
 
 | Question | Settled by |
 |---|---|
-| What cap meets the three requirements, and what does Chrome cost at it? | M2: the builder's pick, with M2.1's record |
-| Do enemies a fiftieth of the short side read, in each concept? | M1's mock arenas, then M4's inspection |
-| How large is the game's world image, and how long is a join at the cap? | M5's cost record |
-| Does the hero's lead over the crowd feel right with the three easings? | M7's captures; the owner in M8 |
-| Is the run fun, and its difficulty right for a person? | The owner in M8 |
+| What cap meets the three requirements, and what does Chrome cost at it? | WP2: the builder's pick, with WP2.1's record |
+| Do enemies a fiftieth of the short side read, in each concept? | WP1's mock arenas, then WP4's inspection |
+| How large is the game's world image, and how long is a join at the cap? | WP5's cost record |
+| Does the hero's lead over the crowd feel right with the three easings? | WP7's captures; the owner in WP8 |
+| Is the run fun, and its difficulty right for a person? | The owner in WP8 |
 | How does the game look on an EDR panel, and is it smooth on the built-in panel itself? | Not judged here; named as not run in the closing record |

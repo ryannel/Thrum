@@ -17,8 +17,8 @@ M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), … e
 
 `crates/thrum-render`: the scene renderer (`synthetic/`), the atmosphere, visibility, the frame runtime, graph,
 presenter and timing. Five modules own that code and all five have builders in it, so nothing here starts until
-the milestones they hold are Done (`ATMOSPHERE` M9, `APPLE-TILE` M10, `APPLE-PRESENTATION` M3, `EFFECT-GRAPH` M3,
-`CULLING` M3). Each change is built here under [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
+the milestones they hold are Done (`ATMOSPHERE` WP9, `APPLE-TILE` WP10, `APPLE-PRESENTATION` WP3, `EFFECT-GRAPH` WP3,
+`CULLING` WP3). Each change is built here under [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
 belongs to its owner once built. Later milestones of those modules are built on what has landed.
 
 Its users are every builder who adds a pass, a record or a stage to the renderer next: `WATERS`, `CLOUDS`,
@@ -91,7 +91,7 @@ position.
 
 A test shader that stubs one of these functions follows the signature of the function its shader calls: the
 source for the cooked march, the query for the reflection consumer. Their assertions do not change. The query
-takes its arguments now because its callers are three today, and a traced occlusion (`RAY-TRACING` M5), a
+takes its arguments now because its callers are three today, and a traced occlusion (`RAY-TRACING` WP5), a
 world-space cache and a screen-space gather each need one of the two arguments
 ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md), which also says why the atmosphere's lent
 `environment_diffuse` and `environment_reflection` do not change).
@@ -120,7 +120,7 @@ zero. An atmosphere stage is one key whose chart inputs are one table, from whic
 graph accesses are built, so the barrier the graph emits cannot differ from what the shader samples. Pass names
 stay exported constants: the frame timing feed gives `CREATOR`'s profiler the names it gave.
 
-M6 checks the stage registry on the smallest production-graph fixture that exposes all fourteen stages. Check
+WP6 checks the stage registry on the smallest production-graph fixture that exposes all fourteen stages. Check
 graph reads, table bindings, distinct roles, validity bits and timing buckets on the CPU wherever the metadata
 can be constructed without a device. Use a tiny target for any prepared timestamp capacity check that needs
 Metal. The milestone runs all cases that together prove the regression.
@@ -152,20 +152,20 @@ refused batch is never published as a time.
 
 *Presenter.* The standalone graph, which nothing calls and every resize recompiles, is removed.
 
-The timing-demand switch `CREATOR` M2 built keeps its meaning.
+The timing-demand switch `CREATOR` WP2 built keeps its meaning.
 
 ## Parked, with the reason
 
 - **M24, more than four local lights built on the CPU each frame.** The fix lifts the GPU cluster build to the
   general case, a new accelerated recipe. The brief puts tuning after the exit.
 - **M31, every Sun change rebuilds the sky, the diffuse light and seven reflection mips.** Its fix is a cadence,
-  and the cadence of the atmosphere's products is a quality knob that `APPLE-PRESENTATION` M7 gives the governor.
+  and the cadence of the atmosphere's products is a quality knob that `APPLE-PRESENTATION` WP7 gives the governor.
 - **M40's resolve in the frame's own submission.** Rejected by the device evidence above. Encoding the resolve
   into a later frame's encoder would also save the submission and keep the completion boundary, but nobody has
   run it on Metal. Either waits for someone to qualify it with that experiment's evaluator first.
 - **T7, shader source assembled four ways** (M18, M20, M27, M28): not in the review's order of attack. The
   reflection test of mechanism 4 runs over the composed sources, so a text edit that breaks a record is caught.
-- **T9 and T10, names and splits**: [REPO-RULES](../REPO-RULES/DESIGN.md) M3, once, after this module.
+- **T9 and T10, names and splits**: [REPO-RULES](../REPO-RULES/DESIGN.md) WP3, once, after this module.
 
 ## What it must not do
 

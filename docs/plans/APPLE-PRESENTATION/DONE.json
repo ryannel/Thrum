@@ -1,8 +1,8 @@
 {
   "module": "APPLE-PRESENTATION",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "Every pixel of the valley carries correct motion under jitter, including the sky and stars",
       "items": [
         {
@@ -14,7 +14,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -26,7 +26,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -38,7 +38,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -48,7 +48,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -58,12 +58,12 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M0"
+        "APPLE-TILE:WP0"
       ],
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
@@ -72,7 +72,7 @@
       "quality_bar": "Motion fit to drive a shipped temporal reconstructor such as MetalFX or Unreal's TSR: zero for a static scene under jitter, exact at infinity for the sky, Sun and stars, and marked invalid where there is no history rather than fabricated. Judged on the current portable output, before any reconstruction exists."
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
       "items": [
         {
@@ -80,11 +80,11 @@
           "statement": "With reconstruction enabled, depth and motion are stored and sampleable, and APPLE-TILE's eligibility report shows them stored; with it disabled nothing extra is stored.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Does the eligibility report from APPLE-TILE M1 list depth and motion as stored only when a reader exists, and is the disabled path's attachment storage unchanged from before this milestone?",
+          "ask": "Does the eligibility report from APPLE-TILE WP1 list depth and motion as stored only when a reader exists, and is the disabled path's attachment storage unchanged from before this milestone?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "builder_result": "pass"
         },
         {
@@ -96,7 +96,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "builder_result": "pass"
         },
         {
@@ -108,7 +108,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "builder_result": "pass"
         },
         {
@@ -120,31 +120,31 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "builder_result": "pass"
         },
         {
           "id": "D2.5",
-          "statement": "In Chrome, on the game's own frame path, rows W1-W7 of the design's temporal-input witness hold: reactive is written where history is invalid and cleared where it is valid, and the frame after an unsubmitted view takes the last submitted frame as its predecessor, in identity and in the motion it writes.",
+          "statement": "In Chrome, on the game's own frame path, rows WP1-W7 of the design's temporal-input witness hold: reactive is written where history is invalid and cleared where it is valid, and the frame after an unsubmitted view takes the last submitted frame as its predecessor, in identity and in the motion it writes.",
           "check": "node scripts/check_v1_browser.mjs --case temporal",
           "lock": "gpu",
           "ask": "Read the temporal case. Are the reactive and motion values taken from frames the page submitted, not from a side render or a declaration? Is the unsubmitted view abandoned at the latest point the browser frame path allows, with the predecessor identity read from the state the previous matrices are packed from? Would a reactive target that is never written, and history advanced before submission, each fail a row?",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "builder_result": "pass"
         },
         {
           "id": "D2.6",
-          "statement": "On the Mac, rows W1-W5 of the design's temporal-input witness hold, read back from the reactive target itself: 1 on invalid-history geometry and 0 once valid, the volume's alpha on the cooked volume, above 0 on stars and the Sun disk on a phase edit, and 0 for steady stars and uncovered pixels.",
+          "statement": "On the Mac, rows WP1-W5 of the design's temporal-input witness hold, read back from the reactive target itself: 1 on invalid-history geometry and 0 once valid, the volume's alpha on the cooked volume, above 0 on stars and the Sun disk on a phase edit, and 0 for steady stars and uncovered pixels.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of W1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
+          "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of WP1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2-volume/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "builder_result": "pass"
         },
         {
@@ -155,12 +155,12 @@
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M2"
+        "APPLE-TILE:WP2"
       ],
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
@@ -169,7 +169,7 @@
       "quality_bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet."
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome",
       "items": [
         {
@@ -177,11 +177,11 @@
           "statement": "TAAU runs at scale 1.0 in the V1 game on the Mac with the portable recipe forced and in Chrome, on the route; the present path reads TAAU's linear output through APPLE-TILE's pre-tone input and the existing SDR transform still runs once.",
           "check": "python3 scripts/run_v1_showcase.py moving",
           "lock": "gpu",
-          "ask": "Is the reconstructor resolved from the registry with TAAU as the portable default, and does its output enter only through the pre-tone input APPLE-TILE M3 delivered, with no second tone or exposure step?",
+          "ask": "Is the reconstructor resolved from the registry with TAAU as the portable default, and does its output enter only through the pre-tone input APPLE-TILE WP3 delivered, with no second tone or exposure step?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m3/selected/README.md#route-execution",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -193,7 +193,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m3/selected/README.md#still-reference-and-camera-cut",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -203,7 +203,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m3/motion-20261118/README.md#mac-metal-and-portable-taau",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -213,7 +213,7 @@
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m3/motion-20261118/README.md#chrome-webgpu",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -225,22 +225,22 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m3/selected/README.md#still-reference-and-camera-cut",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
           "builder_result": "pass"
         },
         {
           "id": "D3.5",
-          "statement": "TAAU's GPU time on the route is recorded at M3's own 640x360 extent, kept apart from the design's 1080p estimate, with build, load and order; a departure from the estimate is recorded as a tripwire, not a failure.",
+          "statement": "TAAU's GPU time on the route is recorded at WP3's own 640x360 extent, kept apart from the design's 1080p estimate, with build, load and order; a departure from the estimate is recorded as a tripwire, not a failure.",
           "ask": "Is the timing a paired on/off record on the route at the stated extent, labelled for load, and is it kept from being read as the 1080p figure the design estimates?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/m3/selected/README.md#moving-route-timing",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M3"
+        "APPLE-TILE:WP3"
       ],
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
@@ -249,7 +249,7 @@
       "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words."
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "The valley fills the window at any size, and keeps presenting while the window is resized",
       "items": [
         {
@@ -259,9 +259,9 @@
           "lock": "gpu",
           "ask": "Does the arm read the submitted frame through engine capture's tap at each size, and compare the extent the host resolved with the window's backing size? Do offscreen, capture and exact-baseline paths still name their own extents, so that no retained image moved?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/mac-extent-final/extent.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/mac-extent-final/extent.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -270,9 +270,9 @@
           "check": "python3 scripts/apple_presentation.py extent --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/ios-review-fix/extent/extent.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/ios-review-fix/extent/extent.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -281,9 +281,9 @@
           "check": "node scripts/check_v1_browser.mjs --case extent",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/chrome.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/chrome.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -293,9 +293,9 @@
           "lock": "gpu",
           "ask": "Read the test. Does it drive the host's own resize and frame calls, count creations by thread, and include a control in which the build runs on the render thread and the count sees it? Is a superseded build's result shown never to reach a frame?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/review-fixes.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/review-fixes.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -305,9 +305,9 @@
           "lock": "gpu",
           "ask": "Read the test. Is each of the four cases driven through the host's own calls, and is the history reset shown by comparing the first new frame with an independently reset one, with a control that keeps history across the switch failing?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/review-fixes.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/review-fixes.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -317,9 +317,9 @@
           "lock": "gpu",
           "ask": "Does the arm resize a real game window and read the engine's frame records, with the console state recorded as a witness and not as a pass condition? Does it fail when the transition is forced back to the synchronous path, which reconfigures at every step?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/missed-display-intervals/README.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/missed-display-intervals/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -331,9 +331,9 @@
             "what": "Screen Recording granted to the tool that captures the game window, with the Mac unlocked. The agent wakes the display, runs the capture and reviews it; nobody has to watch."
           },
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/D4.7.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/D4.7.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -343,9 +343,9 @@
           "lock": "gpu",
           "ask": "Read the test. Does its surface behave as released wgpu does after an error, reporting the size it was asked for while the drawable keeps the old one, so that a host which skipped the restore would fail? Is a deferral shown to make no call, and is each of the four counts asserted for a deferred switch, a failed one with a good restore and a failed one with a failed restore?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/review-fix-metal-proof.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/review-fix-metal-proof.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -355,9 +355,9 @@
           "lock": "gpu",
           "ask": "Is the error raised by wgpu's own configure, through the host's switch, and not by a test double? Is the drawable's size read from Metal and not from wgpu's descriptor?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/mac-fault-checked/configure-fault.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/mac-fault-checked/configure-fault.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -366,9 +366,9 @@
           "check": "python3 scripts/apple_presentation.py transition --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/ios-review-fix/transition/transition.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP4/ios-review-fix/transition/transition.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "builder_result": "pass"
         }
       ],
@@ -380,49 +380,49 @@
       "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function."
     },
     {
-      "id": "M14",
+      "id": "WP14",
       "name": "The retained native valley images reflect the corrected material mip bias",
       "status": "done",
       "items": [
         {
-          "id": "M14.1",
+          "id": "WP14.1",
           "statement": "The `apple-tile-native` references affected by the native spatial mip bias restored in `32dfd3c14` match fresh registered captures for both Metal recipes. Both module logs record the cause and every replaced file's old and new SHA-256. The reference guard and the exact-images verifier pass under the native mip-bias ruling.",
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Do the matched captures show the bias change accounts for the replaced references, starting with `portable-sdr-approach`? Do the candidate verification record, both logs and the landing diff agree on the files and hashes, the `apple-tile-native` pin and refresh, and the unchanged comparison and capture settings?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M14/README.md#full-candidate-verification",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP14/README.md#full-candidate-verification",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M14-review.md"
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP14-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M13",
+      "id": "WP13",
       "name": "A small exposure check catches a twilight brightness rebound",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M13.1",
+          "id": "WP13.1",
           "statement": "The twilight test stays in the fast tier and still proves that physical sky radiance falls and that displayed sky luminance falls with it through the incident meter and low-light adaptation. Guard: the twilight exposure regression on a compact GPU target.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --lib -E 'test(=synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky)' --no-tests=fail",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M13/README.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP13/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M13-review.md"
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP13-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "Render scale steps during play with no hitch and no history reset",
       "items": [
         {
@@ -432,9 +432,9 @@
           "lock": "gpu",
           "ask": "Read the scale arm. Is the frame after a step compared with an independently reset render of the same state, and is the jitter sequence shown to continue across the step?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/scale.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP5/scale.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -444,32 +444,32 @@
           "lock": "gpu",
           "ask": "Read the test. Does a control that reallocates at a step make the counters move?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/metal-attachments.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP5/metal-attachments.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "builder_result": "pass"
         },
         {
           "id": "D5.3",
-          "statement": "At every scale, motion, the sky, aerial lookups and reconstruction address the drawn subrectangle only: M1's zero-motion and sky-pan witnesses hold, a border outside the subrectangle filled with a marker colour changes no output pixel, and material sampling uses the mip bias log2(render/output) \u2212 1 from the view record.",
+          "statement": "At every scale, motion, the sky, aerial lookups and reconstruction address the drawn subrectangle only: WP1's zero-motion and sky-pan witnesses hold, a border outside the subrectangle filled with a marker colour changes no output pixel, and material sampling uses the mip bias log2(render/output) \u2212 1 from the view record.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test dynamic_scale",
           "lock": "gpu",
           "ask": "Read the test. Is the marker border written into the attachments themselves, outside the subrectangle, at each of the five scales, and compared against a run without it over the whole output?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/review-fixes/attachments.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP5/review-fixes/attachments.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "builder_result": "pass"
         },
         {
           "id": "D5.4",
-          "statement": "At each still route checkpoint the design's colour difference to the reconstruction reference is on record for each of the five scales. Scale 1.0 still meets M3's tolerance; no bound is set below it.",
+          "statement": "At each still route checkpoint the design's colour difference to the reconstruction reference is on record for each of the five scales. Scale 1.0 still meets WP3's tolerance; no bound is set below it.",
           "check": "python3 scripts/apple_presentation.py scale --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/scale.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP5/scale.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -478,9 +478,9 @@
           "check": "node scripts/check_v1_browser.mjs --case scale",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/chrome/scale-steps.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP5/chrome/scale-steps.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -488,9 +488,9 @@
           "statement": "On the Mac a step between any two neighbouring scales is not seen as an event: no hitch, flash or jump in the picture, and at 0.67 and 0.5 the terrain silhouette, the grid fixture and thin props are softer but do not break up, crawl or shimmer.",
           "inspect": "Capture the route with a scripted scale trace that visits every step, with T2 engine capture in `realtime` mode. Watch each step at 1x and judge native-size crops of the three features just before and after it. Say that you watched motion.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/review-fixes/README.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP5/review-fixes/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -500,9 +500,9 @@
           "lock": "gpu",
           "ask": "Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M5/scale-costs.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP5/scale-costs.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "builder_result": "pass"
         }
       ],
@@ -514,28 +514,28 @@
       "quality_bar": "Dynamic resolution as in a shipped game that hides it well, such as Spider-Man 2 or Forza Horizon 5: the picture softens a little at lower scale and never pops, flashes, shimmers at the step or loses its history. Judged in motion from the running game on the Mac and in Chrome."
     },
     {
-      "id": "M15",
+      "id": "WP15",
       "name": "Chrome's SDR valley matches the retained frames again",
       "status": "done",
-      "quality_bar": "Match the registered APPLE-TILE records byte for byte. Meet M6's float headroom and undithered H = 1 identity bounds on Metal.",
+      "quality_bar": "Match the registered APPLE-TILE records byte for byte. Meet WP6's float headroom and undithered H = 1 identity bounds on Metal.",
       "items": [
         {
-          "id": "M15.1",
+          "id": "WP15.1",
           "statement": "Chrome's fixed day SDR route matches all 481 retained record identities and decoded RGBA8 digests, including ordinal 61. The full exact-images matrix passes on main against the registered references.",
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Do the matched Chrome control and corrected captures isolate the SDR shader change and recover all 481 records? Does the landing keep the reference files, registry, capture settings and comparator intact? Do the Metal D6.2 and D6.3 receipts on the corrected shader still meet the float headroom and H = 1 identity bounds?",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images; .orchestrate/evidence/APPLE-PRESENTATION/M15/README.md",
+          "evidence": "main-branch check exact-images; .orchestrate/evidence/APPLE-PRESENTATION/WP15/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M15-review.md"
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP15-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "Highlights go brighter than SDR white on the built-in XDR display",
       "items": [
         {
@@ -545,9 +545,9 @@
           "lock": "gpu",
           "ask": "Where are `preferredDynamicRange` and `contentsHeadroom` set, on which thread, and through which reference to the layer? Does any path take wgpu's layer lock? Is the display's real record kept as a witness beside the forced one the arm uses?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/D6.1/edr.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/after-m15/D6.1/edr.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -557,9 +557,9 @@
           "lock": "gpu",
           "ask": "Read the test. Is the CPU reference written from the design's formula and not from the shader? Is the shader's output read back from a float target for the same inputs?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/D6.2/stdout.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/after-m15/D6.2/stdout.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -569,9 +569,9 @@
           "lock": "gpu",
           "ask": "Are both frames taken from one scene state through engine capture's tap, and is the float frame the one the surface was given?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/D6.3/edr-identity.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/after-m15/D6.3/edr-identity.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -580,9 +580,9 @@
           "check": "python3 scripts/apple_presentation.py edr-modes --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/D6.4/edr-modes.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/after-m15/D6.4/edr-modes.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -591,9 +591,9 @@
           "check": "python3 scripts/apple_presentation.py edr-headroom --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/D6.5/edr-headroom.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/after-m15/D6.5/edr-headroom.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -603,9 +603,9 @@
           "lock": "gpu",
           "ask": "Does engine capture read the float target the surface was given in this mode, without changing what it records in the 8-bit mode?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/drawable-capture/README.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/drawable-capture/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -614,9 +614,9 @@
           "check": "exec python3 scripts/apple_presentation.py edr --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/D6.7/edr.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/after-m15/D6.7/edr.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         },
         {
@@ -624,9 +624,9 @@
           "statement": "In false colour and scaled down to SDR for viewing, the EDR frames at H of 2 and 8 show highlights that keep their colour and shape: the Sun's disc is round with a soft edge of sky around it, the sunset sky grades without a flat clipped patch or a band, and each lamp is a point with its own colour.",
           "inspect": "From the float captures of D6.6 make, for the sunset and the night-lights stops, a false-colour image of values above 1.0 and an image divided by H. Judge each whole and in native-size crops of the Sun, the sky beside it and two lamps, beside the SDR frame of the same state.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/D6.8/README.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP6/after-m15/D6.8/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "builder_result": "pass"
         }
       ],
@@ -638,7 +638,7 @@
       "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that."
     },
     {
-      "id": "M7",
+      "id": "WP7",
       "name": "The governor holds the display rate under forced load, then recovers step by step",
       "items": [
         {
@@ -647,7 +647,7 @@
           "check": "cargo test --locked --offline -p thrum-render --test governor_policy",
           "ask": "Read the test. Is the policy a function of samples, missed ticks, the display record and the host's hold marks alone, with no clock of its own? Is each behaviour a separate case with a control? After a build that ended with no new generation, is scale shown to drop under load with no further change of request?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/span-policy.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/span-policy.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -659,7 +659,7 @@
           "lock": "gpu",
           "ask": "Are ticks without a present counted by the frame host from display-link ticks, and labelled as a render-side proxy? Does the arm fail with the governor off under the same load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/delivery-live/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/delivery-live/governor.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -670,7 +670,7 @@
           "check": "python3 scripts/apple_presentation.py governor --target mac-metal --steady",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/delivery-steady/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/delivery-steady/governor.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -681,7 +681,7 @@
           "check": "python3 scripts/apple_presentation.py governor-identity --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/identity.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/identity.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -693,7 +693,7 @@
           "lock": "gpu",
           "ask": "Read the test. Is registration open to a crate that `thrum-render` does not name, as the module list's quality-knobs interface requires for `WATERS` and `CLOUDS`? Does the test register a knob from a test contribution and watch its value change under load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/rust-items-final.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/rust-items-final.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -704,7 +704,7 @@
           "check": "python3 scripts/apple_presentation.py governor-thermal --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/thermal/governor-thermal.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/thermal/governor-thermal.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -715,7 +715,7 @@
           "check": "node scripts/check_v1_browser.mjs --case governor",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/delivery-chrome/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/delivery-chrome/governor.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -725,7 +725,7 @@
           "statement": "In real time on the Mac, through the forced load and the recovery, the motion stays smooth and the picture shows no oscillation, pop or flash: a viewer who is not told cannot point to the frame of a scale step.",
           "inspect": "Capture the forced-load run with T2 engine capture in `realtime` mode, with capture's own cost shown apart. Watch it at 1x, then judge native-size crops of thin features across each step the trace names. Say that you watched motion.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/resume/qualified-motion/README.md",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/qualified-motion/README.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -737,7 +737,7 @@
           "lock": "gpu",
           "ask": "Read the test. Is the failed build the one D4.5's test forces, reached through the host's resize and frame calls and not by setting the governor's state? Does a control whose hold never ends fail it?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M7/rust-items-final.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/rust-items-final.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -756,11 +756,11 @@
           "commit": "91cc8ecb1d9007d3646fbbd8996ac5c0d6db2156",
           "branch": "main"
         },
-        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/M7-handoff.md"
+        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-handoff.md"
       }
     },
     {
-      "id": "M8",
+      "id": "WP8",
       "name": "MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback",
       "items": [
         {
@@ -845,7 +845,7 @@
         },
         {
           "id": "D8.8",
-          "statement": "On the Mac's Apple recipe, M3's five motion sequences and a sequence across a governor scale step show no ghosting, crawl, shimmer or brightness lag beyond TAAU's on the same sequence.",
+          "statement": "On the Mac's Apple recipe, WP3's five motion sequences and a sequence across a governor scale step show no ghosting, crawl, shimmer or brightness lag beyond TAAU's on the same sequence.",
           "inspect": "Capture each sequence with T2 engine capture in `realtime` mode with MetalFX and again with TAAU. Watch each pair at 1x and judge native-size crops of trailing edges, the revealed background, the spawned object's first frames, single stars and the sky during the scrub. Say that you watched motion.",
           "target": "mac-metal",
           "evidence": "",
@@ -855,7 +855,7 @@
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M11"
+        "APPLE-TILE:WP11"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -864,7 +864,7 @@
       "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences."
     },
     {
-      "id": "M9",
+      "id": "WP9",
       "name": "Surface, device and display changes create nothing during play, and launch-to-ready time is on record",
       "items": [
         {
@@ -922,7 +922,7 @@
       "quality_bar": "As free of shader-compilation stutter as a shipped game that compiles its pipelines on a loading screen before play, as Horizon Zero Dawn and Call of Duty: Modern Warfare do on PC: after the game is ready, nothing is compiled, whatever the window or the display does, and a lost device is prepared again behind the same readiness before play resumes."
     },
     {
-      "id": "M10",
+      "id": "WP10",
       "name": "Shaders compiled ahead of time load at launch with no WGSL translation, and pipelines are prepared in parallel",
       "items": [
         {
@@ -984,7 +984,7 @@
         },
         {
           "id": "D10.6",
-          "statement": "The pinned copy of wgpu-hal is version 30.0.1 with the patch files kept beside it applied and nothing else, selected by a `[patch]` entry and registered in `.config/architecture.toml`. In M10 its only patch is the passthrough stage record. The WGSL path translates and runs as in the release: the patch may expose what its translation call returns, and changes nothing it does.",
+          "statement": "The pinned copy of wgpu-hal is version 30.0.1 with the patch files kept beside it applied and nothing else, selected by a `[patch]` entry and registered in `.config/architecture.toml`. In WP10 its only patch is the passthrough stage record. The WGSL path translates and runs as in the release: the patch may expose what its translation call returns, and changes nothing it does.",
           "check": "python3 scripts/apple_presentation.py wgpu-pin",
           "ask": "Does the command rebuild the copy from the released crate's source and the patch files without the network, and fail on one changed byte? Read the patch: outside the passthrough shader path, does it do more than expose the translation call's existing results?",
           "target": "mac-metal",
@@ -1002,15 +1002,15 @@
       "quality_bar": "Launch as a shipped Metal game prepares it, following Apple's guidance to build GPU binaries ahead of time: the shaders the game needs were compiled when it was built, they are exactly the ones the running game asks for, and a library that does not match is rebuilt before play and never during it."
     },
     {
-      "id": "M12",
+      "id": "WP12",
       "name": "A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run",
       "items": [
         {
           "id": "D12.1",
-          "statement": "The pinned backend's second patch backs wgpu's pipeline cache with a Metal binary archive: pipelines created with the cache are added to the archive, and its data survives a write to a file and a read in a new process. The archive change is its own patch file beside M10's, and D10.6's pin check passes with both.",
+          "statement": "The pinned backend's second patch backs wgpu's pipeline cache with a Metal binary archive: pipelines created with the cache are added to the archive, and its data survives a write to a file and a read in a new process. The archive change is its own patch file beside WP10's, and D10.6's pin check passes with both.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test pipeline_archive",
           "lock": "gpu",
-          "ask": "Is the archive change one patch a reader can review apart from M10's? Does any shipping path write the archive during play?",
+          "ask": "Is the archive change one patch a reader can review apart from WP10's? Does any shipping path write the archive during play?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -1061,7 +1061,7 @@
       "quality_bar": "A warm start as a shipped Metal game with binary archives has it: the second launch compiles nothing, a damaged or outdated archive costs one slower launch and never a crash or a hitch in play, and the proof is a run that is not allowed to fall back."
     },
     {
-      "id": "M11",
+      "id": "WP11",
       "name": "Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and G4 closes",
       "items": [
         {
@@ -1111,7 +1111,7 @@
         {
           "id": "D11.5",
           "statement": "Gate G4 holds as the brief words it, on the evidence the design's closing table names, and the maturity ledger says what was and was not proved, with implementation, correctness, visuals and device results apart. EDR is recorded as values above SDR white given to a layer configured for EDR, not as light the panel emitted. The physical iPhone and external-display rows are named as owed.",
-          "ask": "Take the brief's G4 sentence clause by clause: which item of M3 to M12 proves each, and is any clause proved only by a forced override that the ledger does not label?",
+          "ask": "Take the brief's G4 sentence clause by clause: which item of WP3 to WP12 proves each, and is any clause proved only by a forced override that the ledger does not label?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -1150,7 +1150,7 @@
         }
       ],
       "depends_on": [
-        "APPLE-TILE:M12"
+        "APPLE-TILE:WP12"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,

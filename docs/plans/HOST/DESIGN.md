@@ -90,41 +90,41 @@ go onto the game contract here.
 
 | Drift between hosts today | Ends as | Closed in |
 |---|---|---|
-| Features: content features on the Mac, timing only on iPhone and in the browser | The native profile everywhere native; the portable profile, by name, in the browser | M1 |
-| Limits: `downlevel_defaults` on iPhone, wgpu's defaults elsewhere | The adapter's limits on every native host | M1 |
-| Adapter choice differs between the two game capture paths | The recipe's one choice | M1 |
-| Fault watch: three, with different contents | The recipe's one watch | M1 |
-| An uncaptured error is fatal on the Mac and in the browser, survived on iPhone | Recorded and survived | M1 |
-| Surface configure retries on the Mac only | The recipe's configure | M1 |
-| The SDR format list, three copies; the first generation, eleven literals | One of each | M1 |
-| A validation failure at acquire is fatal in the browser | Recovered, by the one outcome mapping | M2 |
-| Pause and overload, four copies | One policy in core | M2 |
-| Waiting for cooked content by reading frames back, about thirty sites | Render once and await drawn | M3 |
-| The game's forwarding host, and two ways to capture the game to disk | The engine's frame host held directly; one capture path | M3 |
-| `Game` exists on macOS only; the browser has a second contract; the sky kit builds its host twice | One contract, three adapters, one construction | M4 |
-| The Mac qualification harness names a game's control | An observer given its control by its caller | M4 |
-| The render owner's frame job and reply, written twice (Mac and iPhone) | One pair of types in `thrum-app` | M4 |
-| The iPhone app's owner thread, UIKit lifecycle, surface lease, touch and command table | Stay in the iPhone app; `GAME-UI` M6 moves them to `thrum-app` | Not here |
+| Features: content features on the Mac, timing only on iPhone and in the browser | The native profile everywhere native; the portable profile, by name, in the browser | WP1 |
+| Limits: `downlevel_defaults` on iPhone, wgpu's defaults elsewhere | The adapter's limits on every native host | WP1 |
+| Adapter choice differs between the two game capture paths | The recipe's one choice | WP1 |
+| Fault watch: three, with different contents | The recipe's one watch | WP1 |
+| An uncaptured error is fatal on the Mac and in the browser, survived on iPhone | Recorded and survived | WP1 |
+| Surface configure retries on the Mac only | The recipe's configure | WP1 |
+| The SDR format list, three copies; the first generation, eleven literals | One of each | WP1 |
+| A validation failure at acquire is fatal in the browser | Recovered, by the one outcome mapping | WP2 |
+| Pause and overload, four copies | One policy in core | WP2 |
+| Waiting for cooked content by reading frames back, about thirty sites | Render once and await drawn | WP3 |
+| The game's forwarding host, and two ways to capture the game to disk | The engine's frame host held directly; one capture path | WP3 |
+| `Game` exists on macOS only; the browser has a second contract; the sky kit builds its host twice | One contract, three adapters, one construction | WP4 |
+| The Mac qualification harness names a game's control | An observer given its control by its caller | WP4 |
+| The render owner's frame job and reply, written twice (Mac and iPhone) | One pair of types in `thrum-app` | WP4 |
+| The iPhone app's owner thread, UIKit lifecycle, surface lease, touch and command table | Stay in the iPhone app; `GAME-UI` WP6 moves them to `thrum-app` | Not here |
 | The display link: Swift on iPhone, `objc2` on the Mac | A fact of the platform | Not a drift |
 
-A milestone is judged on its own rows. M2 closes the device, fault, surface and lifecycle policies; the contract
-and the render owner's types are M4's, and a review of M2 does not ask for them.
+A milestone is judged on its own rows. WP2 closes the device, fault, surface and lifecycle policies; the contract
+and the render owner's types are WP4's, and a review of WP2 does not ask for them.
 
 ## Interfaces
 
 | Interface | For |
 |---|---|
 | **Device recipe**: a device, its capability record and its fault watch from one request, by profile and optional restriction | Every shell, capture, bench and test; `TEST-SUPPORT` |
-| **World lifecycle policy**: pause, overload and resume for both drive styles | The three shells; `SESSION` M7's driven world extends it |
+| **World lifecycle policy**: pause, overload and resume for both drive styles | The three shells; `SESSION` WP7's driven world extends it |
 | **Render once** and **await drawn** | Shells, captures, tests |
-| **Game contract**: what a game implements to run in the window, on the page and offscreen | Games, the kit scenes; `GAME-UI` M6 adds the iPhone adapter |
-| **Frame job and reply**: what a shell's render owner is asked for one frame, and what it answers | The Mac render actor, the iPhone app's owner; `GAME-UI` M6 |
+| **Game contract**: what a game implements to run in the window, on the page and offscreen | Games, the kit scenes; `GAME-UI` WP6 adds the iPhone adapter |
+| **Frame job and reply**: what a shell's render owner is asked for one frame, and what it answers | The Mac render actor, the iPhone app's owner; `GAME-UI` WP6 |
 
 ## Not built here
 
-The iPhone app's UIKit lifecycle and render owner stay where they are until `GAME-UI` M6 moves them into
-`thrum-app`; this module makes that a move by taking out first what the copies share: the device request (M1),
-the lifecycle and surface policy (M2), the forwarding host (M3) and the frame job and reply (M4). A still scene that renders at
+The iPhone app's UIKit lifecycle and render owner stay where they are until `GAME-UI` WP6 moves them into
+`thrum-app`; this module makes that a move by taking out first what the copies share: the device request (WP1),
+the lifecycle and surface policy (WP2), the forwarding host (WP3) and the frame job and reply (WP4). A still scene that renders at
 the display's full rate forever (M58) is left: idling a host changes what the cadence qualification measured, and
 belongs with the governor.
 

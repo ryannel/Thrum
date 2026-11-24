@@ -1,8 +1,8 @@
 {
   "module": "GATE-TIME",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "A merge's check no longer runs the ten-minute gale, the stepped hour, the field flythroughs or the shore-blend solve, and they pass on main after each merge",
       "status": "done",
       "failed_reviews": 0,
@@ -11,61 +11,61 @@
       "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "`./dev check` runs none of the six long tests the design's table names for this milestone: the ten-minute gale on Metal, the exit scene's stepped hour, the three field flythroughs and the shore-blend solve. Each is an ignored test whose reason starts `long:` and names the command that runs it, with the body and every assertion it had. The other tests of those binaries run in `./dev check` as they did.",
           "check": "sh -c 'test \"$(cargo test --locked --offline -p water-scene -p v1-game -p thrum-water-model --tests -- --list --ignored 2>/dev/null | grep -cE \"(^|::)(actual_gale_keeps_the_fleet_in_contact_on_metal|movers_keep_their_authored_loops_after_a_stepped_hour|field_culling_matches_direct_along_the_flythrough|mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough|mixed_mesh_occlusion_matches_bucket_direct_through_first_cut|both_blends_against_component_own_solve_and_nearest_negative_control): test$\")\" -eq 6'",
           "ask": "Compare the six tests with the starting commit: is anything changed but the ignore attribute? Does each reason start `long:` and name the command that runs the test? Is any other test of those files ignored, shortened or removed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M1/ (agent_loop check output); the six tests listed as ignored",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP1/ (agent_loop check output); the six tests listed as ignored",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M1-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "`./dev long-tests` runs every long test and no other ignored test, on the toolchain `./dev check` uses, and a GPU test that finds no adapter fails in it where it would have skipped. It reads the main-tier list, `.config/long-tests.txt`, which names each test binary with its package and its build: release with overflow checks on, or the debug build for a test that failed in release at the starting commit, where the log gives that failure and names the module that owns the test. The list names the foam scene's test binary too. `./dev help` lists the command, and `ORCHESTRATE.md` declares the main-branch check `long-tests` in the design's words, with the timeout set as the design says.",
           "check": "sh -c './dev help | grep -q long-tests && grep -q \"Main-branch check long-tests:\" ORCHESTRATE.md && git ls-files --error-unmatch .config/long-tests.txt >/dev/null'",
-          "ask": "Read the command and the list. Does it run each of the six tests of M1.1, and can it run an ignored test that is not a long test, such as the cooked valley route's? Does it set what makes a GPU test fail where no adapter is found, and use the toolchain `./dev check` uses? Does this milestone's evidence hold one run of the six in release with its wall time? Is any test listed for the debug build, and does the log give its release failure and name its owner? Is the settings line the design's, word for word but for the timeout?",
+          "ask": "Read the command and the list. Does it run each of the six tests of WP1.1, and can it run an ignored test that is not a long test, such as the cooked valley route's? Does it set what makes a GPU test fail where no adapter is found, and use the toolchain `./dev check` uses? Does this milestone's evidence hold one run of the six in release with its wall time? Is any test listed for the debug build, and does the log give its release failure and name its owner? Is the settings line the design's, word for word but for the timeout?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M1/release-run.log and release-run-gpu.log (release run of the six at 79b1fcb7f, wall times)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP1/release-run.log and release-run-gpu.log (release run of the six at 79b1fcb7f, wall times)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M1-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "The six long tests pass in the main-branch check `long-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M1-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "A test marked as a long test cannot run in no tier: `./dev check-docs` fails when a test whose `#[ignore]` reason starts `long:` sits in a test binary the main-tier list does not name, and its message names the test and the list.",
           "ask": "In a scratch copy, mark a test `#[ignore = \"long: probe\"]` in a binary the list does not name and run `./dev check-docs`: does it fail and name the test? Does it still pass for an ignored test whose reason does not start `long:`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M1/m1.5-probe.log",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP1/m1.5-probe.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M1-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M1/ (agent_loop check output)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP1/ (agent_loop check output)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M1-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "A change that breaks a test behind a Cargo feature fails its merge's check, and those tests run on main after each merge",
       "status": "done",
       "failed_reviews": 1,
@@ -74,50 +74,50 @@
       "quality_bar": "As dependable as the feature matrix of a well-kept Rust workspace such as wgpu's or Bevy's: no test sits behind a feature that nothing builds, and anyone can see from one list where each such test runs.",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "`./dev check` builds and lints every test that sits behind a Cargo feature, with that feature on: the test targets of each package the main-tier list names, with the features the list gives it, under the lints the rest of the workspace gets. That is `thrum-render` with `creation-counters`, the game with `draw-probe` and `thrum-asset-gpu/fault-probe`, and `thrum-asset-gpu` with its own `draw-probe`. The record gives what the step adds to the check's time.",
           "ask": "In a scratch copy, add a type error to `crates/thrum-render/tests/ray_instances_seam.rs`; separately to `examples/v1-game/tests/cooked_fault_gpu.rs`; and separately inside the `draw-probe` test of `crates/thrum-asset-gpu/tests/error_types.rs`: does `./dev check` fail on each? Does the step take its packages and features from the list, with no second copy of them in the command? What did the step add to the check's time on a warm build, measured, with the load recorded?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M6/record.md#m61--scratch-faults-and-cost",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP6/record.md#m61--scratch-faults-and-cost",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP6-review.md"
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "`./dev long-tests` also runs every test behind a Cargo feature, with its feature on and a GPU required, and they pass in the main-branch check `long-tests` on main at the claimed commit. The main-tier list names each package with its features, and covers it whole or by test binary: `thrum-render` is listed whole with `creation-counters`, so every test binary of that package runs with the feature on and a new one runs with no edit to the list. A test that failed at the starting commit is listed as not run, with its failure and the module that owns it, and is not changed.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Search the workspace's test files and manifests for a Cargo feature, in `required-features` and in `cfg`: is each test it gates covered by the list with that feature, or listed as not run with its failure and its owner? Was any such test edited? Does the handoff name each test listed as not run? How long does one run of `./dev long-tests` take now, and is the settings line's timeout at least twice that?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check long-tests; .orchestrate/evidence/GATE-TIME/M6/record-round2.md#m62-the-search-for-every-test-behind-a-feature-feature-listinglog",
+          "evidence": "main-branch check long-tests; .orchestrate/evidence/GATE-TIME/WP6/record-round2.md#m62-the-search-for-every-test-behind-a-feature-feature-listinglog",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP6-review.md"
         },
         {
-          "id": "M6.3",
+          "id": "WP6.3",
           "statement": "A Cargo feature cannot take a test out of every tier unnoticed, however the test is gated. `./dev check-docs` fails when a test target requires a feature, or a `cfg` in a test file names one, and the main-tier list does not cover that file's package with that feature: whole, or by the test binary the file builds into. The message names the file, the feature and the list.",
           "ask": "In a scratch copy, add `crates/thrum-render/tests/zz_probe_gpu.rs` holding one test under `#[cfg(feature = \"creation-counters\")]`: does `./dev check-docs` pass, and is that binary among what `./dev long-tests` runs for `thrum-render`, with no edit to the list? Add a file to the game's `tests/` holding one test under `#[cfg(feature = \"draw-probe\")]`: does `./dev check-docs` fail and name the file and the feature, and pass once the list names its binary? Give one test target `required-features` naming a feature the list lacks: does it fail? Does a test file that names no feature still pass?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M6/record-round2.md#m63-probes-scratch-lib-inlinelog-the-suite",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP6/record-round2.md#m63-probes-scratch-lib-inlinelog-the-suite",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP6-review.md"
         },
         {
-          "id": "M6.4",
+          "id": "WP6.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP6-review.md"
         }
       ]
     },
     {
-      "id": "M8",
+      "id": "WP8",
       "name": "A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it",
       "status": "done",
       "failed_reviews": 1,
@@ -126,102 +126,102 @@
       "quality_bar": "As measured and as dependable as the test runs of a well-kept Rust workspace such as wgpu's or Zed's, which go through cargo-nextest: timed both ways on one commit before it is switched on, with the same tests passing after as before, run after run.",
       "items": [
         {
-          "id": "M8.1",
+          "id": "WP8.1",
           "statement": "Before anything is switched on, the record times the whole workspace's tests on one commit three ways: as `./dev check` ran them, one binary after another; side by side through cargo-nextest; and side by side on test builds with dependencies optimised fully and workspace crates lightly. Each way is run twice, alternating, each from the same starting state with its build counted, and each run has its wall time, the load average and what else was running. The record also gives the time alone of every test that takes over ten seconds on the build that is then switched on.",
           "ask": "Does the record hold two runs of each of the three arrangements on one commit, alternated and not grouped, each with its load and with its build counted? Does it give the time alone of every test over ten seconds on the build now in use? Does the log show the record was made before the runner was switched on?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.1; runs/ A1 C1 A2 B2 C2 B3 at 48286bcae, alone.junit.xml at c6a5fdc48)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.1; runs/ A1 C1 A2 B2 C2 B3 at 48286bcae, alone.junit.xml at c6a5fdc48)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.2",
+          "id": "WP8.2",
           "statement": "`./dev check` runs the tests of every test binary side by side through cargo-nextest, each test in a process of its own, on binaries built once for the whole workspace, and still runs the doc tests. Side by side is on because both its runs in the record were shorter than both runs as it was. The optimised test build is on only if both its runs were shorter than both side-by-side runs without it, and the record says which. Test builds keep debug assertions and overflow checks, the four model crates keep their overrides, and nothing but a test is built differently. A failed test is not run again. Where cargo-nextest is missing or older than the version the check names, the check stops before any step with the command that installs it; `CONTRIBUTING.md` says it is needed, and the manual CI workflow installs it.",
           "check": "sh -c 'test -f .config/nextest.toml && grep -q nextest CONTRIBUTING.md && grep -q nextest .github/workflows/ci.yml'",
           "ask": "Read the check command and the record. Is each arrangement that is on one that won both ways? Do test builds keep debug assertions and overflow checks, and is anything that is not a test built differently from the starting commit? Are the doc tests still run? Is a failed test ever run again? With cargo-nextest taken off the path, does `./dev check` stop at once and give the command that installs it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.2; probes/no-nextest.log, probes/old-nextest.log)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.2; probes/no-nextest.log, probes/old-nextest.log)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.3",
+          "id": "WP8.3",
           "statement": "Every test that ran and passed in `./dev check` at the starting commit runs and passes in it now on this Mac, and none is skipped; a test the check ran twice may now run once. The whole workspace's tests pass side by side five runs in a row, made while other builders work, with `THRUM_REQUIRE_GPU=1`. The record holds the test names and results before and after, the five runs with their load, and each test that takes turns in a group or is counted as heavy, with what failed or slowed without it.",
           "ask": "Compare the two recorded lists test by test, not their totals: does every test that reported ok before report ok after? Does any of the five runs hold a failure, a second attempt or a `thrum-gpu-skip:` line? For each of the five files the design names as holding a device mutex: do its tests take turns in a group, or does the record show five whole runs passing without one and say why nothing those tests measure can be moved by another test? What stops fourteen river-model tests starting fourteen thread pools, and does the record show its effect?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.3; runs/check1-5.log and .tests.tsv against runs/A1.tests.tsv)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.3; runs/check1-5.log and .tests.tsv against runs/A1.tests.tsv)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.4",
-          "statement": "`./dev check` reports each test that runs for over ten seconds, and stops and fails one that runs for over sixty. The failure names the test and says what to do: make it fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration, which gives each name the milestone that removes it: M2, M9 or M3. The list holds every test the record shows over ten seconds alone, and no other.",
+          "id": "WP8.4",
+          "statement": "`./dev check` reports each test that runs for over ten seconds, and stops and fails one that runs for over sixty. The failure names the test and says what to do: make it fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration, which gives each name the milestone that removes it: WP2, WP9 or WP3. The list holds every test the record shows over ten seconds alone, and no other.",
           "ask": "In a scratch copy, add a test that sleeps for seventy seconds to a fast binary: does `./dev check` stop it, fail, name it and say what to do? Does one that sleeps for fifteen pass and show as slow? Compare the exempt list with the record's times alone: is every test over ten seconds on it with its milestone, and is any test on it that the record shows at ten seconds or under?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.4 and Round 2; round2/ctd-relative-sleep.log, round2/default-sleep.log)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.4 and Round 2; round2/ctd-relative-sleep.log, round2/default-sleep.log)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.5",
+          "id": "WP8.5",
           "statement": "`./dev check` ends, whether it passes or fails, with the wall time of each of its steps, the tests' among them, and the ten slowest tests with their times. The log gives this milestone's own merge check by those lines: its wall time and its tests' time.",
           "ask": "Read the saved output of this milestone's own merge check, under `.git/orchestrate/checks`: does it end with a time for every step the check ran and the ten slowest tests, and do the log's two figures match it? In a scratch copy, make one step fail: are the times of the steps that ran still printed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.5 and Round 2; round2/ctd-clean.log, round2/ctd-relative-sleep.log, probes/failing-step.log; the merge check named in LOG.md)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.5 and Round 2; round2/ctd-clean.log, round2/ctd-relative-sleep.log, probes/failing-step.log; the merge check named in LOG.md)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.6",
+          "id": "WP8.6",
           "statement": "`./dev check` runs each cooked-asset test once against the production build, in the workspace pass, and its draw-probe pass runs only the tests that assert on the draw probe.",
           "ask": "Which tests of the cooked-assets binary read the draw probe? Does the probe pass run each of them and no other test of that binary, and does the workspace pass still run all of them?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.6; runs/check5.log draw-probe step)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md (WP8.6; runs/check5.log draw-probe step)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.7",
+          "id": "WP8.7",
           "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests` on main at the claimed commit: a changed test build broke none of them.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.8",
+          "id": "WP8.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         },
         {
-          "id": "M8.9",
+          "id": "WP8.9",
           "statement": "`FrameHost::capture_pixels` returns its pixels when another thread's poll of the same device takes the readback's completion and delivers it late, as the cooked loader's poll can. After its submission completes it keeps polling until its own readback arrives, and fails only when `GPU_WAIT` has passed. The test `gpu_capture_pixels_waits_for_a_readback_another_thread_delivers`, among `thrum-render`'s library tests, captures while other threads poll the host's device. It fails on the code before the change in each of ten runs and passes in each of ten after it, well inside the ten seconds a merge-tier test may take. The wait and its test are the only change this milestone makes under `crates/`.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --lib gpu_capture_pixels_waits_for_a_readback_another_thread_delivers",
           "ask": "Does the record show the test failing with `capture readback incomplete` on the code before the change in each of ten runs, and passing in each of ten after it, with its time? Read the test: do its other threads poll the same device the host captures on? Is the wait in `capture_pixels`, with its test, the only change the milestone makes under `crates/`, and can it change a pixel a capture returns or anything a frame records?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md#round-3-m89-the-capture-wait: the test's sixteen threads poll host.device.clone(), the device the host captures on. Before the fix (capture_pixels at ebddf70da) the check failed 10 of 10 runs, 1 to 13 of 300 captures with capture readback incomplete (m8.9/before-write.log); with the fix (7cbd2921a) it passed 10 of 10, 0.85 to 0.91 s (m8.9/after-write.log). Only changes under crates/: capture_pixels's wait and the test.",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP8/record.md#round-3-m89-the-capture-wait: the test's sixteen threads poll host.device.clone(), the device the host captures on. Before the fix (capture_pixels at ebddf70da) the check failed 10 of 10 runs, 1 to 13 of 300 captures with capture readback incomplete (m8.9/before-write.log); with the fix (7cbd2921a) it passed 10 of 10, 0.85 to 0.91 s (m8.9/after-write.log). Only changes under crates/: capture_pixels's wait and the test.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md"
         }
       ]
     },
     {
-      "id": "M7",
+      "id": "WP7",
       "name": "A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge",
       "status": "done",
       "failed_reviews": 0,
@@ -230,58 +230,58 @@
       "quality_bar": "As trustworthy as change-based test selection in a well-kept Rust workspace, such as cargo-nextest's reverse-dependency filters or the determinator the guppy project built for Diem's CI: the selection follows Cargo's own graph, anything it cannot place runs everything, and the saving is measured before it is relied on.",
       "items": [
         {
-          "id": "M7.1",
+          "id": "WP7.1",
           "statement": "Before the selection is switched on, the record gives what it saves. For each landing on main over at least the week before the starting commit it gives the packages the selection as built picks, and the share of the whole workspace's summed test time their tests hold, from the times the check printed at that commit. It gives the mean share, the share of landings that run the whole workspace, and one timed pair on this Mac with the load recorded: `./dev check` for a change to one package nothing depends on, against the whole-workspace run.",
           "ask": "Does the record replay real landings through the selection as built, with test times the check itself printed at the starting commit? What is the mean share of test time a landing selects, and what share of landings run the whole workspace? Does the log show the record was made before the selection was switched on?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "tmp/gate-time-m7/record.md (gate-time worktree; the permission guard refused the evidence folder), .orchestrate/evidence/GATE-TIME/M7/replay.json, whole-start.*, pair/",
+          "evidence": "tmp/gate-time-m7/record.md (gate-time worktree; the permission guard refused the evidence folder), .orchestrate/evidence/GATE-TIME/WP7/replay.json, whole-start.*, pair/",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         },
         {
-          "id": "M7.2",
+          "id": "WP7.2",
           "statement": "`./dev check` runs the unit and integration test binaries of the packages its change can reach and of no other: each workspace package that holds a changed path, every workspace package that depends on one, directly or through others, as a normal, build or dev dependency, and the package a declared edge names for a changed path. The change is every path that differs between the checkout and its merge base with the main branch, uncommitted and untracked paths included. The build, the lints, the repository guards, the script suites and the doc tests run whole, as they did, and the draw-probe pass of the cooked-asset tests runs when the game's package is selected. The check prints what it selected and why.",
           "check": "sh -c 'out=$(cargo test --locked --offline -p xtask selection 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Read the selection's tests: do they cover a file of a package nothing depends on, a file of a package others depend on, an edge that is only a dev dependency, and an uncommitted file? In a scratch branch that changes one source file of `thrum-rain-model`, which test binaries does `./dev check` run, and does it still lint the whole workspace? In one that changes `thrum-core`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "cargo test -p xtask selection: 10 passed; .orchestrate/evidence/GATE-TIME/M7/scratch/rain-model.txt, core.txt, pair/2-selected-check.stdout",
+          "evidence": "cargo test -p xtask selection: 10 passed; .orchestrate/evidence/GATE-TIME/WP7/scratch/rain-model.txt, core.txt, pair/2-selected-check.stdout",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         },
         {
-          "id": "M7.3",
+          "id": "WP7.3",
           "statement": "Where the selection cannot be sure, `./dev check` runs the whole workspace's tests and says why. That is so for a change to the root manifest, the lockfile, the toolchain file, the lint configuration, `./dev` itself, `tools/xtask` or the test runner's own configuration; for a changed path the design gives no rule; and for a checkout with no merge base, with no difference from the main branch, or with a dependency graph the check cannot read. Markdown, `docs/` outside `docs/evidence`, the plans, `.agents/`, `.github/`, `scripts/` and the data under `.config/` that only the guards read select no Rust test.",
           "ask": "Read the path rules and their tests: is every rule of the design there, and does a path with no rule select everything? In scratch branches, change only `Cargo.lock`; only `rust-toolchain.toml`; add a file in a new top-level folder; and check out main's tip with nothing changed: does each run the whole workspace and say why? Does a branch that changes only a Markdown file and a script run no Rust test binary, and still run the guards and script suites?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M7/scratch/lockfile-only.txt, toolchain-only.txt, new-top-level-folder.txt, unchanged-main-tip.txt, markdown-and-script.txt",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP7/scratch/lockfile-only.txt, toolchain-only.txt, new-top-level-folder.txt, unchanged-main-tip.txt, markdown-and-script.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         },
         {
-          "id": "M7.9",
+          "id": "WP7.9",
           "statement": "A test that reads another package's files when it runs is selected when those files change. A declared edge, kept and tested with the path rules, names a path and the package whose own test binaries a change under it selects as well. `crates/thrum-asset-gpu/src/` selects `thrum-render`, whose guard on where cooked pipelines are created scans that folder. No test code reads a tracked file outside its own package except through a dependency of its package, a declared edge, or a path that selects the whole workspace.",
           "ask": "In a scratch branch that changes only one file under `crates/thrum-asset-gpu/src/`, does `./dev check` run `every_cooked_pipeline_goes_through_the_seam_and_escapes_nothing`, and say that a declared edge selected `thrum-render`? Does it leave out the packages that depend on `thrum-render` and not on `thrum-asset-gpu`? Search test code for a reader outside its own package: `CARGO_MANIFEST_DIR` joined with a path that climbs out of the package, and `include_str!`, `include_bytes!` or `#[path]` that does. Is each one a dependency of the reader's package, a declared edge, a path that selects everything, or scratch under `tmp/`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M7/scratch/asset-gpu-src.txt, asset-gpu-edge-run.txt, asset-gpu-test-only.txt; readers.py; record section on the search",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP7/scratch/asset-gpu-src.txt, asset-gpu-edge-run.txt, asset-gpu-test-only.txt; readers.py; record section on the search",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         },
         {
-          "id": "M7.4",
+          "id": "WP7.4",
           "statement": "A selected test binary is the binary the whole-workspace run executes: the check builds the workspace's test binaries once, with the workspace's features, and the selection decides only which of them run.",
           "ask": "For two packages, compare the test binary a selected run executes with the one `./dev check-all` executes on the same commit: is it the same file? Does a selected run compile any crate that a whole-workspace run on the same commit had already built?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M7/binaries.txt",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP7/binaries.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         },
         {
-          "id": "M7.5",
+          "id": "WP7.5",
           "statement": "`./dev check-all` runs everything `./dev check` ran before this milestone, the whole workspace's tests included, whatever changed. `./dev help` lists it, and `ORCHESTRATE.md` declares the main-branch check `workspace-tests` in the design's words, with the timeout set as the design says.",
           "check": "sh -c './dev help | grep -q check-all && grep -q \"Main-branch check workspace-tests:\" ORCHESTRATE.md'",
           "ask": "Compare the steps of `./dev check-all` with the steps of `./dev check` at the starting commit: is any step or test binary missing? Is the settings line the design's, word for word but for the timeout?",
@@ -289,54 +289,54 @@
           "builder_result": "pass",
           "evidence": "./dev help lists check-all; ORCHESTRATE.md Main-branch check workspace-tests, timeout 60m",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         },
         {
-          "id": "M7.6",
+          "id": "WP7.6",
           "statement": "The whole workspace's tests pass in the main-branch check `workspace-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check workspace-tests",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check workspace-tests, after the merge",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         },
         {
-          "id": "M7.8",
+          "id": "WP7.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "TEST-SUPPORT:M2"
+        "TEST-SUPPORT:WP2"
       ],
       "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "`thrum-water`'s swash test runs in one test binary, where it ran in two.",
           "check": "sh -c 'test \"$(cargo test --locked --offline -p thrum-water -- --list 2>/dev/null | grep -c \"submitted_depth_waterline_matches_the_cpu_wave_at_display_time: test\")\" -eq 1'",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m21-the-swash-test-runs-in-one-binary (gate-time worktree); agent_loop check at db3a87e71",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "`thrum-clouds`' GPU conformance runs once on the native device and once on WebGPU's default limits, where four test binaries made those two runs between them. The two tests that stay keep their names, `coarse_sun_paths_match_the_cpu_reference` and `weather_and_sun_path_work_with_default_limits`, and every assertion the four made is made by one of the two.",
           "check": "sh -c 'test \"$(cargo test --locked --offline -p thrum-clouds --tests -- --list 2>/dev/null | grep -cE \"(coarse_sun_paths_match_the_cpu_reference|weather_and_sun_path_work_with_default_limits): test$\")\" -eq 2 && test \"$(cargo test --locked --offline -p thrum-clouds --tests -- --list 2>/dev/null | grep -cE \"(broken_sky_factor_has_no_floor_or_border_switch|columns_and_integer_cells_match_the_cpu_at_their_written_tick): test$\")\" -eq 0 && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-clouds'",
           "ask": "How many times does `cargo test -p thrum-clouds` now run the weather loop and the Sun-path checks: once on the native device and once on default limits? Take the weather-map, Sun-path and continuity assertions of the four old files: is each still made in one of the two runs?",
@@ -345,10 +345,10 @@
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m22-the-cloud-conformance-runs-once-native-once-on-default-limits (gate-time worktree); agent_loop check at db3a87e71, gpu lock",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "The dense field's frustum-only mixed-mesh flythrough is gone, because the occlusion flythrough builds the same direct and frustum hosts and makes the same frustum assertions. The two flythroughs that are left are long tests in one test binary, which `./dev long-tests` runs.",
           "check": "sh -c '! git grep -q \"fn mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough\" -- crates examples && git grep -q \"fn mixed_mesh_occlusion_matches_bucket_direct_through_first_cut\" -- examples && git grep -q \"fn field_culling_matches_direct_along_the_flythrough\" -- examples'",
           "ask": "Does the occlusion flythrough still run the frustum host and assert on it exactly as the deleted test did? Do the two tests left build into one binary, are both still ignored as long tests, and does the list of `./dev long-tests` name that binary and no binary that is gone?",
@@ -356,20 +356,20 @@
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m23-the-frustum-only-mixed-mesh-flythrough-is-gone (gate-time worktree); agent_loop check at db3a87e71",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md"
         },
         {
-          "id": "M2.4",
-          "statement": "The older copy of the cloud display-phase test is gone, and the display-phase test that `CLOUDS` M2.11 replaced it with is unchanged.",
+          "id": "WP2.4",
+          "statement": "The older copy of the cloud display-phase test is gone, and the display-phase test that `CLOUDS` WP2.11 replaced it with is unchanged.",
           "check": "sh -c 'test -z \"$(git ls-files \":(glob)examples/**/clouds_display_time_gpu.rs\")\" && test -n \"$(git ls-files \":(glob)examples/**/clouds_display_phase_gpu.rs\")\"'",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m24-the-older-display-phase-copy-is-gone (gate-time worktree); agent_loop check at db3a87e71",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "The atmosphere's Monte Carlo reference is not built or run by `./dev check`: the f64 path tracer, the quadrature, the random walks, their 198-case run and the tests of the reference itself are out of the tree. The night checks still run as they did. The twilight guard runs as a test of its own, with the three expected values written in it, its 2.5% bound on each channel and its atlas-plane checks as they were.",
           "check": "sh -c '! git grep -q \"fn adaptive_refinement_and_direct_first_order_monte_carlo_agree\" -- crates && git grep -q \"fn night_profile_survives_sky_sampling_and_the_incident_reduction\" -- crates && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib atmosphere::gpu'",
           "ask": "Is any f64 path tracer, quadrature or random-walk reference still compiled by `./dev check`? Does the night test assert what it asserted at the starting commit? Which test runs the twilight guard now, and are its three expected values, its 2.5% bound and its atlas-plane checks the ones the starting commit held, with nothing recomputed?",
@@ -378,22 +378,22 @@
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m25-the-atmospheres-monte-carlo-reference-is-out-of-the-tree (gate-time worktree); agent_loop check at db3a87e71, gpu lock",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M10",
+      "id": "WP10",
       "name": "A record shows where a builder's session goes: the model's own time, each kind of command and each wait",
       "status": "done",
       "failed_reviews": 2,
@@ -402,96 +402,96 @@
       "quality_bar": "As checkable as a `cargo build --timings` report: every minute of a session sits in one named part, the parts add up to the session's wall time, and a reader can trace any figure back to the lines it came from.",
       "items": [
         {
-          "id": "M10.1",
+          "id": "WP10.1",
           "statement": "The record splits the wall time of every builder session of track 6's milestones, from 20 November 2026 to this milestone's starting commit, into three kinds of part: the model's own time; commands, by what they ran (a build or lint, tests the builder chose, `./dev check`, an item's check, the merge, anything else); and waits (for a lock, behind another merge, and a command that only sleeps or polls). It gives each part for each milestone and for all of them together, and gives the time between one milestone's sessions apart from the sessions themselves. The parts of a session add up to its wall time, and time the sources cannot place is a part of its own.",
           "ask": "Take two sessions of your choice, one of them the longest. Run the record's script on them: do its figures match the record, and do the parts add up to each session's wall time? Read twenty minutes of one transcript beside the script's output for that span: is each interval in the part you would put it in? Is a wait inside a command counted as the wait and not as the command?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M10/record.md (tables and placing rules; run on main 5746cde98)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP10/record.md (tables and placing rules; run on main 5746cde98)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M10-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP10-review.md"
         },
         {
-          "id": "M10.2",
+          "id": "WP10.2",
           "statement": "The record is made by a script kept with it in this milestone's evidence, from sources the record names: each session's transcript, which gives the time of every tool call and its result, and the orchestrate script's own logs of jobs, locks and merge checks. It runs again on a later session with no edit.",
           "ask": "Run the script on a builder session that ended after the record was made: does it give the same parts with no edit to the script? Does the record say where each source is and which sessions it could not read?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M10/session_record.py (sources and unread sessions in record.md)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP10/session_record.py (sources and unread sessions in record.md)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M10-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP10-review.md"
         },
         {
-          "id": "M10.3",
+          "id": "WP10.3",
           "statement": "The record ends with what it shows, and proposes no rule: the largest parts overall, how the shortest and the longest sessions differ, and the most that a faster check, shorter waits or less of the model's own time could each take off a session. This milestone changed no setting, plan, skill or check.",
           "ask": "Does each closing statement follow from the record's tables? Does the record propose a rule, or did the milestone's commits change any file but this module's log and done-when file?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M10/record.md#what-it-shows (second fix round: the savings sentences state what their median, mean and largest are of)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP10/record.md#what-it-shows (second fix round: the savings sentences state what their median, mean and largest are of)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M10-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP10-review.md"
         }
       ]
     },
     {
-      "id": "M12",
+      "id": "WP12",
       "name": "A merge's check refuses a new test-limit exemption, main-tier test or test binary that no plan asked for, and reports the tests' summed time and the GPU tests' share",
       "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "TEST-SUPPORT:M6"
+        "TEST-SUPPORT:WP6"
       ],
       "quality_bar": "As firm and as plain as a lint in a well-kept Rust workspace such as Clippy's own: the check refuses the one thing it names, says what to do instead in the same message, and never fails a landing that added nothing.",
       "items": [
         {
-          "id": "M12.1",
+          "id": "WP12.1",
           "statement": "The rule `limit-exempt` counts the tests that `.config/nextest.toml` exempts from the limit on one test, and the count can only fall: a landing that adds a name fails `./dev check` and `./dev check-docs`. An override that changes the limit names its tests one by one, exactly. One that names anything wider fails outright, and so does a default limit later than the test tiers' sixty seconds. The message says to make the test fast and links to the pattern entry `the-smallest-world`, which names the rule. Guard: the rule and its fixtures.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py'",
           "ask": "Read the rule's fixtures: do they cover a name added, a name removed, an override that exempts a whole binary, and a default limit raised? In a scratch copy, add a test's name to an exempt override, then raise the default limit: does `./dev check-docs` fail each time, with a message whose link lands on an entry that exists?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/M12/fix-round-trials.log (default-deleted, default-subtable-30x4)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP12/record.md; .orchestrate/evidence/GATE-TIME/WP12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/WP12/fix-round-trials.log (default-deleted, default-subtable-30x4)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP12-review.md"
         },
         {
-          "id": "M12.2",
+          "id": "WP12.2",
           "statement": "The rule `main-tier` counts the entries of the main-tier list and the tests marked `long:`, and the count can only fall, except in a landing that a done-when item asks for: that landing raises the rule's version, which starts its count again. Any other landing that adds an entry or a long test fails, with a message that says to make the test fast, links to the pattern entry `a-main-tier-test`, which names the rule, and says that a builder with no such item writes the proposal in its module's log for a planner. Guard: the rule and its fixtures.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule main-tier && python3 scripts/test_shape_rules.py'",
           "ask": "In a scratch copy, mark a test `long:` in a binary the list already names, then add a line to the list: does `./dev check-docs` fail each time with that message? Raise the rule's version and record the counts again: does it pass, and does one more added test then fail?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log (long-test-in-listed-binary, main-tier-line-added); .orchestrate/evidence/GATE-TIME/M12/scratch-version-raise.log",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP12/record.md; .orchestrate/evidence/GATE-TIME/WP12/scratch-trials.log (long-test-in-listed-binary, main-tier-line-added); .orchestrate/evidence/GATE-TIME/WP12/scratch-version-raise.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP12-review.md"
         },
         {
-          "id": "M12.3",
+          "id": "WP12.3",
           "statement": "A plan names an integration test target when a done-when item's check runs it with `--test`, in any module, open or Done, or when the main-tier list names it. The targets no plan names are listed, by package and name, in `.config/unplanned-test-binaries.txt`. A target that is neither named nor listed fails `./dev check` and `./dev check-docs`, but for a package's one target `it`, with a message that names it, says to add the test to a test file that exists, and links to the pattern entry `an-existing-test-binary`, which names the rule. The rule `test-binary` counts the list's lines, and the count can only fall; a line whose target no longer exists fails until it is removed. Guard: the rule and its fixtures.",
           "check": "sh -c 'test -s .config/unplanned-test-binaries.txt && python3 scripts/shape_rules.py check --rule test-binary && python3 scripts/test_shape_rules.py'",
           "ask": "In a scratch copy, add a test file to a package whose test files Cargo finds, and a `[[test]]` entry to one that lists them: does `./dev check-docs` fail each time and name the target? Give an open done-when item a check that runs one of them with `--test`: does it pass? Add the other's name to the list: does that fail too? Does a helper module that a test file declares, or a file under `tests/` that is a module of another target, count as a target? Is every line of the list a target that exists and that no plan names?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/M12/fix-round-trials.log (same-name-new-file, same-name-conformance, visibility-line-removed, named-by-p-in-open-item)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP12/record.md; .orchestrate/evidence/GATE-TIME/WP12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/WP12/fix-round-trials.log (same-name-new-file, same-name-conformance, visibility-line-removed, named-by-p-in-open-item)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP12-review.md"
         },
         {
-          "id": "M12.4",
+          "id": "WP12.4",
           "statement": "`./dev check` and `./dev check-all` end, pass or fail, with the summed time of every test the run ran and the summed time of its GPU tests, counted by name: a test whose binary or name says `gpu` or `metal`. The line says how it counts. Nothing fails on either figure, on a step's time or on the whole check's.",
           "ask": "Take a whole check the script saved after this landed, under `.git/orchestrate/checks`, and add up its own test lines: all of them, and those named `gpu` or `metal`. Do the two closing figures match? Does any path through the check command fail on a time other than the limit on one test?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M12/summed-times-check.txt (a whole saved check at 775b0e678: 1329 test lines sum to 941.6 s, 284 gpu/metal-named to 541.0 s, matching its closing lines)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP12/summed-times-check.txt (a whole saved check at 775b0e678: 1329 test lines sum to 941.6 s, 284 gpu/metal-named to 541.0 s, matching its closing lines)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP12-review.md"
         }
       ]
     },
     {
-      "id": "M9",
+      "id": "WP9",
       "name": "Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down",
       "status": "done",
       "failed_reviews": 0,
@@ -500,59 +500,59 @@
       "quality_bar": "As careful as a test-suite speed-up in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
       "items": [
         {
-          "id": "M9.1",
-          "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every test this milestone took off the runner's exempt list and for every other test that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median, and the ten slowest tests now. The list names only tests of the water scene, which M3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
+          "id": "WP9.1",
+          "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every test this milestone took off the runner's exempt list and for every other test that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median, and the ten slowest tests now. The list names only tests of the water scene, which WP3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
           "ask": "Read the record and the exempt list. Is every test the list held at the starting commit, and every other test the saved checks showed over ten seconds, outside the water scene, now under about ten seconds alone and in the record's three runs, or a long test, or named in the log for its module's planner with what was tried? Run three of the tests made fast, alone: do their times match the record? Does the list name a test that does not exist?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/M9/record.md (before and now, alone and median in three ./dev check-all runs; no test outside the water scene over 10 s in any run; ten slowest now); exempt list holds only M3's four",
+          "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/WP9/record.md (before and now, alone and median in three ./dev check-all runs; no test outside the water scene over 10 s in any run; ten slowest now); exempt list holds only WP3's four",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP9-review.md"
         },
         {
-          "id": "M9.2",
+          "id": "WP9.2",
           "statement": "A test made fast asserts what it asserted. Where one test ran several cases in turn, each case is now a test and none is dropped. Where a world, a fixture or a run was made smaller, the log gives the old and new size and why each assertion still means what it meant. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two, and the log says what the GPU test still shows that only a device can. No test binary changed its name.",
           "ask": "For each test this milestone changed, compare it with the starting commit: is every case and every assertion still there, in that test or in the device-free test the log names for it? For each world, fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/M9/record.md#what-each-change-keeps-m92 (each split, smaller world and removed duplicate, with old and new sizes); no binary renamed",
+          "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/WP9/record.md#what-each-change-keeps-m92 (each split, smaller world and removed duplicate, with old and new sizes); no binary renamed",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP9-review.md"
         },
         {
-          "id": "M9.3",
-          "statement": "A test that could not be made fast is a long test: marked `#[ignore]` with a reason that starts `long:`, its body unchanged, in a binary the main-tier list names, with the fault that now reaches main unseen written beside that line. This item asks for each of them, so from M12 the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on. Where one is a proof of a cooked format, a lease or recovery, transport, determinism, or GPU state held to the CPU query a game reads, the log says what was tried to make it fast.",
+          "id": "WP9.3",
+          "statement": "A test that could not be made fast is a long test: marked `#[ignore]` with a reason that starts `long:`, its body unchanged, in a binary the main-tier list names, with the fault that now reaches main unseen written beside that line. This item asks for each of them, so from WP12 the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on. Where one is a proof of a cooked format, a lease or recovery, transport, determinism, or GPU state held to the CPU query a game reads, the log says what was tried to make it fast.",
           "ask": "For each test marked in this milestone: is its body as it was, is its binary listed, and does the list say what fault now reaches main unseen? Search the open items of every module for its binary: does any item that runs it depend on what this test asserts? For a marked test of a kind the statement names, does the log say what was tried, and would you have tried something else first?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal at 87e326a66: no test was marked long; .orchestrate/evidence/GATE-TIME/M9/record.md#long-tests-m93",
+          "evidence": "mac-metal at 87e326a66: no test was marked long; .orchestrate/evidence/GATE-TIME/WP9/record.md#long-tests-m93",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP9-review.md"
         },
         {
-          "id": "M9.4",
+          "id": "WP9.4",
           "statement": "The long tests, with any this milestone added, pass in the main-branch check `long-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests, after the merge (no long test added)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP9-review.md"
         },
         {
-          "id": "M9.5",
+          "id": "WP9.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images, after the merge (no image-producing code changed; only tests)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP9-review.md"
         }
       ]
     },
     {
-      "id": "M13",
+      "id": "WP13",
       "name": "A test over ten seconds in a merge's check is stopped, and fails the check unless it passes within ten seconds alone",
       "status": "done",
       "failed_reviews": 0,
@@ -561,30 +561,30 @@
       "quality_bar": "As trustworthy as the time limit in the CI of a well-kept Rust workspace such as wgpu's: a slow test fails every time, a fast test on a busy machine does not, and the check says which was which.",
       "items": [
         {
-          "id": "M13.1",
+          "id": "WP13.1",
           "statement": "`./dev check` and `./dev check-all` stop a test at ten seconds, where they stopped it at sixty. A test the limit stopped is run once more by the same check, alone, after the others, under the same limit: it fails the check unless it passes within ten seconds, and the closing lines name each test run again with its time alone. A test that fails any other way is not run again, and a test on the exempt list is reported and not stopped, as before. The rule `limit-exempt` fails a default limit later than ten seconds. Guard: the check command's tests and the rule.",
           "check": "python3 -c 'import sys,tomllib; s=tomllib.load(open(\".config/nextest.toml\",\"rb\"))[\"profile\"][\"default\"][\"slow-timeout\"]; sys.exit(0 if s[\"period\"].endswith(\"s\") and float(s[\"period\"][:-1])*s.get(\"terminate-after\",999)<=10 else 1)' && python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py",
           "ask": "In a scratch copy, add three tests to one package: one that sleeps twelve seconds every time, one that sleeps twelve seconds only the first time it runs, and one that fails an assertion at once. Run `./dev check`: is the first stopped twice and the check failed in its name, the second stopped once, passed alone and named in the closing lines with its time, and the third failed with no second run?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M13/m13.1-trial.log; .orchestrate/evidence/GATE-TIME/M13/record.md#m131-the-three-test-trial",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP13/m13.1-trial.log; .orchestrate/evidence/GATE-TIME/WP13/record.md#m131-the-three-test-trial",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M13-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP13-review.md"
         },
         {
-          "id": "M13.2",
+          "id": "WP13.2",
           "statement": "With the stop at ten seconds, three whole runs of the check pass at one commit, beside builders. The record gives the load and, for each run, every test stopped and run again, with both times. No test outside the water scene's package is run again in all three.",
           "ask": "Does the record give the commit, the load, and each run's stopped tests with both times? Is any test outside the water scene's package run again in all three?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M13/record.md#m132-three-whole-runs-beside-builders; .orchestrate/evidence/GATE-TIME/M13/m13.2-run1.log, m13.2-run2.log, m13.2-run3.log",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP13/record.md#m132-three-whole-runs-beside-builders; .orchestrate/evidence/GATE-TIME/WP13/m13.2-run1.log, m13.2-run2.log, m13.2-run3.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M13-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP13-review.md"
         }
       ]
     },
     {
-      "id": "M11",
+      "id": "WP11",
       "name": "Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time",
       "status": "done",
       "failed_reviews": 1,
@@ -593,68 +593,68 @@
       "quality_bar": "As careful as the move to one integration-test binary a crate in a well-kept Rust workspace such as Cargo's own or rust-analyzer's: fewer binaries to link and start, every test still runs once, and anyone can see which files still stand alone and why.",
       "items": [
         {
-          "id": "M11.1",
+          "id": "WP11.1",
           "statement": "The record gives, at the starting commit and at the claimed one, how many test binaries a whole run of the check builds and runs, and what a freshly linked set costs before its first test starts: the link, and the first run of each new binary, which macOS checks. Each is timed twice from the same starting state, with the load. Both later timings are shorter than both earlier ones.",
           "ask": "Were the four timings made the same way and from the same starting state? Is each of the later pair shorter than each of the earlier pair? Does the record's count of binaries match what the runner lists at the claimed commit?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M11/record.md#m111-binaries-and-what-a-freshly-linked-set-costs",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP11/record.md#m111-binaries-and-what-a-freshly-linked-set-costs",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         },
         {
-          "id": "M11.2",
+          "id": "WP11.2",
           "statement": "Every test a whole run of the check ran at the starting commit still runs, once. The names the runner lists before and after are the same but for the module a test now sits in: none is dropped, and none runs twice.",
           "ask": "Read the record's list of test names from the starting commit, and list the tests at the claimed commit yourself: does every name of the first map to exactly one name now? Is any name now in two binaries?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M11/M11.2-name-map.txt",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP11/M11.2-name-map.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         },
         {
-          "id": "M11.3",
+          "id": "WP11.3",
           "statement": "A package's integration tests are modules of one test target named `it`, and fewer than half the 277 integration test targets of 21 November are left. A test file is a target of its own only while something names its binary or it has to run apart: an open item's check in any module, the main-tier list, a long test or a test behind a Cargo feature in the file, a `required-features` or `harness = false` entry, a build for another target such as wasm, or a script or tool that runs it by name. The record lists each one left with what holds it. A target that holds no test is not built as a test binary.",
           "check": "cargo metadata --no-deps --format-version 1 --offline | python3 -c 'import json,sys; t=[x[\"name\"] for p in json.load(sys.stdin)[\"packages\"] for x in p[\"targets\"] if \"test\" in x[\"kind\"]]; sys.exit(0 if \"it\" in t and len(t)<139 else 1)'",
           "ask": "Take ten test targets other than `it`, of your choice, from `cargo metadata`: does something the statement lists hold each, as the record says? Is any package's test file outside `it` with nothing holding it? Does a `bin` or `example` target with no test in it still build a test binary?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M11/held-targets.md",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP11/held-targets.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         },
         {
-          "id": "M11.4",
+          "id": "WP11.4",
           "statement": "No open item lost the binary its check names: every name an open item of any module passes to `--test`, whose test file exists in the tree, is still a test target.",
-          "check": "python3 -c 'import json,glob,re,subprocess,sys; t={x[\"name\"] for p in json.loads(subprocess.run([\"cargo\",\"metadata\",\"--no-deps\",\"--format-version\",\"1\",\"--offline\"],capture_output=True,text=True,check=True).stdout)[\"packages\"] for x in p[\"targets\"] if \"test\" in x[\"kind\"]}; n={m for f in glob.glob(\"docs/plans/*/DONE.json\") for s in json.load(open(f))[\"milestones\"] if s.get(\"status\")!=\"done\" for i in s[\"items\"] for m in re.findall(r\"--test[ =]([A-Za-z0-9_-]+)\",i.get(\"check\",\"\"))}; f=lambda m:[g for d in (\"crates\",\"examples\") for g in glob.glob(d+\"/*/tests/\"+m+\".rs\")+glob.glob(d+\"/*/tests/\"+m+\"/*.rs\")]; lost=sorted(m for m in n if m not in t and f(m)); print(lost); sys.exit(1 if lost or not n else 0)'",
+          "check": "python3 -c 'import json,glob,re,subprocess,sys; t={x[\"name\"] for p in json.loads(subprocess.run([\"cargo\",\"metadata\",\"--no-deps\",\"--format-version\",\"1\",\"--offline\"],capture_output=True,text=True,check=True).stdout)[\"packages\"] for x in p[\"targets\"] if \"test\" in x[\"kind\"]}; n={m for f in glob.glob(\"docs/plans/*/DONE.json\") for s in json.load(open(f))[\"work_packages\"] if s.get(\"status\")!=\"done\" for i in s[\"items\"] for m in re.findall(r\"--test[ =]([A-Za-z0-9_-]+)\",i.get(\"check\",\"\"))}; f=lambda m:[g for d in (\"crates\",\"examples\") for g in glob.glob(d+\"/*/tests/\"+m+\".rs\")+glob.glob(d+\"/*/tests/\"+m+\"/*.rs\")]; lost=sorted(m for m in n if m not in t and f(m)); print(lost); sys.exit(1 if lost or not n else 0)'",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M11/record.md#m114-open-items-keep-their-binaries",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP11/record.md#m114-open-items-keep-their-binaries",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         },
         {
-          "id": "M11.5",
+          "id": "WP11.5",
           "statement": "A Rust file under a package's `tests/` folder that no test target compiles fails `./dev check-docs`, with a message that names the file and says where to declare it. A helper that only a declared file reaches passes.",
           "ask": "In a scratch copy, add a test file to a package's `tests/` folder and do not declare it: does `./dev check-docs` fail and name the file? Declare it in the package's `it` target: does it pass? Read the guard's own tests: do they cover a file left out, a file declared, and a helper module that only a declared file reaches?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M11/M11.5-guard-probe.txt",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP11/M11.5-guard-probe.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         },
         {
-          "id": "M11.6",
+          "id": "WP11.6",
           "statement": "The groups of tests that take turns, the tests counted as heavy and any exempt name in `.config/nextest.toml` select the tests they selected at the starting commit, under their new names.",
           "ask": "For each override in `.config/nextest.toml`, list the tests its filter matches at the claimed commit and compare with the record's list from the starting commit: are they the same tests? Does any filter now match no test?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M11/M11.6-overrides.txt",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP11/M11.6-overrides.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         },
         {
-          "id": "M11.7",
+          "id": "WP11.7",
           "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests`, on main at the claimed commit, and that run ran every test its last run before this milestone started ran.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Compare the test names in the log of the main-branch run that covers this commit with those of its last run before the starting commit: is any test missing, or ignored where it ran?",
@@ -662,189 +662,189 @@
           "builder_result": "pass",
           "evidence": "main-branch check long-tests",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         },
         {
-          "id": "M11.8",
+          "id": "WP11.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "WATERS:M7"
+        "WATERS:WP7"
       ],
       "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "`./dev check` no longer runs the moored foam scenes for ten minutes. That run is a long test of its own, on the sea and on the lake, with every assertion it had, and its reason starts `long:`. The wind sweep is a test of its own that `./dev check` runs: mean foam cover rises across the three winds, as it was asserted. The moored run's name is off the runner's exempt list.",
           "check": "sh -c 'cargo test --locked --offline -p water-scene --test foam_scene_gpu -- --list --ignored | grep -q \": test$\" && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p water-scene --test foam_scene_gpu'",
           "ask": "Compare the two tests with the starting commit's one: does the ignored test make every moored assertion, at every tick it was made, and the wind-sweep test every wind assertion? When the ignored test is run, does its child process run the test and not skip it? Is the moored run's name off the runner's exempt list?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md (long tests in release: long-tests-branch.log; the item check on the merged commit)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP3/record.md (long tests in release: long-tests-branch.log; the item check on the merged commit)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "The ten-minute moored run passes in the main-branch check `long-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check long-tests; branch run in release: .orchestrate/evidence/GATE-TIME/M3/long-tests-branch.log",
+          "evidence": "main-branch check long-tests; branch run in release: .orchestrate/evidence/GATE-TIME/WP3/long-tests-branch.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP3-review.md",
           "ask": "Read the log of the main-branch run that covers this commit: does the moored test's child process report `running 1 test` and one test passed, not an ignored test?"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "No test of the water scene that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every water-scene test the runner's exempt list held and for every other one that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median. The list is empty but for any test the design leaves to its own module's planner, which the log names with what was tried.",
           "ask": "Read the record and the exempt list. Is every water-scene test the list held at the starting commit, and every other one the saved checks showed over ten seconds, now under about ten seconds alone and in the record's three runs, or a long test, or named in the log for its module's planner with what was tried? Run two of them alone: do their times match the record? Is anything else left on the list?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md#before-and-now (alone-before.txt, alone-now.txt, check-all-1..3.log, check-medians.txt, saved-checks.txt)",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP3/record.md#before-and-now (alone-before.txt, alone-now.txt, check-all-1..3.log, check-medians.txt, saved-checks.txt)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP3-review.md"
         },
         {
-          "id": "M3.4",
-          "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. This item and M3.1 ask for each of them, so the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on.",
+          "id": "WP3.4",
+          "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. This item and WP3.1 ask for each of them, so the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on.",
           "ask": "For each water-scene test this milestone changed or marked, compare it with the starting commit: is every case and assertion still there, in that test or in the device-free test the log names for it, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M3/record.md#what-each-change-keeps-m34",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP3/record.md#what-each-change-keeps-m34",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REVIEW-RENDER:M2"
+        "REVIEW-RENDER:WP2"
       ],
       "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "The mirror pool's test no longer holds the pool's composition to computed half-float bounds, and the air and panel witnesses that served only that proof are gone. A test still prepares and draws the pool on Metal and fails if the pool draws nothing.",
           "check": "sh -c '! git grep -q \"fn the_pool_composes_both_stretches_once\" -- examples && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p mirror-scene --test pool_gpu'",
           "ask": "Would the test that is left fail if the pool's contribution drew nothing, or was never prepared? Is anything still compared with a bound worked out from a model?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m41-the-mirror-pool",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP4/record.md#m41-the-mirror-pool",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "In Chrome a secondary view still equals the main view, with no validation error: the fixture and its script case assert what they asserted.",
           "check": "node scripts/check_mirror_browser.mjs --case view",
           "ask": "Compare the view fixture and the script's `view` case with the starting commit: is every comparison and bound as it was?",
           "target": "chrome-webgpu",
           "lock": "chrome",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M4/m4.2-browser-view-branch.log",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP4/m4.2-browser-view-branch.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "The cooked cloud march is no longer held to an f64 transport sum. A short test draws through the real cooked contribution, with the cloud-factor shader variant: zero density leaves the sky as it was, density darkens it, and the test fails if the variant's text replacement did not match.",
           "check": "sh -c '! git grep -q \"fn metal_cooked_march_uses_each_world_sample_and_preserves_sky\" -- crates && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-asset-gpu --lib'",
           "ask": "Does the new test reach the cloud-factor variant of the cooked shader through the contribution a game uses, with no slicing of shader text in the test? Would it fail if the replacement that makes the variant matched nothing?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m43-the-cooked-march",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP4/record.md#m43-the-cooked-march",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "With default features, `./dev check` compares at one commit, for each of the four air and shadow variants, the main shader composed with an empty observer against the one composed with an observer that declares a view slot and leaves it idle: they are equal, and neither holds `secondary_view` text. The test that patched later shader edits back to a 16 November commit's hashes, and its patch table, are gone.",
           "check": "sh -c '! git grep -q \"fn every_main_shader_variant_retains_its_pre_view_bytes\" -- crates && cargo test --locked --offline -p thrum-render --test scene_view_absent_gpu -- --list | grep -q \": test$\" && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --test scene_view_absent_gpu'",
           "ask": "Does a test in this file run with default features and cover all four variants? Are the two observers it compares different, one empty and one that declares an idle view slot? Would a view record or binding that reached the main shader of a scene with no view in use fail it?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#m44-the-scene-view-shader",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP4/record.md#m44-the-scene-view-shader",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP4-review.md"
         },
         {
-          "id": "M4.5",
+          "id": "WP4.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M4/record.md#milestone-check-agent_looppy-check---module-gate-time---milestone-m4-on-49b76c286",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP4/record.md#milestone-check-agent_looppy-check---module-gate-time---milestone-m4-on-49b76c286",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP4-review.md"
         }
       ]
     },
     {
-      "id": "M14",
+      "id": "WP14",
       "name": "The full workspace check passes when a fast test needs more time on a busy Mac",
       "status": "done",
       "quality_bar": "The fast-test guard holds at ten seconds on every merge. On the busy Mac, the workspace check accepts a slow but successful rerun within its bounded window and reports the time it cost.",
       "items": [
         {
-          "id": "M14.1",
+          "id": "WP14.1",
           "statement": "Both check commands stop the parallel attempt at 10 seconds. Only a timed-out case runs a second time, once and serially, in its original build and feature set. A passing 15-second rerun passes check-all and is reported above the fast-test target. The same result fails check, even with the whole workspace selected. A second timeout at the applicable cap, an assertion failure on either attempt, a missing rerun result or a runner error fails the command. A clean first pass runs no retry, and the merge limit and exemption guard still hold. Guard: the xtask runner tests and limit-exempt.",
           "check": "sh -c 'out=$(cargo test --locked --offline -p xtask workspace_rerun 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\" || { echo \"$out\"; exit 1; }' && python3 scripts/shape_rules.py check --rule limit-exempt",
           "ask": "Trace the normal workspace and draw-probe paths for both commands. Do only timed-out cases enter the serial pass after the initial process exits, using exact test identities and the same features? Can check-all recover a passing result above 10 seconds only on its rerun, which the runner still stops at 30 seconds? Do any other first-pass failures or retry process errors still fail the command?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M14/runner-inspection.md",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP14/runner-inspection.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M14-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP14-review.md"
         },
         {
-          "id": "M14.2",
+          "id": "WP14.2",
           "statement": "On the fixed revision, a full ./dev check-all exits zero under contention comparable to the incident (about 40 load on 14 cores with other CPU work and an overlapping Metal workload). Each of the six named incident cases passes under comparable load, either on a serial rerun in the full check or during a focused replay. The full check or a focused replay records at least one real test stopped at 10 seconds whose exact-case serial rerun passes in more than 10 and at most 30 seconds and is reported as a recovery. A focused replay uses the same revision and the production workspace runner's timeout, serial retry and verdict with a narrower test selection. The records include the revision, commands, exit status, load samples covering the runs and reruns, other CPU and GPU work, and case names, times and verdicts.",
-          "check": "python3 .orchestrate/evidence/GATE-TIME/M14/check_loaded.py",
+          "check": "python3 .orchestrate/evidence/GATE-TIME/WP14/check_loaded.py",
           "ask": "Do the raw records show a passing full check-all, each of the six named cases passing either on a serial rerun in that check or during focused replay, and CPU and Metal contention comparable to the incident? Does the checker accept a first-attempt timeout and a reported passing serial retry in more than 10 and at most 30 seconds from either source on the fixed revision? If replay supplies the recovery, trace the command to the production workspace runner and confirm it executes the first-attempt stop, exact-case serial retry and final verdict. Does the checker reject the evidence when the full check fails, a named case lacks a passing result, load evidence is missing, or neither source has a qualifying production recovery?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M14/record.md",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP14/record.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M14-review.md"
+          "review": ".orchestrate/evidence/GATE-TIME/WP14-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M15",
+      "id": "WP15",
       "name": "Merge verification reuses a bounded local Cargo cache",
       "status": "blocked",
       "quality_bar": "The configured merge check makes real Cargo rebuilds cheaper on the busy Mac and returns the ordinary check's verdict on the exact candidate.",
       "items": [
         {
-          "id": "M15.1",
+          "id": "WP15.1",
           "statement": "The configured command checks the caller's inputs and returns the ordinary check's verdict. On the Mac, clean singleton and batch candidates share a bounded Cargo cache and keep their candidate and base selection. A committed failing edit fails with the cache warm and its revert passes. Staged and unstaged tracked changes and non-ignored untracked paths send the check to the caller's worktree. On a passing commit, the configured command reports a failing local assertion when the file is edited and passes after the file is restored, with the cache warm throughout. Toolchain, profile and feature changes invalidate affected builds. Concurrent use, interruption, over-cap retention and low free space recover through cache maintenance or the ordinary check. Ordinary developer and scheduled main-branch checks use their own build directories.",
           "ask": "Do the singleton and batch replays retain their candidate, selection and verdict? Trace the staged, unstaged and untracked admission cases. Do the warm runs show an assertion failure and a passing revert for the committed edit, and an assertion failure in the caller's worktree and a pass after restoration for the uncommitted edit on the same commit? Do the toolchain, profile and feature cases show fresh affected builds? For concurrent use, interruption, over-cap retention and low free space, does the cache owner protect active work and reclaim only its own artifacts, with any fallback preserving the caller's inputs and verdict?",
           "target": "mac-metal",
@@ -854,7 +854,7 @@
           "review": ""
         },
         {
-          "id": "M15.2",
+          "id": "WP15.2",
           "statement": "A three-pair Mac trial under ordinary builder contention compares fresh ordinary checks with the warmed configured route on the same distinct candidate transitions. The trial includes package and whole-workspace selection. Selection, build features and executed check coverage agree between arms. The warmed route's median end-to-end time is at most 300 seconds and its median test build time is lower than the fresh arm's. The record gives the raw runs, build and test times, load, peak and retained disk use and the main push that activates the qualified command. The contributor guide explains how the cache is managed and disabled.",
           "ask": "Recompute the paired trial from its raw runs. Were the candidates matched, warmed from a preceding checkout, and measured under comparable builder load with the same executed check coverage? Is the warmed median at most 300 seconds end to end with a lower median test build time, and do the logs establish the tail costs and disk use? Verify the activation push and the documented cache location, pressure policy and bypass.",
           "target": "mac-metal",
@@ -864,8 +864,8 @@
           "review": ""
         },
         {
-          "id": "M15.3",
-          "statement": "The exact test command configured at rollout runs the ordinary check and returns its passing verdict on a known-good revision before the M15 launcher was introduced, so broken-main diagnosis can use that revision as a passing comparison.",
+          "id": "WP15.3",
+          "statement": "The exact test command configured at rollout runs the ordinary check and returns its passing verdict on a known-good revision before the WP15 launcher was introduced, so broken-main diagnosis can use that revision as a passing comparison.",
           "ask": "Compare the rollout command with the command recorded in the pre-M15 replay. Does the replay identify the old revision and show its ordinary check steps and successful exit under the same invocation that broken-main diagnosis will use?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -884,25 +884,25 @@
           "branch": "build/gate-time",
           "pushed": false
         },
-        "handoff": ".orchestrate/evidence/GATE-TIME/M15-handoff.md"
+        "handoff": ".orchestrate/evidence/GATE-TIME/WP15-handoff.md"
       }
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "The post-rollout record shows a five-minute median for Rust landings",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "DEAD-TOOLS:M2"
+        "DEAD-TOOLS:WP2"
       ],
       "quality_bar": "As plain as the contributor guide of a well-kept Rust workspace such as wgpu's or Bevy's: someone new can tell what runs before a merge, what runs after it, and how long each should take.",
       "items": [
         {
-          "id": "M5.1",
-          "statement": "The record identifies the push and timestamp that activated M15's test command on main. It gives, in push order, the first 20 subsequent ordinary landings verified by a saved run that started after activation and selected at least one Rust test binary. Each timed invocation contributes one observation, including batch, cold and fallback runs. The command's median wall time from the orchestrate run ledger is at most 300 seconds, with at most five observations over 300 seconds. The record gives each landing's identity, selection, wall and step times, cache mode and available load data. It lists exclusions and explains runs over ten minutes. It retains the thirty-landing trend, the failed pre-rollout sample and current times for one run each of long-tests and workspace-tests. The contributor guide's merge timing matches the closing record.",
-          "ask": "Starting at the M15 activation push, trace the first 20 Rust landings to the commands and timed runs that proved their trees. Do the timestamps, checkout keys, and selection lines establish the window in push order, with batch or reused records counted once and cold and fallback runs included? Are all exclusions accounted for? Recompute the median and the count above 300 seconds from the run ledger. Do both pass the design's bounds, with the timing in the guide matching the record and each run over ten minutes explained by its saved output?",
+          "id": "WP5.1",
+          "statement": "The record identifies the push and timestamp that activated WP15's test command on main. It gives, in push order, the first 20 subsequent ordinary landings verified by a saved run that started after activation and selected at least one Rust test binary. Each timed invocation contributes one observation, including batch, cold and fallback runs. The command's median wall time from the orchestrate run ledger is at most 300 seconds, with at most five observations over 300 seconds. The record gives each landing's identity, selection, wall and step times, cache mode and available load data. It lists exclusions and explains runs over ten minutes. It retains the thirty-landing trend, the failed pre-rollout sample and current times for one run each of long-tests and workspace-tests. The contributor guide's merge timing matches the closing record.",
+          "ask": "Starting at the WP15 activation push, trace the first 20 Rust landings to the commands and timed runs that proved their trees. Do the timestamps, checkout keys, and selection lines establish the window in push order, with batch or reused records counted once and cold and fallback runs included? Are all exclusions accounted for? Recompute the median and the count above 300 seconds from the run ledger. Do both pass the design's bounds, with the timing in the guide matching the record and each run over ten minutes explained by its saved output?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -910,7 +910,7 @@
           "review": ""
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "`CONTRIBUTING.md` says what `./dev check` runs, how it selects, that tests run side by side and what that asks of a test, that a test takes about ten seconds or less or is a long test, that a test proves its behaviour on the smallest world that shows it and tests logic without a device, that a package's test files are modules of one test binary and how to add one, what runs on main after the merge (`./dev check-all`, `./dev long-tests` and the main-branch check `cross-target`), how to run one test, one file's tests or one long test by hand, and how to read the times the check prints.",
           "ask": "Does `CONTRIBUTING.md` name the three commands and the `cross-target` check, and say each of those things? Follow its lines for running one file's tests and one long test by hand: does each run what it says?",
           "target": "mac-metal",

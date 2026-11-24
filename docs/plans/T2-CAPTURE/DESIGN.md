@@ -81,7 +81,7 @@ metadata, accepting locked, unlocked and changed state, with unavailable observa
 Open no-desktop-capture proofs require denied read-only Screen Recording preflights before and after under the
 identified launcher/harness permission identity. Missing, failed or granted preflights cannot establish that claim.
 No permission is requested or changed. Neither console observation values nor manual locking gate a run or pass.
-Accepted M0/M1 definitions and their recorded lock witnesses retain their historical meaning.
+Accepted WP0/M1 definitions and their recorded lock witnesses retain their historical meaning.
 
 Per opportunity/submission retain monotonic host request/accept/submit times, committed endpoint pair/timeline,
 interpolation alpha, view/history/cut and content/device/surface generations, submission ID, copy/map completion and
@@ -121,15 +121,15 @@ capture and an incomplete interval; under `wait` the driver holds the next oppor
 stop capture with a reason while the app remains healthy. Finalization has a deadline and retains usable incomplete
 diagnostics. Do not allocate one unbounded array of the entire session or keep GPU frame slots hostage to encoding.
 
-The first M0 feasibility step measured raw-spool throughput on this disk at 1920×1080 and 120 records/s, before
+The first WP0 feasibility step measured raw-spool throughput on this disk at 1920×1080 and 120 records/s, before
 building the full scenario. Its initial three GPU staging slots and eight reusable CPU frame buffers (about 91.2 MB
-combined, excluding the output texture and metadata) did not sustain this disk. The qualified M0 writer uses six
+combined, excluding the output texture and metadata) did not sustain this disk. The qualified WP0 writer uses six
 GPU slots and 96 CPU buffers under a 1 GiB pixel cap, live XOR/Zstd and a separate 256 MiB encoded reserve. Record service rate, queue high-water, actual disk writes and
 drain time; a cached write-acceptance rate alone does not establish sustainable storage throughput. Include the
 final flush and packaging costs. Reject a strategy that overflows over the full four-second interval (one-second
 hold, two-second pan, one-second hold). If sequential raw spill cannot sustain it, revise the writer mechanism from
 measurements before proceeding; do not hide the deficit in a session-sized RAM queue or reduce required fidelity.
-Capacities may be tuned within explicitly recorded byte caps. M0 throughput is qualified only for its measured
+Capacities may be tuned within explicitly recorded byte caps. WP0 throughput is qualified only for its measured
 scene and device; subsequent content must repeat the series.
 
 Under [ASSET-LIFECYCLE](../../ASSET-LIFECYCLE.md), each four-second SDR session has a **16 GiB local output allowance**
@@ -154,14 +154,14 @@ timestamps after capture. Writer saturation is a separate capture-failure contro
 
 ## A full ring, and a run that could not judge
 
-Added 16 November 2026, for M3. On that day the main-branch check `exact-images` failed four times at a realtime
+Added 16 November 2026, for WP3. On that day the main-branch check `exact-images` failed four times at a realtime
 motion arm of `APPLE-TILE`'s matrices, at a different arm each time and twice on one commit: `portable-variants-motion`,
 `apple-tile-route-motion`, `portable-route-motion` and `apple-tile-render-stall-motion`. The retained record of one
 reports `complete: false` with 129 ring omissions, none from the writer, 419 images and 547 GPU records, while five
-modules' GPU tests ran beside it ([handoff](../../../.orchestrate/evidence/REVIEW-ENGINE/M3-handoff.md)). Those tests run inside
+modules' GPU tests ran beside it ([handoff](../../../.orchestrate/evidence/REVIEW-ENGINE/WP3-handoff.md)). Those tests run inside
 `./dev check`, which takes no lock, so no lock keeps them away. The completeness rule was right to refuse the run.
 
-**The cause, to be confirmed first by M3.1.** A realtime capture asks for 120 opportunities a second on elapsed
+**The cause, to be confirmed first by WP3.1.** A realtime capture asks for 120 opportunities a second on elapsed
 host time. Each submission reserves one of six staging slots until its readback is mapped and copied out. When
 other GPU work delays readbacks, all six stay reserved, the tap admits no copy, and the frame is submitted without
 one: an omission. These arms (`variants`, `route`, `render-stall`) are not on a fixed clock. `route` and the stall
@@ -276,7 +276,7 @@ Research consulted 9 November 2026; official sources were inspected for the foll
   and mapping-on-submit APIs, and [Buffer](https://docs.rs/wgpu/30.0.1/wgpu/struct.Buffer.html), mapping/lifetime and
   web polling: support renderer-owned asynchronous readback. Mapping does not by itself supply bounded queues or provenance.
   Rechecked mapping exclusivity and texture-copy APIs for this revision; live lossless compression, bounded encoded spill and deferred PNG/movie packaging are this
-  design's qualified M0 throughput strategy, not a throughput guarantee supplied by wgpu.
+  design's qualified WP0 throughput strategy, not a throughput guarantee supplied by wgpu.
 - [Apple ScreenCaptureKit sample](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-in-macos),
   setup, stream configuration and output processing: OS window capture requires Screen Recording permission and has
   its own queue/rate. The local denied preflight is therefore not fixed by unlocking alone.
@@ -288,7 +288,7 @@ Research consulted 9 November 2026; official sources were inspected for the foll
   the current wgpu surface path. Do not add a raw drawable bridge just to replace Instruments. A future supported
   presentation observer needs its own attribution/lifecycle proof; it would still require an active real display.
 
-Consulted 16 November 2026, for M3:
+Consulted 16 November 2026, for WP3:
 
 - [OBS Studio's status indicators](https://obsproject.com/forum/resources/status-indicators-and-what-they-mean.957/updates)
   and its forum's reports: a realtime recorder counts frames "missed due to rendering lag" when it cannot get
@@ -304,7 +304,7 @@ Consulted 16 November 2026, for M3:
   `EX_TEMPFAIL` is 75, a temporary failure the caller is invited to retry, which is what orchestrate 2.3.6 reads
   it as.
 
-Code read for M3: the opportunity loop and completeness rule in `examples/v1-game/src/window/capture.rs`, the
+Code read for WP3: the opportunity loop and completeness rule in `examples/v1-game/src/window/capture.rs`, the
 elapsed clock in `crates/thrum-app/src/offscreen/clock.rs`, the tap in
 `crates/thrum-render/src/runtime/submitted_capture.rs`, `scripts/capture_v1_runtime.py`, `APPLE-TILE`'s
 matrices and `scripts/exact_baselines.py`.
@@ -320,7 +320,7 @@ capture similarly redraws an endpoint; do not mistake it for a tap of an interpo
 Rejected defaults: ScreenCaptureKit/desktop screenshots retain permission/session dependency; fixed-step video alone
 conceals runtime pacing; standalone game readback duplicates GPU lifetime/submission ownership. A new native video
 encoder path or complete Metal recorder is not needed for the first proof. Live XOR/Zstd reduces storage demand while deferred PNG/movie packaging removes PNG throughput from the
-critical path. M0 margin applies to its measured scene compressibility. Each M1 content workload needs its own
+critical path. WP0 margin applies to its measured scene compressibility. Each WP1 content workload needs its own
 back-to-back capture series and sink-rate refusal measurements before throughput is qualified.
 
 Locked-console feasibility is supported by the [retained design review's probe account](../../../.orchestrate/evidence/T2-CAPTURE/design-review.md#what-checks-out):
@@ -328,7 +328,7 @@ it read `tmp/platform-runtime-mac-m2/console-probe.txt` at 01:59 CET (`IOConsole
 `CGSSessionScreenIsLocked = Yes`) and the successful 02:00 CET [offscreen parity record](../../../.orchestrate/evidence/render/mac-m2-pan/parity-20261109.json).
 The second review locates probe scratch in the separate platform-runtime-mac worktree; the parity JSON alone
 does not record lock state. This is historical feasibility evidence, not a fresh T2 run or runtime-motion
-qualification. Accepted M0/M1 subsequently retained locked-run witnesses with their own proof.
+qualification. Accepted WP0/M1 subsequently retained locked-run witnesses with their own proof.
 The owner's console-witness correction applies to open work and later consumers. Record state during the actual
 run without arranging or waiting for a locked console. Capture independence rests on the denied, attributed
 permission preflights and the actual engine-output path. Never lock an active user's session to arrange a test
@@ -336,25 +336,25 @@ or unlock it by automation.
 
 ## Rollout and attended boundaries
 
-M0 delivers Mac unattended still/fixed-time/real-time capture and the reusable engine tap. Mac qualification M2 consumes
-it on the current surface path, without waiting for Chrome, simulator rollout or parked APPLE-TILE. Mac M3
-needs `APPLE-TILE:M3` and owns fresh post-change motion/cadence requalification; that later obligation cannot
-gate Mac M2. Mac M2.3 owns integration/qualification of this same tap on a real
+WP0 delivers Mac unattended still/fixed-time/real-time capture and the reusable engine tap. Mac qualification WP2 consumes
+it on the current surface path, without waiting for Chrome, simulator rollout or parked APPLE-TILE. Mac WP3
+needs `APPLE-TILE:WP3` and owns fresh post-change motion/cadence requalification; that later obligation cannot
+gate Mac WP2. Mac WP2.3 owns integration/qualification of this same tap on a real
 CAMetalLayer surface: known-pattern output correspondence, lease lifetime, capture-off direct presentation and
-pending-capture surface loss. It needs attended unlocked setup and does not block unattended M0. G3t M0 consumes
-M0 for shared output capture and adds its own scene-linear comparison cases. M1 and M2 of this tooling plan qualify Chrome and iOS simulator respectively;
+pending-capture surface loss. It needs attended unlocked setup and does not block unattended WP0. G3t WP0 consumes
+WP0 for shared output capture and adds its own scene-linear comparison cases. WP1 and WP2 of this tooling plan qualify Chrome and iOS simulator respectively;
 new submitted-output/runtime-motion work on each target needs that target's milestone. Until then, existing Chrome
 canvas endpoint captures remain valid for fixed-time image/oracle claims with endpoint/no-history provenance;
 `simctl` screenshots/video remain valid for simulator function and visible UI/lifecycle observations within their
 recorded timing limits. Neither substitutes for exact submitted temporal output, elapsed-time engine motion or
-physical display proof. Keep those stronger rows dependent/unavailable. No dependency runs back from capture to G3t/G4/Mac M2.
+physical display proof. Keep those stronger rows dependent/unavailable. No dependency runs back from capture to G3t/G4/Mac WP2.
 
 | Check | Attendance and reason |
 | --- | --- |
-| Engine image/effect evolution and application motion on Mac | Accepted M0 includes locked, permission-denied capability proof. Open consumer rows require denied, attributed Screen Recording preflights and record either console state as a witness |
-| Chrome canvas / engine-rendered UI | Accepted M1 includes real WebGPU and locked-run proof. Later open rows record either console state with denied, attributed preflights; browser scheduling is labelled, never Mac panel evidence |
-| iOS simulator engine output | M2 proves the route with denied, attributed preflights; either console state is witness metadata. `simctl` image/video is supplemental and never physical-device timing |
-| Mac M2 windowed tap and built-in-panel swaps/display-link qualification | **Attended setup**: unlocked active built-in display and any Instruments authorization required by the OS. Mac M2.3 qualifies the tap; M2.4 commissions bounded trace-finalization diagnosis. M2.2 uses a capture-off traced arm for cadence and separate capture-on content/observer arms. Agent injects inputs, runs and reviews; owner need not play. No Screen Recording grant is required for engine pixels |
+| Engine image/effect evolution and application motion on Mac | Accepted WP0 includes locked, permission-denied capability proof. Open consumer rows require denied, attributed Screen Recording preflights and record either console state as a witness |
+| Chrome canvas / engine-rendered UI | Accepted WP1 includes real WebGPU and locked-run proof. Later open rows record either console state with denied, attributed preflights; browser scheduling is labelled, never Mac panel evidence |
+| iOS simulator engine output | WP2 proves the route with denied, attributed preflights; either console state is witness metadata. `simctl` image/video is supplemental and never physical-device timing |
+| Mac WP2 windowed tap and built-in-panel swaps/display-link qualification | **Attended setup**: unlocked active built-in display and any Instruments authorization required by the OS. Mac WP2.3 qualifies the tap; WP2.4 commissions bounded trace-finalization diagnosis. WP2.2 uses a capture-off traced arm for cadence and separate capture-on content/observer arms. Agent injects inputs, runs and reviews; owner need not play. No Screen Recording grant is required for engine pixels |
 | Composited/native widgets, OS focus/input, browser chrome | **Attended when the target/tool requires it**: engine output excludes these surfaces. Prefer OS automation without screen recording; if a compositor image is essential, declare that adapter's OS grant/session requirement before the row |
 | Physical HDR/EDR brightness, input-to-photon or physical-device interaction | **Attended/instrumented**: needs actual display/device and correlated observation or sensor; an SDR movie and GPU completion cannot prove it. No physical iPhone is available; keep that proof pending rather than asking for it |
 
@@ -368,15 +368,15 @@ required observation and why an engine/tool adapter cannot supply it; it does no
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
 T2 owns this child work of TOOLS-DELIVERY; no new crate. Build sequentially. Existing committed pages/world lane,
-FrameHost, cooked content, platform loss/lease and scene/controls are available now. M0 must preserve
-`PLATFORM-RUNTIME-MAC:M1` (done). M1/M2 here follow M0; no dependency on G3t/G4 or Mac qualification M2.
-Mac qualification M2 needs only `T2-CAPTURE:M0`; Mac M3 separately needs `APPLE-TILE:M3` for post-change requalification.
-Later visual milestones use M0 on Mac,
-M1 on Chrome and M2 on the simulator at the first proof requiring this tooling. Existing completed evidence is not
+FrameHost, cooked content, platform loss/lease and scene/controls are available now. WP0 must preserve
+`PLATFORM-RUNTIME-MAC:WP1` (done). WP1/M2 here follow WP0; no dependency on G3t/G4 or Mac qualification WP2.
+Mac qualification WP2 needs only `T2-CAPTURE:WP0`; Mac WP3 separately needs `APPLE-TILE:WP3` for post-change requalification.
+Later visual milestones use WP0 on Mac,
+WP1 on Chrome and WP2 on the simulator at the first proof requiring this tooling. Existing completed evidence is not
 invalidated. Captures cannot close an attended panel item.
-Mac M2.3 commissions and proves integration of the shared tap on a real CAMetalLayer window; Mac M2.4 owns bounded
-trace-finalization diagnosis. Neither task is hidden inside unattended M0, and neither adds a reverse dependency.
-Before Chrome M1/simulator M2, existing canvas endpoint images may prove fixed-time endpoint/oracle claims and
+Mac WP2.3 commissions and proves integration of the shared tap on a real CAMetalLayer window; Mac WP2.4 owns bounded
+trace-finalization diagnosis. Neither task is hidden inside unattended WP0, and neither adds a reverse dependency.
+Before Chrome WP1/simulator WP2, existing canvas endpoint images may prove fixed-time endpoint/oracle claims and
 `simctl` captures may prove simulator function/UI/lifecycle within their recorded limits. New submitted-temporal or
 elapsed-time engine-motion claims still need the target's T2 milestone.
 
@@ -386,10 +386,10 @@ existing scripts own manifests, lossless/movie packaging and validation. V1 keep
 content and bindings. G3t owns linear recipe comparison and G4 owns output-provider/EDR qualification; both use this
 capture service rather than copying it. Follow CONTRIBUTING and the architecture registry if dependencies change.
 
-M3 follows M2 and waits on no other module. Its builder also edits `APPLE-TILE`'s matrices and
+WP3 follows WP2 and waits on no other module. Its builder also edits `APPLE-TILE`'s matrices and
 `BASELINE-GUARD`'s verifier, only as [the ruling](../ARCHITECTURE.md#ruling-on-a-capture-that-drops-frames)
 allows, and records the changed pins as that ruling says. It changes no retained reference, compared checkpoint,
-sampling or equality rule. If the loss M3.1 reproduces is not a full ring, the builder ends `BLOCKED` with the
+sampling or equality rule. If the loss WP3.1 reproduces is not a full ring, the builder ends `BLOCKED` with the
 record, because the mechanism above rests on that cause.
 
 ## Proof, retention and review handoff

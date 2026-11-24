@@ -3,52 +3,52 @@
   "design": {
     "verdict": "ok",
     "by": "review_limit",
-    "hash": "9796967388b967d3f1d58c87578860cb1e0bdb0ee11bffdab01a29346522311e",
+    "hash": "ddfe26030fe3206cc7fc62b26e54465e8742912a05b236e7d8bb54dc802891fd",
     "after": [
       ".orchestrate/evidence/SESSION/design-review-6.md",
       ".orchestrate/evidence/SESSION/design-review.md"
     ],
     "at": "2026-11-23T23:33:41Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "b569f39f5b9a440ed89cac74d75bbc2f4ccd54439ea47c8c7f57e65899c72c4f",
+  "work_packages": {
+    "WP1": {
+      "definitions": "3c8785acd11144a5d122a796d12f2fb839acfe3a7eeb00be7004796621378bd4",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "94bca9cdda0dcb9e13feb59969a15259a0ee80dd",
-          "review": ".orchestrate/evidence/SESSION/M1-review-1.md",
+          "review": ".orchestrate/evidence/SESSION/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "fail",
-            "M1.6": "fail",
-            "M1.7": "fail",
-            "M1.8": "pass",
-            "M1.9": "fail",
-            "M1.10": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "fail",
+            "WP1.6": "fail",
+            "WP1.7": "fail",
+            "WP1.8": "pass",
+            "WP1.9": "fail",
+            "WP1.10": "pass"
           },
           "findings": [
             {
               "name": "Different crowd rules accept the same world image and diverge",
-              "item": "M1.6",
+              "item": "WP1.6",
               "repeat": false
             },
             {
               "name": "Malformed-image check uses a destination that rejects valid images",
-              "item": "M1.5",
+              "item": "WP1.5",
               "repeat": false
             },
             {
               "name": "Mac cost record omits a host tick regression flag",
-              "item": "M1.7",
+              "item": "WP1.7",
               "repeat": false
             },
             {
               "name": "Paired codecs changed accepted SIM-2D test fixtures",
-              "item": "M1.9",
+              "item": "WP1.9",
               "planner": "The frozen SIM-2D fixtures register encode-only types. M1.4 requires rejection of those types while M1.9 and the plan require those tests to stay unchanged. Decide the scope of the paired-codec boundary or allow fixture-only codec adaptations.",
               "repeat": false
             }
@@ -73,18 +73,18 @@
         {
           "verdict": "pass",
           "commit": "0727b4623191d08c5558ebf6cd9334bac61c0789",
-          "review": ".orchestrate/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -138,71 +138,71 @@
       "done": {
         "by": "review",
         "commit": "0727b4623191d08c5558ebf6cd9334bac61c0789",
-        "review": ".orchestrate/evidence/SESSION/M1-review.md",
+        "review": ".orchestrate/evidence/SESSION/WP1-review.md",
         "checked": "0834bcd88cc111151ca23f9a376aaa2418b2fc83",
         "at": "2026-11-18T22:22:14Z"
       }
     },
-    "M2": {
-      "definitions": "2194fd97cae047905a96629ed1d7ad7529528a5fa57cd8647bca38281e154c1b",
+    "WP2": {
+      "definitions": "0327593c314272ce2e2ba4312686c537637f673c6f77937f26455430410e8575",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "93d2ba883ebb500a02763834528a3090a32be2cf",
-          "review": ".orchestrate/evidence/SESSION/M2-review-1.md",
+          "review": ".orchestrate/evidence/SESSION/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "fail",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "fail",
-            "M2.7": "pass",
-            "M2.8": "fail",
-            "M2.9": "fail",
-            "M2.10": "pass",
-            "M2.11": "pass",
-            "M2.12": "fail"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "fail",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "fail",
+            "WP2.7": "pass",
+            "WP2.8": "fail",
+            "WP2.9": "fail",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "fail"
           },
           "findings": [
             {
               "name": "Expired hello renews its own deadline",
-              "item": "M2.6",
+              "item": "WP2.6",
               "repeat": false
             },
             {
               "name": "Loss observer runs while holding the session link mutex",
-              "item": "M2.9",
+              "item": "WP2.9",
               "repeat": false
             },
             {
               "name": "Held counts attributed to player index instead of negotiated slot",
-              "item": "M2.8",
+              "item": "WP2.8",
               "repeat": false
             },
             {
               "name": "Cost command never compares the previous comparable run",
-              "item": "M2.8",
+              "item": "WP2.8",
               "repeat": false
             },
             {
               "name": "Image tripwire times the image writer alone",
-              "item": "M2.8",
+              "item": "WP2.8",
               "repeat": false
             },
             {
               "name": "Stall duration omits the interval ending at recovery",
-              "item": "M2.12",
+              "item": "WP2.12",
               "repeat": false
             },
             {
               "name": "Playout rates cannot be set by the match",
-              "item": "M2.12",
+              "item": "WP2.12",
               "repeat": false
             },
             {
               "name": "Initial authoring tick uses half the specified round trip",
-              "item": "M2.3",
+              "item": "WP2.3",
               "repeat": false
             }
           ],
@@ -226,20 +226,20 @@
         {
           "verdict": "pass",
           "commit": "783405c18f7e16decd36a1f52c5658824b6b1b21",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass",
-            "M2.11": "pass",
-            "M2.12": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -278,7 +278,7 @@
         "at": "2026-11-19T09:26:53Z",
         "reused": [
           "Test command",
-          "M2.10"
+          "WP2.10"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -305,51 +305,51 @@
       "done": {
         "by": "review",
         "commit": "783405c18f7e16decd36a1f52c5658824b6b1b21",
-        "review": ".orchestrate/evidence/SESSION/M2-review.md",
+        "review": ".orchestrate/evidence/SESSION/WP2-review.md",
         "checked": "547d97e838c3e695cc6594c39cc0fae4c3fbd331",
         "at": "2026-11-19T10:43:20Z"
       }
     },
-    "M3": {
+    "WP3": {
       "definitions": "4333b2d00eaa5b98afc3c55068da1a82f06f6b86345d3246fdb53123febf7053",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "f1037a825b3ab3047f7f1faa0da54818f82580ff",
-          "review": ".orchestrate/evidence/SESSION/M3-review-1.md",
+          "review": ".orchestrate/evidence/SESSION/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "fail",
-            "M3.6": "fail",
-            "M3.7": "fail",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "fail",
+            "WP3.6": "fail",
+            "WP3.7": "fail",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass"
           },
           "findings": [
             {
               "name": "A refused set batch can publish receipts",
-              "item": "M3.6",
+              "item": "WP3.6",
               "repeat": false
             },
             {
               "name": "Host image storage exceeds the match cap during serialization",
-              "item": "M3.7",
+              "item": "WP3.7",
               "repeat": false
             },
             {
               "name": "Staged input overrides held-control expiry",
-              "item": "M3.5",
+              "item": "WP3.5",
               "repeat": false
             },
             {
               "name": "Every-byte cuts stop at the envelope decoder",
-              "item": "M3.6",
+              "item": "WP3.6",
               "repeat": false
             }
           ],
@@ -373,25 +373,25 @@
         {
           "verdict": "fail",
           "commit": "77c7c74eac5bd61312c117c8e454e3a3c14a7915",
-          "review": ".orchestrate/evidence/SESSION/M3-review-2.md",
+          "review": ".orchestrate/evidence/SESSION/WP3-review-2.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "fail",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "fail",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass"
           },
           "findings": [
             {
               "name": "A recovered peer closes on an expired reliable-send deadline",
-              "item": "M3.7",
+              "item": "WP3.7",
               "different": "The bounded image writer resolves the earlier storage finding. This failure is a stale delivery deadline after the reliable queue drains and set delivery resumes on datagrams.",
               "repeat": false
             }
@@ -416,20 +416,20 @@
         {
           "verdict": "pass",
           "commit": "780567aad826bd5a7891a1269cb5de4fef8dadc9",
-          "review": ".orchestrate/evidence/SESSION/M3-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -493,36 +493,36 @@
       "done": {
         "by": "review",
         "commit": "780567aad826bd5a7891a1269cb5de4fef8dadc9",
-        "review": ".orchestrate/evidence/SESSION/M3-review.md",
+        "review": ".orchestrate/evidence/SESSION/WP3-review.md",
         "checked": "055b370785790be7f3329f9fe8cffd5a861931d0",
         "at": "2026-11-20T01:06:06Z"
       }
     },
-    "M4": {
+    "WP4": {
       "definitions": "428f48c3065bfedde648a651ccf395bca3cc8947d0932a7f271403bef217f8c5",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "efe3deb01cbb4aec5d007be100bef7f635e070d8",
-          "review": ".orchestrate/evidence/SESSION/M4-review-1.md",
+          "review": ".orchestrate/evidence/SESSION/WP4-review-1.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "fail",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass",
-            "M4.6": "pass",
-            "M4.7": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "fail",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass"
           },
           "findings": [
             {
               "name": "Prediction resumes during the post-stall skip",
-              "item": "M4.2",
+              "item": "WP4.2",
               "repeat": false
             },
             {
               "name": "Repair fallback trails the committed controller by one tick",
-              "item": "M4.2",
+              "item": "WP4.2",
               "repeat": false
             }
           ],
@@ -546,15 +546,15 @@
         {
           "verdict": "pass",
           "commit": "0179c7c535e4999636cf7f94993153b135e1ae88",
-          "review": ".orchestrate/evidence/SESSION/M4-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass",
-            "M4.6": "pass",
-            "M4.7": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -592,7 +592,7 @@
         "at": "2026-11-20T10:13:33Z",
         "reused": [
           "Test command",
-          "M4.7"
+          "WP4.7"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -619,13 +619,13 @@
       "done": {
         "by": "review",
         "commit": "0179c7c535e4999636cf7f94993153b135e1ae88",
-        "review": ".orchestrate/evidence/SESSION/M4-review.md",
+        "review": ".orchestrate/evidence/SESSION/WP4-review.md",
         "checked": "db918ef75ea50743ed01eff487989a9aa8513a75",
         "at": "2026-11-20T11:43:28Z"
       }
     },
-    "M5": {
-      "definitions": "d9ab1a4b808132d523d153d0a50571f5504c01e346aed0d4aba767f5208d44b9",
+    "WP5": {
+      "definitions": "7fa7be51de24e849fd8ffbd1fdd4048cd2339557af1e15233402de3ccf96b83e",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -638,18 +638,18 @@
         "at": "2026-11-24T09:51:24Z",
         "reused": [
           "Test command",
-          "M5.1",
-          "M5.2",
-          "M5.3",
-          "M5.4",
-          "M5.5",
-          "M5.6",
-          "M5.7",
-          "M5.8",
-          "M5.9",
-          "M5.11",
-          "M5.12",
-          "M5.14"
+          "WP5.1",
+          "WP5.2",
+          "WP5.3",
+          "WP5.4",
+          "WP5.5",
+          "WP5.6",
+          "WP5.7",
+          "WP5.8",
+          "WP5.9",
+          "WP5.11",
+          "WP5.12",
+          "WP5.14"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -674,7 +674,7 @@
         }
       }
     },
-    "M6": {
+    "WP6": {
       "definitions": "09ed817c902272684869a3179610c8a225f22c5da58c8ea40d7339e452c00498",
       "reviews": [],
       "authorised": {
@@ -690,8 +690,8 @@
         }
       ]
     },
-    "M7": {
-      "definitions": "74d8efff2ffc10e2c70d9107540e94f207fb9e7bda80016a2b2e67a1a249642a",
+    "WP7": {
+      "definitions": "2e4e0a62b4f7a6c2c8382e76b8778620f8cb5189baa74d9cc9cc4b4b33aec88a",
       "reviews": [],
       "authorised": {
         "by": "design review",
@@ -708,15 +708,15 @@
       ],
       "ends_stretch": true
     },
-    "M8": {
+    "WP8": {
       "definitions": "f22a03e97bb4613a2dc6784c0b4029e6afb856eb7078022ed10fad545b7c01ad",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "4a1ab70e79f009132fb43a05354361e828164e48",
-          "review": ".orchestrate/evidence/SESSION/M8-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP8-review.md",
           "items": {
-            "M8.1": "pass"
+            "WP8.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -773,13 +773,13 @@
       "done": {
         "by": "review",
         "commit": "4a1ab70e79f009132fb43a05354361e828164e48",
-        "review": ".orchestrate/evidence/SESSION/M8-review.md",
+        "review": ".orchestrate/evidence/SESSION/WP8-review.md",
         "checked": "ac00513a21d8b96ca6f47b9cb17c0ca16cc912b7",
         "at": "2026-11-24T00:17:53Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
       "at": "2026-11-13T18:43:49Z"
@@ -937,7 +937,7 @@
       },
       "at": "2026-11-18T18:00:33Z",
       "items_owed": [
-        "M8"
+        "WP8"
       ]
     },
     {

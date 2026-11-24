@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
     "commit": "d1ef5f9187923b8a6632497f0f9021f6be95cf64",
-    "hash": "e8650cb005116e1e76eab44e7cc59549f86df260fb32b6b941a64a7251dd0e3e",
+    "hash": "887478f0e1cde2eb748530a8729847a8c70e883e88882a05e4c70bd6a6ef6067",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,25 +23,25 @@
     },
     "at": "2026-11-23T15:00:08Z"
   },
-  "milestones": {
-    "M5": {
+  "work_packages": {
+    "WP5": {
       "definitions": "f83a2045b8ddc289ffb8525b1ef027a2b98bac932d85fa7706ce52d9b447f2b8",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass",
-            "M5.5": "pass",
-            "M5.6": "pass",
-            "M5.7": "pass",
-            "M5.8": "pass",
-            "M5.9": "pass",
-            "M5.10": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass",
+            "WP5.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -97,27 +97,27 @@
       "done": {
         "by": "review",
         "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
-        "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
         "checked": "c46996ef1562ccdcf9f382ea00e1cff3a464efe2",
         "at": "2026-11-11T17:09:31Z"
       }
     },
-    "M6": {
-      "definitions": "24114d314a633bda7faf7920e31d038bac5deb66b6dba88917a4d1cddfaae855",
+    "WP6": {
+      "definitions": "46c2e3705c1c749bed2c08a93c779fe77d35d1fb0f6ab014ecc7d2664e309fdb",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "725feca84e582d7681a4b63a36614bb8c72bc7fd",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.4": "pass",
-            "M6.7": "pass",
-            "M6.8": "pass",
-            "M6.5": "pass",
-            "M6.6": "pass",
-            "M6.9": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.4": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -158,36 +158,36 @@
       "done": {
         "by": "review",
         "commit": "725feca84e582d7681a4b63a36614bb8c72bc7fd",
-        "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
         "checked": "37a88e5ceabdca11eb2773a95a0c984d7655319a",
         "at": "2026-11-23T16:25:52Z"
       }
     },
-    "M7": {
-      "definitions": "8e0d7a8bb83dae0cce8bc847bfbea9e2c04ec7dd7d4cf44e39191fcd5708dd24",
+    "WP7": {
+      "definitions": "554d286465863a145bd3afc8c2c243e163fda6df5320ba3797f670f6000316ef",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "0b8c112bcef34c0cdfcc7f596c966e6be572c6f5",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review-1.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review-1.md",
           "items": {
-            "M7.1": "pass",
-            "M7.2": "pass",
-            "M7.4": "pass",
-            "M7.13": "pass",
-            "M7.5": "fail",
-            "M7.6": "pass",
-            "M7.7": "pass",
-            "M7.8": "pass",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "fail",
-            "M7.12": "pass"
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.4": "pass",
+            "WP7.13": "pass",
+            "WP7.5": "fail",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "fail",
+            "WP7.12": "pass"
           },
           "findings": [
             {
               "name": "Nightglow epoch changes retain view-volume history",
-              "item": "M7.5",
+              "item": "WP7.5",
               "repeat": false
             },
             {
@@ -196,12 +196,12 @@
             },
             {
               "name": "Ledger overstates epoch reseeding coverage",
-              "item": "M7.11",
+              "item": "WP7.11",
               "repeat": false
             },
             {
               "name": "Ledger labels 1080p Metal timings as 720p",
-              "item": "M7.11",
+              "item": "WP7.11",
               "repeat": false
             }
           ],
@@ -225,25 +225,25 @@
         {
           "verdict": "fail",
           "commit": "45a7f07ddf2813efeefa252ae6621096bda698cc",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review-2.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review-2.md",
           "items": {
-            "M7.1": "pass",
-            "M7.2": "pass",
-            "M7.4": "pass",
-            "M7.13": "pass",
-            "M7.5": "fail",
-            "M7.6": "pass",
-            "M7.7": "pass",
-            "M7.8": "pass",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass"
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.4": "pass",
+            "WP7.13": "pass",
+            "WP7.5": "fail",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass"
           },
           "findings": [
             {
               "name": "Sun-path provider epoch change retains old shadow history",
-              "item": "M7.5",
+              "item": "WP7.5",
               "different": "The earlier failure involved a nightglow change in the atmosphere environment epoch. Nightglow now reseeds correctly. This failure changes the registered Sun-path provider\u2019s separate source epoch while the environment epoch stays fixed.",
               "repeat": false
             }
@@ -268,25 +268,25 @@
         {
           "verdict": "fail",
           "commit": "79bac692ffdeba3d6e5bf051bf1feb17e81993e1",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review-3.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review-3.md",
           "items": {
-            "M7.1": "pass",
-            "M7.2": "pass",
-            "M7.4": "fail",
-            "M7.13": "pass",
-            "M7.5": "pass",
-            "M7.6": "pass",
-            "M7.7": "pass",
-            "M7.8": "pass",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass"
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.4": "fail",
+            "WP7.13": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass"
           },
           "findings": [
             {
               "name": "GPU Sun-path shadow disappears at the geometric horizon",
-              "item": "M7.4",
+              "item": "WP7.4",
               "repeat": false
             }
           ],
@@ -310,20 +310,20 @@
         {
           "verdict": "fail",
           "commit": "b0a5b8d19950c9337ac56352811298ebadbba1fb",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "items": {
-            "M7.1": "pass",
-            "M7.2": "pass",
-            "M7.4": "pass",
-            "M7.13": "pass",
-            "M7.5": "pass",
-            "M7.6": "pass",
-            "M7.7": "pass",
-            "M7.8": "pass",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass"
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.4": "pass",
+            "WP7.13": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass"
           },
           "findings": [
             {
@@ -384,8 +384,8 @@
         }
       }
     },
-    "M8": {
-      "definitions": "c013282423ef2dd34143f69cc2a6be19c81c9d7ff78b402ba4bc96457d0ee963",
+    "WP8": {
+      "definitions": "5c44d81faddf08352f19adcbc9a8f0f69d55062981bd757f8a4aa9ad8415b8e1",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -394,23 +394,23 @@
       },
       "ends_stretch": true
     },
-    "M9": {
-      "definitions": "b9924c1944b9fdbd9d8b2f03cb847e297f0b4c24411a986a2946083c93f63983",
+    "WP9": {
+      "definitions": "a981304fa2e0906f5537fdb83fd2f41ddca1fa88343b8fe3973e94946c89f2f5",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "3ac402c4d86c532ef790aa6c1c9ce660618c0b12",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "items": {
-            "M9.1": "pass",
-            "M9.2": "pass",
-            "M9.3": "pass",
-            "M9.4": "pass",
-            "M9.5": "pass",
-            "M9.6": "pass",
-            "M9.7": "pass",
-            "M9.8": "pass",
-            "M9.9": "pass"
+            "WP9.1": "pass",
+            "WP9.2": "pass",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass",
+            "WP9.6": "pass",
+            "WP9.7": "pass",
+            "WP9.8": "pass",
+            "WP9.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -440,7 +440,7 @@
         "checked": "e90ad324abe5fc12c66d83402e08809d89f86d4f",
         "at": "2026-11-16T13:03:11Z",
         "reused": [
-          "M9.3"
+          "WP9.3"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -467,22 +467,22 @@
       "done": {
         "by": "review",
         "commit": "3ac402c4d86c532ef790aa6c1c9ce660618c0b12",
-        "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
         "checked": "e90ad324abe5fc12c66d83402e08809d89f86d4f",
         "at": "2026-11-16T13:11:17Z"
       }
     },
-    "M10": {
-      "definitions": "8f4676b34a39ae409040005004b4e648ac14c7dea48e49fbc36febbf1146b689",
+    "WP10": {
+      "definitions": "2be6aed6b4ec18daed9dc85ff5b7080aca202af4264f22ac7e506302a2ec379f",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "1b31888669ca4a4d9ef225fba8f7479dde78d0ca",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M10-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP10-review.md",
           "items": {
-            "M10.1": "pass",
-            "M10.2": "pass",
-            "M10.3": "pass"
+            "WP10.1": "pass",
+            "WP10.2": "pass",
+            "WP10.3": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -539,20 +539,20 @@
       "done": {
         "by": "review",
         "commit": "1b31888669ca4a4d9ef225fba8f7479dde78d0ca",
-        "review": ".orchestrate/evidence/ATMOSPHERE/M10-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP10-review.md",
         "checked": "cc51861f603d0393fdea8b5177c21d94fde2f026",
         "at": "2026-11-18T14:04:09Z"
       }
     },
-    "M11": {
+    "WP11": {
       "definitions": "843158d2222641a19fbb87ae01855ab90d0b3313d01c356dbacbc55e0239b05e",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "a82b9ab8343386470219e2081e833ccd69e592d7",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M11-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP11-review.md",
           "items": {
-            "M11.1": "pass"
+            "WP11.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -609,13 +609,13 @@
       "done": {
         "by": "review",
         "commit": "a82b9ab8343386470219e2081e833ccd69e592d7",
-        "review": ".orchestrate/evidence/ATMOSPHERE/M11-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP11-review.md",
         "checked": "662efe320bfe7ac1d761817e640bdcc71e0752dd",
         "at": "2026-11-23T15:44:19Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.\n\nPurpose. The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always have a next milestone, and wants water and clouds finished and consolidated. Today only PLATFORM-RUNTIME-MAC M2 and APPLE-TILE (G3t) are planned and open; everything after them is unplanned.\n\nWater and clouds are built in the Broadsides repository at /Users/ryannel/Workspace/Broadsides, not here. Water is on branch codex/water-rust-system, with notes/water/DESIGN.md, DESIGN-PLAN.md and HANDOFF.md. Three spikes on 10 November left results on branches claude/fable-hull-release, claude/fable-near-waterline and claude/fable-foam (notes/water/FABLE-*.md on each). Two cloud paths, a baked library and a procedural one, were built by separate Codex agents in Broadsides; find their branches and notes there. docs/design/decisions/SEA-AND-CLOUD-PORT.md governs bringing them into Thrum: it says Thrum wasn't ready on 6 November and that the owner schedules porting. The owner has now asked for both to be finished and consolidated. Decide, with reasons, what finished means for each, whether that finishing happens in Broadsides first or as Thrum modules, and where in the build order the port's readiness conditions are met.\n\nDone means: the project plan (module map, build order, contracts and a brief per module) covers the remaining work to the V1 exit plus water and clouds; each module that can start next has its design, plan and done-when file, so a builder can start it; and the build plan's active section points to it. List anything that needs an owner decision, such as port timing or spending, in your result rather than deciding it.\n\nBoundaries. Don't change the definitions of PLATFORM-RUNTIME-MAC M2 or APPLE-TILE, because builders are on them. Read Broadsides but don't change it.",
       "at": "2026-11-10T22:13:33Z"
@@ -1034,7 +1034,7 @@
       },
       "at": "2026-11-19T11:07:31Z",
       "items_owed": [
-        "M11"
+        "WP11"
       ]
     }
   ]

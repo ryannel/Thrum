@@ -5,7 +5,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/T2-CAPTURE/design-review.md",
     "commit": "018954f3d38a53f1ce3a8397465e1c4e5c8ced90",
-    "hash": "303df7b9e88cf7136f316431dec71802870047541de42849ec17b7e7f0bbad1d",
+    "hash": "f2dd481a4a7b2b55ae7c021aad10e3086cbf86c2e6f53be6041479cebe708c88",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -24,9 +24,9 @@
     },
     "at": "2026-11-24T01:27:31Z"
   },
-  "milestones": {
-    "M0": {
-      "definitions": "0a5d2516722a5d8f1e6c59e2ad91b36f80210048498e1d466abcd45937a94df7",
+  "work_packages": {
+    "WP0": {
+      "definitions": "1eba61424e6f25bdf30dfdd56117bcf4a02d78a84cd2e74f87ce1da53c5359a2",
       "authorised": {
         "by": "adopted"
       },
@@ -35,7 +35,7 @@
         "by": "adopted"
       }
     },
-    "M1": {
+    "WP1": {
       "definitions": "8119e649bdaab964aa5f5aadb36a3e695cea99b8eeafa88fa433d101096e709a",
       "authorised": {
         "by": "adopted"
@@ -45,13 +45,13 @@
         "by": "adopted"
       }
     },
-    "M2": {
-      "definitions": "dfa21a4ee21c8083506b5d344361509170f3095b2968dcb8e3889dbcbe2a1cdd",
+    "WP2": {
+      "definitions": "0c83b05f9b0e1d33ddde024fde338bbf0ce0c3d4695a9f633c8c487e77eae1bf",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "9502a54d229007b32564a2f35944529c29079915",
-          "review": ".orchestrate/evidence/T2-CAPTURE/M2-review.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/WP2-review.md",
           "host": "claude",
           "model": "claude-opus-5-5",
           "effort": "high",
@@ -85,24 +85,24 @@
       "done": {
         "by": "review",
         "commit": "9502a54d229007b32564a2f35944529c29079915",
-        "review": ".orchestrate/evidence/T2-CAPTURE/M2-review.md",
+        "review": ".orchestrate/evidence/T2-CAPTURE/WP2-review.md",
         "checked": "9502a54d229007b32564a2f35944529c29079915",
         "at": "2026-11-10T00:57:24Z"
       }
     },
-    "M3": {
-      "definitions": "de2f7f0e3b7446c88e5e5e7c0ea52235504d2f6f3a698f7b19888431cccfea86",
+    "WP3": {
+      "definitions": "4c454435857c686de29d1d46c39652c41376063d2fa9a7f19d5e6b1af0abbead",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "27c071969021ea13e57ce2e128737a3e518b07d7",
-          "review": ".orchestrate/evidence/T2-CAPTURE/M3-review.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -159,32 +159,32 @@
       "done": {
         "by": "review",
         "commit": "27c071969021ea13e57ce2e128737a3e518b07d7",
-        "review": ".orchestrate/evidence/T2-CAPTURE/M3-review.md",
+        "review": ".orchestrate/evidence/T2-CAPTURE/WP3-review.md",
         "checked": "2a72aa897d56cf2a02e53daf462bba0f98044d07",
         "at": "2026-11-16T23:46:32Z"
       }
     },
-    "M4": {
-      "definitions": "e5d9b1cda05f4882fcf3b925ac9afd468f5e92d9bcf4ab1b31d4e9d37f0deb1a",
+    "WP4": {
+      "definitions": "53162cb4e0fb4e2f102fb5922accac0e2b9a278d3d5e063f5b1d65fdb270a06c",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "212c80c313e2de17a8b4b74e42aa351736712665",
-          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review-1.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review-1.md",
           "items": {
-            "M4.1": "fail",
-            "M4.2": "fail",
-            "M4.3": "pass"
+            "WP4.1": "fail",
+            "WP4.2": "fail",
+            "WP4.3": "pass"
           },
           "findings": [
             {
               "name": "Shutdown request write failure strands the owned Chrome group",
-              "item": "M4.2",
+              "item": "WP4.2",
               "repeat": false
             },
             {
               "name": "Manifest write failure masks the original capture error",
-              "item": "M4.1",
+              "item": "WP4.1",
               "repeat": false
             }
           ],
@@ -208,16 +208,16 @@
         {
           "verdict": "fail",
           "commit": "13b0f87cbb8a8a4de21a9ef442da24dcd2fa974b",
-          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review-2.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review-2.md",
           "items": {
-            "M4.1": "fail",
-            "M4.2": "pass",
-            "M4.3": "pass"
+            "WP4.1": "fail",
+            "WP4.2": "pass",
+            "WP4.3": "pass"
           },
           "findings": [
             {
               "name": "Supervisor disconnect marks an early Chrome exit as requested",
-              "item": "M4.1",
+              "item": "WP4.1",
               "different": "The previous defect masked a capture error during a failed manifest write. Here manifest publication succeeds and incorrectly certifies a browser exit before the harness requested shutdown.",
               "repeat": false
             }
@@ -242,22 +242,22 @@
         {
           "verdict": "fail",
           "commit": "ebf29181c91a5b390975a4d982a77a5e5710817d",
-          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/WP4-review.md",
           "items": {
-            "M4.1": "fail",
-            "M4.2": "fail",
-            "M4.3": "pass"
+            "WP4.1": "fail",
+            "WP4.2": "fail",
+            "WP4.3": "pass"
           },
           "findings": [
             {
               "name": "Pre-DevTools launcher timeout leaves the capture profile",
-              "item": "M4.1",
+              "item": "WP4.1",
               "different": "The previous defect accepted an early browser exit. This startup failure is correctly rejected, but the profile remains before Chrome has even started.",
               "repeat": false
             },
             {
               "name": "Node transfers profile ownership before Swift accepts admission",
-              "item": "M4.2",
+              "item": "WP4.2",
               "different": "The earlier shutdown-request write failure stranded a running browser group. This ownership gap occurs during startup with a writable volume and no browser group.",
               "repeat": false
             }
@@ -317,7 +317,7 @@
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "The shared exact-images main-branch check fails at random under GPU load in the apple-tile-native motion capture: apple_tile_m2/portable-route-motion/runtime.json reports Metal, complete:false, 129 ring omissions and 0 writer omissions, and examples/v1-game/src/window/capture.rs rightly refuses it. The same commit fails at different motion arms on reruns, and every baseline passed on d31a94173. So merged milestones can't prove on main, and REVIEW-ENGINE M3 is blocked. An exact-image check must not depend on machine load. Plan work so the motion capture keeps every frame on a loaded machine: backpressure when the ring is full, so the renderer waits rather than drops, assuming the capture steps on a fixed clock (confirm that). Also have the capture exit 75 when runtime.json is incomplete: from orchestrate 2.3.6, exit 75 means the run couldn't judge the commit, not that it failed. A lock is not the fix, because the competing GPU tests run inside ./dev check without one. Assign it to whichever module owns the capture (APPLE-TILE owns the apple-tile-native stage). It must be buildable now, without waiting for APPLE-TILE M10's attended items, which need the owner at the Mac. Evidence: docs/evidence/REVIEW-ENGINE/M3-handoff.md, and in the shared git dir orchestrate/main-checks/exact-images/checkout/tmp/baseline-guard/verify-20261116T131758.209497Z/. The other APPLE-TILE flake, docs/evidence/APPLE-TILE/M10/window-proof.py failing with 'CUA app selection timed out', may fit the same work; your call.",
       "at": "2026-11-16T15:36:07Z"
@@ -376,7 +376,7 @@
       },
       "at": "2026-11-16T17:26:52Z",
       "items_owed": [
-        "M4"
+        "WP4"
       ]
     },
     {

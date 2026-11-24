@@ -1,185 +1,185 @@
 {
   "module": "SCENE-VIEWS",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged",
       "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "CULLING:M1",
-        "ATMOSPHERE:M5",
-        "EFFECT-GRAPH:M3"
+        "CULLING:WP1",
+        "ATMOSPHERE:WP5",
+        "EFFECT-GRAPH:WP3"
       ],
       "quality_bar": "A reflection capture as a shipped engine makes one, as Unreal's planar reflection does: the same scene from another camera, in the same light, with nothing borrowed from the main view that belongs to a view. Held to something stricter and checkable: equality with the main view drawn from that camera, for every camera a request is taken from.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "A secondary view of a camera on the main camera's vertical holds what the main view draws from that camera under the same shadow profile and frame lighting, and no camera on the vertical is excepted. The scene has entities on meshes, the Sun, the sky, local lights, and a hill whose shadow reaches receivers beyond the view's cascade reach, so that the caster height map alone decides their Sun visibility. The reference is the scene's main view drawn from the view's camera at the view's extent, prepared with the view's own count and reach of cascades and no fog. At the main view's extent and at a quarter of it each side, with temporal sampling off, the view's colour and depth at every covered pixel equal the reference's to one step of each stored format, from three view cameras: one at the main camera's position; one 80 m from it along the vertical with another pitch; and, with the main camera standing on a texel's edge of the caster height map, its mirror image in a level plane, where the two cameras' view matrices recover horizontal positions in different texels, as (16, 10, 0) looking along (\u22122, \u22121.7, \u22121) and (16, 0, 0) looking along (\u22122, 1.7, \u22121) do. A larger difference is a defect whose cause is found; the bound is not widened to it.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_equal_gpu",
           "ask": "Is the reference a main view drawn by the scene's ordinary path, in a scene whose own camera is the view's, prepared with the view's shadow profile, and would a view that reused the main camera's cluster table, aerial volume or cascades fail? From the displaced camera, are there covered pixels whose colour the hill's height-map shadow changes by more than the allowance, so that a view with no terrain shadow would fail? For the mirror pair, does the test show that the two view matrices recover horizontal positions that snap to different texels of the height map, so that the pair is one a fit from the matrix would have given two maps? Is the allowance one step of the stored format and no more?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.13",
+          "id": "WP1.13",
           "statement": "A request is taken from every camera on the main camera's vertical, and from no other. One whose declared position differs from the frame's main camera's in either horizontal coordinate, by one step of a 32-bit float or by 40 km, is refused by name when it is asked for: the slot is idle in that frame, records no pass and creates nothing, and the frame's bytes are those of a frame that asked for nothing. A camera on the vertical is taken above and below the main camera, facing any way, wherever the vertical stands: on a texel's edge of the caster height map as anywhere else.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_vertical_gpu",
           "ask": "Is the refusal decided from the two positions as they are declared, with no tolerance and no position recovered from a matrix? Does the seam's documentation tell an effect author to copy the main camera's two horizontal coordinates, and where the frame gives them?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.14",
+          "id": "WP1.14",
           "statement": "The scene's fit lays the caster height map out from the position a camera declares, never from one taken back out of its view matrix, in every scene. Cameras on one vertical therefore have one map, the same layout and address record value for value, at any height and facing any way; turning, tilting, raising or lowering a camera where it stands does not move its map. That holds on a texel's edge of the map: for (16, 10, 0) looking along (0, 0, \u22121) and along (\u22122, \u22121.7, \u22121), for (16, \u221270, 0) looking along (\u22122, \u22121.6, \u22121), and for (16, 0, 0) looking along (\u22122, 1.7, \u22121), whose view matrices recover horizontal positions that do not all snap to one texel. The air's shadow heights are reduced from that map and take no position of their own.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib height_anchor 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "ask": "Does the test take each layout from the scene's own fit, as a frame uses it, and show that the four cameras' view matrices recover positions in more than one texel, so that a fit from the matrix would fail it? Does anything that lays out the height map, addresses it or reduces the air's shadow heights still take a camera's position from a matrix?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "A view shows what the main camera cannot see. A view that faces away from the main camera, and one whose subject stands behind a wall the main view's Occlusion hides it by, draw their instances, in Direct, Frustum and Occlusion and on both of the cube route and the bucket route. In each mode the main view's submitted bytes are the same with the view asked for and idle.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_offscreen_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "A view's image depends on its own request and the scene, and not on where the main camera looks. With a request held and the main camera turned through 180 degrees about its own position, the view's colour and depth do not change by a bit: in a scene with shadows, a lamp and a hill 3 km off.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_independent_gpu",
           "ask": "Does the scene put shadowed receivers, a lit lamp and hazed geometry inside the view and outside the main frustum in at least one of the two orientations?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "A view has the Sun's shadows of its own cascades and the scene's height map beyond them. A caster and its receiver that both stand outside the main frustum show the shadow in the view, inside the view's shadow reach from a cascade and beyond it from the height map. With the view's cascade count set to none, only the height map's shadow remains.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_shadow_gpu",
           "ask": "Is the expected Sun visibility at each receiver worked out on the CPU from the casters, and would a view that sampled the main view's cascades fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "With air from the plane, a view's aerial volume is `ATMOSPHERE`'s for an observer at the plane's height. Every texel's column, whether or not its line crosses the plane, is the column the unmodified aerial pass stores at the same texel for a camera of the same orientation and projection standing on the plane, to one stored step in each channel: under a plane 50 m above sea level and one at sea level, with the view's camera 2 m and 40 m below it, looking level, so that lines that never cross fill half the volume, and looking 30\u00b0 up. With no such request the aerial pass and the decoder write the bytes they wrote before, and the main view's shader text is unchanged.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_air_gpu",
           "ask": "Is the reference volume stored by `ATMOSPHERE`'s aerial pass as it runs with no request, for a camera the test places on the plane, so that no expected value comes from the view's own path? Would a volume whose never-crossing lines are empty fail on the raised plane, and would one laid out from the view's camera, or air that starts there, fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.12",
+          "id": "WP1.12",
           "statement": "A fragment in a view is shaded with the air of its own stretch, beyond where its line crosses the plane. Under a level plane 50 m above sea level, the view's stored colour at a panel's pixel is the scene's main view's at that pixel from a camera of the same orientation, projection and extent standing at that pixel's crossing, to the design's rounding allowance. That holds on a line 10\u00b0 up, with the view's camera 2 m and 40 m below the plane and the panel 20 m and 3 km beyond the crossing; and at the plane's horizon, with a level camera 2 m below the plane, a 60\u00b0 field and the panel 1 km beyond the crossing on a line 0.2\u00b0 up, where part of the weight of the fragment's read of the volume lies on a line that never crosses the plane. Each panel is black and at a known radiance, with the Sun 45\u00b0 up across the line of sight and 10\u00b0 up behind it. On the 10\u00b0 line it holds too with a caster that shades part of the stretch beyond the crossing, which darkens the black panel's colour in both by more than the allowance, and with a caster that shades only the stretch before the crossing, which changes nothing.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_air_shaded_gpu",
           "ask": "Is the reference the scene's ordinary main view from the crossing, in clear air with temporal sampling off, and is the allowance worked out from stored steps as the design's `What a view's air is held to` says and printed beside each difference? Does the test show the view's colour missing that allowance against a main view drawn from the view's own camera, in the three cases part E of `docs/evidence/SCENE-VIEWS/design-proof/air_bound_proof.py` says can tell? At the horizon, does it show from the view's volume read back that the same read with the never-crossing lines emptied misses the allowance?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.6",
+          "id": "WP1.6",
           "statement": "A clip plane cuts a view cleanly. An entity that crosses the plane is cut at it to within a pixel of the view, nothing wholly below it draws, and a view whose camera stands under the ground beneath the plane still sees what is above the plane. A plane asked for nearer the camera than 5 cm is held at 5 cm. A world point rebuilt from the view's depth and its record's inverse matrix is the true point, at 20 m and at 3 km, to within four steps of the stored depth at that distance plus four spacings of a 32-bit float at the point's largest coordinate, which the test works out. A larger difference is a defect.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_clip_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.7",
-          "statement": "Absent means absent. A scene that declares no view compiles to the same shader text, passes, pipelines and resources as before this module. Its frames are the ones it drew before, except where M1.14 moves the height map of a camera on a texel's edge, and a scene with a slot declared and idle submits the same bytes as one with none declared. A declared slot that is idle in a frame records no pass, and its pass names are missing from that frame's timing. Asking for a slot, changing its camera and leaving it idle again create no pipeline and no resource.",
+          "id": "WP1.7",
+          "statement": "Absent means absent. A scene that declares no view compiles to the same shader text, passes, pipelines and resources as before this module. Its frames are the ones it drew before, except where WP1.14 moves the height map of a camera on a texel's edge, and a scene with a slot declared and idle submits the same bytes as one with none declared. A declared slot that is idle in a frame records no pass, and its pass names are missing from that frame's timing. Asking for a slot, changing its camera and leaving it idle again create no pipeline and no resource.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_absent_gpu",
           "ask": "Is the comparison with a scene prepared with no declaration, and does it cover the compiled pass list and the creation counters as well as the frame?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.8",
+          "id": "WP1.8",
           "statement": "A view is of the frame it is read in and keeps nothing. Its colour is the scene target's encoding with the frame's exposure sample, coverage is 1 where geometry drew and 0 elsewhere, and it holds no sky, star or effect. With temporal sampling selected it is rasterised with the frame's jitter phase at its own extent, and its record carries that matrix. A discarded frame, a capture, a cut, a resize and a device replacement each leave the next asked view whole in its first frame.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_frame_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.9",
+          "id": "WP1.9",
           "statement": "A contribution declares slots, asks in its upload and reads its own slot's colour, depth and record in its own pass, through the public seam alone. A declaration over the profile's count or the capability record's limits is refused when the scene is prepared, by name. An improper camera is refused when it is asked for, and so is air from a plane that is not level.",
           "check": "cargo test --locked --offline -p thrum-render --test scene_view_seam",
           "ask": "Could `WATERS`' builder write its mirror from the seam's documentation and types without reading `thrum-render`'s internals? Does any other module's item, test, bound or reference differ from before this milestone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         },
         {
-          "id": "M1.11",
+          "id": "WP1.11",
           "statement": "Two views in one frame do not disturb each other. Two slots asked in the same frame with different cameras, clip planes, extents and air requests each hold the bytes they hold when asked alone, in either order of asking, and the main view's bytes are the same with one, both or neither asked.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_pair_gpu",
           "lock": "gpu",
           "ask": "Do the two requests differ in every field, and would per-view products shared between slots (one cluster table, aerial volume, cascade set or culled list) fail?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP1/caster-culling/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.10",
+          "id": "WP1.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "A pool in a small scene mirrors the tower, rocks, lamp and far hill around it, cooked meshes included, whether or not the camera can see them",
       "status": "done",
       "failed_reviews": 1,
@@ -189,84 +189,84 @@
       "quality_bar": "A planar reflection in a shipped game, as GTA V's water and Unreal's planar reflections show one: every object whole in the mirror with its foot meeting its reflection, lit, shadowed and hazed as the object itself is, and steady as the camera moves.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "Cooked placements are in a view. On both the direct and the indirect cooked path, a view of a camera on the main camera's vertical holds what the main view draws of the cooked scene from that camera at the view's extent under the view's shadow profile, to one step of each stored format, with meshlets culled for the view's own frustum, clip plane and least size on the indirect path. A cooked scene that declares no view builds the pipelines and buffers it built before and submits the same bytes.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu --features thrum-render/creation-counters --test cooked_view_gpu",
           "ask": "Is the reference the main view from the view's camera, on the same cooked path and shadow profile? If the indirect path could not hold a second set of culling buffers, does the view resolve to the direct path and report that it did?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP2/README.md#cooked-placements-and-transport",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "A contribution that does not opt in is in no view and is unchanged: it is given no view, records nothing more and builds no pipeline for one.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_optin_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP2/README.md#cooked-placements-and-transport",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "`./dev scene examples/mirror` opens a scene with a flat pool that reads one secondary view with air from the plane. A black marker and one of known radiance, standing above the frame 100 m beyond the reflection point, show in the pool at the pixel geometry gives, from a camera 30 m from that point. The pool's stored colour there is the two stretches of the reflected path composed once each, times the exposure scale: `B + T_c \u00b7 V`, built as the design's `What a view's air is held to` builds it from the scene's main view with the pool's effect off, to that section's rounding allowance, with the Sun off the line of sight and at exposure scales sixteen times apart. On the black marker the same expectation with the camera's stretch left out, and with that stretch held by the view as well, each miss the allowance.",
           "check": "cargo test --locked --offline -p mirror-scene --test pool_gpu",
           "ask": "Are `V`, `B` and `W` stored colours of the scene's ordinary main view with the pool's effect off, composed by the test without the pool's shader, with the allowance worked out from stored steps and printed beside the difference? Is the pool the example's own effect, with no type or file of it in an engine crate?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP2/README.md#cooked-placements-and-transport",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "Each thing round the pool meets its reflection. The tower, the rocks at the pool's edge and the post standing in the water join their reflections at the waterline with no gap, overlap or sliver of the ground below, from 1.5 m and from 10 m, and stay whole in the pool when the camera looks down so that they leave the frame.",
           "inspect": "`fixed` stills from 1.5 m and 10 m at noon with the tower in frame and with the camera tilted down until it is out of frame, and a `realtime` tilt between the two: each waterline, the post, and the pool's edge.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP2/README.md#fixed-and-realtime-inspections",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "The reflection is in the scene's light. In the pool the tower shows its Sun-lit and shaded sides, the shadows on the ground and on the tower lie where the direct view shows them, the lamp lights the ground round it at dusk and at night, and the far hill carries its haze: at dawn, noon, dusk and night.",
           "inspect": "`fixed` stills at the four hours from 1.5 m, each with the direct view of the same things in frame: lit and shaded sides, each shadow, the lamp's pool of light and the hill, in the scene and in the mirror.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP2/README.md#fixed-and-realtime-inspections",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "The reflection is steady and of its frame. As the camera pans, tilts and orbits, as the Sun is scrubbed through an hour and as a mover crosses behind the pool, nothing in the mirror flickers, pops or trails its source by a frame, and no shadow in it appears or changes as its caster comes on screen.",
           "inspect": "`realtime` sequences of a pan, a tilt, an orbit, the time scrub and the mover, with temporal sampling off: consecutive frames at the waterlines and at the shadows in the mirror.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP2/README.md#fixed-and-realtime-inspections",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed",
       "status": "done",
       "failed_reviews": 1,
@@ -276,102 +276,102 @@
       "quality_bar": "The same reflection in Chrome as on the Mac, and a cost a game can plan for: a view priced beside the main view's own draw, with each knob's saving on record.",
       "items": [
         {
-          "id": "M3.1",
-          "statement": "In Chrome the mirror scene draws its view with no validation error, a view of entities and of cooked placements holds M1.1's and M2.1's bounds against Chrome's own main view, and the markers hold M2.3's allowance, with every reference colour Chrome's own.",
+          "id": "WP3.1",
+          "statement": "In Chrome the mirror scene draws its view with no validation error, a view of entities and of cooked placements holds WP1.1's and WP2.1's bounds against Chrome's own main view, and the markers hold WP2.3's allowance, with every reference colour Chrome's own.",
           "check": "node scripts/check_mirror_browser.mjs --case view",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m31-chrome-stored-format-checks",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP3/README.md#m31-chrome-stored-format-checks",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md"
         },
         {
-          "id": "M3.2",
-          "statement": "In Chrome the pool passes M2.4's, M2.5's and M2.6's lists at noon and at dusk.",
+          "id": "WP3.2",
+          "statement": "In Chrome the pool passes WP2.4's, WP2.5's and WP2.6's lists at noon and at dusk.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon and dusk, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m32-submitted-noon-and-dusk-inspection",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP3/README.md#m32-submitted-noon-and-dusk-inspection",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "A view's extent, far distance, least size and the count and reach of its cascades are named runtime values with a range and a declared effect. Setting each to both ends of its range while the scene runs changes the reflection in the pool as declared, creates no pipeline or resource, and changes no pixel of the frame outside the pool; the main view's geometry, culling and shadow submissions are the bytes they were. The extent moves a viewport inside the slot's prepared targets.",
           "check": "cargo test --locked --offline -p mirror-scene --features thrum-render/creation-counters --test view_knobs_gpu",
           "ask": "Can a caller that knows nothing of views list these knobs and set one, as the governor will? Is the frame compared outside the pool's pixels, and the pool's inside them against the declared change?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m33-runtime-quality-controls",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP3/README.md#m33-runtime-quality-controls",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "The paired cost record is retained with the load it was taken under. On the mirror scene, and on a scene of 100,513 entity instances with one view (the count of the V1 field flythrough), on both of the Mac's recipes at 2560\u00d71440 with capture off, it holds no view asked, one and two, and each knob at both ends: each view pass's GPU time by name beside the main view's, with the machine's load average and busiest processes. It is of the view code this milestone leaves, was taken while other builders worked, and the evidence, the author guide and the maturity ledger call its figures taken under load and claim none for a quiet machine. The logical bytes of each resource a prepared slot owns are listed beside it, and each tripwire it trips has its investigation there. No figure in the record decides this item, and it needs no sitting with other builders paused.",
           "check": "python3 scripts/scene_view_cost.py check",
           "ask": "Is the record of the view code this milestone leaves: has no commit of the milestone since the record's changed what a view draws or what the collector times? Do the evidence, the author guide and the ledger call the record's figures taken under load, with each tripped wire's investigation beside the record?",
           "reads": [
             "scripts/scene_view_cost.py",
-            "docs/evidence/SCENE-VIEWS/M3/cost.json.gz"
+            "docs/evidence/SCENE-VIEWS/WP3/cost.json.gz"
           ],
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP3/README.md#m34-capture-off-metal-cost",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "An effect author can use secondary views from the public documentation: declaring slots, the request, what a view holds and leaves out, what is read and when, the limits, the knobs and what each costs.",
-          "ask": "Could the builder of `WATERS` M14 write the mirror lookup's reads from the documentation and this design alone? Does it say that a view has no sky, fog, water or history, and what a consumer must compose itself?",
+          "ask": "Could the builder of `WATERS` WP14 write the mirror lookup's reads from the documentation and this design alone? Does it say that a view has no sky, fog, water or history, and what a consumer must compose itself?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/EFFECTS.md#secondary-views",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md"
         },
         {
-          "id": "M3.6",
+          "id": "WP3.6",
           "statement": "The maturity ledger has a row for secondary views with implementation, correctness, visuals and device kept apart, and it claims nothing for a recipe or a target that was not run.",
-          "ask": "Does the row match what M1 to M3 ran, and is the Apple recipe's result recorded apart from the portable one's?",
+          "ask": "Does the row match what WP1 to WP3 ran, and is the Apple recipe's result recorded apart from the portable one's?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/design/maturity.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md"
         },
         {
-          "id": "M3.7",
+          "id": "WP3.7",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "A small scene catches wrong secondary-view air and shade",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M4.1",
-          "statement": "The compact panel-crossing GPU cases preserve M1.12's comparison against the ordinary main camera at the crossing, including the wrong-stretch, grazing-horizon and before- and after-crossing caster controls. Each case passes within ten seconds on its first run in the focused batch under normal builder load. Guard: compact secondary-view readback cases.",
+          "id": "WP4.1",
+          "statement": "The compact panel-crossing GPU cases preserve WP1.12's comparison against the ordinary main camera at the crossing, including the wrong-stretch, grazing-horizon and before- and after-crossing caster controls. Each case passes within ten seconds on its first run in the focused batch under normal builder load. Guard: compact secondary-view readback cases.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test scene_view_air_shaded_gpu --no-tests=fail",
           "ask": "Does the evidence map the original panel test's assertions, boundary cases and tolerances to the cases that ran in the focused batch? Does it record the baseline and the revised per-test times, including solo and focused runs of the revised cases, and show that each revised case passed within ten seconds on its first attempt in the batch?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M4/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/WP4/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M4-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP4-review.md"
         }
       ],
       "failed_reviews": 0,

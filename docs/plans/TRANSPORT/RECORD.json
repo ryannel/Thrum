@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/TRANSPORT/design-review.md",
     "commit": "5495de2c26c898f65b0c6a4963651bb803163d83",
-    "hash": "d2531eabb70627398afa739d5559156847d672370f40617f66f77fd7e8534cad",
+    "hash": "e97e1824c938880e4fe3add744a77787f4be25e5dec3f42e421419a964efa71c",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,27 +23,27 @@
     },
     "at": "2026-11-15T07:38:44Z"
   },
-  "milestones": {
-    "M1": {
+  "work_packages": {
+    "WP1": {
       "definitions": "aca0b785371f8cbf2065f5499eb6d8fbd892765efff3caaea00b465521bca911",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "4d6d9f89ed1fccd4f78dbc11b6b37564318de062",
-          "review": ".orchestrate/evidence/TRANSPORT/M1-review-1.md",
+          "review": ".orchestrate/evidence/TRANSPORT/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass"
           },
           "findings": [
             {
@@ -71,20 +71,20 @@
         {
           "verdict": "pass",
           "commit": "f16cf0b9c89792e476e6f067b1bb88747b0a3ac3",
-          "review": ".orchestrate/evidence/TRANSPORT/M1-review.md",
+          "review": ".orchestrate/evidence/TRANSPORT/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -147,30 +147,30 @@
       "done": {
         "by": "review",
         "commit": "f16cf0b9c89792e476e6f067b1bb88747b0a3ac3",
-        "review": ".orchestrate/evidence/TRANSPORT/M1-review.md",
+        "review": ".orchestrate/evidence/TRANSPORT/WP1-review.md",
         "checked": "55845a9db69c6c83de3218cb68b510bce785bc5a",
         "at": "2026-11-16T11:22:17Z"
       }
     },
-    "M2": {
-      "definitions": "b3c35b5247ba9f8dd71a590029c2d98952bbe96804436482b7f5db15740c0151",
+    "WP2": {
+      "definitions": "647a99f73e1a507d8d256f8ce5e1ef6ab31d89de9ddf05a5d5a5d9655b982592",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "dd83938996e82af79d39681c09ae691330f20626",
-          "review": ".orchestrate/evidence/TRANSPORT/M2-review.md",
+          "review": ".orchestrate/evidence/TRANSPORT/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass",
-            "M2.11": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -232,13 +232,13 @@
       "done": {
         "by": "review",
         "commit": "dd83938996e82af79d39681c09ae691330f20626",
-        "review": ".orchestrate/evidence/TRANSPORT/M2-review.md",
+        "review": ".orchestrate/evidence/TRANSPORT/WP2-review.md",
         "checked": "b0df0938057eebd65c099cd2f22b90857ebf4b3c",
         "at": "2026-11-16T19:17:04Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module TRANSPORT. It needs: SHOWCASE",
       "at": "2026-11-13T16:38:51Z"

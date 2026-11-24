@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/BASELINE-GUARD/design-review.md",
     "commit": "2ee92707ea6d8a7261c12b92f2a2fe7524a44b85",
-    "hash": "18f1c9e28a66f1d62408d9925d301e99a1ddc99578e89ef945c4603c503daaf3",
+    "hash": "1a94493e716fa972011ecfd10655ce71f5d70531e168a0d3a92430a0eb712319",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,20 +23,20 @@
     },
     "at": "2026-11-16T00:22:16Z"
   },
-  "milestones": {
-    "M1": {
+  "work_packages": {
+    "WP1": {
       "definitions": "5ac7b729378cfb947ff18339a6aabec9aa312c3dfae5fad4fb761633931167fe",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "1cde61da4d0cc214da29e294925cc353c5a7a813",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -92,26 +92,26 @@
       "done": {
         "by": "review",
         "commit": "1cde61da4d0cc214da29e294925cc353c5a7a813",
-        "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
+        "review": ".orchestrate/evidence/BASELINE-GUARD/WP1-review.md",
         "checked": "1cde61da4d0cc214da29e294925cc353c5a7a813",
         "at": "2026-11-12T07:32:49Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "ca0b12a3ebfe6b7e7bcdb6978ae8ebfca93cad3cb90a9f81df56df7e77f43249",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "777a18d6f4703be7a8d322d8e05b45ceeeb3ba20",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -168,13 +168,13 @@
       "done": {
         "by": "review",
         "commit": "777a18d6f4703be7a8d322d8e05b45ceeeb3ba20",
-        "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md",
+        "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md",
         "checked": "45f31108ba1a4b92e8f50ae819afd36b4afc7a69",
         "at": "2026-11-16T03:48:25Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and done-when file. Both depend on APPLE-TILE M2, which is in its second review now, so builders can start them once it passes. Everything else is waiting on APPLE-TILE M2 or M3, so these are the next work. Keep each first milestone small enough to start right after APPLE-TILE M2 lands. Also: APPLE-PRESENTATION M1's jitter change broke APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged (docs/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change that alters another module's exact baselines gets caught before landing.",
       "at": "2026-11-11T15:19:29Z"

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/CONTENT-LOOP/design-review.md",
     "commit": "40f97820e505ec0e0067e6a3adb56705abf170e4",
-    "hash": "623084ca559f02c7cfe112f7a85d6a8805ec3797961050d858addeb20351db33",
+    "hash": "efbd2f3b626f36e7e2b4b816db142729c0fd989d71a216428f50cee0ebf8314e",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,30 +23,30 @@
     },
     "at": "2026-11-23T22:14:46Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "e7d79e7cd07aab685584fadffc2889c14a29c9f0903c3efa429c1120d6965205",
+  "work_packages": {
+    "WP1": {
+      "definitions": "0dd28f5486515c5168cd037b7041adf656c160410ee6fc256a817b6b923683a4",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "607aa2f0107b6141e558c5bc2404979e0d460c55",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review-1.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "fail",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass"
           },
           "findings": [
             {
               "name": "unchanged-product-reuploaded-behind-ready-publication",
-              "item": "M1.3",
+              "item": "WP1.3",
               "repeat": false
             }
           ],
@@ -70,18 +70,18 @@
         {
           "verdict": "pass",
           "commit": "c60ababa8390b474c176a26fecb2364fdec28cae",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -111,11 +111,11 @@
         "checked": "2ed5f248b2ad93d95d361bbf7701a9d37831d1e7",
         "at": "2026-11-13T20:52:57Z",
         "reused": [
-          "M1.2",
-          "M1.3",
-          "M1.4",
-          "M1.6",
-          "M1.10"
+          "WP1.2",
+          "WP1.3",
+          "WP1.4",
+          "WP1.6",
+          "WP1.10"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -142,43 +142,43 @@
       "done": {
         "by": "review",
         "commit": "c60ababa8390b474c176a26fecb2364fdec28cae",
-        "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/WP1-review.md",
         "checked": "2ed5f248b2ad93d95d361bbf7701a9d37831d1e7",
         "at": "2026-11-13T20:56:29Z"
       }
     },
-    "M2": {
-      "definitions": "eef7f5ba9cfa0a11f21585242f09d65cdf0192ab4ea76c897e736aca5fe1eace",
+    "WP2": {
+      "definitions": "60aea7f156b9deba8f4cb44b4bbe5bda05615269d2a4f0fb3297d44294443a29",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "afbc687082b91b1a2db598f5b8f015f9cf3f76e8",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review-1.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "fail",
-            "M2.3": "fail",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "fail"
+            "WP2.1": "pass",
+            "WP2.2": "fail",
+            "WP2.3": "fail",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "fail"
           },
           "findings": [
             {
               "name": "rebuild_breaks_fresh_row_equality",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": false
             },
             {
               "name": "rebuild_switches_unwritten_rows",
-              "item": "M2.3",
+              "item": "WP2.3",
               "repeat": false
             },
             {
               "name": "rebuild_splits_placement_and_row_publication",
-              "item": "M2.9",
+              "item": "WP2.9",
               "repeat": false
             }
           ],
@@ -202,17 +202,17 @@
         {
           "verdict": "pass",
           "commit": "20318f826fd1b7d4deb856136ac65b43801a8de2",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -249,11 +249,11 @@
         "checked": "71e940bc105ebbf1bfd55651e0c9417f290da327",
         "at": "2026-11-17T14:43:38Z",
         "reused": [
-          "M2.2",
-          "M2.3",
-          "M2.4",
-          "M2.5",
-          "M2.9"
+          "WP2.2",
+          "WP2.3",
+          "WP2.4",
+          "WP2.5",
+          "WP2.9"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -280,34 +280,34 @@
       "done": {
         "by": "review",
         "commit": "20318f826fd1b7d4deb856136ac65b43801a8de2",
-        "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/WP2-review.md",
         "checked": "71e940bc105ebbf1bfd55651e0c9417f290da327",
         "at": "2026-11-17T15:27:17Z"
       }
     },
-    "M3": {
-      "definitions": "76cc9d209bd008b3f6d11be645944029d37fc24e0a24c261b0fb964cb95cd1a3",
+    "WP3": {
+      "definitions": "08d9b8018e0a54f92cae9de93ec76d76f10aa9f8bda3045a4b1e67cc17b8b6d7",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "3197e98706f5a2e35a0b59d68c2afa896ffa65f4",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review-1.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "fail",
-            "M3.9": "pass",
-            "M3.10": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "fail",
+            "WP3.9": "pass",
+            "WP3.10": "pass"
           },
           "findings": [
             {
               "name": "g5_decision_misstates_draw_paths_and_target_qualification",
-              "item": "M3.8",
+              "item": "WP3.8",
               "repeat": false
             }
           ],
@@ -331,18 +331,18 @@
         {
           "verdict": "pass",
           "commit": "1d1c0f35c6568a82585e1a20f35181c29238ffe8",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -380,7 +380,7 @@
         "at": "2026-11-19T18:55:24Z",
         "reused": [
           "Test command",
-          "M3.10"
+          "WP3.10"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -407,30 +407,30 @@
       "done": {
         "by": "review",
         "commit": "1d1c0f35c6568a82585e1a20f35181c29238ffe8",
-        "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/WP3-review.md",
         "checked": "74f4ffcff4ec8c2ae7894f730b3b9356667f8ae6",
         "at": "2026-11-19T19:27:49Z"
       }
     },
-    "M4": {
+    "WP4": {
       "definitions": "b8ec538d1e7879e413afe4ae2bb759c633e3ab5a5b3b6edf35f27e9722205b31",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "f0a5d7d0dadc5ccaba78713f5aa5eb7cd7943d7f",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review-1.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP4-review-1.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "fail",
-            "M4.4": "pass",
-            "M4.5": "pass",
-            "M4.6": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass"
           },
           "findings": [
             {
               "name": "unchanged_watcher_test_contains_added_logging",
-              "item": "M4.3",
+              "item": "WP4.3",
               "repeat": false
             }
           ],
@@ -454,14 +454,14 @@
         {
           "verdict": "pass",
           "commit": "f2b4481602010b068393977635f9b4df2743d12c",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass",
-            "M4.6": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -515,20 +515,20 @@
       "done": {
         "by": "review",
         "commit": "f2b4481602010b068393977635f9b4df2743d12c",
-        "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/WP4-review.md",
         "checked": "7f89c741ff5190e8b1ec0f11eac91f0be3ec8bc1",
         "at": "2026-11-16T08:15:33Z"
       }
     },
-    "M5": {
+    "WP5": {
       "definitions": "ef1c4d758ec2a73eb99fe4a9b6996f60c1d9011e1a7c48817a3eabcfc9707ffa",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "43e9c950e51e3727029a43fcd2cce9643dec89bf",
-          "review": ".orchestrate/evidence/CONTENT-LOOP/M5-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP5-review.md",
           "items": {
-            "M5.1": "pass"
+            "WP5.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -586,13 +586,13 @@
       "done": {
         "by": "review",
         "commit": "43e9c950e51e3727029a43fcd2cce9643dec89bf",
-        "review": ".orchestrate/evidence/CONTENT-LOOP/M5-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/WP5-review.md",
         "checked": "fd2077b4211ec2a17e93bb2c2cf0e9444c3f59f7",
         "at": "2026-11-23T22:47:47Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the running game without a stall; needs APPLE-PRESENTATION M2). Write its design, milestones and done-when file so M1 is buildable as soon as APPLE-PRESENTATION M2 passes review. SEA, CLOUDS and RENDER-2D depend on it; account for what they will need from it.",
       "at": "2026-11-13T06:24:04Z"
@@ -738,7 +738,7 @@
       },
       "at": "2026-11-18T00:49:50Z",
       "items_owed": [
-        "M5"
+        "WP5"
       ]
     }
   ]

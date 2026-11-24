@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/CREATOR/design-review.md",
     "commit": "50b3e01fcf91dabd2e2fe7e0fcd4e85cd668b6c3",
-    "hash": "5088711568210b9d4a6d6a6b14ce0a7a322c81b4c64e1d14b2d71928bbb1619e",
+    "hash": "429bc5edb05578c748ad649ae44af87a2f71f50c5cc3d85fbd080989e518632d",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,14 +23,14 @@
     },
     "at": "2026-11-23T22:10:03Z"
   },
-  "milestones": {
-    "M1": {
+  "work_packages": {
+    "WP1": {
       "definitions": "ffc77bacc900ad9a6e5b65fbb0dc2afd227468a593e473d04a9a7d904bad1df0",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "51a01842269ff60300f989ba8c69bc88edcc40c5",
-          "review": ".orchestrate/evidence/CREATOR/M1-review-1.md",
+          "review": ".orchestrate/evidence/CREATOR/WP1-review-1.md",
           "host": "claude",
           "model": "claude-opus-5-5",
           "effort": "high",
@@ -51,13 +51,13 @@
         {
           "verdict": "pass",
           "commit": "ba46b1312347a6189e2d5f79230688241f0a1e9e",
-          "review": ".orchestrate/evidence/CREATOR/M1-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -105,26 +105,26 @@
       "done": {
         "by": "review",
         "commit": "ba46b1312347a6189e2d5f79230688241f0a1e9e",
-        "review": ".orchestrate/evidence/CREATOR/M1-review.md",
+        "review": ".orchestrate/evidence/CREATOR/WP1-review.md",
         "checked": "4137756a617da1c9777bb0cb194ebc8387663daa",
         "at": "2026-11-11T04:26:54Z"
       }
     },
-    "M2": {
-      "definitions": "f35214290aeaaf4462db94949622c4396f951b7824e334ff4a2c1cdf244a813b",
+    "WP2": {
+      "definitions": "8fe2207f033d5ee73522d20cca3e234119f1ad23ae7e3c7a3d00a5f5512f7380",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "f6d49743a7e6cc03098ba1087b894c44ddaaad4c",
-          "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -155,8 +155,8 @@
         "at": "2026-11-14T16:00:15Z",
         "reused": [
           "Test command",
-          "M2.2",
-          "M2.4"
+          "WP2.2",
+          "WP2.4"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -183,29 +183,29 @@
       "done": {
         "by": "review",
         "commit": "f6d49743a7e6cc03098ba1087b894c44ddaaad4c",
-        "review": ".orchestrate/evidence/CREATOR/M2-review.md",
+        "review": ".orchestrate/evidence/CREATOR/WP2-review.md",
         "checked": "0ecd720bf759f859b22d2e3a8b82d37c0f21ebdc",
         "at": "2026-11-14T16:28:28Z"
       }
     },
-    "M3": {
+    "WP3": {
       "definitions": "cb72f4724f4a9d3496da23295dc265e991ce19ee1075754fd280abce221adbc4",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "cb084d70b190b5787f608787b90f7f80dbb74528",
-          "review": ".orchestrate/evidence/CREATOR/M3-review-1.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review-1.md",
           "items": {
-            "M3.1": "could_not_judge",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "could_not_judge",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "fresh-review reading order was violated",
-              "item": "M3.1",
+              "item": "WP3.1",
               "repeat": false
             }
           ],
@@ -229,18 +229,18 @@
         {
           "verdict": "fail",
           "commit": "ac817e477ae573c7b75fe5b1113244f0eb573106",
-          "review": ".orchestrate/evidence/CREATOR/M3-review-2.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review-2.md",
           "items": {
-            "M3.1": "could_not_judge",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "could_not_judge",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "fresh-review reading order was violated",
-              "item": "M3.1",
+              "item": "WP3.1",
               "repeat": true
             }
           ],
@@ -264,18 +264,18 @@
         {
           "verdict": "fail",
           "commit": "42ee82c7784883a86a65a66bf6a50ba3ce04dea0",
-          "review": ".orchestrate/evidence/CREATOR/M3-review-3.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review-3.md",
           "items": {
-            "M3.1": "could_not_judge",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "could_not_judge",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "fresh-review reading order was violated",
-              "item": "M3.1",
+              "item": "WP3.1",
               "repeat": true
             }
           ],
@@ -299,23 +299,23 @@
         {
           "verdict": "fail",
           "commit": "d03da5e34d48d5843cea222aff9f938db3be5015",
-          "review": ".orchestrate/evidence/CREATOR/M3-review-4.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review-4.md",
           "items": {
-            "M3.1": "could_not_judge",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "could_not_judge",
-            "M3.5": "pass"
+            "WP3.1": "could_not_judge",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "could_not_judge",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "fresh-review reading order was violated",
-              "item": "M3.1",
+              "item": "WP3.1",
               "repeat": true
             },
             {
               "name": "native panel drag was not reachable through the review UI tool",
-              "item": "M3.4",
+              "item": "WP3.4",
               "repeat": false
             }
           ],
@@ -339,13 +339,13 @@
         {
           "verdict": "pass",
           "commit": "2d29dc0ba8eb11c527ec60ccbe8c302a32075557",
-          "review": ".orchestrate/evidence/CREATOR/M3-review.md",
+          "review": ".orchestrate/evidence/CREATOR/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -399,12 +399,12 @@
       "done": {
         "by": "review",
         "commit": "2d29dc0ba8eb11c527ec60ccbe8c302a32075557",
-        "review": ".orchestrate/evidence/CREATOR/M3-review.md",
+        "review": ".orchestrate/evidence/CREATOR/WP3-review.md",
         "checked": "d1bcc9f16932e3ab545a343877c720655e7e0f6c",
         "at": "2026-11-17T23:23:38Z"
       }
     },
-    "M4": {
+    "WP4": {
       "definitions": "db5ee823f34b1722a2d37526383632b14b1d9fca5f44bd6653f635550e814fed",
       "reviews": [],
       "authorised": {
@@ -415,7 +415,7 @@
       "ends_stretch": true
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.\n\nPurpose. The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always have a next milestone, and wants water and clouds finished and consolidated. Today only PLATFORM-RUNTIME-MAC M2 and APPLE-TILE (G3t) are planned and open; everything after them is unplanned.\n\nWater and clouds are built in the Broadsides repository at /Users/ryannel/Workspace/Broadsides, not here. Water is on branch codex/water-rust-system, with notes/water/DESIGN.md, DESIGN-PLAN.md and HANDOFF.md. Three spikes on 10 November left results on branches claude/fable-hull-release, claude/fable-near-waterline and claude/fable-foam (notes/water/FABLE-*.md on each). Two cloud paths, a baked library and a procedural one, were built by separate Codex agents in Broadsides; find their branches and notes there. docs/design/decisions/SEA-AND-CLOUD-PORT.md governs bringing them into Thrum: it says Thrum wasn't ready on 6 November and that the owner schedules porting. The owner has now asked for both to be finished and consolidated. Decide, with reasons, what finished means for each, whether that finishing happens in Broadsides first or as Thrum modules, and where in the build order the port's readiness conditions are met.\n\nDone means: the project plan (module map, build order, contracts and a brief per module) covers the remaining work to the V1 exit plus water and clouds; each module that can start next has its design, plan and done-when file, so a builder can start it; and the build plan's active section points to it. List anything that needs an owner decision, such as port timing or spending, in your result rather than deciding it.\n\nBoundaries. Don't change the definitions of PLATFORM-RUNTIME-MAC M2 or APPLE-TILE, because builders are on them. Read Broadsides but don't change it.",
       "at": "2026-11-10T22:13:33Z"
@@ -548,7 +548,7 @@
       },
       "at": "2026-11-17T19:31:05Z",
       "items_owed": [
-        "M4"
+        "WP4"
       ]
     },
     {

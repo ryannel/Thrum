@@ -1,146 +1,146 @@
 {
   "module": "DEAD-CODE",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "GATE-TIME:M1"
+        "GATE-TIME:WP1"
       ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "`thrum-core` keeps no per-tick ring of change bitsets: the ring, the code that maintained it on every write and spawn, the queries that read it and the step that only wrote it are gone. The per-slot change ticks and the structural tick that publication reads are as they were, and the simulation decision no longer says the core keeps a change journal.",
           "check": "sh -c '! git grep -qE \"ChangeFrame|invalidate_change_frames|visit_changes_since|visit_structural_since|visit_changes_with_ticks3\" -- crates examples && git grep -q \"fn finalize_activity\" -- crates && cargo test --locked --offline -p thrum-core'",
           "ask": "Does a write or a spawn still record anything that nothing reads? Did publication, `finalize_activity` or any per-slot tick change? Was any test deleted that covered code that is kept?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "Item check run by agent_loop.py check on the M1 branch; thrum-core tests pass; absence greps empty. LOG.md entry of 2026-11-20.",
+          "evidence": "Item check run by agent_loop.py check on the WP1 branch; thrum-core tests pass; absence greps empty. LOG.md entry of 2026-11-20.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "A world steps to the same state: every test of `thrum-core`, `thrum-sim2d` and `thrum-network` that passed at the starting commit passes, and no expected digest, hash or state in a test was edited.",
           "check": "cargo test --locked --offline -p thrum-core -p thrum-sim2d -p thrum-network",
           "ask": "Read the milestone's diff of test files with `git diff` from the commit it started from: is any expected digest, hash, count or state literal changed? Is any test of kept behaviour removed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "Item check run by agent_loop.py check on the M1 branch; core, sim2d and network tests pass; no test expected value edited (git diff of tests: one removed assertion on a deleted query in g2_runtime).",
+          "evidence": "Item check run by agent_loop.py check on the WP1 branch; core, sim2d and network tests pass; no test expected value edited (git diff of tests: one removed assertion on a deleted query in g2_runtime).",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "The sea computes no moment ladder: the moments and mip-parameter buffers, the reduce pipeline, their bind group and records, and the write that fed them are gone, and the sea's graph declares the passes that are left. Water samples the filtered textures as it did. The forward-cache test holds that every mip of the filtered textures carries the moments on all five planes, and water's record test checks no record that nothing binds.",
           "check": "sh -c '! git grep -qE \"moments_buffer|check_moments|BufferKey::Moments\" -- crates examples && git grep -q \"fn filtered_accesses\" -- crates && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-sea -p thrum-water'",
           "ask": "Does the sea still compute anything each frame that only a test reads? Which test now fails if a filtered-texture mip lost its slope or Jacobian moments, and does it check all five planes of every mip? Did any assertion about the filtered textures or the wave field change?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": "Item check run by agent_loop.py check on the M1 branch under gpu; sea and water tests pass with THRUM_REQUIRE_GPU=1; forward_cache_gpu unchanged.",
+          "evidence": "Item check run by agent_loop.py check on the WP1 branch under gpu; sea and water tests pass with THRUM_REQUIRE_GPU=1; forward_cache_gpu unchanged.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "The long tests that run what this milestone changed pass on main with its commit in, in the main-branch check `long-tests`: the exit scene's stepped hour, which steps the simulation through the tick path the ring was written on, and the ten-minute gale, which renders the sea's graph every frame.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests; before merge the stepped hour and the gale passed in release on the branch, as ./dev long-tests runs them.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "A scene contribution writes only the hooks it uses",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
       "depends_on": [
-        "GATE-TIME:M6"
+        "GATE-TIME:WP6"
       ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "`SceneContribution` gives `computes`, `encode_compute`, `encode_after_compute`, `draw` and `submitted` default bodies that do what the empty stubs did, and no implementation under `crates` or `examples` writes a body equal to its default. `passes`, `rebuild` and `encode_upload` stay required. The trait's documentation says that a wrapper must forward every hook, that `encode_compute` is called only when `computes` is true, and that `submitted` commits what `encode_upload` staged.",
           "check": "git grep -q \"trait SceneContribution\" -- crates && git grep -lE \"SceneContribution for\" -- crates examples | xargs perl -0777 -ne 'while (/\\bimpl\\b[^{;]*\\bSceneContribution\\s+for\\b[^{]*(\\{(?:[^{}]++|(?1))*\\})/g) { $body = $1; $impls++; $stubs++ while $body =~ /\\bfn\\s+(?:encode_compute|encode_after_compute|draw|submitted)\\b[^{;]*\\{(?:\\s|\\/\\/[^\\n]*)*\\}/g; $stubs++ while $body =~ /\\bfn\\s+computes\\b[^{;]*\\{(?:\\s|\\/\\/[^\\n]*)*false\\s*\\}/g } END { print $impls + 0, \" impls, \", $stubs + 0, \" bodies equal to a default\\n\"; exit(($stubs || !$impls) ? 1 : 0) }'",
           "ask": "List every `impl SceneContribution` under `crates` and `examples`: does any still write a body equal to a default, for any of the five hooks? Compare with the starting commit: is any body that did work gone, or any hook's behaviour changed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.1-check.log: \"36 impls, 0 bodies equal to a default\" on main c0e172d27 (M2 code from b57808ace, 8956287dd)",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/WP2/M2.1-check.log: \"36 impls, 0 bodies equal to a default\" on main c0e172d27 (WP2 code from b57808ace, 8956287dd)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "The list of contributions, `SceneContributions`, is the one wrapper that stands in front of other contributions outside tests, and it forwards every hook: a test in the list's own module, `contribution::list`, puts a probe behind it and sees all eight hooks reach it, the five with defaults among them. The ray-tracing replacement, a test's own fixture, still writes all eight forwards out. The other test fixtures that forward keep the hooks their tests need, and get no probe.",
           "check": "sh -c 'out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib contribution::list 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Name the test that fails if `SceneContributions` does not forward one hook, and try it: remove one forward in a scratch copy. Does its probe count all eight hooks, the five with defaults among them? Does the ray-tracing replacement still forward all eight itself, with none left to a default? Is there any other wrapper outside tests that holds a contribution and forwards to it?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.2-check.log is empty because the check keeps its own output; the check passed on main c0e172d27 (agent_loop check record 25556f4b57d7a94f6d643068-8ae08c7734c118c8): contribution::list::tests::every_hook_reaches_a_member_behind_the_list ok, 1 passed, GPU required",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/WP2/M2.2-check.log is empty because the check keeps its own output; the check passed on main c0e172d27 (agent_loop check record 25556f4b57d7a94f6d643068-8ae08c7734c118c8): contribution::list::tests::every_hook_reaches_a_member_behind_the_list ok, 1 passed, GPU required",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP2-review.md"
         },
         {
-          "id": "M2.4",
-          "statement": "The tests that no merge check runs, and that reach a contribution this milestone edited, pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is M2.5's.",
+          "id": "WP2.4",
+          "statement": "The tests that no merge check runs, and that reach a contribution this milestone edited, pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is WP2.5's.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.4-long-tests-run.json: main-branch check long-tests passed on main 199c58df01fa (2026-11-21 02:13-02:39Z), which contains 8956287dd; mesh_stage_gpu skipped as not-run (M2.5)",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/WP2/M2.4-long-tests-run.json: main-branch check long-tests passed on main 199c58df01fa (2026-11-21 02:13-02:39Z), which contains 8956287dd; mesh_stage_gpu skipped as not-run (WP2.5)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "The main-branch check `long-tests` skips a test binary that the main-tier list, `.config/long-tests.txt`, marks not-run, so one that holds a contribution this milestone edited is proved here: its tests pass on main with this milestone's commit in, run one test at a time with a GPU required. One binary is in that position, the game's `mesh_stage_gpu`, where the milestone removed the stub bodies of `SelectionView`. Run whole, its tests fail on state they share. That fault was listed before this milestone and is `MESH-SHADING`'s to fix, so the binary's tests keep every assertion and the not-run line stays as it is.",
           "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --features draw-probe --test mesh_stage_gpu -- --test-threads=1 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "ask": "Compare the not-run lines of `.config/long-tests.txt` at the claimed commit with the files this milestone changed since `f5d7c5bba`: is `mesh_stage_gpu` the only not-run binary among them? In that binary, did the milestone change anything but the removed stub bodies, and did it change the list?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.5-check.log: mesh_stage_gpu, --test-threads=1, GPU required: 10 passed, 5 ignored, on main c0e172d27",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/WP2/M2.5-check.log: mesh_stage_gpu, --test-threads=1, GPU required: 10 passed, 5 ignored, on main c0e172d27",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.3-check.log: main-branch check exact-images COVERED, passed on main 199c58df01fa, which contains 8956287dd",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/WP2/M2.3-check.log: main-branch check exact-images COVERED, passed on main 199c58df01fa, which contains 8956287dd",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP2-review.md"
         }
       ],
       "diagnosed_for_planner_finding": true
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach",
       "status": "done",
       "failed_reviews": 0,
@@ -149,28 +149,28 @@
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "`thrum-core` offers no runtime method, change query, serial transaction visit or incremental capture that only its own tests reached: the seven uncalled runtime methods, the query that read each slot's change ticks, the serial visits and `RuntimeDelta` with what served only it are gone. A full capture and undo behave as they did. The property that a visit which refuses a row still refreshes the written row's active bit is held on the chunked visit, with the written column indexed.",
           "check": "sh -c '! git grep -qE \"RuntimeDelta|WorldDelta|restore_through|visit_if_indexed|visit_with_changes|change_ticks3_at|matches_capture\" -- crates examples && git grep -q \"fn write_read2_indexed\" -- crates && cargo test --locked --offline -p thrum-core -p thrum-sim2d -p thrum-network'",
           "ask": "Read the test that carries the refused-row property now: does it index the written column, run the chunked visit, and fail if the active bit were left stale? Were the capture, restore and undo assertions that used a delta kept, on a full capture? Is any expected digest or state edited?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal); the script's run on the merged tip is the proof of record. Mutation run on the branch: disabling the chunked visit's active-bit update fails refusing_visit_refreshes_the_written_rows_active_bit (LOG.md, 2026-11-21 M3 entry).",
+          "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal); the script's run on the merged tip is the proof of record. Mutation run on the branch: disabling the chunked visit's active-bit update fails refusing_visit_refreshes_the_written_rows_active_bit (LOG.md, 2026-11-21 WP3 entry).",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "`thrum-render` has one public way to open a device, the device recipe: the three openers that only called each other are gone.",
           "check": "sh -c '! git grep -qE \"fn open_generation(_with_feature_mask|_from)?\\(\" -- crates examples && git grep -q \"fn open_planned_generation\" -- crates'",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal); the script's run on the merged tip is the proof of record.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP3-review.md"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "The rain model has no serialiser that only a test calls: two preparations of the same bed are compared as values, and two different beds differ. `Tree::bytes`, which the rain cost example uses, is as it was.",
           "check": "sh -c '! git grep -q \"fn to_bytes\" -- crates/thrum-rain-model && cargo test --locked --offline -p thrum-rain-model --test tree'",
           "ask": "Is the value comparison as strict as the byte comparison was, negative zero in the ground included?",
@@ -178,10 +178,10 @@
           "builder_result": "pass",
           "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal), including the_same_bed_gives_the_same_tree; the unit test negative_zero_differs_from_zero_as_its_bytes_do passes in thrum-rain-model's lib tests.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP3-review.md"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "The shadowed aerial shader exists once. The test-only copy of the two production pieces is gone, the atmosphere model's test reads the production pieces, and the test that only compared the copy with them is gone. No production shader source changed.",
           "check": "sh -c 'test -z \"$(git ls-files \":(glob)crates/**/synthetic_aerial_shadowed.wgsl\")\" && git ls-files \":(glob)crates/**/*aerial_camera_shadowed.wgsl\" | grep -q . && cargo test --locked --offline -p thrum-render --lib atmosphere::model'",
           "ask": "Does `git diff` from the starting commit show any change to a shader file that a pipeline is built from?",
@@ -189,161 +189,161 @@
           "builder_result": "pass",
           "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal); the script's run on the merged tip is the proof of record.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP3-review.md"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "The water scene reads its settings in one place, so a proof captures the scene a person opens",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "WATERS:M7"
+        "WATERS:WP7"
       ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "The settings that choose the water scene, which are its `THRUM_WATER_*` variables other than the proof harness's own and its page query, are parsed by one typed settings parse, which the window, the page and the proof tests all use. Where the two parsers disagreed the window's reading stands: a floating scene's heading, `THRUM_WATER_STONE` on only when it is `1`, and `THRUM_WATER_WAKE_BODIES` honoured. A meaning only a test needs has a variable of its own. The harness's variables, which say where a proof writes and which commit, route and recipe it records, stay with the tests.",
           "check": "sh -c 'git grep -q \"THRUM_WATER_\" -- examples/water/tests && ! git grep -qE \"env::var(_os)?\\(\\\"THRUM_WATER_(FOAM|LOCATION|WAKE|BODIES|SPEED|HEADING|VIEW|STONE|WAKE_BODIES|ISLAND)\\\"\" -- examples/water/tests && cargo test --locked --offline -p water-scene --lib'",
           "ask": "List each setting either parser read at the starting commit, with the reading each gave: does the one parse give the window's reading for every one, and does the log record each decision? Does `scripts/water_cost.py` or `scripts/check_water_browser.mjs` set a variable whose meaning changed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "agent_loop.py check on c83ac24a4 (mac-metal): M4.1 and ./dev check pass, log .git/orchestrate/jobs/20261121-164904-11925.log; the before/after reading of each setting is in commit 6ccb11f4c's message; settings::tests in water-scene's lib",
+          "evidence": "agent_loop.py check on c83ac24a4 (mac-metal): WP4.1 and ./dev check pass, log .git/orchestrate/jobs/20261121-164904-11925.log; the before/after reading of each setting is in commit 6ccb11f4c's message; settings::tests in water-scene's lib",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M4-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP4-review.md"
         }
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "The game's unread state projection and the content crate with no producer are gone",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "HOST:M3"
+        "HOST:WP3"
       ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "The game copies no committed page's changes for a reader that does not exist: the state projection, its forwarding and its test legs are gone, and the maturity ledger no longer offers it. A recovered page is still republished, and the host's committed-ticks test passes.",
           "check": "sh -c '! git grep -qE \"GameProjection|poll_projection\" -- crates examples && cargo test --locked --offline -p v1-game --test host_gpu'",
           "ask": "After a recovered page, is the page still republished, and does a test show it? Does the maturity ledger still describe a projection outbox as present?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-CODE/M5/M5.1-check.log",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/WP5/M5.1-check.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M5-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP5-review.md"
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "The workspace has no `thrum-content-runtime`: the crate, its registration and the game's wrappers around it are gone, and the engineering skill's package table no longer names it. The cooked-rows test publishes its environment through `thrum-render`'s own API, with the photometric numbers and the revision it used.",
           "check": "sh -c '! git grep -qE \"thrum-content-runtime|thrum_content_runtime\" -- crates examples tools Cargo.toml .config .agents && cargo test --locked --offline -p v1-game --test cooked_rows_gpu'",
           "ask": "Does the cooked-rows test assert what it asserted at the starting commit, on the same environment numbers?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-CODE/M5/M5.2-check.log",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/WP5/M5.2-check.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M5-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP5-review.md"
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M5-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP5-review.md"
         }
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "Bind-group layout entries and graph declarations are each written through one helper",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REVIEW-RENDER:M3",
-        "GATE-TIME:M6"
+        "REVIEW-RENDER:WP3",
+        "GATE-TIME:WP6"
       ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "`thrum_render::binding` gives a bind-group layout entry for each standard kind: uniform buffer, storage buffer read-only or not, sampled texture, sampler, storage texture and acceleration structure. Outside tests and outside that module, no file under `crates` or `examples` writes a `BindGroupLayoutEntry` literal, except an entry with a count or a dynamic offset, and the local helper sets in the renderer, the asset crate and the clouds are gone. Every layout is what it was.",
           "check": "sh -c 'git grep -q \"pub mod binding\" -- crates/thrum-render/src && test \"$(git grep -h \"BindGroupLayoutEntry {\" -- crates examples \":!*/tests/*\" \":!*tests.rs\" \":!*/benches/*\" \":!crates/thrum-render/src/binding*\" | wc -l)\" -le 10 && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib binding'",
           "ask": "List every `BindGroupLayoutEntry` literal left outside tests and outside the binding module: does each have a count or a dynamic offset? Pick ten converted entries across five crates and compare each with its literal at the starting commit: same visibility, type, read-only flag, sample type, dimension and minimum size?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; .orchestrate/evidence/DEAD-CODE/M6/M6-notes.md, binding-conversions.md, render-tests.log, crates-tests.log",
+          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; .orchestrate/evidence/DEAD-CODE/WP6/M6-notes.md, binding-conversions.md, render-tests.log, crates-tests.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP6-review.md"
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "A graph access that stores with no view is written with `Access::new`, and a graph resource that mirrors a `wgpu` texture is declared from the texture by one function, which declares a 2D texture with the texture's own layers, mips and samples. Every compiled graph is what it was: no graph snapshot was edited.",
           "check": "sh -c 'git grep -q \"fn of_texture\" -- crates/thrum-render/src && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --test graph_kinds --test scene_2d'",
           "ask": "Does the function ever declare a cube or a 3D texture? Read the milestone's diff of snapshot and expected-graph files with `git diff` from the starting commit: is any changed?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; per-site equality asserts in .orchestrate/evidence/DEAD-CODE/M6/of-texture-asserts.log and of-texture-hits.log, summary in M6-notes.md",
+          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; per-site equality asserts in .orchestrate/evidence/DEAD-CODE/WP6/of-texture-asserts.log and of-texture-hits.log, summary in WP6-notes.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP6-review.md"
         },
         {
-          "id": "M6.4",
-          "statement": "The tests that no merge check runs, and that build layouts or graphs through the converted code, pass on main with this milestone's commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through a converted file, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is M6.5's.",
+          "id": "WP6.4",
+          "statement": "The tests that no merge check runs, and that build layouts or graphs through the converted code, pass on main with this milestone's commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through a converted file, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is WP6.5's.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP6-review.md"
         },
         {
-          "id": "M6.5",
+          "id": "WP6.5",
           "statement": "The game's `mesh_stage_gpu` tests draw through bind-group layouts this milestone converts, in `crates/thrum-asset-gpu/src/mesh_stages.rs` among others, and they pass on main with its commit in, run one test at a time with a GPU required. At this plan's writing the main-tier list, `.config/long-tests.txt`, marks that binary not-run, so the main-branch check `long-tests` skips it: run whole, its tests fail on state they share, which is `MESH-SHADING`'s to fix. This milestone changes neither that binary's tests nor its line in the list, and the item holds the same once the line has gone.",
           "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --features draw-probe --test mesh_stage_gpu -- --test-threads=1 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "ask": "At the claimed commit, does the main-tier list mark not-run any other binary whose tests build a layout or a graph through a file this milestone converted? Did the milestone change `mesh_stage_gpu`'s tests or the list?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; serial run on 15ed94d9f in .orchestrate/evidence/DEAD-CODE/M6/mesh-stage-gpu.log",
+          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; serial run on 15ed94d9f in .orchestrate/evidence/DEAD-CODE/WP6/mesh-stage-gpu.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP6-review.md"
         },
         {
-          "id": "M6.3",
+          "id": "WP6.3",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md"
+          "review": ".orchestrate/evidence/DEAD-CODE/WP6-review.md"
         }
       ]
     }

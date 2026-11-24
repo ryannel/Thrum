@@ -15,7 +15,7 @@ The owner, 14 November 2026, of water:
 `WATERS` settled how water reflects scenery the camera cannot see: it reads a second draw of the scene, made
 from the camera's mirror image in the water's plane. A second draw needs the scene's culling, lights, shadows
 and air for another view, which no effect may reach, so [the module list](../ARCHITECTURE.md#scene-views) made
-it a module of its own. The lead's task for this plan: "plan the new module SCENE-VIEWS that WATERS M14 depends
+it a module of its own. The lead's task for this plan: "plan the new module SCENE-VIEWS that WATERS WP14 depends
 on. Choose methods from first principles and current practice."
 
 ## Purpose and scope
@@ -26,7 +26,7 @@ is. It is never presented, and it has no history.
 
 | User | Needs | What that requires of the design |
 |---|---|---|
-| `WATERS` M14, for a lake, a pond and the sea under an island | The far shore, hills, trees and the craft as a camera at the mirror image of the main one would see them, with the light the main view gives them, up to two a frame | The same shading, with what belongs to a view made again for the view; a cut at a plane; air that starts at the water's level plane, so each stretch of a reflected path has one owner |
+| `WATERS` WP14, for a lake, a pond and the sea under an island | The far shore, hills, trees and the craft as a camera at the mirror image of the main one would see them, with the light the main view gives them, up to two a frame | The same shading, with what belongs to a view made again for the view; a cut at a plane; air that starts at the water's level plane, so each stretch of a reflected path has one owner |
 | `PUDDLES`, `RIVERS`, through `WATERS` | The same, with no work of their own | Nothing beyond the interface |
 | A game that has no such water | Nothing | A scene that declares no view is what it was, bit for bit, but for [one correction every scene has](#where-the-height-map-is-laid-out): where its height map lies when its camera stands on a texel's edge |
 | A later consumer: a monitor in the world, a portal, a probe that stands elsewhere | A view from a camera somewhere else | [Not built](#the-camera-stands-on-the-main-cameras-vertical). The request is a camera and nothing in it says "mirror", so serving one adds to a slot and changes no request |
@@ -124,7 +124,7 @@ one: the same world, lit the same, from the other side. In words, on both target
 | | Cascades fitted round the camera for every view | Not selected: it coarsens the main view's shadows in every scene that declares a view |
 | | **Cascades of the view's own, fitted to its frustum, with the scene's height map beyond them** | **Selected** |
 | The Sun's shadows beyond a view's cascades | A caster height map and air shadow heights of the view's own, laid out round its camera | Not selected. Right for any camera, but it is every caster within 16 km drawn top-down and reduced once more, each frame for each view, and for a mirror's camera it draws the bytes the frame already holds. It is the route for [a camera elsewhere](#purpose-and-scope), when a consumer has one |
-| | The frame's map, for any camera that stands inside it | Fails V1. The march toward the Sun ends where it leaves the map, so off the map's centre a receiver loses hills that the main view from that camera has. With the map centred 40 km away, 283 pixels of a 128×128 frame differ by up to 2,904 stored steps ([the builder's Metal run](../../../.orchestrate/evidence/SCENE-VIEWS/M1/9be4a4887-portable.log), `shadow/tests/scene_view_anchor.rs`). Two maps that overlap are not two equal reads |
+| | The frame's map, for any camera that stands inside it | Fails V1. The march toward the Sun ends where it leaves the map, so off the map's centre a receiver loses hills that the main view from that camera has. With the map centred 40 km away, 283 pixels of a 128×128 frame differ by up to 2,904 stored steps ([the builder's Metal run](../../../.orchestrate/evidence/SCENE-VIEWS/WP1/9be4a4887-portable.log), `shadow/tests/scene_view_anchor.rs`). Two maps that overlap are not two equal reads |
 | | **The frame's map, for a camera on the main camera's vertical** | **Selected.** The scene's fit lays the map out by the camera's horizontal position alone, so there the frame's map [is the view's own](#what-a-view-owns-and-what-it-shares) |
 | Which position the fit lays the height map out round | The one it takes back out of the camera's view matrix, as the fit had it | Fails V1 and V3 on a texel's edge. That position carries the matrix's rounding, which follows the camera's direction and height, so a camera and its mirror image in a level plane laid their maps out 32 m apart (the sixth design review's probe, and [part G](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)) |
 | | That fit, with equality promised only where two cameras snap alike | Not selected. The limit would be a rounding no consumer can test for, V3 would fail inside it, and a camera in motion meets it: one in 19,000 of part G's cameras at positions unrelated to the grid. Refusing a request there instead would drop a reflection for a frame |
@@ -280,14 +280,14 @@ the fit is a function of those numbers, the scene's casters and the Sun. So:
 - The frame's main camera, a request on its vertical, and an ordinary scene whose own camera stands where
   the request's does all have one map: the same layout and address record, value for value. In part G, on
   90 verticals at 10 heights from 500 m below the datum to 9 km above it, none differs, the 78 on an edge
-  included. This is the equality V1, M1.1 and M2.1 promise, and no admitted camera is excepted from it.
+  included. This is the equality V1, WP1.1 and WP2.1 promise, and no admitted camera is excepted from it.
 - Turning, tilting, raising and lowering the main camera where it stands does not move the map, on an edge
   as anywhere else, so V3 has no exception either.
 - The comparison that admits a request and the fit that lays out its shadows read the same declared
   numbers. Admission and equality cannot disagree about which cameras stand on one vertical.
 
-M1.14 holds the fit to this at the review's cameras, and M1.1 draws the mirror pair. Chrome runs the same
-fit, so M3.1 inherits both.
+WP1.14 holds the fit to this at the review's cameras, and WP1.1 draws the mirror pair. Chrome runs the same
+fit, so WP3.1 inherits both.
 
 **What it changes in a scene with no view.** A frame's bytes differ from before only where the camera's
 matrix had rounded its position into the neighbouring texel. In part G that takes a camera within four
@@ -297,7 +297,7 @@ where the declared position puts it and stays there as the camera turns; before,
 shadows could step a texel as it turned. The registered exact baselines are drawn from the showcase
 valley's authored camera, which stands at `z = 16`, on an edge. Part G reproduces that camera and the
 moving route's 721 half-tick poses: in every one the two positions fall in one texel, so no retained image
-is expected to move. That is a CPU reproduction; M1.10's verifier decides.
+is expected to move. That is a CPU reproduction; WP1.10's verifier decides.
 
 ### The view's pass
 
@@ -354,20 +354,20 @@ mirror through water's knobs.
   The frame's lighting (the Sun, the sky's products, exposure) is the host's, and no camera derives it. So a
   view of camera X on that vertical must equal the main view drawn from X in the same lighting, where both
   cover, up to the sky the view leaves out, when the two are drawn under one shadow profile. A view's own
-  profile is smaller than the main view's (one cascade, no fog), so that is the comparison M1.1 makes, to
+  profile is smaller than the main view's (one cascade, no fog), so that is the comparison WP1.1 makes, to
   one step of each stored format: with X at the main camera's position; with X 80 m along the vertical
   from it, where a hill's shadow reaches the receivers through the height map alone; and with the main
   camera on a texel's edge and X at its mirror image in a level plane, a pair whose matrices recover
   positions on either side of the edge. At one position the builder's Metal run has it at zero steps with
-  none, one and two cascades ([proof](../../../.orchestrate/evidence/SCENE-VIEWS/M1/9be4a4887-proof.md)). The displaced
+  none, one and two cascades ([proof](../../../.orchestrate/evidence/SCENE-VIEWS/WP1/9be4a4887-proof.md)). The displaced
   case and the edge are unrun on a GPU; part G has the edge's layout on the CPU.
 - **V2, V3.** Nothing a view reads is fitted to the main frustum: its lists, cascades, clusters and aerial
   volume are its own, and the terrain shadows are laid out by the horizontal position the two cameras
-  declare, not by the main camera's direction or height. M1.3 turns the main camera where it stands, and
-  M1.14 turns it on a texel's edge.
+  declare, not by the main camera's direction or height. WP1.3 turns the main camera where it stands, and
+  WP1.14 turns it on a texel's edge.
 - **V4.** The plane test is per fragment and exact to a pixel. The depth it leaves is the standard reversed
   depth, which resolves 0.33 mm at 3 km (part C), so `WATERS`' lookup loses nothing to the cut.
-- **V6.** Part A, above. That reconstruction then holds a reflection steady is `WATERS` M14.6's to judge.
+- **V6.** Part A, above. That reconstruction then holds a reflection steady is `WATERS` WP14.6's to judge.
 - **The air of a mirrored path.** Part D, in a section with the aerosol's phase function: a view with air
   from the plane, composed with the main camera's own stretch, is the true two-stretch path to rounding for
   a Sun ahead, behind and low, under a ridge that shades part of the path, and with a fog bank between the
@@ -378,11 +378,11 @@ mirror through water's knobs.
   never crosses. With that line holding the product's column the read is the main view's from the crossing,
   texel for texel, and within 0.03% of a fine quadrature of the fragment's own line at 1 km. With it empty
   the read is 39% low.
-- **V7.** Unrun. M3 takes the record.
+- **V7.** Unrun. WP3 takes the record.
 - **A hard component on paper: the cooked indirect path in a view.** Its meshlet culling reads one frustum
   from the contribution frame and writes one set of indirect arguments. For a view it needs the same pass
   again with the view's planes and a second set of arguments, and a second pipeline set from the view's
-  surface. Both exist in kind. Whether its buffers can be doubled inside the limits Chrome reports is M2's
+  surface. Both exist in kind. Whether its buffers can be doubled inside the limits Chrome reports is WP2's
   first finding, and the direct path is the declared fallback for a view if they cannot.
 
 ### What a view's air is held to
@@ -402,14 +402,14 @@ is not measured here.
 **This module is held to a view's air being that product, for the right stretch.** The reference is
 `ATMOSPHERE`'s own product, made by its code as it stands with no request, from a camera the test puts on
 the plane: anywhere on it for the stored volume, and at a fragment's crossing for its colour. It exists
-once `ATMOSPHERE:M5` is Done, which M1 waits for, and in Chrome the reference is
+once `ATMOSPHERE:WP5` is Done, which WP1 waits for, and in Chrome the reference is
 Chrome's own. Two comparisons keep what is stored apart from how it is read.
 
-- **The stored volume** (M1.5): transport and storage. Every texel's column of a view's volume, whether or
+- **The stored volume** (WP1.5): transport and storage. Every texel's column of a view's volume, whether or
   not its line crosses the plane, is the column the unmodified aerial pass stores at the same texel for a
   camera of the same orientation and projection standing on the plane. The allowance is one stored step in
   each channel: the two runs do the same arithmetic on inputs that differ in their last bits.
-- **The shaded fragment** (M1.12): decoding, shadowed and not. Under a level plane, the stored colour of a
+- **The shaded fragment** (WP1.12): decoding, shadowed and not. Under a level plane, the stored colour of a
   fragment at a pixel of the view is the stored colour the scene's main view gives that fragment at the same
   pixel, from a camera of the same orientation, projection and extent standing where that pixel's line
   crosses the plane, in a scene with no view volume, with temporal sampling off and a surface whose own
@@ -433,12 +433,12 @@ Chrome's own. Two comparisons keep what is stored apart from how it is read.
 | The right stretch in a column laid out from the camera | 1 | 0 | 1,064 | 0 |
 
 A panel 3 km beyond a crossing 11 m from the camera cannot tell where the air starts: the stretch before the
-crossing is 5 steps, inside what rounding allows. The other three cases can, and M1.12 names them. A column
+crossing is 5 steps, inside what rounding allows. The other three cases can, and WP1.12 names them. A column
 laid out from the camera can pass the fragment, where the crossing is near the camera or the panel far. It
 fails the stored volume in every near layer, where the layer's end is a different distance beyond the
 crossing.
 
-**At the horizon.** M1.12 takes the third design review's case: a plane 50 m above sea level, a level
+**At the horizon.** WP1.12 takes the third design review's case: a plane 50 m above sea level, a level
 camera 2 m below it with a 60° field, and a panel 1 km beyond the crossing on a line 0.2° up. 40% of the
 weight of that fragment's read lies on a row that never crosses the plane. With that row empty the
 in-scatter is 39% low, 403 stored steps in part F's stand-in, where the review's own run found 75.6 times
@@ -463,9 +463,9 @@ voxel under the ground onto it
 ([`RenderSkyRayMarching.hlsl`](https://github.com/sebh/UnrealEngineSkyAtmosphere/blob/master/Resources/RenderSkyRayMarching.hlsl),
 fetched for this revision). A view is made by the same pass, so it takes whatever that pass becomes with no
 change here. A rule of the view's own for those lines would be a second aerial product, with no reference.
-Until then M1.12's horizon case and the example stand where the product is sound.
+Until then WP1.12's horizon case and the example stand where the product is sound.
 
-**The composed colour** (M2.3, and M3.1 in Chrome). The pool composes the camera's stretch with the view's.
+**The composed colour** (WP2.3, and WP3.1 in Chrome). The pool composes the camera's stretch with the view's.
 The expectation is built from three stored colours of the scene's ordinary main view, with the pool's
 effect off and nothing shading the camera's stretch:
 
@@ -481,7 +481,7 @@ rounding again: one step of each of the four stored colours and `Q` for each fil
 carried through that expression. The pool's one read of the view blends the texels round the point, so `V`
 is taken as its range over those pixels. Part E, on a black marker 100 m beyond the reflection point: from
 a camera 30 m from that point, leaving the camera's stretch out is 152 steps off, and a view that holds it
-as well is 265. From 1.5 m they are 9 and 15, which rounding can hide, so M2.3 names 30 m. Its test
+as well is 265. From 1.5 m they are 9 and 15, which rounding can hide, so WP2.3 names 30 m. Its test
 evaluates both wrong compositions, and each must miss the allowance.
 
 **A miss.** A difference over an allowance has a cause to find. It is never recorded as the bound, and a
@@ -513,7 +513,7 @@ air from the plane and applies the lent aerial pair from the main camera to the 
 scene stands 250 m above sea level, about where the V1 valley does, and its hill within 5 km. In a 60° view
 the row of the volume under the horizon then meets `ATMOSPHERE`'s ground 6.9 km away or more, so
 [the product's loss at the horizon](#what-a-views-air-is-held-to) is out of the example. Its
-effect can be left out of a frame, which is how M2.3's references are drawn. It is a fixture and a
+effect can be left out of a frame, which is how WP2.3's references are drawn. It is a fixture and a
 demonstration, and no engine crate holds it.
 
 **Creator journey.** An effect author declares slots with their extents, asks in upload with a camera on
@@ -528,17 +528,17 @@ builder in the owner's files, with the owner's items, tests, bounds and referenc
 a scene that declares no view compiling to the same shader text, passes, pipelines and storage and drawing
 the same bytes, but for [where ruling 3 lays its height map out](#where-the-height-map-is-laid-out).
 
-1. **The contribution seam** (`EFFECT-GRAPH`'s, M1): a contribution may declare slots, ask in upload, opt in to
+1. **The contribution seam** (`EFFECT-GRAPH`'s, WP1): a contribution may declare slots, ask in upload, opt in to
    drawing in views, and read its own slots in its own passes.
-2. **A camera-drawn compaction against another volume** (`CULLING`'s files, M1), as Sun casters have.
+2. **A camera-drawn compaction against another volume** (`CULLING`'s files, WP1), as Sun casters have.
 3. **Per-view lighting products** (the forward pass's shadow and cluster files, `ATMOSPHERE`'s aerial pass and
-   the aerial decoders, M1): cascades, a cluster table and an aerial volume for a second view, which reads
+   the aerial decoders, WP1): cascades, a cluster table and an aerial volume for a second view, which reads
    the frame's caster height map and air shadow heights; that map laid out, in every scene, from the
    position its camera declares; and air from a level plane: the pass run for an observer at the plane's height, and the decoder a view's pipelines
    compose.
-4. **The view record for a view that is not presented** (`APPLE-PRESENTATION`'s, M1). C07 now names a
+4. **The view record for a view that is not presented** (`APPLE-PRESENTATION`'s, WP1). C07 now names a
    secondary view: it publishes no frame contract and has no history key.
-5. **Cooked placements in a view** (`thrum-asset-gpu`, `COOKED-DRAW`'s paths and `CONTENT-LOOP`'s residency, M2).
+5. **Cooked placements in a view** (`thrum-asset-gpu`, `COOKED-DRAW`'s paths and `CONTENT-LOOP`'s residency, WP2).
 
 `WATERS` is asked for one thing: its M14 reads a view as [this design](#what-the-consumer-reads) lends it.
 
@@ -555,8 +555,8 @@ Estimates, unmeasured. A view is the scene's opaque draw again at its extent, le
 | The view's pass | Frame, each asked view | A quarter of the main view's pixels at half each side; one colour and one depth target stored | The largest term. On a tile GPU each view is a render pass with two stores |
 | Memory | | Colour and depth at 1280×720 for a 2560×1440 frame: about 11 MiB a slot; a cascade layer 4 MiB | |
 
-**Records and tripwires, never gates** ([brief](../BRIEF.md#goal-and-exit-rule), decision 3).
-`scripts/scene_view_cost.py`, created in M3, takes a paired record of one scene at one view with capture off:
+**Records and tripwires, never gates** ([brief](../VISION.md#goal-and-exit-rule), decision 3).
+`scripts/scene_view_cost.py`, created in WP3, takes a paired record of one scene at one view with capture off:
 no view asked, one and two, with each view pass's GPU time by name beside the main view's, the bytes of each
 resource and the load on the machine. A wire trips when the whole frame is over the refresh interval, when a
 pass is about 25% over its last comparable record, or when a view costs more than the main view's opaque
@@ -567,35 +567,35 @@ figure decides whether an item passes.**
 work, under the shared `gpu` lock, and keeps the machine's load average and its busiest processes beside the
 figures. Its check fails only on a missing measurement. This module claims no figure for a quiet machine and
 asks for no sitting with the other builders paused, in its last milestone as in any other: the evidence, the
-author guide and the maturity ledger call the record's figures taken under load. M3's record is the first
+author guide and the maturity ledger call the record's figures taken under load. WP3's record is the first
 paired one, so it is the record a later one is compared with, and it has none before it to be compared with.
 If figures for a quiet machine are wanted later, the collector's one command retakes the record in a window
 the lead batches for every module. No milestone waits for that window.
 
 ## Risks
 
-1. **A view costs a second scene.** Early sign: M3's record. The designed remedies are the knobs: extent, far
+1. **A view costs a second scene.** Early sign: WP3's record. The designed remedies are the knobs: extent, far
    distance, least size, no cascade. The wrong fix is drawing a view every other frame, which fails V6.
-2. **The view fragment entry diverges from the main one.** Early sign: M1.1. The entry shares `shade` and adds
+2. **The view fragment entry diverges from the main one.** Early sign: WP1.1. The entry shares `shade` and adds
    only the plane test and the output; a second copy of the lighting is the wrong fix.
-3. **Discard costs the view its hidden-surface removal on Apple GPUs.** Early sign: M3's record on the Apple
+3. **Discard costs the view its hidden-surface removal on Apple GPUs.** Early sign: WP3's record on the Apple
    recipe. The designed remedy is a clip-distance variant for the recipe that has it, promoted by a paired win.
-4. **Chrome refuses the added bindings, buffers or a format.** Early sign: M2's first finding for the cooked
-   path and M3's first Chrome run. Limits are read from the capability record and refused at preparation.
+4. **Chrome refuses the added bindings, buffers or a format.** Early sign: WP2's first finding for the cooked
+   path and WP3's first Chrome run. Limits are read from the capability record and refused at preparation.
 5. **Shadows in a view read coarse or swim**, because one cascade spans the view's whole reach. Early sign:
-   M2.5. The remedies are the second cascade and a shorter reach.
-6. **Another builder is in the same files.** `ATMOSPHERE` M6 and M7, `CULLING` and `APPLE-PRESENTATION` edit
+   WP2.5. The remedies are the second cascade and a shorter reach.
+6. **Another builder is in the same files.** `ATMOSPHERE` WP6 and M7, `CULLING` and `APPLE-PRESENTATION` edit
    files this module edits. Whichever lands second integrates on top, and the exact baselines catch a slip.
 7. **A reflection's haze thins just above the water's horizon**, at sea level most. It is `ATMOSPHERE`'s
-   product [as it stands](#what-a-views-air-is-held-to), and the main view has it too. Early sign: M2.5's
-   hill, if the example is moved down to sea level, and `WATERS` M14 on the sea. The wrong fix is a rule of
+   product [as it stands](#what-a-views-air-is-held-to), and the main view has it too. Early sign: WP2.5's
+   hill, if the example is moved down to sea level, and `WATERS` WP14 on the sea. The wrong fix is a rule of
    the view's own for the lines below its horizon.
 8. **A consumer needs a camera off the main camera's vertical.** Early sign: the refusal, by name. The
    designed remedy is a slot with terrain shadows of its own, planned when that consumer is. The wrong fix
    is taking the request onto the frame's map, which misses V1 by thousands of stored steps.
 9. **A retained image, or another module's exact test, was drawn from a camera whose matrix rounds across
    a texel's edge**, so [the declared position](#where-the-height-map-is-laid-out) moves its height map.
-   Part G expects none among the registered baselines. Early sign: M1.10, or an exact test in `./dev check`.
+   Part G expects none among the registered baselines. Early sign: WP1.10, or an exact test in `./dev check`.
    [Exact baselines](../ARCHITECTURE.md#exact-baselines) rule 1 then applies: the builder ends `BLOCKED`
    with the camera and the two layouts, and the planner settles the move with the owner. The wrong fix is
    taking the position from the matrix again for the main view, which brings back the two maps.
@@ -613,12 +613,12 @@ the lead batches for every module. No milestone waits for that window.
 - **Bounds.** An equality item compares like with like: the same camera, extent, shadow profile and frame
   lighting. Its
   allowance is one step of each stored format, because two pipelines may round the last bit differently;
-  for M1.6's rebuilt point it is a few steps of the stored depth and of a 32-bit float at the point's
-  coordinates, which the test works out. A view's air (M1.5, M1.12, M2.3) is compared with `ATMOSPHERE`'s
+  for WP1.6's rebuilt point it is a few steps of the stored depth and of a 32-bit float at the point's
+  coordinates, which the test works out. A view's air (WP1.5, WP1.12, WP2.3) is compared with `ATMOSPHERE`'s
   own product from the plane, to [the allowances above](#what-a-views-air-is-held-to), and never with an
   independent quadrature. A larger difference has a cause to find and is never recorded as the bound. A
   builder who cannot close one ends `BLOCKED` with the measurement.
-- **Panel-crossing regression (M4).** The compact GPU readback keeps M1.12's comparison to the ordinary
+- **Panel-crossing regression (WP4).** The compact GPU readback keeps WP1.12's comparison to the ordinary
   main camera at the crossing, including the stored-step allowances, the wrong camera stretch, the grazing
   horizon control and the casters that shade before and beyond the plane. The acceptance run covers all
   cases in the existing `scene_view_air_shaded_gpu` test binary. The fixture may split those cases into
@@ -626,19 +626,19 @@ the lead batches for every module. No milestone waits for that window.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/scene-views-<milestone>/`, selected
   evidence in `.orchestrate/evidence/SCENE-VIEWS/`.
 - **Dependencies.** The example's package is registered in `.config/architecture.toml`.
-- **Maturity.** A ledger row for secondary views is added in M3, with implementation, correctness, visuals
+- **Maturity.** A ledger row for secondary views is added in WP3, with implementation, correctness, visuals
   and device apart.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
-| Does a view equal the main view from its camera to the last bit? | M1.1, for every camera on the main camera's vertical: to one step of each stored format; more is a defect |
-| Does laying the height map out from the declared position move a retained image? | Part G's reproduction of the showcase cameras says no. M1.10's verifier decides; [risk 9](#risks) has the route if one moves |
-| Does anything need a view from a camera off that vertical? | No consumer today. M1.13 refuses it by name; [risk 8](#risks) has the remedy |
-| Can the cooked indirect path hold a second set of culling buffers inside Chrome's limits? | M2.1; the direct path is the fallback for a view |
-| What does a view cost, and what does each knob buy? | M3.4 |
-| Is one cascade to 128 m enough for a reflection? | M2.5; [risk 5](#risks) |
-| Is a clip-distance variant a measured win on the Apple recipe? | After M3, as a recipe proposal in the log |
+| Does a view equal the main view from its camera to the last bit? | WP1.1, for every camera on the main camera's vertical: to one step of each stored format; more is a defect |
+| Does laying the height map out from the declared position move a retained image? | Part G's reproduction of the showcase cameras says no. WP1.10's verifier decides; [risk 9](#risks) has the route if one moves |
+| Does anything need a view from a camera off that vertical? | No consumer today. WP1.13 refuses it by name; [risk 8](#risks) has the remedy |
+| Can the cooked indirect path hold a second set of culling buffers inside Chrome's limits? | WP2.1; the direct path is the fallback for a view |
+| What does a view cost, and what does each knob buy? | WP3.4 |
+| Is one cascade to 128 m enough for a reflection? | WP2.5; [risk 5](#risks) |
+| Is a clip-distance variant a measured win on the Apple recipe? | After WP3, as a recipe proposal in the log |
 | How far is a view's air from true transport? | Not this module's: it is `ATMOSPHERE`'s aerial product from the plane, unqualified there until that module's own campaign |
 | Should the aerial pass stop a column at the ground, which thins haze just above the horizon near sea level? | `ATMOSPHERE`'s next plan; proposed in its log. A view follows the pass |

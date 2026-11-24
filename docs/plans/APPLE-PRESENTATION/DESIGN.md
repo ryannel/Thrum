@@ -10,7 +10,7 @@
 
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
 [the loop's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
-fresh design review of that revision passed on 11 November. Revised 14 November for M4 to M12
+fresh design review of that revision passed on 11 November. Revised 14 November for WP4 to WP12
 ([settled below](#m4-to-m12-settled-14-november-2026)), and twice on 19 November for
 [the surface across a transition](#the-surface-across-a-transition-m4), the second time after
 [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) asked for one answer to the drawable's size
@@ -18,20 +18,20 @@ after a failed configure and for a stated iOS transition. It answers the three i
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
-**The owner's request.** The V1 exit in [the build plan](../BRIEF.md#goal-and-exit-rule) asks for "MetalFX,
+**The owner's request.** The V1 exit in [the build plan](../VISION.md#goal-and-exit-rule) asks for "MetalFX,
 EDR and a quality governor" and gate G4 for "No pipeline compilation during play." The 10 November planning task
 that put this module on the loop says, word for word: "The owner wants work lined up continuously toward the V1
 exit in docs/BUILD-PLAN.md, so builders always have a next milestone". The task for this revision says, word for
 word: "Revise APPLE-PRESENTATION's design and plan as .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asks".
-The task for the 14 November revision says, word for word: "APPLE-PRESENTATION M4 to M11 have no done-when
-entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them [...]. Write their
-done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3,
+The task for the 14 November revision says, word for word: "APPLE-PRESENTATION WP4 to WP11 have no done-when
+entries, so no builder can be given them, and SHOWCASE WP7-M8 (the V1 exit) sit behind them [...]. Write their
+done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION WP3,
 which a builder holds."
 [The module list](../ARCHITECTURE.md) places this module and settles seams 1–9 below; every milestone is in
 [the done-when file](DONE.json).
 
-**What a design approval covers.** A Design Approved result for this revision approves the whole module. M1–M3
-are as the 11 November review approved them and are not changed. For M4 to M12 the review reads
+**What a design approval covers.** A Design Approved result for this revision approves the whole module. WP1–WP3
+are as the 11 November review approved them and are not changed. For WP4 to WP12 the review reads
 [the section that settles them](#m4-to-m12-settled-14-november-2026), which holds the four things the earlier
 approval left for it: the EDR transform and its H = 1 identity, the exposure handoff of the normalising MetalFX
 fallback, the lifecycle of a generation build, and the archive mechanism. Where that section and an older
@@ -69,7 +69,7 @@ Commissioned:
 - the governor;
 - generation transitions;
 - cold start;
-- offline metallibs and binary archives (G4 M10);
+- offline metallibs and binary archives (G4 WP10);
 - prepared handling of cuts, resizes, dropped frames, display changes, surface replacement and provider or archive
   rejection;
 - paired proof.
@@ -145,8 +145,8 @@ upscalers.
     Its motion target uses blending disabled (replace), so star pixels carry their own motion, not the sum with the
     sky's (seam 4).
   - *The star pass is its own pass.* Today it declares and attaches colour alone (`synthetic/stars.rs`). Its graph
-    accesses and attachments follow its shader outputs: motion from M1, reactive from M2. A star pipeline that
-    declares a target the pass does not attach, or the reverse, is a defect the M2 witness reads for.
+    accesses and attachments follow its shader outputs: motion from WP1, reactive from WP2. A star pipeline that
+    declares a target the pass does not attach, or the reverse, is a defect the WP2 witness reads for.
 - Stars and the Sun are reactive only on cuts and phase edits, never permanently.
 
 **Disocclusion.**
@@ -178,9 +178,9 @@ upscalers.
   - MetalFX's internal history advances at encode, so a discarded or failed frame resets it at the next encode.
 - The previous matrices in the view record are the last *submitted* frame's.
 
-**The temporal-input witness (M2).** Until M3, nothing reads the reactive target, and final colour is the same
-whether history advanced at submission or earlier. Screenshots of the valley therefore cannot prove M2: a target
-that is declared, cleared and never written passes them. M2 is proved on each target by a witness that reads the
+**The temporal-input witness (WP2).** Until WP3, nothing reads the reactive target, and final colour is the same
+whether history advanced at submission or earlier. Screenshots of the valley therefore cannot prove WP2: a target
+that is declared, cleared and never written passes them. WP2 is proved on each target by a witness that reads the
 temporal inputs themselves, from frames the game's own frame path submitted.
 
 - *One fixture, two targets.* One checked-in definition holds the steps and the expected values. The Mac tests and
@@ -189,7 +189,7 @@ temporal inputs themselves, from frames the game's own frame path submitted.
   both targets today.
 - *Where values are read.* On the Mac, GPU tests read the reactive and motion targets back. In Chrome the case
   runs the built game in hardware Chrome and takes the values from frames the page submitted, through T2's Chrome
-  capture. Either a reactive view beside M1's motion view in the display pass, or a readback of the attachment in
+  capture. Either a reactive view beside WP1's motion view in the display pass, or a readback of the attachment in
   the same submission, does that. A side render (`begin_capture`), a pipeline declaration and a CPU-side flag are
   not observations.
 - *History identity.* For each submitted frame the frame host reports the identity of its history sample and of
@@ -206,16 +206,16 @@ temporal inputs themselves, from frames the game's own frame path submitted.
 
 | Row | Step | Observed in the submitted frame | A fault it catches |
 |---|---|---|---|
-| W1 | One object has no valid history: a spawn, or another of M1's invalid-history cases that marks a single object | Reactive is 1 on the object's pixels | An inert target; invalid history left unmarked |
-| W2 | The next submitted frame, same object | Reactive is 0 on those pixels | Marking that never clears |
-| W3 | The cooked volume in view, nothing changing | Reactive is above 0 on the volume and 0 beside it; on the Mac it equals the alpha the volume wrote | A volume that does not write the target |
-| W4 | A time-of-day edit with stars in view, and one with the Sun disk in view | Reactive is above 0 on star pixels and on the disk in that frame | A star pass or sky that does not write on a phase edit |
-| W5 | Steady frames before and after W4, and every other step | Star and Sun pixels read 0; a region no reactive writer covers reads 0 in every step | Stars reactive permanently; a target cleared to a nonzero value |
-| W6 | Submit A, the unsubmitted view, submit C | C's predecessor is A's sample; the unsubmitted view is no frame's predecessor | History advanced before submission |
-| W7 | The same | C's motion on static geometry is the camera change from A to P, which the fixture makes clearly nonzero | Previous matrices advanced before submission |
+| WP1 | One object has no valid history: a spawn, or another of WP1's invalid-history cases that marks a single object | Reactive is 1 on the object's pixels | An inert target; invalid history left unmarked |
+| WP2 | The next submitted frame, same object | Reactive is 0 on those pixels | Marking that never clears |
+| WP3 | The cooked volume in view, nothing changing | Reactive is above 0 on the volume and 0 beside it; on the Mac it equals the alpha the volume wrote | A volume that does not write the target |
+| WP4 | A time-of-day edit with stars in view, and one with the Sun disk in view | Reactive is above 0 on star pixels and on the disk in that frame | A star pass or sky that does not write on a phase edit |
+| WP5 | Steady frames before and after WP4, and every other step | Star and Sun pixels read 0; a region no reactive writer covers reads 0 in every step | Stars reactive permanently; a target cleared to a nonzero value |
+| WP6 | Submit A, the unsubmitted view, submit C | C's predecessor is A's sample; the unsubmitted view is no frame's predecessor | History advanced before submission |
+| WP7 | The same | C's motion on static geometry is the camera change from A to P, which the fixture makes clearly nonzero | Previous matrices advanced before submission |
 
-A row that cannot be observed on a target fails the witness there. It is not skipped. W6 and W7 on the Mac are the
-pipelined frame-host tests of the acceptance protocol above; W1–W5 on the Mac and W1–W7 in Chrome are the witness
+A row that cannot be observed on a target fails the witness there. It is not skipped. WP6 and WP7 on the Mac are the
+pipelined frame-host tests of the acceptance protocol above; WP1–WP5 on the Mac and WP1–WP7 in Chrome are the witness
 runs. The browser checker's existing cases stay as a regression check, and prove nothing about these rows.
 
 **History keys and scale.**
@@ -249,9 +249,9 @@ It is the fallback, the image oracle for MetalFX, and Chrome's reconstructor. Th
 current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the AA of the admitted temporal profile
 (seam 2).
 
-**Reconstruction reference and tolerance.** This is how a reconstructor's still image is judged, from M3 on.
+**Reconstruction reference and tolerance.** This is how a reconstructor's still image is judged, from WP3 on.
 - *Reference.* At a still route checkpoint, with the world paused, a separate accumulation mode on portable renders
-  the frame at native resolution once for each offset of the M1 jitter sequence, and averages the frames in
+  the frame at native resolution once for each offset of the WP1 jitter sequence, and averages the frames in
   scene-linear colour before the one SDR transform. That gives 32 distinct sub-pixel samples for each pixel, under
   a box filter. It is a deterministic 32-sample supersample. It is not claimed to be converged, and its frame count
   is not evidence that it is.
@@ -306,7 +306,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Generation transitions (resize, backing-scale change, device loss).**
 - A new extent needs new targets and a new MetalFX scaler, so it cannot be free.
 - The frame host keeps presenting the old generation. The present pass scales its output into the resized drawable
-  with linear filtering implemented and qualified by G4; the surface binding is execute-time (G3t M2/M3).
+  with linear filtering implemented and qualified by G4; the surface binding is execute-time (G3t WP2/M3).
   G3t itself retains nearest-source SDR mapping and its intermediate.
 - Meanwhile a preparation thread builds the new generation: targets, bind groups, providers with synchronous
   initialization, and the history keys. wgpu's `Device` is `Send + Sync`.
@@ -345,12 +345,12 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   - The platform separately sets `preferredDynamicRange` (the OS 26 replacement) and `contentsHeadroom` on the main
     thread, through its own retained `CAMetalLayer` reference. It never goes through `Surface::as_hal`, which takes
     the layer mutex that `nextDrawable` holds.
-  - M6 verifies how the two properties interact.
+  - WP6 verifies how the two properties interact.
 - *One surface across displays.* Where the session starts on a display with potential headroom above 1, the EDR surface
   stays configured on every display. On an SDR display H is 1 and the image equals the SDR path. A display move is
   therefore an H change and needs no reconfigure. The 8-bit SDR surface is chosen only at a generation build where EDR
   is unavailable: the iOS simulator, a forced setting, or no EDR display. That costs a 2× drawable on SDR displays,
-  which M11 measures. A session that started on the 8-bit surface switches to the EDR surface through a generation
+  which WP11 measures. A session that started on the 8-bit surface switches to the EDR surface through a generation
   transition when the window reaches a display with potential headroom above 1.
 - *Tone.* The present pass maps exposed scene-linear colour to [0, H], where 1.0 is SDR reference white.
   - Below a shoulder it equals the SDR `NeutralHighlights` curve in linear terms.
@@ -393,10 +393,10 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Archives and cold start.**
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
   generation builds.
-- M9 takes a planning baseline of launch-to-ready. M10 then builds and proves the pipeline preparation work: the
-  pinned backend, offline metallibs and parallel pre-warm, and M12 local archive qualification, all within V1. Their
+- WP9 takes a planning baseline of launch-to-ready. WP10 then builds and proves the pipeline preparation work: the
+  pinned backend, offline metallibs and parallel pre-warm, and WP12 local archive qualification, all within V1. Their
   mechanism is [settled below](#pipeline-preparation-m10-and-m12).
-- Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's per-post authorization rules in G4 M10/U1.
+- Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's per-post authorization rules in G4 WP10/U1.
 
 **What would change these choices:**
 - A MetalFX neural upscaler (M5 Pro/Max) would be a new provider behind the same contract.
@@ -404,26 +404,26 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - A measured MetalFX loss to TAAU on the valley would keep TAAU on Apple: the registry selects the reconstructor, and
   evidence decides.
 
-## M4 to M12, settled 14 November 2026
+## WP4 to WP12, settled 14 November 2026
 
-See the [plan](PLAN.md) for the build order. M10 cooks libraries ahead of time and prepares pipelines in
-parallel. M12 adds the archive. M11 remains the final paired proof. The parameters below carry forward the
+See the [plan](PLAN.md) for the build order. WP10 cooks libraries ahead of time and prepares pipelines in
+parallel. WP12 adds the archive. WP11 remains the final paired proof. The parameters below carry forward the
 drafted values unless specified.
 
 Put new native proof arms in `scripts/apple_presentation.py` and browser cases in
 `scripts/check_v1_browser.mjs`. Keep window, Chrome and simulator proofs in milestone or main-branch checks.
 
-### Extent on three targets (M4)
+### Extent on three targets (WP4)
 
 The render extent is the surface's backing size on the Mac, the oriented surface's on iOS and the canvas's
 backing size in Chrome. A host is still created at an extent its caller names, so offscreen runs, engine capture
-and every exact baseline keep the extent they were retained at: M4 moves no retained image. Chrome has one
+and every exact baseline keep the extent they were retained at: WP4 moves no retained image. Chrome has one
 thread, so there a new extent is prepared between two frames as it is today, and the page records the gap. iOS
 prepares between two frames too, in its render owner, because its lease lets it present nothing meanwhile
 ([the surface across a transition](#the-surface-across-a-transition-m4) says why). Only the Mac builds off the
 render thread, and the lifecycle below is the Mac's.
 
-### The lifecycle of a generation build (M4)
+### The lifecycle of a generation build (WP4)
 
 A **request** is what a generation is built for: the backing extent, the display mode (EDR float or 8-bit) and
 the device generation. The frame host holds the latest request, and one build at most.
@@ -452,7 +452,7 @@ the device generation. The frame host holds the latest request, and one build at
   transition, and is counted apart. So is the surface texture each acquisition returns, with the view of it:
   those are presentation, made in every steady frame, and belong to no generation.
 
-### The surface across a transition (M4)
+### The surface across a transition (WP4)
 
 **The rule.** The surface's configured extent and format are the current generation's, at every frame. They
 change only in the switch, in one step with the generation, or not at all. The host also has one answer for the
@@ -502,7 +502,7 @@ On the Mac:
 when the drawable's size is the extent UIKit last observed, and the module list's ruling on seam 5 keeps the lease
 as it is. Once a rotation is observed, no old-extent frame can be shown, so a build off the owner's thread would
 buy no picture: the owner would answer requests it could present nothing for, past the bound the route already
-holds. The owner therefore keeps the coherent transition `PLATFORM-RUNTIME-IOS` M7 built:
+holds. The owner therefore keeps the coherent transition `PLATFORM-RUNTIME-IOS` WP7 built:
 
 - `Resized` bumps the surface epoch and publishes the new extent, as today. A section admitted before it may
   still present once, which is the race the lease has always allowed and counted.
@@ -529,16 +529,16 @@ Chrome is not affected: its canvas is resized by the page and prepared between t
 `Device::configure_surface` on every backend, for any surface of the device and from any thread, and the wgpu
 documentation calls it intended. No call through the released crates changes a drawable's size without it. A
 raw `setDrawableSize` behind wgpu leaves wgpu-core and the Metal backend describing the old size, which makes two
-authorities for one extent. The M4 builder's source audit found both, and
-[its handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-handoff.md) records them. Two designs would remove the wait:
+authorities for one extent. The WP4 builder's source audit found both, and
+[its handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP4-handoff.md) records them. Two designs would remove the wait:
 an engine-owned drawable path beside wgpu's surface, or a patched copy of wgpu-core. Neither is taken. Each adds
-an authority or a pinned crate from M4 on, to save one wait that falls after the size has settled, and neither
+an authority or a pinned crate from WP4 on, to save one wait that falls after the size has settled, and neither
 shows a better picture: a build starts only when the extent has been stable for the debounce, so the old picture
 is scaled through the whole drag in every design. Changing a layer's drawable size often is also its own risk:
 developers report `nextDrawable` stalling for about a second after such changes, with no fix from Apple
 ([Apple developer forums](https://developer.apple.com/forums/thread/773229)).
 
-### The governor across a build (M4 and M7)
+### The governor across a build (WP4 and WP7)
 
 Build work loads the GPU and the CPU, so a frame encoded while a build runs says nothing about steady cost. The
 governor therefore **holds** through a build: it commits no change, and it never admits a sample or a missed tick
@@ -556,10 +556,10 @@ deferred the build has not ended. If the next build starts at once, the hold con
 
 Either way the governor resumes with its committed scale, tier and knob values, an empty sample window and an
 over-budget count of zero. So no ending of a build leaves it held: after a failed build it answers load on the
-retained generation with no further change of request. M7 builds both halves on M4's lifecycle: the frame
+retained generation with no further change of request. WP7 builds both halves on WP4's lifecycle: the frame
 host's marking of held frames, and the policy that obeys it.
 
-### The EDR transform and its H = 1 identity (M6)
+### The EDR transform and its H = 1 identity (WP6)
 
 The SDR curve is the engine's `neutral_highlights`: with x the largest channel of the exposed colour, it is the
 identity up to the knee k = 0.76, and above it the peak is `1 − d²/(x + d − k)` with d = 1 − k, with the
@@ -586,22 +586,22 @@ and exposure from `PreToneInput` in `synthetic/display.rs`. Under seam 6, T2-CAP
 the written float target in EDR and the existing 8-bit stage in SDR. The game can read the resolved display
 mode and H. [Seam 6 ruling](../ARCHITECTURE.md#interfaces)
 
-### The governor's knobs and state (M7)
+### The governor's knobs and state (WP7)
 
 The governor owns one registry of **quality knobs**. A knob is a named runtime value with a short list of
 prepared steps and a declared history invalidation: none, marks age, or resets its own effect. Render scale is
 the governor's own knob. Any engine module registers others through `thrum-render`'s public interface without
-`thrum-render` naming it, which is how `WATERS` and `CLOUDS` add theirs; M7 registers the aerial lookup's
+`thrum-render` naming it, which is how `WATERS` and `CLOUDS` add theirs; WP7 registers the aerial lookup's
 cadence as the first, in the atmosphere files under [seam 7's ruling](../ARCHITECTURE.md#interfaces). The policy
 lowers scale first and effect knobs by tier after it, and a thermal state above nominal lowers the tier. The
 governor's state, which is scale, tier, each knob's value and the reason for the last change, is in the frame
 record and readable by the game.
 
-### MetalFX exposure and the normalising fallback (M8)
+### MetalFX exposure and the normalising fallback (WP8)
 
 The tone pass computes the exposed colour as `stored / A`, where A is the storage scale p times the camera's
 inverse gain, resolved on the GPU each frame. MetalFX is first given the stored colour and an exposure texture
-of `1/A`. M8 measures whether its history follows that through a time-of-day scrub and through a forced step of
+of `1/A`. WP8 measures whether its history follows that through a time-of-day scrub and through a forced step of
 p. If it does not, the fallback is one pre-pass that writes `n = stored · (K/A)` at render extent, with K the
 constant 0.25, the storage scale's own key. Then:
 
@@ -613,13 +613,13 @@ constant 0.25, the storage scale's own key. Then:
   65504. So n is exact to rounding only for exposed values up to 65504/K = 262,016, a little under 2^18. The
   pre-pass follows RENDER-SPEC's storage rule: finite arithmetic, then a clamp to the half-float range, with
   high clamps, low clamps and non-finite repairs counted for the pass. Where `K/A` is above 1 it can clamp a
-  value the stored colour held, so M8 records the counts on the route and tests a value on each side of the
+  value the stored colour held, so WP8 records the counts on the route and tests a value on each side of the
   limit;
 - TAAU, the reference and the portable recipe are untouched.
 
 Which path is in use is a resolved selection the game reports. The pre-pass's cost is recorded when it is on.
 
-### Pipeline preparation (M10 and M12)
+### Pipeline preparation (WP10 and WP12)
 
 **What the released backend does.** In wgpu-hal 30.0.1's Metal backend, a WGSL shader is turned into Metal
 source when a pipeline is created, once for each stage of that pipeline, under options taken from the pipeline:
@@ -633,27 +633,27 @@ workgroup array, such as `atmosphere/diffuse.wgsl` or `visibility.wgsl`, gets no
 shader with a runtime-sized storage array, such as the forward pass's `synthetic.wgsl`, gets no buffer sizes
 for its bounds checks.
 
-**The pinned backend (from M10).** A copy of wgpu-hal 30.0.1 is kept in the repository, selected by a `[patch]`
+**The pinned backend (from WP10).** A copy of wgpu-hal 30.0.1 is kept in the repository, selected by a `[patch]`
 entry and registered in `.config/architecture.toml`. Its difference from the release is kept beside it as
 patch files a reader can review, one for each change, and the copy is exactly the release with those patches
-applied. wgpu, wgpu-core, wgpu-types and naga stay the released crates. M10 adds the first patch and M12 the
+applied. wgpu, wgpu-core, wgpu-types and naga stay the released crates. WP10 adds the first patch and WP12 the
 second:
 
-1. *Stage records for passthrough (M10).* The translation call is the only source of Metal source and stage
+1. *Stage records for passthrough (WP10).* The translation call is the only source of Metal source and stage
    records: the patch lets the cook take both from it, and nothing re-implements its options. A cooked library
    travels as one blob, the stage record of each of its functions followed by the Metal library, in the bytes
    wgpu-core already hands the backend. The pinned loader splits the blob, and pipeline creation fills the same
    fields the WGSL path fills, so the encoder binds threadgroup memory and buffer sizes through the code it
    already has. Bytes with no record section behave as in the release. The WGSL path translates and runs as in
    the release: the patch may expose what its translation call already returns, and changes nothing it does.
-2. *The archive (M12)*, below.
+2. *The archive (WP12)*, below.
 
 The library cook belongs beside CONTENT-LOOP's cooker in `thrum-cook`. Shipping packages exclude it, as
 `scripts/g5_shipping_links.py` checks.
 
-Three techniques, each behind the registry, each kept only if M9's and M12's launch records show it wins:
+Three techniques, each behind the registry, each kept only if WP9's and WP12's launch records show it wins:
 
-1. **Libraries cooked ahead of time (M10).** The unit is a pipeline stage, not a WGSL file, because the Metal
+1. **Libraries cooked ahead of time (WP10).** The unit is a pipeline stage, not a WGSL file, because the Metal
    source depends on the pipeline. For each stage of each pipeline on the manifest, the cook takes the Metal
    source and the stage record from the pinned backend's own translation, compiles the source with the Metal
    toolchain under the language version and invariance option the backend passes, and stores the blob under
@@ -666,9 +666,9 @@ Three techniques, each behind the registry, each kept only if M9's and M12's lau
    never in play. The **manifest** is the set of pipelines the route creates, taken from the creation counters.
    The cook therefore runs on a Mac with a Metal device and the Metal toolchain, and never in a shipping
    package.
-2. **Parallel preparation (M10).** The pipelines of the manifest are created across worker threads before
+2. **Parallel preparation (WP10).** The pipelines of the manifest are created across worker threads before
    readiness. The set that is ready does not depend on the thread count.
-3. **The archive (M12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. The second patch backs that
+3. **The archive (WP12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. The second patch backs that
    cache with an `MTLBinaryArchive` on Metal. In **harvest**, a separate command, pipelines
    are created with the archive attached and added to it, and it is written to a file whose header carries the
    device, the OS build and the manifest's digest. In a normal launch the header is checked first: a stale or
@@ -681,7 +681,7 @@ No patch is posted upstream by any agent: U1 is the owner's, and it concerns the
 keeps the pin to one crate; typed fields on wgpu's passthrough descriptor would be the upstream form of the
 first patch, and would mean pinning wgpu-types and wgpu-core as well.
 
-### What closes G4, and what the owner observes (M11)
+### What closes G4, and what the owner observes (WP11)
 
 G4 closes on evidence agents and the device produce. The brief's sentence is proved clause by clause:
 
@@ -697,7 +697,7 @@ G4 closes on evidence agents and the device produce. The brief's sentence is pro
 
 Engine capture proves the values the surface was given, never the light the panel emits, and no agent can see
 the panel. So the look of EDR on the built-in display is the owner's **observation**: experienced quality under
-C12, which never gates ([brief](../BRIEF.md#decisions), decision 4). M11's evidence page asks for it and says
+C12, which never gates ([brief](../VISION.md#decisions), decision 4). WP11's evidence page asks for it and says
 how to see it, and the ledger carries its status, outstanding or answered in the owner's words, apart from what
 was proved. No milestone, G4's close included, waits for the reply. A reply that reports a defect is new work.
 The physical iPhone and external-display rows stay owed in the same way.
@@ -727,7 +727,7 @@ The physical iPhone and external-display rows stay owed in the same way.
   - the 1×1 exposure resolve.
 
   The MetalFX provider is `apple_tile/metalfx.rs`, implementing G3t's `NativeProvider`.
-- *Display (`synthetic/display.rs`, `synthetic_display.wgsl`, `present.rs`, `present.wgsl`).* G3t M3 exposes the
+- *Display (`synthetic/display.rs`, `synthetic_display.wgsl`, `present.rs`, `present.wgsl`).* G3t WP3 exposes the
   pre-tone linear colour/exposure input and retains the current two-pass SDR arithmetic/quantization. G4 feeds
   reconstruction into that input, and adds/qualifies its EDR branch and transition-time linear scaling. No G3t
   fusion or cross-shader bit-equivalence is assumed. Ordinary SDR keeps the retained branch; a later fused SDR
@@ -773,7 +773,7 @@ The physical iPhone and external-display rows stay owed in the same way.
 | Traffic at s = 0.67 (0.92 Mpx) | Attachment writes 0.44× native; reconstruction input reads about 21 B per render pixel (19 MB); history read and write 33 MB |
 | Forward plus sky at s = 0.67 | About 0.85 ms if pixel-bound, from 1.94 ms native |
 | Atmosphere | Unchanged: fixed-size LUTs |
-| TAAU at 1080p output | Estimated 0.2–0.5 ms. MetalFX cost is unpublished. M3 measures TAAU at its own 640×360 extent; M5 (D5.7) measures it at the window's extent, once M4 has given one; M8 measures MetalFX. |
+| TAAU at 1080p output | Estimated 0.2–0.5 ms. MetalFX cost is unpublished. WP3 measures TAAU at its own 640×360 extent; WP5 (D5.7) measures it at the window's extent, once WP4 has given one; WP8 measures MetalFX. |
 
 With the forward saving against the reconstruction estimate, the expected net GPU saving at s = 0.67 is about
 0.4–0.9 ms on the valley. At s = 1.0, reconstruction is pure cost. Full-screen play at s = 1.0 is about 3.6× the
@@ -795,9 +795,9 @@ pixels of the window, which is why the governor exists before the paired proof.
   captures (D6.8). The owner's look at the panel is an observation, and it gates nothing.
 - **The pinned backend drifts from the release, or changes what the WGSL path does.** Guard: the pin check (D10.6), which
   rebuilds the copy from the release and the retained patches, and the exact baselines under `./dev check`.
-- **Adding a third forward target breaks contributors.** Guard: SceneContribution and cooked-pipeline tests in G4 M2.
+- **Adding a third forward target breaks contributors.** Guard: SceneContribution and cooked-pipeline tests in G4 WP2.
 - **The reactive target is declared but inert, or history advances before submission, on one target only.** Nothing
-  visible changes until M3. Guard: the temporal-input witness on the Mac and in Chrome.
+  visible changes until WP3. Guard: the temporal-input witness on the Mac and in Chrome.
 
 ## Performance
 
@@ -845,21 +845,21 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
    properties on the main thread. Headroom, refresh and backing scale are per surface (platform owner).
 7. **Governor.** Location, inputs (missed ticks from the frame host, thermal state from the platform) and value
    commits inside a profile generation (C04).
-8. **Native provider.** MetalFX through G3t's independently reviewed whole-encoder segment (depends on G3t M11).
-9. **Pipeline preparation and archives.** Owned by G4 M10 and M12 under the G3t boundary: the measured split; a
-   pinned copy of wgpu-hal from M10, whose first patch carries stage records for offline metallibs through
-   passthrough and whose second (M12) is the Metal `PIPELINE_CACHE`; upstream later. V1's archive item stays as
+8. **Native provider.** MetalFX through G3t's independently reviewed whole-encoder segment (depends on G3t WP11).
+9. **Pipeline preparation and archives.** Owned by G4 WP10 and WP12 under the G3t boundary: the measured split; a
+   pinned copy of wgpu-hal from WP10, whose first patch carries stage records for offline metallibs through
+   passthrough and whose second (WP12) is the Metal `PIPELINE_CACHE`; upstream later. V1's archive item stays as
    written.
 
 ## Open questions
 
-- Does MetalFX beat TAAU in quality per millisecond on the valley at 0.67 and 0.5? Settled by M11.
-- Does tile traffic follow the drawn subrectangle at reduced scale? G4's paired proof reruns G3t M12's fixed-extent
+- Does MetalFX beat TAAU in quality per millisecond on the valley at 0.67 and 0.5? Settled by WP11.
+- Does tile traffic follow the drawn subrectangle at reduced scale? G4's paired proof reruns G3t WP12's fixed-extent
   baseline with real reconstruction readers and scale steps, where M0
   proved a capture method.
-- Is the TAAU 1080p estimate right? M3 records TAAU's time at its own 640×360 extent, kept apart from this
-  estimate; M5 (D5.7) records the 1080p figure, once M4 has given the surface extent.
-- Does MetalFX's history track a GPU-written exposure texture under a changing storage scale? Settled by M8.
+- Is the TAAU 1080p estimate right? WP3 records TAAU's time at its own 640×360 extent, kept apart from this
+  estimate; WP5 (D5.7) records the 1080p figure, once WP4 has given the surface extent.
+- Does MetalFX's history track a GPU-written exposure texture under a changing storage scale? Settled by WP8.
 
 ## Game outcomes
 
@@ -888,7 +888,7 @@ noise threshold and labels. Additions:
   both, under *Reconstruction reference and tolerance*: a 32-sample reference averaged in scene-linear colour with
   the scene, time and exposure held and checked; CIEDE2000 on the submitted SDR output over the whole frame; p99 at
   most 3 (provisional, changed only by a plan revision) and lower than the no-AA frame's.
-- **Temporal-input witness.** [The design](DESIGN.md#techniques-and-evidence) defines rows W1–W7 under
+- **Temporal-input witness.** [The design](DESIGN.md#techniques-and-evidence) defines rows WP1–WP7 under
   *The temporal-input witness*: one fixture read by the Mac tests and the Chrome case, with values taken from
   submitted frames.
 - **Motion review.** Pans, translating lights, reveals behind a moving prop, a spawn, a time-of-day scrub and a cut,
@@ -915,14 +915,14 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | Jitter, matrices, motion, subrectangle | G4, with the C07 and RENDER-SPEC owners' review | `synthetic/view.rs`, `synthetic.wgsl`, `synthetic.rs` (`pack_aux`) | G3c visibility (view record), atmosphere |
 | Sky and star motion at infinity | Atmosphere owner, by G4 request (seam 4) | `atmosphere/sky.wgsl`, star pass | Atmosphere plan |
 | Third forward target and mip bias | G4, with the G5, asset and atmosphere owners' review (seam 3) | `synthetic.rs` forward targets, `contribution.rs:56`, `thrum-asset-gpu/src/draw.rs`, `material.rs`, `atmosphere/gpu.rs` | All forward contributors |
-| History protocol | G4, with the C07 owner's review (seam 1) | `history.rs`, `runtime.rs` | The existing drop contract; G3t M10–M11 for native frames |
-| Reconstruction | G4 | new `reconstruction/{mod,taau,jitter,exposure,reference}.rs`, `taau.wgsl` | Pre-tone linear input (G3t M3) |
-| Render extent and transitions | G4, with the frame-runtime and G3b owners' review (seam 5) | `runtime.rs:39`, `runtime/preparation.rs`, `render_actor.rs`, `examples/v1-game-ios/src/ios/render.rs:24` | G3t M11 provider rebuild |
-| EDR present | G4 | `present.rs`, `present.wgsl` | G3t M3 pre-tone input; G4 owns EDR display math |
+| History protocol | G4, with the C07 owner's review (seam 1) | `history.rs`, `runtime.rs` | The existing drop contract; G3t WP10–WP11 for native frames |
+| Reconstruction | G4 | new `reconstruction/{mod,taau,jitter,exposure,reference}.rs`, `taau.wgsl` | Pre-tone linear input (G3t WP3) |
+| Render extent and transitions | G4, with the frame-runtime and G3b owners' review (seam 5) | `runtime.rs:39`, `runtime/preparation.rs`, `render_actor.rs`, `examples/v1-game-ios/src/ios/render.rs:24` | G3t WP11 provider rebuild |
+| EDR present | G4 | `present.rs`, `present.wgsl` | G3t WP3 pre-tone input; G4 owns EDR display math |
 | Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
 | Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
 | MetalFX provider | G4 | new `apple_tile/metalfx.rs` | G3t `apple_tile/segment.rs` |
-| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, the pinned wgpu-hal copy with its stage-record patch (M10) and its Metal `PipelineCache` patch (M12) | G4 M10 pipeline preparation; every pipeline site; every module's exact baselines, which the pin must not move |
+| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, the pinned wgpu-hal copy with its stage-record patch (WP10) and its Metal `PipelineCache` patch (WP12) | G4 WP10 pipeline preparation; every pipeline site; every module's exact baselines, which the pin must not move |
 
 Review order:
 1. History protocol.
@@ -942,39 +942,39 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 
 | G4 milestone | Can start when | Runs in parallel with |
 |---|---|---|
-| M1 jitter, matrices, motion | G3t M0, atmosphere checkpoint, seams 2 and 4 | G3t M1–M3 |
-| M2 temporal inputs, history protocol | M1, G3t M1 (eligibility report), G3t M2 (shares `runtime.rs`), seams 1 and 3 | G3t M3/M10–M11 (sequential integration for shared files) |
-| M3 TAAU at native scale | M2, **G3t M3** (TAAU output feeds the retained pre-tone input) | G3t M10–M11 |
-| M4 surface extent and transitions | M3, **G3t M3**, seam 5 | G3t M10–M11 |
-| M5 dynamic scale | M4 | M6 |
-| M6 EDR on macOS | **G3t M3**, seam 6 | M5 |
-| M7 governor | M5, seam 7 | M6 |
-| M8 MetalFX temporal | **G3t M11**, seam 8, M5 | M9 |
-| M9 launch-to-ready split, prepared paths | D9.1 after G3t M0; the rest after M4–M8 | G3t M12 |
-| M10 offline metallibs, pre-warm | D9.1 | M2–M9 (own files) |
-| M12 local archive | M10 (the pinned backend) | none |
-| M11 paired proof | M1–M10 and M12, G3t M12 | none |
+| WP1 jitter, matrices, motion | G3t M0, atmosphere checkpoint, seams 2 and 4 | G3t WP1–WP3 |
+| WP2 temporal inputs, history protocol | WP1, G3t WP1 (eligibility report), G3t WP2 (shares `runtime.rs`), seams 1 and 3 | G3t WP3/M10–WP11 (sequential integration for shared files) |
+| WP3 TAAU at native scale | WP2, **G3t WP3** (TAAU output feeds the retained pre-tone input) | G3t WP10–WP11 |
+| WP4 surface extent and transitions | WP3, **G3t WP3**, seam 5 | G3t WP10–WP11 |
+| WP5 dynamic scale | WP4 | WP6 |
+| WP6 EDR on macOS | **G3t WP3**, seam 6 | WP5 |
+| WP7 governor | WP5, seam 7 | WP6 |
+| WP8 MetalFX temporal | **G3t WP11**, seam 8, WP5 | WP9 |
+| WP9 launch-to-ready split, prepared paths | D9.1 after G3t M0; the rest after WP4–WP8 | G3t WP12 |
+| WP10 offline metallibs, pre-warm | D9.1 | WP2–WP9 (own files) |
+| WP12 local archive | WP10 (the pinned backend) | none |
+| WP11 paired proof | WP1–WP10 and WP12, G3t WP12 | none |
 
 The loop runs this module's milestones one at a time in [plan order](PLAN.md). The done-when file records
-the outside waits for M8 and M11 on `APPLE-TILE:M11` and `APPLE-TILE:M12`, respectively.
+the outside waits for WP8 and WP11 on `APPLE-TILE:WP11` and `APPLE-TILE:WP12`, respectively.
 
 **Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*
-- *G3t M1 → M2.*
-- *G3t M3 → M3/M4/M6.* One replaceable pre-tone scene-linear input carries matching exposure, extent and
+- *G3t WP1 → WP2.*
+- *G3t WP3 → WP3/M4/M6.* One replaceable pre-tone scene-linear input carries matching exposure, extent and
   sample/generation identity. The existing SDR tone-to-Rgba8Unorm-to-present path and nearest mapping remain.
   G4 inserts TAAU/MetalFX there and owns the qualified EDR branch, headroom transform and transition filtering.
   The surface is bound at execute time; no fused-shader feasibility or traffic saving is inherited from G3t.
-- *G3t M11 → M8.* The first native handoff, unlocked by G3t D10.1–D11.3.
+- *G3t WP11 → WP8.* The first native handoff, unlocked by G3t D10.1–D11.3.
 
-G3t M11 proves replacement with bounded provider fixtures; M12 records current readers and fixed extents. Neither
-waits for G4. G4's paired proof reruns eligibility with M2's real reconstruction readers and traffic with M5's actual
+G3t WP11 proves replacement with bounded provider fixtures; WP12 records current readers and fixed extents. Neither
+waits for G4. G4's paired proof reruns eligibility with WP2's real reconstruction readers and traffic with WP5's actual
 scale steps; these are G4 integration obligations, not backward G3t prerequisites.
 
-M1–M3 are the early in-game work on portable through public interfaces. They need G3t's proof tooling and graph
+WP1–WP3 are the early in-game work on portable through public interfaces. They need G3t's proof tooling and graph
 milestones, not the boundary ruling.
 
-## Twilight exposure regression (M13)
+## Twilight exposure regression (WP13)
 
 Use the smallest scene and minimum accepted samples that carry the incident meter, exposure scale and
 displayed luma through from twilight into night. Put the response arithmetic on the CPU where possible.

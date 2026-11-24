@@ -1,94 +1,94 @@
 {
   "module": "HOST",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "One device recipe: the Mac window, the browser page, the iPhone app, captures and benches ask for their device the same way and answer a GPU fault the same way",
       "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "CREATOR:M3",
-        "APPLE-TILE:M10",
-        "APPLE-PRESENTATION:M3",
-        "EFFECT-GRAPH:M3",
-        "CULLING:M3",
-        "REVIEW-ENGINE:M1",
-        "REPO-RULES:M1"
+        "CREATOR:WP3",
+        "APPLE-TILE:WP10",
+        "APPLE-PRESENTATION:WP3",
+        "EFFECT-GRAPH:WP3",
+        "CULLING:WP3",
+        "REVIEW-ENGINE:WP1",
+        "REPO-RULES:WP1"
       ],
       "quality_bar": "What a shipped cross-platform engine has and Thrum's hardware-native decision asks for: one place decides what a device is asked for, as Bevy's `RenderPlugin` and Unreal's RHI do, so a platform can never be short a feature its hardware has because its copy of the request went stale.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "One function in `thrum-render`'s capabilities owns the device request: adapter choice, features, limits, an optional restriction that can only lower limits and remove features, the fault watch, the SDR surface-format preference and the retrying surface configure. The Mac window, the browser page, the kit capture, the iPhone app and the game's captures and benches call it: `device-request` is at zero in their sources.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-app/src examples/v1-game/src examples/v1-game/benches examples/v1-game-ios/src",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "A native device from the recipe has every content feature its adapter offers and the adapter's limits: on an Apple GPU the first texture profile is ASTC, and the sea's limit check passes. The browser keeps the portable request it has today, as a named choice of the recipe. A restricted request yields a device with the lowered limit, and a restriction that raises a limit or adds a feature is refused.",
           "check": "cargo test --locked --offline -p thrum-render --test device_recipe && cargo test --locked --offline -p thrum-sea --test recipe_limits",
           "lock": "gpu",
           "ask": "Is the browser's narrower request a named input of the one recipe, with the reason beside it, or a second copy? Does the first device generation come from one engine constant, with no literal `1` passed where a capability record is captured?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "A GPU fault means the same on every host: the first uncaptured error and the first loss message are recorded with the device generation, an uncaptured error does not abort the process, and a lost device is replaced. A fault that invalidated the device generation and its histories before still does.",
           "check": "cargo test --locked --offline -p thrum-render --test device_fault",
           "lock": "gpu",
           "ask": "Do the Mac window, the browser page and the iPhone app each install the recipe's one watch and no handler of their own? Does the test raise a real validation error on a device and see the process survive and the error recorded? Is the path by which a delayed execution error retires the generation and resets its histories still there, as C07 requires?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "The Mac window and the Chrome page still start, draw, lose their device and recover as the checks their modules left require.",
           "check": "python3 scripts/host_lifecycle.py check --target mac-metal --target chrome-webgpu",
           "lock": "gpu",
           "ask": "Read the runner. Does it run the loss and recovery checks `PLATFORM-RUNTIME-MAC` and the web shell left, unedited, in a real window and a real browser?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "On the iPhone simulator the game starts, draws the cooked scene with the ASTC profile, rotates and resumes from the background.",
           "inspect": "the simulator run at the claimed commit: engine output at start, after a rotation and after background and foreground, with the game's report of its texture profile and limits. Function only",
           "target": "ios-sim",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/WP1-proof.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/WP1-review.md"
         },
         {
-          "id": "M1.6",
+          "id": "WP1.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app",
       "status": "done",
       "failed_reviews": 2,
@@ -98,63 +98,63 @@
       "quality_bar": "Lifecycle handling as uniform as SDL's or winit's own event model makes it for their users: one state machine, three thin adapters, and no behaviour that depends on which copy of the code a platform happened to get.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "Pause and overload are decided in one place beside the clock in `thrum-core`: draining, the explicit resume, counting each overload episode once, and the race with an unconsumed resume. The three shells use it, for a world on its own thread and for one stepped inline.",
           "check": "cargo test --locked --offline -p thrum-core --test world_lifecycle",
           "ask": "Are `PauseIntent`, the iPhone app's `WorldPolicy`, the web shell's `recover_overload` and the game's `overload_reported` gone, or reduced to calls into the one policy? Does the test cover both drive styles and the resume race?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m21-resume-acknowledgement-race",
+          "evidence": ".orchestrate/evidence/HOST/WP2/README.md#m21-resume-acknowledgement-race",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M2-review.md"
+          "review": ".orchestrate/evidence/HOST/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "One surface outcome means one action on every host: an outdated or lost surface is reconfigured, a validation failure at acquire is recovered and is not fatal, a timeout skips the frame. The mapping is one platform-neutral function that the three shells call.",
           "check": "cargo test --locked --offline -p thrum-app --test surface_outcomes",
           "ask": "Does the browser shell still treat a validation failure at acquire as fatal? Does any shell configure a surface outside the recipe's retrying configure?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m22-drawable-recovery",
+          "evidence": ".orchestrate/evidence/HOST/WP2/README.md#m22-drawable-recovery",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M2-review.md"
+          "review": ".orchestrate/evidence/HOST/WP2-review.md"
         },
         {
-          "id": "M2.3",
-          "statement": "Every drift the design's table marks M1 or M2 is closed: the device request, the fault watch, the surface configure and format list, the first generation, the surface outcome mapping and the pause and overload policy each have one implementation, and the Mac window, the browser page and the iPhone app call it.",
-          "ask": "Take the rows of the design's drift table marked M1 and M2 one at a time: where is the one implementation, and does each of the three shells call it? Is any copy of those policies left in a shell, in `examples/v1-game-ios` or in the game? Rows marked M3, M4 or Not here are not this milestone's.",
+          "id": "WP2.3",
+          "statement": "Every drift the design's table marks WP1 or WP2 is closed: the device request, the fault watch, the surface configure and format list, the first generation, the surface outcome mapping and the pause and overload policy each have one implementation, and the Mac window, the browser page and the iPhone app call it.",
+          "ask": "Take the rows of the design's drift table marked WP1 and WP2 one at a time: where is the one implementation, and does each of the three shells call it? Is any copy of those policies left in a shell, in `examples/v1-game-ios` or in the game? Rows marked WP3, WP4 or Not here are not this milestone's.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m23-policy-ownership-after-review",
+          "evidence": ".orchestrate/evidence/HOST/WP2/README.md#m23-policy-ownership-after-review",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M2-review.md"
+          "review": ".orchestrate/evidence/HOST/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "On each target the game pauses, drains an overload, loses its device and recovers: the Mac window, the Chrome page and the iPhone simulator pass their lifecycle checks.",
           "check": "python3 scripts/host_lifecycle.py check --target mac-metal --target chrome-webgpu --target ios-sim",
           "lock": "gpu",
           "ask": "Does the simulator leg run the background, rotation and loss checks `PLATFORM-RUNTIME-IOS` left, unedited? Simulator results are function only: is anything else claimed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m24-preserve-restore-after-one-configure-exception",
+          "evidence": ".orchestrate/evidence/HOST/WP2/README.md#m24-preserve-restore-after-one-configure-exception",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M2-review.md"
+          "review": ".orchestrate/evidence/HOST/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M2-review.md"
+          "review": ".orchestrate/evidence/HOST/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk",
       "status": "done",
       "failed_reviews": 1,
@@ -164,54 +164,54 @@
       "quality_bar": "A public runtime a second game can use as it stands, as Bevy's `App` or SDL's GPU device is used directly by every game: nothing between a game and the engine but the game's own scene and rules.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "A frame can be drawn and submitted without reading it back, and one function waits for cooked content to be drawn, with one deadline and error policy. Waiting performs no readback.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu --test await_drawn",
           "lock": "gpu",
           "ask": "Is any loop left under `crates/` or `examples/` that polls the cooked statistics and reads pixels back only to advance staging?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal: review fix. thrum_asset_gpu::await_content is the one content wait (DRAWN_DEADLINE 90 s, Progress::Failed ends it); await_drawn is it over cooked stats and draw_endpoint. The sky kit's wait_drawn (capture and live capture) and the native-witness route preparation now call it; CONTENT_WAIT is gone. await_drawn 2 + drawn unit 3 + cooked_view_gpu 1 + thrum-app sky:: 12 passed under gpu lock; starter live-reload 10 saves passed; starter still capture drew generation 1; Metal-witness route capture complete. Record: tmp/host-m3-evidence/round2 and .orchestrate/evidence/HOST/M3/",
+          "evidence": "mac-metal: review fix. thrum_asset_gpu::await_content is the one content wait (DRAWN_DEADLINE 90 s, Progress::Failed ends it); await_drawn is it over cooked stats and draw_endpoint. The sky kit's wait_drawn (capture and live capture) and the native-witness route preparation now call it; CONTENT_WAIT is gone. await_drawn 2 + drawn unit 3 + cooked_view_gpu 1 + thrum-app sky:: 12 passed under gpu lock; starter live-reload 10 saves passed; starter still capture drew generation 1; Metal-witness route capture complete. Record: tmp/host-m3-evidence/round2 and .orchestrate/evidence/HOST/WP3/",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M3-review.md"
+          "review": ".orchestrate/evidence/HOST/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "The game, the iPhone app and the benches hold `thrum_render`'s frame host. The game's forwarding host is gone, and what stands in its place is the game's scene, its world and its own controls.",
           "check": "sh -c 'test \"$(git grep -h \"pub struct FrameHost\" -- crates examples | wc -l)\" -eq 1 && cargo test --locked --offline -p v1-game --test host_gpu --test frame_alloc'",
           "lock": "gpu",
           "ask": "List the public items of the game's library that only forward to the engine runtime: are there any? Does the iPhone app or any bench reach the engine through a type of the game's?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal: one pub struct FrameHost; host_gpu 5 and frame_alloc 2 passed under gpu lock; v1-game lib 59 and the converted GPU targets passed. Game holds FrameHost<GameWorld, GameScene> built by GameSetup::prepare*; GameHost is a trait of game controls; iPhone app and benches name thrum_render's FrameHost directly. Record: .orchestrate/evidence/HOST/M3/",
+          "evidence": "mac-metal: one pub struct FrameHost; host_gpu 5 and frame_alloc 2 passed under gpu lock; v1-game lib 59 and the converted GPU targets passed. Game holds FrameHost<GameWorld, GameScene> built by GameSetup::prepare*; GameHost is a trait of game controls; iPhone app and benches name thrum_render's FrameHost directly. Record: .orchestrate/evidence/HOST/WP3/",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M3-review.md"
+          "review": ".orchestrate/evidence/HOST/WP3-review.md"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "There is one way to capture the game to disk, on the engine's offscreen driver. `src/bin/window/` and its `#[path]` includes are gone, and engine capture's `still`, `fixed` and `realtime` modes each run on the Mac at the claimed commit and give the records they gave.",
           "check": "sh -c 'test ! -e examples/v1-game/src/bin/window && python3 -m unittest discover -s scripts -p test_t2_capture.py'",
           "ask": "Which code path does each of `still`, `fixed` and `realtime` capture take now, and is any device, host or route logic written twice? Is there a native `fixed` run at the claimed commit on record, beside the `still` and `realtime` runs the baseline matrices make?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal: src/bin/window removed; scene capture runs on thrum_app::Offscreen from src/window/capture/scene.rs with settings parsed in main.rs; test_t2_capture 17 OK. Engine capture --case pan still/fixed/realtime complete with the same record set; apple_tile_m1 (38) and apple_tile_m2 (4) native matrices passed byte-exact, including fixed route checkpoints. Record: .orchestrate/evidence/HOST/M3/",
+          "evidence": "mac-metal: src/bin/window removed; scene capture runs on thrum_app::Offscreen from src/window/capture/scene.rs with settings parsed in main.rs; test_t2_capture 17 OK. Engine capture --case pan still/fixed/realtime complete with the same record set; apple_tile_m1 (38) and apple_tile_m2 (4) native matrices passed byte-exact, including fixed route checkpoints. Record: .orchestrate/evidence/HOST/WP3/",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M3-review.md"
+          "review": ".orchestrate/evidence/HOST/WP3-review.md"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M3-review.md"
+          "review": ".orchestrate/evidence/HOST/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first",
       "status": "ready_for_review",
       "failed_reviews": 1,
@@ -221,91 +221,91 @@
       "quality_bar": "A host API in the manner of winit's `ApplicationHandler` or Bevy's plugins: a game says what it is once, every platform adapter runs it, and nothing platform-shaped leaks into what the game writes.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "`thrum-app` has one platform-neutral contract a game implements, with a key type the shell owns, and thin adapters for the Mac window, the browser page and the offscreen driver. The sky kit builds its host in one function for all three.",
           "check": "cargo test --locked --offline -p thrum-app --test game_contract",
           "ask": "Does any type from winit, AppKit or web-sys appear in what a game implements? Does the sky kit still have a second construction path for the browser? Can the same game value run offscreen and in the window?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m41-game-contract",
+          "evidence": ".orchestrate/evidence/HOST/WP4/resumed/README.md#m41-game-contract",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M4-review.md"
+          "review": ".orchestrate/evidence/HOST/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "The browser binding of typed controls is the engine's, as the Mac panel is: a game declares its controls once and writes no page glue for them.",
           "ask": "What control code does the V1 game's browser module still hold that the starter also holds, or would have to copy?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m42-browser-controls",
+          "evidence": ".orchestrate/evidence/HOST/WP4/resumed/README.md#m42-browser-controls",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M4-review.md"
+          "review": ".orchestrate/evidence/HOST/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "The Mac qualification harness is given its control and its schedule by its caller, and reaches the shell through one observer the shell takes as a value. `thrum-app` names no control, scene or type of any game.",
           "check": "sh -c '! grep -rn \"camera\\.yaw\" crates/ | grep -q .'",
           "ask": "Can you tell product code from measurement in the render actor's frame function? Does `PLATFORM-RUNTIME-MAC`'s qualification still produce its records, with its checks unedited?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m43-mac-qualification-observer",
+          "evidence": ".orchestrate/evidence/HOST/WP4/resumed/README.md#m43-mac-qualification-observer",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M4-review.md"
+          "review": ".orchestrate/evidence/HOST/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "A second game would copy nothing from the first: what is left in `examples/v1-game` is its scenes, rules, controls declaration, camera policy, content and entry points.",
           "ask": "Read the game's library. What would a 2D game with other rules have to copy from it unchanged to run in the window, on the page and in the offscreen driver? Name each item, or say there is none.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m44-second-game",
+          "evidence": ".orchestrate/evidence/HOST/WP4/resumed/README.md#m44-second-game",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M4-review.md"
+          "review": ".orchestrate/evidence/HOST/WP4-review.md"
         },
         {
-          "id": "M4.5",
-          "statement": "The render owner's frame job and reply are one pair of platform-neutral types in `thrum-app`, used by the Mac render actor and by the iPhone app's render owner. What `examples/v1-game-ios` still holds that `thrum-app` also holds is on the design's list of what `GAME-UI` M6 moves, and nothing else.",
+          "id": "WP4.5",
+          "statement": "The render owner's frame job and reply are one pair of platform-neutral types in `thrum-app`, used by the Mac render actor and by the iPhone app's render owner. What `examples/v1-game-ios` still holds that `thrum-app` also holds is on the design's list of what `GAME-UI` WP6 moves, and nothing else.",
           "check": "test \"$(git grep -h \"const SAMPLE_SLOTS: usize\" -- crates examples | wc -l)\" -eq 1 && exec python3 scripts/host_lifecycle.py check --target ios-sim",
           "lock": "simulator",
-          "ask": "List what the iPhone app's render owner and `thrum-app`'s render actor both still define. Is each entry the owner thread, the UIKit lifecycle, the surface lease, touch or the command table, which the design leaves to `GAME-UI` M6? Is the device request, the lifecycle policy, the outcome mapping, the frame host or the frame job and reply defined twice anywhere?",
+          "ask": "List what the iPhone app's render owner and `thrum-app`'s render actor both still define. Is each entry the owner thread, the UIKit lifecycle, the surface lease, touch or the command table, which the design leaves to `GAME-UI` WP6? Is the device request, the lifecycle policy, the outcome mapping, the frame host or the frame job and reply defined twice anywhere?",
           "target": "ios-sim",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/resumed/README.md#m45-iphone-simulator",
+          "evidence": ".orchestrate/evidence/HOST/WP4/resumed/README.md#m45-iphone-simulator",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M4-review.md"
+          "review": ".orchestrate/evidence/HOST/WP4-review.md"
         },
         {
-          "id": "M4.6",
+          "id": "WP4.6",
           "statement": "The starter runs in its window and in Chrome, and the V1 game on the Mac and in Chrome, as before.",
           "check": "sh -c './dev check-web && python3 scripts/host_lifecycle.py check --target mac-metal --target chrome-webgpu'",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M4/strict-shutdown/README.md",
+          "evidence": ".orchestrate/evidence/HOST/WP4/strict-shutdown/README.md",
           "verdict": "fail",
-          "review": ".orchestrate/evidence/HOST/M4-review.md"
+          "review": ".orchestrate/evidence/HOST/WP4-review.md"
         },
         {
-          "id": "M4.7",
+          "id": "WP4.7",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/HOST/M4-review.md"
+          "review": ".orchestrate/evidence/HOST/WP4-review.md"
         }
       ],
       "findings": [
         {
           "name": "Chrome lifecycle qualification accepts an exit the inherited check rejects",
-          "item": "M4.6",
+          "item": "WP4.6",
           "repeat": false
         }
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "A failure in the shells can be matched and printed: `thrum-app`'s public functions return typed errors",
       "status": "not_started",
       "failed_reviews": 0,
@@ -315,7 +315,7 @@
       "quality_bar": "Errors as `thrum-asset`'s `AssetError` already is: the crate creators meet first returns something they can match on and read.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "No public function in `thrum-app` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-app",
           "target": "mac-metal",
@@ -323,7 +323,7 @@
           "evidence": ""
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "Every public error type in `thrum-app` implements `Display` and `std::error::Error`, and a caller can tell a lost device from a bad scene file by matching. The kit scenes and the creator docs show the typed form.",
           "check": "cargo test --locked --offline -p thrum-app --test error_types",
           "ask": "Does the closure a creator passes to `run` still return a string error anywhere in the kit scenes or the creator docs? Does the test's list hold every error type the crate exports?",
@@ -334,7 +334,7 @@
           "review": ""
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",

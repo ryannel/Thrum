@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/MESH-SHADING/design-review.md",
     "commit": "0fbfce6f0d39ba49f82529cdc3f4d477955e4029",
-    "hash": "c30d98934d2a9d0ab8c494a3877c3b50c5fa7bcfd63cd13fdc9b3634d007c739",
+    "hash": "86cbda785e8dfd307afd9c032cae1c9d6226d2526eb4d5f82244eb8fe5054d06",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,39 +23,39 @@
     },
     "at": "2026-11-18T14:36:10Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "83e6388a39ef138682a25d8f446311b5a511ac4813e6d24bb42282128e494596",
+  "work_packages": {
+    "WP1": {
+      "definitions": "b51efe2ebaf413e01f1cb217946748194719a4b38cdf9c692fecacb627d383f1",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "6b7b475ea814bb382f794b8f700da7a5c9d95d9f",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review-1.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review-1.md",
           "items": {
-            "M1.1": "fail",
-            "M1.2": "fail",
-            "M1.3": "pass",
-            "M1.4": "fail",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass"
+            "WP1.1": "fail",
+            "WP1.2": "fail",
+            "WP1.3": "pass",
+            "WP1.4": "fail",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass"
           },
           "findings": [
             {
               "name": "Idle secondary view starts an empty cooked compute pass",
-              "item": "M1.4",
+              "item": "WP1.4",
               "repeat": false
             },
             {
               "name": "Finite far plane lacks rejection and crossing coverage",
-              "item": "M1.2",
+              "item": "WP1.2",
               "repeat": false
             },
             {
               "name": "Test gate bypasses registry device creation",
-              "item": "M1.1",
+              "item": "WP1.1",
               "repeat": false
             }
           ],
@@ -79,17 +79,17 @@
         {
           "verdict": "pass",
           "commit": "a7cd42ca11143ef3980ee05e35391326e0852671",
-          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -143,38 +143,38 @@
       "done": {
         "by": "review",
         "commit": "a7cd42ca11143ef3980ee05e35391326e0852671",
-        "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md",
+        "review": ".orchestrate/evidence/MESH-SHADING/WP1-review.md",
         "checked": "864141b4d085e53d958b2054eb6dad0c22f19748",
         "at": "2026-11-18T14:29:42Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "8625f3df09564c74fa554753afeaa04115fa024f7e18d03efff80cdcbf0bc2a6",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "4aaceaee767c116dbf1d6fdf638baf8169b53284",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review-1.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "fail",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "fail",
-            "M2.8": "pass",
-            "M2.9": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "fail",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "fail",
+            "WP2.8": "pass",
+            "WP2.9": "pass"
           },
           "findings": [
             {
               "name": "Low-Sun parity accepts a one-sided stage caster",
-              "item": "M2.3",
+              "item": "WP2.3",
               "repeat": false
             },
             {
               "name": "Cost rows omit path-dependent resident draw buffers",
-              "item": "M2.7",
+              "item": "WP2.7",
               "repeat": false
             }
           ],
@@ -198,17 +198,17 @@
         {
           "verdict": "pass",
           "commit": "03776f54c46e79d82fcef506e8e0c58ec1acba4a",
-          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -265,13 +265,13 @@
       "done": {
         "by": "review",
         "commit": "03776f54c46e79d82fcef506e8e0c58ec1acba4a",
-        "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md",
+        "review": ".orchestrate/evidence/MESH-SHADING/WP2-review.md",
         "checked": "9ddd820a761e21636ab85e88f04bc212ca4fde14",
         "at": "2026-11-18T22:18:04Z"
       }
     },
-    "M3": {
-      "definitions": "8696d5ef8e701b533aace5b857adc582bd205f0dff888616a775b5481ecc9e83",
+    "WP3": {
+      "definitions": "ce6789080f44d3e103694c7cd9d75ce05d0b986d79d5c8318e5b71569332018d",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -280,7 +280,7 @@
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Metal ray queries / intersection) and mesh shaders (Metal object and mesh stages) on the Apple tile recipe, verified on this M3 Max, under the hardware-native decision (docs/design/decisions/HARDWARE-NATIVE-ENGINE.md): registry-selected accelerated paths, the portable path stays as fallback and reference, and each path is promoted only by a measured win. Decide from first principles and current state of the art which rendering problems in Thrum they should serve (for example GPU-driven geometry and culling, shadows, reflections, occlusion or GI) and whether this is a new module or milestones added to an existing one, following the module-decomposition rules. It must not delay V1 (SHOWCASE M8): schedule it off the critical path unless a piece clearly earns a place on it, and say which. Desktop high / PC stays out of scope; keep designs reusable for a later Vulkan/D3D12 recipe where that costs nothing. Done when the module list, a design and milestones with done-when files exist and are ready for design review.",
       "at": "2026-11-17T22:30:25Z"

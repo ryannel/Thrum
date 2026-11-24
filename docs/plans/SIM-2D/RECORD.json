@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SIM-2D/design-review.md",
     "commit": "f6f6aa5ab5321740a0b3225891f2c098606dc78c",
-    "hash": "aa42cd7603497013c63d2132d789e38165a2842de547a873b72977bd8336041e",
+    "hash": "ded913915a1209d66bdd7e6617b6c5798ec82dce7c198720768cfb72b3eacec8",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,47 +23,47 @@
     },
     "at": "2026-11-13T15:42:42Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "d41c37333513166e5720a55fe98f93bd55485752e61fb11d939846440dc53a37",
+  "work_packages": {
+    "WP1": {
+      "definitions": "06bc19ad120141c89c1dfe116ae138ac51893a894d828acaa7b9afc62508c746",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "996bac579e17124798b44cdf2eadc4a23f18b45d",
-          "review": ".orchestrate/evidence/SIM-2D/M1-review-1.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP1-review-1.md",
           "items": {
-            "M1.1": "fail",
-            "M1.2": "fail",
-            "M1.3": "fail",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "fail",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass"
+            "WP1.1": "fail",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "fail",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass"
           },
           "findings": [
             {
               "name": "Retained profile vectors omit the input conversion at the wire boundaries",
-              "item": "M1.1",
+              "item": "WP1.1",
               "repeat": false
             },
             {
               "name": "Chrome run does not check the input conversion at the wire boundaries",
-              "item": "M1.2",
+              "item": "WP1.2",
               "repeat": false
             },
             {
               "name": "Simulator run does not check the input conversion at the wire boundaries",
-              "item": "M1.3",
+              "item": "WP1.3",
               "repeat": false
             },
             {
               "name": "Quarter-slower tripwire compares only within one record",
-              "item": "M1.8",
+              "item": "WP1.8",
               "repeat": false
             }
           ],
@@ -87,20 +87,20 @@
         {
           "verdict": "pass",
           "commit": "687194afe1a071a97cd23d0742388a71e886a07a",
-          "review": ".orchestrate/evidence/SIM-2D/M1-review.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -161,41 +161,41 @@
       "done": {
         "by": "review",
         "commit": "687194afe1a071a97cd23d0742388a71e886a07a",
-        "review": ".orchestrate/evidence/SIM-2D/M1-review.md",
+        "review": ".orchestrate/evidence/SIM-2D/WP1-review.md",
         "checked": "0c8e1608dcd726d1c8d7f3d7be2c13ffe2cb1354",
         "at": "2026-11-16T09:25:42Z"
       }
     },
-    "M2": {
-      "definitions": "98dc64aa57428259f6c07f61e0f8568b3c2ff2e8657c3691b787b8702d180a85",
+    "WP2": {
+      "definitions": "cbacce22747766d39cb82334d8ba0672acca82942b049ebf37eb9ad983de7a92",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "fbd407c90c3e71f8fa39248193118d7235f37077",
-          "review": ".orchestrate/evidence/SIM-2D/M2-review-1.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "fail",
-            "M2.10": "fail",
-            "M2.11": "pass",
-            "M2.12": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "fail",
+            "WP2.10": "fail",
+            "WP2.11": "pass",
+            "WP2.12": "pass"
           },
           "findings": [
             {
               "name": "mac_cost_identity_stale",
-              "item": "M2.9",
+              "item": "WP2.9",
               "repeat": false
             },
             {
               "name": "chrome_cost_identity_stale",
-              "item": "M2.10",
+              "item": "WP2.10",
               "repeat": false
             }
           ],
@@ -219,30 +219,30 @@
         {
           "verdict": "fail",
           "commit": "61b0743154a7f073e5e1abe62e33999ed9c494fa",
-          "review": ".orchestrate/evidence/SIM-2D/M2-review-2.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP2-review-2.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "fail",
-            "M2.10": "fail",
-            "M2.11": "pass",
-            "M2.12": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "fail",
+            "WP2.10": "fail",
+            "WP2.11": "pass",
+            "WP2.12": "pass"
           },
           "findings": [
             {
               "name": "mac_cost_identity_stale",
-              "item": "M2.9",
+              "item": "WP2.9",
               "repeat": true
             },
             {
               "name": "chrome_cost_identity_stale",
-              "item": "M2.10",
+              "item": "WP2.10",
               "repeat": true
             }
           ],
@@ -266,20 +266,20 @@
         {
           "verdict": "pass",
           "commit": "8f0eb711082258469158d6bef5e4d15e812b412a",
-          "review": ".orchestrate/evidence/SIM-2D/M2-review.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass",
-            "M2.11": "pass",
-            "M2.12": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -343,28 +343,28 @@
       "done": {
         "by": "review",
         "commit": "8f0eb711082258469158d6bef5e4d15e812b412a",
-        "review": ".orchestrate/evidence/SIM-2D/M2-review.md",
+        "review": ".orchestrate/evidence/SIM-2D/WP2-review.md",
         "checked": "d58a89e1728618c2968c86b51639fd0b80239edc",
         "at": "2026-11-17T08:22:04Z"
       }
     },
-    "M3": {
-      "definitions": "5d457f5bff277a10cab5683dd0b659b6d49724fc240bbf06056da3bd6858cfb5",
+    "WP3": {
+      "definitions": "236d46690ea5009d9b5ca419e73bb74d03994da2ff6427ad5e640b2e537eb3c5",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "8bd42fe3b57f2cf59774d5ff4e8996ebb04a8085",
-          "review": ".orchestrate/evidence/SIM-2D/M3-review-1.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass"
           },
           "findings": [
             {
@@ -392,17 +392,17 @@
         {
           "verdict": "fail",
           "commit": "f18ecee6958ec387bf78e8b296816256083f7dd2",
-          "review": ".orchestrate/evidence/SIM-2D/M3-review-2.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP3-review-2.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass"
           },
           "findings": [
             {
@@ -430,17 +430,17 @@
         {
           "verdict": "fail",
           "commit": "992e95d15639393b965be21b555488255dafeca2",
-          "review": ".orchestrate/evidence/SIM-2D/M3-review-3.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP3-review-3.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass"
           },
           "findings": [
             {
@@ -468,17 +468,17 @@
         {
           "verdict": "pass",
           "commit": "a29d0686fc6b077593c9030bec840615db8c89e7",
-          "review": ".orchestrate/evidence/SIM-2D/M3-review.md",
+          "review": ".orchestrate/evidence/SIM-2D/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -539,13 +539,13 @@
       "done": {
         "by": "review",
         "commit": "a29d0686fc6b077593c9030bec840615db8c89e7",
-        "review": ".orchestrate/evidence/SIM-2D/M3-review.md",
+        "review": ".orchestrate/evidence/SIM-2D/WP3-review.md",
         "checked": "e1d130689617271ea0b8f5bebf45894562c10af2",
         "at": "2026-11-18T06:31:04Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module SIM-2D. It needs: SHOWCASE",
       "at": "2026-11-13T15:24:39Z"

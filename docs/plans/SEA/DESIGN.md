@@ -37,7 +37,7 @@ It is not a blind study. Read for it: the design of 13 November and its two revi
 `ae8c1ebb7` (`THRUM-PORT`, `TIMINGS`, `SURFACE-DESIGN`, `SEA-PARKED`, `PROGRESS`, `DESIGN`), its sea, wake and
 transform kernels at that commit, and the foam spike at `2e5f47184`; Unity's and Crest's published water systems;
 and in this repository the designs of `EFFECT-GRAPH`, `ATMOSPHERE`, `CONTENT-LOOP`, `APPLE-PRESENTATION` and
-`CREATOR`, and the CPU model `SEA` M1 built.
+`CREATOR`, and the CPU model `SEA` WP1 built.
 
 The owner, 14 November 2026, later the same day:
 
@@ -47,7 +47,7 @@ The owner, 14 November 2026, later the same day:
 So water is now designed as one system, in [`WATERS`' design](../WATERS/DESIGN.md), and this module is the part of
 it that was always the sea's own: the wind's waves. Everything else the earlier design held (the surface, bodies
 and the query, the wake, foam, optics, controls and the close) moved to `WATERS`, generalised to every body of
-water, and its milestones M3 to M10 moved with it. M1 and M2 are unchanged, word for word.
+water, and its milestones M3 to M10 moved with it. WP1 and WP2 are unchanged, word for word.
 
 ## Purpose and scope
 
@@ -56,15 +56,15 @@ place and time. Nothing in the field depends on where water lies, so it is compu
 reads it: the open sea whole, a lake at the share its fetch allows, a beach as far as its depth allows
 ([gains](../WATERS/DESIGN.md#waves-on-a-body-gains)).
 
-**Commissioned:** the CPU wave model and its f64 oracle (M1), and the same field on the GPU at every frame's
-time (M2). Nothing is drawn here. Cue S1's waves and the oracle half of S2 are this module's; the surface that
+**Commissioned:** the CPU wave model and its f64 oracle (WP1), and the same field on the GPU at every frame's
+time (WP2). Nothing is drawn here. Cue S1's waves and the oracle half of S2 are this module's; the surface that
 shows them, and every other cue, is `WATERS`'.
 
 **Not built:** anything that needs to know where water is. Waves do not shoal, turn or break here.
 
-**What exists.** `thrum-sea-model` is built by M1. Broadsides has the same kernels; its frame is not used.
+**What exists.** `thrum-sea-model` is built by WP1. Broadsides has the same kernels; its frame is not used.
 
-**After this module.** Once M2 is Done, `thrum-sea-model` and `thrum-sea` pass to `WATERS`, which reads the
+**After this module.** Once WP2 is Done, `thrum-sea-model` and `thrum-sea` pass to `WATERS`, which reads the
 spectrum's band energies for its gains, declares these passes inside its own contribution and keeps these tests
 passing.
 
@@ -78,7 +78,7 @@ where the sea design's list now lives. The three that select this module's mecha
   a 20 m wave, which repeats fifteen times across a 20 km vista.
 - **Crest** draws wave components into camera-centred levels of detail that the surface samples, which is what
   the field cache is.
-- **Broadsides**' accepted calm and trade-wind sea (W1) has this layering, and is the evidence that it reads as
+- **Broadsides**' accepted calm and trade-wind sea (WP1) has this layering, and is the evidence that it reads as
   open water. Four cascades cost it about 0.5 ms an evaluation on this Mac.
 
 ### Judged from first principles
@@ -99,7 +99,7 @@ says how a copy is recorded; this module's copies are listed in `.orchestrate/ev
 
 | Mechanism here | Where Broadsides has it | Expected fit |
 |---|---|---|
-| Spectrum, long-wave components, the f64 evaluator | `crates/sim/bw_water/src/ocean/` | M1 wrote these here from published sources. Nothing more is needed; its golden tests may be read for cases |
+| Spectrum, long-wave components, the f64 evaluator | `crates/sim/bw_water/src/ocean/` | WP1 wrote these here from published sources. Nothing more is needed; its golden tests may be read for cases |
 | Cascade evolution to the frame's time with whole-cycle loop phases; the 256-point transform inside 16 KiB of workgroup memory with twiddles built in f64; packing; mips | `crates/render/bw_render_water/shaders/ocean_evolve.wesl`, `ocean_fft.wesl`, `ocean_assemble.wesl`, `ocean_mips.wesl` | Close. These already do what [the ambient sea](#the-ambient-sea) asks |
 
 ## Mechanisms
@@ -199,7 +199,7 @@ evaluated, so it needs no wrapping history. It is a display cache: nothing that 
 ### Check that it can work
 
 - **S1.** No tile: the long waves are not periodic, and the cascades' joint period is far beyond the view. The
-  accepted Broadsides W1 sea, which has this layering, is the evidence that it reads as open water. Vista: at 5 km
+  accepted Broadsides WP1 sea, which has this layering, is the evidence that it reads as open water. Vista: at 5 km
   a 150 m swell is under a pixel, so the vista is slope statistics, which the moments carry.
 - **S2 and the oracle.** `long_wave_precision.py`: 192 components, 6 m significant height, points to 4 km from
   an anchor 50 km from the origin after 24 hours. The wrapped f32 evaluation differs from f64 by 0.05 mm, and by
@@ -226,7 +226,7 @@ A frame: `upload` takes the wind and swell parameters and the long-wave phases a
 
 ## Cost account
 
-Estimates, unmeasured. M2 records them. The surface that reads the field is `WATERS`'.
+Estimates, unmeasured. WP2 records them. The surface that reads the field is `WATERS`'.
 
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
@@ -239,14 +239,14 @@ Estimates, unmeasured. M2 records them. The surface that reads the field is `WAT
 every second frame at 120 Hz and nothing in Chrome, and would add a second read of every layer to every water
 pixel of every frame. Both figures are estimates; `WATERS`' first cost record has the surface's real cost, and
 the cadence knobs lower the field's rate if a record favours that. No timing figure decides an item
-([brief](../BRIEF.md#goal-and-exit-rule), decision 3).
+([brief](../VISION.md#goal-and-exit-rule), decision 3).
 
 ## Risks
 
 1. **A 160 m repeat shows from 40 m up.** Early sign: `WATERS`' first vista capture. Fallback: a larger first
    patch under a profile the portable limits still admit, designed here first.
-2. **Chrome refuses a format, count or binding the Mac accepts.** Early sign: M2 runs under WebGPU's default
-   limits on the Mac; `WATERS` M3 is the first real Chrome run.
+2. **Chrome refuses a format, count or binding the Mac accepts.** Early sign: WP2 runs under WebGPU's default
+   limits on the Mac; `WATERS` WP3 is the first real Chrome run.
 3. **The field costs more every frame than the reads it saves.** Early sign: `WATERS`' first record on repeat
    frames. The designed remedy is the cadence knobs. The wrong fix is a second copy blended in the surface pass.
 
@@ -265,6 +265,6 @@ the cadence knobs lower the field's rate if a record favours that. No timing fig
 
 | Question | Settled by |
 |---|---|
-| What tolerance do the cascades meet against their f64 reference on Metal? | M2 measures first, then asserts the recorded bound |
-| Is evaluating the field every frame cheaper than a second read of it in every water pixel? | `WATERS` M2's record, on tick frames and repeat frames |
-| Is an Apple-tile kernel variant a measured win? | `WATERS` M11 |
+| What tolerance do the cascades meet against their f64 reference on Metal? | WP2 measures first, then asserts the recorded bound |
+| Is evaluating the field every frame cheaper than a second read of it in every water pixel? | `WATERS` WP2's record, on tick frames and repeat frames |
+| Is an Apple-tile kernel variant a measured win? | `WATERS` WP11 |

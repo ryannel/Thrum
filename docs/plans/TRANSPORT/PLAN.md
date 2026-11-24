@@ -19,30 +19,30 @@ design.
 - Assumption: a host holds up to four players, and "hold a session" is proved for ten minutes with four clients (two on the Mac, one in Chrome, one in the iPhone simulator).
 - Assumption: the iPhone simulator proves that the link works there, never its speed. A physical iPhone, where the local-network permission applies, is not run.
 
-## M1 A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop
+## WP1 A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop
 
-Criteria: M1.1–M1.12 in the done-when file.
+Criteria: WP1.1–WP1.12 in the done-when file.
 
-[The first builder's handoff](../../../.orchestrate/evidence/TRANSPORT/M1-handoff.md) says what is on branch `build/transport`,
+[The first builder's handoff](../../../.orchestrate/evidence/TRANSPORT/WP1-handoff.md) says what is on branch `build/transport`,
 what was tried and what to do first; start there and keep that work. The only sockets outside this module are the
 cooker's loopback dev-server tests, which are `CONTENT-LOOP`'s, run in `./dev check` and are not this milestone's
 to move or to answer for. `thrum-network` holds byte codecs that belong to `SESSION`; this
 milestone neither edits it nor depends on it, and the link carries opaque bytes. Its `MAX_MESSAGE_BYTES` and A5's
 1,000-byte datagram budget are where the two limits come from. `thrum-asset`'s `remote/browser.rs` shows the
 hand-written `wasm_bindgen` imports the browser adapter follows, and `thrum-network/examples/` shows the stdin
-targets M2 follows. The tick-quantised `LinkConditioner` in `crates/thrum-core/tests/support/v1_workload.rs` stays
+targets WP2 follows. The tick-quantised `LinkConditioner` in `crates/thrum-core/tests/support/v1_workload.rs` stays
 as it is. New packages and every direct outside dependency are registered in `.config/architecture.toml`, and the
 new crates are fetched once with the network.
 
 The order matters in one place: write the link script against the in-memory link first, then make each socket
 adapter pass the same script. Record costs last, at the commit being claimed.
 
-## M2 A peer that sends garbage, floods, stalls or freezes cannot stop the host or slow the other players, and a game without multiplayer contains no network code
+## WP2 A peer that sends garbage, floods, stalls or freezes cannot stop the host or slow the other players, and a game without multiplayer contains no network code
 
-Criteria: M2.1–M2.11 in the done-when file.
+Criteria: WP2.1–WP2.11 in the done-when file.
 
-M1 left the adapters, the relay, the proof command and the session run, which M2.9 repeats unchanged. The
-transport section of `docs/design/modules/NETWORKING.md` is the owning design M2.7 brings up to date, and the
+WP1 left the adapters, the relay, the proof command and the session run, which WP2.9 repeats unchanged. The
+transport section of `docs/design/modules/NETWORKING.md` is the owning design WP2.7 brings up to date, and the
 maturity ledger is `docs/design/maturity.json`.
 
 Stop rules, for both milestones:

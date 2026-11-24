@@ -6,12 +6,12 @@
 C04/C06/C07/C08/C12 in [CONTRACTS](../../design/CONTRACTS.md) govern.
 The lead commissioned this scoped re-plan on 9 November after the [second design review](../../../.orchestrate/evidence/APPLE-TILE/design-review-2.md)
 returned seven findings at `224b58a1`. The findings are answered in [the disposition table](../../../.orchestrate/evidence/APPLE-TILE/replan-handoff-2026-11-11.md#disposition-of-second-review-findings). Independent design
-approval is owed to the loop; M0 remains parked and no implementation, qualification or unpark is claimed.
+approval is owed to the loop; WP0 remains parked and no implementation, qualification or unpark is claimed.
 This reconciles current sources rather than claiming a blind design.
 
-[T2 capture](../T2-CAPTURE/DESIGN.md) M0 (Mac) and M1 (Chrome) are done. Consume that renderer-owned submitted-output tap;
-add scene-linear comparison stages there, never a second recorder. T2 M2's simulator engine capture remains blocked
-on [COOKED-DRAW M1](../COOKED-DRAW/PLAN.md). It is not on the Mac M3 or G4 native-boundary critical path.
+[T2 capture](../T2-CAPTURE/DESIGN.md) WP0 (Mac) and WP1 (Chrome) are done. Consume that renderer-owned submitted-output tap;
+add scene-linear comparison stages there, never a second recorder. T2 WP2's simulator engine capture remains blocked
+on [COOKED-DRAW WP1](../COOKED-DRAW/PLAN.md). It is not on the Mac WP3 or G4 native-boundary critical path.
 
 ## Purpose, range and cues
 
@@ -28,7 +28,7 @@ shadows, mirrored props and interpolation. No new game types or second world, vi
 
 The quality bar is the same intact, temporally stable scene expected of a shipped high-end game; portable supplies
 matched image semantics, not an assertion that the valley's artistic polish is finished. G3s sunset diagnosis stays
-parked. Mac M2 owns current-path cadence and Mac M3 its post-G3t-M3 requalification; offscreen motion proves neither.
+parked. Mac WP2 owns current-path cadence and Mac WP3 its post-G3t-M3 requalification; offscreen motion proves neither.
 Physical iPhone timing/loss is owed; ios-sim is function only.
 
 Commissioned now: registry recipes, graph-derived transient/memoryless attachments, one split scene/output graph,
@@ -40,7 +40,7 @@ and slot duplication; M6 scratch sharing; M7 compact rows; M8 expanded GPU light
 consolidation. Existing queue-ordered uploads, 192-byte admitted rows, CPU overflow selection and V2 raster/order
 semantics stay in use. These are named later performance candidates, with no completion or gain claimed here.
 The complete Metal recorder, Metal 4 queue, tile shaders, Android recipe and quantization also remain later work.
-Retain milestone IDs M0–M3/M10–M12 so consumer references stay stable; M4–M9 definitions are removed, not accepted.
+Retain milestone IDs WP0–WP3/M10–WP12 so consumer references stay stable; M4–M9 definitions are removed, not accepted.
 
 ## Research and selection
 
@@ -83,20 +83,20 @@ selected by this plan.
 | Native providers | Isolated renderer `apple_tile` backend | Generation-owned resources; executor supplies recording/completion |
 | Route/content | V1 game/G7 | Reuse fixed route and cooked inputs; add G3t proof fixtures without changing G7 baseline |
 
-Current main supplies runtime, sky, content and visibility. M0 needs accepted `T2-CAPTURE:M0`; M1 needs accepted
-`T2-CAPTURE:M1` for exact Chrome submitted images and elapsed-time motion. Both are delivered. M2 also names the
-already-done `PLATFORM-RUNTIME-MAC:M1` loss boundary. Simulator rows before M12 use the diagnostic scene and
+Current main supplies runtime, sky, content and visibility. WP0 needs accepted `T2-CAPTURE:WP0`; WP1 needs accepted
+`T2-CAPTURE:WP1` for exact Chrome submitted images and elapsed-time motion. Both are delivered. WP2 also names the
+already-done `PLATFORM-RUNTIME-MAC:WP1` loss boundary. Simulator rows before WP12 use the diagnostic scene and
 `simctl` endpoint/function observations only, never submitted temporal output or elapsed-time engine motion.
-M12 alone needs `COOKED-DRAW:M1` for cooked simulator function. No row requires `T2-CAPTURE:M2`.
+WP12 alone needs `COOKED-DRAW:WP1` for cooked simulator function. No row requires `T2-CAPTURE:WP2`.
 
-Mac M2 qualifies the current surface path after T2 M0, independently of this module. Mac M3 waits for Mac M2
-(module order) and `APPLE-TILE:M3`: T2 M0/M1 → G3t M0–M3, including the attended real-window rows at M2/M3 and
+Mac WP2 qualifies the current surface path after T2 WP0, independently of this module. Mac WP3 waits for Mac WP2
+(module order) and `APPLE-TILE:WP3`: T2 WP0/M1 → G3t WP0–WP3, including the attended real-window rows at WP2/M3 and
 simulator diagnostic lifecycle checks. Chrome capture is delivered; simulator cooked draw/capture is absent from
-this chain. Mac M3 reruns its complete runtime-motion/capture-OFF panel-cadence and windowed-tap/tooling protocols
+this chain. Mac WP3 reruns its complete runtime-motion/capture-OFF panel-cadence and windowed-tap/tooling protocols
 on the changed build; earlier results qualify only their recorded build. There is no reverse Mac dependency.
 
-G4 receives M0 proof tools, M1 eligibility, M3's replaceable pre-tone colour/exposure seam and M11 native
-providers. M11 uses bounded provider extent fixtures and M12 two fixed extents/current readers; neither waits on G4.
+G4 receives WP0 proof tools, WP1 eligibility, WP3's replaceable pre-tone colour/exposure seam and WP11 native
+providers. WP11 uses bounded provider extent fixtures and WP12 two fixed extents/current readers; neither waits on G4.
 G4 later requalifies real reconstruction readers, display math and live scale transitions. G5 owns cooked draws:
 COOKED-DRAW may add downlevel facts to the same capability registry and change `thrum-asset-gpu/src/draw.rs`.
 G3t must extend that registry in place and preserve the selected cooked direct/indirect path. No draw.rs refactor is
@@ -143,14 +143,14 @@ normal-path usages. Report reasons per resource/variant and prepare all variants
 **One graph, late surface.** Compile scene and output together per generation/variant, with an execute-time surface
 binding. The pre-acquire partition contains scene work and the current SDR tone pass; the post-acquire partition
 contains the surface consumer and dependent timing/readback epilogue. Reject scene work behind acquisition without
-a surface dependency. M2 keeps the current graph resources and shaders while changing scheduling only.
+a surface dependency. WP2 keeps the current graph resources and shaders while changing scheduling only.
 
-M3 makes the existing tone stage consume one explicitly bound scene-linear colour plus its matching exposure and
+WP3 makes the existing tone stage consume one explicitly bound scene-linear colour plus its matching exposure and
 extent/sample identity. Default input is the current forward composition. G4 can substitute a prepared reconstructed
 linear texture, with declared graph edges, before tone; resources/bind groups for admitted choices exist before
-readiness. M3 identity substitution uses the same texture, shader and sample coordinates and must change no bytes.
+readiness. WP3 identity substitution uses the same texture, shader and sample coordinates and must change no bytes.
 Keep `synthetic_display.wgsl` → Rgba8Unorm intermediate → `present.wgsl`, including implicit quantization, both surface
-format branches and nearest-source letterbox mapping. M3 does not move tone arithmetic into a new shader or claim
+format branches and nearest-source letterbox mapping. WP3 does not move tone arithmetic into a new shader or claim
 16.59 MB/frame saved. G4 implements a separate qualified EDR branch when required; retaining this SDR branch does
 not authorize applying tone twice. Capture reads the same prepared submitted output and linear checkpoint branches,
 never a raw drawable. Pass-name timing replaces positional slots; update native/iOS/browser/capture consumers together.
@@ -158,7 +158,7 @@ never a raw drawable. Pass-name timing replaces positional slots; update native/
 Healthy acquisition refusal still drops scene views, flushes pending uploads through the existing token path, and
 does not commit image history. Observed device loss abandons without any old-queue call. A background iOS lease
 refuses submission and resets affected histories. Resize/replacement uses platform generation admission, retains old
-resources until completion and rejects stale callbacks. M2 must retain these distinctions under the merged graph.
+resources until completion and rejects stale callbacks. WP2 must retain these distinctions under the merged graph.
 
 **Retained transport, lights and visibility.** Both recipes retain the existing single queue-ordered upload buffers,
 dirty reconciliation and refusal flush rules. Queue writes precede the next submission's uses; no pointer import,
@@ -207,8 +207,8 @@ twin before readiness. Provider-internal history resets after any encoded-but-di
 cut or incompatible generation. Keep the ordinary presentation-drop contract for native frames too: discard and
 reset instead of adding submit-without-present. Loss still forbids even a flush; iOS background still forbids submit.
 Raw command-buffer errors join the normal device-loss path via generation-tagged completion. Report native GPU
-start/end times separately from wgpu query times. A rejected optional provider uses its prepared twin. M10's
-stand-in is composition proof only; M11 covers provider replacement extents without waiting for G4's live transitions.
+start/end times separately from wgpu query times. A rejected optional provider uses its prepared twin. WP10's
+stand-in is composition proof only; WP11 covers provider replacement extents without waiting for G4's live transitions.
 
 The diagnostic native witness uses finite, nonnegative RGBA16F texels and exact load/select/store, with integer phase
 and a reserved fixture tile holding binary-exact 0/1 state. It copies current scene colour to output/history; on
@@ -218,11 +218,11 @@ and never aliased; successful submit advances the selection, and discard/cut/rep
 Copy scene/history regions with bit-preserving native blits and portable wgpu texture copies; only the reserved
 0/1 tile needs a native storage-write kernel and a WGSL twin. The tile kernel uses integer selection, without
 blend, division, pow or CPU floating-point ranking. No-op native work, stale input, hidden WGSL production and failure
-to reset must each fail exact output/history readbacks. A small same-submit fixture is the first M10 implementation
+to reset must each fail exact output/history readbacks. A small same-submit fixture is the first WP10 implementation
 step, before route integration; if exact copying or ordering fails, stop for a boundary re-plan, not a wider bound.
 Ordinary scene runs disable this labelled diagnostic. Its crop/state changes never redefine the ordinary baseline.
 
-**Pipeline preparation boundary (formerly G3t seam 5).** G4 M9 records launch-to-ready stages; G4 M10 owns offline
+**Pipeline preparation boundary (formerly G3t seam 5).** G4 M9 records launch-to-ready stages; G4 WP10 owns offline
 metallibs/passthrough reflection, parallel pre-warm and a pinned Metal pipeline-cache/archive patch. Preserve
 per-pipeline cook/compatibility keys, matching runtime MSL demand and strict archive-miss qualification on each shipped
 device. A rejected cache rebuilds before readiness. Upstream contribution is later and does not gate V1; the owner's
@@ -265,28 +265,28 @@ and old/new-generation overlap rather than hiding these allocations in the scene
 resident variant/fallback allocation and peak old/new-generation overlap. A memoryless attachment's logical traffic
 reduction is not equal to a resident-memory or physical bandwidth saving.
 
-M0 supplies matched baseline identity, same-target repeats, prepared linear-image checkpoints and full-resolution
+WP0 supplies matched baseline identity, same-target repeats, prepared linear-image checkpoints and full-resolution
 motion sequences. Existing G7's coarse-grid comparator stays unchanged and is only a route/content smoke test.
-G3t retains a full-resolution pre-change native portable baseline at M0 and a Chrome portable baseline after
-`T2-CAPTURE:M1`, before M1 changes its rendering, with build/shader/content,
+G3t retains a full-resolution pre-change native portable baseline at WP0 and a Chrome portable baseline after
+`T2-CAPTURE:WP1`, before WP1 changes its rendering, with build/shader/content,
 route/sample, format, exposure and H=1 identity. Later milestones compare against that baseline as well as paired
 same-build recipes; shared regressions cannot disappear by comparing two changed paths. Chrome is compared to its
 own recorded WebGPU baseline, not expected to be bit-identical to a different backend. Baseline artifacts and the
 comparator are retained under the storage rules; a new baseline cannot silently replace an earlier one.
 
-The comparison contract requires exact same-target scene-linear and submitted SDR bytes for M1/M2/M3 and ordinary
-M10/M11/M12 runs, against recipe pairs and the retained pre-change portable baseline. Membership/IDs and draw order
+The comparison contract requires exact same-target scene-linear and submitted SDR bytes for WP1/M2/M3 and ordinary
+WP10/M11/M12 runs, against recipe pairs and the retained pre-change portable baseline. Membership/IDs and draw order
 are exact. This compares unchanged shader arithmetic and quantization on the same backend/compiler/profile; it makes
 no CPU-vs-GPU f32 or cross-backend promise. T2 `still`/`fixed` checkpoints use matched sample, exposure, format, extent,
 headroom H=1 and history/reset identity. T2 `realtime` records prove elapsed-time continuity, not byte equality across
 different scheduling. Compare recorded exact sample identities where available; use matched deterministic fixed
-routes for checkpoint equality, never equate movie frame indices with world samples. The M10/M11 diagnostic is
+routes for checkpoint equality, never equate movie frame indices with world samples. The WP10/M11 diagnostic is
 exact against its own copy/select twin and declared state history; compare ordinary pre-provider inputs separately.
 There is no 1-ULP or global perceptual allowance in this scope.
 
-M0 rejects phase mismatch, missing contribution, a dropped weak light with nonzero pixels in a saturated cluster,
+WP0 rejects phase mismatch, missing contribution, a dropped weak light with nonzero pixels in a saturated cluster,
 an omitted mirrored cube at slot 5060 and the removed night star layer. Keep native-size difference maps/crops and
-prove all controls fail exact comparison. M0 also retains a full-frame current two-pass SDR/sRGB/letterbox control,
+prove all controls fail exact comparison. WP0 also retains a full-frame current two-pass SDR/sRGB/letterbox control,
 including non-1:1 source/destination extents: later identity-input rebinding must reproduce it exactly. These are
 existing-path controls, not an unrun fused-shader feasibility claim. If retained same-target exactness fails, stop
 for causal diagnosis and independent design re-review; never widen the tolerance, alter math mode or silently
@@ -294,10 +294,10 @@ refresh a baseline. Future fusion/GPU ranking requires a separate reviewed contr
 Independent visual review checks full frames/crops and normal-speed motion in addition to exact bytes.
 
 Capture modes are explicit in every visual item: Mac T2 `still`/`fixed` for exact submitted checkpoints, T2 `realtime`
-for host-time engine motion. Chrome M1's implemented adapter uses `fixed` checkpoints and `realtime` sequences
-(no `still` switch); Mac M0 implements all three modes. Scene-linear readbacks extend that same tap. Existing endpoint smoke
+for host-time engine motion. Chrome WP1's implemented adapter uses `fixed` checkpoints and `realtime` sequences
+(no `still` switch); Mac WP0 implements all three modes. Scene-linear readbacks extend that same tap. Existing endpoint smoke
 remains endpoint/no-history, not temporal proof. Simulator `simctl` images/video prove function/UI/lifecycle within
-recorded coverage only; simulator submitted/runtime-motion proof stays with T2 M2. GPU runs hold the `gpu` lock.
+recorded coverage only; simulator submitted/runtime-motion proof stays with T2 WP2. GPU runs hold the `gpu` lock.
 
 D2.5/D3.5 and final window proof use OS capture of the actual game window (PID/window ID), requiring **attended
 setup**: unlocked active Mac session plus Screen Recording permission for the capturing process. Do not request or
@@ -306,9 +306,9 @@ frames against T2 `still`/`fixed` reference images at the same paused-world cont
 scene extent, inspecting content and post-resize letterbox geometry in content-pixel coordinates. Record stable
 settled-state identity; these are matched-state references, not images of the same submission. Dynamic window
 observation uses host-time OS video with ordinary controls; it proves functional response only, not exact same-frame
-correspondence or panel cadence. Mac M2.3 retains ownership of real-window tap integration and submission
+correspondence or panel cadence. Mac WP2.3 retains ownership of real-window tap integration and submission
 correspondence; this functional observer does not require or qualify that unbuilt adapter. No engine image/log alone
-proves a composited window. Unavailable grants keep these items open while unattended work proceeds. Mac M3 owns
+proves a composited window. Unavailable grants keep these items open while unattended work proceeds. Mac WP3 owns
 capture-OFF panel swaps and Instruments setup separately; this module never treats engine PTS as photons.
 
 Record source/build/shader/route/cooked hashes, registry digest, device/backend, viewport, mode, warmup, run order and
@@ -319,7 +319,7 @@ requires a sustained paired run: after warmup, repeat each matched route for at 
 measurement window, not a performance budget), recording actual duration, thermal state at start/throughout/end,
 power/load and observed throttling. Repeat if the thermal/load comparison is confounded; unavailable thermal data
 leaves performance qualification/promotion open. D12.2 needs it for integrated promotion; functional completion may
-record a safe candidate as unpromoted. M12 also exercises the representative 10,000-entity field with 1,000–2,000 movers,
+record a safe candidate as unpromoted. WP12 also exercises the representative 10,000-entity field with 1,000–2,000 movers,
 full/partial visibility and supported direct/culling paths, so a small valley route cannot stand in for scaling.
 Separate display callbacks, submit, GPU completion and physical swaps. Read physical
 per-encoder bytes only by the retained Xcode replay method; without a screen/tool slot mark them unmeasured, and do not
@@ -335,34 +335,34 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
 - Native initialization/lifetimes differ from wgpu assumptions: same-submit stateful twin, discard/reset, held slot,
   extent replacement and generation loss witnesses precede MetalFX.
 - Quiet timings, physical traffic and real display cadence may be unavailable. Keep their evidence limits explicit;
-  none is supplied by docs checks. Functional real-window runs at M2/M3 cannot be replaced by offscreen output;
-  without an unlocked active-display slot those items stay open. M12 records cadence/physical-device rows still owed,
-  and Mac M3 must qualify the post-G3t-M3 surface path rather than inherit old results.
+  none is supplied by docs checks. Functional real-window runs at WP2/M3 cannot be replaced by offscreen output;
+  without an unlocked active-display slot those items stay open. WP12 records cadence/physical-device rows still owed,
+  and Mac WP3 must qualify the post-G3t-M3 surface path rather than inherit old results.
 
 ## Sequence and dependencies
 
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
-Retained sequence: **M0 → M1 → M2 → M3 → M10 → M11 → M12**. IDs are kept for consumers. Removed M4–M9
+Retained sequence: **WP0 → WP1 → WP2 → WP3 → WP10 → WP11 → WP12**. IDs are kept for consumers. Removed M4–M9
 are deferred work, not completed milestones. One builder integrates sequentially; this task launches no agents.
-M0 consumes accepted `T2-CAPTURE:M0`; M1 consumes accepted `T2-CAPTURE:M1`. G3t adds scene-linear checkpoints
-through the shared tap. M2 also names delivered `PLATFORM-RUNTIME-MAC:M1`. Before M1 changes rendering, retain
+WP0 consumes accepted `T2-CAPTURE:WP0`; WP1 consumes accepted `T2-CAPTURE:WP1`. G3t adds scene-linear checkpoints
+through the shared tap. WP2 also names delivered `PLATFORM-RUNTIME-MAC:WP1`. Before WP1 changes rendering, retain
 Mac and Chrome same-target portable baselines using their qualified target taps and pinned source/cooked inputs.
 
-Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and
-`APPLE-TILE:M3`: T2 M0/M1, then G3t M0–M3, including attended D2.5/D3.5 and simulator diagnostic
-function checks. **Neither COOKED-DRAW M1 nor T2 simulator M2 is on that chain.** Mac M3 reruns its complete
+Mac WP2 qualifies the current path after T2 WP0 independently. Mac WP3 needs Mac WP2 by module order and
+`APPLE-TILE:WP3`: T2 WP0/M1, then G3t WP0–WP3, including attended D2.5/D3.5 and simulator diagnostic
+function checks. **Neither COOKED-DRAW WP1 nor T2 simulator WP2 is on that chain.** Mac WP3 reruns its complete
 runtime-motion and capture-OFF built-in-panel cadence protocols plus real-window tap/tooling preflight on the changed
-build. G3t never waits back on Mac M2/M3; old results qualify only their recorded builds.
+build. G3t never waits back on Mac WP2/M3; old results qualify only their recorded builds.
 
-G4 receives M0 proof tools, M1 eligibility, M3 pre-tone linear input/exposure binding and M11 native
+G4 receives WP0 proof tools, WP1 eligibility, WP3 pre-tone linear input/exposure binding and WP11 native
 provider lifetime/reset/timing. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR
-branch and its display semantics. M11 bounded extent fixtures and M12 fixed extents/current readers do not wait for
+branch and its display semantics. WP11 bounded extent fixtures and WP12 fixed extents/current readers do not wait for
 G4; G4 later reruns actual reconstruction-reader/scale-transition proofs. Full G4 JSON migration remains its own commission.
 
-M12 alone needs `COOKED-DRAW:M1` for cooked simulator endpoint/function evidence. Earlier simulator rows use the
+WP12 alone needs `COOKED-DRAW:WP1` for cooked simulator endpoint/function evidence. Earlier simulator rows use the
 existing diagnostic scene and `simctl` interim observations, with no submitted/runtime-motion claim. This preserves
-T2 rollout rather than waiting on or implementing its M2. G5 owns cooked residency/draw and COOKED-DRAW's
+T2 rollout rather than waiting on or implementing its WP2. G5 owns cooked residency/draw and COOKED-DRAW's
 changes to `DeviceCapabilities`, `SceneSurface` and `thrum-asset-gpu/src/draw.rs`. Extend the same registry, preserve
 selected direct/indirect paths and path-independent history. No draw.rs classifier/layout/target refactor is
 commissioned here; keep any mechanical execution/creation-site adaptation narrow, merge sequentially and rerun
@@ -381,17 +381,17 @@ realtime scheduling alone does not supply byte-matched frame identities. Existin
 `python3 scripts/run_v1_showcase.py moving` remains endpoint/no-history route smoke only.
 
 Simulator uses `simctl` endpoint/function capture with recorded coverage and timing limits. No row in this plan
-claims simulator exact submitted output or elapsed-time engine motion; those stay with T2 M2. M12's cooked scene
+claims simulator exact submitted output or elapsed-time engine motion; those stay with T2 WP2. WP12's cooked scene
 must wait on its owner COOKED-DRAW, never build a substitute. New commands are documented only when implemented.
 Run GPU work under `gpu` exclusivity; no GPU or screen automation is part of this planning turn.
 
 D2.5/D3.5/D12.3 declare **attended setup** in JSON: unlocked active Mac session and Screen Recording permission for
 the chosen OS capture process. Record actual window/PID/tool and compare settled OS
 window evidence to T2 `still`/`fixed` reference images at matching paused-world controls/content/extent. Inspect content
-and letterbox in content-pixel coordinates; these are matched states, not the same submission. Mac M2.3 owns separate
+and letterbox in content-pixel coordinates; these are matched states, not the same submission. Mac WP2.3 owns separate
 windowed-tap integration/correspondence, which this observer does not require or qualify. Dynamic OS video with controls
 proves response only. Agent runs/reviews after setup; do not automate grant changes. Missing setup leaves these rows open
-while unblocked work proceeds. Mac M3 separately owns attended Instruments/panel qualification with capture OFF.
+while unblocked work proceeds. Mac WP3 separately owns attended Instruments/panel qualification with capture OFF.
 
 Use `tmp/g3t-<milestone>/` for scratch and selected `.orchestrate/evidence/render/` records under the storage rules. Retain
 lossless sources, provenance, exact diffs and 1x views; inspect full frames and native-size crops for Sun, stars,

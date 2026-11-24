@@ -1,29 +1,29 @@
 # Showcase: the exit scene and the V1 exit record (G7)
 
 13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
-[module list](../ARCHITECTURE.md) · [the brief](../BRIEF.md). Governed by
+[module list](../ARCHITECTURE.md) · [the brief](../VISION.md). Governed by
 [the route decision](../../design/decisions/G7-SHOWCASE-ROUTE.md), which built the launch and the six-stop route,
 by C04, C05, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), and by
-[exact baselines](../ARCHITECTURE.md#exact-baselines). Revised on 18 November 2026 after M5's first review:
-[Motion on a shared machine](#motion-on-a-shared-machine) says how motion is judged before M8. Revised again that
+[exact baselines](../ARCHITECTURE.md#exact-baselines). Revised on 18 November 2026 after WP5's first review:
+[Motion on a shared machine](#motion-on-a-shared-machine) says how motion is judged before WP8. Revised again that
 day for [the design review](../../../.orchestrate/evidence/SHOWCASE/design-review.md) of that revision: how each target produces
-a tick-by-tick sequence, what build a timing record is of, how the exit baseline is replaced, and what M7 does
+a tick-by-tick sequence, what build a timing record is of, how the exit baseline is replaced, and what WP7 does
 with a late frame it cannot explain. Revised a third time for that review's second round: a timing record's
 digest also covers the scripts that launch, drive and observe its arms. Revised on 19 November 2026 for
 [the ruling on the valley's lookout rim and sunrise stop](../ARCHITECTURE.md#ruling-on-the-valley-fix), which
-adds M9: [The lookout's rim and the sunrise stop](#the-lookouts-rim-and-the-sunrise-stop). Revised the same
-day for the design review of M9: culling is compared again on the changed terrain, a diagnostic control is drawn
-at its stop's hour, the bare valley's check cannot pass without its baseline, and what M9 may change in another
+adds WP9: [The lookout's rim and the sunrise stop](#the-lookouts-rim-and-the-sunrise-stop). Revised the same
+day for the design review of WP9: culling is compared again on the changed terrain, a diagnostic control is drawn
+at its stop's hour, the bare valley's check cannot pass without its baseline, and what WP9 may change in another
 module's files is said file by file. Revised for that review's second round: the root pins are every route file
-that names an old root when M9 starts, M6's `exit-fast-yaw.json` among them. Revised on 20 November 2026 after
-[M9's review](../../../.orchestrate/evidence/SHOWCASE/M9-review.md): M9's landing also moved the retained references
+that names an old root when WP9 starts, WP6's `exit-fast-yaw.json` among them. Revised on 20 November 2026 after
+[WP9's review](../../../.orchestrate/evidence/SHOWCASE/WP9-review.md): WP9's landing also moved the retained references
 into test fixtures, and [what moves with the terrain](#the-lookouts-rim-and-the-sunrise-stop) says which
 paths follow them.
 
 ## The request
 
 The human's words weren't passed on; this design answers the lead's task of 13 November 2026, to plan row 13 of
-the module list. What the module must deliver is in [the brief](../BRIEF.md), the owner's page. Its text is
+the module list. What the module must deliver is in [the brief](../VISION.md), the owner's page. Its text is
 carried from the build plan and is not the owner's own words, except decision 3.
 
 - **The V1 exit** (decision 1): "one reusable engine powers `examples/v1-game`, a single-player showcase on this
@@ -55,7 +55,7 @@ the Mac on the portable recipe, Chrome on the portable recipe.
 **Built before this plan** and kept: the launcher `scripts/run_v1_showcase.py` (`mac`, `chrome`, `check`,
 `startup`, `moving`), the six stop presets, the parity metric with its fixed calibration rule and controls, and the
 valley's terrain and ground material ([route slice record](../../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)). Its
-milestones were numbered M1 to M4, so this plan starts at M5.
+milestones were numbered M1 to M4, so this plan starts at WP5.
 
 **What the valley is today.** `THRUM_SCENE=valley` draws the cooked terrain, one sphere and one rock. The
 simulation already steps 10,000 entities with 1,500 movers, but they are cubes in a grid 1.8 m across near the
@@ -64,12 +64,12 @@ a picture.
 
 **Commissioned here:**
 
-1. M5: the valley is populated. 10,000 entities draw as cooked mesh rows, 1,500 of them moving.
-2. M6: the populated valley is culled on the GPU with no pixel changed, and the default mode is set by
+1. WP5: the valley is populated. 10,000 entities draw as cooked mesh rows, 1,500 of them moving.
+2. WP6: the populated valley is culled on the GPU with no pixel changed, and the default mode is set by
    `CULLING`'s rule.
-3. M7: one command runs the exit scene on each row, and each run reports what it resolved, with frame records.
-4. M8: the visual review, the records taken on the built-in display, and the V1 exit record.
-5. M9, built after M6 and before M7: the lookout's ground runs to its rim without a bright band at sunset, and
+3. WP7: one command runs the exit scene on each row, and each run reports what it resolved, with frame records.
+4. WP8: the visual review, the records taken on the built-in display, and the V1 exit record.
+5. WP9, built after WP6 and before WP7: the lookout's ground runs to its rim without a bright band at sunset, and
    the sphere and the rock cast long shadows at the sunrise stop. Culling is compared with Direct again on the
    terrain that ships.
 
@@ -83,7 +83,7 @@ the exit.
 | Cue | Where it must read | Range | Plausible wrong substitute, and what rejects it |
 |---|---|---|---|
 | **S1 A populated place** | The six stops and the exit flythrough, Mac and Chrome | Dawn to night; near ground to the far slopes | 10,000 entities that exist and are not seen, as today. Rejected by in-view counts at each stop and inspected frames |
-| **S2 Things move** | A held view and the flythrough, tick by tick, and in real time at the close | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test, a capture of every tick, and M8's real-time review |
+| **S2 Things move** | A held view and the flythrough, tick by tick, and in real time at the close | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test, a capture of every tick, and WP8's real-time review |
 | **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback, or a comparison that cannot see a missing prop. Rejected by the game's own report and a no-entities control |
 | **S4 Culling is never seen** | The flythrough with movers moving | Frustum and Occlusion; both recipes; Chrome | Equality on a scene with nothing hidden. Rejected by a non-empty prepass and hidden slots in the rows |
 | **S5 Smooth** | The built-in 120 Hz panel; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie. Rejected by capture-off frame records and OS-reported presented intervals |
@@ -122,10 +122,10 @@ root. So:
 - The exit scene is a third game content beside `Grid` and `Field`, chosen by name. With it unselected, every
   existing configuration prepares, steps and draws as before.
 - The valley's source folder and its cooked root do not change, except once, in
-  [M9](#the-lookouts-rim-and-the-sunrise-stop). The exit's props are separate sources, and the
+  [WP9](#the-lookouts-rim-and-the-sunrise-stop). The exit's props are separate sources, and the
   exit's cook source is the valley's files plus the props. The launcher already cooks a copy of the source; the
   copy step can assemble it. The builder may assemble it another way that keeps the valley's root.
-- The six stop presets are reused as they are; M9 changes the hour of one. The exit gets its own flythrough
+- The six stop presets are reused as they are; WP9 changes the hour of one. The exit gets its own flythrough
   route file, pinned to the exit store's root.
 
 ### One generator authors the terrain, the props and the paths
@@ -143,7 +143,7 @@ root. So:
 
 ### Props are cooked mesh rows, sized by measurement
 
-Entities draw whole mesh rows on `CULLING`'s bucket route, and `CONTENT-LOOP:M2` supplies cooked meshes as rows.
+Entities draw whole mesh rows on `CULLING`'s bucket route, and `CONTENT-LOOP:WP2` supplies cooked meshes as rows.
 The route allows 64 buckets, three per mesh, so the scene uses at most 21 meshes. Turn and scale come from each
 slot's basis, fixed when the scene is prepared, so a few meshes give varied scatter. Entities are coloured by
 material and carry no texture.
@@ -186,15 +186,15 @@ default so that exact baselines hold. No one place says which of them the showca
   and display range differ by row, and the record says how.
 
 The file's entries for MetalFX, EDR and the governor are written from `APPLE-PRESENTATION`'s closing record, so
-M7 depends on that module's last milestone, M11, and M7.1 checks the five milestones M7 builds on in the record
+WP7 depends on that module's last milestone, M11, and WP7.1 checks the five milestones WP7 builds on in the record
 files.
 
 ### The lookout's rim and the sunrise stop
 
-M9, added on 19 November 2026. `ATMOSPHERE` M6 judges the valley's sky and sunlight against a list of defects
+WP9, added on 19 November 2026. `ATMOSPHERE` WP6 judges the valley's sky and sunlight against a list of defects
 earlier reviews recorded, and its builder stopped on two whose cause is the authored valley. The module list's
 [ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) gives the valley's source and stop presets to this
-module and the fix to M9. The numbers below are in
+module and the fix to WP9. The numbers below are in
 [the design proof](../../../.orchestrate/evidence/SHOWCASE/design-proof/lookout-rim.md), which is arithmetic on the generator
 and not a GPU run.
 
@@ -241,13 +241,13 @@ landing:
 - The layout is regenerated on the new terrain and passes the layout check. A prop keeps its place where the
   ground under it did not change.
 - **Root pins.** Every file in `examples/v1-game/routes/` names the cooked root it was made for. The rule is
-  by what a file pins, not by a list: each one that names the old valley root or the old exit root when M9
+  by what a file pins, not by a list: each one that names the old valley root or the old exit root when WP9
   starts takes its new root, and its generation if that moved, and changes in nothing else. Keys, phase and
   checkpoints stay. The valley's root is pinned by `moving-v1.json`, `culling-fast-yaw.json`,
   `effect-state.json` and `effect-after-opaque.json`, which are other modules'. The exit's is pinned by this
-  module's `exit-flythrough.json` and `exit-held.json`, and by `exit-fast-yaw.json`, which M6 adds for its
+  module's `exit-flythrough.json` and `exit-held.json`, and by `exit-fast-yaw.json`, which WP6 adds for its
   frame-edge inspection. A route left on an old root stops before its first frame with `runtime route cooked
-  root mismatch`, and nothing M9 runs plays the fast yaw, so M9.7 counts the files at M9's starting commit. The
+  root mismatch`, and nothing WP9 runs plays the fast yaw, so WP9.7 counts the files at WP9's starting commit. The
   launcher's calibrated root is the only other pin today. The rule "only the pin" is about a file that holds
   a pin. It says nothing against the next bullet.
 - **`APPLE-TILE`'s references.** The retained references that moved, images and manifests, are regenerated by
@@ -268,17 +268,17 @@ landing:
   [What a route check must have compared](#what-a-route-check-must-have-compared) says what the two checks
   gain in this landing.
 - **Culling.** The occluding mesh, the layout and the exit root are new, so
-  [M6's comparison is made again](#culling-on-the-assembled-scene) on them.
+  [WP6's comparison is made again](#culling-on-the-assembled-scene) on them.
 
 **How it is proved.** By eye on the Mac, in fixed captures with TAAU on, which is how the gate that asked for
 the fix will judge it: the sunset stop, views 20° either side of it, and that view held from 17.2 to 17.8 h,
 where the earlier sweep found the step largest; and the sunrise stop. The route checks compare the Mac with
-Chrome at all six stops, so Chrome gets no inspection of its own here; `ATMOSPHERE` M6 judges it there, with
+Chrome at all six stops, so Chrome gets no inspection of its own here; `ATMOSPHERE` WP6 judges it there, with
 motion. Culling is the exception to "by eye": an object wrongly hidden as it clears the new lip would vanish
 alike on both targets and from both baselines, so it is proved by equality with Direct. While the terrain is
 open the builder looks at the six stops for any other entry of
 [`ATMOSPHERE`'s list](../ATMOSPHERE/DESIGN.md#closing-g3s) whose cause is the terrain's mesh, fixes it in the
-same regeneration, and records in the log the ones whose cause is not, for M6. The bar is that module's: time
+same regeneration, and records in the log the ones whose cause is not, for WP6. The bar is that module's: time
 of day as in Red Dead Redemption 2 or Horizon Forbidden West.
 
 ### The route check sees a missing prop
@@ -288,12 +288,12 @@ a thin scatter of small props could vanish on one target and stay under the thre
 third control beside the diagnostic scene and the retinted texture: the same store drawn with no entities must
 fail at every stop that has entities in view. If it does not, the metric goes back to design (a finer grid) and is
 not tuned to pass. Thresholds are set once for the exit store's root by the route decision's fixed rule. The exit
-has its own baseline file; the bare valley's check and baseline are untouched until M9.
+has its own baseline file; the bare valley's check and baseline are untouched until WP9.
 
 <a id="what-a-route-check-must-have-compared"></a>
 
-**What a route check must have compared (M9).** Two gaps in the checks as built would let M9's recalibration
-pass on less than it claims. M9 closes both in the launcher, and
+**What a route check must have compared (WP9).** Two gaps in the checks as built would let WP9's recalibration
+pass on less than it claims. WP9 closes both in the launcher, and
 [the route decision](../../design/decisions/G7-SHOWCASE-ROUTE.md) takes the same two changes with the new hour.
 
 - **A control is drawn at its stop's hour and pose.** The negative control is the diagnostic scene, the page
@@ -311,22 +311,22 @@ pass on less than it claims. M9 closes both in the launcher, and
   another identity. The bare valley's does not: its comparison returns `other identity` or `absent` before
   reading a grid, and the check counts a baseline failure only when the status is `compared`. A baseline
   whose frame-source version differed would pass unread. The canonical check is `check` with the checked-in
-  source and baseline and without `--recalibrate` or `--save-baseline`. From M9 it fails unless the status is
+  source and baseline and without `--recalibrate` or `--save-baseline`. From WP9 it fails unless the status is
   `compared` and all six stops on each target are under the thresholds. A run on another source or a scratch
   baseline, `--recalibrate` and `--save-baseline` behave as before: there another identity is information, or
   the thing being replaced.
 
 **Replacing the exit baseline.** `check --exit --save-baseline` is the first calibration and nothing else: it
 refuses to run while a baseline exists, and with the file deleted it would compute the thresholds again. A
-reviewed change that moves a stop, as `ATMOSPHERE` M10's shadow correction may, needs a refresh, which the
+reviewed change that moves a stop, as `ATMOSPHERE` WP10's shadow correction may, needs a refresh, which the
 launcher gains the first time one is needed. The refresh requires the existing baseline and refuses a run whose
 identity (comparator, frames, cooked root and presets) differs from the saved one. It judges parity and the
 three controls by the saved thresholds, and replaces the grids only when all pass. It keeps the identity and the
 thresholds, and writes into the baseline file a record of the refresh: the cause, the builds before and after,
 and for each target and stop how far the grid moved, marking those over the thresholds. The cause and the old
-and new file hashes go in the log. From M7 the same refresh serves each row's baseline.
+and new file hashes go in the log. From WP7 the same refresh serves each row's baseline.
 
-**Three rows, one encoding (M7).** The rows are compared as 8-bit sRGB submitted output after tone mapping,
+**Three rows, one encoding (WP7).** The rows are compared as 8-bit sRGB submitted output after tone mapping,
 before display: T2's `sdr` source in Chrome and on the Mac's portable row. The Apple row keeps EDR selected and
 is captured at headroom 1, where
 [`APPLE-PRESENTATION`'s EDR transform](../APPLE-PRESENTATION/DESIGN.md#the-edr-transform-and-its-h--1-identity-m6)
@@ -337,53 +337,53 @@ headroom. If a row cannot give this encoding, that is a proposal in the log, not
 
 ### Culling on the assembled scene
 
-`CULLING` closed on the scenes that existed and left this rerun here. M6 runs its equality command on the exit
+`CULLING` closed on the scenes that existed and left this rerun here. WP6 runs its equality command on the exit
 scene: Frustum and Occlusion with Sun-caster culling against bucket-ordered Direct, at every submitted frame of
 the flythrough with movers moving, on both recipes, and at checkpoints in Chrome. The default is set by
 `CULLING`'s rule from paired rows in two runs. This module changes no culling code.
 
 **The comparison is of one cooked root.** Equality says nothing was wrongly hidden by the geometry it ran on.
 The Metal oracle is an ignored test that only the launcher's `culling` command runs, so `./dev check` does not
-repeat it, and the command refuses a store whose root is not the one the flythrough pins. M9 changes the
+repeat it, and the command refuses a store whose root is not the one the flythrough pins. WP9 changes the
 occluding mesh, the layout and the exit root, and neither a layout check nor a comparison of the Mac with
-Chrome compares a culled draw with Direct. So M9 runs M6's two equality commands again, on both Mac recipes
-and in Chrome, with its own receipts beside M6's. M6's receipts stay as they are, the record for the root
-they name. Nothing else of M6 is repeated: the default is a cost choice already made, and motion on the changed
-valley is judged in `ATMOSPHERE` M6 and in M8. The same holds for any later landing that changes the exit
-root, such as content regenerated to fit the frame in M7. The exit record's culling clause cites the receipts
-whose cooked root is the one the claimed commit cooks, and M8.8 asks for that.
+Chrome compares a culled draw with Direct. So WP9 runs WP6's two equality commands again, on both Mac recipes
+and in Chrome, with its own receipts beside WP6's. WP6's receipts stay as they are, the record for the root
+they name. Nothing else of WP6 is repeated: the default is a cost choice already made, and motion on the changed
+valley is judged in `ATMOSPHERE` WP6 and in WP8. The same holds for any later landing that changes the exit
+root, such as content regenerated to fit the frame in WP7. The exit record's culling clause cites the receipts
+whose cooked root is the one the claimed commit cooks, and WP8.8 asks for that.
 
 ### Frame records, startup and hitches
 
-- **Unattended (M7).** With capture off, the frame host's completed samples over the flythrough and one full day
+- **Unattended (WP7).** With capture off, the frame host's completed samples over the flythrough and one full day
   cycle, per row: CPU stages, GPU passes by name and the callback interval, with build and load. Every frame that
   missed its opportunity is listed with its duration, its place on the route or in the day and what its
   investigation found. Startup to the first exit-scene frame is a labelled proxy.
-- **What an investigation can end in.** M7's records are taken while other builders work. The investigation
+- **What an investigation can end in.** WP7's records are taken while other builders work. The investigation
   reads the late frame's own stage and pass times, its neighbours and the load. Where a stage or pass of the
   engine's or the page's accounts for the delay, that is its **cause**, and it is fixed or proposed to its owning
   module. Where the record shows the delay lay outside the game, it says how. Where the frame's own work was
   ordinary and the time went between callbacks, the record shows the gap and cannot say whose it was: the frame
-  is listed as **unresolved under load**, with the evidence read, and carried to M8. Load is never a cause by
-  itself. It is the reason a cause could not be established. M8.13 answers every carried frame from the sitting
+  is listed as **unresolved under load**, with the evidence read, and carried to WP8. Load is never a cause by
+  itself. It is the reason a cause could not be established. WP8.13 answers every carried frame from the sitting
   with the other builders paused: it did not recur at that place, or it recurred and gets a cause there.
-- **On the built-in display (M8, attended setup).** The Mac's presented-time witness, as `PLATFORM-RUNTIME-MAC`
+- **On the built-in display (WP8, attended setup).** The Mac's presented-time witness, as `PLATFORM-RUNTIME-MAC`
   qualifies it, over the flythrough on both recipes with capture off, and windowed startup. For Chrome, the page's
   frame-callback intervals in a visible window. No presented-time witness exists for Chrome, and the record says
   so.
-- **Tripwire.** A row about a quarter slower than M5's baseline at the same stop is investigated (brief decision
+- **Tripwire.** A row about a quarter slower than WP5's baseline at the same stop is investigated (brief decision
   3). No figure is a gate.
 
 ### Motion on a shared machine
 
-M5's first review failed its two motion items on real-time takes: a held image for 49.81 ms and a step after
+WP5's first review failed its two motion items on real-time takes: a held image for 49.81 ms and a step after
 an 86.31 ms gap on the Mac, and a 92.8 ms gap in Chrome, every submitted image retained
-([review](../../../.orchestrate/evidence/SHOWCASE/M5-review.md)). The follow-up found two different things
-([diagnostics](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.md)).
+([review](../../../.orchestrate/evidence/SHOWCASE/WP5-review.md)). The follow-up found two different things
+([diagnostics](../../../.orchestrate/evidence/SHOWCASE/WP5-motion-diagnostics.md)).
 
 - **A shadow that blinks on, in the renderer.** A dark strip appears on the Mac between committed ticks 233
   and 234 with every tick submitted. It is `ATMOSPHERE`'s, fixed by its M10
-  ([what the caster height map holds](../ATMOSPHERE/DESIGN.md#what-the-caster-height-map-holds)), which M5
+  ([what the caster height map holds](../ATMOSPHERE/DESIGN.md#what-the-caster-height-map-holds)), which WP5
   waits for.
 - **Whole-frame gaps, from the machine.** Complete takes still held gaps: 121.8 and 176.1 ms in Chrome, 54 and
   70 ms on the Mac, and gaps with capture off as well. Every arm was taken while other builders compiled and
@@ -393,12 +393,12 @@ an 86.31 ms gap on the Mac, and a 92.8 ms gap in Chrome, every submitted image r
 
 So motion is proved in two parts, and the project's rule for timing decides which part can fail a milestone.
 
-1. **What the engine draws at each tick is judged, and gates.** M5.8 and M5.9 judge tick-by-tick sequences.
+1. **What the engine draws at each tick is judged, and gates.** WP5.8 and WP5.9 judge tick-by-tick sequences.
    On the Mac every world tick is submitted exactly once. In Chrome a due tick can be deferred to the next
    callback under load, so a judge reads the source ticks and judges the runs that advance one at a time, as
    **Chrome** below says. What such a sequence draws at a tick is the same whatever the machine is doing, so a
    pop, a jump, a mover through terrain or a shadow that blinks is the engine's and is a finding.
-2. **How evenly real time delivers those frames is recorded, and does not gate before M8.** M5.11 keeps
+2. **How evenly real time delivers those frames is recorded, and does not gate before WP8.** WP5.11 keeps
    real-time takes on both targets with capture-off arms back to back, their timelines and the load. Its
    check fails on a record of another build or of other capture scripts, on a missing arm or field, on an arm
    whose world stopped early,
@@ -414,7 +414,7 @@ So motion is proved in two parts, and the project's rule for timing decides whic
   with `THRUM_CAPTURE_ROUTE`). It gives the world a synthetic time one tick on from the last, at a chosen phase,
   reads T2's submitted-image tap, and refuses a step that did not submit exactly one fresh tick. It logs every
   routed tick with its submission, and today keeps pixels only at a route's named checkpoints.
-- **Windows.** M5 extends the recorder to keep the submitted image of every tick inside **windows**, runs of
+- **Windows.** WP5 extends the recorder to keep the submitted image of every tick inside **windows**, runs of
   consecutive routed ticks that the caller names, each image with the identity a checkpoint has. A take's span
   comes from its log: one line for each routed tick, in order, at one phase. A judge names its own windows, so
   no stretch of a take is the builder's choice alone. The route slice built this recorder and other modules'
@@ -445,18 +445,18 @@ tracked file there that builds, launches, drives or observes an arm: the files u
 `examples/v1-game/` (which holds the routes and the capture page), `scripts/` and `.cargo/`, and `Cargo.toml`,
 `Cargo.lock` and `rust-toolchain.toml`. `scripts/` is taken whole and not as a list of today's helpers, because
 the launcher and the two capture drivers import across it and a list would miss the next helper. `motion --check`
-computes that digest again from the checkout it runs in, without building, and fails when it differs. M5.11's
+computes that digest again from the checkout it runs in, without building, and fails when it differs. WP5.11's
 `reads` lists exactly those paths and the two records the check compares, so a pass is not reused once one of
 them changes: the digest and the reuse of a pass cover the same files. Other modules land changes to those paths
 most hours, and a record cannot outlive one. So the arms are the milestone's last act, taken on a branch that
 already holds main, and landed with nothing else. If another landing gets in first, the check fails on main and
 the six arms, a few minutes of takes, are taken again. Nothing else is proved twice.
 
-In M5, M6 and M7 a reviewer who sees a step in a real-time take reads the take's timeline first. A step the
+In WP5, WP6 and WP7 a reviewer who sees a step in a real-time take reads the take's timeline first. A step the
 elapsed time between two submissions accounts for is a recorded gap. A step it does not account for, or
-content that differs from the tick-by-tick capture of the same tick, is a finding. A late frame in M7's frame
+content that differs from the tick-by-tick capture of the same tick, is a finding. A late frame in WP7's frame
 records is handled as [Frame records, startup and hitches](#frame-records-startup-and-hitches) says. Stutter at
-1x is judged in M8.2 and M8.5, and on the built-in display in M8.6 and M8.7. M8 is this module's last milestone,
+1x is judged in WP8.2 and WP8.5, and on the built-in display in WP8.6 and WP8.7. WP8 is this module's last milestone,
 so its real-time takes and frame records, the two attended ones included, are made in the sitting the project
 settings give a last milestone, with the other builders paused.
 
@@ -476,9 +476,9 @@ owner's page and is not edited.
 
 ### Check that it can work
 
-- **Cost.** `CULLING` M2 measured the mixed-mesh field, 100,513 instances with Sun shadows at 1920×1080: whole-GPU
+- **Cost.** `CULLING` WP2 measured the mixed-mesh field, 100,513 instances with Sun shadows at 1920×1080: whole-GPU
   p50 48.7 ms with Frustum in the open and 108 ms Direct, contended
-  ([record](../../../.orchestrate/evidence/CULLING/M2.md)). A tenth of the instances at that mesh mix predicts about 5 ms, close
+  ([record](../../../.orchestrate/evidence/CULLING/WP2.md)). A tenth of the instances at that mesh mix predicts about 5 ms, close
   to the 8.33 ms interval before terrain, sky and reconstruction. So the sweep comes first, on stand-in meshes.
 - **Size on screen.** At 1080p and a 46° field of view a pixel spans about 0.74 mrad. A 1 m prop is under two
   pixels beyond 700 m; a 20 m balloon is still five pixels at 5 km. Small props stay near, and movers can fill the
@@ -507,24 +507,24 @@ before it trusts any frame.
 
 ## Exact baselines
 
-- No registered exact baseline moves, except in M9. There the terrain changes, so all five registered sets are
-  expected to move, and M9 refreshes them in its own landing under
+- No registered exact baseline moves, except in WP9. There the terrain changes, so all five registered sets are
+  expected to move, and WP9 refreshes them in its own landing under
   [the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix), and moves them into the game's test fixtures
   under [the relocation ruling](../ARCHITECTURE.md#ruling-on-relocated-references). In every other milestone the valley's source
   root, the grid and field contents and the default output stay as they are.
 - Every landing here changes covered paths, so every milestone carries a verifier item. It passes from the
   main-branch check `exact-images`, which runs on main after the merge
   ([why](../ARCHITECTURE.md#proofs-run-once-on-main)). No builder runs the verifier before a merge.
-- This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in M5 and
-  extended to one per row in M7. `ATMOSPHERE` M10 takes a balloon's false strip off the far ground, so the
-  exit's may be replaced once in M5 for that cause, by
-  [the refresh](#the-route-check-sees-a-missing-prop), which keeps its identity and thresholds. M9 calibrates
+- This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in WP5 and
+  extended to one per row in WP7. `ATMOSPHERE` WP10 takes a balloon's false strip off the far ground, so the
+  exit's may be replaced once in WP5 for that cause, by
+  [the refresh](#the-route-check-sees-a-missing-prop), which keeps its identity and thresholds. WP9 calibrates
   both again for the new roots, and from then the bare valley's canonical check fails without its baseline.
 
 ## Limits for every milestone
 
 - **Nothing that exists changes.** With the exit scene unselected, every existing configuration prepares, steps
-  and draws exactly as before, because exact baselines pin them. If one does not, stop and fix that first. M9
+  and draws exactly as before, because exact baselines pin them. If one does not, stop and fix that first. WP9
   is the one exception, for the terrain and the sunrise hour alone.
 - **Another module's comparison is not edited.** If a change fails an exact test, a baseline or a witness
   another module owns, write the proposal in the log and end `BLOCKED`
@@ -536,7 +536,7 @@ before it trusts any frame.
   so that two copies cannot disagree.
 - **Entities stay as V1 has them.** A mover that needs to turn, or a prop that needs a texture or a level of
   detail, is a proposal in the log and not work here.
-- **M6 and M9 change no culling code or comparison.** If equality fails, stop and diagnose. Never widen a
+- **WP6 and WP9 change no culling code or comparison.** If equality fails, stop and diagnose. Never widen a
   comparison. A landing that changes the exit root runs the two equality commands on the new root and keeps
   earlier receipts as they are.
 - **No parity threshold is tuned.** If a control does not fail as it must, the metric comes back to this design.
@@ -545,40 +545,40 @@ before it trusts any frame.
 
 ## Risks
 
-1. **The frame does not fit.** Early sign: M5's sweep. Fallback: lighter meshes or fewer props near the lookout,
+1. **The frame does not fit.** Early sign: WP5's sweep. Fallback: lighter meshes or fewer props near the lookout,
    by regenerating; then a level-of-detail proposal to `CULLING`.
-2. **Distant props shimmer under reconstruction.** Early sign: M5's flythrough crops. Fallback: shorter placement
+2. **Distant props shimmer under reconstruction.** Early sign: WP5's flythrough crops. Fallback: shorter placement
    distances per kind.
-3. **Props are lit or hazed unlike the terrain.** Early sign: M5's stills at low Sun. It is an integration defect
+3. **Props are lit or hazed unlike the terrain.** Early sign: WP5's stills at low Sun. It is an integration defect
    for `ATMOSPHERE` or the forward pass, handled as above.
 4. **A row falls back silently.** Mitigation: the resolved report and a control with one selection removed.
 5. **Shared files move under the builder.** `scripts/run_v1_showcase.py` and the game's sources are edited by
    other modules. Integrate sequentially. After a rebase, rerun only what the script says failed.
-6. **The built-in display is not free when M8 is ready.** Its two attended items are done in one sitting, batched
+6. **The built-in display is not free when WP8 is ready.** Its two attended items are done in one sitting, batched
    with other modules' attended items.
 
 ## Proof and builder handoff
 
 - **Targets.** `mac-metal` on both recipes, and `chrome-webgpu`. The iPhone simulator is not a row.
-- **Capture.** T2 engine capture on the Mac and in Chrome: `fixed` for stops, checkpoints and M5's tick-by-tick
-  motion, which on the Mac comes from the native route recorder; `realtime` for M5.11's record and for motion
-  from M6 on. [Motion on a shared machine](#motion-on-a-shared-machine) says how each is produced and read.
+- **Capture.** T2 engine capture on the Mac and in Chrome: `fixed` for stops, checkpoints and WP5's tick-by-tick
+  motion, which on the Mac comes from the native route recorder; `realtime` for WP5.11's record and for motion
+  from WP6 on. [Motion on a shared machine](#motion-on-a-shared-machine) says how each is produced and read.
   Frame records are taken with capture off.
 - **Reaching the targets.** A Mac GPU run holds the `gpu` lock and a run that starts Chrome holds `chrome`. The
   project runs Codex with `danger-full-access`, so Chrome and Instruments start without an approval. A reviewer
   takes its own captures and never judges the builder's in place of them. If a reviewer cannot start a target,
   the review moves to Claude.
-- **Attended setup.** Two items in M8 need the built-in display unlocked and awake. The agent runs and reviews;
+- **Attended setup.** Two items in WP8 need the built-in display unlocked and awake. The agent runs and reviews;
   the owner does nothing else. Console state is recorded and is never a pass condition elsewhere.
 - **Storage.** Scratch in `tmp/showcase-<milestone>/`; selected evidence in `.orchestrate/evidence/SHOWCASE/`.
 
 ## Open questions
 
-- Whether Occlusion or Frustum is the exit scene's default. M6's paired rows settle it.
-- Whether the frame holds the refresh interval under the full exit configuration. M7's records settle it; the
+- Whether Occlusion or Frustum is the exit scene's default. WP6's paired rows settle it.
+- Whether the frame holds the refresh interval under the full exit configuration. WP7's records settle it; the
   remedy is content, by regenerating.
 - How long a day-cycle sweep runs, and what its captures may store. The exit scene has a solar-time control and
-  no sweep yet. M7 builds the sweep for its capture-off records, which store no images. M8's real-time day-cycle
+  no sweep yet. WP7 builds the sweep for its capture-off records, which store no images. WP8's real-time day-cycle
   takes run longer than T2's four-second case, so before the first one its builder writes the storage record
   [T2's design](../T2-CAPTURE/DESIGN.md) asks of a longer session: extent, duration, expected peak from the
-  bytes M5's takes measured for each frame, the excerpts kept and the expiry.
+  bytes WP5's takes measured for each frame, the excerpts kept and the expiry.

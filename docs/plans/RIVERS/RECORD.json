@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/RIVERS/design-review.md",
     "commit": "dbfa0a6c05eb9deb8173ce2f41039647e23555e2",
-    "hash": "d5522527c2df01dcc88ab0866598f4117d22665724432f933d58b0d5698be441",
+    "hash": "9249a03d7d673ea33ae87d29d9063ecaa0c0f428373ca16a1e864e31a0708559",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,31 +23,31 @@
     },
     "at": "2026-11-24T01:16:23Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "f63eaadb53b968de03c89af930b3b872e62e343902a804158d9e4139212c6bd4",
+  "work_packages": {
+    "WP1": {
+      "definitions": "f8760967368a27a44757d08b8d641911d4cade846c2a683787b1e71383660c13",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "675559d187c83f33e88da48476cd8f3e76dcb554",
-          "review": ".orchestrate/evidence/RIVERS/M1-review-1.md",
+          "review": ".orchestrate/evidence/RIVERS/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "fail",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "fail",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass"
           },
           "findings": [
             {
               "name": "accepts_solve_after_step_budget",
-              "item": "M1.5",
+              "item": "WP1.5",
               "repeat": false
             }
           ],
@@ -71,19 +71,19 @@
         {
           "verdict": "pass",
           "commit": "56707f30c87701a930140dd34cf9fc9e43bf0220",
-          "review": ".orchestrate/evidence/RIVERS/M1-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -149,31 +149,31 @@
       "done": {
         "by": "review",
         "commit": "56707f30c87701a930140dd34cf9fc9e43bf0220",
-        "review": ".orchestrate/evidence/RIVERS/M1-review.md",
+        "review": ".orchestrate/evidence/RIVERS/WP1-review.md",
         "checked": "4d6d9f89ed1fccd4f78dbc11b6b37564318de062",
         "at": "2026-11-16T07:45:36Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "d8a54e5d18706ea5c2e5b0ba1bf0be68af086595cf6bfa397b279722a7186662",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "63eba4ef428b8193abe2e3bc2149e6c9acde028f",
-          "review": ".orchestrate/evidence/RIVERS/M2-review-1.md",
+          "review": ".orchestrate/evidence/RIVERS/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "fail",
-            "M2.6": "pass",
-            "M2.7": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "fail",
+            "WP2.6": "pass",
+            "WP2.7": "pass"
           },
           "findings": [
             {
               "name": "plunge_skips_shoreline_intersection",
-              "item": "M2.5",
+              "item": "WP2.5",
               "repeat": false
             }
           ],
@@ -197,15 +197,15 @@
         {
           "verdict": "pass",
           "commit": "3aa8a5de45e63a8b2dea94d31d8469b3ff6c65eb",
-          "review": ".orchestrate/evidence/RIVERS/M2-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -266,32 +266,32 @@
       "done": {
         "by": "review",
         "commit": "3aa8a5de45e63a8b2dea94d31d8469b3ff6c65eb",
-        "review": ".orchestrate/evidence/RIVERS/M2-review.md",
+        "review": ".orchestrate/evidence/RIVERS/WP2-review.md",
         "checked": "5d75d02190ce60aa5047cadb0f9f151b7fa023d7",
         "at": "2026-11-16T16:57:13Z"
       }
     },
-    "M3": {
-      "definitions": "e7e8bb7bef311903d14219273122920582e407d07b02ff613ede60f49daacbd5",
+    "WP3": {
+      "definitions": "aa51a5e0278519852957041b92b65a6e1b26ea552b17f549078c8986a9ebfbf0",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "427b695e08a4e547fac7ce3e89724a159baf984c",
-          "review": ".orchestrate/evidence/RIVERS/M3-review-1.md",
+          "review": ".orchestrate/evidence/RIVERS/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "fail",
-            "M3.3": "pass",
-            "M3.8": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "fail",
+            "WP3.3": "pass",
+            "WP3.8": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass"
           },
           "findings": [
             {
               "name": "chart source gauge is refused",
-              "item": "M3.2",
+              "item": "WP3.2",
               "repeat": false
             }
           ],
@@ -315,16 +315,16 @@
         {
           "verdict": "fail",
           "commit": "a16ce632ccd1cb67e33482cf89022547553421c4",
-          "review": ".orchestrate/evidence/RIVERS/M3-review-2.md",
+          "review": ".orchestrate/evidence/RIVERS/WP3-review-2.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.8": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.8": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass"
           },
           "findings": [
             {
@@ -352,16 +352,16 @@
         {
           "verdict": "pass",
           "commit": "7367aeb5dca06dea4144a820770b9c66a8afcd0d",
-          "review": ".orchestrate/evidence/RIVERS/M3-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.8": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.8": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -425,13 +425,13 @@
       "done": {
         "by": "review",
         "commit": "7367aeb5dca06dea4144a820770b9c66a8afcd0d",
-        "review": ".orchestrate/evidence/RIVERS/M3-review.md",
+        "review": ".orchestrate/evidence/RIVERS/WP3-review.md",
         "checked": "7c19c82947ea94464ff637340fa3a605d535cb42",
         "at": "2026-11-17T06:07:46Z"
       }
     },
-    "M4": {
-      "definitions": "da37b19257c7ee794a9a0516e6efb0d90ae26a5ee27d6cffd1d992d7d03a178b",
+    "WP4": {
+      "definitions": "f56b84107b65bc03c757f97451f9518323ac2d40bcaf1542552a24672a4d4272",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -439,8 +439,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M5": {
-      "definitions": "98c453a8d8e0f6b6910aa4266a86b7af7c464baaeb8170020be46a417dfb91ae",
+    "WP5": {
+      "definitions": "badab01b6c95780b805f72b9d39567a5162a22c6d3b35ced36d68360002dc9e1",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -448,8 +448,8 @@
         "at": "2026-11-18T05:20:57Z"
       }
     },
-    "M6": {
-      "definitions": "c917f1f5c86bc3dedb2635793ab7b9cf1806c7f270524790092b7608900018fe",
+    "WP6": {
+      "definitions": "3ec14f42467ccd430201487baf75c8daa305ad600546b22903861bf8e91ac81b",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -457,8 +457,8 @@
         "at": "2026-11-18T03:31:43Z"
       }
     },
-    "M7": {
-      "definitions": "8641c7d17ff7397051804a57ed0a77b6b37dd57224df0cf8df41fa36f169503a",
+    "WP7": {
+      "definitions": "f6c9e2721473e8730b8091f8f2dea719043c0a67ea9779515fe1e4960476d022",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -467,25 +467,25 @@
       },
       "ends_stretch": true
     },
-    "M8": {
+    "WP8": {
       "definitions": "c2e23b74b53c81a3bf18789b01eaf063234319c47f77ac04ac3ca4c07f9b9b51",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "1dd2255411674c579fa2a3d4a2a2b7999c2d7b52",
-          "review": ".orchestrate/evidence/RIVERS/M8-review-1.md",
+          "review": ".orchestrate/evidence/RIVERS/WP8-review-1.md",
           "items": {
-            "M8.1": "fail"
+            "WP8.1": "fail"
           },
           "findings": [
             {
               "name": "Lip wetting coincides with the sample midpoint",
-              "item": "M8.1",
+              "item": "WP8.1",
               "repeat": false
             },
             {
               "name": "Sheet growth is sampled at the landing",
-              "item": "M8.1",
+              "item": "WP8.1",
               "repeat": false
             }
           ],
@@ -509,9 +509,9 @@
         {
           "verdict": "pass",
           "commit": "8f996927d38dfd78d0bff18e67abdf07ff2edd8f",
-          "review": ".orchestrate/evidence/RIVERS/M8-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP8-review.md",
           "items": {
-            "M8.1": "pass"
+            "WP8.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -542,7 +542,7 @@
         "at": "2026-11-23T12:56:49Z",
         "reused": [
           "Test command",
-          "M8.1"
+          "WP8.1"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -569,21 +569,21 @@
       "done": {
         "by": "review",
         "commit": "8f996927d38dfd78d0bff18e67abdf07ff2edd8f",
-        "review": ".orchestrate/evidence/RIVERS/M8-review.md",
+        "review": ".orchestrate/evidence/RIVERS/WP8-review.md",
         "checked": "758b8e06ec205dc67e8a1f875b8ebb7d35120f8f",
         "at": "2026-11-23T12:58:47Z"
       }
     },
-    "M9": {
+    "WP9": {
       "definitions": "8c5e600d306d11a6bb4241752fb0b92a5e92e145a29e9a4b7daf78438816a495",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "a472716d90075ca7ceb205e48bbd86679658b516",
-          "review": ".orchestrate/evidence/RIVERS/M9-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP9-review.md",
           "items": {
-            "M9.1": "pass",
-            "M9.2": "pass"
+            "WP9.1": "pass",
+            "WP9.2": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -640,13 +640,13 @@
       "done": {
         "by": "review",
         "commit": "a472716d90075ca7ceb205e48bbd86679658b516",
-        "review": ".orchestrate/evidence/RIVERS/M9-review.md",
+        "review": ".orchestrate/evidence/RIVERS/WP9-review.md",
         "checked": "65ebd23f1386e03c66ec04d892dc99132643187c",
         "at": "2026-11-24T02:10:27Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as part of the one water system, at the quality of shipped high-end games. The owner, 14 Nov 2026: 'Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.'",
       "at": "2026-11-14T11:06:55Z"
@@ -823,7 +823,7 @@
       },
       "at": "2026-11-18T05:23:05Z",
       "items_owed": [
-        "M8"
+        "WP8"
       ]
     },
     {
@@ -849,7 +849,7 @@
       },
       "at": "2026-11-23T12:31:50Z",
       "items_owed": [
-        "M9"
+        "WP9"
       ]
     }
   ]

@@ -1,6 +1,6 @@
 # Web shell: the engine carries the browser platform runtime (G3b)
 
-8 November 2026. Moved from the web shell plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape. The web shell was designed, built and reviewed before the loop, so this module has no done-when file; [the record](../../../.orchestrate/evidence/PLATFORM-RUNTIME-WEB/M1-record.md) holds what was accepted and [the log](LOG.md) the reviews. The sections below are unchanged.
+8 November 2026. Moved from the web shell plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape. The web shell was designed, built and reviewed before the loop, so this module has no done-when file; [the record](../../../.orchestrate/evidence/PLATFORM-RUNTIME-WEB/WP1-record.md) holds what was accepted and [the log](LOG.md) the reviews. The sections below are unchanged.
 
 Family design: [PLATFORM-RUNTIME.md](../../design/modules/PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation),
 contracts [C02](../../design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world),
@@ -125,7 +125,7 @@ classified by what it touches:
 | Material reload (`dev-material`) | Refused by the facade with `graphics device is lost`, checked through `graphics_lost()`. A request outstanding at loss is still retired, and the accepted hook is restored on the replacement device, as now | **Changes.** Today the request compiles synchronously on the lost device (`material.rs` `request` → `Candidate::prepare`), then is retired at publication |
 | Cooked valley attach | Deferred. While lost, `set_scene_contribution` holds the contribution (a later attach replaces it), and the shell attaches it right after publishing the replacement device, before its first encode. `publish_device` installs free slots, so the no-frames-in-flight check passes. A refusal there is reported in the cooked loader errors (`cooked_status`), where the page and checker already look for cooked failures | **Changes.** Today it rebuilds resources on the lost device at once (`runtime.rs` `set_scene_contribution`). That makes GPU calls while lost; the page attaches before RAF starts, so no refusal occurs today |
 
-The two changes land first, on today's facade, with their checker witnesses (M1, first work item). The extraction
+The two changes land first, on today's facade, with their checker witnesses (WP1, first work item). The extraction
 then carries them unchanged.
 
 **Report fields.** `WebStatus` carries every field `report()` and the facade read today: adapter name, surface format,
@@ -136,7 +136,7 @@ is bounded by `FRAMES` (600) and exposes that bound for `complete()`.
 
 **Cost.** The frame step is the same code, moved and made generic, and is monomorphized for the one runtime. The two
 `WebWorld` calls happen on play-state changes, not per frame. There is no new allocation, indirection or copy per
-frame. The Wasm size change is recorded in M1, and should be near zero.
+frame. The Wasm size change is recorded in WP1, and should be near zero.
 
 **Placement.** A `web` module in `thrum-app`, compiled only for `wasm32` (Thrum Core's ruling, 8 November). A game
 author then finds both shells in one crate, they share the counter vocabulary, and the architecture

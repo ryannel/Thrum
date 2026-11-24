@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/REVIEW-RENDER/design-review.md",
     "commit": "f30cfedce7e4f64c66b289e45d89ab9a9a3626e7",
-    "hash": "e2ebaff835165d6f8dc17e28adf4a7c614cde66dda8d86475f88d74b451a2f43",
+    "hash": "162f975648de8d74975bb45f252aa1d0cec4e24f620c6c22596c6962810d15ea",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,30 +23,30 @@
     },
     "at": "2026-11-23T15:25:29Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "9aaaf2c52944b0306ca8d5c66c406efba11df4414869fe8387d76b16c38c5502",
+  "work_packages": {
+    "WP1": {
+      "definitions": "a588388e93d21a55d716886fcb669b02396e723fffc2f837af8b0465703f316c",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "c8bcaf11e8ad04cd79302da354c0c795308aae70",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review-1.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "fail",
-            "M1.3": "fail",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "findings": [
             {
               "name": "Sprite presentation loses the timing-capacity fault",
-              "item": "M1.2",
+              "item": "WP1.2",
               "repeat": false
             },
             {
               "name": "A cloud GPU limit is classified as a scene error",
-              "item": "M1.3",
+              "item": "WP1.3",
               "repeat": false
             },
             {
@@ -74,18 +74,18 @@
         {
           "verdict": "fail",
           "commit": "254d9fcbe2fb8167385cf87282926cee810c2dea",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review-2.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review-2.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "fail",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "findings": [
             {
               "name": "A cloud GPU limit is classified as a scene error",
-              "item": "M1.3",
+              "item": "WP1.3",
               "repeat": true
             }
           ],
@@ -109,13 +109,13 @@
         {
           "verdict": "pass",
           "commit": "fabe92c3b3cf684951288167bfd87b0f0a6547fa",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -172,24 +172,24 @@
       "done": {
         "by": "review",
         "commit": "fabe92c3b3cf684951288167bfd87b0f0a6547fa",
-        "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md",
+        "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review.md",
         "checked": "74f4ffcff4ec8c2ae7894f730b3b9356667f8ae6",
         "at": "2026-11-19T19:22:05Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "5abc9436de997d7c5d0e4218bb1d19ac5ed3ce63fb9629f9f8344c82cda81331",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "c6153dabcaa4280e3f9a37d6fe74ebbe4cc5452f",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review-1.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "fail",
-            "M2.3": "pass",
-            "M2.4": "fail",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "fail",
+            "WP2.3": "pass",
+            "WP2.4": "fail",
+            "WP2.5": "pass"
           },
           "findings": [
             {
@@ -198,12 +198,12 @@
             },
             {
               "name": "Vacated cluster records are written as literal byte arrays",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": false
             },
             {
               "name": "Compute dispatch dimensions and other shared constants still have independent shader literals",
-              "item": "M2.4",
+              "item": "WP2.4",
               "repeat": false
             }
           ],
@@ -227,18 +227,18 @@
         {
           "verdict": "fail",
           "commit": "9563a37c3e0920c64ea8e6df76bae0ac6f14eb52",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review-2.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review-2.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "fail",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "fail",
+            "WP2.5": "pass"
           },
           "findings": [
             {
               "name": "Earth profile and luminance parameters remain literal in production shaders",
-              "item": "M2.4",
+              "item": "WP2.4",
               "different": "The earlier dispatch, selector, solar tangent and binding-span sites are fixed. This concerns the Earth density law, night chart altitude and luminance weights used by independent CPU and GPU lighting paths.",
               "repeat": false
             }
@@ -263,18 +263,18 @@
         {
           "verdict": "fail",
           "commit": "015ced3d29b88e1dee5754d935d70ea391e161fe",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review-3.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review-3.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "fail",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "fail",
+            "WP2.5": "pass"
           },
           "findings": [
             {
               "name": "Sky LUT zenith row is hard-coded in the production shader",
-              "item": "M2.4",
+              "item": "WP2.4",
               "different": "The reported Earth density, night altitude, luminance, dispatch, selector, solar tangent and binding-span sites are repaired. This defect is the sky LUT producer\u2019s last-row index, which still embeds the Rust-owned texture height minus one.",
               "repeat": false
             }
@@ -299,13 +299,13 @@
         {
           "verdict": "pass",
           "commit": "2b7fcdd73181a6f916f378a286f4dae50f8a3e90",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -369,24 +369,24 @@
       "done": {
         "by": "review",
         "commit": "2b7fcdd73181a6f916f378a286f4dae50f8a3e90",
-        "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md",
+        "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review.md",
         "checked": "1ef7341f5519814614069ee7c35189bbeccc3c22",
         "at": "2026-11-20T15:12:10Z"
       }
     },
-    "M3": {
+    "WP3": {
       "definitions": "844ad5cf61222109f0a84ee40ff4f16c53510bb13bce9cfea1ec48669372a6ea",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "3fb33c30621763ff1aa3b902f13f2af8c6356819",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review-1.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
@@ -414,13 +414,13 @@
         {
           "verdict": "pass",
           "commit": "83f3709cae0d6591e2076a07cbe24959fa2d79e4",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -458,9 +458,9 @@
         "at": "2026-11-21T15:33:46Z",
         "reused": [
           "Test command",
-          "M3.1",
-          "M3.2",
-          "M3.3"
+          "WP3.1",
+          "WP3.2",
+          "WP3.3"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -488,49 +488,49 @@
       "done": {
         "by": "review",
         "commit": "83f3709cae0d6591e2076a07cbe24959fa2d79e4",
-        "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md",
+        "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review.md",
         "checked": "378646962a0b2f022721e9373328897e11b2a2ff",
         "at": "2026-11-21T15:40:42Z"
       }
     },
-    "M4": {
-      "definitions": "5c573ede36d9cb5606695532a7c60d20c2d60985444ff52a6cec5f28bf7173fa",
+    "WP4": {
+      "definitions": "a91c3d2c51b4edf6ec09a0a5086ef25b21857bc07dbbccb093a3b672f0f5e52e",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "0575578582905065fc635918d829ec35bb226099",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review-1.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review-1.md",
           "items": {
-            "M4.1": "fail",
-            "M4.2": "fail",
-            "M4.3": "pass",
-            "M4.4": "fail",
-            "M4.5": "pass"
+            "WP4.1": "fail",
+            "WP4.2": "fail",
+            "WP4.3": "pass",
+            "WP4.4": "fail",
+            "WP4.5": "pass"
           },
           "findings": [
             {
               "name": "Public renderer trait methods return String errors",
-              "item": "M4.1",
+              "item": "WP4.1",
               "repeat": false
             },
             {
               "name": "V1 converts renderer failures to Debug text before returning FrameError",
-              "item": "M4.4",
+              "item": "WP4.4",
               "repeat": false
             },
             {
               "name": "The frame host discards the native reservation error",
-              "item": "M4.4",
+              "item": "WP4.4",
               "repeat": false
             },
             {
               "name": "Bucket admission merges storage and dispatch limits",
-              "item": "M4.2",
+              "item": "WP4.2",
               "repeat": false
             },
             {
               "name": "A zero sprite row count reports that capacity was exceeded",
-              "item": "M4.2",
+              "item": "WP4.2",
               "repeat": false
             }
           ],
@@ -554,13 +554,13 @@
         {
           "verdict": "pass",
           "commit": "bf4c19d3ec0042b52276890257727caa85e6c18a",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -624,33 +624,33 @@
       "done": {
         "by": "review",
         "commit": "bf4c19d3ec0042b52276890257727caa85e6c18a",
-        "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md",
+        "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review.md",
         "checked": "5968f529acb670f261e66217cc83d7650d70cacf",
         "at": "2026-11-23T23:41:14Z"
       }
     },
-    "M5": {
+    "WP5": {
       "definitions": "d3e62ee2394d4716359d7c1226218b65b9ef0b3cd4eadda63f18324cb3191677",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "d7af8d05b9dfa265216295814e72678fd3b69c57",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review-1.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP5-review-1.md",
           "items": {
-            "M5.1": "fail",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass"
+            "WP5.1": "fail",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass"
           },
           "findings": [
             {
               "name": "Replayed counters can pass validation in a later frame",
-              "item": "M5.1",
+              "item": "WP5.1",
               "repeat": false
             },
             {
               "name": "Submitted capture gathers GPU timestamps with timing demand off",
-              "item": "M5.1",
+              "item": "WP5.1",
               "repeat": false
             }
           ],
@@ -674,12 +674,12 @@
         {
           "verdict": "pass",
           "commit": "7ad46af49b0c8320eafe8c8bfa0c89ffa257e5e7",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP5-review.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -744,20 +744,20 @@
       "done": {
         "by": "review",
         "commit": "7ad46af49b0c8320eafe8c8bfa0c89ffa257e5e7",
-        "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md",
+        "review": ".orchestrate/evidence/REVIEW-RENDER/WP5-review.md",
         "checked": "8c28ea8359fd7a8072601a2fe517df870e4303cf",
         "at": "2026-11-24T05:27:05Z"
       }
     },
-    "M6": {
-      "definitions": "b704dcf22351c40dc5195beadcb7a29a751af83103eb6f0cfc4f0aa1433ae28b",
+    "WP6": {
+      "definitions": "2f00b0b6e63aabf0401e968f7b43af051a3d27367defa520634f69c64a12ec7d",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "058d919b9285a6b17b30a6b4608ac9f0f636eaf4",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M6-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP6-review.md",
           "items": {
-            "M6.1": "pass"
+            "WP6.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -814,13 +814,13 @@
       "done": {
         "by": "review",
         "commit": "058d919b9285a6b17b30a6b4608ac9f0f636eaf4",
-        "review": ".orchestrate/evidence/REVIEW-RENDER/M6-review.md",
+        "review": ".orchestrate/evidence/REVIEW-RENDER/WP6-review.md",
         "checked": "2d41e287199f4826f22bc8cedb6851626bc25e26",
         "at": "2026-11-23T16:27:42Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive that work?\" So the decisions below are made; plan them as buildable milestones, not human decisions.\n\n1) Code review fixes. A whole-repository review is at /Users/ryannel/Workspace/thrum/tmp/code-review-2026-11-14/CODE-REVIEW.md, with slices in sections/ beside it. Copy it into docs/evidence/code-review-2026-11-14/ and plan its fixes. The canonical shapes are already written in .agents/skills/thrum-engineering/references/patterns.md (review step 1); add the review's mechanical repo_check rules. Then follow its order of attack: confirmed bugs first (H01, H09, M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), test support and one GPU gate (T6), one device recipe and host core (T4), error convention (T3), performance (T12), and renames and splits (T9, T10) as one planned architecture milestone, then hygiene (T13). Give each fix to the module that owns the code, or a new module where none does. Modules are cut by isolation and ownership, and each delivers milestone by milestone in order; do not split CLOUDS or WATERS or change their milestones. Sequence work so it does not rewrite files that running builders hold (CULLING M3, APPLE-PRESENTATION M3, APPLE-TILE M10, CREATOR M3, EFFECT-GRAPH M3, ATMOSPHERE M9, CLOUDS M1, WATERS M1); later milestones of those modules may be rebased onto it.\n   H03 decision: no Git history rewrite (it would need a force-push to main under many live worktrees). Plan the forward fix only: bulk media and archives leave the tracked tree under docs/ASSET-LIFECYCLE.md's storage rules (untrack at HEAD, keep selected small evidence), and repo_check stops new bulk binaries being committed. Keep evidence links that reviews depend on resolvable.\n\n2) Separate the game from the engine. Owner: \"it sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as much as we can, it shouldn't even sit in the same code base ideally.\" Today examples/v1-game (26k lines) holds engine host and shell code (host, window, browser, camera, projection, controls), engine qualification rigs (H20), and engine tests compile its source (H02/H13); thrum-cook depends on examples/asset-loop (H19); ARCHITECTURE places CLOUDS and PUDDLES selections in v1-game. Design the end state where the game lives in its own repository and depends only on the engine's public API: engine host/shell code moves into engine crates (also H15/M03), qualification moves into the owning crates or an engine-side harness, shared fixtures move to engine test support, and repo_check enforces the boundary. Stage it: first make the boundary real inside this repository, then move the game out.\n   Repository decision: the game moves to a new local Git repository at /Users/ryannel/Workspace/thrum-games (v1-game now; the swarm game later), with no remote until the owner asks for one. It consumes the engine through Cargo path dependencies on a sibling Thrum checkout, so engine changes surface in the game at once; switching to pinned git revisions is a later step once the engine has releases. The last stage creates that repository, moves the game with its history-free copy, and leaves Thrum with no game code. The upcoming swarm game follows the same shape from the start. V1 still exits through the showcase game, so keep its milestones buildable throughout and say how the V1 gate is verified once the game lives outside.\n\nSay which new milestones can start at once, and which wait for running builders.",
       "at": "2026-11-14T22:15:19Z"
@@ -947,7 +947,7 @@
       },
       "at": "2026-11-18T03:26:25Z",
       "items_owed": [
-        "M6"
+        "WP6"
       ]
     },
     {

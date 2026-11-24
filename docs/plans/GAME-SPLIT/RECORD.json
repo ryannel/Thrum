@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/GAME-SPLIT/design-review.md",
     "commit": "50d57a11fcdae9e5fa2e0b51976d0656d803ab93",
-    "hash": "e9c6d2f165df822a351d525b75c27d0a589b94fffca37cd81b5e546d1a658cb0",
+    "hash": "58baf5e9063cb6d536f1b1b489400528b8e0d736ef66c8e7a9a9b757d369edcf",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,20 +23,20 @@
     },
     "at": "2026-11-14T23:37:07Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "e8e22fde9bfde2917562964e6e7c4f7e8d3a80f924223ef949f1c6a1ed74404a",
+  "work_packages": {
+    "WP1": {
+      "definitions": "6b22d7c84354a5a84eb7b0f5c13e46f5c55558bd67d33d35a0f67e8ffd3e0c34",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "ee839016d61ba3f470ee96e0a9d7638bc03d1e15",
-          "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -101,24 +101,24 @@
       "done": {
         "by": "review",
         "commit": "ee839016d61ba3f470ee96e0a9d7638bc03d1e15",
-        "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md",
+        "review": ".orchestrate/evidence/GAME-SPLIT/WP1-review.md",
         "checked": "55ad64a02f973d165cd274fccf88474dcb2fec56",
         "at": "2026-11-17T08:43:58Z"
       }
     },
-    "M2": {
-      "definitions": "1548a03a19c82b9cbc47321ee1a8f1f3d951af764784010d0abb05e10916fef2",
+    "WP2": {
+      "definitions": "d6e64ac399390cc60532dc75ecab8fe00451cc52d0e75ccceaf33b6e9d272a7a",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "41364eb6b240039339326a52f137312dfc5b11b1",
-          "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -182,13 +182,13 @@
       "done": {
         "by": "review",
         "commit": "41364eb6b240039339326a52f137312dfc5b11b1",
-        "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md",
+        "review": ".orchestrate/evidence/GAME-SPLIT/WP2-review.md",
         "checked": "6f4a72d29c80f8a53a9ea7a194ff3c5cc5ff6bf0",
         "at": "2026-11-19T03:56:16Z"
       }
     },
-    "M3": {
-      "definitions": "d917e080f9d92146d506b846969c4aaf090f99d840778a8a3ece657e179de69c",
+    "WP3": {
+      "definitions": "ba147f6a3f4a449895041cc72a05479c4d7cce43d48a1fda5cd6f637e86a1df4",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -203,8 +203,8 @@
         }
       ]
     },
-    "M4": {
-      "definitions": "596fde9917f50c8db3493735b1667597ea2acc06cd8c368fedc9505c4cb2c81e",
+    "WP4": {
+      "definitions": "25571378eaa7a71d07c683eecb5c32a0c665f307cb2b77302144dd4b03c2cd36",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -212,8 +212,8 @@
         "at": "2026-11-15T22:19:37Z"
       }
     },
-    "M5": {
-      "definitions": "a9812f40dcfbf7be89826260ab8ef2009e0c6c5a6f197426eb952ceb9f020e8e",
+    "WP5": {
+      "definitions": "49d13e9134f54bb7c93bcb6f400e8d390f833d193a482c7079d1187a6d5abce7",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -229,7 +229,7 @@
       ]
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive that work?\" So the decisions below are made; plan them as buildable milestones, not human decisions.\n\n1) Code review fixes. A whole-repository review is at /Users/ryannel/Workspace/thrum/tmp/code-review-2026-11-14/CODE-REVIEW.md, with slices in sections/ beside it. Copy it into docs/evidence/code-review-2026-11-14/ and plan its fixes. The canonical shapes are already written in .agents/skills/thrum-engineering/references/patterns.md (review step 1); add the review's mechanical repo_check rules. Then follow its order of attack: confirmed bugs first (H01, H09, M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), test support and one GPU gate (T6), one device recipe and host core (T4), error convention (T3), performance (T12), and renames and splits (T9, T10) as one planned architecture milestone, then hygiene (T13). Give each fix to the module that owns the code, or a new module where none does. Modules are cut by isolation and ownership, and each delivers milestone by milestone in order; do not split CLOUDS or WATERS or change their milestones. Sequence work so it does not rewrite files that running builders hold (CULLING M3, APPLE-PRESENTATION M3, APPLE-TILE M10, CREATOR M3, EFFECT-GRAPH M3, ATMOSPHERE M9, CLOUDS M1, WATERS M1); later milestones of those modules may be rebased onto it.\n   H03 decision: no Git history rewrite (it would need a force-push to main under many live worktrees). Plan the forward fix only: bulk media and archives leave the tracked tree under docs/ASSET-LIFECYCLE.md's storage rules (untrack at HEAD, keep selected small evidence), and repo_check stops new bulk binaries being committed. Keep evidence links that reviews depend on resolvable.\n\n2) Separate the game from the engine. Owner: \"it sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as much as we can, it shouldn't even sit in the same code base ideally.\" Today examples/v1-game (26k lines) holds engine host and shell code (host, window, browser, camera, projection, controls), engine qualification rigs (H20), and engine tests compile its source (H02/H13); thrum-cook depends on examples/asset-loop (H19); ARCHITECTURE places CLOUDS and PUDDLES selections in v1-game. Design the end state where the game lives in its own repository and depends only on the engine's public API: engine host/shell code moves into engine crates (also H15/M03), qualification moves into the owning crates or an engine-side harness, shared fixtures move to engine test support, and repo_check enforces the boundary. Stage it: first make the boundary real inside this repository, then move the game out.\n   Repository decision: the game moves to a new local Git repository at /Users/ryannel/Workspace/thrum-games (v1-game now; the swarm game later), with no remote until the owner asks for one. It consumes the engine through Cargo path dependencies on a sibling Thrum checkout, so engine changes surface in the game at once; switching to pinned git revisions is a later step once the engine has releases. The last stage creates that repository, moves the game with its history-free copy, and leaves Thrum with no game code. The upcoming swarm game follows the same shape from the start. V1 still exits through the showcase game, so keep its milestones buildable throughout and say how the V1 gate is verified once the game lives outside.\n\nSay which new milestones can start at once, and which wait for running builders.",
       "at": "2026-11-14T22:15:19Z"

@@ -1,6 +1,6 @@
 # iOS runtime: scene extent follows the oriented surface (G3b)
 
-9 November 2026. **Selected design; M7 implementation and independent design review owed.**
+9 November 2026. **Selected design; WP7 implementation and independent design review owed.**
 Child of [PLATFORM-RUNTIME](../../design/modules/PLATFORM-RUNTIME.md#i1-phone-shell-lifecycle-slice--selected-target-partial-implementation).
 The existing [shell design and M1–M6 history](DESIGN.md#shell-design) retain lifecycle ownership.
 [Plan](PLAN.md) · [done when](DONE.json).
@@ -21,7 +21,7 @@ implementation. UIKit produces the one authoritative oriented full-bounds pixel 
 render owner consumes that pair, controls target lifetime, and derives the scene projection, render targets and
 presenter from it. G5 owns cooked draw selection and content, not view sizing. G4 owns future reconstruction and
 dynamic resolution; neither is necessary for native-resolution correctness. This supersedes the old G4 framing
-deferral for this baseline only. Shared `thrum-render` changes are part of M7, not a second runtime or scene owner.
+deferral for this baseline only. Shared `thrum-render` changes are part of WP7, not a second runtime or scene owner.
 
 The failure was read from builder checkpoint `b0dae34c` with `git show`, including
 `.orchestrate/evidence/render/cooked-draw/README.md`, `rotation/layout-failure.json` and both rotation screenshots.
@@ -63,8 +63,8 @@ before this baseline is correct. Revisit native resolution only with a separatel
 
 ## Proof, cost and handoff
 
-M7 uses the existing diagnostic scene and XCUITest orientation driver independently of unaccepted COOKED-DRAW.
-It needs no `COOKED-DRAW:M1` or T2 simulator capture acceptance. Extend route witnesses to expose actual scene
+WP7 uses the existing diagnostic scene and XCUITest orientation driver independently of unaccepted COOKED-DRAW.
+It needs no `COOKED-DRAW:WP1` or T2 simulator capture acceptance. Extend route witnesses to expose actual scene
 target dimensions, projection aspect and presenter viewport alongside current surface/drawable dimensions and
 epoch. Derive these from the resources/matrices used by an identified presented frame, not echoed requests.
 Tests must reject presenter-only resizing, stretching/cropping and stale recovery candidates. Simulator records
@@ -77,17 +77,17 @@ extent transitions only, coalesce transient extents and reuse identical extents.
 extra readback outside route diagnostics, device recreation or CPU/GPU wait is justified. Do not turn simulator
 wall times into speed, cadence, power or physical-iPhone claims; no invented performance gate.
 
-After independent M7 acceptance, COOKED-DRAW M1 reruns its unchanged M1.9–M1.11 proofs on the integrated host.
-M7 establishes sizing for the shared scene route; it does not accept cooked visuals. T2-CAPTURE M2 continues to
-need COOKED-DRAW M1. No owner decision is required for this correction. Independent design review is owed to the
+After independent WP7 acceptance, COOKED-DRAW WP1 reruns its unchanged M1.9–M1.11 proofs on the integrated host.
+WP7 establishes sizing for the shared scene route; it does not accept cooked visuals. T2-CAPTURE WP2 continues to
+need COOKED-DRAW WP1. No owner decision is required for this correction. Independent design review is owed to the
 lead/loop; this planner cannot launch agents.
 
-## Scope of the shell (M1–M7)
+## Scope of the shell (M1–WP7)
 
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
 Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. M1–M4 covered off-main frames, touch, lifecycle and
-surface replacement; M5 adds rotation and M6 device loss. M7 adds native-resolution scene framing at the current
+surface replacement; M5 adds rotation and M6 device loss. WP7 adds native-resolution scene framing at the current
 oriented extent, superseding the earlier G4 framing deferral for this baseline. G4 retains reconstruction/governor
 policy. Simulator timing, a physical iPhone and G3b's Mac live rows are out of scope. Pre-change reference:
 `tmp/g3b-ios-lifecycle/late-acquire/` (serial UIKit callback, 601 presented, 600 completed) and
@@ -172,7 +172,7 @@ surface stays revoked (no present can happen) and the checker fails on missing r
   at once; an in-flight section then drops its old-extent drawable at its next check, exactly like a revocation. The
   next request carries the new epoch and extent. The owner reconfigures only when no frame is pending (`Reconfigure`
   replies meanwhile), resizes the host's presenter bindings with `resize_surface`, then configures the surface. That is the historical
-  M5 surface-only behaviour; M7 replaces the iOS call with a coherent scene-and-surface extent transition. The
+  M5 surface-only behaviour; WP7 replaces the iOS call with a coherent scene-and-surface extent transition. The
   window, surface, lease and world stay the same: rotation is not a replacement.
   *What the epoch cannot stop.* UIKit animates the layer's bounds through a rotation, and an acquire just before
   `Resized` can still return an old-size drawable under a current epoch (Metal reports no `Suboptimal`). With

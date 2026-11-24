@@ -1,7 +1,7 @@
 # Creator experience: closing G6
 
 10 November 2026, revised 11 November after
-[the design review](../../../.orchestrate/evidence/CREATOR/design-review.md) and 17 November for M3's proofs ([log](LOG.md)). Design for the `CREATOR` module in [the module list](../ARCHITECTURE.md).
+[the design review](../../../.orchestrate/evidence/CREATOR/design-review.md) and 17 November for WP3's proofs ([log](LOG.md)). Design for the `CREATOR` module in [the module list](../ARCHITECTURE.md).
 [Plan](PLAN.md) · [Done when](DONE.json) ·
 [G6 decision](../../design/decisions/G6-CREATOR-EXPERIENCE.md) · [Creator guide](../../design/ENGINE-EXPERIENCE.md) ·
 [C11](../../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1) ·
@@ -13,7 +13,7 @@ From the 10 November planning task, word for word: "The owner wants work lined u
 in docs/BUILD-PLAN.md, so builders always have a next milestone ... each module that can start next has its
 design, plan and done-when file, so a builder can start it".
 
-The V1 exit this module serves, from [the build plan](../BRIEF.md#goal-and-exit-rule): "hot reload,
+The V1 exit this module serves, from [the build plan](../VISION.md#goal-and-exit-rule): "hot reload,
 profiler and native/browser demo UI" and "A fresh agent builds a small scene from public docs alone." Gate G6
 adds: "One command produces a lit scene, sky, cooked mesh, camera and slider ... Keep that scene to about 100 game
 lines, report game lines and zero engine game types."
@@ -30,12 +30,12 @@ the cooked material hook; the exposure-zones overlay; three fresh-agent scenes o
 lines. This design does not reopen those mechanisms.
 
 **Commissioned here**, to close G6:
-1. A kit scene runs in Chrome from one command (M1).
-2. A profiler in the demo UI on both targets (M2). It needs two bounded additions to the frame runtime, so M2 is
-   built after `APPLE-TILE:M3`; [the frame timing feed](#the-frame-timing-feed) says why.
-3. A fresh agent builds a new scene for both targets from the public docs alone, and the gate closes (M3).
+1. A kit scene runs in Chrome from one command (WP1).
+2. A profiler in the demo UI on both targets (WP2). It needs two bounded additions to the frame runtime, so WP2 is
+   built after `APPLE-TILE:WP3`; [the frame timing feed](#the-frame-timing-feed) says why.
+3. A fresh agent builds a new scene for both targets from the public docs alone, and the gate closes (WP3).
 
-**Follow-up (M4).** Keep the three slow material-hook regressions listed in the plan in the fast tier with a
+**Follow-up (WP4).** Keep the three slow material-hook regressions listed in the plan in the fast tier with a
 smaller fixture.
 
 **Not commissioned:** the clipping and shadow-cascade overlays, parameter files as a cooked product kind, a
@@ -98,7 +98,7 @@ record each shell already keeps.
 | Presented and missed | The shell's counts of callbacks that ended in a present call and of those that did not | "present calls", not displayed frames |
 | World tick, Extract, Upload | `tick_cpu`, `extract_cpu`, `upload_cpu` | A still scene has no world, and its World tick row says so |
 | Encode + submit | `encode_cpu`, which the runtime measures as one span across encoding, finish, submit and completion registration | One row with the combined name |
-| One row per GPU pass | The pass-name timing of the same samples, as `APPLE-TILE:M3` delivers it, with the present pass | The graph's pass name |
+| One row per GPU pass | The pass-name timing of the same samples, as `APPLE-TILE:WP3` delivers it, with the present pass | The graph's pass name |
 
 Physical display cadence is not a profiler row. It stays with `PLATFORM-RUNTIME-MAC`'s attended protocol. Submit is
 not split from encode: the split would add a timer to the frame path for a number no cue needs. A creator case
@@ -150,10 +150,10 @@ The review found three things the existing interfaces cannot do. Each is settled
    strictly more work than the default. The window title's GPU part says timing is off instead of showing zeros.
 
 **Ownership and order.** The switch and the "not requested" reason are the only changes this module makes in
-`thrum-render`. M2's builder makes them, by the seam ruling in the module list, once `APPLE-TILE:M3` is Done.
-`APPLE-TILE:M2` reschedules encode, acquire, submit and completion, which are the functions the switch touches,
-and `APPLE-TILE:M3` replaces the positional GPU slots with pass names in every consumer. Building earlier would
-put a second writer in those functions while protected work is in flight, and would hand `APPLE-TILE:M3` one more
+`thrum-render`. WP2's builder makes them, by the seam ruling in the module list, once `APPLE-TILE:WP3` is Done.
+`APPLE-TILE:WP2` reschedules encode, acquire, submit and completion, which are the functions the switch touches,
+and `APPLE-TILE:WP3` replaces the positional GPU slots with pass names in every consumer. Building earlier would
+put a second writer in those functions while protected work is in flight, and would hand `APPLE-TILE:WP3` one more
 consumer to migrate. Once built, the switch belongs to the frame runtime and its owner. Tests in `./dev check`
 hold its behaviour, so later runtime work keeps it. Graph passes take their timestamps through the one optional
 batch the switch controls, so they obey it without knowing the profiler exists; timing gathered another way, such
@@ -161,7 +161,7 @@ as a native segment's, is not gathered while the switch is off. This module owns
 and the rows.
 
 **The valley.** The kit declares the group for kit scenes. The V1 game opts in with one call in
-`examples/v1-game`, which is the only edit this module makes there. M2 proves the valley on the Mac; its page is
+`examples/v1-game`, which is the only edit this module makes there. WP2 proves the valley on the Mac; its page is
 proved on `SHOWCASE`'s route.
 
 **Alternatives considered.** A separate overlay drawn by the engine would need a text renderer the engine does
@@ -182,14 +182,14 @@ alone.
 includes the sky draw and a scene contribution's work. So a change is read against the row's own spread across
 repeated runs with no change, not against zero. These rows are coupled and may move together: the forward pass
 with any material or mesh edit; every GPU row when the machine's GPU is shared or warm; Encode + submit with the
-number of passes. M2's inspection uses two changes whose row is known beforehand, and both run today:
+number of passes. WP2's inspection uses two changes whose row is known beforehand, and both run today:
 pausing the valley's world (`world.paused`) lowers World tick, and an edit to the starter's material hook that
 adds fragment work raises the pass that draws the cooked mesh.
 
 ### The fresh-agent proof
 
-The fresh agent is a separate new session that the lead commissions for M3.1 from
-[the brief](../../../.orchestrate/evidence/CREATOR/M3-fresh-agent-brief.md). It is never the milestone's builder or reviewer, nor a
+The fresh agent is a separate new session that the lead commissions for WP3.1 from
+[the brief](../../../.orchestrate/evidence/CREATOR/WP3-fresh-agent-brief.md). It is never the milestone's builder or reviewer, nor a
 subagent of either. The builder has seen the work. The reviewer cannot be fresh either: the review skill and the
 project's instruction files load engineering guidance before a reviewer reads any item.
 
@@ -216,7 +216,7 @@ That the agent was fresh rests on the lead's commission and the agent's own read
 it. The sign that it was not is a scene that names an engine item the three documents and the starter folder
 don't show, and the reviewer looks for that.
 
-**The on-glass check** (M3.4) needs a person only for setup: the built-in display unlocked and awake, with Screen
+**The on-glass check** (WP3.4) needs a person only for setup: the built-in display unlocked and awake, with Screen
 Recording and Accessibility permission already granted to the process the agent runs. The agent then launches the
 starter, drags the slider with synthetic pointer events, saves the files, and captures the real window and panel
 by window id. An offscreen frame does not stand in for the window. Without the Accessibility grant a person does
@@ -258,7 +258,7 @@ each original regression in the disposition record.
 | Parameter and material files and their reload | `thrum-app` (this module) |
 | The scene shell on Mac (`app`) and web (`web`), and the kit's runners and page | `thrum-app`; the shell's frame, clock and loss policy stay as the platform plans define them |
 | Cooked products and the dev server | `CONTENT-LOOP` |
-| Frame samples, GPU pass timings and the timing-demand switch | The frame runtime in `thrum-render`. M2 adds the switch there under the seam ruling; this module then only reads samples and sets the switch from its shells |
+| Frame samples, GPU pass timings and the timing-demand switch | The frame runtime in `thrum-render`. WP2 adds the switch there under the seam ruling; this module then only reads samples and sets the switch from its shells |
 | The profile window, the profiler group and its rows | `thrum-app` and `thrum-controls` (this module) |
 | Callback timestamps and present counts | Each shell, as the platform plans define them; the profiler reads them |
 | A scene's game code, assets and parameter file | The creator |
@@ -312,7 +312,7 @@ This module owns `crates/thrum-controls`, the kit, runners, page, profile window
 `docs/design/ENGINE-EXPERIENCE.md`, `examples/starter/README.md`). It uses the web shell's frame, clock and loss
 policy unchanged.
 
-It reads frame samples from `thrum-render`. In M2 only, under
+It reads frame samples from `thrum-render`. In WP2 only, under
 [the seam ruling](../ARCHITECTURE.md#interfaces), its builder adds the timing-demand switch and the "not requested"
 reason to the frame runtime, and one call in `examples/v1-game` that declares the profiler group. Any other change
 to the frame runtime, the shells' policy or the V1 game goes in the log as a proposal for the module list.

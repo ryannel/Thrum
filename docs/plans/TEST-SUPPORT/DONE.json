@@ -1,178 +1,178 @@
 {
   "module": "TEST-SUPPORT",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a line anyone running the tests sees, or fails when a GPU is required",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REPO-RULES:M1"
+        "REPO-RULES:WP1"
       ],
       "quality_bar": "As dependable as wgpu's own `gpu_test` harness: one way to ask for a device, a skip that always says why, and no machine on which a missing GPU can pass for a run.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "`thrum-test-support` is registered in `.config/architecture.toml` with `test_role = \"support\"` and nothing has it as a normal or build dependency. The `test-crate-edges` rule refuses that edge, and for a package registered `\"fixtures\"` it refuses a build dependency and a normal dependency from any package but the registered proving ground.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-crate-edges --zero . && python3 scripts/test_shape_rules.py'",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP1/README.md",
           "ask": "Do the rule's fixtures refuse a normal dependency on the support package, a normal dependency on a fixtures package from a package under `crates/`, and a build dependency on either, and pass a dev-dependency on both and a normal dependency on the fixtures package from the proving ground?",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "A test asks for a GPU through one gate. With an adapter it runs. With none the gate writes `thrum-gpu-skip: <test>: <reason>` to standard error, where an ordinary `cargo test` run shows it, and the test returns; with `THRUM_REQUIRE_GPU=1` the test fails with that reason. `./dev check` sets the variable on macOS, so on this Mac a missing adapter can never pass for a run.",
           "check": "cargo test --locked --offline -p thrum-test-support",
           "ask": "Read the gate and its tests. Do they run a child test process with the adapter forced absent, under the default harness with no `--nocapture` or `--show-output`, and find the skip line in its output and exit code 0, then a failing exit code with `THRUM_REQUIRE_GPU=1`? Does `./dev check` set the variable on macOS and leave it unset elsewhere? Does the gate reach wgpu only, with no type of `thrum-render`'s in what it hands to a unit test inside `thrum-render`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "Every GPU test and bench in `thrum-sea`, `thrum-asset-gpu` and `thrum-cook` takes its device through the gate, by profile and restriction: `device-request` is at zero for those crates, and their tests pass with a GPU required. The sea's seven-storage-buffer device and its default-limits device are restrictions the helper is asked for, and what those tests assert is unchanged.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-sea crates/thrum-asset-gpu crates/thrum-cook && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-sea -p thrum-asset-gpu -p thrum-cook'",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP1/README.md",
           "ask": "In `thrum-sea`'s `portable_limits_gpu` and its harness, does the device with seven storage buffers a stage, and the one on WebGPU's default limits, come from the helper, with each assertion as it was? Can a restriction raise a limit or add a feature?",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "Every test that ran and passed in those crates before runs and passes now, and none is skipped on this Mac. The record holds the results of the same test command before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
           "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line? Does any GPU test in the three crates return early without asking the gate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "Every GPU test in the engine goes through the gate, the workspace's tests build for Linux and Windows with no CPU test hidden, and no test shares code by `#[path]`",
       "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
-        "HOST:M1",
-        "GAME-SPLIT:M2",
-        "ATMOSPHERE:M9",
-        "APPLE-TILE:M10",
-        "APPLE-PRESENTATION:M3",
-        "EFFECT-GRAPH:M3",
-        "CULLING:M3"
+        "HOST:WP1",
+        "GAME-SPLIT:WP2",
+        "ATMOSPHERE:WP9",
+        "APPLE-TILE:WP10",
+        "APPLE-PRESENTATION:WP3",
+        "EFFECT-GRAPH:WP3",
+        "CULLING:WP3"
       ],
       "quality_bar": "As dependable as wgpu's own `gpu_test` harness, across the whole workspace: the same answer to 'does this test need a GPU' in every file, and tests that build for Linux and Windows, with no CPU test hidden there and no GPU test that would fail there for want of an adapter or of Metal. Nothing is run on Linux or Windows, so what is proved there is what a type-check and a read of the tests can show: linking, a lint-clean build and GPU tests on another backend are not claimed.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "`device-request` is at zero across `crates/` and `examples/`: outside the device recipe and the gate, nothing asks wgpu for an adapter or a device. The support package's stand-in is gone, and a test's device is the recipe's, by profile and restriction.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates examples",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (shape check passes at 677f643e4)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP2/cross-target.md (shape check passes at 677f643e4)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "Every library, binary, example, test and bench target in the workspace type-checks for Linux and for Windows from this Mac, with default features. One tracked command, `scripts/check_cross_target.sh`, checks `x86_64-unknown-linux-gnu` and `x86_64-pc-windows-msvc`, leaves no package or target out, and fails when either has an error. It links nothing and stands in for the C and C++ compilers. Warnings do not fail it.",
           "check": "sh -c 'test -f scripts/check_cross_target.sh && bash scripts/check_cross_target.sh'",
           "ask": "Read the command: does it check every target of every workspace package for both platforms, with none excluded by name? Would an error on the Linux target alone make it exit non-zero? Does a run leave the checkout clean?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md; cross-target-iter.log; cross-target-linux-error-probe.log",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP2/cross-target.md; cross-target-iter.log; cross-target-linux-error-probe.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "No OS condition keeps a test that needs no GPU and no host API of that OS out of a Linux or Windows build. `whole-file-gpu-gate` is at zero across `crates/` and `examples/`: no file or module that holds tests is conditioned on an OS as a whole, except a module of tests of that OS's own shell or system calls, which says so in a `platform-only tests:` comment. A test may carry an OS condition of its own where it needs that OS's GPU or host APIs, and need not write a skip line elsewhere.",
           "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
           "ask": "List the tests that carry an OS condition of their own, and the modules marked `platform-only tests:`. Is any of them a test that touches no GPU and no API of that OS, so that it would run on Linux or Windows?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (rule at zero; audit section)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP2/cross-target.md (rule at zero; audit section)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "A GPU test asks the gate before it opens a device, and one that needs Metal asks the gate for Metal. So where there is no adapter, or none on Metal, it writes the skip line and returns: no test opens the recipe's device unasked, returns without asking, or admits any backend and then requires Metal.",
           "ask": "Search the tests under `crates/` and `examples/`. Does any open the recipe's device, or return early, before it asks the gate? Does any admit any backend and then assert Metal, or open a recipe only Metal offers, outside a macOS condition?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (audit section)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP2/cross-target.md (audit section)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         },
         {
-          "id": "M2.8",
+          "id": "WP2.8",
           "statement": "The type-check keeps running after this milestone, on main and in no merge's check: `ORCHESTRATE.md` declares the main-branch check `cross-target` in the design's words.",
           "check": "grep -q 'Main-branch check cross-target:.*scripts/check_cross_target.sh' ORCHESTRATE.md",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "ORCHESTRATE.md Rules: Main-branch check cross-target; .orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md",
+          "evidence": "ORCHESTRATE.md Rules: Main-branch check cross-target; .orchestrate/evidence/TEST-SUPPORT/WP2/cross-target.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         },
         {
-          "id": "M2.3",
-          "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`. The includes of game source went with `GAME-SPLIT` M2.",
+          "id": "WP2.3",
+          "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`. The includes of game source went with `GAME-SPLIT` WP2.",
           "check": "python3 scripts/shape_rules.py check --rule path-attribute --zero crates",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (shape check passes at 677f643e4)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP2/cross-target.md (shape check passes at 677f643e4)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "This milestone took no test out of a Mac run. Every test that passed before it passed at its first candidate with a GPU required and no skip line, which the recorded comparison of `cargo test --workspace` shows, and no change made since that candidate removes a test, empties one on macOS or lets one skip there.",
           "ask": "Does the recorded comparison map every test that reported `ok` before to one that reported `ok` at the first candidate, test by test, with no `thrum-gpu-skip:` line in the later run? In the milestone's commits after that candidate, is any test removed, or its body left empty on macOS, without the same test declared again? The proof that none skips now is the merged tree's `./dev check`, which requires a GPU on this Mac.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/README.md (recorded comparison); cross-target.md (M2.4 section)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP2/README.md (recorded comparison); cross-target.md (WP2.4 section)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images on the merged tip (verify answers NOT_ON_MAIN before merge)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "The test kit's readback, device call and wait exist, and the check refuses a new hand-written readback or deadline loop in a test",
       "status": "done",
       "failed_reviews": 0,
@@ -181,42 +181,42 @@
       "quality_bar": "As dependable as wgpu's own test harness: a test file holds what it tests, the jobs every GPU test shares are written once, and converting a test changes nothing it asserts.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "`thrum-test-support` offers each job of the kit, with a test of its own in the support package: a readback of a buffer, of a whole mip of a 2D, 3D or array texture or one layer of it, or of a byte range, with one bounded wait, on its own submission or appended to the caller's encoder; one call that asks the gate for a GPU, on Metal where asked, and opens the recipe's device by profile and restriction; one wait with a deadline; a scratch folder that removes itself; a PPM writer; and a counting allocator type that counts allocations and bytes on the calling thread. `thrum-render`'s unit tests have the same one call from the crate's own `test_device`, typed by the crate. No existing test is converted.",
           "check": "sh -c 'out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-test-support --all-features readback 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Read the kit's tests: would each fail if its job misbehaved, such as a readback that returned the wrong mip or layer, a wait that outlived its deadline, or an allocator that missed a thread's allocations? Does the gate half of the one call deal only in wgpu types, with the recipe reached through the `render` feature or, inside `thrum-render`, through its own `test_device`? Was any existing test changed?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M5/README.md#m51-the-kits-jobs; .orchestrate/evidence/TEST-SUPPORT/M5/kit-tests.log",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP5/README.md#m51-the-kits-jobs; .orchestrate/evidence/TEST-SUPPORT/WP5/kit-tests.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M5-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP5-review.md"
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "`test-readback` (a buffer mapped for reading in a test file outside the kit) and `test-deadline` (a hand-written deadline assert in a test file) are rules of the shape check, each entered at the count of the commit this milestone lands on. A landing that adds one more fails `./dev check`, and the message names the kit's function to use and the Tests section of the engineering patterns, which describes the kit. The log gives each rule's count at landing.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-readback && python3 scripts/shape_rules.py check --rule test-deadline && python3 scripts/test_shape_rules.py'",
           "ask": "Read the two rules' fixtures: does each refuse one more of its shape in a test file, and pass the kit's own readback and wait and the same code in a file that is not a test? In a scratch copy, add a `map_async` readback to a test file: does `./dev check-docs` fail and name the kit's function?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M5/README.md#m52-the-rules; .orchestrate/evidence/TEST-SUPPORT/M5/probe-check-docs.log",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP5/README.md#m52-the-rules; .orchestrate/evidence/TEST-SUPPORT/WP5/probe-check-docs.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M5-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP5-review.md"
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M5-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP5-review.md"
         }
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "A GPU test draws to the test kit's one small target, and the engineering skill says in one short block how to write a test",
       "status": "done",
       "failed_reviews": 0,
@@ -225,7 +225,7 @@
       "quality_bar": "As quick to act on as the testing notes in the contributor guide of a well-kept engine such as Bevy's or wgpu's: a builder about to write a test reads five lines, follows one link and has a shape to copy. The target is as dependable as wgpu's own test harness.",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "The kit gives a GPU test its target, in a module named `target`: one call returns a colour target, with a depth target where the test asks for one, at the kit's one small size, in wgpu types alone, and the size is a constant that a test driving a host passes to it. The kit's own test draws to the target and reads it back through the kit's readback. Guard: the kit's test.",
           "check": "sh -c 'cargo test --locked --offline -p thrum-test-support -- --list 2>/dev/null | grep -q \"^target::.*: test$\" && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-test-support target::'",
           "ask": "Read the kit's test of the target: would it fail if the target were another size than the constant, or if the draw wrote nothing? Is anything the call takes or returns typed by an engine crate?",
@@ -234,10 +234,10 @@
           "builder_result": "pass",
           "evidence": "agent_loop check on 59047a2e4 (mac-metal, THRUM_REQUIRE_GPU=1): 2 target tests pass; size-32 and no-draw mutations each fail both (LOG.md, 2026-11-21)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP6-review.md"
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "In the engineering skill, one block on writing a test stands where the adopted-shapes table had its \"Unit tests\" and \"GPU tests\" rows. It says, each in a line that links to its entry in the patterns reference: prove a behaviour on the smallest world that shows it; test logic on the CPU and open a device only for what a GPU alone can show, at the test kit's small target; step simulated time, never wait on the clock; add to an existing test binary; a full-size or long run is a main-tier test and needs a plan's say. What the two rows said, the unit-test layout and the GPU gate, is one link from the block. The skill is no more than about forty words longer than its 1,657 of 21 November, and `AGENTS.md` and `CLAUDE.md` are as they were. Record: the check adds nothing to the tree.",
           "check": "sh -c 'f=.agents/skills/thrum-engineering/SKILL.md; ! grep -q \"^| Unit tests |\" $f && ! grep -q \"^| GPU tests |\" $f && test \"$(wc -w < $f)\" -le 1700 && for a in the-smallest-world logic-without-a-device simulated-time an-existing-test-binary a-main-tier-test; do grep -q \"references/patterns.md#$a\" $f || exit 1; done && ./dev check-docs'",
           "ask": "Does each of the five lines link to its own entry, and is the unit-test layout and the GPU gate, which the two rows gave, one link from the block? Did this milestone's commits change `AGENTS.md` or `CLAUDE.md`, or add test guidance to the skill outside the block?",
@@ -245,10 +245,10 @@
           "builder_result": "pass",
           "evidence": "agent_loop check on 59047a2e4: rows gone, five links, 1,695 words, ./dev check-docs pass; AGENTS.md and CLAUDE.md untouched",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP6-review.md"
         },
         {
-          "id": "M6.3",
+          "id": "WP6.3",
           "statement": "The Tests section of the patterns reference has an entry for each of the five habits, each under an anchor written out as `<a id=\"\u2026\">` so that its heading can change: `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test`. Each says what to write, with a call or a command to copy where there is one, and what a builder does when the habit cannot hold: for a full-size or long run, that it needs a done-when item that says what only it can show, so a builder with none writes the proposal in the module's log for a planner. The entries state no limit of their own: they link to the test tiers of the project settings. Record: the check adds nothing to the tree.",
           "check": "sh -c 'for a in the-smallest-world logic-without-a-device simulated-time an-existing-test-binary a-main-tier-test; do grep -q \"id=\\\"$a\\\"\" .agents/skills/thrum-engineering/references/patterns.md || exit 1; done && ./dev check-docs'",
           "ask": "Take each entry beside the test tiers of `ORCHESTRATE.md`: does it say the same, and state no number the tiers do not? Does the entry on logic without a device show the kit's target call as the kit now has it? Does the entry on simulated time show how a test steps the engine's clock, and say what a wait on the device uses?",
@@ -256,145 +256,145 @@
           "builder_result": "pass",
           "evidence": "agent_loop check on 59047a2e4: five anchors in references/patterns.md, ./dev check-docs pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP6-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
       "depends_on": [
-        "GATE-TIME:M2",
-        "DEAD-CODE:M2",
-        "GATE-TIME:M6"
+        "GATE-TIME:WP2",
+        "DEAD-CODE:WP2",
+        "GATE-TIME:WP6"
       ],
       "quality_bar": "As dependable as wgpu's own test harness: a test file holds what it tests, the jobs every GPU test shares are written once, and converting a test changes nothing it asserts.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "A test under `crates/` or in a kit scene (the water, mirror, starter, lighthouse and stones examples) reads a buffer or a texture back through the kit: `test-readback` is at zero there, outside the sites the rule exempts by name with a reason.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-readback --zero crates examples/water examples/mirror examples/starter examples/lighthouse examples/stones && python3 scripts/test_shape_rules.py && cargo test --locked --offline -p thrum-test-support'",
           "ask": "Read the rule's exemptions: is each one a site that does a different job, as the design lists them, and not a readback that was awkward to convert? In ten converted tests across five crates, is every assertion, bound and expected value as it was at the starting commit?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md (M3.1 readback)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP3/README.md (WP3.1 readback)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "A GPU test under `crates/` asks for its GPU and its device in one call, by backend, profile and restriction: the kit's call, or in `thrum-render`'s unit tests the crate's own `test_device`, which asks the kit's gate and opens this build's recipe. A local wrapper is left only where it does something the call does not, and a test that needed Metal still fails without it on this Mac.",
           "ask": "List the local gate-and-device wrappers left under `crates/`: what does each do that the one call does not? How many of `thrum-render`'s unit tests still ask the gate and open a device in two steps? Did any test that asserted Metal become one that skips on this Mac? Did any test's profile, restriction or generation change?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md (finding 5; M3.2 prologue)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP3/README.md (finding 5; WP3.2 prologue)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "Frame waits, scratch folders, PPM writing and the counting allocator type come from the kit: no test file under `crates/` or in a kit scene defines its own copy of one. Each binary that counts allocations declares its own static of the kit's type and counts what it counted before, allocations or bytes, and no recorded tripwire's percentile rule changed. Hand-written deadline asserts are not swept: `test-deadline` is no higher than at the starting commit.",
           "ask": "Search the test files under `crates/` and the kit scenes for a local frame-wait loop, scratch folder type, PPM writer and `GlobalAlloc` implementation: is any left, and why? For each converted allocator, does the test count the same thing, allocations or bytes, behind the same switch as at the starting commit? Did any wait's deadline get shorter, or any tripwire's percentile rule change?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/README.md (findings 2-4; M3.3)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP3/README.md (findings 2-4; WP3.3)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md"
         },
         {
-          "id": "M3.4",
-          "statement": "This milestone stops no test running on this Mac. Every test that reported `ok` in `cargo test --workspace` at the starting commit `4592e88cb` reports `ok` in the same command on the finished tree with `THRUM_REQUIRE_GPU=1`, under its name or a mapped one, and none is skipped. A test missing from the later run that a commit of another module took out is not this milestone's loss: the record names that commit for each. That command runs no long test and no test behind a Cargo feature, which M3.6 covers.",
+          "id": "WP3.4",
+          "statement": "This milestone stops no test running on this Mac. Every test that reported `ok` in `cargo test --workspace` at the starting commit `4592e88cb` reports `ok` in the same command on the finished tree with `THRUM_REQUIRE_GPU=1`, under its name or a mapped one, and none is skipped. A test missing from the later run that a commit of another module took out is not this milestone's loss: the record names that commit for each. That command runs no long test and no test behind a Cargo feature, which WP3.6 covers.",
           "ask": "Compare the two recorded runs' results, test by test, not their lists. For each test that reported `ok` before and does not after, under its name or a mapped one: which commit took it out of the run, does that commit's diff remove it, and is the commit another module's? Is any test out of the run with no such commit? Does the later run's output hold any `thrum-gpu-skip:` line?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/comparison-2.log and workspace-attribution.log (before.*, after-2.*)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP3/comparison-2.log and workspace-attribution.log (before.*, after-2.*)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md"
         },
         {
-          "id": "M3.6",
+          "id": "WP3.6",
           "statement": "This milestone stops no long test and no test behind a Cargo feature running. The main-branch check `long-tests` passes on main with the milestone's commits in, and every test it reported `ok` in its last run without them, at `0870118d6`, reports `ok` in the run that covers them, under its name or a mapped one. A test missing from the covering run that a commit of another module took out is not this milestone's loss: the record names that commit for each.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Compare the saved log of the main-branch run that covers this milestone's last commit with the run at `0870118d6`, test by test. For each test that reported `ok` before and is missing, ignored or skipped now, under its name or a mapped one: which commit took it out of the run, does that commit's diff remove it, and is the commit another module's? Is any test out of the run with no such commit?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/long-tests-attribution-d22b9d203.log; covering run: main-branch check long-tests",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP3/long-tests-attribution-d22b9d203.log; covering run: main-branch check long-tests",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md"
         }
       ],
       "diagnosed_for_planner_finding": true
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "Each crate's WGSL records are held to its Rust structs by one shared check, and the proving ground's cooked tests build their game through one fixture",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REVIEW-RENDER:M2"
+        "REVIEW-RENDER:WP2"
       ],
       "quality_bar": "As dependable as wgpu's own test harness: a test file holds what it tests, the jobs every GPU test shares are written once, and converting a test changes nothing it asserts.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "The renderer's own record test, the sea, the asset crate, water and clouds hold their WGSL records to their Rust structs through the kit's one reflection check, in member offset, size and scalar kind. No crate keeps its own walk of a shader's bound structs or a second layout type, each `wgsl_records` test target keeps its name, and the checks that did more than reflect are as they were. A record that fails the stricter check is not changed here: its test keeps the comparison it made before, and the log names the record and the module that owns it.",
           "check": "sh -c 'git grep -q \"wgsl\" -- crates/thrum-test-support/src && cargo test --locked --offline -p thrum-render -p thrum-sea -p thrum-asset-gpu --test wgsl_records && cargo test --locked --offline -p thrum-water -p thrum-clouds'",
           "ask": "How many walks of a parsed shader's bound structs are there under `crates/` outside the kit, the renderer's own test included? Do the sea's and the asset crate's records now get the size and scalar-kind checks, and did any record fail them? If one did, is the record untouched and named in the log with its owner? Are the view record's literal offsets and the cloud and weather shaders' naga validation still asserted? Would a member moved in one crate's WGSL fail that crate's test?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M4/: README.md (M4.1), m41-check.log, m41-mutation.log",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP4/: README.md (WP4.1), m41-check.log, m41-mutation.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "The proving ground's cooked tests make their scratch store, cook, device and host through one fixture in its test support. Each case asserts what it asserted, on the device it had: the generation it gave the recipe and its assertion on the execution path. The fixture shares code, not a device or a lock: no test that ran beside others now waits for one.",
           "check": "cargo test --locked --offline -p v1-game --test cooked_assets_gpu --test cooked_material_gpu",
           "ask": "Compare five cases from each of the two files with the starting commit: same assertions, same draw path, same generation, same execution assertion? Does the fixture hold a lock, a static device or anything else that makes tests take turns that did not before? Does the log give the two binaries' run time before and after, with the load?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M4/: README.md (M4.2); before-/after-cooked_*_gpu.* with *.load and before-load.txt; after-draw-probe.log",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP4/: README.md (WP4.2); before-/after-cooked_*_gpu.* with *.load and before-load.txt; after-draw-probe.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
           "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M4/: before.*, after.*, comparison.log, README.md (M4.3)",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/WP4/: before.*, after.*, comparison.log, README.md (WP4.3)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP4-review.md"
         }
       ]
     }

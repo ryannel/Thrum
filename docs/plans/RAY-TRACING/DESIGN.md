@@ -1,7 +1,7 @@
 # Ray tracing: traced shadows and ambient occlusion on the Mac
 
 19 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
-[module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac) · [the brief](../BRIEF.md) ·
+[module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac) · [the brief](../VISION.md) ·
 planning probes: [the API](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md),
 [the ray's origin](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md) and
 [a rounded mesh's terminator band](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/PATCH.md).
@@ -19,7 +19,7 @@ The lead's task for this plan, in part: "Plan hardware ray tracing (Metal ray qu
 shaders (Metal object and mesh stages) on the Apple tile recipe, verified on this M3 Max, under the
 hardware-native decision: registry-selected accelerated paths, the portable path stays as fallback and
 reference, and each path is promoted only by a measured win. Decide from first principles and current state of
-the art which rendering problems in Thrum they should serve ... It must not delay V1 (SHOWCASE M8) ... Desktop
+the art which rendering problems in Thrum they should serve ... It must not delay V1 (SHOWCASE WP8) ... Desktop
 high / PC stays out of scope; keep designs reusable for a later Vulkan/D3D12 recipe where that costs nothing."
 
 The owner, the same day: "Ok let's lower the bar." Visual work passes on a shipped-game look and on speed. A
@@ -76,7 +76,7 @@ that cast shadows, and props that sit on the ground. Everything else in the fram
 
 - **Reflections by ray, and global illumination.** Both shade what a ray hits: they need a hit's material,
   its vertex attributes and its lighting inside the tracing shader, which the visibility effects here do not.
-  Reflection's consumer is water, whose mirror lookup is `WATERS` M14 on `SCENE-VIEWS`; neither is built. No
+  Reflection's consumer is water, whose mirror lookup is `WATERS` WP14 on `SCENE-VIEWS`; neither is built. No
   material in the showcase valley is smooth enough to mirror its surroundings. Global illumination is a
   radiance cache with state of its own. Each is a later plan on the structure this module builds
   ([open for the human](PLAN.md#open-for-the-human)).
@@ -123,7 +123,7 @@ Read for this design, 17 and 18 November 2026:
   express.
 - **What rays are spent on in shipped games.** Shadows and ambient occlusion are the cheapest uses, because a
   ray only has to report whether it hit anything. Reflections and global illumination shade the hit. On Apple
-  silicon the shipped examples that trace rays (Cyberpunk 2077 and Assassin's Creed Shadows on M3 and M4
+  silicon the shipped examples that trace rays (Cyberpunk 2077 and Assassin's Creed Shadows on WP3 and WP4
   machines) run their ray-traced presets at about 30 to 50 frames a second on an M4 Max in press measurements,
   which is far from this project's bar of the display's full refresh. So this module starts with the uses that fit a
   frame at 120 Hz and leaves hit shading out.
@@ -158,8 +158,8 @@ Read for this design, 17 and 18 November 2026:
 | Where the hard Sun shadow is traced | Inline, in the fragment that is being shaded, this frame | A screen-space mask pass before shading: it needs a depth prepass, a second geometry pass on a tile GPU |
 | How a soft shadow is made | One ray a pixel toward a point on the disc, in a pass after opaque geometry, filtered over time and space and read by the next frame's shading, beside a centre ray traced inline this frame that overrides a settled history it contradicts | The history alone: a moving caster's whole shadow is then a frame late, and detaches from a fast mover. The same rays integrated by TAAU alone: at mid-penumbra one ray is right half the time, and a history of some twenty frames leaves about a tenth of the Sun's light as grain. A fourth forward target for demodulated Sun light, which would make the soft value current: it changes every forward pipeline in the engine. MetalFX's denoising upscaler: it needs albedo, normal and roughness targets and belongs to `APPLE-PRESENTATION`; it is what would change this selection |
 | Where ambient occlusion is traced | In the same pass as the soft shadow, at half the extent | Inline in shading: one ray a pixel is grain over every shaded surface |
-| How a coarse rounded mesh loses its false facets | One excused passage through the receiving surface, judged from what the ray itself reports. Inline, the fragment's reach decides it. The visibility pass has no reach, so it records a dipped ray both ways and the fragment picks the value its own passage bears out | Moving the origin onto the implied surface, as Hanika does: right for the inline ray, but the pass has no vertex normals, so its disc rays would still strike the receiver and the penumbra would be lost there. Skipping nearby hits on the receiving instance by their facing, which M3 first built: it erased a sheet joined into the same mesh. One soft value with the passage excused at any distance: past an open rim it excused a joined panel metres away, and the panel's soft edge went hard. A forward target that carries the implied surface's height or the disc ray's raw result to the pass: it changes every forward pipeline in the engine |
-| How many structures | One for the scene, rebuilt each frame | One for still geometry and one for movers: this adapter has room, but every ray would walk both. It is the named candidate if the rebuild shows as a tripwire, and M1's record of a still scene beside a moving one says what it could save |
+| How a coarse rounded mesh loses its false facets | One excused passage through the receiving surface, judged from what the ray itself reports. Inline, the fragment's reach decides it. The visibility pass has no reach, so it records a dipped ray both ways and the fragment picks the value its own passage bears out | Moving the origin onto the implied surface, as Hanika does: right for the inline ray, but the pass has no vertex normals, so its disc rays would still strike the receiver and the penumbra would be lost there. Skipping nearby hits on the receiving instance by their facing, which WP3 first built: it erased a sheet joined into the same mesh. One soft value with the passage excused at any distance: past an open rim it excused a joined panel metres away, and the panel's soft edge went hard. A forward target that carries the implied surface's height or the disc ray's raw result to the pass: it changes every forward pipeline in the engine |
+| How many structures | One for the scene, rebuilt each frame | One for still geometry and one for movers: this adapter has room, but every ray would walk both. It is the named candidate if the rebuild shows as a tripwire, and WP1's record of a still scene beside a moving one says what it could save |
 | What the structure holds | Every opaque thing in the scene, on screen or off | What the frame's passes draw: a lamp's ray, a Sun ray at low Sun and an occlusion ray all reach geometry that no camera or cascade volume holds |
 | What turns a ray effect on | A launch and a scene that ask, with a fallback to the map frame and a record for this Mac | A rule that makes the traced Sun shadow the default where a sitting measured it no slower and better looking, keyed to the adapter. Two design reviews found that it could promote a slower frame from a sum of pass times, credit rays with a difference between two recipes, and qualify a 40-core M3 Max from a 30-core one's sitting under one adapter name. For effects a scene chooses, that machinery guards less than it costs |
 
@@ -213,7 +213,7 @@ The registry already records the features a device generation enabled. This modu
 `MESH-SHADING` adds its feature to the same function and the same list. Whichever module's first milestone
 lands second extends what the first built.
 
-### The structure (M1, M2)
+### The structure (WP1, WP2)
 
 Two kinds of structure, in wgpu's terms a `Blas` and a `Tlas`:
 
@@ -237,12 +237,12 @@ also ask for the structure with no effect, which is what the traced view and a t
   The arena belongs to its scene's preparation and a cooked contribution's residency to its surface, so two
   scenes on one device share neither.
 
-**Entities (M1).** With ray demand, each row of the mesh arena gets a mesh structure, built from the arena's
+**Entities (WP1).** With ray demand, each row of the mesh arena gets a mesh structure, built from the arena's
 vertex and index buffers at the row's range. The scene structure takes one instance for each active slot, with
 the model matrix the vertex stage uses: `current`, with its translation mixed from `previous` by the frame's
 presentation alpha. An inactive slot has no instance. So a ray meets a mover where the frame draws it.
 
-**Cooked placements (M2).** With ray demand, each resident cooked mesh gets a mesh structure, built in the
+**Cooked placements (WP2).** With ray demand, each resident cooked mesh gets a mesh structure, built in the
 frame that records the mesh's last copy, after the copy and before any draw. A contribution offers its
 instances each frame through one new optional method of the contribution seam: for each opaque placement it
 holds in the scene, the mesh structure, the transform and the mask. `thrum-render` gains no dependency on
@@ -265,7 +265,7 @@ pipeline and its caster index count exist only to draw those maps, and both are 
 them. None of the three is read when a mask is set. So in a scene with Sun shadows off, a wall of entities
 and a wall that is a cooked placement both stand in the structure as casters, and a lamp's ray stops at them.
 
-**Edits (M2).** [A content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) needs no new
+**Edits (WP2).** [A content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) needs no new
 kind of reader. A replacement row's mesh structure is built in the frame that records the row's last write, so
 the row is ready when it is today. A replacement placement's is built in the frame that records its last copy.
 The scene structure is built from the set the frame shows, so the switch frame traces the new geometry and no
@@ -307,7 +307,7 @@ shader text.
   the rim and meet no far face, and the back of a sheet of the same mesh lying that close can then be taken
   for one.
 
-### Traced shadows (M3)
+### Traced shadows (WP3)
 
 **The Sun.** The scene's existing switch says whether the Sun casts shadows at all. Where it does, the shadow
 has a method: `Maps`, the cascades and height map of today, or `Traced`. Where it does not, neither method
@@ -373,7 +373,7 @@ the air's shadow heights are reduced from it. When a volume reader of the cascad
 volume, `WATERS`' lent Sun visibility), the cascades are drawn for it under either method.
 
 **A hard shadow has no partial Sun.** The centre ray gives a hard edge everywhere, and at sunset a receiver's
-Sun goes out when the disc's centre meets the ridge. That is M3's stated limit. M4 removes it.
+Sun goes out when the disc's centre meets the ridge. That is WP3's stated limit. WP4 removes it.
 
 **Lamps.** A scene may ask for lamp shadows. Then, in `local_radiance`, each lamp in the fragment's cluster
 list that is in range and that the surface faces traces one any-hit ray to the lamp's position, stopping short
@@ -392,11 +392,11 @@ by its walls.
 the scene resolves to tracing. An admitted contribution that compiles the scene's shader takes the traced
 operations from it, as it takes the cloud factor.
 
-### Soft Sun shadows (M4)
+### Soft Sun shadows (WP4)
 
 A scene on `Traced` may turn the penumbra on. A fragment's Sun visibility then has two sources.
 
-**This frame's centre ray.** Every fragment that faces the Sun traces it inline, exactly as in M3. It says
+**This frame's centre ray.** Every fragment that faces the Sun traces it inline, exactly as in WP3. It says
 whether the Sun's centre is hidden now.
 
 **The soft history.** An engine pass, the **traced visibility pass**, runs after the frame's opaque geometry:
@@ -498,7 +498,7 @@ and no other exists.
 
 - **Where the history was settled, never.** A shadow's body arriving on lit ground, and Sun returning to
   ground that was in a body, are the centre ray's in the frame they are drawn. A moving caster's shadow stays
-  under it with no frame of lag, as in M3.
+  under it with no frame of lag, as in WP3.
 - **Where a soft edge has left, for one frame.** A texel that held a soft edge, and that the edge has left
   for the shadow's body or for full Sun, shows the old soft value in the first frame after. That frame's pass
   finds every ray in the texel's neighbourhood agreeing and writes the settled value, by the pass's step 2,
@@ -514,7 +514,7 @@ and no other exists.
 remnant lies inside the edge it has now and reads as part of it. A narrow edge that moves further in a frame
 than it is wide leaves a band as narrow as itself one frame's travel behind it, for one frame at each place:
 the outline of where the shadow was. Shipped ray-traced shadows trail by their filter's whole memory, in the
-body as well as the edge. Whether the band reads as a second edge is judged in M4, on a caster fast and low
+body as well as the edge. Whether the band reads as a second edge is judged in WP4, on a caster fast and low
 enough to make it, and [risk 3](#risks) names what would remove it.
 
 A pixel with no history, such as ground a turn has just revealed, is hard for one frame.
@@ -523,7 +523,7 @@ The history is committed only with a submitted frame and reset on a camera cut, 
 a device replacement, by `APPLE-PRESENTATION`'s history rules. Fragments drawn after opaque geometry (water)
 have no history and trace inline.
 
-### Ambient occlusion (M5)
+### Ambient occlusion (WP5)
 
 A scene may ask for ambient occlusion with a radius in metres. The traced visibility pass then also traces,
 at half its extent, one ray for each pixel in a cosine-weighted direction about the surface normal, no longer
@@ -541,14 +541,14 @@ own settle length and one more frame. Ambient occlusion is broad and faint, and 
 lags in the same way. A darkening still visible after that is a trail, and fails.
 
 **Overcast valley.** With the visible cloud sky selected, the valley composes cooked geometry and
-`thrum_clouds::Shade` in its `SceneContributions` list. RAY-TRACING M5 adds candidate preparation to `Shade`
+`thrum_clouds::Shade` in its `SceneContributions` list. RAY-TRACING WP5 adds candidate preparation to `Shade`
 for both traced and Maps surfaces so the production list can admit traced occlusion. The cloud provider keeps
 its existing lighting, graph passes and Sun-path product. It offers no ray instances. The inspection uses
-[CLOUDS M7's overcast preset](../CLOUDS/PLAN.md#m7-the-sky-runs-from-clear-through-fair-and-broken-to-overcast-and-back-and-its-clouds-drift-form-grow-and-thin)
+[CLOUDS WP7's overcast preset](../CLOUDS/PLAN.md#wp7-the-sky-runs-from-clear-through-fair-and-broken-to-overcast-and-back-and-its-clouds-drift-form-grow-and-thin)
 with the visible sky and its shade active. At the same cloud state, camera and time, traced occlusion darkens
 the base of a prop while open ground stays unchanged. Verify Apple tile and resolved occlusion in both reports.
 
-`Shade` prepares through [the M3 boundary](#scene-preparation-and-maps-fallback-m3). It keeps compatible
+`Shade` prepares through [the WP3 boundary](#scene-preparation-and-maps-fallback-m3). It keeps compatible
 accepted cloud resources and temporal state. If the device generation changes, stage a full replacement. On
 the same generation, read the compatible weather resources while staging the bindings and resources that the
 candidate's Sun-path target and sky surface need. Describe the resulting graph for host validation. Keep any
@@ -578,7 +578,7 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   [ruling 12](../ARCHITECTURE.md#seam-rulings-for-track-5) a host may prefer Apple tile: the registry admits
   it by the facts that admit a named one (Metal, unified memory, transient storage), and where they do not
   admit it the generation resolves to portable and the registry records why. A preference is never an error
-  and never overrides a named recipe. `MESH-SHADING` M3 and this module's M6 both use it; whichever lands
+  and never overrides a named recipe. `MESH-SHADING` WP3 and this module's WP6 both use it; whichever lands
   first builds it and the other uses it as found.
 - **Resolution, with a plain fallback.** One function of the registry resolves the requests against the
   generation, before anything is allocated. A ray request that cannot be met resolves to what the portable
@@ -603,7 +603,7 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   The proving ground's valley has one launch selection, off by default, that does all three: it names
   `ray-query` as preferred, it states a preference for Apple tile where the device enabled ray queries, and
   it asks the scene for `Traced` with the penumbra. It asks for no lamp shadow and no ambient occlusion,
-  which keep the selections M3 and M5 gave them. The window and the capture host read it alike. What that
+  which keep the selections WP3 and WP5 gave them. The window and the capture host read it alike. What that
   one setting gives:
 
   | The launch, with the selection | Recipe | The Sun's shadow |
@@ -619,19 +619,19 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   nor hides it. With no selection nothing here is read and the launch is today's. The opt-in is recorded in
   two places: every run's report says what was asked, enabled and resolved, and this Mac's record says what
   the opt-in was found to do here.
-- **This Mac's record (M6).** It is written for a person deciding whether to opt a machine in, and nothing in
+- **This Mac's record (WP6).** It is written for a person deciding whether to opt a machine in, and nothing in
   the engine reads it. It holds the machine as the OS reports it (chip, GPU core count, memory, OS version)
   with the registry's digest, the commit, the launch line, the look, and the paired timing. The launch line
   is the selection and nothing else: it names no recipe. The look is two inspections of the final build, each
   under the settings its capture's report gives:
   - **The opt-in as launched.** Frames captured with the selection as the launch line gives it: traced Sun
     shadows with the penumbra, no lamp shadow, no ambient occlusion. The Sun's cues are judged at contact,
-    at rest and in motion, by the lists of M3 and M4 that apply. This is what a person who follows the launch
+    at rest and in motion, by the lists of WP3 and WP4 that apply. This is what a person who follows the launch
     line sees, and the only inspection that would show a fault of this configuration alone, such as a soft
     history that is bound only when ambient occlusion is on. At the night stop it shows lamps without
     shadows, and the record says so.
   - **Every effect together.** Lamp shadows and ambient occlusion added through their own selections, judged
-    by the lists of M3 to M5. No sentence of the record gives this result as the opt-in's.
+    by the lists of WP3 to WP5. No sentence of the record gives this result as the opt-in's.
 - **The paired timing is a tripwire.** On the final build with capture off, at 1280×720 and at 1920×1080, the
   valley's route runs from two launches. One is the opt-in launch as the record's launch line gives it, with
   no recipe named: `Traced` with the penumbra, the default quality values, and lamp shadows and ambient
@@ -655,7 +655,7 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   comparison with the portable recipe, an image difference inside a declared tolerance and a sustained run,
   and it belongs with a decision to make a ray effect a default. The maturity ledger records the traced path
   as run on this Mac, not performance-qualified and not a default.
-- **Why M6 waits for the exit.** M6 waits for `SHOWCASE` M8 so that its inspection and its record describe
+- **Why WP6 waits for the exit.** WP6 waits for `SHOWCASE` WP8 so that its inspection and its record describe
   the valley as the V1 exit leaves it. Nothing here changes the window's default, before the exit or after
   it, and the verifier's runs name no hardware feature, so no registered exact baseline moves.
 
@@ -704,7 +704,7 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
 - **The timed-pass span.** `timing.rs` reads every timed pass's begin and end counters from one batch, the
   surface consumer's among them, so the span is the last end less the first begin, with no new query. A
   structure build is not a pass with timestamps of its own. It is inside the span when a timed pass that
-  reads no structure is encoded before it, and M1's record of the build's GPU time has to arrange that
+  reads no structure is encoded before it, and WP1's record of the build's GPU time has to arrange that
   anyway. A span that held the queued transfers too would need the command buffer's own GPU start time,
   which wgpu does not give. For a tripwire the pass interval is enough when it is named as one.
 - **The recipe.** `capabilities/recipe.rs` resolves the recipe from the adapter's backend, unified memory and
@@ -713,13 +713,13 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   With no preference the function returns what it returns today, so no existing launch moves. The registry
   is made after the device, so the host knows whether ray queries were enabled before it states one.
 - **Scale.** The representative scene is 10,000 entities with 1,000 to 2,000 movers. A rebuild is linear in
-  instances, and the structure holds every instance whether or not it is on screen. M1 records it at 10,000
+  instances, and the structure holds every instance whether or not it is on screen. WP1 records it at 10,000
   and at the field's 100,513, and claims nothing at the larger count.
 - **What an edit costs.** A mesh structure cannot be built in parts, so an edit to a mesh costs its whole
-  build in one frame. M2 records that time against triangle count. `CONTENT-LOOP`'s promise of no late frame
+  build in one frame. WP2 records that time against triangle count. `CONTENT-LOOP`'s promise of no late frame
   on an edit stands for the portable method; on a scene with a structure it is the recorded build.
 
-### Scene preparation and Maps fallback (M3)
+### Scene preparation and Maps fallback (WP3)
 
 The first submission after a successful fallback has the bytes, content and streaming progress of the
 ordinary Maps submission for the same operation. Compare the same device generation and recipe, visual
@@ -734,7 +734,7 @@ speeds up its uploads to make the comparison pass.
 hooks. A new object-safe hook exposes candidate preparation and defaults to unsupported. An
 opted-in member prepares from a shared borrow of its accepted state and returns a candidate with the
 resources and declarations it will install. Its infallible commit takes that candidate and installs it on
-the member. M3 opts the cooked contribution in for both traced and Maps candidates. M5 opts the
+the member. WP3 opts the cooked contribution in for both traced and Maps candidates. WP5 opts the
 [valley's cloud provider](#ambient-occlusion-m5) in through the same hook. A `SceneContributions` list admits
 candidate preparation only if every leaf opts in, including leaves in nested lists. The empty list is eligible.
 Admission reads support before any traced preparation or call to `rebuild`. Detached visual and device
@@ -825,7 +825,7 @@ frame: it is judged by inspection.
 Recorded, never a gate (brief decision 3). The tripwires are the brief's: a visible hitch, a comparable figure
 about 25% worse than its last record, growth that is not linear in what it should follow.
 
-**A frame's cost** is two figures, in every record of this module from M3 on:
+**A frame's cost** is two figures, in every record of this module from WP3 on:
 
 - **Timed-pass span:** from the begin timestamp of the first timed pass the frame encodes to the end
   timestamp of the pass that consumes the frame's output. The time between those passes lies inside it, and
@@ -835,8 +835,8 @@ about 25% worse than its last record, growth that is not linear in what it shoul
   under both methods, the cascades' view records under `Maps`, and whatever the traced path queues for its
   own passes. Those differ between the methods, so the span can miss a GPU cost one of them pays. The CPU
   side of the same writes is inside frame CPU time. It is the span
-  [ruling 7](../ARCHITECTURE.md#seam-rulings-for-track-5) adds to the frame's timing record, which M3 adds
-  if `MESH-SHADING` M2 has not, and uses as found if it has.
+  [ruling 7](../ARCHITECTURE.md#seam-rulings-for-track-5) adds to the frame's timing record, which WP3 adds
+  if `MESH-SHADING` WP2 has not, and uses as found if it has.
 - **Frame CPU time:** the frame sample's upload and encode intervals together, which run from the start of
   the frame's uploads to the return of its submission.
 
@@ -848,19 +848,19 @@ Every record that carries the span calls it the timed-pass span and says which q
 it for each method, and no sentence drawn from it speaks of the whole frame's GPU time.
 
 - **Structure memory.** One mesh structure for each mesh, not each instance, plus an instance record for each
-  thing in the scene. M1 and M2 record resident bytes.
+  thing in the scene. WP1 and WP2 record resident bytes.
 - **Preparation overlap.** A transition retains the live resources and one candidate. Reuse compatible
   raster buffers by reference and allocate incompatible storage only for the candidate that needs it.
   Check contribution support once per preparation. The boundary adds no work to the frame loop.
 - **Each frame, CPU.** One instance write for each entity and placement in the scene.
-- **Each frame, GPU.** The scene structure's rebuild, which M1 records for a still scene, for the
+- **Each frame, GPU.** The scene structure's rebuild, which WP1 records for a still scene, for the
   representative movers and with every instance moving. Hard Sun: one ray for each shaded opaque pixel that
   faces the Sun, and in a rounded mesh's terminator band the receiver query and the ray that goes on from the
   far face, two more queries. Soft Sun: the same, with the terminator band's two queries also paid by a
   fragment whose plane the disc straddles; and in the visibility pass one ray for each opaque pixel,
   two more queries where that ray dips below its triangle inside the dive limit, and none at all beyond the
   limit. The history holds two soft values and their moments where one would do without the terminator
-  band, and the filter's passes carry both. M4's record states the limit, the share of pixels on each side
+  band, and the filter's passes carry both. WP4's record states the limit, the share of pixels on each side
   of it, and the history's bytes. Lamps: one ray for each
   in-range lamp a pixel faces. Ambient occlusion: one ray for each four pixels. The filter's passes.
 - **Saved on `Traced`.** The two cascade passes and the blocker search, while no volume reads the cascades.
@@ -872,25 +872,25 @@ that moved, through a third mask bit.
 
 1. **wgpu's ray tracing is experimental.** A defect a builder cannot work around inside Thrum ends the
    milestone `BLOCKED` with the smallest program that shows it. No pinned copy of wgpu exists before
-   `APPLE-PRESENTATION` M10, and nothing is posted upstream without the owner.
-2. **The rebuild grows with the scene, not the view.** Recorded from M1. The candidate is a second structure
+   `APPLE-PRESENTATION` WP10, and nothing is posted upstream without the owner.
+2. **The rebuild grows with the scene, not the view.** Recorded from WP1. The candidate is a second structure
    for still geometry.
 3. **A soft edge trails a mover.** Inside the edge the settle length bounds it, and the edge a shadow has
-   left shows for one frame. M4 inspects both on named frames, with a caster fast and low enough that its
+   left shows for one frame. WP4 inspects both on named frames, with a caster fast and low enough that its
    shadow moves further in a frame than its edge is wide. If the edge it left reads as a second edge, the
    named candidate is a few more inline rays toward the disc's rim on a fragment whose history holds a soft
    edge: where they all agree with the centre ray, the fragment has left the edge and uses the centre ray.
-   The builder may add them in M4, as a quality value, and says so in the evidence. If the edge still cannot
-   pass, M4's builder ends `BLOCKED` with the frames.
+   The builder may add them in WP4, as a quality value, and says so in the evidence. If the edge still cannot
+   pass, WP4's builder ends `BLOCKED` with the frames.
 4. **The terminator band is lit by a rule, not by the triangles.** [The passage](#a-rounded-meshs-own-facets)
    lights a terminator band the mesh's own triangles shadow, and its stated limits are a joined sheet
    inside the gap at an open rim, [the strip beside it](#what-a-fragment-uses) under soft shadows, and a
-   hard edge on a terminator band beyond the dive limit. M3 inspects the
-   terminator band on the valley's rock and balloons, and M4 under another body's soft shadow and on an
+   hard edge on a terminator band beyond the dive limit. WP3 inspects the
+   terminator band on the valley's rock and balloons, and WP4 under another body's soft shadow and on an
    open shell under a panel of its own mesh. If a facet
    survives on an irregular mesh because its far face lies beyond the reach, the builder may widen the reach
    by eye and says by how much, because the terminator band's supported separation grows with it.
-5. **Normals rebuilt from depth are wrong at silhouettes.** The filter's edge stops bound it; M5 inspects it.
+5. **Normals rebuilt from depth are wrong at silhouettes.** The filter's edge stops bound it; WP5 inspects it.
    A terminator-band pixel the pass misreads there settles dark, and its fragment shows the centre ray's hard
    edge.
 6. **Other builders are in the same files.** `SCENE-VIEWS`, `ATMOSPHERE`, `APPLE-PRESENTATION`, `HOST`,
@@ -902,7 +902,7 @@ that moved, through a third mask bit.
 
 - GPU tests ask `thrum-test-support`'s gate for a device with `ray-query` required and the Apple tile recipe,
   and are skipped with a reason where the adapter offers no ray queries. On this Mac a skip fails. A capture
-  for an inspected item requires the name too, so its frames cannot be the fallback's. M6's capture of the
+  for an inspected item requires the name too, so its frames cannot be the fallback's. WP6's capture of the
   opt-in is the one exception: it is launched as the record's launch line gives it, because that launch is
   what it judges. Its report is kept beside its frames, and frames whose report does not read Apple tile and
   `Traced` with the penumbra are the fallback's and are not judged.
@@ -910,17 +910,17 @@ that moved, through a third mask bit.
   not admit Apple tile, through the registry's functions, and a failed device request, structure or pipeline
   through a fault the test injects.
 - Tests that need only entities live in `thrum-render`'s tests. Proofs that need cooked meshes or the valley
-  run in the proving ground through a script, except M3's merge-tier guards. M3.14 checks admission and commit
+  run in the proving ground through a script, except WP3's merge-tier guards. WP3.14 checks admission and commit
   order on the CPU through the production boundary. The reviewer traces each caller into that boundary.
-  M3.15 uses the existing `thrum-asset-gpu` integration test binary on Metal and a receiver just large enough
+  WP3.15 uses the existing `thrum-asset-gpu` integration test binary on Metal and a receiver just large enough
   to need a second upload. It checks the first submitted bytes and upload progress. Both guards run without
-  opt-in Cargo features. M3.16 requires the existing main-branch `long-tests` result covering the M3 commit,
+  opt-in Cargo features. WP3.16 requires the existing main-branch `long-tests` result covering the WP3 commit,
   including the feature-gated selection and contribution tests.
 - Visual items use T2 engine capture on `mac-metal`, `fixed` for stills and `realtime` for motion, in the
   proving ground's valley with each effect and the traced view behind a selection that is off by default.
 - An item that judges motion names its frames: the frame occlusion changed, and each frame after it up to the
   settle length and one more. The reviewer is given those frames at native size.
-- Every timing of this module is a tripwire taken under load, M6's pair included: it records the load and
+- Every timing of this module is a tripwire taken under load, WP6's pair included: it records the load and
   fails only on a missing measurement. No sitting with other builders paused is asked for.
 - Scratch goes in `tmp/ray-tracing-<milestone>/`, selected evidence in `.orchestrate/evidence/RAY-TRACING/`.
 

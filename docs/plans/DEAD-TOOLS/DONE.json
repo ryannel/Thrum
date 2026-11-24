@@ -1,8 +1,8 @@
 {
   "module": "DEAD-TOOLS",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "Each module's record of what it copied, from where and under what licence is tracked in Git, where a clone gets it",
       "status": "done",
       "failed_reviews": 0,
@@ -11,20 +11,20 @@
       "quality_bar": "As dependable as the third-party notices of a well-kept open-source project such as wgpu or Bevy: anyone with a clone can read what was copied, from where and under what licence, and the record is the one that gets updated.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "The provenance records of `SEA`, `WATERS`, `CLOUDS`, `PUDDLES` and `RIVERS` are tracked in Git as `docs/provenance/<MODULE>.md`. Each says what its working-folder record said about what was copied or translated, from where and under what licence. Every link in one resolves in a clone: a link to a file only the working folder holds becomes that file's name in plain text. The repository map says the folder holds these records.",
           "check": "sh -c 'test \"$(git ls-files docs/provenance/SEA.md docs/provenance/WATERS.md docs/provenance/CLOUDS.md docs/provenance/PUDDLES.md docs/provenance/RIVERS.md | wc -l)\" -eq 5 && ! git grep -qE \"\\]\\([^)]*orchestrate/evidence\" -- docs/provenance/SEA.md docs/provenance/WATERS.md docs/provenance/CLOUDS.md docs/provenance/PUDDLES.md docs/provenance/RIVERS.md && ./dev check-docs'",
           "ask": "Compare each tracked record with the working-folder record it came from: is any statement about what was copied, its source or its licence lost or changed? Does each working-folder record now open with a line that names the tracked record as the one to keep current?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M5/record-diffs.txt (tracked vs working records: only link forms differ); .orchestrate/evidence/DEAD-TOOLS/M5/check.log",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP5/record-diffs.txt (tracked vs working records: only link forms differ); .orchestrate/evidence/DEAD-TOOLS/WP5/check.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M5-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP5-review.md"
         }
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "The check refuses a new script or bench that nothing runs, a new source file that names `docs/evidence`, and a new shader text edit: each count is frozen where it stands",
       "status": "done",
       "failed_reviews": 0,
@@ -33,30 +33,30 @@
       "quality_bar": "As dependable as a lint baseline in a well-kept repository such as Chromium's or rust-lang's tidy checks: what is already there is counted once, one more is refused with a message that says what to write instead, and a correct landing is never refused.",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "Four rules of the shape check each hold a count that can only fall, entered at the count of the commit this milestone lands on: `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, as the design defines them. A landing that adds one more of any of them fails `./dev check`, and the message says what to write instead. A new script that a done-when item's check names is not refused, whether its milestone is open or Done, and no record under `docs/evidence` counts as naming a script or a bench. The log gives each rule's count at landing.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule evidence-path && python3 scripts/shape_rules.py check --rule script-caller && python3 scripts/shape_rules.py check --rule bench-runner && python3 scripts/shape_rules.py check --rule shader-text-edit && python3 scripts/test_shape_rules.py'",
           "ask": "Read each rule's fixtures: does each refuse one more of its shape and pass the cases the design leaves out (the evidence store's restore code; a script that `dev`, a tracked document outside the plans or a done-when item's check names, for an open milestone and for a Done one; a suite named for no script; a bench a script runs; a `.replace(` in a test file)? Is a script or bench that only a file under `docs/evidence` names counted? In a scratch copy, add a script nothing names, and a `.replace(` to a non-test Rust file that mentions WGSL: does `./dev check` fail on each and say what to do? Count `shader-text-edit` by hand with `git grep`, and pick three scripts the rule counts and three it does not: do the log's counts and the rule agree with what you find?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M6/NOTES.md",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP6/NOTES.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M6-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP6-review.md"
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M6-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP6-review.md"
         }
       ]
     },
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "Scripts that nothing runs are gone in one landing, and the check finds the script suites that are left by itself",
       "status": "done",
       "failed_reviews": 1,
@@ -65,51 +65,51 @@
       "quality_bar": "As clean as a prune in a well-kept repository such as ripgrep's or wgpu's: everything left is run or read by something, what was removed is found in history from the document that described it, and no document points at a file that is gone.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "The headless release-trust toolchain is out of the tree: the 15 scripts the design names, their 13 suites and the `rustc_receipt` binary. Nothing left under `scripts`, `tools`, `crates`, `examples` or `.config` names one of them. The designs and research notes that describe it each say in one line which commit last held it and link no file that is gone, and the maturity ledger's rows for it say retired at that commit.",
           "check": "sh -c 'test -z \"$(git ls-files | grep -E \"(^|/)(test_)?(prepare_headless_cargo_home|prepare_macos_tool_root_clone|inventory_headless_tool_roots|run_bounded_native_build|qualify_held_macos_native_ab|release_cargo_selection|hold_macos_private_cargo_cache|hold_macos_release_records|hold_macos_tool_root_clone|verify_crate_extraction|verify_crates_io_archive_origin|verify_crates_io_index_origin|verify_headless_release_inputs|verify_rust_component_archive|verify_rustc_receipts|rustc_receipt)\\.(py|rs)$\")\" && ! git grep -qE \"prepare_headless_cargo_home|prepare_macos_tool_root_clone|inventory_headless_tool_roots|run_bounded_native_build|qualify_held_macos_native_ab|release_cargo_selection|hold_macos_private_cargo_cache|hold_macos_release_records|hold_macos_tool_root_clone|verify_crate_extraction|verify_crates_io_archive_origin|verify_crates_io_index_origin|verify_headless_release_inputs|verify_rust_component_archive|verify_rustc_receipts|rustc_receipt\" -- scripts tools crates examples .config && ./dev check-docs'",
           "ask": "Does each of the three headless-build designs, and each research note that linked the toolchain, name the last commit that held it? Does any row of the maturity ledger still describe the toolchain as present, candidate or selected?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md (deletions, document lines, ledger rows incl. the three the first review found, shape counts)",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP1/NOTES.md (deletions, document lines, ledger rows incl. the three the first review found, shape counts)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "The thirteen one-shot milestone proof scripts, the profiler probe beside them, and the culling campaign script with its suite are out of the tree, and nothing that is left imports or runs one. So are the three files that only one of them ran: the ungranted Mac capture script, its Swift launcher and the playback review script. No deletion of this milestone left a file under `scripts/` with no caller.",
           "check": "sh -c 'test -z \"$(git ls-files scripts/apple_presentation_m1.py scripts/apple_presentation_m1_held.py scripts/apple_tile_m10.py scripts/apple_tile_m1_sim.py scripts/native_provider_recovery.py scripts/recipe_browser.py scripts/capture_effect_composition.py scripts/cooked_draw_seed_history.py scripts/culling_capture.py scripts/reconstruction_motion.py scripts/reconstruction_timing.py scripts/transport_checks.py scripts/check_creator_profiler.py scripts/creator_profile_probe.rs scripts/culling_campaign.py scripts/test_culling_campaign.py scripts/capture_mac_m2_ungranted.py scripts/mac_m2_capture_launcher.swift scripts/review_v1_playback.mjs)\" && ./dev check-docs'",
           "ask": "Take each deleted script's name: does any script, test, `./dev` command, CI workflow or open item's check that is left import or run it? Was any script deleted that something still runs, or that the exact-baseline registry pins or a pinned script imports? Did `script-caller`'s count only fall, with the baseline tightened to it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md (deletions and callers searched; script-caller 36 to 25, tightened)",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP1/NOTES.md (deletions and callers searched; script-caller 36 to 25, tightened)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "`./dev check` finds the script suites itself: every `scripts/test_*.py` runs, and every `scripts/test_*.mjs` where node is installed, with no list to keep, so a suite added later runs without an edit to the check. A suite is excluded only by name with its reason: one the check cannot run, one that fails at the starting commit, one that tests a script the review found dead and this module leaves, or one that takes over about a minute, with its measured time. The record gives the time the newly run suites add to a check.",
           "ask": "In a scratch copy, add a `scripts/test_zz_probe.py` that fails and run the check's script step: does it fail on the probe? Is each excluded suite one of the four kinds the design names, with its reason, and for a failing one its failure and the module that owns its script? Run each suite excluded as failing on the starting commit: does it fail there? Was any failing suite edited to make it pass? Does the record give the time each newly run suite takes, measured, and is any suite over about a minute still in the check?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md; .orchestrate/evidence/DEAD-TOOLS/M1/suites/discover-counts.txt; .orchestrate/evidence/DEAD-TOOLS/M1/probe-check-2.log",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP1/NOTES.md; .orchestrate/evidence/DEAD-TOOLS/WP1/suites/discover-counts.txt; .orchestrate/evidence/DEAD-TOOLS/WP1/probe-check-2.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran",
       "status": "done",
       "failed_reviews": 0,
@@ -118,7 +118,7 @@
       "quality_bar": "As clean as a prune in a well-kept repository such as ripgrep's or wgpu's: everything left is run or read by something, what was removed is found in history from the document that described it, and no document points at a file that is gone.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "`thrum-render` builds no bench, and no longer depends on the bench harness only its benches used. The game's `field_culling` and `material_reload` benches are gone. The benches the design lists as kept are untouched.",
           "check": "sh -c 'test -z \"$(git ls-files | grep -E \"(^|/)benches/(extract|clustered|visibility|frame_target|camera_culling|camera_culling_encode|occlusion_passes|field_culling|material_reload)\\.rs$\")\" && ! git grep -q \"^divan\" -- crates/thrum-render/Cargo.toml && cargo check --locked --offline -p thrum-render -p v1-game --all-targets'",
           "ask": "For each of the four benches the design lists as kept, does the script it names still run it, and does its command still name a bench that exists?",
@@ -126,10 +126,10 @@
           "builder_result": "pass",
           "evidence": "agent_loop check on a4946d010: pass (.git/orchestrate/checks/18611c59781e642058603ba7-00a3a466ab367679.stdout); kept benches valley_culling (scripts/culling_cost.py, scripts/render2d.py), cooked_edit and edit_to_visible (scripts/check_g5_tripwires.sh), allocations (scripts/transport_link.py) unchanged",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "`./dev baseline-inventory` is gone, with the two benches only it ran: the one that held the G0 and G2 modes, and the game's frame bench with its inventory printer and batch modes. `./dev help` and `CONTRIBUTING.md` no longer offer the command.",
           "check": "sh -c './dev help >/dev/null && ! ./dev help | grep -q baseline-inventory && test -z \"$(git ls-files | grep -E \"(^|/)benches/(g2r|frame)\\.rs$\")\" && cargo check --locked --offline -p v1-game --benches'",
           "ask": "Does anything left print the G0 gate table or read a `--g0` or `--g3b` flag? Is the maturity ledger's mention of the inventory still worded as history?",
@@ -137,22 +137,22 @@
           "builder_result": "pass",
           "evidence": "agent_loop check on a4946d010: pass (.git/orchestrate/checks/18611c59781e642058603ba7-9215f90b80b9987f.stdout); ./dev help no longer lists baseline-inventory",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M2-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left",
       "status": "done",
       "failed_reviews": 2,
@@ -161,115 +161,115 @@
       "quality_bar": "As clean as a prune in a well-kept repository such as ripgrep's or wgpu's: everything left is run or read by something, what was removed is found in history from the document that described it, and no document points at a file that is gone.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "The records under `docs/evidence` that nothing reads are out of the tree: 373 of the 406 tracked there on 20 November. Each has a copy in the working folder. Where that copy differs from the bytes Git held, those bytes were saved there first under a second name, so the bytes Git held of every deleted record are in the working folder. No tracked document links a file that is gone.",
           "check": "sh -c 'test \"$(git ls-files docs/evidence | wc -l)\" -le 33 && ./dev check-docs'",
           "ask": "List the deleted files whose working copy differs from the bytes at the starting commit, with `git show` against the working folder: is each one's committed content there under a second name? Pick ten other deleted files across modules: does each working copy match the bytes Git held? For five files still tracked under `docs/evidence`, what reads each?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md (M3.1 and both fix rounds), with sweep-refs-to-deleted.txt, deleted-records.json and deleted.txt beside it",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP3/NOTES.md (WP3.1 and both fix rounds), with sweep-refs-to-deleted.txt, deleted-records.json and deleted.txt beside it",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "The test data `./dev check` reads is not under `docs/evidence`: the `RENDER-2D` cost receipts and the atmosphere's aerial volumes are read from test fixtures, with the bytes they had, and the tests that read them pass.",
-          "check": "sh -c 'test -z \"$(git ls-files docs/evidence/RENDER-2D/M1 docs/evidence/ATMOSPHERE/M9-volumes)\" && python3 scripts/test_render2d.py && out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib aerial_ground 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
+          "check": "sh -c 'test -z \"$(git ls-files docs/evidence/RENDER-2D/WP1 docs/evidence/ATMOSPHERE/WP9-volumes)\" && python3 scripts/test_render2d.py && out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib aerial_ground 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Compare each moved file's Git blob with the starting commit: are the bytes the same? Does `python3 scripts/render2d.py costs` read the same receipts it read before?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m32-test-data-in-fixtures",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP3/NOTES.md#m32-test-data-in-fixtures",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review.md"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "One manifest under `.config/` lists the evidence that left the tree, and the evidence store writes nothing under `docs/evidence`: no manifest and no generated ignore file are kept there. The store's check reports the entries it reported at the starting commit, and a restore gives the same bytes.",
           "check": "sh -c 'test -z \"$(git ls-files docs/evidence/BULK.json docs/evidence/.gitignore)\" && python3 scripts/evidence_store.py check && python3 scripts/test_evidence_store.py'",
           "ask": "Does `evidence_store.py check` report the same number of history, local and relocated entries as at the starting commit? Restore one history entry in a scratch checkout: is its hash the manifest's?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m33-one-manifest, store-check-before.txt and store-check-after.txt beside it",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP3/NOTES.md#m33-one-manifest, store-check-before.txt and store-check-after.txt beside it",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review.md"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "`AGENTS.md`, `CONTRIBUTING.md`, the storage rules, the repository map and the engineering patterns say where evidence goes as the project settings do: run records in the working folder, test data in fixtures, and a provenance record tracked under `docs/provenance`. None tells a reader to add or commit a file under `docs/evidence`.",
           "check": "./dev check-docs",
           "ask": "Read the evidence text of each of the five documents and the message of the evidence-size rule: does any still send a record to `docs/evidence`, or describe a step the merge would refuse?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m34-documents",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP3/NOTES.md#m34-documents",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review.md"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "TEST-SUPPORT:M2"
+        "TEST-SUPPORT:WP2"
       ],
       "quality_bar": "As clean as a prune in a well-kept repository such as ripgrep's or wgpu's: everything left is run or read by something, what was removed is found in history from the document that described it, and no document points at a file that is gone.",
       "items": [
         {
-          "id": "M4.1",
-          "statement": "No source file under `crates`, `examples`, `scripts` or `tools` names a path under `docs/evidence`, except the evidence store's code that restores history: the rule `evidence-path`, frozen since M6, is at zero there. A record a run writes goes to the working folder by default, and a record a later run compares with is test data in a fixtures folder, with the bytes it had.",
+          "id": "WP4.1",
+          "statement": "No source file under `crates`, `examples`, `scripts` or `tools` names a path under `docs/evidence`, except the evidence store's code that restores history: the rule `evidence-path`, frozen since WP6, is at zero there. A record a run writes goes to the working folder by default, and a record a later run compares with is test data in a fixtures folder, with the bytes it had.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule evidence-path --zero crates examples scripts tools && python3 scripts/test_shape_rules.py'",
           "ask": "Is every exemption written in the rule with its reason, and is the evidence store's restore code the only one? Compare each moved record's Git blob with the starting commit.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (rule at zero; moved blobs in M4/blobs.txt)",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP4/NOTES.md (rule at zero; moved blobs in WP4/blobs.txt)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "Every command an open item's check runs through a changed script runs as it did and compares with the same prior record: the cost checks of the water, cloud, river, rain and scene-view scripts, the 2D conformance check, the session and ray-tracing proofs and the content tripwire.",
           "ask": "List each script the milestone changed and the open items whose checks run it. For each, does the command still parse its arguments, read the same prior record bytes, and print and exit as before? Did any command's output shape change?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (script-by-script table; before/after outputs in M4/before and M4/after)",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP4/NOTES.md (script-by-script table; before/after outputs in WP4/before and WP4/after)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "The culling route test holds no timing coordinator and no campaign mode, and nothing reads the variables that armed them. Its exact, timing and exit-arm modes run as they did.",
           "check": "sh -c '! git grep -qE \"TimingInterleave|THRUM_CULLING_TIMING_PAIR\" -- crates examples scripts && git grep -q valley_route -- examples'",
           "ask": "Do `culling_cost.py` and `render2d.py` still drive the route test's timing mode, and does its exact comparison still run in `./dev check`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (route exact, exit-arm and timing runs in M4/after)",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/WP4/NOTES.md (route exact, exit-arm and timing runs in WP4/after)",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md"
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP4-review.md"
         }
       ]
     }

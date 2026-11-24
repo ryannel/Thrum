@@ -22,21 +22,21 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: cost is recorded on the Mac only, at 2560×1440, and no timing figure decides an item (brief decision 3).
 - Assumption: the owner's bar of 17 November applies as in `WATERS`: what a game reads stays tested (the river in the map and the query, with the flow bands in its answers), and the look of the sheet, the flow bands and the river's caustics is judged by eye.
 
-## M1 On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes
+## WP1 On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes
 
-[Review](../../../.orchestrate/evidence/RIVERS/M1-review.md)
+[Review](../../../.orchestrate/evidence/RIVERS/WP1-review.md)
 
-## M2 On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on
+## WP2 On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on
 
-[Review](../../../.orchestrate/evidence/RIVERS/M2-review.md)
+[Review](../../../.orchestrate/evidence/RIVERS/WP2-review.md)
 
-## M3 On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale
+## WP3 On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale
 
-[Review](../../../.orchestrate/evidence/RIVERS/M3-review.md)
+[Review](../../../.orchestrate/evidence/RIVERS/WP3-review.md)
 
-## M8 Small river fixtures keep the solver checks fast
+## WP8 Small river fixtures keep the solver checks fast
 
-Build this repair first. It can land independently of the island work in M4, which waits for WATERS M9.
+Build this repair first. It can land independently of the island work in WP4, which waits for WATERS WP9.
 
 Use the [fixture design](DESIGN.md#compact-river-solver-fixtures-m8) for the cases in the
 [workspace case list and baseline times](LOG.md#m8-workspace-timing-baseline).
@@ -45,25 +45,25 @@ Record each case’s disposition, any replacement coverage and its before-and-af
 check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
 focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
 
-## M9 Chart gauges and solver determinism run within the fast-suite limit
+## WP9 Chart gauges and solver determinism run within the fast-suite limit
 
-Land this repair before M4. Use the [compact fixtures](DESIGN.md#compact-chart-gauge-and-determinism-fixtures-m9)
+Land this repair before WP4. Use the [compact fixtures](DESIGN.md#compact-chart-gauge-and-determinism-fixtures-m9)
 for the two tests that timed out on their isolated retry. Record the work each fixture does and the test
 times with the default Nextest profile, excluding compilation, alone and together under normal builder load.
 Both pass on the first attempt under the existing ten-second limit.
 
-## M4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
+## WP4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 
-The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/check_water_browser.mjs` are `WATERS`'; add the valley, cases and scenes behind the selection and change none of theirs. River files are generated beside the example's cooked content and are not committed. The fall is in the map from here and is drawn in M6.
+The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/check_water_browser.mjs` are `WATERS`'; add the valley, cases and scenes behind the selection and change none of theirs. River files are generated beside the example's cooked content and are not committed. The fall is in the map from here and is drawn in WP6.
 
-## M5 On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream
+## WP5 On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream
 
-The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. `c` and the birth constant are the two values to tune against M5.4 and M5.5; record both. M5.10's expected answer comes from the band evaluator M3 left in `thrum-water-model` (`flow.rs`), and its tolerance from the query test `WATERS` M5 wrote. The query dispatch and the cascades' cadence are `WATERS`'; [a query's demand](DESIGN.md#the-flows-own-waves) adds only when the flow bands' own producer runs, and M5.6 tests it.
+The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. `c` and the birth constant are the two values to tune against WP5.4 and WP5.5; record both. WP5.10's expected answer comes from the band evaluator WP3 left in `thrum-water-model` (`flow.rs`), and its tolerance from the query test `WATERS` WP5 wrote. The query dispatch and the cascades' cadence are `WATERS`'; [a query's demand](DESIGN.md#the-flows-own-waves) adds only when the flow bands' own producer runs, and WP5.6 tests it.
 
-## M6 A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings
+## WP6 A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings
 
-M6.10's figures are parts 9 and 12's: build the ladder in `thrum-water`'s interaction step. No f64 reference of it is required. The wave share is tuned by eye against M6.5 and recorded, and nothing asserts the fall's power as its ceiling. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
+WP6.10's figures are parts 9 and 12's: build the ladder in `thrum-water`'s interaction step. No f64 reference of it is required. The wave share is tuned by eye against WP6.5 and recorded, and nothing asserts the fall's power as its ceiling. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
 
-## M7 A visitor raises the lake, sets the stream's flow and takes the day from dawn to night, and the rivers and the waterfall hold up in motion, in shade and from under water, on the Mac and in Chrome
+## WP7 A visitor raises the lake, sets the stream's flow and takes the day from dawn to night, and the rivers and the waterfall hold up in motion, in shade and from under water, on the Mac and in Chrome
 
-If `WATERS` already takes the lent Sun visibility on its surface, M7.3 adds only the sheet's. A defect in the reconstructor, and not in what the water writes, goes to `APPLE-PRESENTATION`'s log.
+If `WATERS` already takes the lent Sun visibility on its surface, WP7.3 adds only the sheet's. A defect in the reconstructor, and not in what the water writes, goes to `APPLE-PRESENTATION`'s log.

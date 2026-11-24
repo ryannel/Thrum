@@ -1,61 +1,61 @@
 {
   "module": "BASELINE-GUARD",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "From a clean checkout, one command verifies every registered exact baseline at the current commit: it builds the release game and the Wasm page, cooks the valley, runs APPLE-TILE's native matrices and the four Chrome fixed captures, exits non-zero on any difference, refuses a dirty tree, and on a full pass writes a proof that names the content key.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "ask": "Does the verifier take every input from the checkout and its own fresh outputs, reading nothing from another task's scratch such as tmp/g3t-m0? Does its record hold the revision, the content key, the native binary's hash, the Wasm artefact hashes and the cooked root? Do its registry and the table in ARCHITECTURE.md list the same baselines, owners and covered paths?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "The Chrome comparison covers all 481 records of each of the four retained sets (day and night, submitted SDR and scene-linear): the identity fields are equal, and each fresh frame's decoded bytes hash to the retained digest. Every retained reference file is unchanged, and the owner's byte comparison behaves as before.",
           "ask": "Read the comparison and one verifier record. Is each fresh frame's hash computed again from its bytes, not copied from the candidate's manifest? Are all four sets and all 481 records of each compared? Did this milestone's diff leave every file under the registered baselines byte-identical?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "`./dev check` passes a commit with no covered-path change beyond main without a proof, and refuses one with such a change unless a proof names its content key. A proof stops counting when a rebase brings in a covered-path change, and still counts when the rebase brings in only other paths.",
           "check": "python3 scripts/test_exact_baselines.py",
           "ask": "Read the test and the gate. Does the test drive fetch, rebase, gate and push against a throwaway remote, and show that remote's main unmoved after each refusal? Does `./dev check` run the gate, with no flag or environment variable that skips it?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "The loop's own `land`, run in a scratch clone against a local bare remote, refuses three regressions and leaves that remote's main unmoved: jitter on the game's default views, a night-only change and a Chrome-only change. Each fails the verifier by name, so no proof is written. A proved change rebased onto a covered-path commit is refused the same way.",
           "ask": "Do the retained patches, base revision, commands and logs let you reproduce each refusal? Does each verifier failure name the baseline, its owner and the comparison, and tell a changed image from a reference file that cannot be read? Was the real remote never pushed to?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP1-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "The time one verifier run and one gate check take is recorded from three runs each, with the load.",
           "ask": "What do the recorded runs show a covered-path landing pays, and how close is one verifier run to the loop's one-hour limit on a check?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP1-review.md",
           "builder_result": "pass"
         }
       ],
@@ -66,7 +66,7 @@
       "quality_bar": "A merge gate in the manner of Rust's bors and a merge queue: the commit that reaches main is the commit that was tested, the comparison is exact and named, and it fails on the smallest real change."
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh",
       "status": "done",
       "failed_reviews": 0,
@@ -74,80 +74,80 @@
       "quality_bar": "A lockfile's checksum, as in Cargo.lock or go.sum: a pinned file changes only in a commit that also changes its recorded digest, and the failure names the file, its owner and the rule.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "The registry lists each registered baseline's comparison files as the design's table names them, the verifier and `scripts/compare_v1_pixels.py` among them. For each baseline it holds a pin over the baseline's definition and the path and Git object ID of every protected file, and the refresh that last set the pin: the ruling's anchor in the module list, the module and the milestone. One command computes every pin at the current commit, passes when each equals the registry's, and prints them.",
           "check": "python3 scripts/exact_baselines.py guard",
           "ask": "Read the guard and the registry. Is each pin computed from the commit's tree, over every field of the entry but the pin and the refresh, every tracked file of the reference and every comparison file? Does each baseline list every comparison file the design's table names for it? Does the first refresh of each baseline name an anchor that the module list holds?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "The guard refuses a change to a protected file, naming the baseline, its owner and each file that differs from the merge base with main: a changed byte in a reference file, a reference file added or removed, and a changed comparison file, with `scripts/compare_v1_pixels.py` and the verifier each tried. It refuses a protected file with an uncommitted change, a pin that changed while its refresh did not, and a refresh whose anchor the module list does not hold. It passes a commit that changes a reference together with its pin and a refresh naming an anchor the module list holds.",
           "check": "python3 scripts/test_exact_baselines.py GuardTests",
           "ask": "Read the tests. Is each case decided by the function `./dev check` calls, in a Git repository made for the test, with the refusal's text asserted to name the baseline, the owner and the file? Is there a flag, an environment variable or a file other than the registry that makes the guard pass?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "`./dev check` runs the guard where it ran the gate, with no GPU, browser or build. The gate, the proof file and `proof_path` are gone: nothing under `scripts/` or `tools/` reads or writes a proof, and `verify --full` still writes its record with the content key.",
           "check": "sh -c '! grep -rn proof_path scripts tools'",
           "ask": "Does `./dev check` call the guard, and does it fail when the guard fails? Does a `verify --full` record still hold the revision, the content key, the binary and Wasm hashes and the cooked root?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "The verifier's scratch stays bounded. At its start, `verify --full` keeps the records of its latest runs and the captures of its latest failed run under `tmp/baseline-guard/`, and removes older ones. The numbers kept come from the measured size of a failed run, recorded with the free space the checkout of the run on main needs.",
           "check": "python3 scripts/test_exact_baselines.py ScratchTests",
           "ask": "Read the pruning and its tests. Can it remove anything outside `tmp/baseline-guard/` of its own checkout, the run in progress, or the latest failed run's captures? What do the recorded sizes say the checkout holds after a day of runs?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes on a main commit that contains the claimed one: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md",
           "ask": "Read this milestone's diff. Is every file under the registered references unchanged, and does the registry still hold the same five baselines with their earlier fields as they were?"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "`CONTRIBUTING.md`, `./dev help`, the engineering skill's building reference and the module list's exact-baseline rules describe the guard, the pins, and how a planned refresh, an edited comparison file and an added, redefined or retired baseline each record themselves. None still describes a proof file or a gate.",
           "ask": "Do the four documents agree with the guard as built? Does a builder making a planned refresh find in them every step it must take (regenerate, run `verify --full`, update the pin and the refresh, merge in one landing), and a planner retiring a baseline the record it must leave?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "The guard compares the registered set with the registry at the merge base with main. It refuses, naming the baseline and its owner: a baseline registered at the merge base that the commit neither registers nor retires, a changed field of a baseline's definition whose pin and refresh did not change with it, and a new baseline with no refresh. It passes a baseline moved to the retired list with a refresh naming an anchor the module list holds, and a redefined or added baseline whose pin and refresh are right.",
           "check": "python3 scripts/test_exact_baselines.py RegisteredSetTests",
           "ask": "Read the tests. Does one remove a single baseline and leave every other entry, pin and refresh untouched, and is the refusal's text asserted to name that baseline? Is each case decided by the function `./dev check` calls, against the merge base's registry read from Git and not from the working tree?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md"
         }
       ]
     }

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SCENE-VIEWS/design-review.md",
     "commit": "8c19984d9ef3504a9b00403f500a43900d3e26bb",
-    "hash": "10f01e23910b9a336fc1f8fb8aa5ae040878c61790cde5d15cc11ee597f50695",
+    "hash": "95656a4b360b02b106e21686597c82029e22c4113b46dd55fd7231a946f5c4ef",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,29 +23,29 @@
     },
     "at": "2026-11-23T22:21:05Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "b930cc53458fe592312ad986c8cabcee3a14747e4ca6f957946ddb65b188c1bd",
+  "work_packages": {
+    "WP1": {
+      "definitions": "dc1164946ee3c689c8065e174162f321980124c1ef88ca81742e09914fd5a468",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "57b4d4deb6aa329c4d71af9cdfefcbe6aef52d77",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review-1.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.13": "pass",
-            "M1.14": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.12": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.11": "pass",
-            "M1.10": "pass"
+            "WP1.1": "pass",
+            "WP1.13": "pass",
+            "WP1.14": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.12": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.11": "pass",
+            "WP1.10": "pass"
           },
           "findings": [
             {
@@ -73,22 +73,22 @@
         {
           "verdict": "pass",
           "commit": "bd9554c78be4e33032227380a5e89d7ed92dd566",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.13": "pass",
-            "M1.14": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.12": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.11": "pass",
-            "M1.10": "pass"
+            "WP1.1": "pass",
+            "WP1.13": "pass",
+            "WP1.14": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.12": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.11": "pass",
+            "WP1.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -118,7 +118,7 @@
         "checked": "2321c7c0a887eef0b7c9875f27ea74059a5f6757",
         "at": "2026-11-17T22:06:29Z",
         "reused": [
-          "M1.10"
+          "WP1.10"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -129,36 +129,36 @@
       "done": {
         "by": "review",
         "commit": "bd9554c78be4e33032227380a5e89d7ed92dd566",
-        "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md",
+        "review": ".orchestrate/evidence/SCENE-VIEWS/WP1-review.md",
         "checked": "2321c7c0a887eef0b7c9875f27ea74059a5f6757",
         "at": "2026-11-17T22:36:38Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "2979a1a80b7505aa8345fc2a1d649b94c6657e9fac525b4edd36640428434e76",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "eb180e89d6a8fa790a42cb027bfc85b5c1f53676",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review-1.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "fail",
-            "M2.4": "pass",
-            "M2.5": "fail",
-            "M2.6": "pass",
-            "M2.7": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "fail",
+            "WP2.4": "pass",
+            "WP2.5": "fail",
+            "WP2.6": "pass",
+            "WP2.7": "pass"
           },
           "findings": [
             {
               "name": "Reflected bank does not show the lamp-lit ground",
-              "item": "M2.5",
+              "item": "WP2.5",
               "repeat": false
             },
             {
               "name": "Radiance markers are inside the main frame",
-              "item": "M2.3",
+              "item": "WP2.3",
               "repeat": false
             },
             {
@@ -190,15 +190,15 @@
         {
           "verdict": "pass",
           "commit": "59dc5dfdeba763f68b40f24d9ef7e6040b9865fc",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -252,45 +252,45 @@
       "done": {
         "by": "review",
         "commit": "59dc5dfdeba763f68b40f24d9ef7e6040b9865fc",
-        "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md",
+        "review": ".orchestrate/evidence/SCENE-VIEWS/WP2-review.md",
         "checked": "571ffff3d222fdb2463510cfd01a5cd7d415b97d",
         "at": "2026-11-18T03:54:32Z"
       }
     },
-    "M3": {
-      "definitions": "5465b04a19bd0910a65980e1007b17d1edf07d7c6a18f85601d12b13f78bf9c6",
+    "WP3": {
+      "definitions": "7106f475b2193356c216e0bf1d5b6fd34624feff1367bd364377c17d0fd571d8",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "0997520f795f2178647797cdbc200b4e2331b61a",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review-1.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review-1.md",
           "items": {
-            "M3.1": "fail",
-            "M3.2": "pass",
-            "M3.3": "fail",
-            "M3.4": "fail",
-            "M3.5": "fail",
-            "M3.6": "pass",
-            "M3.7": "pass"
+            "WP3.1": "fail",
+            "WP3.2": "pass",
+            "WP3.3": "fail",
+            "WP3.4": "fail",
+            "WP3.5": "fail",
+            "WP3.6": "pass",
+            "WP3.7": "pass"
           },
           "findings": [
             {
-              "item": "M3.1",
+              "item": "WP3.1",
               "name": "Chrome omits the terrain-shadow equality cases",
               "repeat": false
             },
             {
-              "item": "M3.4",
+              "item": "WP3.4",
               "name": "The final cost record was taken during another builder's GPU run",
               "repeat": false
             },
             {
-              "item": "M3.3",
+              "item": "WP3.3",
               "name": "The pool comparison accepts the wrong effect",
               "repeat": false
             },
             {
-              "item": "M3.5",
+              "item": "WP3.5",
               "name": "The author guide omits the measured cost of each control",
               "repeat": false
             },
@@ -319,15 +319,15 @@
         {
           "verdict": "pass",
           "commit": "da940c7a4508970dcbfaea2899bde11ff82e3830",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -358,7 +358,7 @@
         "at": "2026-11-18T12:00:55Z",
         "reused": [
           "Test command",
-          "M3.4"
+          "WP3.4"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -385,20 +385,20 @@
       "done": {
         "by": "review",
         "commit": "da940c7a4508970dcbfaea2899bde11ff82e3830",
-        "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md",
+        "review": ".orchestrate/evidence/SCENE-VIEWS/WP3-review.md",
         "checked": "28e75266d58c8ede49ba2c06cb135eea5f0e9f7b",
         "at": "2026-11-18T12:29:32Z"
       }
     },
-    "M4": {
-      "definitions": "42d0230227029fff3635b9ccb0a31732c84f2f865d8cc5a142bae2d488facdcc",
+    "WP4": {
+      "definitions": "76b0e268f1731054c05d7c384200072ca544b6cfb01d8c9831273363e54d3784",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "b4a702dbbcf7e27b9810f94ed90e4020d9003ed3",
-          "review": ".orchestrate/evidence/SCENE-VIEWS/M4-review.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/WP4-review.md",
           "items": {
-            "M4.1": "pass"
+            "WP4.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-sol",
@@ -456,13 +456,13 @@
       "done": {
         "by": "review",
         "commit": "b4a702dbbcf7e27b9810f94ed90e4020d9003ed3",
-        "review": ".orchestrate/evidence/SCENE-VIEWS/M4-review.md",
+        "review": ".orchestrate/evidence/SCENE-VIEWS/WP4-review.md",
         "checked": "08fdbcbbaf6060006c69becf7d87c3eb8a6158a1",
         "at": "2026-11-23T23:17:34Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main stay in high quality modern games. That's the standard we're after. Camera being able to go under water we need to support as well.\" The WATERS re-plan of that day left out caustics, underwater light shafts and exposure that adapts under water, which are standard in high-end underwater views; bring the underwater view up to that bar in WATERS (or the owning module), and plan the new module SCENE-VIEWS that WATERS M14 depends on. Choose methods from first principles and current practice. Do not change WATERS M1, which is being built.",
       "at": "2026-11-14T10:11:12Z"
@@ -689,7 +689,7 @@
       },
       "at": "2026-11-18T10:30:04Z",
       "items_owed": [
-        "M4"
+        "WP4"
       ]
     },
     {

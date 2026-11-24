@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/WATERS/design-review.md",
     "commit": "8939bdf4a4151d1c4304b18438d4e50e686817a4",
-    "hash": "9bb2ada571c17ad184658b66b6db00e6c68c8a110643397d047fbd530963639f",
+    "hash": "376747fb76552623d2d0b044045f255fdc164756552ccab88e6f9ec31612b5c2",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,38 +23,38 @@
     },
     "at": "2026-11-24T04:48:35Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "b49194933fd7682c9e31ebce69ac2ed052671c0598dc0289cfa614499be52a73",
+  "work_packages": {
+    "WP1": {
+      "definitions": "28c7411d6e1211056e43c758d59c48f49882b4c98ea0c9117951c89941dc17dd",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "b5dae2f233cc6ca1bb15ed4e965b48f5e91d3072",
-          "review": ".orchestrate/evidence/WATERS/M1-review-1.md",
+          "review": ".orchestrate/evidence/WATERS/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "fail",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass",
-            "M1.13": "fail"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "fail",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass",
+            "WP1.13": "fail"
           },
           "findings": [
             {
               "name": "Triangle bed is clipped to the uncovered-cell fallback",
-              "item": "M1.8",
+              "item": "WP1.8",
               "repeat": false
             },
             {
               "name": "Interpolated shore support crosses downhill over a ridge",
-              "item": "M1.13",
+              "item": "WP1.13",
               "repeat": false
             }
           ],
@@ -78,26 +78,26 @@
         {
           "verdict": "fail",
           "commit": "2f8d01ebf8115b3330f9602b37a26222504add7a",
-          "review": ".orchestrate/evidence/WATERS/M1-review-2.md",
+          "review": ".orchestrate/evidence/WATERS/WP1-review-2.md",
           "items": {
-            "M1.1": "fail",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass",
-            "M1.13": "pass"
+            "WP1.1": "fail",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass",
+            "WP1.13": "pass"
           },
           "findings": [
             {
               "name": "Basin seeding floods disconnected cell corners",
-              "item": "M1.1",
+              "item": "WP1.1",
               "repeat": false
             }
           ],
@@ -121,21 +121,21 @@
         {
           "verdict": "pass",
           "commit": "a53d727013983a384afebe98cc8fd8f5ddaa876f",
-          "review": ".orchestrate/evidence/WATERS/M1-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass",
-            "M1.13": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass",
+            "WP1.13": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -166,18 +166,18 @@
         "at": "2026-11-15T14:57:40Z",
         "reused": [
           "Test command",
-          "M1.1",
-          "M1.2",
-          "M1.3",
-          "M1.4",
-          "M1.5",
-          "M1.6",
-          "M1.7",
-          "M1.8",
-          "M1.9",
-          "M1.11",
-          "M1.12",
-          "M1.13"
+          "WP1.1",
+          "WP1.2",
+          "WP1.3",
+          "WP1.4",
+          "WP1.5",
+          "WP1.6",
+          "WP1.7",
+          "WP1.8",
+          "WP1.9",
+          "WP1.11",
+          "WP1.12",
+          "WP1.13"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -204,34 +204,34 @@
       "done": {
         "by": "review",
         "commit": "a53d727013983a384afebe98cc8fd8f5ddaa876f",
-        "review": ".orchestrate/evidence/WATERS/M1-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP1-review.md",
         "checked": "54daa5e527bf5f65d403ca40e16ee9ed2f430dab",
         "at": "2026-11-15T15:01:37Z"
       }
     },
-    "M2": {
-      "definitions": "714557e42f8e6a519de83b78f510d762334077af648cb743595bba119a4f7ba3",
+    "WP2": {
+      "definitions": "4e2e81b0e5b1435a08d8e774ed9f91342f500f73ec27da97dd56de9f970d95a8",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "d6ac9853f85c906e4fff3b338baabc62b6f65cf9",
-          "review": ".orchestrate/evidence/WATERS/M2-review-1.md",
+          "review": ".orchestrate/evidence/WATERS/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "fail",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "fail",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass"
           },
           "findings": [
             {
               "name": "rectangular_near_water_highlights",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": false
             }
           ],
@@ -255,18 +255,18 @@
         {
           "verdict": "pass",
           "commit": "b08d6ac6de632072e5eefb79dc907a8e39da1d91",
-          "review": ".orchestrate/evidence/WATERS/M2-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -320,29 +320,29 @@
       "done": {
         "by": "review",
         "commit": "b08d6ac6de632072e5eefb79dc907a8e39da1d91",
-        "review": ".orchestrate/evidence/WATERS/M2-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP2-review.md",
         "checked": "0aa21a207b69301066e949d63657081d95e16cbe",
         "at": "2026-11-17T07:57:17Z"
       }
     },
-    "M3": {
-      "definitions": "33e317facbfc82fd33f5b8a3f60ae82dafedeb3180e38ddf16c45c65723cf376",
+    "WP3": {
+      "definitions": "1bc68414b5ffff36869c4dab3eb49c00cc85446958801fa5146c689ba861e3b6",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "e451366458d93f8de784d54e4a203c64d0362275",
-          "review": ".orchestrate/evidence/WATERS/M3-review-1.md",
+          "review": ".orchestrate/evidence/WATERS/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "fail",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "fail",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "resume-clock-contract",
-              "item": "M3.2",
+              "item": "WP3.2",
               "repeat": false
             }
           ],
@@ -366,13 +366,13 @@
         {
           "verdict": "fail",
           "commit": "d5e0feb74f59457bf46ba250d0da24e86373e75a",
-          "review": ".orchestrate/evidence/WATERS/M3-review-2.md",
+          "review": ".orchestrate/evidence/WATERS/WP3-review-2.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
@@ -400,13 +400,13 @@
         {
           "verdict": "pass",
           "commit": "9b2554a72ffa1df161f1e58b4627dc1ade624e2b",
-          "review": ".orchestrate/evidence/WATERS/M3-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -467,39 +467,39 @@
       "done": {
         "by": "review",
         "commit": "9b2554a72ffa1df161f1e58b4627dc1ade624e2b",
-        "review": ".orchestrate/evidence/WATERS/M3-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP3-review.md",
         "checked": "b7e5f80a70c94304d31b028e9c07680152746560",
         "at": "2026-11-18T09:01:55Z"
       }
     },
-    "M4": {
-      "definitions": "185b802f8410ecd281a19b3675f06f8c78bad46cdb96019c53e3c142442a8e98",
+    "WP4": {
+      "definitions": "80182ecf615275056586f144e8d18e803db53dbbc8fc47e02974f82381f73460",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "4e8e9fc17b0749cb1521a8c5159cb7eb37bb998b",
-          "review": ".orchestrate/evidence/WATERS/M4-review-1.md",
+          "review": ".orchestrate/evidence/WATERS/WP4-review-1.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "fail",
-            "M4.4": "pass",
-            "M4.5": "pass",
-            "M4.6": "fail",
-            "M4.7": "pass",
-            "M4.8": "pass",
-            "M4.9": "pass",
-            "M4.10": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "fail",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass",
+            "WP4.10": "pass"
           },
           "findings": [
             {
               "name": "Lake stage jumps to the tick endpoint at fractional presentation times",
-              "item": "M4.6",
+              "item": "WP4.6",
               "repeat": false
             },
             {
               "name": "Diffuse foreground shorelines lack a readable contact line",
-              "item": "M4.3",
+              "item": "WP4.3",
               "repeat": false
             }
           ],
@@ -523,18 +523,18 @@
         {
           "verdict": "pass",
           "commit": "c92c1b5a15f60d6010244c29885f0f6922537fa5",
-          "review": ".orchestrate/evidence/WATERS/M4-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass",
-            "M4.6": "pass",
-            "M4.7": "pass",
-            "M4.8": "pass",
-            "M4.9": "pass",
-            "M4.10": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass",
+            "WP4.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -591,57 +591,57 @@
       "done": {
         "by": "review",
         "commit": "c92c1b5a15f60d6010244c29885f0f6922537fa5",
-        "review": ".orchestrate/evidence/WATERS/M4-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP4-review.md",
         "checked": "2aaca9a541b171af93ce1bf0f18fa7f3d0d4a2d3",
         "at": "2026-11-18T18:02:23Z"
       }
     },
-    "M5": {
-      "definitions": "980d296c452b418933e7d8c10c1c9519230be5578fac24462f63e2a6ade488d2",
+    "WP5": {
+      "definitions": "d9933fcc58d85ef92f7dd10490ab62b3e2af976c7e2e0774b6092b6f9f4ed7b4",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "4bd30f460391a84231a31bda2efc8a6fe358d8c3",
-          "review": ".orchestrate/evidence/WATERS/M5-review-1.md",
+          "review": ".orchestrate/evidence/WATERS/WP5-review-1.md",
           "items": {
-            "M5.1": "fail",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "fail",
-            "M5.5": "fail",
-            "M5.6": "pass",
-            "M5.7": "fail",
-            "M5.8": "pass",
-            "M5.9": "pass"
+            "WP5.1": "fail",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "fail",
+            "WP5.5": "fail",
+            "WP5.6": "pass",
+            "WP5.7": "fail",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
           },
           "findings": [
             {
-              "item": "M5.4",
+              "item": "WP5.4",
               "name": "The craft leaves the water in the scene gale at 15 m/s",
               "repeat": false
             },
             {
-              "item": "M5.1",
+              "item": "WP5.1",
               "name": "Multi-tick frames overwrite accepted query pages",
               "repeat": false
             },
             {
-              "item": "M5.1",
+              "item": "WP5.1",
               "name": "Query answers use the displayed stage instead of the use-tick stage",
               "repeat": false
             },
             {
-              "item": "M5.1",
+              "item": "WP5.1",
               "name": "The query omits the slope of chart water levels",
               "repeat": false
             },
             {
-              "item": "M5.5",
+              "item": "WP5.5",
               "name": "A float slides through the craft in the moving beam-sea view",
               "repeat": false
             },
             {
-              "item": "M5.7",
+              "item": "WP5.7",
               "name": "Chrome loses individual answer ages across a hitch",
               "repeat": false
             }
@@ -666,27 +666,27 @@
         {
           "verdict": "fail",
           "commit": "af35b87aa2e3a1c3f32e0722997a65b6ece57bd1",
-          "review": ".orchestrate/evidence/WATERS/M5-review-2.md",
+          "review": ".orchestrate/evidence/WATERS/WP5-review-2.md",
           "items": {
-            "M5.1": "fail",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass",
-            "M5.5": "fail",
-            "M5.6": "pass",
-            "M5.7": "pass",
-            "M5.8": "pass",
-            "M5.9": "pass"
+            "WP5.1": "fail",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "fail",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
           },
           "findings": [
             {
-              "item": "M5.1",
+              "item": "WP5.1",
               "name": "A stage change after dispatch leaves a stale depth valid at the use tick",
               "different": "Quarter-alpha display interpolation, historical page retention and chart slope are fixed. This request used the correct authored stage at dispatch, but the map changed again before the requested tick and the mailbox still delivered the obsolete result.",
               "repeat": false
             },
             {
-              "item": "M5.5",
+              "item": "WP5.5",
               "name": "The rendered gale crest cuts through the deck at 15 m/s",
               "different": "The 5 m/s beam-sea buoy pass is clear. This failure is the water surface crossing the launch deck in the 15 m/s head sea, with no buoy in the hull.",
               "repeat": false
@@ -712,17 +712,17 @@
         {
           "verdict": "pass",
           "commit": "033eac6999680fd79d11d016eae05053a1ff06d4",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP5-review.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass",
-            "M5.5": "pass",
-            "M5.6": "pass",
-            "M5.7": "pass",
-            "M5.8": "pass",
-            "M5.9": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -759,8 +759,8 @@
         "checked": "254e03ed3753d6a2564bcde61be58fa3bbdb7d21",
         "at": "2026-11-19T10:18:33Z",
         "reused": [
-          "M5.2",
-          "M5.3"
+          "WP5.2",
+          "WP5.3"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -787,57 +787,57 @@
       "done": {
         "by": "review",
         "commit": "033eac6999680fd79d11d016eae05053a1ff06d4",
-        "review": ".orchestrate/evidence/WATERS/M5-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP5-review.md",
         "checked": "254e03ed3753d6a2564bcde61be58fa3bbdb7d21",
         "at": "2026-11-19T10:54:30Z"
       }
     },
-    "M6": {
-      "definitions": "333161dbd71c967dcdda4551f43fd323eb219025b14fc3b882f6f7387cab1696",
+    "WP6": {
+      "definitions": "52044df4951389b98236fc7a22c2425f828028af8d95058abdace1ccae1a4491",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "7bdb4c2df239e2236a2f677c06dff2fc2bd5704c",
-          "review": ".orchestrate/evidence/WATERS/M6-review-1.md",
+          "review": ".orchestrate/evidence/WATERS/WP6-review-1.md",
           "items": {
-            "M6.3": "pass",
-            "M6.4": "fail",
-            "M6.5": "fail",
-            "M6.6": "fail",
-            "M6.7": "pass",
-            "M6.15": "pass",
-            "M6.8": "pass",
-            "M6.9": "pass",
-            "M6.10": "pass",
-            "M6.11": "pass",
-            "M6.12": "fail",
-            "M6.13": "fail",
-            "M6.14": "pass"
+            "WP6.3": "pass",
+            "WP6.4": "fail",
+            "WP6.5": "fail",
+            "WP6.6": "fail",
+            "WP6.7": "pass",
+            "WP6.15": "pass",
+            "WP6.8": "pass",
+            "WP6.9": "pass",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "fail",
+            "WP6.13": "fail",
+            "WP6.14": "pass"
           },
           "findings": [
             {
               "name": "Refused regional pressure still lifts the querying body",
-              "item": "M6.4",
+              "item": "WP6.4",
               "repeat": false
             },
             {
               "name": "Future impulse pages evict admitted drops before their tick",
-              "item": "M6.5",
+              "item": "WP6.5",
               "repeat": false
             },
             {
               "name": "The paired cost baseline still renders water and lacks the prior comparison",
-              "item": "M6.12",
+              "item": "WP6.12",
               "repeat": false
             },
             {
               "name": "The moored-craft check never observes waves outside the settled hull",
-              "item": "M6.6",
+              "item": "WP6.6",
               "repeat": false
             },
             {
               "name": "The lifecycle test submits the first endpoint write before discarding",
-              "item": "M6.13",
+              "item": "WP6.13",
               "repeat": false
             }
           ],
@@ -861,26 +861,26 @@
         {
           "verdict": "fail",
           "commit": "e7799c46e2969c14e9ea411f20bc21feec9b2d17",
-          "review": ".orchestrate/evidence/WATERS/M6-review-2.md",
+          "review": ".orchestrate/evidence/WATERS/WP6-review-2.md",
           "items": {
-            "M6.3": "pass",
-            "M6.4": "pass",
-            "M6.5": "pass",
-            "M6.6": "fail",
-            "M6.7": "pass",
-            "M6.15": "pass",
-            "M6.8": "pass",
-            "M6.9": "pass",
-            "M6.10": "pass",
-            "M6.11": "pass",
-            "M6.12": "pass",
-            "M6.13": "pass",
-            "M6.14": "pass"
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "fail",
+            "WP6.7": "pass",
+            "WP6.15": "pass",
+            "WP6.8": "pass",
+            "WP6.9": "pass",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "pass",
+            "WP6.13": "pass",
+            "WP6.14": "pass"
           },
           "findings": [
             {
               "name": "A moored craft sinks into its own wake when only the fine level admits its pressure",
-              "item": "M6.6",
+              "item": "WP6.6",
               "different": "The previous finding concerned missing observations of outgoing waves around a settled hull. The check now measures those waves. This is a measured draft error when just one level admits the source.",
               "repeat": false
             }
@@ -905,21 +905,21 @@
         {
           "verdict": "pass",
           "commit": "d581f3144d83556de2094df014646306022e5373",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP6-review.md",
           "items": {
-            "M6.3": "pass",
-            "M6.4": "pass",
-            "M6.5": "pass",
-            "M6.6": "pass",
-            "M6.7": "pass",
-            "M6.15": "pass",
-            "M6.8": "pass",
-            "M6.9": "pass",
-            "M6.10": "pass",
-            "M6.11": "pass",
-            "M6.12": "pass",
-            "M6.13": "pass",
-            "M6.14": "pass"
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.15": "pass",
+            "WP6.8": "pass",
+            "WP6.9": "pass",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "pass",
+            "WP6.13": "pass",
+            "WP6.14": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -950,11 +950,11 @@
         "at": "2026-11-20T01:47:19Z",
         "reused": [
           "Test command",
-          "M6.4",
-          "M6.5",
-          "M6.7",
-          "M6.15",
-          "M6.13"
+          "WP6.4",
+          "WP6.5",
+          "WP6.7",
+          "WP6.15",
+          "WP6.13"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -981,63 +981,63 @@
       "done": {
         "by": "review",
         "commit": "d581f3144d83556de2094df014646306022e5373",
-        "review": ".orchestrate/evidence/WATERS/M6-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP6-review.md",
         "checked": "33529d6e3e35949dcdd23c66ac55b9dbf690a279",
         "at": "2026-11-20T02:56:03Z"
       }
     },
-    "M7": {
-      "definitions": "2bea36130145b8a3cd654d9becbb9e7887ff783dd6c934df23aada5860f97ceb",
+    "WP7": {
+      "definitions": "40c1e25f90a058078a8a07fb98635ab7d19008b691966dfa67f1f8e97e9062d4",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "390b89d2aa9c1e9880762c8a959e0be05e00e054",
-          "review": ".orchestrate/evidence/WATERS/M7-review-1.md",
+          "review": ".orchestrate/evidence/WATERS/WP7-review-1.md",
           "items": {
-            "M7.2": "pass",
-            "M7.3": "fail",
-            "M7.4": "pass",
-            "M7.5": "fail",
-            "M7.6": "pass",
-            "M7.7": "pass",
-            "M7.8": "fail",
-            "M7.9": "fail",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass",
-            "M7.13": "fail",
-            "M7.14": "pass",
-            "M7.15": "fail"
+            "WP7.2": "pass",
+            "WP7.3": "fail",
+            "WP7.4": "pass",
+            "WP7.5": "fail",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "fail",
+            "WP7.9": "fail",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass",
+            "WP7.13": "fail",
+            "WP7.14": "pass",
+            "WP7.15": "fail"
           },
           "findings": [
             {
               "name": "Shore births on dry columns",
-              "item": "M7.5",
+              "item": "WP7.5",
               "repeat": false
             },
             {
               "name": "Stranded stocks drift on exposed sand",
-              "item": "M7.3",
+              "item": "WP7.3",
               "repeat": false
             },
             {
               "name": "Gale film ends in a hard line across exposed sand",
-              "item": "M7.9",
+              "item": "WP7.9",
               "repeat": false
             },
             {
               "name": "Powered stern foam obscures aerated water at 6 m/s",
-              "item": "M7.8",
+              "item": "WP7.8",
               "repeat": false
             },
             {
               "name": "Submerged air cancels fresh-to-aged film transfer",
-              "item": "M7.13",
+              "item": "WP7.13",
               "repeat": false
             },
             {
               "name": "Film weight varies at the still waterline",
-              "item": "M7.15",
+              "item": "WP7.15",
               "repeat": false
             },
             {
@@ -1065,27 +1065,27 @@
         {
           "verdict": "fail",
           "commit": "712a58c49a83a8e00e36f7a6d261c62261c24587",
-          "review": ".orchestrate/evidence/WATERS/M7-review-2.md",
+          "review": ".orchestrate/evidence/WATERS/WP7-review-2.md",
           "items": {
-            "M7.2": "pass",
-            "M7.3": "pass",
-            "M7.4": "pass",
-            "M7.5": "pass",
-            "M7.6": "pass",
-            "M7.7": "pass",
-            "M7.8": "fail",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass",
-            "M7.13": "pass",
-            "M7.14": "pass",
-            "M7.15": "pass"
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "fail",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass",
+            "WP7.13": "pass",
+            "WP7.14": "pass",
+            "WP7.15": "pass"
           },
           "findings": [
             {
               "name": "Squared turquoise halo around the moving craft",
-              "item": "M7.8",
+              "item": "WP7.8",
               "different": "The earlier M7.8 finding was a solid white powered trail hiding the aerated water; that is fixed. This is a new box-shaped, straight-edged turquoise tint around the hull and ahead of the bow, absent with foam off.",
               "repeat": false
             }
@@ -1110,27 +1110,27 @@
         {
           "verdict": "fail",
           "commit": "aa9600b9d55bdce11aadbf9f75b838a683cf60f8",
-          "review": ".orchestrate/evidence/WATERS/M7-review-3.md",
+          "review": ".orchestrate/evidence/WATERS/WP7-review-3.md",
           "items": {
-            "M7.2": "pass",
-            "M7.3": "pass",
-            "M7.4": "pass",
-            "M7.5": "pass",
-            "M7.6": "pass",
-            "M7.7": "fail",
-            "M7.8": "pass",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass",
-            "M7.13": "pass",
-            "M7.14": "pass",
-            "M7.15": "pass"
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "fail",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass",
+            "WP7.13": "pass",
+            "WP7.14": "pass",
+            "WP7.15": "pass"
           },
           "findings": [
             {
               "name": "Gale whitecaps end in a straight line at the coarse foam window's edge",
-              "item": "M7.7",
+              "item": "WP7.7",
               "repeat": false
             }
           ],
@@ -1154,27 +1154,27 @@
         {
           "verdict": "fail",
           "commit": "2fb75920d7404b29a68b22f88ab175ec4c3dbd69",
-          "review": ".orchestrate/evidence/WATERS/M7-review-4.md",
+          "review": ".orchestrate/evidence/WATERS/WP7-review-4.md",
           "items": {
-            "M7.2": "pass",
-            "M7.3": "pass",
-            "M7.4": "pass",
-            "M7.5": "pass",
-            "M7.6": "pass",
-            "M7.7": "fail",
-            "M7.8": "pass",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass",
-            "M7.13": "pass",
-            "M7.14": "pass",
-            "M7.15": "pass"
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "fail",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass",
+            "WP7.13": "pass",
+            "WP7.14": "pass",
+            "WP7.15": "pass"
           },
           "findings": [
             {
               "name": "Gale sea saturates into a uniform foam sheet that whitens toward the horizon",
-              "item": "M7.7",
+              "item": "WP7.7",
               "different": "The earlier M7.7 finding was a straight line at the coarse window's edge where dense cover stopped and the far sea went sparse. That line is gone. This is the steady-state gale look: after about 20 s the whole sea from 2 m is one lace sheet with no open water, and from 40 m the far sea is a uniform white-grey band brighter than the horizon sky, so whitecaps do not thin toward the horizon.",
               "repeat": false
             }
@@ -1199,22 +1199,22 @@
         {
           "verdict": "pass",
           "commit": "27b5ee7991a54e00a88f84d8b762ab7f931a0f6a",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP7-review.md",
           "items": {
-            "M7.2": "pass",
-            "M7.3": "pass",
-            "M7.4": "pass",
-            "M7.5": "pass",
-            "M7.6": "pass",
-            "M7.7": "pass",
-            "M7.8": "pass",
-            "M7.9": "pass",
-            "M7.10": "pass",
-            "M7.11": "pass",
-            "M7.12": "pass",
-            "M7.13": "pass",
-            "M7.14": "pass",
-            "M7.15": "pass"
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass",
+            "WP7.11": "pass",
+            "WP7.12": "pass",
+            "WP7.13": "pass",
+            "WP7.14": "pass",
+            "WP7.15": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -1245,16 +1245,16 @@
         "at": "2026-11-21T11:34:24Z",
         "reused": [
           "Test command",
-          "M7.2",
-          "M7.3",
-          "M7.4",
-          "M7.5",
-          "M7.6",
-          "M7.10",
-          "M7.11",
-          "M7.12",
-          "M7.13",
-          "M7.15"
+          "WP7.2",
+          "WP7.3",
+          "WP7.4",
+          "WP7.5",
+          "WP7.6",
+          "WP7.10",
+          "WP7.11",
+          "WP7.12",
+          "WP7.13",
+          "WP7.15"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -1282,13 +1282,13 @@
       "done": {
         "by": "review",
         "commit": "27b5ee7991a54e00a88f84d8b762ab7f931a0f6a",
-        "review": ".orchestrate/evidence/WATERS/M7-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP7-review.md",
         "checked": "e8ceb60e0d5c9d4559f1ee36ab111c7fde7879f2",
         "at": "2026-11-21T11:52:38Z"
       }
     },
-    "M8": {
-      "definitions": "4ff7f2dfea8deede0a7eb9c4762c6c1da5132874d28d5a5de6133d0b15a94c8c",
+    "WP8": {
+      "definitions": "3b9d0e01c19fe679b7d7693a7c9923fd15d582a20a146a26135d141e73a52dcb",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1296,8 +1296,8 @@
         "at": "2026-11-18T04:32:39Z"
       }
     },
-    "M9": {
-      "definitions": "ee6c9cc08ae60db796ec5437e13ff86da749416511b7ae484faae6be5f8eab5e",
+    "WP9": {
+      "definitions": "6df4a031394c1681e3036cd3b92679f2032ca9c50f45c2d8d0d68263c6cdb7cf",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1305,8 +1305,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M10": {
-      "definitions": "e5fd3e394c87736b8a83cba805a26c9dd9bc53814904d4fef89ce6f84230f55e",
+    "WP10": {
+      "definitions": "7714f193766adeca72f8e7ec3ffcfac9da3224ee51212ca53ab194b1d146f918",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1314,8 +1314,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M11": {
-      "definitions": "1cf8b19b83784e6a7c2f20d611fac9c1d6bdb2a2aadb0b041709dd0dd8c6e197",
+    "WP11": {
+      "definitions": "0eb4cf580b2eec3594b5d2e2546183bf711d3a3f341877e99974e4e84084fd56",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1324,26 +1324,26 @@
       },
       "ends_stretch": true
     },
-    "M12": {
-      "definitions": "791f4bb9101f66609520c1592ade85fc3820a19ce2d1bc28285c6d72f9b892d3",
+    "WP12": {
+      "definitions": "74c535972bd4c946a5937d773e57a90639a0f6aef8a02dc9210fba3c0117b17c",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "ae5fe54f3a1319bb739258608cc0d36c0ef19a08",
-          "review": ".orchestrate/evidence/WATERS/M12-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP12-review.md",
           "items": {
-            "M12.1": "pass",
-            "M12.2": "pass",
-            "M12.3": "pass",
-            "M12.11": "pass",
-            "M12.4": "pass",
-            "M12.5": "pass",
-            "M12.6": "pass",
-            "M12.12": "pass",
-            "M12.7": "pass",
-            "M12.8": "pass",
-            "M12.9": "pass",
-            "M12.10": "pass"
+            "WP12.1": "pass",
+            "WP12.2": "pass",
+            "WP12.3": "pass",
+            "WP12.11": "pass",
+            "WP12.4": "pass",
+            "WP12.5": "pass",
+            "WP12.6": "pass",
+            "WP12.12": "pass",
+            "WP12.7": "pass",
+            "WP12.8": "pass",
+            "WP12.9": "pass",
+            "WP12.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -1407,13 +1407,13 @@
       "done": {
         "by": "review",
         "commit": "ae5fe54f3a1319bb739258608cc0d36c0ef19a08",
-        "review": ".orchestrate/evidence/WATERS/M12-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP12-review.md",
         "checked": "2d7dfd7f019b1a1ccf7ca986af8366265c9b16d7",
         "at": "2026-11-16T05:57:16Z"
       }
     },
-    "M13": {
-      "definitions": "29ee1494a3e935c8b78be35b05d72c3a28977ee7e55ebb2e14e37a4d890eeb94",
+    "WP13": {
+      "definitions": "f1099dbb460e3f239a71c60e57839296202ac77b713795795f2edcae2b6a1fad",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1421,8 +1421,8 @@
         "at": "2026-11-24T04:46:50Z"
       }
     },
-    "M15": {
-      "definitions": "090d4967267cc29d0c7df3d119f0182479be295ca7228031ff7e9897deb94666",
+    "WP15": {
+      "definitions": "527a1229028ec6daeca4688ba0c6b168b6bf835dc39ddb0d5da406db8a447d23",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1430,8 +1430,8 @@
         "at": "2026-11-18T04:32:39Z"
       }
     },
-    "M14": {
-      "definitions": "8f63c7260ea82ae3ccec465ec913775b0239d95c0a25d00cc67c93ece9698735",
+    "WP14": {
+      "definitions": "f69ee17d1cc6d39734d47e89459c573c1c1b60c40d4c11fae5c47b29384cb219",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1439,8 +1439,8 @@
         "at": "2026-11-18T04:32:39Z"
       }
     },
-    "M16": {
-      "definitions": "2556754798430d1d29b20a1a6237abbfeb55a017bcd9fb54a365900c7a8c57b7",
+    "WP16": {
+      "definitions": "ce2d2c3b1c686b1e79a1cc1a1f147a96186ea283c6480cb6bc99def6d758918e",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1448,18 +1448,18 @@
         "at": "2026-11-18T05:23:29Z"
       }
     },
-    "M17": {
+    "WP17": {
       "definitions": "a504acdfa1540e07b049b1e2f416d8cbaf896c1300381498919cbc6dfeb7356b",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "b20e9f6026796ed098a86771e70d6d8b83122b45",
-          "review": ".orchestrate/evidence/WATERS/M17-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP17-review.md",
           "items": {
-            "M17.1": "pass",
-            "M17.2": "pass",
-            "M17.3": "pass",
-            "M17.4": "pass"
+            "WP17.1": "pass",
+            "WP17.2": "pass",
+            "WP17.3": "pass",
+            "WP17.4": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -1516,20 +1516,20 @@
       "done": {
         "by": "review",
         "commit": "b20e9f6026796ed098a86771e70d6d8b83122b45",
-        "review": ".orchestrate/evidence/WATERS/M17-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP17-review.md",
         "checked": "9dac87be2b8c04331305626871b04d4b19223bc9",
         "at": "2026-11-24T02:38:40Z"
       }
     },
-    "M18": {
+    "WP18": {
       "definitions": "ccdf2f11f46522a654e8d009834a4b9c63303173c201cef72770f92b2bfb7207",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "5789ae3d76173158817b7f88b316e8b4091d0dd7",
-          "review": ".orchestrate/evidence/WATERS/M18-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP18-review.md",
           "items": {
-            "M18.1": "pass"
+            "WP18.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -1586,13 +1586,13 @@
       "done": {
         "by": "review",
         "commit": "5789ae3d76173158817b7f88b316e8b4091d0dd7",
-        "review": ".orchestrate/evidence/WATERS/M18-review.md",
+        "review": ".orchestrate/evidence/WATERS/WP18-review.md",
         "checked": "f59f0a120beed8f3c91548d3e7167bf48122e168",
         "at": "2026-11-24T03:07:54Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.\" Earlier the same day: \"The agent should look at that work from first principles and figure out how to design the best possible atmospheric system for the thrum game engine.\" SEA today plans only an open sea; inland water lives in older designs (docs/design/modules/WATER*.md, docs/design/decisions/E1-GPU-WATER.md) with no module planned. From first principles, design Thrum's water as one cohesive system covering every body of water a game needs, and settle how the modules, plan and build order carry it (renaming or splitting SEA if that is right). Treat the existing designs and Broadsides as evidence, not constraints. SEA M1 is being built in a worktree now; if your design changes what it builds, say so plainly.",
       "at": "2026-11-14T01:49:07Z"
@@ -1940,7 +1940,7 @@
       },
       "at": "2026-11-23T11:10:36Z",
       "items_owed": [
-        "M17"
+        "WP17"
       ]
     },
     {
@@ -1989,7 +1989,7 @@
       },
       "at": "2026-11-23T13:16:59Z",
       "items_owed": [
-        "M18"
+        "WP18"
       ]
     },
     {

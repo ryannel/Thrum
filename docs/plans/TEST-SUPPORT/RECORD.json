@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/TEST-SUPPORT/design-review.md",
     "commit": "3a6744e9573fa2bacfb6349fa1cd482f1304637a",
-    "hash": "e611602308a4b105075157c30ea614e822e0616dc48d3904fd7539306890f42c",
+    "hash": "0410d3886e648511520fe8f1839c0d53c8a9fa26f9071b2bf1106224ec29a6c7",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
@@ -23,20 +23,20 @@
     },
     "at": "2026-11-21T19:48:30Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "0cfe76a8dff19a5b5cb215f86c6ae11996ff1b3dcdda6944df9373c307d41d96",
+  "work_packages": {
+    "WP1": {
+      "definitions": "cb2097c4b89718bdc8fbd32884abf9fbc51c5ee18669426dc32bbfbc835f0ecf",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "7f89c741ff5190e8b1ec0f11eac91f0be3ec8bc1",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -100,49 +100,49 @@
       "done": {
         "by": "review",
         "commit": "7f89c741ff5190e8b1ec0f11eac91f0be3ec8bc1",
-        "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/WP1-review.md",
         "checked": "4d6d9f89ed1fccd4f78dbc11b6b37564318de062",
         "at": "2026-11-16T07:45:21Z"
       }
     },
-    "M2": {
-      "definitions": "0650a2b10dc1d4b72f4c34c594df4c40fd6dc1b8b03b6e965ec2d3605e3126ef",
+    "WP2": {
+      "definitions": "d3d033313c7b51c2df143899e0dd33e41dd903171c956f527d39e8a1a7a0f0de",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "ed19162adf909e3e940ec58f4669307d1e4a5fd9",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review-1.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review-1.md",
           "items": {
-            "M2.1": "fail",
-            "M2.2": "fail",
-            "M2.3": "fail",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "fail",
+            "WP2.2": "fail",
+            "WP2.3": "fail",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "findings": [
             {
               "name": "Parent OS conditions hide whole test files and CPU tests",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": false
             },
             {
               "name": "Cooked exit-scene test silently passes outside macOS",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": false
             },
             {
               "name": "Sky rendering test opens Metal without admission",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": false
             },
             {
               "name": "Descriptor adjustment can override a validated storage cap",
-              "item": "M2.1",
+              "item": "WP2.1",
               "repeat": false
             },
             {
               "name": "Sprite tests share their fixture through textual inclusion",
-              "item": "M2.3",
+              "item": "WP2.3",
               "repeat": false
             }
           ],
@@ -166,29 +166,29 @@
         {
           "verdict": "fail",
           "commit": "fbf7290c04d2799a4f84caa1049d331f089d4163",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review-2.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review-2.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "fail",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "fail",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "findings": [
             {
               "name": "Metal-only tests admit any backend and assert Metal",
-              "item": "M2.2",
+              "item": "WP2.2",
               "different": "Not a skipped or missing admission: these tests ask the gate for any backend and then require Metal, so on a Linux or Windows machine with a non-Metal adapter they fail instead of reporting a skip; the fix round's removal of macOS module gates exposed most of them.",
               "repeat": false
             },
             {
               "name": "Parent OS conditions hide whole test files and CPU tests",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": true
             },
             {
               "name": "A CPU camera-route test is gated on macOS",
-              "item": "M2.2",
+              "item": "WP2.2",
               "different": "An OS condition on a single CPU-only test whose subject builds on every platform, not a parent module condition or a GPU admission.",
               "repeat": false
             }
@@ -213,24 +213,24 @@
         {
           "verdict": "fail",
           "commit": "ecc930cdc0bf26cfff633269271c401c88fad1cd",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review-3.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review-3.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "fail",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "fail",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "findings": [
             {
               "name": "Un-gated Metal draw tests need an Apple-only dev-dependency",
-              "item": "M2.2",
+              "item": "WP2.2",
               "different": "Not a hidden test, a missing admission or an OS condition: un-gating thrum-asset-gpu's draw test module left it using serde_json, which Cargo.toml declares only for macOS and iOS, so the crate's lib tests no longer compile on Linux or Windows.",
               "repeat": false
             },
             {
               "name": "Water scene tests do not compile off macOS",
-              "item": "M2.2",
+              "item": "WP2.2",
               "different": "Not a hidden test, a missing admission or an OS condition: the water example's 11 GPU test targets import thrum-app APIs that exist only on macOS, so they fail to compile on Linux and Windows.",
               "repeat": false
             }
@@ -255,16 +255,16 @@
         {
           "verdict": "pass",
           "commit": "bb206f434a748e89d806b29e759fb52138b48d28",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -322,51 +322,51 @@
       "done": {
         "by": "review",
         "commit": "bb206f434a748e89d806b29e759fb52138b48d28",
-        "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/WP2-review.md",
         "checked": "7e30ba7e42eaae246bef8400561640c6c0a8db19",
         "at": "2026-11-20T19:40:26Z"
       }
     },
-    "M3": {
-      "definitions": "58120d939b3ecaed412a3cb186ad7e5ba10ecd1da5f99d568c5419e8690b9867",
+    "WP3": {
+      "definitions": "a7678cc1c6c5c43a317366dd53bdcf88bdacd24540069e04d9aeecd4e797c0ba",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "3cc944afa2b8fda18bc043ab493c3aa8dc5fa183",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review-1.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "fail",
-            "M3.3": "fail",
-            "M3.4": "pass",
-            "M3.6": "fail",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "fail",
+            "WP3.3": "fail",
+            "WP3.4": "pass",
+            "WP3.6": "fail",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "Long-test baseline includes tests removed by prerequisite milestones",
-              "item": "M3.6",
+              "item": "WP3.6",
               "planner": "The last scheduled pre-start run predates required GATE-TIME M2 deletions. No TEST-SUPPORT conversion can preserve those executions without undoing the prerequisite. Specify the comparison population or the accepted mappings and retirements.",
               "repeat": false
             },
             {
               "name": "Frame retirement polls can exceed the original remaining timeout",
-              "item": "M3.3",
+              "item": "WP3.3",
               "repeat": false
             },
             {
               "name": "Native frame completion loops still bypass the kit",
-              "item": "M3.3",
+              "item": "WP3.3",
               "repeat": false
             },
             {
               "name": "Shadow capture still writes PPM by hand",
-              "item": "M3.3",
+              "item": "WP3.3",
               "repeat": false
             },
             {
               "name": "Local device wrappers repeat the kit call without additional behavior",
-              "item": "M3.2",
+              "item": "WP3.2",
               "repeat": false
             }
           ],
@@ -390,14 +390,14 @@
         {
           "verdict": "pass",
           "commit": "4f452c5157687cc43ddf5d7deec92b1aafea5fbf",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.6": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.6": "pass",
+            "WP3.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -428,9 +428,9 @@
         "at": "2026-11-22T01:48:13Z",
         "reused": [
           "Test command",
-          "M3.1",
-          "M3.6",
-          "M3.5"
+          "WP3.1",
+          "WP3.6",
+          "WP3.5"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -441,23 +441,23 @@
       "done": {
         "by": "review",
         "commit": "4f452c5157687cc43ddf5d7deec92b1aafea5fbf",
-        "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/WP3-review.md",
         "checked": "46987285e5e5ecf2ce4751409dd152206e9f7825",
         "at": "2026-11-22T01:53:26Z"
       }
     },
-    "M4": {
-      "definitions": "65ae8f51dc92c3451e1558b9486e5157bb4f7a493d51b46dd1ddafc55cab1925",
+    "WP4": {
+      "definitions": "8c84fcd86a94619d499f1aa067cbdc3d56ffcc8cb132ad0abfe3deabfb70ab6d",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "d6816e5a00af2cde3582afe9de9f021513ff5833",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -488,7 +488,7 @@
         "at": "2026-11-22T01:55:17Z",
         "reused": [
           "Test command",
-          "M4.4"
+          "WP4.4"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -499,22 +499,22 @@
       "done": {
         "by": "review",
         "commit": "d6816e5a00af2cde3582afe9de9f021513ff5833",
-        "review": ".orchestrate/evidence/TEST-SUPPORT/M4-review.md",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/WP4-review.md",
         "checked": "c37c3fd0c4a3c9d10a1ea72684b277245ff32b40",
         "at": "2026-11-22T02:04:48Z"
       }
     },
-    "M5": {
+    "WP5": {
       "definitions": "c7c083825925f2b259572eddba2008eb37b1884d0be96b38e7a9bdf4e5783c35",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "fac9abfb1516ed3d1e8d81ebd153fa61786539be",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M5-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP5-review.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -572,22 +572,22 @@
       "done": {
         "by": "review",
         "commit": "fac9abfb1516ed3d1e8d81ebd153fa61786539be",
-        "review": ".orchestrate/evidence/TEST-SUPPORT/M5-review.md",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/WP5-review.md",
         "checked": "242721497ff931683f0ebf262b1891c597b885ac",
         "at": "2026-11-20T20:59:56Z"
       }
     },
-    "M6": {
+    "WP6": {
       "definitions": "cf9ec6787eb03e91d4e2faac5c58e64dd5463602fda5b8f54bf52775bbbd738d",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "c37a65a26d3ef3dfc53834eb1b42c458be44570a",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.3": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -645,13 +645,13 @@
       "done": {
         "by": "review",
         "commit": "c37a65a26d3ef3dfc53834eb1b42c458be44570a",
-        "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/WP6-review.md",
         "checked": "8767deef3c436ecafbdf0a3e133236aa9f686557",
         "at": "2026-11-21T12:18:59Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive that work?\" So the decisions below are made; plan them as buildable milestones, not human decisions.\n\n1) Code review fixes. A whole-repository review is at /Users/ryannel/Workspace/thrum/tmp/code-review-2026-11-14/CODE-REVIEW.md, with slices in sections/ beside it. Copy it into docs/evidence/code-review-2026-11-14/ and plan its fixes. The canonical shapes are already written in .agents/skills/thrum-engineering/references/patterns.md (review step 1); add the review's mechanical repo_check rules. Then follow its order of attack: confirmed bugs first (H01, H09, M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), test support and one GPU gate (T6), one device recipe and host core (T4), error convention (T3), performance (T12), and renames and splits (T9, T10) as one planned architecture milestone, then hygiene (T13). Give each fix to the module that owns the code, or a new module where none does. Modules are cut by isolation and ownership, and each delivers milestone by milestone in order; do not split CLOUDS or WATERS or change their milestones. Sequence work so it does not rewrite files that running builders hold (CULLING M3, APPLE-PRESENTATION M3, APPLE-TILE M10, CREATOR M3, EFFECT-GRAPH M3, ATMOSPHERE M9, CLOUDS M1, WATERS M1); later milestones of those modules may be rebased onto it.\n   H03 decision: no Git history rewrite (it would need a force-push to main under many live worktrees). Plan the forward fix only: bulk media and archives leave the tracked tree under docs/ASSET-LIFECYCLE.md's storage rules (untrack at HEAD, keep selected small evidence), and repo_check stops new bulk binaries being committed. Keep evidence links that reviews depend on resolvable.\n\n2) Separate the game from the engine. Owner: \"it sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as much as we can, it shouldn't even sit in the same code base ideally.\" Today examples/v1-game (26k lines) holds engine host and shell code (host, window, browser, camera, projection, controls), engine qualification rigs (H20), and engine tests compile its source (H02/H13); thrum-cook depends on examples/asset-loop (H19); ARCHITECTURE places CLOUDS and PUDDLES selections in v1-game. Design the end state where the game lives in its own repository and depends only on the engine's public API: engine host/shell code moves into engine crates (also H15/M03), qualification moves into the owning crates or an engine-side harness, shared fixtures move to engine test support, and repo_check enforces the boundary. Stage it: first make the boundary real inside this repository, then move the game out.\n   Repository decision: the game moves to a new local Git repository at /Users/ryannel/Workspace/thrum-games (v1-game now; the swarm game later), with no remote until the owner asks for one. It consumes the engine through Cargo path dependencies on a sibling Thrum checkout, so engine changes surface in the game at once; switching to pinned git revisions is a later step once the engine has releases. The last stage creates that repository, moves the game with its history-free copy, and leaves Thrum with no game code. The upcoming swarm game follows the same shape from the start. V1 still exits through the showcase game, so keep its milestones buildable throughout and say how the V1 gate is verified once the game lives outside.\n\nSay which new milestones can start at once, and which wait for running builders.",
       "at": "2026-11-14T22:15:19Z"

@@ -1,14 +1,14 @@
 # RENDER-2D: thousands of crisp sprites, drawn without paying for anything 3D
 
 13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C01, C04, C05, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md) and
+[the brief](../VISION.md). C01, C04, C05, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md) and
 [mechanism 2 of the module list](../ARCHITECTURE.md#mechanisms-settled-here) govern.
 
 ## The request
 
 The owner's words weren't passed on with this task; this design answers the lead's task, "Plan module RENDER-2D.
 It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP", which is row 18 of the module list. What the owner asked for is on
-[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../BRIEF.md) carries
+[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../VISION.md) carries
 as decision 7:
 
 > - **A swarm survivor.** One or more players hold out against ever-growing crowds of enemies, with automatic
@@ -35,19 +35,19 @@ This design reconciles the code on main at `54ab55bb`; it is not a blind study. 
 the designs of `APPLE-TILE`, `EFFECT-GRAPH`, `CONTENT-LOOP` and `SIM-2D`; and
 [a planning probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md) run for it.
 
-**This module is planned before the code it builds on is finished.** `APPLE-TILE` M10 to M12,
-`APPLE-PRESENTATION` M3 to M11, `CONTENT-LOOP` M1 to M3 and `EFFECT-GRAPH` M3 are still to be built. So this design
+**This module is planned before the code it builds on is finished.** `APPLE-TILE` WP10 to M12,
+`APPLE-PRESENTATION` WP3 to M11, `CONTENT-LOOP` WP1 to WP3 and `EFFECT-GRAPH` WP3 are still to be built. So this design
 names the behaviour it needs from them and never one of their APIs, and the builder of each milestone first reads
 what was actually built ([handoff](#proof-and-builder-handoff)).
 
 **Built beside V1 (14 November 2026).** The owner said: "Let's move the 2d engine side of things to before v1
 and decouple them. But we don't want to start working on the swarm game till v1 lands." So this module no
-longer waits for the V1 exit. A milestone waits only for what it uses: M1 for `EFFECT-GRAPH:M3`, whose
-after-opaque stage it refuses in a 2D scene, and `APPLE-PRESENTATION:M3`, whose reconstruction a 2D scene
-declares none of; M4 for `CONTENT-LOOP:M1`, whose lease and publication a sheet uses; M5 for `SIM-2D:M1`, whose
-crowd it draws. `APPLE-TILE` M10 to M12, `APPLE-PRESENTATION` M4 to M12 and `CONTENT-LOOP` M2 and M3 are built
+longer waits for the V1 exit. A milestone waits only for what it uses: WP1 for `EFFECT-GRAPH:WP3`, whose
+after-opaque stage it refuses in a 2D scene, and `APPLE-PRESENTATION:WP3`, whose reconstruction a 2D scene
+declares none of; WP4 for `CONTENT-LOOP:WP1`, whose lease and publication a sheet uses; WP5 for `SIM-2D:WP1`, whose
+crowd it draws. `APPLE-TILE` WP10 to M12, `APPLE-PRESENTATION` WP4 to M12 and `CONTENT-LOOP` WP2 and WP3 are built
 in the same files at the same time. Whichever lands second builds on the first and keeps its tests passing; in
-particular a governor or a reconstructor that lands after M1 gives a 2D scene no scale, no jitter and no
+particular a governor or a reconstructor that lands after WP1 gives a 2D scene no scale, no jitter and no
 history, as [C07's no-reconstruction form](#2-the-view-and-the-output-pixel) says.
 
 ## Purpose and scope
@@ -63,7 +63,7 @@ clusters, depth, motion and reactive targets. Its instance field uploads only ch
 translation between tick endpoints on the GPU, which the V1 game uses for 10,000 entities. The output half tones
 one bound scene-linear colour into an 8-bit intermediate and presents it. Engine capture, device generations and
 the tentative-frame rule are built. The content loop cooks meshes, textures and volumes and residency draws
-them; lending them to another module is `CONTENT-LOOP` M1, not built yet. There is no
+them; lending them to another module is `CONTENT-LOOP` WP1, not built yet. There is no
 orthographic view, no sprite and no sheet product. Both tone operators change colours below white, and the 8-bit
 output is dithered.
 
@@ -75,7 +75,7 @@ output is dithered.
 screen: every row is ordered and submitted, and the GPU clips. Snapping of positions to a pixel grid. Blend modes
 other than alpha and additive. Multisampling. Nine-slice panels, text layout and the interface stage, which are
 `GAME-UI`'s. An iOS app for a second game, which is
-[`GAME-UI` M6](../ARCHITECTURE.md#seam-rulings-for-game-ui), and a one-command 2D starter, which nobody plans.
+[`GAME-UI` WP6](../ARCHITECTURE.md#seam-rulings-for-game-ui), and a one-command 2D starter, which nobody plans.
 Any change to the 3D scene's output.
 
 **Words used here.** A **scene kind** is 2D or 3D. A **sheet** is a set of sprite images cooked together: its
@@ -88,7 +88,7 @@ is one sprite to draw: a **world row** comes from the tick page and a **frame ro
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
 | **C1 A crowd.** Thousands of sprites on screen, smooth at the display's refresh | 2,000, 5,000 and 10,000 moving rows, packed three deep, with spawn and despawn churn; the built-in display's full 3456×2234 pixels and 1920×1080; Chrome | A sparse crowd, or a small window. Rejected by `SIM-2D`'s packed crowd at the display's pixel size, with shaded pixels recorded beside each time. Times are baselines ([cost](#cost-account)) |
-| **C2 Crisp and still.** Pixel art stays legible through a scroll, with clean edges and no visible contrast pulse or crawl | Pixel art from 1 to 6 output pixels per texel, with exact aligned whole scales, and smooth art from 0.25 to 2. Subpixel scroll and rotation use the M3 motion scales. The output follows window size and both densities | Crisp stills can hide a pulse in motion. Too much softening can erase fine marks. Judge the same one-texel stripes and checker at normal size in elapsed-time motion and fixed stills |
+| **C2 Crisp and still.** Pixel art stays legible through a scroll, with clean edges and no visible contrast pulse or crawl | Pixel art from 1 to 6 output pixels per texel, with exact aligned whole scales, and smooth art from 0.25 to 2. Subpixel scroll and rotation use the WP3 motion scales. The output follows window size and both densities | Crisp stills can hide a pulse in motion. Too much softening can erase fine marks. Judge the same one-texel stripes and checker at normal size in elapsed-time motion and fixed stills |
 | **C3 Order holds still.** Where two sprites overlap, the same one stays in front until one has passed the other by more than the band | Equal sort values; slots reused; rows that jitter inside the band, standing and while travelling together; three or more rows overlapping at once; sheets and blends mixed | An unstable sort. An order that only looks stable because nothing overlaps. A band on each row's own value, which lets two rows that travel together swap. A band so wide that nothing reorders. Rejected by overlapping rows of known colours read back at the overlap, by [the travelling pair](#4-order), and by a row that passes its neighbour and must exchange |
 | **C4 Smooth between ticks.** Sprites glide when the display runs faster than the simulation | 60 Hz ticks on a 120 Hz display; a repeated tick; a pause; a spawn into a reused slot; a new timeline | The same pose shown twice, or a new sprite sliding in from where the slot's last owner died. Rejected by positions at known alphas, and by a reused slot that must not move |
 | **C5 Sprite effects.** Frame animation in step with the world, tint, hit flash, transparency, additive glow | Any mix, interleaved in one pass | Additive drawn in a second pass, out of order. Rejected by a normal sprite over an additive one over a normal one, compared with a CPU blend |
@@ -122,7 +122,7 @@ judged in words, in the running scenes.
   content that aliases on the output grid. One bright texel in a repeating three-output-pixel stripe period
   contributes weights `[0.75, 0.75, 0]` or `[0.25, 1, 0.25]` at two phases. Both sum to 1.5. The SDR reds
   are respectively `[215, 215, 21]` and `[132, 244, 132]`. The same cause is visible in the submitted
-  Metal and Chrome strips and checker in [M3's first review](../../../.orchestrate/evidence/RENDER-2D/M3-review.md).
+  Metal and Chrome strips and checker in [WP3's first review](../../../.orchestrate/evidence/RENDER-2D/WP3-review.md).
   A bounded, positive prefilter lowers the aliased harmonics before output sampling and blends transparent edges
   without ringing. A tent gives this roll-off with compact support. [Turkowski, Filters for Common Resampling Tasks](https://people.csail.mit.edu/ericchan/bib/pdf/ResamplingFilters.pdf)
   Pixel snapping or an integer-scaled intermediate would step motion or change the requested framing.
@@ -142,10 +142,10 @@ judged in words, in the running scenes.
   with its argument written there and [a probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost) behind it.
 - **Limits.** WebGPU's defaults allow 16 sampled textures and 8 storage buffers in a stage, 256 array layers and
   8192 texels a side ([limits](https://www.w3.org/TR/webgpu/#limits), read 13 November). The capability record is
-  the authority; M1 records what Chrome reports.
+  the authority; WP1 records what Chrome reports.
 - **What would change the selection.** If the full-size scene-linear target and the two output passes cost too
   much in Chrome, a 2D recipe that writes display-encoded colour directly is designed here before anyone builds
-  it. If a packed crowd's overdraw is the cost, an opaque-core pass with depth is designed here first. If M5.3
+  it. If a packed crowd's overdraw is the cost, an opaque-core pass with depth is designed here first. If WP5.3
   finds overlapping rows visibly out of order through [a chain](#4-order), a repair that moves such a row past the
   chain is designed here first; it gives up the pair rule for the rows it moves. If a real scene gives most of its
   rows new sort values in one tick often enough to show in the ordering times, an exact rebuild for such a tick,
@@ -283,7 +283,7 @@ with `b` at the range of the jitter, 0.04% of overlapping pairs were more than `
 one in a million more than `2b`, and the worst was 2.4 `b`. Without the near test, with the band between every
 two rows, those were 1.2%, 0.18% and 4.6 `b`, and they grew with the size of the crowd, because every row at
 nearly the same height joins the chain whether or not it is anywhere near. That is why the near test is part of
-the rule. M5.3 records the same figures for `SIM-2D`'s crowd.
+the rule. WP5.3 records the same figures for `SIM-2D`'s crowd.
 
 The order is updated on the CPU at each tick and uploaded as a list of row indices. A depth buffer was not
 chosen: blended edges need back-to-front drawing whatever a depth test does, so depth would add a second path for
@@ -324,7 +324,7 @@ A sheet is **pixel** or **smooth**.
   Reconstruction retains coverage alpha and fades to ordinary coverage colour as its contributing
   texels become transparent. The CPU overdraw estimate and the emitted standalone quad use the same
   pixel-filter support radius. Judge the original stripes and checker through repeated crossings in
-  M3.8 and tune against the still and motion inspections. Fade the magnification corrections as the
+  WP3.8 and tune against the still and motion inspections. Fade the magnification corrections as the
   smaller axis approaches minification, from full strength at 1.25× to zero at 1×.
 
   Aligned whole scales retain the original texels at 1× through 6× at every backing extent. Pixel
@@ -334,7 +334,7 @@ A sheet is **pixel** or **smooth**.
 
 Filter premultiplied scene-linear RGBA. At 1× the finest alternating pattern lies at the output grid's
 Nyquist limit. The byte guarantee is for grid alignment, and the visual claim for scrolling is judged
-at the scales and viewing conditions in M3.
+at the scales and viewing conditions in WP3.
 
 Below one output pixel a texel, both kinds read mip levels, which are box-filtered in linear light from the
 premultiplied texels. Frames are separated by a gutter wide enough that no mip level the sheet holds reaches a
@@ -350,7 +350,7 @@ extruded edge. Adjacent tiles keep their shared vertices and ownership of the ou
 
 Sheets are sRGB. The cooker, or the engine for an embedded sheet, premultiplies in linear light. The sprite
 target is scene-linear half-float at the output's extent, and it is the pre-tone input that
-[`APPLE-TILE:M3`](../APPLE-TILE/DESIGN.md#mechanisms) lets a producer bind, with a fixed exposure of 1.
+[`APPLE-TILE:WP3`](../APPLE-TILE/DESIGN.md#mechanisms) lets a producer bind, with a fixed exposure of 1.
 
 A 2D scene selects a **display-referred transfer** in the output half: a value from 0 to 1 is sRGB-encoded with
 no tone curve and no dither. An opaque texel therefore leaves the frame as the 8-bit code it was authored with.
@@ -393,13 +393,13 @@ sheet lacks draws nothing and is counted in the frame's record. A sheet that is 
 or after device loss, is absent: its rows draw nothing, and they all appear in one frame when it arrives.
 
 **Embedded sheets.** A game may also hand over a sheet's images as bytes when the scene is prepared, with the
-same kinds, frames and names. Tests, tools and a fallback use this, and it is how M1 to M3 draw before the cooked
+same kinds, frames and names. Tests, tools and a fallback use this, and it is how WP1 to WP3 draw before the cooked
 product exists. An embedded sheet is rebuilt from its retained bytes after device loss.
 
 ### Check that it can work
 
 - **A second producer for the output half.** The tone stage already consumes "one explicitly bound scene-linear
-  colour plus its matching exposure and extent/sample identity" (`APPLE-TILE:M3`). A 2D scene is another producer
+  colour plus its matching exposure and extent/sample identity" (`APPLE-TILE:WP3`). A 2D scene is another producer
   of that one input. The graph is already compiled per generation and variant.
 - **Rows.** The 3D instance field is the precedent: 10,000 rows of 192 bytes, changed-row upload and GPU
   interpolation, in the V1 game today.
@@ -414,7 +414,7 @@ product exists. An embedded sheet is rebuilt from its retained bytes after devic
   implicit-derivative sample inside a branch on the sheet number; coverage sampling already computes the
   footprint itself, so derivatives are taken before the branch and the sample inside it is explicit.
 - **Magnification.** The original coverage probe measured texel weight and agreed with a texel-area reference.
-  M3's first review showed why that missed the visible defect. The widened kernel retains the weight identity
+  WP3's first review showed why that missed the visible defect. The widened kernel retains the weight identity
   and attenuates the alias before the SDR transfer. The planning calculation in the log checks that direction.
   The device captures decide whether the retained detail and residual motion meet the visual bar.
 - **Lifecycle.** A 2D scene has no history, so a resize, a discarded frame and a capture frame have nothing to
@@ -463,14 +463,14 @@ Asked of other modules. Each is new work inside state another module owns, settl
 on what the owning module has landed by then, with the behaviour defined here, and it then belongs to the owner.
 
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): scene-kind selection, the display-referred
-   transfer, and a scene that declares no reconstruction. Built in M1.
+   transfer, and a scene that declares no reconstruction. Built in WP1.
 2. **Content** (`CONTENT-LOOP`, `EFFECT-GRAPH`): the sheet product, pages as a lease, and residency and the
-   contribution list in a 2D scene. M4 extends the texture cooker in `thrum-cook` and runtime views in
+   contribution list in a 2D scene. WP4 extends the texture cooker in `thrum-cook` and runtime views in
    `thrum-asset`. The game connects `thrum-asset-gpu` residency to the sprite scene, so `thrum-render` can
    consume the views without a residency dependency.
 3. **The V1 game and its shells** (`SHOWCASE`, `T2-CAPTURE`, `PLATFORM-RUNTIME-IOS`): a `sprites` scene
    selection, off by default, that the window, the page, the iOS shell and the capture scripts accept. Built in
-   M1, and for the simulator in M5.
+   WP1, and for the simulator in WP5.
 
 **Contracts.** One contract changed for this design, on 13 November 2026, settled in the module list under
 ruling 1. C07 and [the hardware-native frame contract](../../design/decisions/HARDWARE-NATIVE-ENGINE.md#frame-contract)
@@ -483,7 +483,7 @@ reset flags, which a 2D scene never makes. They now name two forms:
 | No reconstruction | A view of a 2D scene, when the scene is prepared | One unjittered projection, exposure and output extent. No jitter, previous projection, motion, depth, reactive mask, reset flag or guide buffer, and none is allocated. No history key and no render scale | None is resolved, on any device. One asked for by name is refused by name at preparation, never ignored and never fed made-up inputs |
 
 The frame runtime (`APPLE-TILE`) produces the declaration and `APPLE-PRESENTATION` consumes it, in its registry
-and governor; both sides are built in M1 under ruling 1. No 3D view's obligations change, so nothing a V1 module
+and governor; both sides are built in WP1 under ruling 1. No 3D view's obligations change, so nothing a V1 module
 builds or has built changes. No other contract's text changes. The scene kind is a load-time selection in C04's
 sense, not a live change. C05's preview clause is met as `CONTENT-LOOP` meets it. E08 of the architecture brief
 still puts pure 2D outside scope, which the owner's page overrides; rewording it is the owner's.
@@ -519,15 +519,15 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
    to the same passes and bytes. Fix a regression before continuing with 2D work.
 2. **A mechanism needs a change to the shared runtime.** Reuse the frame host, presentation path and content
    loader. If the shared runtime cannot support the mechanism, record the gap in the log and end `BLOCKED`.
-3. **The full-size target is the cost in Chrome.** Early sign: M1's cost rows. The answer is under research.
-4. **Overdraw of a packed crowd.** Early sign: M2's and M5's rows. The answer is under research.
+3. **The full-size target is the cost in Chrome.** Early sign: WP1's cost rows. The answer is under research.
+4. **Overdraw of a packed crowd.** Early sign: WP2's and WP5's rows. The answer is under research.
 5. **Jitter is larger than a band that still looks right, or chains leave overlapping rows visibly out of
-   order.** Early sign: M5.3's reversal and out-of-order figures and the inspected crowd. The band is set from the
+   order.** Early sign: WP5.3's reversal and out-of-order figures and the inspected crowd. The band is set from the
    measured jitter; if no value serves, the order is redesigned here, starting from the repair under
    [research](#research-and-selection).
 6. **Exact colour fails by a code on one target**, from the GPU's sRGB decode or a fast-math `pow`. Early sign:
-   M1.5. Stop and diagnose; do not widen the comparison silently.
-7. **The lease is not the shape a sheet needs.** `CONTENT-LOOP` M1 is unbuilt. Early sign: M4's first reading.
+   WP1.5. Stop and diagnose; do not widen the comparison silently.
+7. **The lease is not the shape a sheet needs.** `CONTENT-LOOP` WP1 is unbuilt. Early sign: WP4's first reading.
 8. **C2 can appear to pass** in crisp stills of an aligned card or in a scroll that washes away the checker.
    Compare the original one-texel patterns in motion and keep isolated marks legible.
 9. **A convincing fake of C4:** frames captured at the tick rate. The proof reads positions at alphas between
@@ -539,7 +539,7 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 
 - **Targets.** `mac-metal`, on both native recipes where an item says so. `chrome-webgpu` through
   `scripts/check_v1_browser.mjs` for the sprite scene and through this module's own script for the crowd view;
-  both need a browser launch the Codex sandbox grants per run. `ios-sim` for function only, in M5, through the
+  both need a browser launch the Codex sandbox grants per run. `ios-sim` for function only, in WP5, through the
   existing iOS shell.
 - **Scenes.** The **sprite scene** is a selection in `examples/v1-game`, off by default: a test card of static
   rows, and the game's 10,000 simulated entities as world rows. It reaches all three shells and their capture
@@ -547,10 +547,10 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
   package, on `thrum-app`'s window and page.
 - **Art.** Test cards are generated in code. The few sprites the scenes need are drawn by the builder, original
   and simple. Nothing is lifted from another game or from Broadsides.
-- **Generation inventory.** M3.12 lands first. Its one-frame sheet has a 12×12 atlas with gutters and one
+- **Generation inventory.** WP3.12 lands first. Its one-frame sheet has a 12×12 atlas with gutters and one
   32-byte frame record. Keep the existing 64×48 Metal witness and 3D control. The device run observes live
   allocations, actual pipeline creation and submitted pass timings at the point this test guards.
-  The checkpoint uses the focused inventory check. M3.13 uses the shared `long-tests` result on main
+  The checkpoint uses the focused inventory check. WP3.13 uses the shared `long-tests` result on main
   covering the completed milestone, including the test-only checkpoint.
 - **Exact sprite checks.** The aligned image, resize, tile and mip witnesses use expectations taken from
   the source texels and this design's rules. No sprite image is registered as an exact baseline. These tests
@@ -558,12 +558,12 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 - **Capture.** Inspected items use T2 engine capture and name their mode. Motion is judged from `realtime`
   captures at 1920×1080 as consecutive frames at 1x; the display's full 3456×2234 is captured as `fixed` stills
   and timed in the cost records, because twenty seconds of it would not fit capture's output bound.
-- **Camera proof and diagnostics.** M3.2 and M3.7 step the camera over retained rows and test that the
+- **Camera proof and diagnostics.** WP3.2 and WP3.7 step the camera over retained rows and test that the
   submitted pixels follow it. Scene-linear texel sums and phase contrast can help diagnose a capture.
   The old Metal and Chrome coverage-error limits belong to the box-filter run and are retired as checks.
-- **Filter cost.** Use the existing profile record for the M3.1 comparison of sprite-pass timings before
+- **Filter cost.** Use the existing profile record for the WP3.1 comparison of sprite-pass timings before
   and after the change at 1920×1080 on Metal and Chrome for the 1.5× scroll. Include recipe, device, shaded
-  pixels, overdraw and load. The timings are tripwires. M5 measures the packed crowd.
+  pixels, overdraw and load. The timings are tripwires. WP5 measures the packed crowd.
 - **Cost records.** Record the revision and machine load. Keep the specified crowd size and backing extent
   when investigating a tripwire. Record the observed cost and finding, then continue the build.
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,
@@ -573,7 +573,7 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
   [Project proof rules](../../../ORCHESTRATE.md#targets)
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/render-2d-<milestone>/`; selected evidence
   in `.orchestrate/evidence/RENDER-2D/`.
-- **Creator guide and maturity.** M5 updates [the creator guide](../../design/ENGINE-EXPERIENCE.md) and adds
+- **Creator guide and maturity.** WP5 updates [the creator guide](../../design/ENGINE-EXPERIENCE.md) and adds
   2D rows to [the maturity ledger](../../design/maturity.json) for implementation, correctness, visuals and
   device results.
 
@@ -581,8 +581,8 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 
 | Question | Settled by |
 |---|---|
-| What do the full-size target and the two output passes cost on the Mac and in Chrome? | M1 records it |
-| Is the widened filter sharp enough with no visible contrast pulse? | M3.8–M3.10 inspect the submitted images |
-| How much does `SIM-2D`'s crowd jitter, what band hides it, and how far out of order do chains leave overlapping rows? | M5.3 measures all three and sets the band |
-| Does a packed crowd of 10,000 fit the refresh interval at the display's full size? | M5 records it; a miss is a finding, not a stop |
+| What do the full-size target and the two output passes cost on the Mac and in Chrome? | WP1 records it |
+| Is the widened filter sharp enough with no visible contrast pulse? | WP3.8–WP3.10 inspect the submitted images |
+| How much does `SIM-2D`'s crowd jitter, what band hides it, and how far out of order do chains leave overlapping rows? | WP5.3 measures all three and sets the band |
+| Does a packed crowd of 10,000 fit the refresh interval at the display's full size? | WP5 records it; a miss is a finding, not a stop |
 | Does `SWARM` want more than eight sheets, or display-space blending? | Its planner asks here |

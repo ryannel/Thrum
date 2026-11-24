@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/PUDDLES/design-review.md",
     "commit": "0ae50f8e7114928352bcc3bd1f0a46f87183ed5c",
-    "hash": "fb5fa92a8208d716f86ef159b2b2ac4f68027e7d84db17b3026e8c835933a058",
+    "hash": "80213a5a95afb6499f5c0261af4599ed482eaa1a6c20bbc8cc35370512a2414a",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,33 +23,33 @@
     },
     "at": "2026-11-18T04:07:51Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "1cc3064c5521c9b4a2721e7ba9d86ff394e94eab85c960ea689fff04d68a0796",
+  "work_packages": {
+    "WP1": {
+      "definitions": "ebac69cb58b70adb5301dabdf1cc2e06fe72f61d54e8cbb7808966704feb50f8",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "9337627f70a33c221f83534dc4e282fc5632e156",
-          "review": ".orchestrate/evidence/PUDDLES/M1-review-1.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.13": "fail",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.13": "fail",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass"
           },
           "findings": [
             {
               "name": "water-receiver-uses-ground-exposure",
-              "item": "M1.13",
+              "item": "WP1.13",
               "repeat": false
             }
           ],
@@ -73,21 +73,21 @@
         {
           "verdict": "pass",
           "commit": "438c734d589fc0a2fad7346f73c7d24111c3e7c1",
-          "review": ".orchestrate/evidence/PUDDLES/M1-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.13": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.13": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -154,38 +154,38 @@
       "done": {
         "by": "review",
         "commit": "438c734d589fc0a2fad7346f73c7d24111c3e7c1",
-        "review": ".orchestrate/evidence/PUDDLES/M1-review.md",
+        "review": ".orchestrate/evidence/PUDDLES/WP1-review.md",
         "checked": "4d6d9f89ed1fccd4f78dbc11b6b37564318de062",
         "at": "2026-11-16T06:54:21Z"
       }
     },
-    "M2": {
-      "definitions": "d18e71316eb89cb761adc10e7753ddf0f47f53dab0907fe398b9cdb734aa65db",
+    "WP2": {
+      "definitions": "d19bd6c0ddbcf61a4d23c9ed73b346a9f5ec5d823200d23014185620cf3a9816",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "442ec8032e49f94c7e6e058465ebd98065a88d24",
-          "review": ".orchestrate/evidence/PUDDLES/M2-review-1.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP2-review-1.md",
           "items": {
-            "M2.1": "fail",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.11": "fail",
-            "M2.9": "pass",
-            "M2.10": "pass"
+            "WP2.1": "fail",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.11": "fail",
+            "WP2.9": "pass",
+            "WP2.10": "pass"
           },
           "findings": [
             {
               "name": "unpaid-water-source",
-              "item": "M2.1",
+              "item": "WP2.1",
               "repeat": false
             },
             {
               "name": "cover-transfer-exceeds-puddle-water",
-              "item": "M2.11",
+              "item": "WP2.11",
               "repeat": false
             }
           ],
@@ -209,28 +209,28 @@
         {
           "verdict": "fail",
           "commit": "6bbfc7a5372a82784f817839cf3f0e5f03af9f67",
-          "review": ".orchestrate/evidence/PUDDLES/M2-review-2.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP2-review-2.md",
           "items": {
-            "M2.1": "fail",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.11": "fail",
-            "M2.9": "pass",
-            "M2.10": "pass"
+            "WP2.1": "fail",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.11": "fail",
+            "WP2.9": "pass",
+            "WP2.10": "pass"
           },
           "findings": [
             {
               "name": "negative-ground-inventory-after-source-off",
-              "item": "M2.1",
+              "item": "WP2.1",
               "different": "The prior Account::unpaid source is removed; the replacement debt survives uncovering and drying and makes ground_held negative while sinks exceed received rain.",
               "repeat": false
             },
             {
               "name": "uncovering-film-is-owed-instead-of-transferred",
-              "item": "M2.11",
+              "item": "WP2.11",
               "different": "The prior reported covering overpayment is fixed; uncovering now records zero delivered film and debt, while the ground subsequently consumes the undelivered class film.",
               "repeat": false
             }
@@ -255,22 +255,22 @@
         {
           "verdict": "fail",
           "commit": "97ceeb4c4fe8bdd81bbf57c68247805c16ba3cd7",
-          "review": ".orchestrate/evidence/PUDDLES/M2-review-3.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP2-review-3.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.11": "fail",
-            "M2.9": "pass",
-            "M2.10": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.11": "fail",
+            "WP2.9": "pass",
+            "WP2.10": "pass"
           },
           "findings": [
             {
               "name": "uncovering-film-is-owed-instead-of-transferred",
-              "item": "M2.11",
+              "item": "WP2.11",
               "repeat": true
             }
           ],
@@ -294,19 +294,19 @@
         {
           "verdict": "pass",
           "commit": "2807a37b4abf5ea922aa69a6d7119d3421c8828d",
-          "review": ".orchestrate/evidence/PUDDLES/M2-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.11": "pass",
-            "M2.12": "pass",
-            "M2.13": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -336,8 +336,8 @@
         "checked": "a4950a9a9d867ad01d2cf4264e5c7252884fdbd6",
         "at": "2026-11-17T03:34:12Z",
         "reused": [
-          "M2.12",
-          "M2.13"
+          "WP2.12",
+          "WP2.13"
         ],
         "host": "claude",
         "model": "claude-fable-5-2",
@@ -365,13 +365,13 @@
       "done": {
         "by": "review",
         "commit": "2807a37b4abf5ea922aa69a6d7119d3421c8828d",
-        "review": ".orchestrate/evidence/PUDDLES/M2-review.md",
+        "review": ".orchestrate/evidence/PUDDLES/WP2-review.md",
         "checked": "a4950a9a9d867ad01d2cf4264e5c7252884fdbd6",
         "at": "2026-11-17T03:38:57Z"
       }
     },
-    "M3": {
-      "definitions": "4a1b23ba3a30bad97454815cd1cb06c93cb977fffd72448b499e8f95c17101a3",
+    "WP3": {
+      "definitions": "d469ebad0e203aa0e0e2a9e440c93e002c5babf6d4be09fbee1b1b54bcf14b2a",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -379,8 +379,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M4": {
-      "definitions": "e329fd5eb0118de7b44c34b479a6dff65394508f717fd849354457a1b62db135",
+    "WP4": {
+      "definitions": "103ae6feec4e2d3a8abe7c7381715304532b0504d0f7e30063a4e2894e0a94fd",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -388,8 +388,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M5": {
-      "definitions": "d7c459bf31d5169fd0acec1e290a944adc4e1a0995f56f6795a4979684af31e6",
+    "WP5": {
+      "definitions": "f4641c694d590c330fc7aea2dc6dadff677fb66a2e47e1d41801c9642b018eff",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -397,8 +397,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M6": {
-      "definitions": "805835f2556a7d69f0fad82963defe1a854fae7ecf31033f450edba7b997c1d1",
+    "WP6": {
+      "definitions": "72077657556f2e2999f6f92af1ff5975f4b9a2b6caf898b211e59a5ebb2ca403",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -406,8 +406,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M7": {
-      "definitions": "1f297743c3b553a964b02062d194c13fe4abadd3546a25babe83309b2d1cea81",
+    "WP7": {
+      "definitions": "ceb4f4f65b96ecd3b2c05ea8687b23f7db30a5fda3be22195619c0675bb80e51",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -415,8 +415,8 @@
         "at": "2026-11-20T10:12:46Z"
       }
     },
-    "M8": {
-      "definitions": "9e958fdf595dc851ccabfdf5fcf5ef534a583738727e888f034f98c99a5d07c7",
+    "WP8": {
+      "definitions": "e04ece16f01d1422e866a7be2e9d9bd28c142300ed12b9cc6dceac362593afa9",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -425,7 +425,7 @@
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of the one water system, at the quality of shipped high-end games. The owner, 14 Nov 2026: 'Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.'",
       "at": "2026-11-14T12:06:54Z"

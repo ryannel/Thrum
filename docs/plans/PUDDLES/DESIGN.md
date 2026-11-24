@@ -54,7 +54,7 @@ V1 valley, each behind a selection.
 - **Sun and shade in drying.** Drying is one rate a game sets; shaded ground dries as fast as sunlit.
 - **Snow and ice**, as in `WATERS`.
 
-**What exists.** `WATERS` M1 builds the map and M8 its optics; M6 raises rings on water 0.25 m deep and M7
+**What exists.** `WATERS` WP1 builds the map and WP8 its optics; WP6 raises rings on water 0.25 m deep and WP7
 draws the film on sand the waves wash. Thrum has no rain, no wetness and no puddles. The forward shader composes
 a cloud factor into its direct Sun and has no notion of a wet surface.
 
@@ -147,7 +147,7 @@ What each source was read for, and how far.
 | P1, P2 | A basin for each hollow, merged by replacing two bodies with one | Fails P2: a body's identity changes, the water is rebuilt and its rings reset |
 | P1, P2 | A live shallow-water solver over the ground | Right, and the same every-tick cost and device dependence `RIVERS` judged. Not selected |
 | P1, P2 | **A prepared tree of hollows with water volumes stepped on the CPU, read by a point test in the map** | **Selected** |
-| P1, P6 | A puddle fills the pores of ground it rises over at once, and owes what it cannot pay | Fails. The first runoff onto a floor with 3 mm of dry pores holds under a hundredth of their room, so no puddle forms on ground whose own soak rate, 1 mm/h, says one must (the M2 handoff: the puddle never held more than 2.7 ml of a 208 ml shower). A debt is water the account does not hold |
+| P1, P6 | A puddle fills the pores of ground it rises over at once, and owes what it cannot pay | Fails. The first runoff onto a floor with 3 mm of dry pores holds under a hundredth of their room, so no puddle forms on ground whose own soak rate, 1 mm/h, says one must (the WP2 handoff: the puddle never held more than 2.7 ml of a 208 ml shower). A debt is water the account does not hold |
 | P1, P6 | Ground is not covered until the puddle can fill its pores | Fails the same soak rate, and keeps water for a hollow that stands nowhere |
 | P1, P6 | **The pores under a puddle take its water at the class's soak rate; ground changes hands only in its class's state, and is held while the puddle cannot pay** | **Selected** |
 | P1, P6 | Rain on held ground is its puddle's, because the hollow keeps that ground's account | Fails C09. Held ground stands above the water, so rain hits it first. On part 11d's dish at 1 mm/h the puddle was given 5.1e-8 m³ a tick where 2.8e-9 falls on water, and the ground's 5 mm/h percolation never met the rest (the design review of 17 November) |
@@ -220,7 +220,7 @@ move shelter nothing.
 Water and ground are told apart by the level, never by a mark: a mark only says which of two accounts,
 the hollow's or the class's, keeps a stretch of ground's water. Ground passes between those accounts when
 a hollow's mark moves over it, by transfers the account holds. The receivers are proved apart from the
-total: a total that closes does not show where a cell's rain went, so M1 and M2 hold each receiver's gain
+total: a total that closes does not show where a cell's rain went, so WP1 and WP2 hold each receiver's gain
 alone as well as the account ([proof](#proof-and-builder-handoff)).
 
 ### Hollows: the tree and the point test
@@ -297,13 +297,13 @@ continuous through each (part 1: the largest change in a step with either falls 
 rebuilt: the labels and the tree are content, the levels are numbers, and
 [the interaction waves' regions](../WATERS/DESIGN.md#interaction-waves) are labelled again from the map, which
 leaves their height and potential where they are; that is CPU work whenever a puddle's wet cells change,
-which in rain is often, and M4 records it, with M8 for the fine level's. So rings on two puddles are still there on the one they
+which in rain is often, and WP4 records it, with WP8 for the fine level's. So rings on two puddles are still there on the one they
 become, and can then cross the drowned sill.
 
 The account: rain on the body equals the change in the stores over open ground, in the pores under the
 marks and in the puddles, plus what dried, soaked or percolated, was withheld by canopy and left over the
 edge. Rain, and water a game pours in, are its only sources, and the state keeps no quantity that stands
-for water not yet delivered. Part 1 closes it to 1.5e-12 l in 199 l, for a fill with no stores; M2.1 closes
+for water not yet delivered. Part 1 closes it to 1.5e-12 l in 199 l, for a fill with no stores; WP2.1 closes
 it with the stores, the marks' transfers and the pores under the marks.
 
 Part 2 gives the times this makes: a pothole of 4 l with six times its area draining to it fills in 8 minutes
@@ -495,7 +495,7 @@ splash's crown and jet are not waves and are not drawn.
 ### Rings from a footfall
 
 A profile may name a **fine interaction level** ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-puddles)),
-built in M8, after `WATERS:M6` has built the interaction step it extends:
+built in WP8, after `WATERS:WP6` has built the interaction step it extends:
 256² cells of 2 cm, a window 5.12 m across round the body the game names, with `WATERS`' operator, regions,
 border and sources, and
 
@@ -527,7 +527,7 @@ and the regions with the latest sources are the ones solved.
 Everything else is `WATERS`' and is used as built. A puddle is lit, seen through and mirrored by the one
 optics: the ground shows through thin water and is lost under a muddy type, and rain's slope variance blurs
 its reflections. The view from under water is `WATERS`' on any body and is not judged on water this shallow.
-A float sits on it through the one query. From `WATERS:M16` the film's and the puddle's Sun lobes take the
+A float sits on it through the one query. From `WATERS:WP16` the film's and the puddle's Sun lobes take the
 scene's Sun visibility, by [`RIVERS`' ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers) and ruling 7
 here, so a puddle in a wall's shadow does not glint.
 
@@ -588,21 +588,21 @@ What that delivers, from part 7, from 0.3 m, 1.7 m and 15 m up:
 
 - **P1, P2.** Part 1 runs the tree, the fill and the point test on a made bed through 10 merges and 10
   partings. The preparation in Rust at 640,000 cells, the map on the GPU and the look of a waterline at 5 cm
-  cells are unrun; M1 and M3 are the first.
+  cells are unrun; WP1 and WP3 are the first.
 - **P3.** Part 3 is the ring's own integral, and part 9 the schedule through a stop and a restart. That a
-  sum of scheduled rings reads as rain and not as a pattern, at 128 a square metre a second, is unrun; M4 is
+  sum of scheduled rings reads as rain and not as a pattern, at 128 a square metre a second, is unrun; WP4 is
   the first look ([risk 2](#risks)). Part 3's mean square slope at 50 mm/h, 0.065, is a superposition and
-  likely too high; M4 judges it.
+  likely too high; WP4 judges it.
 - **P4.** Part 6 is the operator on uniform depth, wave by wave. Fields, regions and a puddle's edge are
-  `WATERS`' as measured in its part H and J at larger scale, and unrun at this one; M8 is the first.
+  `WATERS`' as measured in its part H and J at larger scale, and unrun at this one; WP8 is the first.
 - **P5.** Part 7 is a yard in section with puddles at two heights, a post, a kerb, a roof's edge and a wall:
   the planes and cuts above, ray by ray. `WATERS`' optics on water 5 mm deep, the bands' ranking as a camera
-  moves and the look are unrun; M7 is the first.
+  moves and the look are unrun; WP7 is the first.
 - **P6, P7.** Parts 4 and 5 are arithmetic, part 8 the stores through a shower long enough to fill the
   pores, and part 10 exposure under two shelters. Part 11 is the mark, the pores under it, held ground and the rain
-  on it, on one hollow; hollows that share a puddle through a merge and a parting are unrun, and M2.12 is
+  on it, on one hollow; hollows that share a puddle through a merge and a parting are unrun, and WP2.12 is
   the first.
-  The look of the wet ground and of the film is unrun; M5 is the first.
+  The look of the wet ground and of the film is unrun; WP5 is the first.
 - **P8.** The wave support is `WATERS`'. Unrun.
 - **Cost.** Unrun. Each milestone records its own.
 
@@ -647,17 +647,17 @@ with no item, test, bound or reference of another module changed and all kept pa
 these capabilities compiles to the shader text, passes and storage it has today, and `thrum-water-model` gives
 it the same answers to the bit.
 
-1. A hollows body in the map (M1 on the CPU, M3 on the GPU).
-2. A fine interaction level, which takes the waves under 1 m from the near level (M8, on the GPU, in the
-   interaction step `WATERS:M6` builds; an f64 reference of it is a diagnostic a builder may add, as
+1. A hollows body in the map (WP1 on the CPU, WP3 on the GPU).
+2. A fine interaction level, which takes the waves under 1 m from the near level (WP8, on the GPU, in the
+   interaction step `WATERS:WP6` builds; an f64 reference of it is a diagnostic a builder may add, as
    `WATERS`' is).
-3. Rain bands: wave layers the wind does not fill, at a gain every body's row has (M2 on the CPU, M4 on the
+3. Rain bands: wave layers the wind does not fill, at a gain every body's row has (WP2 on the CPU, WP4 on the
    GPU).
-4. The film is drawn over standing rain water (M5).
-5. A wetness provider on the forward surface, in the scene's shader and the cooked material (M5).
-6. A rain selection in `examples/water` (M3) and in `examples/v1-game` (M6).
-7. The film's Sun lobe takes the lent Sun visibility, with the surface's (M7).
-8. A hollows body gives the mirror its levels in bands, each cut at its lowest water (M7).
+4. The film is drawn over standing rain water (WP5).
+5. A wetness provider on the forward surface, in the scene's shader and the cooked material (WP5).
+6. A rain selection in `examples/water` (WP3) and in `examples/v1-game` (WP6).
+7. The film's Sun lobe takes the lent Sun visibility, with the surface's (WP7).
+8. A hollows body gives the mirror its levels in bands, each cut at its lowest water (WP7).
 
 Four of these replace what [`WATERS`' design](../WATERS/DESIGN.md#what-the-later-modules-build-on) expected: a
 puddle is not a basin with a seed, a drop is not an impulse record, the film is drawn off the shore, and a
@@ -672,56 +672,56 @@ Estimates, unmeasured.
 
 | Work | Rate | Size | Estimate |
 |---|---|---|---|
-| Preparing a hollows body | Prepared | One flood of its cells, a sort for each node. A yard 40 m by 40 m at 5 cm is 640,000 cells | Under a second on one core; M1 records it. A node's curve of level for volume is the builder's to keep small |
-| The fill step | Tick, on the CPU | A few operations for each puddle and each node that spills | Microseconds for hundreds of puddles; M1 records it |
+| Preparing a hollows body | Prepared | One flood of its cells, a sort for each node. A yard 40 m by 40 m at 5 cm is 640,000 cells | Under a second on one core; WP1 records it. A node's curve of level for volume is the builder's to keep small |
+| The fill step | Tick, on the CPU | A few operations for each puddle and each node that spills | Microseconds for hundreds of puddles; WP1 records it |
 | Hollows in the map | Every read inside a hollows rectangle | A label, a level and the fine bed | Three reads on puddle pixels; none elsewhere. 640,000 cells are about 4 MiB |
-| Puddle tiles | Frame | Cells that hold water and their neighbours, at the cell's spacing | A fifth of a yard under water is about 130,000 quads; M3 records it |
+| Puddle tiles | Frame | Cells that hold water and their neighbours, at the cell's spacing | A fifth of a yard under water is about 130,000 quads; WP3 records it |
 | Rain bands | Frame, while the last second held rain and water is in view | Two patches of 512²; about 8 rings a texel from a table, each with one read of the 60-entry rate history | Under the cascades' cost; two more layer reads in the surface where the gain is not zero |
-| The fine level | Tick, while a source is in the window | 256²; one solve for each region and ladder depth in use, up to the profile's count | A few tenths of a millisecond; M8 records it with the count of solves |
-| The wetness function | Frame, every forward fragment in a scene with wet ground | One read of the canopy grid's two layers and arithmetic on a small table | One texture more in the forward stage, the second with `WATERS`' caustics; M5 records the pair |
-| The mirror's bands | Frame, on the CPU | The levels of the hollows in view, sorted and grouped; no view beyond the profile's | Negligible; a band's view costs what any mirror view does, and M7.8 records it |
-| The film | Frame, over a hollows body's ground with surface water | The film's pixels: the function, a pattern read, the reflection | Of the order of the surface on those pixels; M5 records it |
+| The fine level | Tick, while a source is in the window | 256²; one solve for each region and ladder depth in use, up to the profile's count | A few tenths of a millisecond; WP8 records it with the count of solves |
+| The wetness function | Frame, every forward fragment in a scene with wet ground | One read of the canopy grid's two layers and arithmetic on a small table | One texture more in the forward stage, the second with `WATERS`' caustics; WP5 records the pair |
+| The mirror's bands | Frame, on the CPU | The levels of the hollows in view, sorted and grouped; no view beyond the profile's | Negligible; a band's view costs what any mirror view does, and WP7.8 records it |
+| The film | Frame, over a hollows body's ground with surface water | The film's pixels: the function, a pattern read, the reflection | Of the order of the surface on those pixels; WP5 records it |
 
 Records and tripwires are [`WATERS`'](../WATERS/DESIGN.md#cost-account): `scripts/water_cost.py`, with scenes
 this module adds, and `scripts/rain_cost.py` for preparation, the fill step and the valley. No timing figure
-decides an item ([brief](../BRIEF.md#goal-and-exit-rule), decision 3).
+decides an item ([brief](../VISION.md#goal-and-exit-rule), decision 3).
 
 ## Risks
 
-1. **A waterline shows its cells**, or a puddle's far edge hangs in the air at a sill. Early sign: M3's
+1. **A waterline shows its cells**, or a puddle's far edge hangs in the air at a sill. Early sign: WP3's
    captures at 1.7 m. The designed remedies are a finer cell, a bed built from the highest ground in each
    cell as the map's is, and the surface carried one cell past the water. The wrong fix is a soft edge drawn
    in the ground's material.
-2. **Rain bands read as a pattern**: a grid, a repeat, or rings too alike. Early sign: M4's first captures.
+2. **Rain bands read as a pattern**: a grid, a repeat, or rings too alike. Early sign: WP4's first captures.
    The designed remedies are the two patches' sizes, more size classes and the schedule's count. The wrong
    fix is a texture of rings.
 3. **Rain makes all water matt**, because the moments of the drops below the cut are too large. Early sign:
-   M4's captures at 50 mm/h. The designed remedy is a lifetime on the moments' integral, as the rings have.
-4. **The film fights the ground or floats over it**, `WATERS`' risk 16, now on paving. Early sign: M5's
+   WP4's captures at 50 mm/h. The designed remedy is a lifetime on the moments' integral, as the rings have.
+4. **The film fights the ground or floats over it**, `WATERS`' risk 16, now on paving. Early sign: WP5's
    captures at a grazing view. Its depth bias and the bed are the remedies.
-5. **The film's joints miss the ground's joints.** Early sign: M5's close views. The pattern is one texture
+5. **The film's joints miss the ground's joints.** Early sign: WP5's close views. The pattern is one texture
    read by both; the wrong fix is a second pattern tuned to look near enough.
-6. **Wet ground reads as a tint**: flat, with no sheen. Early sign: M5's captures. The film, the lower
+6. **Wet ground reads as a tint**: flat, with no sheen. Early sign: WP5's captures. The film, the lower
    roughness and `p` by class are the mechanism; three failed looks on one cue go to the log.
-7. **The forward pass will not take another texture in Chrome**, with `WATERS`' caustics. Early sign: M5's
+7. **The forward pass will not take another texture in Chrome**, with `WATERS`' caustics. Early sign: WP5's
    preparation. The designed remedy is the canopy grid packed with the caustic level's array.
-8. **Too many puddles for the fine level's solves.** Early sign: M8's record. Regions are admitted by their
+8. **Too many puddles for the fine level's solves.** Early sign: WP8's record. Regions are admitted by their
    latest source, so a walked path is solved and the rest lie at rest.
 9. **`WATERS` and `RIVERS` move under this module's changes**, since three builders edit the same crates.
    Each ruling keeps its change behind a declaration that existing scenes do not make, and each milestone
    runs their tests.
-10. **A puddle without falling rain looks unexplained.** Early sign: M4's review. Rain in the air is the
+10. **A puddle without falling rain looks unexplained.** Early sign: WP4's review. Rain in the air is the
     remedy this plan does not have ([plan](PLAN.md#open-for-the-human)).
-11. **Exposure's edge is a ruled line.** Early sign: M5's captures under the roof. The soft edge's width is
+11. **Exposure's edge is a ruled line.** Early sign: WP5's captures under the roof. The soft edge's width is
     the remedy.
 12. **Mirror bands swap as the camera moves, or a puddle's reflection breaks behind a post.** Early sign:
-    M7.2's pan and M7.12's ranking. The designed remedies are `WATERS`' hysteresis, the fade at a band's
+    WP7.2's pan and WP7.12's ranking. The designed remedies are `WATERS`' hysteresis, the fade at a band's
     top and a smaller tolerance. The wrong fix is one plane for the yard, which part 7 fails either way.
 13. **A real scene stacks three shelters in a column**, a crown over a porch under an eave. Early sign: a
     refusal at preparation. The remedy is a third layer in the grid, a profile value; the wrong fix is
     dropping the refusal.
 14. **Held ground shows as a matt patch** beside ground that shines, where a hollow is about as shallow as
-    its class's relief is deep. Early sign: M5.6's drying sequence. The designed remedies are a class's
+    its class's relief is deep. Early sign: WP5.6's drying sequence. The designed remedies are a class's
     relief kept well under its hollows' depth, and deeper dips in the yard. The wrong fixes are to read the
     class's film on ground the account says has none, and to hand ground back on water the puddle does not
     hold.
@@ -737,32 +737,32 @@ dependencies. In addition:
 - **Other modules' files.** A change inside a file another module wrote is one a ruling names, behind a
   declaration no existing scene makes. Anything else it needs is a proposal in this module's log.
 - **The bar.** `WATERS`' handoff carries [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026,
-  and it holds here: M3 to M8 pass on their look and their speed. What a game reads stays tested against the
-  CPU models at a tolerance each test states: the puddles in the map (M3.3), the rain bands at the display's
-  time (M4.1) and the wetness function (M5.2). Each of those tests also runs a named wrong evaluator and shows
-  it miss: for M4.1, bands evaluated half a tick late and bands that ignore the rate history; for M5.2, wetness
+  and it holds here: WP3 to WP8 pass on their look and their speed. What a game reads stays tested against the
+  CPU models at a tolerance each test states: the puddles in the map (WP3.3), the rain bands at the display's
+  time (WP4.1) and the wetness function (WP5.2). Each of those tests also runs a named wrong evaluator and shows
+  it miss: for WP4.1, bands evaluated half a tick late and bands that ignore the rate history; for WP5.2, wetness
   that ignores slope and wetness that reads the open store everywhere. The wet look, a ring's shape and the
   fine level's waves are judged by eye, with no f64 reference required and no bound measured first. Which
   level holds a wave is not a look: it is state with one owner, two copies of a ring pass every view, and
-  M8.9 tests it on the levels' own state, with the near level still given the short waves as its wrong
+  WP8.9 tests it on the levels' own state, with the near level still given the short waves as its wrong
   evaluator. Parts 1 to
-  11 are the source of the bounds M1 and M2 were proved with.
+  11 are the source of the bounds WP1 and WP2 were proved with.
 - **Receivers.** The account's total and the receivers are separate proofs. A test of a receiver sets a
   case where the total would close under the wrong assignment too, and checks that receiver's gain alone.
   It finds each receiver's cells from the bed, the shelters and the water's level at the tick's start. It
   reads a mark only to tell held ground from open ground, and never as the edge of the water.
 - **Time in the views.** An inspected item that shows filling or drying may turn the rain and the drying rate
   up so the change fits the sequence; it says the rates it used.
-- **Maturity.** A ledger row for `E1.rain` is added in M3 and kept current.
+- **Maturity.** A ledger row for `E1.rain` is added in WP3 and kept current.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
-| What does preparing a yard cost, and how small can a node's curve be kept? | M1 records it |
-| Does a 5 cm cell give a clean waterline at 1.7 m? | M3; [risk 1](#risks) |
-| Do 128 rings a square metre a second read as heavy rain, and what moments do the rest need? | M4; [risks 2 and 3](#risks) |
-| What `p` reads right for each ground, and does the film carry wet paving? | M5; [risk 6](#risks) |
-| How many sampled textures do the surface and the forward stage need with rain, in Chrome? | M3 and M5 count against the record |
-| Do two mirror views serve a yard whose water stands at several heights, and is 5 cm the right band? | M7.2 and M7.12; [risk 12](#risks) |
-| Does a rainy scene need rain in the air to meet its bar? | M4's and M7's reviews; the owner ([plan](PLAN.md#open-for-the-human)) |
+| What does preparing a yard cost, and how small can a node's curve be kept? | WP1 records it |
+| Does a 5 cm cell give a clean waterline at 1.7 m? | WP3; [risk 1](#risks) |
+| Do 128 rings a square metre a second read as heavy rain, and what moments do the rest need? | WP4; [risks 2 and 3](#risks) |
+| What `p` reads right for each ground, and does the film carry wet paving? | WP5; [risk 6](#risks) |
+| How many sampled textures do the surface and the forward stage need with rain, in Chrome? | WP3 and WP5 count against the record |
+| Do two mirror views serve a yard whose water stands at several heights, and is 5 cm the right band? | WP7.2 and WP7.12; [risk 12](#risks) |
+| Does a rainy scene need rain in the air to meet its bar? | WP4's and WP7's reviews; the owner ([plan](PLAN.md#open-for-the-human)) |

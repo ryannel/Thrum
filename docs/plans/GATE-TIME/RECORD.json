@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/GATE-TIME/design-review.md",
     "commit": "a00456b6a61dc604bc5c6abc2db4a0a6249b52e9",
-    "hash": "b3ab6da71510b1680a7f365ec2942dd8d2281e99178ba57cd3b9d2b5a90a33aa",
+    "hash": "aa84a937e0c8b872b59acd7517b4e59c0745a03240004ecd0ddbd3b3592808e2",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,20 +23,20 @@
     },
     "at": "2026-11-24T04:58:46Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "880b269a0741e2c408cc6e4d87a61a109a23d6b44030f34013a695b48ae23836",
+  "work_packages": {
+    "WP1": {
+      "definitions": "775b916e7effdeac238d983d8e5f39776e67c6e4f7f235311f25ebe645be0712",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "05e3c3ab2e1aa0a6de98a8aa80476a219993fe32",
-          "review": ".orchestrate/evidence/GATE-TIME/M1-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.5": "pass",
-            "M1.4": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.5": "pass",
+            "WP1.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -94,25 +94,25 @@
       "done": {
         "by": "review",
         "commit": "05e3c3ab2e1aa0a6de98a8aa80476a219993fe32",
-        "review": ".orchestrate/evidence/GATE-TIME/M1-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP1-review.md",
         "checked": "4538c06b07f355ea376e0f13d41078f6ef413ec3",
         "at": "2026-11-20T19:05:42Z"
       }
     },
-    "M2": {
-      "definitions": "f73d24dcf31c86a0c9eeeb8f43ed10622153421598a8a43e5ddc3f3b7059ba49",
+    "WP2": {
+      "definitions": "160e6b1cb6a2291607c0c7ce9979ad6b5c4279efbcb8c514889009ab261302dc",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "714da2ba8fe053ed4d96ff231a510eb89dc259c8",
-          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -143,11 +143,11 @@
         "at": "2026-11-21T11:34:23Z",
         "reused": [
           "Test command",
-          "M2.1",
-          "M2.2",
-          "M2.3",
-          "M2.4",
-          "M2.5"
+          "WP2.1",
+          "WP2.2",
+          "WP2.3",
+          "WP2.4",
+          "WP2.5"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -175,23 +175,23 @@
       "done": {
         "by": "review",
         "commit": "714da2ba8fe053ed4d96ff231a510eb89dc259c8",
-        "review": ".orchestrate/evidence/GATE-TIME/M2-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP2-review.md",
         "checked": "e8ceb60e0d5c9d4559f1ee36ab111c7fde7879f2",
         "at": "2026-11-21T11:41:09Z"
       }
     },
-    "M3": {
-      "definitions": "0816a3eab76b00ae3d766496d640a8eb5e33bb6c322d74fb8a59eb9c13f7eb56",
+    "WP3": {
+      "definitions": "cdbbb1f39b3034434f8e3dd334d2c8eb03a648756d16ca5bc7491b4ba90dfd5e",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "b7c4e262f7f5e14ae2292f96c9b33bc769d2b534",
-          "review": ".orchestrate/evidence/GATE-TIME/M3-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -222,7 +222,7 @@
         "at": "2026-11-22T09:50:12Z",
         "reused": [
           "Test command",
-          "M3.1"
+          "WP3.1"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -250,24 +250,24 @@
       "done": {
         "by": "review",
         "commit": "b7c4e262f7f5e14ae2292f96c9b33bc769d2b534",
-        "review": ".orchestrate/evidence/GATE-TIME/M3-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP3-review.md",
         "checked": "c538155f2329340da394404ee9cbfca3385b455f",
         "at": "2026-11-22T09:57:57Z"
       }
     },
-    "M4": {
-      "definitions": "d6d6042bdc52bc35772715b1c4aa69141cc61a46a0d095073fea0c4ad2a9a2d9",
+    "WP4": {
+      "definitions": "cbd793bb4e50f248a094b1f95fe28011c2054ec1ac0cfebe9c7540685ad7dc40",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "add9433b7df4678b6dace49256721f6247e8ea02",
-          "review": ".orchestrate/evidence/GATE-TIME/M4-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -298,10 +298,10 @@
         "at": "2026-11-22T14:23:35Z",
         "reused": [
           "Test command",
-          "M4.1",
-          "M4.2",
-          "M4.3",
-          "M4.4"
+          "WP4.1",
+          "WP4.2",
+          "WP4.3",
+          "WP4.4"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -329,13 +329,13 @@
       "done": {
         "by": "review",
         "commit": "add9433b7df4678b6dace49256721f6247e8ea02",
-        "review": ".orchestrate/evidence/GATE-TIME/M4-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP4-review.md",
         "checked": "d96b41b77439b53de557c3cd3cc55d106e8d744b",
         "at": "2026-11-22T14:27:37Z"
       }
     },
-    "M5": {
-      "definitions": "61ce02b810ff07b120957b854668b5b78ffd3008c6498ff0a13e6f2b40a269b0",
+    "WP5": {
+      "definitions": "b5088f4919b1d6e26c2e72f95ec02954afce7bdb8cd1c6da945469d4c2709837",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -344,28 +344,28 @@
       },
       "ends_stretch": true
     },
-    "M6": {
+    "WP6": {
       "definitions": "bce5f3079f1ae413f38f49c026027e672dd9df7a36230f7f39d791749e854c67",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "c18171ddc54f7bbd83053a41e3b616a3ed790fc9",
-          "review": ".orchestrate/evidence/GATE-TIME/M6-review-1.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP6-review-1.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "fail",
-            "M6.3": "fail",
-            "M6.4": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "fail",
+            "WP6.3": "fail",
+            "WP6.4": "pass"
           },
           "findings": [
             {
               "name": "gated game-library test runs in no tier",
-              "item": "M6.2",
+              "item": "WP6.2",
               "repeat": false
             },
             {
               "name": "check-docs misses feature-gated inline library tests",
-              "item": "M6.3",
+              "item": "WP6.3",
               "repeat": false
             }
           ],
@@ -389,12 +389,12 @@
         {
           "verdict": "pass",
           "commit": "df43354b682bc4e7cbac7c7398bf473e519b57cb",
-          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.3": "pass",
-            "M6.4": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -452,27 +452,27 @@
       "done": {
         "by": "review",
         "commit": "df43354b682bc4e7cbac7c7398bf473e519b57cb",
-        "review": ".orchestrate/evidence/GATE-TIME/M6-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP6-review.md",
         "checked": "9b3a90ddb9823096f1195fda18d09d0ea29254b6",
         "at": "2026-11-20T22:55:00Z"
       }
     },
-    "M7": {
+    "WP7": {
       "definitions": "38bfe5570318813c7f7c9da1dbda4d00d9639af62232c60e2d833936e534d32b",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "6a14b101e9d5a4ae71337045105492c3d1ae4e69",
-          "review": ".orchestrate/evidence/GATE-TIME/M7-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md",
           "items": {
-            "M7.1": "pass",
-            "M7.2": "pass",
-            "M7.3": "pass",
-            "M7.9": "pass",
-            "M7.4": "pass",
-            "M7.5": "pass",
-            "M7.6": "pass",
-            "M7.8": "pass"
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.9": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.8": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -530,27 +530,27 @@
       "done": {
         "by": "review",
         "commit": "6a14b101e9d5a4ae71337045105492c3d1ae4e69",
-        "review": ".orchestrate/evidence/GATE-TIME/M7-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP7-review.md",
         "checked": "46f4c4c65dbd854509b602c82721fcc61962a5f8",
         "at": "2026-11-21T07:53:23Z"
       }
     },
-    "M8": {
-      "definitions": "f463bc41f34cec2e3e9057f84d730bdffee35e46e8d58ce000d10831c0b70ade",
+    "WP8": {
+      "definitions": "46f8bb7000eb0582f7b04b43c79f1a2ce64caddaa5cfd0b5c4be9c1f57c37152",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "da813c36e89e8833957ce957a50b230d666cb363",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review-1.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review-1.md",
           "items": {
-            "M8.1": "pass",
-            "M8.2": "pass",
-            "M8.3": "pass",
-            "M8.4": "fail",
-            "M8.5": "fail",
-            "M8.6": "pass",
-            "M8.7": "pass",
-            "M8.8": "pass"
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "fail",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.8": "pass"
           },
           "findings": [
             {
@@ -559,12 +559,12 @@
             },
             {
               "name": "With CARGO_TARGET_DIR set, ./dev check does not end with the ten slowest tests",
-              "item": "M8.5",
+              "item": "WP8.5",
               "repeat": false
             },
             {
               "name": "With CARGO_TARGET_DIR set, a stopped test's failure does not say what to do",
-              "item": "M8.4",
+              "item": "WP8.4",
               "repeat": false
             }
           ],
@@ -588,17 +588,17 @@
         {
           "verdict": "pass",
           "commit": "d7198a1f70fc250002ee0b81f4888d0c2404a771",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md",
           "items": {
-            "M8.1": "pass",
-            "M8.2": "pass",
-            "M8.3": "pass",
-            "M8.4": "pass",
-            "M8.5": "pass",
-            "M8.6": "pass",
-            "M8.7": "pass",
-            "M8.8": "pass",
-            "M8.9": "pass"
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.8": "pass",
+            "WP8.9": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -657,24 +657,24 @@
       "done": {
         "by": "review",
         "commit": "d7198a1f70fc250002ee0b81f4888d0c2404a771",
-        "review": ".orchestrate/evidence/GATE-TIME/M8-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP8-review.md",
         "checked": "8e6ff2b964540e497e10ed6f695343931ef9ee00",
         "at": "2026-11-21T05:46:00Z"
       }
     },
-    "M9": {
-      "definitions": "432d0047179081b647c38d7a9b8189dced4fbdfc1a84cb63e33d1a04d515992c",
+    "WP9": {
+      "definitions": "cd1d915a5c3ebf3e8f9c89cf00f465a11bc056ff31f2103940e27ff724f8efb0",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "666db5da6e58a2adc0c30e79865d697ac61e1001",
-          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP9-review.md",
           "items": {
-            "M9.1": "pass",
-            "M9.2": "pass",
-            "M9.3": "pass",
-            "M9.4": "pass",
-            "M9.5": "pass"
+            "WP9.1": "pass",
+            "WP9.2": "pass",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -705,8 +705,8 @@
         "at": "2026-11-21T19:34:52Z",
         "reused": [
           "Test command",
-          "M9.4",
-          "M9.5"
+          "WP9.4",
+          "WP9.5"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -734,27 +734,27 @@
       "done": {
         "by": "review",
         "commit": "666db5da6e58a2adc0c30e79865d697ac61e1001",
-        "review": ".orchestrate/evidence/GATE-TIME/M9-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP9-review.md",
         "checked": "b63faa90bbc34381fa3f36ac05f594b33973ab11",
         "at": "2026-11-21T19:37:55Z"
       }
     },
-    "M10": {
+    "WP10": {
       "definitions": "244f57ee9c13063ceb692605c9b463e0d1a85c4f94b8e3b463b3a718ec0c0158",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "4bc589612e14eaa51359cdffc2beeaade0e89679",
-          "review": ".orchestrate/evidence/GATE-TIME/M10-review-1.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP10-review-1.md",
           "items": {
-            "M10.1": "pass",
-            "M10.2": "pass",
-            "M10.3": "fail"
+            "WP10.1": "pass",
+            "WP10.2": "pass",
+            "WP10.3": "fail"
           },
           "findings": [
             {
               "name": "A closing statement says agent_loop.py check took about 10 to 12 minutes each time until 04:38, which the record's own tables contradict and no table can show",
-              "item": "M10.3",
+              "item": "WP10.3",
               "repeat": false
             }
           ],
@@ -778,16 +778,16 @@
         {
           "verdict": "fail",
           "commit": "6d9c2a2b327f3f96e7e5df8c14f3dd1dc9533a2a",
-          "review": ".orchestrate/evidence/GATE-TIME/M10-review-2.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP10-review-2.md",
           "items": {
-            "M10.1": "pass",
-            "M10.2": "pass",
-            "M10.3": "fail"
+            "WP10.1": "pass",
+            "WP10.2": "pass",
+            "WP10.3": "fail"
           },
           "findings": [
             {
               "name": "The closing statements on savings call the median of each session's saving the most that could come off the median session, which the tables contradict",
-              "item": "M10.3",
+              "item": "WP10.3",
               "different": "The earlier finding was a figure no table held (a per-call check time); that sentence is gone. This one is a correct table figure, the median of per-session savings, described in the prose as an upper bound for the median session.",
               "repeat": false
             }
@@ -812,11 +812,11 @@
         {
           "verdict": "pass",
           "commit": "6f4111361cbeda015c86e2fdc89d3d31f607a017",
-          "review": ".orchestrate/evidence/GATE-TIME/M10-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP10-review.md",
           "items": {
-            "M10.1": "pass",
-            "M10.2": "pass",
-            "M10.3": "pass"
+            "WP10.1": "pass",
+            "WP10.2": "pass",
+            "WP10.3": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -874,32 +874,32 @@
       "done": {
         "by": "review",
         "commit": "6f4111361cbeda015c86e2fdc89d3d31f607a017",
-        "review": ".orchestrate/evidence/GATE-TIME/M10-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP10-review.md",
         "checked": "87079e4ff9e045be73536cbda69c51ff62ff1b7d",
         "at": "2026-11-21T12:28:22Z"
       }
     },
-    "M11": {
-      "definitions": "e0017e093c26635de33437495cbf61a781aaebeec38dff70caf3f183c376867f",
+    "WP11": {
+      "definitions": "fa46ff4d20a58c4f4bec53656861a5cb1c468fe1a82ecb806f6644c5d4293440",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "cf7a694ef5e839d9e77686d8419da15f5e0ef178",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review-1.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review-1.md",
           "items": {
-            "M11.1": "fail",
-            "M11.2": "pass",
-            "M11.3": "pass",
-            "M11.4": "pass",
-            "M11.5": "pass",
-            "M11.6": "pass",
-            "M11.7": "pass",
-            "M11.8": "pass"
+            "WP11.1": "fail",
+            "WP11.2": "pass",
+            "WP11.3": "pass",
+            "WP11.4": "pass",
+            "WP11.5": "pass",
+            "WP11.6": "pass",
+            "WP11.7": "pass",
+            "WP11.8": "pass"
           },
           "findings": [
             {
               "name": "record misattributes the first-run cost to the link",
-              "item": "M11.1",
+              "item": "WP11.1",
               "repeat": false
             }
           ],
@@ -923,16 +923,16 @@
         {
           "verdict": "pass",
           "commit": "aabccd93027dbeb3f7e2f1a112b194259843e7af",
-          "review": ".orchestrate/evidence/GATE-TIME/M11-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md",
           "items": {
-            "M11.1": "pass",
-            "M11.2": "pass",
-            "M11.3": "pass",
-            "M11.4": "pass",
-            "M11.5": "pass",
-            "M11.6": "pass",
-            "M11.7": "pass",
-            "M11.8": "pass"
+            "WP11.1": "pass",
+            "WP11.2": "pass",
+            "WP11.3": "pass",
+            "WP11.4": "pass",
+            "WP11.5": "pass",
+            "WP11.6": "pass",
+            "WP11.7": "pass",
+            "WP11.8": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -963,9 +963,9 @@
         "at": "2026-11-22T05:48:05Z",
         "reused": [
           "Test command",
-          "M11.3",
-          "M11.4",
-          "M11.8"
+          "WP11.3",
+          "WP11.4",
+          "WP11.8"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -993,33 +993,33 @@
       "done": {
         "by": "review",
         "commit": "aabccd93027dbeb3f7e2f1a112b194259843e7af",
-        "review": ".orchestrate/evidence/GATE-TIME/M11-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP11-review.md",
         "checked": "352e84cf28901015f206af4d76b8021e1cca0f4f",
         "at": "2026-11-22T05:56:50Z"
       }
     },
-    "M12": {
-      "definitions": "1f4a271ebfefa3b766d91215ab5ae19ab137b49130754c21fffb4bec512c911d",
+    "WP12": {
+      "definitions": "c2be06f596f8a400322a198adcfc6848d782a00bc657d62356083c9c9fe54d77",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "7b29443c2a46e3439576c24d896e7e2ad3305dce",
-          "review": ".orchestrate/evidence/GATE-TIME/M12-review-1.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP12-review-1.md",
           "items": {
-            "M12.1": "fail",
-            "M12.2": "pass",
-            "M12.3": "fail",
-            "M12.4": "pass"
+            "WP12.1": "fail",
+            "WP12.2": "pass",
+            "WP12.3": "fail",
+            "WP12.4": "pass"
           },
           "findings": [
             {
               "name": "test-binary matches --test names without their package",
-              "item": "M12.3",
+              "item": "WP12.3",
               "repeat": false
             },
             {
               "name": "limit-exempt passes a deleted default limit",
-              "item": "M12.1",
+              "item": "WP12.1",
               "repeat": false
             }
           ],
@@ -1043,12 +1043,12 @@
         {
           "verdict": "pass",
           "commit": "8ee6bbaab7d062e21d3eba620c35d62359091f69",
-          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP12-review.md",
           "items": {
-            "M12.1": "pass",
-            "M12.2": "pass",
-            "M12.3": "pass",
-            "M12.4": "pass"
+            "WP12.1": "pass",
+            "WP12.2": "pass",
+            "WP12.3": "pass",
+            "WP12.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -1079,9 +1079,9 @@
         "at": "2026-11-21T13:22:16Z",
         "reused": [
           "Test command",
-          "M12.1",
-          "M12.2",
-          "M12.3"
+          "WP12.1",
+          "WP12.2",
+          "WP12.3"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -1109,21 +1109,21 @@
       "done": {
         "by": "review",
         "commit": "8ee6bbaab7d062e21d3eba620c35d62359091f69",
-        "review": ".orchestrate/evidence/GATE-TIME/M12-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP12-review.md",
         "checked": "a0cd1b8235b835e99114a888b7ec466743276143",
         "at": "2026-11-21T13:32:39Z"
       }
     },
-    "M13": {
+    "WP13": {
       "definitions": "333250e6b14e8ec1e4575469fa4deb1600c893d3dafe776bb02d1ed38ae2978c",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "6014c0d31169d0899ced8108530201b02c4ce1a4",
-          "review": ".orchestrate/evidence/GATE-TIME/M13-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP13-review.md",
           "items": {
-            "M13.1": "pass",
-            "M13.2": "pass"
+            "WP13.1": "pass",
+            "WP13.2": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -1181,21 +1181,21 @@
       "done": {
         "by": "review",
         "commit": "6014c0d31169d0899ced8108530201b02c4ce1a4",
-        "review": ".orchestrate/evidence/GATE-TIME/M13-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP13-review.md",
         "checked": "87ee81806917719edc99693f054a911d4be4ed94",
         "at": "2026-11-21T20:55:09Z"
       }
     },
-    "M14": {
-      "definitions": "82e03e1685f13ad69e3df3b6871ce69838ebc4e489c7fa4e451ea54ae8682e78",
+    "WP14": {
+      "definitions": "37d5d3cc7481075a05bef2e6ba112b4b03bd77abd33a77fe465d885474fc376c",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "23772f97510f789cc99b40e675022b0ffa6eeae6",
-          "review": ".orchestrate/evidence/GATE-TIME/M14-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP14-review.md",
           "items": {
-            "M14.1": "pass",
-            "M14.2": "pass"
+            "WP14.1": "pass",
+            "WP14.2": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -1252,13 +1252,13 @@
       "done": {
         "by": "review",
         "commit": "23772f97510f789cc99b40e675022b0ffa6eeae6",
-        "review": ".orchestrate/evidence/GATE-TIME/M14-review.md",
+        "review": ".orchestrate/evidence/GATE-TIME/WP14-review.md",
         "checked": "a864268f5ce228af432525baddb2378c1305d754",
         "at": "2026-11-24T04:26:35Z"
       }
     },
-    "M15": {
-      "definitions": "bc1c5fe60f9915d2fa13354cf42ad8ad4109d70d952d1b5d6767770bf9f9daf3",
+    "WP15": {
+      "definitions": "ad36ca00388e651dfcd3f5a32a68d68f83fbfed63cba8685ea3921f0583624ef",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1267,7 +1267,7 @@
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and consolidation for Thrum.\" The purpose is to make Thrum cheaper to change: a shorter merge gate, no tools, records or code that nothing uses, and no proof heavier than the fault it guards. It must not change what the engine draws, simulates or sends.\n\nStart from /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/REPORT.md. Read it in place; don't copy it or edit it. Beside it, results.json holds every finding, findings/<reviewer>.md holds the full write-ups, and verified/<reviewer>-<n>.md holds the second agents' corrections. Where a verifier corrected a finding, the verifier is right.\n\nIn scope: the report's sections 1 to 4 (gate time, dead tools and records, dead engine code, and small API changes that delete stubs). Also in scope: the parts of section 6 that are code or files, meaning the fixtures and record writers that still use docs/evidence, and the water settings that are parsed twice. Section 5, the test kit, belongs to TEST-SUPPORT as a milestone after its M2, so plan it there. Section 7 needs designs of its own: list each part as not planned, with one line each.\n\nSection 6's plan and settings text belongs to the lead and the planners:\n- L8-01: no rule says a Done item's check is history, so about 770 path mentions are treated as frozen.\n- L8-05: `! grep` and `test ! -e` checks pass when their path is missing (HOST M4.5, CLOUDS M14.13, SHOWCASE M9.7, HOST M3.2).\n- L8-07: ten open items ask for new tracked files under docs/evidence, which the merge guard refuses.\nFix those in the open done-when items and in ORCHESTRATE.md where it's within planner authority. Name any change that only the orchestrate skill can make, and keep that out of this plan.\n\nWhat the plan must respect:\n- A done-when item names a behaviour, not a file location. SHOWCASE M9.6 failed review over a byte-identical fixture move because its items named paths.\n- Up to three Claude builders (Opus 5.5 medium) can work at once. Shape the work so that milestones with disjoint files can run side by side, as separate modules if that's what it takes, and say which ones can.\n- Other builders are live, on Codex, in APPLE-PRESENTATION, HOST, RAY-TRACING, REVIEW-RENDER, SESSION, TEST-SUPPORT and RENDER-2D. The findings' verifier notes say which files are busy and which open done-when items name them. Declare each milestone's files, so the lead can confirm them before a builder starts.\n- A deletion that drops a capability or a proof is the owner's call. Carry each one as an assumption, with the other choice stated. That covers the headless release-trust toolchain (8,500 lines), the nine benches nothing runs, the ten-minute gale soak (actual_gale_keeps_the_fleet_in_contact_on_metal) moving from the gate to a main-branch check with a 60-second run left in the gate, and the reference tests that the 17 November bar may retire. The state-delta codec stays unless SESSION's design changes, because that design says keep.\n- scripts/ is a covered path for exact baselines, so script deletions land together.\n- Changes to the gate's machinery (the test profile, nextest) are measured before they're switched on.\n- Order by payoff. Gate time comes first, because every merge pays it.\n\nDone when the design has passed its review and the plan is merged.",
       "at": "2026-11-20T10:12:46Z"
@@ -1547,7 +1547,7 @@
       },
       "at": "2026-11-22T14:59:57Z",
       "items_owed": [
-        "M14"
+        "WP14"
       ]
     },
     {
@@ -1596,7 +1596,7 @@
       },
       "at": "2026-11-24T03:17:25Z",
       "items_owed": [
-        "M15"
+        "WP15"
       ]
     },
     {

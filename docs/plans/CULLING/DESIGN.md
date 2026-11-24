@@ -1,7 +1,7 @@
 # Culling: only what the camera can see is drawn (G3c)
 
 11 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C04, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), the
+[the brief](../VISION.md). C04, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), the
 [graph decision](../../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) and the
 [hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) govern.
 
@@ -10,14 +10,14 @@
 The owner's planning task of 11 November 2026, word for word:
 
 > Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and
-> done-when file. Both depend on APPLE-TILE M2, which is in its second review now, so builders can start them once
-> it passes. Everything else is waiting on APPLE-TILE M2 or M3, so these are the next work. Keep each first
-> milestone small enough to start right after APPLE-TILE M2 lands. Also: APPLE-PRESENTATION M1's jitter change broke
+> done-when file. Both depend on APPLE-TILE WP2, which is in its second review now, so builders can start them once
+> it passes. Everything else is waiting on APPLE-TILE WP2 or WP3, so these are the next work. Keep each first
+> milestone small enough to start right after APPLE-TILE WP2 lands. Also: APPLE-PRESENTATION WP1's jitter change broke
 > APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged
-> (.orchestrate/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
+> (.orchestrate/evidence/APPLE-TILE/WP2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
 > that alters another module's exact baselines gets caught before landing.
 
-What the module must deliver comes from [the brief](../BRIEF.md):
+What the module must deliver comes from [the brief](../VISION.md):
 
 - the V1 exit (decision 1) lists "GPU culling" and says "Keep 10,000 entities and 1,000–2,000 movers as the
   representative scene";
@@ -61,7 +61,7 @@ culling mode.
 2. The mode follows the device and the measurements: a capability-selected fallback to Direct, Chrome on mixed
    meshes, and the field default decided from paired rows.
 3. The valley's 10,000 entities culled by default and equal to Direct in every pixel, on Mac and Chrome, and the
-   gate closed. That proof needs Direct itself to be one image, so M3 also makes the forward pass draw
+   gate closed. That proof needs Direct itself to be one image, so WP3 also makes the forward pass draw
    [one image under load](#m3-one-image-under-load).
 
 **Not built here:** LOD selection; several cameras; meshlet culling of field meshes; a visibility buffer; Metal
@@ -171,7 +171,7 @@ exact form, and GPU tests pin the shader's slack to the reference at its boundar
 The bound has two parts, and each needs its own witness:
 
 - **Depth slack.** On cubes a zero-tolerance mutant still passes, so the witness that needs the slack is a mesh
-  face lying on its own bounds, flush with a prepass occluder at a rounded far pose (M1).
+  face lying on its own bounds, flush with a prepass occluder at a rounded far pose (WP1).
 - **Footprint widening.** The depth witness says nothing about it. Its witness is a slot that shows only in a
   texel column the unwidened rectangle would leave out. The reference searches poses for one. If it finds one, a
   mutant without the widening must lose pixels there. If it finds none, the evidence records the poses searched,
@@ -189,7 +189,7 @@ comes from the upload's determinant. The compaction runs once over the concatena
 indirect record per bucket. Sun casters are culled per Sun pass against that pass's own raster volume, never
 against the camera.
 
-### M1: Occlusion on the bucket route
+### WP1: Occlusion on the bucket route
 
 Occlusion is refused today for scenes that select meshes (`admit_meshes` returns `SceneCapacity`), because the
 visible-last bit sat at the member's list index, which a layout change hands to another slot.
@@ -210,7 +210,7 @@ visible-last bit sat at the member's list index, which a layout change hands to 
 **Check that it can work.** The equality argument above does not depend on the mesh, only on prepass parity and a
 conservative test. Parity holds per bucket by sharing the pipeline state. The test is conservative for any mesh
 inside its local bounds, which admission computes from the vertices. Where it pays is known in outline. The
-earlier session's harness (its logs are not committed, so this is a prediction for M2 to test, not evidence)
+earlier session's harness (its logs are not committed, so this is a prediction for WP2 to test, not evidence)
 measured about 22,000 frustum-passing 1,024-triangle spheres at 7.2 ms of forward time at 720p, and 0.8–1.4 ms in
 this prepass shape. The committed rows show the other end: on 12-triangle cubes Occlusion costs about 0.3 ms more
 than Frustum at 1080p. So it is a per-scene choice.
@@ -230,7 +230,7 @@ Two visibility systems exist: instance culling here, and per-meshlet culling of 
 `CONTENT-LOOP` supplies cooked meshes as mesh rows for the exit scene. This module does not wait for that: it
 proves the valley's entities on the meshes that exist, and `SHOWCASE` reruns the same commands on its scene.
 
-### M2: the mode follows the device and the measurements
+### WP2: the mode follows the device and the measurements
 
 - **Capability fallback.** Culled modes draw with `draw_indexed_indirect` and compute. The requested mode resolves
   from the capability record, as [COOKED-DRAW](../COOKED-DRAW/DESIGN.md) does: a record without adapter-read
@@ -245,7 +245,7 @@ proves the valley's entities on the meshes that exist, and `SHOWCASE` reruns the
   mode again and resolves it against the new generation's record. Direct stays requestable everywhere, as the
   oracle a creator can launch.
 
-### M3: the valley's entities
+### WP3: the valley's entities
 
 The valley keeps its content. Its 10,000 entities move from Direct to the default the rule above gives, on the cube
 route, where Frustum and Occlusion are byte-equal to Direct, so culling changes no retained image. An opt-in mesh selection
@@ -254,15 +254,15 @@ culling against bucket-ordered Direct, which is the configuration `SHOWCASE` ado
 
 **Under temporal sampling.** The prepass, both culls and the forward pass read one view record, so a jittered
 projection moves them together and the proof is unchanged. Motion and reactive outputs come from the forward pass,
-whose colour, motion and reactive arithmetic is untouched. M3 proves equality with temporal sampling selected.
+whose colour, motion and reactive arithmetic is untouched. WP3 proves equality with temporal sampling selected.
 
 **Compute-readable materials.** The gate asks that compute can read the material table. The one existing material
 buffer gains compute visibility; no second table is made.
 
-### M3: one image under load
+### WP3: one image under load
 
-Added 14 November 2026, after M3's builder stopped on [the module list's](../ARCHITECTURE.md#exact-baselines)
-rule 1. Its evidence is on branch `build/culling`, under `.orchestrate/evidence/CULLING/M3/` (`pinned-probes-d70c1a27/`,
+Added 14 November 2026, after WP3's builder stopped on [the module list's](../ARCHITECTURE.md#exact-baselines)
+rule 1. Its evidence is on branch `build/culling`, under `.orchestrate/evidence/CULLING/WP3/` (`pinned-probes-d70c1a27/`,
 `triangle-merging/`, `sample-dependency/`, `sample-frequency/`, `qualification-a5ab2143/`), and reaches main
 when that branch merges.
 
@@ -289,11 +289,11 @@ the Sun receiver's slope there. There is one shader source for every backend and
 and no selection. Volume entries, and passes whose fragment stage takes no derivative, stay as they are. This is
 the workaround Steven Noonan reports on that issue from Darwinia, over ANGLE's Metal backend and over its Vulkan
 backend on MoltenVK. It has to be a written output: he recalls a declared but unused one being optimised away.
-Those reports are why this mechanism is chosen. That it works here is M3.11's to prove.
+Those reports are why this mechanism is chosen. That it works here is WP3.11's to prove.
 
 **Why not another way.** Each of these was built and is retained on the branch. Explicit gradients for the
 material samples moved 4,859 reference pixels and the hosts still differed. Sample-frequency interpolation
-failed M3.4's own check by one pixel. Making the Sun search depend on the samples failed under load. A depth output
+failed WP3.4's own check by one pixel. Making the Sun search depend on the samples failed under load. A depth output
 on opaque fragments was stable over four loaded routes, and at the `portable-sdr-approach` checkpoint its image
 is byte-equal to the coverage output's, 8,303 pixels from the retained reference. Two different outputs give
 the same bytes there, which is what both stopping the merge would produce; it is an inference from one
@@ -304,7 +304,7 @@ tests would prove a configuration nobody ships.
 
 **What moves.** The default output of every scene with textured or shadowed opaque geometry, at pixels whose
 2×2 quad spans more than one triangle. `APPLE-TILE`'s registered references therefore move, and
-[the module list's ruling on M3](../ARCHITECTURE.md#ruling-on-culling-m3) says who refreshes them. Once refreshed,
+[the module list's ruling on WP3](../ARCHITECTURE.md#ruling-on-culling-m3) says who refreshes them. Once refreshed,
 they guard the pipelines they are drawn with, which are Direct's: a build whose Direct pipelines lost the
 output's effect draws the old bytes there and fails the verifier. They are never drawn Frustum, Occlusion or
 with meshes selected, so they say nothing about those pipelines.
@@ -321,7 +321,7 @@ they were. Three proofs carry the claim. Each is one bounded run, and none waits
    route each, with the same recipe, source and entity route, four hosts (Direct, Frustum, Occlusion and a
    second Direct), two counted render workers and the full exact comparison at every tick. The turns go round
    the eight combinations of the two recipes, the two sources (SDR and scene-linear) and the two entity
-   routes: cubes, as M3.1 draws the valley, and selected meshes, as M3.4 does. Those are the forward pipelines
+   routes: cubes, as WP3.1 draws the valley, and selected meshes, as WP3.4 does. Those are the forward pipelines
    this milestone qualifies. The campaign ends when the control has differed in five routes and both builds
    have run every combination. The build with the output must have run at least as many routes as the control
    and differed in none. If the output did nothing, five differences would all fall to the control with a
@@ -337,9 +337,9 @@ they were. Three proofs carry the claim. Each is one bounded run, and none waits
    working, a build draws merged derivatives, the image the old references hold. At `portable-sdr-approach`
    alone the two images are 8,303 pixels apart, and on the branch all thirty native files and all four Chrome
    manifests moved. So a loss on Direct's pipelines fails that check on every run, at any load. That is
-   M3.10's check. It draws Direct only, so it does not stand in for the campaign.
-3. **This module's comparisons, on the merged tip.** M3.1 and M3.4 compare separately prepared hosts at every
-   tick of the route on both recipes, and M3.4's check is where this module first met the variation. The
+   WP3.10's check. It draws Direct only, so it does not stand in for the campaign.
+3. **This module's comparisons, on the merged tip.** WP3.1 and WP3.4 compare separately prepared hosts at every
+   tick of the route on both recipes, and WP3.4's check is where this module first met the variation. The
    script runs both on main's tip while other builders load the GPU. One passing run of each is weak evidence
    that the image is one, by this section's first sentence. They are there to catch a mode that differs from
    its oracle.
@@ -360,7 +360,7 @@ Equal shader sources are never offered as proof of anything.
 
 A campaign passed on the branch at `cfecd0c7`: meshes selected, six pairs, the control differing in five
 routes and the build with the output in none. It is why this mechanism lands. It ran before the rebase and
-without the cube route, so it is not M3.11's proof.
+without the cube route, so it is not WP3.11's proof.
 
 The campaign is a measurement and nothing else: one job that does not fetch, rebase, verify or merge, which
 the builder starts itself once it has read `merge`'s result. It holds the `gpu` lock around whole pairs. A
@@ -381,34 +381,34 @@ On the branch, once each:
   `APPLE-TILE`'s scripts, and committed. The references they replace must be what main drew: a passing
   verifier record at the **starting commit**, the commit of main the branch regenerated on top of, says so.
   The main-branch check's pass at that commit is such a record and costs no run.
-- **M3.12's difference images**, between the references replaced and the new ones, show only what that item
+- **WP3.12's difference images**, between the references replaced and the new ones, show only what that item
   allows. The builder judges them by the item's own list, and the reviewer judges them again at review.
 - **Rule 2's one `verify --full`** passes on the branch's build against the regenerated references (proof 2).
 - **Pins.** The [reference guard](../BASELINE-GUARD/DESIGN.md#the-reference-guard) in `./dev check` refuses a
   moved reference until the registry records it. A commit changes, in `.config/exact-baselines.json`, the
   `pin` and the `refresh` of each baseline whose reference moved, and nothing else.
   `python3 scripts/exact_baselines.py guard` prints each pin from the committed files. The refresh names the
-  anchor `ruling-on-culling-m3`, the module `CULLING` and the milestone `M3`. Only the guard reads those two
+  anchor `ruling-on-culling-m3`, the module `CULLING` and the milestone `WP3`. Only the guard reads those two
   fields, so this commit changes nothing that was drawn or compared.
 
 Then the builder runs `merge`, by itself. It rebases, runs `./dev check` with the reference guard, and pushes.
-The script's run on the merged tip is the proof of record, and M3.10's check passes from the main-branch
+The script's run on the merged tip is the proof of record, and WP3.10's check passes from the main-branch
 check's run there. On main, once: the campaign (proof 1), on a build of
 [the commit it stands for](#what-a-campaign-stands-for).
 
-**What a rebase repeats.** `APPLE-TILE` M10 and `ATMOSPHERE` M9 also land covered changes, so the builder
+**What a rebase repeats.** `APPLE-TILE` WP10 and `ATMOSPHERE` WP9 also land covered changes, so the builder
 integrates on top of what has landed.
 
-- If the registered reference files are as they were, nothing is repeated: not the verifier, not M3.12's
+- If the registered reference files are as they were, nothing is repeated: not the verifier, not WP3.12's
   images. The campaign follows the merge in any case.
 - If only a pin changes, because main changed a comparison file, the builder copies the pins the guard prints
   and keeps its refresh.
 - If a registered reference changes or conflicts, another landing moved an image. Main's new tip becomes the
-  starting commit. The builder regenerates each moved reference from the rebased build, makes M3.12's images
+  starting commit. The builder regenerates each moved reference from the rebased build, makes WP3.12's images
   again, and runs `verify --full` once on that build. Each of the two refreshes records its own old and new
   hashes, as [the module list](../ARCHITECTURE.md#ruling-on-culling-m3) orders.
 
-**When it fails.** Before the merge: if a reference moved where M3.12 allows none, nothing is merged, and
+**When it fails.** Before the merge: if a reference moved where WP3.12 allows none, nothing is merged, and
 the builder ends `BLOCKED` with the payloads. After the merge: if the main-branch check fails at this module's
 commit, rule 2's course applies. The builder fixes it as its next task, or the lead reverts the merge, which
 restores the shader, the references and the pins together. If the build with the output differs in the
@@ -429,25 +429,25 @@ queued for the lock to prove again what the run on main proves. The order and th
 withdrawn, not automated better.
 
 **Cost.** A coverage write can cost fragment time: merged triangles shaded fewer helper fragments at shared
-edges, and the driver may test depth later. Nobody has measured it here. M3.13 records it under
+edges, and the driver may test depth later. Nobody has measured it here. WP3.13 records it under
 [Performance](#performance), as paired rows of the claimed shader and the same control, taken once and not
 again for a rebase. The figure is a
 recorded cost. It is not a condition of landing the correction, and no result of it ends the milestone
-([the brief](../BRIEF.md), decision 3;
+([the brief](../VISION.md), decision 3;
 [the owner's performance decision](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md)). If the rows
-cross a tripwire, the builder investigates within M3: which passes carry the cost, from the per-pass rows, and
+cross a tripwire, the builder investigates within WP3: which passes carry the cost, from the per-pass rows, and
 what in the output causes it. The finding is recorded with a disposition, one of two: the cause is corrected in
-M3, or the cost is carried, with the reason and what the performance phase should try, as a proposal in the log
+WP3, or the cost is carried, with the reason and what the performance phase should try, as a proposal in the log
 for a planner. Building continues either way. A cheaper form of the output moves the references again, so it
 lands [as above](#how-it-lands), and the campaign is taken again on main after it. Correctness and the
-milestone's quality bar remain requirements whatever the rows say: M3.7 and M3.8 judge the captures for popping,
+milestone's quality bar remain requirements whatever the rows say: WP3.7 and WP3.8 judge the captures for popping,
 flicker and missing geometry. They do not judge how fast or how evenly the frames arrive, and no item of this
 module does ([Frame cadence](#frame-cadence)).
 
 **Chrome.** The campaign runs on the Mac only. Chrome's image varies too, by
 [the module list's reading](../ARCHITECTURE.md#a-frame-that-varies-under-load) of two Chrome records, which is
-an inference from where the pixels lie. The same shader source reaches Chrome, where M3.2, M3.5 and the
-main-branch check over the four Chrome sets stand as the proof, and M3.10 records which sets moved.
+an inference from where the pixels lie. The same shader source reaches Chrome, where WP3.2, WP3.5 and the
+main-branch check over the four Chrome sets stand as the proof, and WP3.10 records which sets moved.
 
 ## The system as it runs
 
@@ -479,31 +479,31 @@ only when a scene is prepared.
 is caught. For this module:
 
 - It must not move `APPLE-TILE`'s registered baselines, on the Mac or in Chrome, with one exception that the
-  module list rules: M3's [coverage output](#m3-one-image-under-load). The main-branch check `exact-images`
-  runs the verifier on main after each merge, and M2 and M3 carry `verify` as their claim-time check, which
-  passes from that run. No image run is asked before a merge, except M3's one run for its planned refresh.
-- M1 was built before the verifier existed and carried the native matrix as an automated check.
+  module list rules: WP3's [coverage output](#m3-one-image-under-load). The main-branch check `exact-images`
+  runs the verifier on main after each merge, and WP2 and WP3 carry `verify` as their claim-time check, which
+  passes from that run. No image run is asked before a merge, except WP3's one run for its planned refresh.
+- WP1 was built before the verifier existed and carried the native matrix as an automated check.
 - Its own exact comparisons are relative (each mode against its oracle in the same run), so they hold no retained
   bytes. Another module's builder must not loosen them.
-- M3 changes the valley's default mode. That is allowed only because the culled image is byte-equal to Direct,
-  which M3.1 and M3.2 prove.
-- M3's coverage output is the one change of this module that moves retained images. Under the ruling, its
+- WP3 changes the valley's default mode. That is allowed only because the culled image is byte-equal to Direct,
+  which WP3.1 and WP3.2 prove.
+- WP3's coverage output is the one change of this module that moves retained images. Under the ruling, its
   builder regenerates each reference that moved, with `APPLE-TILE`'s own scripts, in the landing that adds the
   output, which lands [as rule 2's planned refresh](#how-it-lands). In the registry,
   which is `BASELINE-GUARD`'s, the landing changes the `pin` and the `refresh` of each baseline whose reference
   moved. Every other field of the registry, the comparisons, their sampling and every script stay as they are,
-  and the references stay `APPLE-TILE`'s. M3.10 holds the refresh and M3.12 has a reviewer see what moved. No
-  other change of M3 may move a reference.
+  and the references stay `APPLE-TILE`'s. WP3.10 holds the refresh and WP3.12 has a reviewer see what moved. No
+  other change of WP3 may move a reference.
 
 ## Risks
 
 1. **False culling at a silhouette or tie on real meshes.** Early sign: the mesh tie witness or the flythrough
    differs from the oracle. Fallback: raster-proxy occlusion; until then Occlusion stays off by default.
 2. **Occlusion costs more than it saves.** Apple's hidden-surface removal already discards hidden fragments, so
-   only vertex and binning work is saved. Early sign: M2's paired rows. Outcome: Frustum stays the default.
+   only vertex and binning work is saved. Early sign: WP2's paired rows. Outcome: Frustum stays the default.
 3. **A silent fallback hides a failure.** Mitigation: resolved-mode and hidden-count assertions in every witness.
-4. **Shared files move under the builder.** `scene_graph.rs` and `synthetic.rs` are also edited by `APPLE-TILE` M3,
-   `APPLE-PRESENTATION` M2 and `EFFECT-GRAPH`. Integrate sequentially. The script's run on the merged tip is the
+4. **Shared files move under the builder.** `scene_graph.rs` and `synthetic.rs` are also edited by `APPLE-TILE` WP3,
+   `APPLE-PRESENTATION` WP2 and `EFFECT-GRAPH`. Integrate sequentially. The script's run on the merged tip is the
    proof after a rebase, and the builder reruns only the check it says failed.
 6. **The interpolation allowance is wrong on some rasterizer.** It is assumed, not measured. Early sign: the mesh
    tie witness loses pixels with the full ε. Fallback: as risk 1.
@@ -511,13 +511,13 @@ is caught. For this module:
    with a bench-only comparison.
 7. **The coverage output is not the whole cause, or stops working.** The evidence for it is bounded: four quads
    and eight loaded routes. A later compiler, dependency or pipeline change could also fold the output away.
-   Early sign: the build with the output differs in M3.11's campaign on main, or the main-branch check draws
+   Early sign: the build with the output differs in WP3.11's campaign on main, or the main-branch check draws
    the old bytes, which shows a loss on Direct's pipelines only. Outcome: the builder ends `BLOCKED` with the
    payloads, or [rule 2's course](#how-it-lands) applies, with a revert that restores the references. After
-   M3, a loss confined to a culled or bucket pipeline has no standing loaded proof: it shows as an exact
+   WP3, a loss confined to a culled or bucket pipeline has no standing loaded proof: it shows as an exact
    comparison that varies under load, which stops the module that meets it.
-8. **The coverage output costs more than expected.** Early sign: M3.13's paired rows cross a tripwire. Outcome:
-   the cause is investigated and given a disposition within M3, as the Cost paragraph of
+8. **The coverage output costs more than expected.** Early sign: WP3.13's paired rows cross a tripwire. Outcome:
+   the cause is investigated and given a disposition within WP3, as the Cost paragraph of
    [the mechanism](#m3-one-image-under-load) says. The figure alone never stops the milestone.
 
 ## Performance
@@ -539,10 +539,10 @@ This module is not judged on frame cadence. No item of it is about how fast or h
 needs an awake panel, a capture-off run or a sitting with the other builders paused. Settled on 17 November 2026,
 with [the module list](../ARCHITECTURE.md#who-judges-frame-cadence).
 
-- **What M3.7 and M3.8 judge.** Which geometry each submitted frame holds: nothing visible pops in or out,
+- **What WP3.7 and WP3.8 judge.** Which geometry each submitted frame holds: nothing visible pops in or out,
   flickers or is missing at a frame edge or at an occluder's silhouette. They use a `realtime` capture because the
   game then draws at uneven intervals, with larger camera steps between frames and the occasional dropped
-  submission, which the fixed-tick routes of M3.1 to M3.5 never do. The capture is read as a sequence of images.
+  submission, which the fixed-tick routes of WP3.1 to WP3.5 never do. The capture is read as a sequence of images.
   Its submission intervals are not a measurement of cadence: it is taken while other builders work, with the
   capture observer on, and Chrome's recorder runs headless on a 60 Hz timer. A long interval between two frames
   is a larger camera step, a harder case for the item and no failure of it.
@@ -555,9 +555,9 @@ with [the module list](../ARCHITECTURE.md#who-judges-frame-cadence).
 - **Why not here.** Gate G3c asks for visibility, image equivalence and costs "as tripwires", and says nothing of
   pacing. Cadence belongs to the whole frame, on a display, with capture off and every module's passes in it. A
   figure for culling alone would need the attended panel and the paused builders this plan declines, and
-  `SHOWCASE` would take it again on the scene that ships. What culling adds to a frame is in M3.3's and M3.13's
+  `SHOWCASE` would take it again on the scene that ships. What culling adds to a frame is in WP3.3's and WP3.13's
   paired rows, per pass, at p50 and p95.
-- **What a reviewer does with an uneven capture.** Nothing against M3.7 or M3.8, and the target's full-refresh
+- **What a reviewer does with an uneven capture.** Nothing against WP3.7 or WP3.8, and the target's full-refresh
   edge condition is not run for them. A stall the reviewer traces to this module's own code, such as a culling
   pass's time in the frame's rows or a resource it creates mid-run, is a defect to report like any other. An
   interval in a loaded capture with no traced cause is an observation.
@@ -570,14 +570,14 @@ with [the module list](../ARCHITECTURE.md#who-judges-frame-cadence).
 - **Targets.** `mac-metal` for every milestone, on both recipes where a recipe is named. `chrome-webgpu` through
   `scripts/check_v1_browser.mjs`, as the existing field cases run. `ios-sim` for function only: the simulator has
   no indirect execution, so it proves the fallback, never a culled mode.
-- **Capture.** Equality is proved in-process by reading back each mode's target in one run. M3.7 and M3.8 use
+- **Capture.** Equality is proved in-process by reading back each mode's target in one run. WP3.7 and WP3.8 use
   T2 engine capture and name its modes: `fixed` for stills, `realtime` for the pan, which is read as a sequence of
   submitted frames and [never as a timing](#frame-cadence).
 - **GPU.** Each GPU check holds one lock: `gpu` on the Mac, `chrome` for a run that starts Chrome. Scratch goes in `tmp/culling-<milestone>/`; selected evidence in
   `.orchestrate/evidence/CULLING/`.
 - **Once, then `merge`.** Each proof is one run on the branch; the script's run on the merged tip is the proof
   of record, and [no job of the builder's](#no-landing-pipeline) chains proofs, guards the merge or follows it.
-  M3.11's campaign is the one proof the builder takes on main, [after the merge](#what-a-campaign-stands-for).
+  WP3.11's campaign is the one proof the builder takes on main, [after the merge](#what-a-campaign-stands-for).
 - **Maturity.** The `G3c_gpu_culling` row of [the ledger](../../design/maturity.json) is updated at each milestone,
   with implementation, correctness, visuals and device results kept apart.
 
@@ -585,8 +585,8 @@ with [the module list](../ARCHITECTURE.md#who-judges-frame-cadence).
 
 | Question | Settled by |
 |---|---|
-| Does the derived ε hold on a mesh face lying on its bounds? | M1's tie witness and its zero-tolerance mutant |
-| Does any pose need the footprint widening? | M1's reference search, and the no-widening mutant if it finds one |
-| Does Occlusion win on realistic meshes at 1080p on this Mac? | M2's paired rows |
-| Which of the five registered reference sets does the coverage output move? | M3.10's record |
-| What does the coverage output cost on the valley? | M3.13's paired rows, and its investigation if a tripwire is crossed |
+| Does the derived ε hold on a mesh face lying on its bounds? | WP1's tie witness and its zero-tolerance mutant |
+| Does any pose need the footprint widening? | WP1's reference search, and the no-widening mutant if it finds one |
+| Does Occlusion win on realistic meshes at 1080p on this Mac? | WP2's paired rows |
+| Which of the five registered reference sets does the coverage output move? | WP3.10's record |
+| What does the coverage output cost on the valley? | WP3.13's paired rows, and its investigation if a tripwire is crossed |

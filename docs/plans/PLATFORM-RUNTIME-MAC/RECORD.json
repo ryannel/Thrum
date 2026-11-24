@@ -5,7 +5,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/design-review.md",
     "commit": "771645f62ca0467c5cb20805a53c511e0a2aefe7",
-    "hash": "5da7ef2559c905c4c67a18177cd365fd35d19cf3a22de538263c5c75cdc76501",
+    "hash": "6bc88dbe287bbbf38dd47925a1190fedff9086671be49017fefa49dab506a494",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -24,8 +24,8 @@
     },
     "at": "2026-11-11T12:46:23Z"
   },
-  "milestones": {
-    "M0": {
+  "work_packages": {
+    "WP0": {
       "definitions": "12fb0e177d91cbba4ca02d512e6f07d312fb6b7153646249d08b05586f6edb4a",
       "authorised": {
         "by": "adopted"
@@ -35,7 +35,7 @@
         "by": "adopted"
       }
     },
-    "M1": {
+    "WP1": {
       "definitions": "a6d6cccc39ab737f6cda8b1c6553c002d610791482576dde3983669e401117a6",
       "authorised": {
         "by": "adopted"
@@ -45,34 +45,34 @@
         "by": "adopted"
       }
     },
-    "M2": {
-      "definitions": "92d1b95f8b080c4196750ca0ad09c32d9e6b1e43b2313a71ae8adb0ce7a1b9ba",
+    "WP2": {
+      "definitions": "09aeb5347057ac9460d65cb49be7a57b5c6f48f16af4c95540cf406433aa8d1d",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "61e545fa9d6ca842e79d0d23d166dfa532b2a944",
-          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M2-review-1.md",
+          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/WP2-review-1.md",
           "items": {
-            "M2.1": "could_not_judge",
-            "M2.2": "could_not_judge",
-            "M2.3": "could_not_judge",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "could_not_judge",
+            "WP2.2": "could_not_judge",
+            "WP2.3": "could_not_judge",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "findings": [
             {
               "name": "current-release-motion-unverified",
-              "item": "M2.1",
+              "item": "WP2.1",
               "repeat": false
             },
             {
               "name": "current-build-matched-arms-unverified",
-              "item": "M2.2",
+              "item": "WP2.2",
               "repeat": false
             },
             {
               "name": "current-live-window-proof-unavailable",
-              "item": "M2.3",
+              "item": "WP2.3",
               "repeat": false
             }
           ],
@@ -96,13 +96,13 @@
         {
           "verdict": "pass",
           "commit": "b8045fdba10e604934023e28cb1313c37cc7f4ea",
-          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -132,7 +132,7 @@
           "asked": null,
           "said": "The screen is unlocked if you need it",
           "items": [
-            "M2.2"
+            "WP2.2"
           ],
           "at": "2026-11-12T06:57:44Z"
         },
@@ -140,7 +140,7 @@
           "asked": null,
           "said": "The screen is unlocked if you need it",
           "items": [
-            "M2.5"
+            "WP2.5"
           ],
           "at": "2026-11-12T06:57:53Z"
         }
@@ -151,7 +151,7 @@
         "at": "2026-11-13T11:01:35Z",
         "reused": [
           "Test command",
-          "M2.3"
+          "WP2.3"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -178,21 +178,21 @@
       "done": {
         "by": "review",
         "commit": "b8045fdba10e604934023e28cb1313c37cc7f4ea",
-        "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+        "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/WP2-review.md",
         "checked": "4af3611fbe9497a6a18577b7fa80a41053772d2c",
         "at": "2026-11-13T19:32:21Z"
       }
     },
-    "M3": {
-      "definitions": "742bfebb2f59cb54f3d52f68ef886a3d526f06a26691edaeb4ce22b84f2e0331",
+    "WP3": {
+      "definitions": "a7cf1486de90d5d06e48a62137aaa684470a80a0aa5dcf1508e4d0b6eb034713",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "7583d69d6d427b7f2a016835f01eef1db6103c90",
-          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
+          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -249,13 +249,13 @@
       "done": {
         "by": "review",
         "commit": "7583d69d6d427b7f2a016835f01eef1db6103c90",
-        "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
+        "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/WP3-review.md",
         "checked": "f0b9f4da4f32db7521672a7214776ca26af3e8af",
         "at": "2026-11-14T16:46:51Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Bring Thrum's plans into the orchestrate 1.7.0 shape after the migration to docs/plans (commit 42fdce97). Your first landing will be refused until the oversized plans are trimmed; that is intended, so trim and land again. Done when:\n- ARCHITECTURE.md opens with the module table (# | Module | What it's for | Needs), in plain words, with no status column, and the status column and status prose elsewhere in it are gone.\n- Every milestone is named for what someone can see or do.\n- Done milestones are a heading plus a link to their review.\n- Review briefs (about 400 lines, ATMOSPHERE's plan especially) and pasted handoffs are moved to docs/evidence/<MODULE>/.\n- Design sections are moved out of plans into DESIGN.md, such as PLATFORM-RUNTIME-IOS's 'Shell design'.\n- The per-module *-BRIEF.md files are folded into their module folders.\n- docs/BUILD-PLAN.md is folded into BRIEF.md, with Purpose: pointing at it.\n- The stray plans docs/design/CONSTRUCTION-PLAN.md, docs/design/decisions/G7-SHOWCASE-ROUTE-PLAN.md and docs/evidence/i2a/SOURCE-SPACE-PLAN.md are converted or deleted.\n- The status prose is removed from ORCHESTRATE.md's Targets section.\nDon't change any done-when item, record file or milestone scope; this is a reshape, not a replan. Fix links that the moves break.",
       "at": "2026-11-11T04:36:27Z"
@@ -314,17 +314,17 @@
   "decisions": [
     {
       "action": "answer",
-      "milestone": "M2",
+      "work_package": "WP2",
       "words": "The screen is unlocked if you need it",
       "at": "2026-11-12T06:57:44Z",
-      "item": "M2.2"
+      "item": "WP2.2"
     },
     {
       "action": "answer",
-      "milestone": "M2",
+      "work_package": "WP2",
       "words": "The screen is unlocked if you need it",
       "at": "2026-11-12T06:57:53Z",
-      "item": "M2.5"
+      "item": "WP2.5"
     }
   ]
 }

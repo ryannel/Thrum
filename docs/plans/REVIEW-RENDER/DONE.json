@@ -1,81 +1,81 @@
 {
   "module": "REVIEW-RENDER",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised",
       "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
-        "ATMOSPHERE:M9",
-        "APPLE-TILE:M10",
-        "APPLE-PRESENTATION:M3",
-        "EFFECT-GRAPH:M3",
-        "CULLING:M3"
+        "ATMOSPHERE:WP9",
+        "APPLE-TILE:WP10",
+        "APPLE-PRESENTATION:WP3",
+        "EFFECT-GRAPH:WP3",
+        "CULLING:WP3"
       ],
       "quality_bar": "Three confirmed defects closed the way a careful engine team closes them: the fix, a test that fails without it, and not one retained pixel moved.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "The directional record the CPU writes and the environment light the atmosphere's diffuse pass writes are two buffers, each with exactly one writer, one Rust record, one WGSL declaration and a layout test, and no byte offset splits a buffer between two writers. The constant ambient is in the directional record, so a photometric scene with nonzero ambient light and no atmosphere draws the bytes it drew before the split, as an atmosphere scene and a diagnostic scene do.",
           "check": "cargo test --locked --offline -p thrum-render --test light_records",
           "lock": "gpu",
           "ask": "Does anything outside the atmosphere write the environment light buffer, or anything but the scene renderer's CPU upload write the directional record? With no atmosphere, does anything write the environment light at all? Does the test draw a photometric scene with nonzero `ambient_lux` and no atmosphere, and compare it with bytes taken before the change? Is the literal 48, or the 208-byte binding, left anywhere? Does `thrum-asset-gpu`'s cooked shader still compile against the light group through the published seam?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m11-light-buffer-ownership-and-exact-pixels",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP1.md#m11-light-buffer-ownership-and-exact-pixels",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "A surface encode failure is kept: the drive report and the frame sample say that the surface frame was dropped and why, by kind, and a failure that is not transient is returned to the caller.",
           "check": "cargo test --locked --offline -p thrum-render --test surface_fault",
           "lock": "gpu",
           "ask": "Does the test raise a stale binding, an extent mismatch and a timing-capacity failure, and see each reported by its own kind? Is `.is_ok()` or `let _ =` used on a fallible encode anywhere in the runtime?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m12-surface-encode-faults",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP1.md#m12-surface-encode-faults",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "`FrameError` has no blanket conversion from a string: a missing presenter is the same variant from `resize_surface` and from `drive`, and a GPU fault, a usage error and a world error can be told apart by matching.",
           "check": "cargo test --locked --offline -p thrum-render --test frame_error_kinds",
-          "ask": "Are both `From<String>` and `From<&str>` gone? At each site that used them, is the variant chosen by what failed and not by where it was raised? Sites that format a source error's `Debug` text into a variant are M4.4's and are not judged here.",
+          "ask": "Are both `From<String>` and `From<&str>` gone? At each site that used them, is the variant chosen by what failed and not by where it was raised? Sites that format a source error's `Debug` text into a variant are WP4.4's and are not judged here.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1/grouped-shade.md",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP1/grouped-shade.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "Indirect light at a surface is asked for by the surface point being lit, and a medium reads the ambient light as a source. `ambient_irradiance` and `indirect_radiance` take a world position and a pixel position, in `synthetic.wgsl` and in both composed variants, and every surface caller passes its own fragment's. The read by direction alone is its own function, `ambient_source`, which the cooked volume calls once for its whole march. Nothing reads the two new arguments, so no value changes.",
           "ask": "Do `ambient_irradiance` and `indirect_radiance` take the two arguments in `synthetic.wgsl`, `synthetic_environment.wgsl` and `synthetic_plain.wgsl`? Trace every entry that reaches `shade`, shadowed and unshadowed, for scene meshes and cooked meshes: does `shade` pass its fragment's interpolated world position and fragment position, and does `indirect_radiance` hand the same two on to `ambient_irradiance`, with no constant or other stand-in? Does `ambient_source` take a direction and no position? Does the cooked volume in `thrum-asset-gpu` read `ambient_source` once before its march, as it read the ambient light before, and call neither surface function? Is `ambient_source` called by anything that shades a surface, other than `ambient_irradiance` itself? In the scene shader and what is composed with it (`thrum-render`'s `synthetic*.wgsl` and `thrum-asset-gpu`'s cooked shaders), does anything light a surface from the diffuse coefficients, the constant ambient or the reflection cube without going through the two query functions? Do the test shaders that stub these functions keep their assertions?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m15-surface-queries-and-the-medium-source",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP1.md#m15-surface-queries-and-the-medium-source",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test",
       "status": "done",
       "failed_reviews": 3,
@@ -85,60 +85,60 @@
       "quality_bar": "The discipline of `encase` and `bytemuck` users such as Bevy's render crates: a layout drift between Rust and WGSL fails a test, where today it shades wrongly without a word.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "A test walks every struct that any `thrum-render` shader binds as a uniform or storage buffer, in every composed shader source the crate builds, and fails unless a `#[repr(C)]` `Pod` Rust record is registered for it with equal size and member offsets.",
           "check": "cargo test --locked --offline -p thrum-render --test wgsl_records",
           "ask": "Does the test find bound structs by reflection over the composed sources production builds, so a new shader or struct cannot be left out? Change one field's type in a WGSL struct: does the test fail?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m21-reflected-host-layouts",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP2/README.md#m21-reflected-host-layouts",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "Each such record is written whole from its struct. No uniform or storage record in the scene renderer, the atmosphere or visibility is packed by byte offsets, and the atmosphere reads the view record through its struct, not through offsets into another module's bytes.",
           "ask": "Search the three modules for `to_le_bytes` and `copy_from_slice` on record bytes: is any record a shader reads still assembled that way? Does one flag still have two writers, as `has_local_lights` did?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m22-whole-record-writes",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP2/README.md#m22-whole-record-writes",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "A WGSL record used by several shaders has one authoritative declaration, composed into each. The test fails when two source files each declare the struct a registered record is bound as; a declaration repeated by composition counts once, and shader-local structs that only share a name are not duplicates.",
           "check": "cargo test --locked --offline -p thrum-render --test wgsl_single_declaration",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m23-shared-wgsl-declarations",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP2/README.md#m23-shared-wgsl-declarations",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "A constant used on both sides is generated into the shader from the Rust value: the scene renderer's and the atmosphere's shared constants appear as literals in no `.wgsl` file.",
           "ask": "Take the constants the review lists under M23 and M29: is each now generated? Is any number still typed into both a `.rs` and a `.wgsl` file?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-sky-lut-zenith-row",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP2/README.md#m24-sky-lut-zenith-row",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "Passes, stages and pipelines in the renderer are named by typed keys, so a rename or a new pass cannot silently drop a timing bucket or a barrier",
       "status": "done",
       "failed_reviews": 1,
@@ -148,7 +148,7 @@
       "quality_bar": "Identity as a frame graph declares it in Frostbite's and Bevy's render graphs: one declaration per pass that carries its name, accesses, recorder and timing category, with every table derived from it.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "Every pass in the compiled graph of every scene variant has a typed key with a unique role, a name constant and a timing category, and its recorder is bound from its declaration. The pass count comes from the compiled graph.",
           "check": "cargo test --locked --offline -p thrum-render --test pass_keys",
           "lock": "gpu",
@@ -157,10 +157,10 @@
           "builder_result": "pass",
           "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test pass_keys` 2 passed on 336 compiled 3D graphs from 84 prepared scenes: portable and apple-tile recipes; diagnostic, day and star lighting; Sun shadows off and on; Direct, Frustum and Occlusion culling; with and without local lights; TAAU, reference and temporal-input overlays; SDR and scene-linear sources; with and without readback. Every pass has a PassKey. Keys and roles are unique, and each pass's name, timing bucket and role equal its key's. The prepared scene_pass_count equals the compiled pipeline-pass count, and so does each target's stored slot count (the value the frame host now reads). Review fix: a frame host no longer compiles a graph to count timestamp slots. Each 3D slot sizes its batch from its target's compiled graphs (OffscreenTarget::timed_pass_count), and the timing recovery paths reuse the slot's own capacity, so poll_gpu reads no count (runtime.rs). Scratch release measurement on Metal, 12-pass scene: 47 \u00b5s per compile before, 3 ns per stored read (tmp/review-render-m3/slot-count-cost.log). Recorders bind from the key in exhaustive matches, in scene_graph.rs and now also in the 2D binder (sprite/graph.rs, which has no catch-all). Scratch: a new PassKey variant failed to compile at name, timing, role and recorder, and a keyless graph.pass failed this test. Logs: tmp/review-render-m3/pass_keys.log, scratch-*.log.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "GPU timing is gathered by the category a pass declares. No timing bucket is found by matching a pass name, and a pass whose time lands in no bucket fails the test instead of reading as zero. The frame timing feed gives `CREATOR`'s profiler the names and buckets it gave.",
           "check": "cargo test --locked --offline -p thrum-render --test timing_categories",
           "lock": "gpu",
@@ -169,10 +169,10 @@
           "builder_result": "pass",
           "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test timing_categories` 3 passed. Across the 336 graphs, every pass lands in exactly one TimingCategory bucket (the bucket sum equals the total), and each frame host batch has a slot for every timed pass. Each profiler bucket equals the pre-M3 name lists, and the scene sum and profiler row names are unchanged. A renamed pass keeps its bucket. timing.rs imports only capabilities and names no pass. Log: tmp/review-render-m3/timing_categories.log.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review.md"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "An atmosphere stage is one typed key. Its bind-group inputs and its graph accesses are built from one table of the charts it reads, so they cannot differ, and its role, validity bit and timing bucket come from the key.",
           "check": "cargo test --locked --offline -p thrum-render --test atmosphere_stage_table",
           "lock": "gpu",
@@ -181,121 +181,121 @@
           "builder_result": "pass",
           "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test atmosphere_stage_table` 2 passed. Across all 14 AtmosphereStage keys, the graph's chart reads equal AtmosphereStage::chart_reads, the table the bind groups are built from. Role, validity bit and timing bucket come from the key. A secondary view's aerial volume reads the aerial table's charts and records on Metal. Log: tmp/review-render-m3/atmosphere_stage_table.log.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review.md"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "Visibility's pipeline roles and the scene's instance identity lanes are named, not hex tags or tuple positions.",
           "ask": "Are the ASCII role tags the review lists under L34, and the `ids[0]`, `ids[2]`, `ids[3]` reads under L18, replaced by names in every file that used them?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "Visibility roles are PipelineRole::{CameraVisibility, FinalCull, DepthPyramid, DepthPrepass, CasterCull, Surface} in pass_key.rs, keeping the historical ASCII values. No role literal remains outside pass_key.rs: keys are built with PipelineRole::pipeline_key. InstanceRecord lanes use logical_slot, material, skin_offset, generation, is_active and deactivate in every crate, and `rg 'ids\\[[0-3]\\]'` finds no InstanceRecord lane outside abi.rs. HISTORY_OWNER is a resource owner, not a role. The first review confirmed this.",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review.md"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "The atmosphere stage registry is checked on a small fixture",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "For all fourteen stages, graph reads match the table, the table lists the expected chart bindings, and each key supplies a distinct role, its timing bucket and a nonzero validity bit. The prepared scene and target each have enough timestamp slots for every timed pass in the fixture. Each selected case passes on its first run within the existing ten-second limit.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test atmosphere_stage_table -E 'test(/^stage_registry_/)' --no-tests=fail",
-          "ask": "Does the M6.1 run include every case that replaces the listed regression, and do those cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Which remaining assertions, if any, require a device?",
+          "ask": "Does the WP6.1 run include every case that replaces the listed regression, and do those cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit? Which remaining assertions, if any, require a device?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M6/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP6/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M6-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP6-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer",
       "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REPO-RULES:M1"
+        "REPO-RULES:WP1"
       ],
       "quality_bar": "Errors as `thrum-asset`'s `AssetError` already is, and as wgpu's own typed errors are: a caller can tell device loss from a usage bug by matching, and a person can read the message.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "No public function in `thrum-render` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-render",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/review-fix-string-errors.log",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP4/review-fix-string-errors.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "The render error is defined in the crate's own error module with `Display` and `Error`. A bad instance transform has its own variant, the capacity variant is split into the limits it stood for, and every public error type in the crate implements `Error`: a test names them all and does not compile for one that does not.",
           "check": "cargo test --locked --offline -p thrum-render --test error_types",
           "ask": "Does the test's list hold every error type the crate exports? Does a degenerate instance transform still come back as a lighting error? How many causes does each capacity variant now cover?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/review-fix-audit.md#m42-error-contract-and-capacity",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP4/review-fix-audit.md#m42-error-contract-and-capacity",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "The atmosphere and the contribution seam import neither their error nor their shared constants from the scene renderer: errors come from the error module and the shared constants from a neutral module both depend on. An effect graph that fails validation returns a typed error, not a string code.",
           "ask": "What does `atmosphere` still import from the scene renderer, and is any of it an error, a constant or a format? Can a caller match on why an effect graph was refused?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/review-fix-audit.md#m43-shared-definitions-and-graph-validation",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP4/review-fix-audit.md#m43-shared-definitions-and-graph-validation",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "`FrameError` carries typed sources, and every crate and example that matched on or printed the old errors builds and behaves as before.",
           "check": "cargo test --locked --offline -p thrum-render -p thrum-asset-gpu -p thrum-sea -p thrum-app",
           "lock": "gpu",
           "ask": "Is any error still turned into text with `{:?}` on its way up through the runtime?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M4/review-fix-audit.md#m44-frame-propagation",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP4/review-fix-audit.md#m44-frame-propagation",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review.md"
         },
         {
-          "id": "M4.5",
+          "id": "WP4.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP4-review.md"
         }
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph",
       "status": "done",
       "failed_reviews": 1,
@@ -305,48 +305,48 @@
       "quality_bar": "Waste removed, not tuned, and correctness never traded for it: work whose result nobody used is gone, a counter shows it, a GPU time that is published is a real measurement of the frame it names, and no retained pixel moved.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "A completed frame's GPU timing reaches the frame sample without allocating and names the frame it measured. Queries are still resolved in a later submission, after the render has completed, as the retained Metal diagnosis requires. A batch whose counters are zero, the error value, inverted or repeated from an earlier frame, one from a retired device generation and one discarded before submission are each refused and counted by reason, and none is published as a time.",
           "check": "sh -c 'cargo test --locked --offline -p thrum-render --test timing_validity && cargo test --locked --offline -p v1-game --test frame_alloc'",
           "lock": "gpu",
           "ask": "Over the test's run of timed frames on this Mac, is every frame accounted for as published, refused with a reason or still pending, and does each published timing carry the frame it was recorded in? Does the test feed a stale, a zero and an inverted pair and see each refused? Is the resolve still encoded only after the render's completion, in a later submission? Does the game's frame-allocation test now cover a completed, timed frame? With the timing-demand switch off, is anything gathered?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m51-review-fixes and .orchestrate/evidence/REVIEW-RENDER/M5/review-fix-final-metal.log",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP5/README.md#m51-review-fixes and .orchestrate/evidence/REVIEW-RENDER/WP5/review-fix-final-metal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP5-review.md"
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "The presenter has one presentation path. The standalone graph that nothing called is gone, and a resize or rotation compiles no graph of the presenter's own.",
           "check": "cargo test --locked --offline -p thrum-render --test presenter_single_path",
           "lock": "gpu",
           "ask": "Is there any public presenter entry point that no production caller uses?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m52-presenter and .orchestrate/evidence/REVIEW-RENDER/M5/rebased-metal.log",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP5/README.md#m52-presenter and .orchestrate/evidence/REVIEW-RENDER/WP5/rebased-metal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP5-review.md"
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "Paired frame records before and after are on file for the valley on the Mac, with the load. No figure in them decides this item.",
           "ask": "Are both rows from the same route and build settings at named commits?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m53-paired-valley-frames",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/WP5/README.md#m53-paired-valley-frames",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP5-review.md"
         },
         {
-          "id": "M5.4",
+          "id": "WP5.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/WP5-review.md"
         }
       ]
     }

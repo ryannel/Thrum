@@ -1,8 +1,8 @@
 {
   "module": "REVIEW-ENGINE",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "The iPhone app gets compressed textures and enough storage buffers for the sea, and a rewound game no longer carries a patch that never ran",
       "status": "done",
       "failed_reviews": 0,
@@ -12,62 +12,62 @@
       "quality_bar": "Two confirmed defects closed the way a careful engine team closes them: the fix, a test that fails without it, and nothing else changed.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "The iPhone app asks for every content feature its adapter offers and for the adapter's own limits. On this Mac's Apple GPU the app's request function yields a device whose first texture profile is ASTC and whose limits equal the adapter's, so a stage has the eight storage buffers the sea needs.",
           "check": "cargo test --locked --offline -p v1-game-ios --test device_request",
           "lock": "gpu",
           "ask": "Is the function under test the one the iPhone app calls for preparation and for recovery, with no second copy? Does anything still ask for `downlevel_defaults` limits on an Apple GPU?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M1/README.md; .orchestrate/evidence/REVIEW-ENGINE/M1/checks/items.json; .orchestrate/evidence/REVIEW-ENGINE/M1/checks/M1.1.stderr.log",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP1/README.md; .orchestrate/evidence/REVIEW-ENGINE/WP1/checks/items.json; .orchestrate/evidence/REVIEW-ENGINE/WP1/checks/M1.1.stderr.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "On the iPhone simulator the game still starts, draws the cooked scene, rotates and comes back from the background, and its report names the texture profile and the storage-buffer limit it got.",
           "inspect": "the simulator run at the claimed commit: engine output at start, after a rotation and after background and foreground, with the game's report beside it. Function only; nothing here is a speed claim",
           "target": "ios-sim",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M1/README.md; .orchestrate/evidence/REVIEW-ENGINE/M1/simulator/report.json",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP1/README.md; .orchestrate/evidence/REVIEW-ENGINE/WP1/simulator/report.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "`GameRuntime` has one publication model, the engine's page. The game-authored capture path, the state only that path used and the rewind patch callbacks are gone, and the V1 game passes no patch closure. The engine's own deferred publication keeps its undo preimages and previous poses.",
           "ask": "Is there any path left by which a game fills a page itself, or any branch on whether the engine captures? Do `thrum-core`'s runtime tests build their fixtures on the engine page? If `PublicationPage::patch_rewind` remains, what in the engine calls it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M1/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP1/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "After a rewind and replay the published page equals a fresh capture of the same world, for a correction that lands inside a deferred publication and for one that lands across it, and the V1 game's simulation tests pass unchanged.",
           "check": "cargo test --locked --offline -p thrum-core --test rewind_publication && cargo test --locked --offline -p v1-game --test simulation",
           "ask": "Read the new test. Does it compare whole pages, byte for byte, and does it cover a rewind that lands while a publication is deferred?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M1/README.md; .orchestrate/evidence/REVIEW-ENGINE/M1/checks/items.json; .orchestrate/evidence/REVIEW-ENGINE/M1/checks/M1.4.stdout.log",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP1/README.md; .orchestrate/evidence/REVIEW-ENGINE/WP1/checks/items.json; .orchestrate/evidence/REVIEW-ENGINE/WP1/checks/M1.4.stdout.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images; .orchestrate/evidence/REVIEW-ENGINE/M1/README.md; .orchestrate/evidence/REVIEW-ENGINE/M1/checks/baselines.json; .orchestrate/evidence/REVIEW-ENGINE/M1/checks/items.json",
+          "evidence": "main-branch check exact-images; .orchestrate/evidence/REVIEW-ENGINE/WP1/README.md; .orchestrate/evidence/REVIEW-ENGINE/WP1/checks/baselines.json; .orchestrate/evidence/REVIEW-ENGINE/WP1/checks/items.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "The sea names its buffers and passes, shares its records with its shaders under a layout test, and uploads its spectrum only when the spectrum changes",
       "status": "done",
       "failed_reviews": 0,
@@ -77,66 +77,66 @@
       "quality_bar": "Code an agent can extend without counting indices, as `thrum-asset-gpu`'s named resources are, and an upload path as lean as the sea's own design account says: microseconds of CPU a frame.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "The sea's buffers, pipelines, bind groups and passes are named by typed keys, and its sizes, usages, bind groups, dispatch counts and graph accesses come from one table: for every pass, the resources its bind group holds are the resources its graph declaration names, with the same access.",
           "check": "cargo test --locked --offline -p thrum-sea --test declared_accesses",
           "lock": "gpu",
           "ask": "Is any buffer or pass still addressed by a literal index or by its place in a list? Are the mip pixel count and the channel count computed from the sizes they depend on?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M2/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "Every record a sea shader reads is a `#[repr(C)]` `Pod` struct written whole, and a test parses the WGSL and fails unless each struct the shaders bind as a uniform or storage buffer has a Rust record of equal size and member offsets.",
           "check": "cargo test --locked --offline -p thrum-sea --test wgsl_records",
           "ask": "Does the test find the bound structs by reflection, so that a new struct with no Rust record fails it, or does it check a hand-kept list?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M2/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "A frame whose spectrum has not changed writes only the parameter block, the long-wave phases and the queries. The mode buffer is written when the spectrum changes and at no other time, and a weather transition blends into an existing spectrum without cloning one.",
           "check": "cargo test --locked --offline -p thrum-sea --test upload_bytes",
           "lock": "gpu",
           "ask": "Does the test count bytes handed to the queue, for a still spectrum, a changed one and a transition? What do the before and after records show a frame's CPU cost was and is? No figure there decides this item.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M2/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "The GPU sea still equals the CPU model: every test `SEA` left passes, unedited.",
           "check": "cargo test --locked --offline -p thrum-sea",
           "lock": "gpu",
           "ask": "Did the diff change any assertion, bound or reference in a test that existed before this milestone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M2/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP2/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M2-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "A cooked mesh reaches the GPU straight from its mapped file, and the cooker's edit-to-visible test measures the engine's own loader",
       "status": "done",
       "failed_reviews": 0,
@@ -146,129 +146,129 @@
       "quality_bar": "Loading as direct as the cooked format was designed for, in the manner of Nanite's and meshoptimizer's ready-to-upload buffers: one producer of each byte, no second loader anywhere, and a tripwire that measures the code that ships.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "A cooked mesh's index data reaches the GPU from the product's own index section: the uploaded bytes equal the section's bytes, the loader builds no second copy of the expansion, and meshlet ranges come from the meshlet table. The cooked format is unchanged.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu --test mapped_indices",
           "lock": "gpu",
           "ask": "Does a load still allocate or scan in proportion to the index count? Did any cooked product's bytes change for the same source?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M3/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP3/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md"
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "The cooked draw is unchanged: `COOKED-DRAW`'s parity and the crate's other tests pass, unedited.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu",
           "lock": "gpu",
           "ask": "Did the diff change any assertion or reference in a test that existed before this milestone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M3/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP3/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md"
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "The cooker's edit-to-visible test and bench drive `thrum-asset-gpu`'s loader. `examples/asset-loop` is gone, `thrum-cook` names no example in its manifest or its sources, and the texture and volume profile preference is one function in `thrum-asset` that every caller uses.",
           "check": "sh -c 'test ! -e examples/asset-loop && ! grep -rqE \"asset[-_]loop|examples/\" crates/thrum-cook --include=Cargo.toml --include=*.rs && ! grep -q asset-loop .config/architecture.toml'",
           "ask": "Do `scripts/check_g5_tripwires.sh` and the edit-to-visible test now measure the engine's loader? Is the tripwire's history still comparable, or is a new baseline recorded with the reason and the old and new figures side by side?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M3/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP3/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md"
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "Every record a `thrum-asset-gpu` shader reads is a `Pod` struct written whole, held by a reflection test as the sea's are.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu --test wgsl_records",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M3/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP3/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md"
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "The cost of loading the valley's meshes before and after is on record, as time and allocated bytes from the existing bench, with the load.",
           "ask": "Are both rows from the same bench on named commits? No figure decides this item; does the record say what changed and why?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M3/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP3/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md"
         },
         {
-          "id": "M3.6",
+          "id": "WP3.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images; .orchestrate/evidence/REVIEW-ENGINE/M3/README.md",
+          "evidence": "main-branch check exact-images; .orchestrate/evidence/REVIEW-ENGINE/WP3/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M3-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP3-review.md"
         }
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum",
       "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REPO-RULES:M1"
+        "REPO-RULES:WP1"
       ],
       "quality_bar": "Errors as `thrum-asset`'s `AssetError` already is, and as the Rust API guidelines ask: one enum per boundary, a message a person can act on, a source where one is wrapped, and variants that name the caller's decision.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "No public function in `thrum-core`, `thrum-network`, `thrum-sea`, `thrum-sea-model`, `thrum-asset`, `thrum-asset-gpu`, `thrum-cook` or `thrum-controls` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-core crates/thrum-network crates/thrum-sea crates/thrum-sea-model crates/thrum-asset crates/thrum-asset-gpu crates/thrum-cook crates/thrum-controls",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M4/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP4/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review.md"
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "Every public error type in those crates implements `Display` and `std::error::Error`, returns its wrapped error from `source()`, and is named for its domain. A test in each crate names the crate's public error types and does not compile for one that is not an `Error`.",
           "check": "cargo test --locked --offline -p thrum-core -p thrum-network -p thrum-sea -p thrum-sea-model -p thrum-asset -p thrum-asset-gpu -p thrum-cook -p thrum-controls --test error_types",
           "ask": "Does each of the eight crates have the test, and does its list hold every error type the crate exports? Do variants name what the caller should do, or where the error happened?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M4/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP4/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review.md"
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "The two unrelated types named `FrameError` have different names, and no caller or test in these crates decides anything from an error's `Debug` or `Display` text.",
           "ask": "Which of the two was renamed, and does every use follow? Does any test or caller compare an error with a string?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M4/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP4/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review.md"
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images; .orchestrate/evidence/REVIEW-ENGINE/M4/README.md",
+          "evidence": "main-branch check exact-images; .orchestrate/evidence/REVIEW-ENGINE/WP4/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M4-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP4-review.md"
         }
       ]
     },
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "Replay stops copying undo it never uses, the cooker decodes each texture once, and the sea transforms its cascades in half the passes its design allows for",
       "status": "done",
       "failed_reviews": 0,
@@ -278,78 +278,78 @@
       "quality_bar": "Waste removed, not tuned: each change takes out work whose result was thrown away, shows it with a counter, and leaves every output it could reach unchanged or inside the bound its owner already set.",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "A deferred replay tick copies no undo that a later tick will overwrite: the bytes copied for undo during a replay do not grow with its depth, and the corrected-run replay tests pass unchanged.",
           "check": "cargo test --locked --offline -p thrum-core --test deferred_undo_cost",
           "ask": "Does the test count bytes copied across replays of different depth? Is the last tick's undo still the one a publication after the replay uses?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M5/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP5/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP5-review.md"
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "The cooker decodes a texture and builds its mip chain once however many profiles it cooks, and every cooked product has the bytes it had: the same sources give the same content addresses.",
           "check": "cargo test --locked --offline -p thrum-cook --test decode_once",
           "ask": "Does the test compare content addresses of every profile's product before and after, for a texture and a volume? The mip filter's odd-size and alpha handling change bytes and are not part of this item: were they left alone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M5/README.md",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP5/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP5-review.md"
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "The sea's cascades are transformed as packed pairs: six complex channels a band in place of eleven, work buffers sized for six, and twiddles from a table built in f64. The GPU sea still equals the CPU model inside the bounds `SEA` set, with its tests unedited.",
           "check": "cargo test --locked --offline -p thrum-sea --test packed_transforms && cargo test --locked --offline -p thrum-sea",
           "lock": "gpu",
           "ask": "Does the record give the sea's GPU memory before and after against the design's account, and the paired GPU time of the cascade passes? Was any bound in `SEA`'s tests changed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M5/README.md; .orchestrate/evidence/REVIEW-ENGINE/M5/metal-cascade-ms.csv; .orchestrate/evidence/REVIEW-ENGINE/M5/metal-resource-bytes.csv",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP5/README.md; .orchestrate/evidence/REVIEW-ENGINE/WP5/metal-cascade-ms.csv; .orchestrate/evidence/REVIEW-ENGINE/WP5/metal-resource-bytes.csv",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP5-review.md"
         },
         {
-          "id": "M5.4",
+          "id": "WP5.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M5-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP5-review.md"
         }
       ]
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "Corrected replay stays fast and the 100,000-entity run stays covered",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "The compact multi-chunk corrected-replay case runs before merges and takes under 6 s alone in the default workspace test build. It passes the first attempt under ordinary builder load and proves complete authority rollback at each original refusal and corrected-run equality at the endpoint. The original 100,000-entity case is excluded from the fast tier.",
           "check": "export PATH=\"$(dirname \"$(rustup which --toolchain stable rustc)\"):$PATH\"; RUSTC_WRAPPER=\"${RUSTC_WRAPPER-}\" CARGO_INCREMENTAL=0 cargo nextest run --locked --offline --workspace --profile default -E 'package(=v1-game) & binary(=simulation) & test(=parallel_movers_match_the_straight_corrected_run_in_a_small_world)' --retries 0 --no-tests=fail",
           "ask": "Does the record show the original case excluded from normal workspace runs and per-test times for the compact case in the default workspace build, under 6 s alone and passing the first attempt within 10 s under recorded ordinary builder load? Does the compact case cover slot churn and use dispatch counters to prove serial execution, requested Rayon fallback and forced multi-chunk dispatch? Does it compare complete authority immediately before and after each refusal (kernel, Resolve after tentative kernel writes, and inside corrected replay), then show that the correction changes the endpoint and that final complete authority and the published page match the straight corrected run?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M6/README.md; .orchestrate/evidence/REVIEW-ENGINE/M6/compact-isolated.log; .orchestrate/evidence/REVIEW-ENGINE/M6/compact-loaded.log; .orchestrate/evidence/REVIEW-ENGINE/M6/fast-selection.log",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP6/README.md; .orchestrate/evidence/REVIEW-ENGINE/WP6/compact-isolated.log; .orchestrate/evidence/REVIEW-ENGINE/WP6/compact-loaded.log; .orchestrate/evidence/REVIEW-ENGINE/WP6/fast-selection.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP6-review.md"
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "The 100,000-entity parallel corrected-replay run pass in the main-branch check for the merged repair. Record: the covering long-tests run.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Does the covering log show the original full-size replay test running and passing in the long tier on a main commit that includes this repair?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M6/README.md; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests-run.json; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests.stdout.log; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests.stderr.log",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/WP6/README.md; .orchestrate/evidence/REVIEW-ENGINE/WP6/long-tests-run.json; .orchestrate/evidence/REVIEW-ENGINE/WP6/long-tests.stdout.log; .orchestrate/evidence/REVIEW-ENGINE/WP6/long-tests.stderr.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md"
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/WP6-review.md"
         }
       ],
       "failed_reviews": 0,

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/SEA/design-review.md",
     "commit": "7e2cc31dc0477855a47e698cc4d588a297432ebe",
-    "hash": "2645235a8be549d1df3117cd8e5c14ec5e3da99263e76dcdfa0ad2b7a24285c7",
+    "hash": "9982be8d763a120bc5eff6236e580e6655981a9a3cbf21e0570b7fab344bc014",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -23,24 +23,24 @@
     },
     "at": "2026-11-14T02:47:21Z"
   },
-  "milestones": {
-    "M1": {
+  "work_packages": {
+    "WP1": {
       "definitions": "0e5a30c3bcaed6580c3b8f38fc50221c1a3f6cac4a15659b97d473ed56363d40",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "7c65f750aa8e392aff6500fdaa22ad0f9a606be9",
-          "review": ".orchestrate/evidence/SEA/M1-review.md",
+          "review": ".orchestrate/evidence/SEA/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -71,7 +71,7 @@
         "at": "2026-11-14T01:25:04Z",
         "reused": [
           "Test command",
-          "M1.2"
+          "WP1.2"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -98,28 +98,28 @@
       "done": {
         "by": "review",
         "commit": "7c65f750aa8e392aff6500fdaa22ad0f9a606be9",
-        "review": ".orchestrate/evidence/SEA/M1-review.md",
+        "review": ".orchestrate/evidence/SEA/WP1-review.md",
         "checked": "953ce30e1ad48ffd5e775740832f799a8bb3c3cb",
         "at": "2026-11-14T01:52:10Z"
       }
     },
-    "M2": {
-      "definitions": "b1c3eae2608515aa41e66361e2f462f3ff06f5f905aefcf85c28cf4aaf6d87fe",
+    "WP2": {
+      "definitions": "3b3a969f4473f908e0782c6deba35a07492dc5665d67aa6bd252d375f5a0e1d8",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "462113dcf5d0809c2c48c7aa77203d52b301898f",
-          "review": ".orchestrate/evidence/SEA/M2-review.md",
+          "review": ".orchestrate/evidence/SEA/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -149,9 +149,9 @@
         "checked": "a5b8b87d5a3639ac0838a9f2c5dc01e26a621f71",
         "at": "2026-11-14T14:03:13Z",
         "reused": [
-          "M2.2",
-          "M2.3",
-          "M2.5"
+          "WP2.2",
+          "WP2.3",
+          "WP2.5"
         ],
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -178,13 +178,13 @@
       "done": {
         "by": "review",
         "commit": "462113dcf5d0809c2c48c7aa77203d52b301898f",
-        "review": ".orchestrate/evidence/SEA/M2-review.md",
+        "review": ".orchestrate/evidence/SEA/WP2-review.md",
         "checked": "a5b8b87d5a3639ac0838a9f2c5dc01e26a621f71",
         "at": "2026-11-14T14:07:07Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather than waiting on their port timing, said (13 Nov 2026): \"On 2 use the fable planner like normal but you can bring that across when it makes sense.\" Lead's reading, to record as an assumption: planning starts now, and the owner leaves to this plan when the Broadsides Rust work is brought across, within docs/design/decisions/SEA-AND-CLOUD-PORT.md (module by module, no wholesale import, Broadsides untouched). Milestones that depend on unfinished modules wait on them as usual.",
       "at": "2026-11-13T21:50:42Z"

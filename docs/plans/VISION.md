@@ -112,7 +112,7 @@ through the module named, and [the status page](STATUS.md) says where that modul
   LUTs and Sun disk; physical illuminance drives lights and shadows; time controls span dawn through night. Follow
   the Broadsides reading map and the PD and CC0 rules. Module: `ATMOSPHERE`.
   The TAAU route proof on Metal and Chrome records sunrise shadows, the lookout depth edge and the aerial glow at
-  sunset. The west-lookout crossing and exact disk match remain open. [M6 builder evidence](../../.orchestrate/evidence/ATMOSPHERE/M6/README.md)
+  sunset. The west-lookout crossing and exact disk match remain open. [M6 builder evidence](../../.orchestrate/evidence/ATMOSPHERE/WP6/README.md)
 - **G3t, tile dataflow and Metal boundary.** One registry, graph-derived attachment storage, one split scene and
   output graph, G4's pre-tone colour and exposure input, and a prepared generation-owned native segment with its
   twin, under [the boundary record](../design/decisions/G3T-METAL-BOUNDARY.md). No raw or wgpu encoder splice and
@@ -133,9 +133,9 @@ through the module named, and [the status page](STATUS.md) says where that modul
   reload support asset, shader and parameter edits. A fresh agent uses only public docs and the starter, builds a
   small scene without reading internals, and records friction. Keep that scene to about 100 game lines, report
   game lines and zero engine game types. See [the creator guide](../design/ENGINE-EXPERIENCE.md). Module: `CREATOR`.
-  [M1](../../.orchestrate/evidence/CREATOR/M1.md) proves the shared Mac/Chrome scene route and live assets;
-  [M2](../../.orchestrate/evidence/CREATOR/M2.md) and its [independent review](../../.orchestrate/evidence/CREATOR/M2-review.md)
-  prove the profiler. [M3](../../.orchestrate/evidence/CREATOR/M3.md) records the lead-commissioned fresh scene on Mac and
+  [M1](../../.orchestrate/evidence/CREATOR/WP1.md) proves the shared Mac/Chrome scene route and live assets;
+  [M2](../../.orchestrate/evidence/CREATOR/WP2.md) and its [independent review](../../.orchestrate/evidence/CREATOR/WP2-review.md)
+  prove the profiler. [M3](../../.orchestrate/evidence/CREATOR/WP3.md) records the lead-commissioned fresh scene on Mac and
   Chrome, the documentation check, native mistakes and the attended window journey.
   The clipping and shadow-cascade overlays and parameter files as a cooked product remain unbuilt and outside
   this gate's scope.

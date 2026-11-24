@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/CLOUDS/design-review.md",
     "commit": "6896d70c083e554f23910331774455a6221b1464",
-    "hash": "8954eb20d93a5205de4a2965fcf5ecb178ae2d6fd39843a2539c946ebd02b612",
+    "hash": "d9b358e5fa7f52b15cab5fb8b7193456e34f4cc0cb5ce07845bf8adc3ee79c26",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,40 +23,40 @@
     },
     "at": "2026-11-23T15:15:14Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "6595069d84ab20d47179f35e67625db8c9bf235611ea8d74b5affb11c2f2766b",
+  "work_packages": {
+    "WP1": {
+      "definitions": "187b827f7222320f0ed5fc86f39374d7cde01489091ddfb5440bf0c396638d68",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "82fe79220d907d08b3b374977ddaa3e0fb44bc0c",
-          "review": ".orchestrate/evidence/CLOUDS/M1-review-1.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP1-review-1.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "fail",
-            "M1.5": "pass",
-            "M1.6": "fail",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass",
-            "M1.13": "pass",
-            "M1.14": "pass",
-            "M1.15": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "fail",
+            "WP1.5": "pass",
+            "WP1.6": "fail",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass",
+            "WP1.13": "pass",
+            "WP1.14": "pass",
+            "WP1.15": "pass"
           },
           "findings": [
             {
               "name": "density-does-not-implement-designed-erosion",
-              "item": "M1.6",
+              "item": "WP1.6",
               "repeat": false
             },
             {
               "name": "top-continuity-proof-substitutes-depth",
-              "item": "M1.4",
+              "item": "WP1.4",
               "repeat": false
             }
           ],
@@ -80,23 +80,23 @@
         {
           "verdict": "pass",
           "commit": "926ef32dfb14a92afe9421b8390f6ed5c2f643fd",
-          "review": ".orchestrate/evidence/CLOUDS/M1-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass",
-            "M1.8": "pass",
-            "M1.9": "pass",
-            "M1.10": "pass",
-            "M1.11": "pass",
-            "M1.12": "pass",
-            "M1.13": "pass",
-            "M1.14": "pass",
-            "M1.15": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass",
+            "WP1.12": "pass",
+            "WP1.13": "pass",
+            "WP1.14": "pass",
+            "WP1.15": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -153,32 +153,32 @@
       "done": {
         "by": "review",
         "commit": "926ef32dfb14a92afe9421b8390f6ed5c2f643fd",
-        "review": ".orchestrate/evidence/CLOUDS/M1-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP1-review.md",
         "checked": "3a477bdde59402f52b958939a542cdc0c9d77a3b",
         "at": "2026-11-15T05:49:43Z"
       }
     },
-    "M2": {
-      "definitions": "289aea296aa8fbdd4075ec9792f4e609f1f4323e440398a43ae38b63b2620540",
+    "WP2": {
+      "definitions": "7853656bc943bc389a9f96a659f717b7a775b3027f8b7735019e7aaa5fad1ae4",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "2ac2d5a0f64173cdb02deb1df908ba0d90fb1804",
-          "review": ".orchestrate/evidence/CLOUDS/M2-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass",
-            "M2.9": "pass",
-            "M2.10": "pass",
-            "M2.11": "pass",
-            "M2.12": "pass",
-            "M2.13": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -232,37 +232,37 @@
       "done": {
         "by": "review",
         "commit": "2ac2d5a0f64173cdb02deb1df908ba0d90fb1804",
-        "review": ".orchestrate/evidence/CLOUDS/M2-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP2-review.md",
         "checked": "a98b2d354278edc6b2cb7ce10e7fab96f9bc40d8",
         "at": "2026-11-17T14:53:27Z"
       }
     },
-    "M3": {
-      "definitions": "4253cc345df7ea05a3d0aab3ac6f8cd74f7b5590fbf3e1c4cd4ba478198a3148",
+    "WP3": {
+      "definitions": "d7407d99c94115e6248df991b3bd80f3fc571da44b843d219d163dbe6ec8447d",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "fa76d66bb9892c6a7b0e1b57f48911c9dead1673",
-          "review": ".orchestrate/evidence/CLOUDS/M3-review-1.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "fail",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass",
-            "M3.15": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "fail",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.15": "pass"
           },
           "findings": [
             {
               "name": "Cost check accepts missing cloud resource measurements",
-              "item": "M3.9",
+              "item": "WP3.9",
               "repeat": false
             }
           ],
@@ -286,21 +286,21 @@
         {
           "verdict": "pass",
           "commit": "771915c1deae079388f77b347818a3d28e75c442",
-          "review": ".orchestrate/evidence/CLOUDS/M3-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass",
-            "M3.15": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.15": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -357,29 +357,29 @@
       "done": {
         "by": "review",
         "commit": "771915c1deae079388f77b347818a3d28e75c442",
-        "review": ".orchestrate/evidence/CLOUDS/M3-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP3-review.md",
         "checked": "547d97e838c3e695cc6594c39cc0fae4c3fbd331",
         "at": "2026-11-19T10:42:31Z"
       }
     },
-    "M4": {
-      "definitions": "922d89de4226be98366e38ed3433eefd030394aeb5a8b34297bbdc323d76f9da",
+    "WP4": {
+      "definitions": "44dd75ee2ec19253e912fa56901a1a6f897be818740b9c57b157b481971206e9",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "fd811ad2db3dba9e92b796c0527d25eaa1eb98ff",
-          "review": ".orchestrate/evidence/CLOUDS/M4-review-1.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP4-review-1.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "fail",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "fail",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass"
           },
           "findings": [
             {
               "name": "Ground-field lifecycle check accepts a constant Sun-path depth",
-              "item": "M4.2",
+              "item": "WP4.2",
               "repeat": false
             }
           ],
@@ -403,13 +403,13 @@
         {
           "verdict": "pass",
           "commit": "d0ef09fbd56deca7ce4e2cbc58406f5136fef7f5",
-          "review": ".orchestrate/evidence/CLOUDS/M4-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass",
-            "M4.5": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -466,36 +466,36 @@
       "done": {
         "by": "review",
         "commit": "d0ef09fbd56deca7ce4e2cbc58406f5136fef7f5",
-        "review": ".orchestrate/evidence/CLOUDS/M4-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP4-review.md",
         "checked": "39fb2cf703db6c66fa8e1629ca052e63d20cd50a",
         "at": "2026-11-20T03:06:25Z"
       }
     },
-    "M5": {
-      "definitions": "380248ecd97dfddcd48caa17c62644815f8901d6b084116deb200c8899a473d0",
+    "WP5": {
+      "definitions": "79c39616cb06d50056477a726092efbe3df76063d43ffe2474321a1db8b375dd",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "8f53f1d2b475ad24eb6127fa56a147df74fc7118",
-          "review": ".orchestrate/evidence/CLOUDS/M5-review-1.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP5-review-1.md",
           "items": {
-            "M5.2": "pass",
-            "M5.3": "fail",
-            "M5.4": "pass",
-            "M5.6": "fail",
-            "M5.7": "pass",
-            "M5.8": "pass",
-            "M5.9": "pass"
+            "WP5.2": "pass",
+            "WP5.3": "fail",
+            "WP5.4": "pass",
+            "WP5.6": "fail",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
           },
           "findings": [
             {
               "name": "Low-Sun receiving cloud breaks into horizontal shadow bands",
-              "item": "M5.3",
+              "item": "WP5.3",
               "repeat": false
             },
             {
               "name": "Chrome reproduces striped shading across the 10-degree Sun",
-              "item": "M5.6",
+              "item": "WP5.6",
               "repeat": false
             },
             {
@@ -523,15 +523,15 @@
         {
           "verdict": "pass",
           "commit": "cbe5315c30c4094099f34c15b932905df87416b0",
-          "review": ".orchestrate/evidence/CLOUDS/M5-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP5-review.md",
           "items": {
-            "M5.2": "pass",
-            "M5.3": "pass",
-            "M5.4": "pass",
-            "M5.6": "pass",
-            "M5.7": "pass",
-            "M5.8": "pass",
-            "M5.9": "pass"
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -588,31 +588,31 @@
       "done": {
         "by": "review",
         "commit": "cbe5315c30c4094099f34c15b932905df87416b0",
-        "review": ".orchestrate/evidence/CLOUDS/M5-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP5-review.md",
         "checked": "ce5a54574a2fecc8629509f8251545f4e07a4379",
         "at": "2026-11-20T16:38:42Z"
       }
     },
-    "M6": {
-      "definitions": "5b586fd15a01d52aaeb6ac91f0686a6f7ef98276db5d5c0a2691be915c5d5a0b",
+    "WP6": {
+      "definitions": "77d21912bfe76d5eb651f9327b995a0a1db28883033847006935bfb4737cd6cc",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "5203f907b04dd8d38190ac513c1241466374205e",
-          "review": ".orchestrate/evidence/CLOUDS/M6-review-1.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP6-review-1.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.3": "pass",
-            "M6.4": "fail",
-            "M6.5": "fail",
-            "M6.6": "pass",
-            "M6.7": "pass",
-            "M6.8": "pass",
-            "M6.9": "fail",
-            "M6.10": "pass",
-            "M6.11": "pass",
-            "M6.12": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "fail",
+            "WP6.5": "fail",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass",
+            "WP6.9": "fail",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "pass"
           },
           "findings": [
             {
@@ -625,17 +625,17 @@
             },
             {
               "name": "The demo lifecycle removes caller-authored shapes by ID",
-              "item": "M6.9",
+              "item": "WP6.9",
               "repeat": false
             },
             {
               "name": "The placed crest has a visibly different edge from its neighbor",
-              "item": "M6.4",
+              "item": "WP6.4",
               "repeat": false
             },
             {
               "name": "The mixed bank gains a formed lobe in one submitted frame at 60\u00d7",
-              "item": "M6.5",
+              "item": "WP6.5",
               "repeat": false
             },
             {
@@ -663,25 +663,25 @@
         {
           "verdict": "fail",
           "commit": "bd9ab578d2374fa22480611611d6db0de3fbb3ee",
-          "review": ".orchestrate/evidence/CLOUDS/M6-review-2.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP6-review-2.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.3": "fail",
-            "M6.4": "pass",
-            "M6.5": "pass",
-            "M6.6": "pass",
-            "M6.7": "pass",
-            "M6.8": "pass",
-            "M6.9": "pass",
-            "M6.10": "pass",
-            "M6.11": "pass",
-            "M6.12": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "fail",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass",
+            "WP6.9": "pass",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "pass"
           },
           "findings": [
             {
               "name": "Unchanged placed-weather windows are uploaded and redrawn every frame",
-              "item": "M6.3",
+              "item": "WP6.3",
               "repeat": false
             }
           ],
@@ -705,25 +705,25 @@
         {
           "verdict": "fail",
           "commit": "1ee6c8f4eb43256cdf28661e7f39ceeb7503af3d",
-          "review": ".orchestrate/evidence/CLOUDS/M6-review-3.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP6-review-3.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "fail",
-            "M6.3": "pass",
-            "M6.4": "pass",
-            "M6.5": "pass",
-            "M6.6": "pass",
-            "M6.7": "pass",
-            "M6.8": "pass",
-            "M6.9": "pass",
-            "M6.10": "pass",
-            "M6.11": "pass",
-            "M6.12": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "fail",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass",
+            "WP6.9": "pass",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "pass"
           },
           "findings": [
             {
               "name": "Paused camera movement leaves placed-cloud shade stale",
-              "item": "M6.2",
+              "item": "WP6.2",
               "repeat": false
             }
           ],
@@ -747,20 +747,20 @@
         {
           "verdict": "pass",
           "commit": "fe95c049b0970acabfa17f9417f248f734012224",
-          "review": ".orchestrate/evidence/CLOUDS/M6-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.3": "pass",
-            "M6.4": "pass",
-            "M6.5": "pass",
-            "M6.6": "pass",
-            "M6.7": "pass",
-            "M6.8": "pass",
-            "M6.9": "pass",
-            "M6.10": "pass",
-            "M6.11": "pass",
-            "M6.12": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass",
+            "WP6.9": "pass",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -791,14 +791,14 @@
         "at": "2026-11-24T03:25:16Z",
         "reused": [
           "Test command",
-          "M6.1",
-          "M6.2",
-          "M6.3",
-          "M6.6",
-          "M6.7",
-          "M6.8",
-          "M6.9",
-          "M6.12"
+          "WP6.1",
+          "WP6.2",
+          "WP6.3",
+          "WP6.6",
+          "WP6.7",
+          "WP6.8",
+          "WP6.9",
+          "WP6.12"
         ],
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -825,13 +825,13 @@
       "done": {
         "by": "review",
         "commit": "fe95c049b0970acabfa17f9417f248f734012224",
-        "review": ".orchestrate/evidence/CLOUDS/M6-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP6-review.md",
         "checked": "1ebd51595ab4180e7cb30c8552ea41b43a84669d",
         "at": "2026-11-24T03:36:42Z"
       }
     },
-    "M7": {
-      "definitions": "74109040cf7067aee4766aba141442d1f0ee8ab03e14cd7ca93c0a0a8c921687",
+    "WP7": {
+      "definitions": "4ef76962c945e7bbdc2ba185f098536d049cde5c4477fb857deb8ccd396c8a21",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -839,8 +839,8 @@
         "at": "2026-11-18T10:47:28Z"
       }
     },
-    "M8": {
-      "definitions": "419d2c5b09a2013533d533f22185e3dac4fdbbb604fa073b4833c83898422f5e",
+    "WP8": {
+      "definitions": "e1d99a48949ca91b31d8ac0079f7870aa348ec744bc497e4396bbc6357193187",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -848,8 +848,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M9": {
-      "definitions": "8d9804ea7c18cf78dabb7b2b93e794ec8fafc82d5a458fc4e133f49414672cd7",
+    "WP9": {
+      "definitions": "e88d75bcaaf06f3047ab16f8f01bdb5876846c9443f7c583db6a0e8a6a4660f5",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -857,8 +857,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M10": {
-      "definitions": "c71caa23df5be7efbdda50bc3439f02478a8c1be126b8463ded029c195915613",
+    "WP10": {
+      "definitions": "765b0ea2f5e4dfc11475f9512318dbc4718cb5c6623d663d8baf24f1520e0b9d",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -866,8 +866,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M11": {
-      "definitions": "c08fb5c2e747c13fb46fadf29e6821c5e117d35247ab01fde7e65a034a7e3769",
+    "WP11": {
+      "definitions": "9128fb546ac8fef703a7e89acaf1e49f23f505f87e9ca8b144e0636c2405f947",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -875,8 +875,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M12": {
-      "definitions": "919663b817a03ed99fa62e37b4455dcf9f8962e019b6512aff0c342c450ed46a",
+    "WP12": {
+      "definitions": "b303da25fafe5c92e14508a6ae51e99ed13c501b93f8ceadedbd522b08dee5ae",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -885,34 +885,34 @@
       },
       "ends_stretch": true
     },
-    "M13": {
-      "definitions": "a3fc5c654fbd40807cdf1e4a31c1b959f165c8b39bc6fc1c202ba6fb8783e151",
+    "WP13": {
+      "definitions": "1ea97319bbc3e27ffa7fabfdbc246f23a26697441ac8fbb9187a540964ce1154",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "fd06895cc48f3d674612cfc483d74547e98e3636",
-          "review": ".orchestrate/evidence/CLOUDS/M13-review-1.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP13-review-1.md",
           "items": {
-            "M13.1": "pass",
-            "M13.2": "pass",
-            "M13.3": "pass",
-            "M13.4": "fail",
-            "M13.5": "fail",
-            "M13.6": "pass",
-            "M13.7": "pass",
-            "M13.8": "pass",
-            "M13.9": "pass",
-            "M13.10": "pass"
+            "WP13.1": "pass",
+            "WP13.2": "pass",
+            "WP13.3": "pass",
+            "WP13.4": "fail",
+            "WP13.5": "fail",
+            "WP13.6": "pass",
+            "WP13.7": "pass",
+            "WP13.8": "pass",
+            "WP13.9": "pass",
+            "WP13.10": "pass"
           },
           "findings": [
             {
               "name": "footprint_column_sum_eroded",
-              "item": "M13.5",
+              "item": "WP13.5",
               "repeat": false
             },
             {
               "name": "saturated_radiative_day_does_not_clear",
-              "item": "M13.4",
+              "item": "WP13.4",
               "repeat": false
             }
           ],
@@ -936,23 +936,23 @@
         {
           "verdict": "fail",
           "commit": "20b3aa9abb1c12c6b870059bef04e2a43cfd6be4",
-          "review": ".orchestrate/evidence/CLOUDS/M13-review-2.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP13-review-2.md",
           "items": {
-            "M13.1": "pass",
-            "M13.2": "pass",
-            "M13.3": "pass",
-            "M13.4": "pass",
-            "M13.5": "pass",
-            "M13.6": "fail",
-            "M13.7": "pass",
-            "M13.8": "pass",
-            "M13.9": "pass",
-            "M13.10": "pass"
+            "WP13.1": "pass",
+            "WP13.2": "pass",
+            "WP13.3": "pass",
+            "WP13.4": "pass",
+            "WP13.5": "pass",
+            "WP13.6": "fail",
+            "WP13.7": "pass",
+            "WP13.8": "pass",
+            "WP13.9": "pass",
+            "WP13.10": "pass"
           },
           "findings": [
             {
               "name": "sun_path_skips_column_form_erosion",
-              "item": "M13.6",
+              "item": "WP13.6",
               "repeat": false
             }
           ],
@@ -976,18 +976,18 @@
         {
           "verdict": "pass",
           "commit": "d3dacff87c84c669b14c7a7368037384e148bb6a",
-          "review": ".orchestrate/evidence/CLOUDS/M13-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP13-review.md",
           "items": {
-            "M13.1": "pass",
-            "M13.2": "pass",
-            "M13.3": "pass",
-            "M13.4": "pass",
-            "M13.5": "pass",
-            "M13.6": "pass",
-            "M13.7": "pass",
-            "M13.8": "pass",
-            "M13.9": "pass",
-            "M13.10": "pass"
+            "WP13.1": "pass",
+            "WP13.2": "pass",
+            "WP13.3": "pass",
+            "WP13.4": "pass",
+            "WP13.5": "pass",
+            "WP13.6": "pass",
+            "WP13.7": "pass",
+            "WP13.8": "pass",
+            "WP13.9": "pass",
+            "WP13.10": "pass"
           },
           "host": "codex",
           "model": "gpt-6-astra",
@@ -1051,13 +1051,13 @@
       "done": {
         "by": "review",
         "commit": "d3dacff87c84c669b14c7a7368037384e148bb6a",
-        "review": ".orchestrate/evidence/CLOUDS/M13-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP13-review.md",
         "checked": "45f31108ba1a4b92e8f50ae819afd36b4afc7a69",
         "at": "2026-11-16T03:49:05Z"
       }
     },
-    "M14": {
-      "definitions": "f31ea7da55c6bb26a1390e295f991d343791710bcaea7f760e54bcd17d2b8f74",
+    "WP14": {
+      "definitions": "b9b19b9a3f9d56d4b78f9102887ec2a77590c24e27dda448fa7148ed4ee6af81",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1065,8 +1065,8 @@
         "at": "2026-11-20T10:12:46Z"
       }
     },
-    "M15": {
-      "definitions": "ff2c69ae3cf018fe52e3c05d45a0a021b60700cc2ab88370763038f2d58074b9",
+    "WP15": {
+      "definitions": "74b53fdf5f275d5023d17908079486d5179fa80c465dcf111d433c5ea235867b",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1074,8 +1074,8 @@
         "at": "2026-11-18T10:04:12Z"
       }
     },
-    "M16": {
-      "definitions": "ae8f8838e6cd7e4d283c9b6f0c06845cec9da20ef4a05de284ba51ae2a7af582",
+    "WP16": {
+      "definitions": "7bbb576aff10aca2609eab9fdfd8ba8e427ffbeeee75a527c48aac46540a1d6d",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1083,8 +1083,8 @@
         "at": "2026-11-17T23:05:22Z"
       }
     },
-    "M17": {
-      "definitions": "a4add5ef630de427a832fba005b14d8ce45a8c36327c66eaa401bfc5a1a3b963",
+    "WP17": {
+      "definitions": "cc87cd92183dbfb72af36467700174e94fab6597e634f342ca782a1e1efa4b27",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1092,15 +1092,15 @@
         "at": "2026-11-18T23:43:14Z"
       }
     },
-    "M18": {
+    "WP18": {
       "definitions": "de7abd13b3edfa81b85415625170ec7c9266a486889e633683510b489dec9fb7",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "132a4a96c254bcfebb13ade3bdfdfbce9af81cca",
-          "review": ".orchestrate/evidence/CLOUDS/M18-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP18-review.md",
           "items": {
-            "M18.1": "pass"
+            "WP18.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -1157,13 +1157,13 @@
       "done": {
         "by": "review",
         "commit": "132a4a96c254bcfebb13ade3bdfdfbce9af81cca",
-        "review": ".orchestrate/evidence/CLOUDS/M18-review.md",
+        "review": ".orchestrate/evidence/CLOUDS/WP18-review.md",
         "checked": "29272be51e08154569aa94c6f9a570461d6c536e",
         "at": "2026-11-23T16:44:10Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather than waiting on their port timing, said (13 Nov 2026): \"On 2 use the fable planner like normal but you can bring that across when it makes sense.\" Lead's reading, to record as an assumption: planning starts now, and the owner leaves to this plan when the Broadsides Rust work is brought across, within docs/design/decisions/SEA-AND-CLOUD-PORT.md (module by module, no wholesale import, Broadsides untouched). Milestones that depend on unfinished modules wait on them as usual.",
       "at": "2026-11-13T22:37:36Z"
@@ -1688,7 +1688,7 @@
       },
       "at": "2026-11-18T23:45:50Z",
       "items_owed": [
-        "M18"
+        "WP18"
       ]
     },
     {

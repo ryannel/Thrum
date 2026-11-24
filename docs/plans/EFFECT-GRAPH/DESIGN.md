@@ -1,15 +1,15 @@
 # Effect graph: engine modules run their own passes inside the one frame
 
 11 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C02, C04, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), the
+[the brief](../VISION.md). C02, C04, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), the
 [graph decision](../../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) and
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) govern. Revised 16 November 2026: a fourth
 milestone gives effects [the display phase](#the-display-phase-m4). Revised again that day after
 that revision's review (finding MF5; `git show 8ed45fc5b:.orchestrate/evidence/EFFECT-GRAPH/design-review.md`): the
 phase describes the target the clock consumes, and a prediction is carried a tick at a time. Revised a third
-time that day, after M4's first review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review-1.md)): which
-[pair a frame shows](#the-frames-pair) on a world on its own thread. Revised 17 November, after M4's second
-review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review.md)): [the timing model](#the-timing-model), which
+time that day, after WP4's first review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review-1.md)): which
+[pair a frame shows](#the-frames-pair) on a world on its own thread. Revised 17 November, after WP4's second
+review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review.md)): [the timing model](#the-timing-model), which
 states every rule about a frame's time as one set, with display time on the world's time.
 
 ## The request
@@ -17,37 +17,37 @@ states every rule about a frame's time as one set, with display time on the worl
 The owner's planning task of 11 November 2026, word for word:
 
 > Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and
-> done-when file. Both depend on APPLE-TILE M2, which is in its second review now, so builders can start them once
-> it passes. Everything else is waiting on APPLE-TILE M2 or M3, so these are the next work. Keep each first
-> milestone small enough to start right after APPLE-TILE M2 lands. Also: APPLE-PRESENTATION M1's jitter change broke
+> done-when file. Both depend on APPLE-TILE WP2, which is in its second review now, so builders can start them once
+> it passes. Everything else is waiting on APPLE-TILE WP2 or WP3, so these are the next work. Keep each first
+> milestone small enough to start right after APPLE-TILE WP2 lands. Also: APPLE-PRESENTATION WP1's jitter change broke
 > APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged
-> (.orchestrate/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
+> (.orchestrate/evidence/APPLE-TILE/WP2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
 > that alters another module's exact baselines gets caught before landing.
 
-What the module is for comes from [the brief](../BRIEF.md), decision 6: "Sea and clouds are finished as Thrum
+What the module is for comes from [the brief](../VISION.md), decision 6: "Sea and clouds are finished as Thrum
 modules and are not part of the V1 exit." [The port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november)
 names the graph condition this module meets: 3D and cube resources, cadence, and async-compute eligibility as a
 declared seam. The module list's brief adds the rest: mipped storage arrays, persistent state advanced by
 tick-derived time, ping-pong and world-anchored wrapping histories, compute before the fragment passes that read
 it, and module passes after opaque geometry that read scene depth and a refraction source.
 
-The lead's planning task of 16 November 2026, after `CLOUDS` M2's builder ended `BLOCKED needs_dependency`:
+The lead's planning task of 16 November 2026, after `CLOUDS` WP2's builder ended `BLOCKED needs_dependency`:
 
-> CLOUDS M2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared
-> display-time interface change before M2.7's uneven 60× shade motion can be completed.
+> CLOUDS WP2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared
+> display-time interface change before WP2.7's uneven 60× shade motion can be completed.
 
-The builder's diagnosis (`.orchestrate/evidence/CLOUDS/M2-temporal-blocker.md` on branch `build/clouds` at
+The builder's diagnosis (`.orchestrate/evidence/CLOUDS/WP2-temporal-blocker.md` on branch `build/clouds` at
 `0756d0adce44`) asked that the change go to
 "HOST/EFFECT-GRAPH, with their clock/platform consumers", that it "preserve enough target information and
 endpoint history, or explicitly define a bounded prediction coordinate for presentation-only advection", and that
 authoritative weather stay unchanged. The time a frame gives an effect is this module's interface, so the change
-is [M4](#the-display-phase-m4) here. `HOST` waits on seven milestones and changes none of this.
+is [WP4](#the-display-phase-m4) here. `HOST` waits on seven milestones and changes none of this.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `graph.rs`, `graph_record.rs`,
 `contribution.rs`, `synthetic/{scene_graph,contributed}.rs`, `atmosphere/graph.rs`, the [SEA](../SEA/BRIEF.md) and
 [CLOUDS](../CLOUDS/BRIEF.md) briefs, and the designs of the three modules whose files it shares. For the revision
 after [the design review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md), also read: the history scope in
-`graph.rs`, the encoded-frame token in `runtime/tokens.rs`, `timing.rs`, and `APPLE-PRESENTATION`'s M2 and M3 items.
+`graph.rs`, the encoded-frame token in `runtime/tokens.rs`, `timing.rs`, and `APPLE-PRESENTATION`'s WP2 and WP3 items.
 
 ## Purpose and scope
 
@@ -81,14 +81,14 @@ existing passes or descriptors (they keep their exact output); real async-comput
 | **N5 Feed reconstruction's inputs** | Motion, reactive coverage and reset on cuts, replacement and effect reset | Zero motion on a moving effect. Rejected by reading motion from submitted frames against the known displacement |
 | **N6 Survive resize and device replacement** | Mid-run, with state in flight | Reusing an old generation's texture. Rejected by generation checks and exact state after re-seed |
 | **N7 Cost nothing when absent** | Every existing scene and variant | A seam that adds an empty pass or a copy. Rejected by identical compiled pass lists and the exact baselines |
-| **N8 Show motion that is a function of time at the display's time** (M4) | Consumed targets up to 50 ms ahead of the observation; expired and clamped platform targets; a display faster or slower than the tick; a tick whose commit lands late; a frame on a world on its own thread that polls after a tick due later than its observation was committed, once or frame after frame; a clock that starts at any host time on any tick; pause, overload, the hold after a resume, queued ticks and a rewind, each of which leaves stopped time out of display time; capture frames | The interpolation alpha, which stops at the committed tick: the motion then takes a short step and a long one in turn. Rejected by display times worked out from scripted observations and leads, across a tick's commit and on frames whose alpha is 1. Or a phase taken at the platform target while alpha is taken at the consumed one. Rejected by alpha being the phase held to 1 in every frame, and by a frame whose target had expired. Or a tick due after the frame's observation, which no phase from 0 up describes. Rejected by a delayed frame's display time, and by a run of delayed polls that must keep advancing. Or display time written as a host's time, which holds until the clock first stops. Rejected by frames after a pause partway through a tick, held to due times a script gives |
+| **N8 Show motion that is a function of time at the display's time** (WP4) | Consumed targets up to 50 ms ahead of the observation; expired and clamped platform targets; a display faster or slower than the tick; a tick whose commit lands late; a frame on a world on its own thread that polls after a tick due later than its observation was committed, once or frame after frame; a clock that starts at any host time on any tick; pause, overload, the hold after a resume, queued ticks and a rewind, each of which leaves stopped time out of display time; capture frames | The interpolation alpha, which stops at the committed tick: the motion then takes a short step and a long one in turn. Rejected by display times worked out from scripted observations and leads, across a tick's commit and on frames whose alpha is 1. Or a phase taken at the platform target while alpha is taken at the consumed one. Rejected by alpha being the phase held to 1 in every frame, and by a frame whose target had expired. Or a tick due after the frame's observation, which no phase from 0 up describes. Rejected by a delayed frame's display time, and by a run of delayed polls that must keep advancing. Or display time written as a host's time, which holds until the clock first stops. Rejected by frames after a pause partway through a tick, held to due times a script gives |
 
 This is internal work: its outcomes are properties measured through the diagnostic effect, with inspected items
 where a picture is the evidence.
 
 N5 stops at the inputs. This module proves that an effect's motion, reactive coverage and reset reach the targets
 reconstruction reads. How an effect looks after reconstruction, with no shimmer or ghost, is accepted in `SEA`'s
-and `CLOUDS`' own milestones on `APPLE-PRESENTATION:M3`'s reconstructor; the diagnostic slab is not a product and
+and `CLOUDS`' own milestones on `APPLE-PRESENTATION:WP3`'s reconstructor; the diagnostic slab is not a product and
 this module does not wait for that reconstructor.
 
 ## Research and selection
@@ -112,7 +112,7 @@ this module does not wait for that reconstructor.
   [tier-2 feature](https://developer.chrome.com/blog/new-in-webgpu-142). So a simulation that reads and writes the
   same texels in a multi-channel float format must ping-pong on the portable recipe. The storage-texture count per
   stage, the view dimensions a storage binding accepts and the one-mip-per-binding rule were not re-read from the
-  specification today; M1 records them from the device's capability record in Chrome and the graph validates
+  specification today; WP1 records them from the device's capability record in Chrome and the graph validates
   against the record, never against this paragraph.
 - **What would change the selection.** If the cadence rules cannot keep readers defined for some consumer, that
   consumer's pass gets prepared graph variants (as day and night have) and the rule narrows. If a second consumer
@@ -120,7 +120,7 @@ this module does not wait for that reconstructor.
 
 ## Mechanisms
 
-### Resource kinds (M1)
+### Resource kinds (WP1)
 
 The texture descriptor gains a dimension. The flattened range unit stays "one whole mip of one layer".
 
@@ -137,7 +137,7 @@ the record does not allow for that access, more storage textures in one pass tha
 above the record's limit. Transient reuse stays exact: only identical descriptors, dimension included, may share
 an allocation. A module asks the record which formats a recipe allows; it never probes the device.
 
-### Effects and stages (M2, M3)
+### Effects and stages (WP2, WP3)
 
 An **effect** is a `SceneContribution` that also declares passes and resources. The existing trait and its fixed
 slots stay as they are, so `thrum-asset-gpu` does not change. A scene holds an ordered list of contributions in
@@ -158,13 +158,13 @@ ordered set:
 | `simulate` | Compute | After upload, before the Sun passes and forward | Generalises the one compute slot |
 | `shadow` | Draw | Inside the Sun cascade passes | Exists |
 | `opaque` | Draw | End of the forward opaque pass | Exists |
-| `after-opaque` | Render or compute | After opaque geometry, sky and stars; before the pre-tone input | New (M3) |
+| `after-opaque` | Render or compute | After opaque geometry, sky and stars; before the pre-tone input | New (WP3) |
 
 Compute in `simulate` therefore always precedes the fragment passes that read it, by graph order, not by
 convention. All of an effect's pipelines are prepared in `rebuild`, before readiness. Its passes are timed under
 their own names.
 
-### State, time and the tentative frame (M2)
+### State, time and the tentative frame (WP2)
 
 Effect state lives in persistent or history resources the effect owns. Three rules make it advance with the world.
 
@@ -198,7 +198,7 @@ a new epoch for the effect. A `rebuild` on the same generation (a resize, a repu
 and the state, unless one of the effect's own descriptors changed, which also starts a new epoch. A GPU error
 found at completion takes the device-loss path, as the temporal history does.
 
-### The display phase (M4)
+### The display phase (WP4)
 
 **What was wrong.** Rule 1 gives an effect the frame's interpolation alpha as its place between two ticks, and
 `SEA` and `CLOUDS` read `C − 1 + α` ticks as "the display's time", where `C` is the frame's committed tick. Alpha
@@ -215,13 +215,13 @@ where `t_C` and `T` are times on the host's clock and the result is a time of th
 
 Alpha is `p` held to [0, 1]. Whenever the lead carries the target past the next tick's due time, `p` is above 1,
 alpha stops at 1, and the display time it stands for stops with it; the first frame of the next tick then makes
-up the difference. With 60 Hz ticks and a 120 Hz display that can be every second frame, and in `CLOUDS` M2's
+up the difference. With 60 Hz ticks and a 120 Hz display that can be every second frame, and in `CLOUDS` WP2's
 60× capture it was: alpha alternated 0.92 and 1.0, so wind travel alternated 3.2 m and 36.8 m where 20 m was
-due ([the planner's reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/README.md) of the builder's record). Every
+due ([the planner's reading](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-plan/README.md) of the builder's record). Every
 quantity shown by alpha under a lead steps this way, not only clouds.
 
 <a id="the-timing-model"></a>
-**The timing model.** M4's rules about time are stated here once, as one set. Its first two builds each met a
+**The timing model.** WP4's rules about time are stated here once, as one set. Its first two builds each met a
 frame the rules did not cover, a delayed frame and then a resumed one, and both came from writing a frame's
 display time as a time on the host's clock. The parts after this one give the lead's meanings, the hosts, the
 pair rule and the reasons, and add no rule.
@@ -266,8 +266,8 @@ exists in host time only. "The display target" had also meant two different host
    a lead: 4 at 60 Hz. A target farther past the committed tick holds there. Rule 3 and a lead that is never
    negative keep it from going below 0.
 5. **Alpha is the same function.** For one clock sample and one consumed target, alpha is what it was before
-   M4, bit for bit, and equals `min(p, 1)`. A frame with no lead consumes its observation, as before, so a
-   `still`, a browser frame and a capture frame are unchanged. M4 changes two things a frame is given, and no
+   WP4, bit for bit, and equals `min(p, 1)`. A frame with no lead consumes its observation, as before, so a
+   `still`, a browser frame and a capture frame are unchanged. WP4 changes two things a frame is given, and no
    exact image rests on either: one host's lead, [below](#one-read-of-the-clock), and the tick a delayed
    frame shows on a world on its own thread, [below](#the-frames-pair).
 6. **Display time** is `(C − 1 + p) · d`. In an interpolating frame under the phase's bound that is
@@ -303,10 +303,10 @@ exists in host time only. "The display target" had also meant two different host
     |---|---|---|
     | The clocked world and the lane in `thrum-core`; the frame host's world observer in `thrum-render` | `TickClock` | The phase and the due time of the clock sample in the pair the frame shows |
     | The V1 game's inline and threaded worlds, which the iPhone app also runs | A clocked world started at host time zero on tick 0 | The same. An inline world resumes at the host time its host names. A world on its own thread resumes at its worker's own read of the clock, between the request and the reply |
-    | `thrum-app`'s sky world with a tick duration (`SkyGame::with_tick_duration`, which `examples/water` runs) | Tick `⌊o / d⌋`: one span from host time zero that never stops | A clock that interpolates in every frame; the phase `(o + L) / d − C`, held at the bound; the alpha it gave before M4; the due time `C · d`. As first built it reported a phase of 1 and a clock not interpolating beside an alpha that moved, which is the stand-in this rule forbids |
+    | `thrum-app`'s sky world with a tick duration (`SkyGame::with_tick_duration`, which `examples/water` runs) | Tick `⌊o / d⌋`: one span from host time zero that never stops | A clock that interpolates in every frame; the phase `(o + L) / d − C`, held at the bound; the alpha it gave before WP4; the due time `C · d`. As first built it reported a phase of 1 and a clock not interpolating beside an alpha that moved, which is the stand-in this rule forbids |
     | The sky world with no tick duration; a `still` | None | A clock not interpolating; exactly 1 |
     | A test fixture that scripts its alpha | None | It is not a source of world time. It reports a clock not interpolating, and nothing reads a phase from it |
-    | `SESSION` M7's [driven world](../SESSION/DESIGN.md#12-a-driven-world) | Its driver's position, with a rate, at a time | A phase and a due time from that position, as a clocked world gives them from its clock |
+    | `SESSION` WP7's [driven world](../SESSION/DESIGN.md#12-a-driven-world) | Its driver's position, with a rate, at a time | A phase and a due time from that position, as a clocked world gives them from its clock |
 
 12. **It is on the record, and an effect is given no host time.** The frame's completed sample and a submitted
     capture's stamp carry the observation, the lead, the phase, alpha, whether the clock was interpolating
@@ -319,7 +319,7 @@ exists in host time only. "The display target" had also meant two different host
 
 The V1 game starts its world's clock at host time zero on tick 0, on every host. Until that world first stops,
 its origin is zero and a frame's display time is its consumed target less one tick as plain numbers, which is
-how M4's first tests passed on a statement that was wrong. A capture that warms up paused and resumes when it
+how WP4's first tests passed on a statement that was wrong. A capture that warms up paused and resumes when it
 begins, as `examples/v1-game/src/bin/window/capture.rs` does at 1 s, and a window that has recovered from an
 overload, run at another origin.
 
@@ -344,7 +344,7 @@ frame's effect time (`EffectTime` in `contribution/state.rs`).
   forward **a tick at a time, by that step's own arithmetic with the inputs the committed state holds**, and
   read between the predicted endpoints. One tick's increment carried across several ticks is not this: while a
   rate is itself changing, the same display time would be shown differently from tick `C` and from tick `C + 1`
-  ([6 m in the cloud's case](../../../.orchestrate/evidence/CLOUDS/M2-plan/display-travel.txt)). A quantity known only at its endpoints
+  ([6 m in the cloud's case](../../../.orchestrate/evidence/CLOUDS/WP2-plan/display-travel.txt)). A quantity known only at its endpoints
   keeps alpha.
 - **What a prediction guarantees.** Carried forward so, a quantity is exact for as long as the inputs the
   committed state holds stay what they were: two frames that show one display time from two committed ticks
@@ -362,14 +362,14 @@ read costs nothing: the lead is shorter by the delay, and once the read passes t
 - **The offscreen runner** reads one clock twice today: `Offscreen::step_for` measures the lead, and `drive`
   then reads the observation. A scheduling delay between the two puts the consumed target that far past the
   platform target. In the review's case a 2 ms delay gives alpha 0.72 where the platform target asks for 0.60.
-  M4 makes it one read. This is the only lead M4 changes: where the clock is interpolating, the alpha of a
+  WP4 makes it one read. This is the only lead WP4 changes: where the clock is interpolating, the alpha of a
   frame driven through `step_for` moves by the delay it used to include. The Mac's capture driver calls
   `step_for` in `realtime` and in `fixed` mode, against targets on the machine's own clock, so that alpha
-  already differs from run to run and no exact image can rest on its value. M4.5 holds M4 to that.
+  already differs from run to run and no exact image can rest on its value. WP4.5 holds WP4 to that.
 - **The Mac's render actor and the iPhone's render owner** take the platform target on Core Animation's media
   clock and the observation on the world's clock, in two adjacent reads. While a target is `future` their
-  consumed target lies off the platform target by the time between those reads. M4 leaves both as they are.
-  Nobody has measured that time, and no M4 item captures through a window.
+  consumed target lies off the platform target by the time between those reads. WP4 leaves both as they are.
+  Nobody has measured that time, and no WP4 item captures through a window.
 
 <a id="the-frames-pair"></a>
 **The frame's pair.** A frame shows one **pair**: a clock sample and the page committed with it. Rule 3 needs
@@ -380,9 +380,9 @@ timeline is the order of their ticks, and "newest" below means that order.
 On an inline world the frame's own observation admits the ticks, so the newest pair always qualifies. A world on
 its own thread admits ticks from its own reads of the clock. The render owner reads its observation, the frame
 host collects GPU completions, and only then is the world polled. A tick that fell due in that gap and that the
-world has already committed is due after the observation. M4's first review met it: observed at 1 ms and polled
+world has already committed is due after the observation. WP4's first review met it: observed at 1 ms and polled
 once the world had reached 40 ms, a frame with no lead was given tick 2, due at 33.3 ms. The identity then asks
-for a phase of −1.94 ([reproduction](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review/zero-lead.txt)). Such a frame is a
+for a phase of −1.94 ([reproduction](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review/zero-lead.txt)). Such a frame is a
 **delayed frame**.
 
 **Decision.** A world on its own thread holds two pairs at most for its frames: the one it shows, and the
@@ -395,10 +395,10 @@ time a frame is given are those of the pair it shows.
 
 - **It cannot stall.** A pair seen at one poll was due before that poll. Every host that reads a running clock
   reads each observation after its previous poll, so the refused pair qualifies at the next one: a frame shows
-  a tick no older than the newest its previous poll saw. Holding only the pair shown, as M4 was first built,
+  a tick no older than the newest its previous poll saw. Holding only the pair shown, as WP4 was first built,
   does not have this. On a 60 Hz display whose frames are observed 0.5 ms before each tick falls due and
   polled 1 ms later, every newest pair is refused: in
-  [the planner's probe](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-replan/README.md), which runs the repository's clock,
+  [the planner's probe](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-replan/README.md), which runs the repository's clock,
   600 frames stay on one tick and 596 of them sit at the bound. A 60.01 Hz display drifts through that place
   in the tick and holds up to 73 frames, 1.2 s, as it passes. With the refused pair the same frames follow the
   world tick for tick, and their phase does not pass 1.
@@ -407,16 +407,16 @@ time a frame is given are those of the pair it shows.
   takes its target in the span its pair belongs to, and the bound keeps its display time within 50 ms of that
   pair's tick. After a resume the first pair that interpolates is due one tick after the worker's resume, and
   it waits as a refused pair for an observation that reaches it. In
-  [the planner's run of the lane](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/README.md#the-lane-paused-and-resumed)
+  [the planner's run of the lane](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-timing/README.md#the-lane-paused-and-resumed)
   every frame of a resumed span has one origin, to 7 ns, and the resume's tick is due between the request
   and its reply.
 - **Under the bound.** A delayed frame is under the phase's bound while the time from its previous poll to
   its consumed target, with any lateness of the world's own, is at most 50 ms. A test that scripts its
   observations may hand one from before its previous poll, and the refused pair then waits for an observation
   that reaches it.
-- **What changes.** Before M4 every poll took the newest pair.
+- **What changes.** Before WP4 every poll took the newest pair.
 
-  | Frame | The pair it shows | Against before M4 |
+  | Frame | The pair it shows | Against before WP4 |
   |---|---|---|
   | Any frame of an inline world: the browser, a `still`, a test at scripted times | The newest | Unchanged |
   | Any frame whose clock is not interpolating: paused, overloaded, holding, with ticks queued | The newest | Unchanged |
@@ -436,12 +436,12 @@ time a frame is given are those of the pair it shows.
   |---|---|---|
   | Hosts whose world has its own thread: the V1 game in the Mac window and in Mac captures, and the iPhone app (`PLATFORM-RUNTIME-MAC`, `PLATFORM-RUNTIME-IOS`, `T2-CAPTURE`) | The frame shows an earlier tick than the world's newest. The frame's report gives the tick shown, and counts each completed tick once, in the first frame that shows it or a later one | Nothing. None of their files or items changes |
   | Readers of alpha and the page: the game's camera and entities, `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites | A pair and an alpha that describe the frame's own consumed target | Nothing |
-  | Readers of the phase: `CLOUDS` from its M2 | The same identity as in any frame. With no lead the phase can pass 1 in a delayed frame, when the pair it shows is more than a tick behind its observation | Nothing: a phase past 1 is already theirs to predict from |
+  | Readers of the phase: `CLOUDS` from its WP2 | The same identity as in any frame. With no lead the phase can pass 1 in a delayed frame, when the pair it shows is more than a tick behind its observation | Nothing: a phase past 1 is already theirs to predict from |
   | Effect state (rule 1) | A frame on the tick the state already holds, then an advance of several ticks. Never an earlier tick | Nothing: both are rows of rule 1's table |
   | Records: the completed sample, the capture time record, `thrum-app`'s profile recording | Completed ticks land in a later frame's row than before. The tick, observation, lead, phase and due time are on the record | Nothing |
-  | Later owners of these files: `HOST` M2 to M5, `SESSION` M7's driven world, `GAME-SPLIT` | The rule and its tests | Keep the tests passing. A driven world on its own thread shows pairs by the same rule |
+  | Later owners of these files: `HOST` WP2 to WP5, `SESSION` WP7's driven world, `GAME-SPLIT` | The rule and its tests | Keep the tests passing. A driven world on its own thread shows pairs by the same rule |
   | The browser, `still`s and inline tests | No delayed frame | Nothing |
-  | Every exact baseline | Held by M4.5: none has moved | Nothing |
+  | Every exact baseline | Held by WP4.5: none has moved | Nothing |
 
 - **Its cost.** One comparison in each poll, and at most one more leased page. The snapshot ring has four
   pages, keeps its newest two and writes a third. The lane's two pairs are among those except when a delayed
@@ -452,7 +452,7 @@ time a frame is given are those of the pair it shows.
   | Choice | Verdict |
   |---|---|
   | Take the newest pair and let the phase go below 0 | The identity would hold. Every reader would then have to show a time before the tick it is given. The page holds that tick and the one before it, so alpha has nothing to show there, and a stepped quantity cannot be carried backwards from committed state |
-  | Take the newest pair and hold the phase at 0, as before M4 | Display time is wrong by up to the gap, and the next frame steps short: the unevenness M4 exists to remove |
+  | Take the newest pair and hold the phase at 0, as before WP4 | Display time is wrong by up to the gap, and the next frame steps short: the unevenness WP4 exists to remove |
   | Report such a frame as not interpolating, or drop it | The world is running. A 1 there would be read as the committed tick, and a dropped frame is a hitch |
   | Hold only the pair shown | Right for one delayed frame. Stalls when frames are delayed in a run, as above |
   | Have the world publish its newest two pairs | No extra page. Stalls when two ticks are committed in the gap of every frame, as the probe's 30 frames a second with a 20 ms gap do |
@@ -485,8 +485,8 @@ And for which target the phase describes:
 | The platform target, with every host made to consume it exactly | Right where one clock gives both, and done there. The window hosts read two clocks, so exactness needs the clocks paired once for a session. That is a change to both platforms' frame loops with no item here to prove it |
 | **The consumed target, with one read where one clock serves** | Selected. It is what the clock evaluates in every frame, so one identity covers `future`, `late` and `clamped` frames. The runner the Mac's captures use then consumes the platform target exactly |
 
-And for what display time is counted in, after M4's second review
-([its frames](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review/resume-identity.txt)):
+And for what display time is counted in, after WP4's second review
+([its frames](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review/resume-identity.txt)):
 
 | Choice | Verdict |
 |---|---|
@@ -496,54 +496,54 @@ And for what display time is counted in, after M4's second review
 | Report frames after a resume as not interpolating | The world is running. Motion by the phase would stop for good at the first pause |
 | Record the observation on the world's time | The observation, the lead and the platform target are compared on the host's clock, as a `future` frame's are. One field cannot be both |
 | Carry the origin with each pair | It is negative for a world that starts on a high tick. The due time says the same and is never before the clock's start |
-| **Two times, joined by the due time of the frame's tick** | Selected. The clock sample already holds it, and the clock's and the lane's arithmetic do not change ([the check](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/README.md)) |
+| **Two times, joined by the due time of the frame's tick** | Selected. The clock sample already holds it, and the clock's and the lane's arithmetic do not change ([the check](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-timing/README.md)) |
 
 The one step a resume leaves, in rule 9, is the hold's: alpha has waited for the first tick after a resume
-since before M4, and every reader of alpha resumes that way. Interpolating through the hold would move when
+since before WP4, and every reader of alpha resumes that way. Interpolating through the hold would move when
 alpha starts after a pause for all of them, which is theirs and `HOST`'s to plan, with the readers of alpha
 under a lead.
 
-**Not built here.** `CLOUDS` M2 is the first reader. `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites and
+**Not built here.** `CLOUDS` WP2 is the first reader. `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites and
 a game's camera and entities stay on alpha: under a lead they step unevenly by the same arithmetic, which has
-not been captured. Each is its owner's to plan, and the game-facing half belongs with the contract `HOST` M4
-writes. The window hosts' two reads are their owners' too. `HOST` M2 to M5 and `SESSION` M7 rework the files
+not been captured. Each is its owner's to plan, and the game-facing half belongs with the contract `HOST` WP4
+writes. The window hosts' two reads are their owners' too. `HOST` WP2 to WP5 and `SESSION` WP7 rework the files
 this milestone touches and keep its tests passing.
 
 **Check that it can work.**
 
-- **The uneven capture.** In [the planner's reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/README.md), the
+- **The uneven capture.** In [the planner's reading](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-plan/README.md), the
   targets of the 60× rows (submission time plus consumed lead) put the six frames at `p` = 0.92, 1.40, 0.92,
   1.40, 0.92, 1.40 on ticks 927, 927, 928, 928, 929, 929. Display time `C − 1 + p` then advances 0.48, 0.52,
   0.48, 0.52, 0.48 ticks, which is 19.0 to 20.8 m of travel a frame against the capture's 3.2 and 36.8 m. The
-  spread left over is the record's: it holds the submission time, not the observation, which is why M4 writes
+  spread left over is the record's: it holds the submission time, not the observation, which is why WP4 writes
   the observation. The arithmetic was run on the rows while planning and is not a capture of the fix.
-- **The consumed target.** [`consumed_target.py`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/consumed_target.py), in
-  the clock's own whole-nanosecond arithmetic ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/consumed-target.txt)):
+- **The consumed target.** [`consumed_target.py`](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-plan/consumed_target.py), in
+  the clock's own whole-nanosecond arithmetic ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-plan/consumed-target.txt)):
   in the review's delayed frame, its expired frame and a clamped one, display time is the consumed target less
   one tick and alpha is the phase held to 1; one consumed target seen from ticks 60 and 61 is one display time;
   and over 2,000 platform targets 1/120 s apart, one read gives steps of 8.33 ms in every frame, where two
   reads up to 2 ms apart give 6.39 to 10.27 ms.
-- **The timing model.** [`spans.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/spans.rs) drives the repository's
+- **The timing model.** [`spans.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-timing/spans.rs) drives the repository's
   clock from a start at host time 7.3 s on tick 100 through queued ticks, a pause partway through a tick, a
   resume, the hold, two overloads and a ten-tick rewind, at 60 and 100 Hz with leads of 0 to 50 ms, and holds
   every frame to rules 1 to 9 from the script's own times
-  ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/spans.txt)). Across 272 frames at each rate the worst distance
+  ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-timing/spans.txt)). Across 272 frames at each rate the worst distance
   from the model is 4.2 ns, the phase's `f32`. The review's resumed frames, 1.000 s and 1.008 s from the
   literal identity, are exact with origins of 1000 and 1008 ms.
-  [`lane_lifecycle.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/lane_lifecycle.rs) pauses and resumes the
+  [`lane_lifecycle.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-timing/lane_lifecycle.rs) pauses and resumes the
   repository's lane on its own thread, with 0, 3 and 20 ms between each observation and its poll
-  ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/lane-lifecycle.txt)): origin zero before the pause, one
+  ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-timing/lane-lifecycle.txt)): origin zero before the pause, one
   origin after the resume, and the hold shown as the committed tick. So the clock and the lane already keep
-  the model, and M4 has to state the due time, carry it and test it.
-- **The frame's pair.** [`kept_pair.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-replan/kept_pair.rs) runs the
+  the model, and WP4 has to state the due time, carry it and test it.
+- **The frame's pair.** [`kept_pair.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-replan/kept_pair.rs) runs the
   repository's clock against four lanes: the newest pair, one held pair, the world's newest two pairs, and a
-  held pair with a refused pair ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-replan/kept-pair.txt)). In the review's frame the newest pair is
+  held pair with a refused pair ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-replan/kept-pair.txt)). In the review's frame the newest pair is
   32.3 ms from the identity and either held pair meets it at phase 0.06. In runs of delayed frames at 30, 60,
   60.01 and 120 frames a second, with leads of 0, 8 and 50 ms, the refused pair keeps every frame within 3 ns
   of the identity and under the bound, and no frame waits on a tick that has fallen due. It models the lane.
-  M4's items hold the lane itself to the same.
+  WP4's items hold the lane itself to the same.
 
-### Ping-pong histories (M2)
+### Ping-pong histories (WP2)
 
 A ping-pong history is a history-scope pair. The existing scope binds "the last submitted side" for reads and
 flips on every submitted frame. That is right for the view's temporal history and wrong for an effect that may
@@ -570,7 +570,7 @@ runs, reads B and writes step 6 to A again.
 
 Bindings for both sides are prepared in `rebuild`, so choosing a side creates nothing in a frame. A producer may
 be a group of passes, such as one per mip, that run or skip together. The graphs cited above are rebuilt every
-frame and need no such rule; this one is derived here, and M2's cadence witness is its proof.
+frame and need no such rule; this one is derived here, and WP2's cadence witness is its proof.
 
 **World-anchored wrapping.** A wrapping history is addressed toroidally by world position, so a moving camera
 exposes only a strip of new texels. Addressing is the effect's shader. The seam owns the one part that must follow
@@ -610,9 +610,9 @@ different cadences; and a `result` read by a pass ordered before the producer.
 A skipped pass reports "not run" in timing, not zero. Cadence values are **quality knobs**: each is a named
 runtime value with a range and a declared invalidation (none, the effect's own history, or the view's
 reconstruction history). The seam lists them and commits a change at a frame boundary, applying the declared
-invalidation. The governor in `APPLE-PRESENTATION:M7` is the consumer; this module builds no policy.
+invalidation. The governor in `APPLE-PRESENTATION:WP7` is the consumer; this module builds no policy.
 
-### After opaque (M3)
+### After opaque (WP3)
 
 An `after-opaque` pass may read scene depth, load and write scene colour, and write motion and reactive coverage
 under [the temporal contribution](../APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals): motion from
@@ -623,7 +623,7 @@ or to carry an explicit joint or approximate integration policy. Admitting and c
 
 - **Scene depth and the colour copy are separate requests.** Depth is stored and sampled when any reader declares
   it: an after-opaque pass, such as a volume that refracts nothing and still stops at terrain; reconstruction,
-  which `APPLE-PRESENTATION` M2 stores depth for whenever it is enabled; or any other pass that samples it. The
+  which `APPLE-PRESENTATION` WP2 stores depth for whenever it is enabled; or any other pass that samples it. The
   graph derives storage from the union of readers (C06), so dropping one reader removes storage only when no
   other reader is left.
 - **The refraction source** is a copy of scene colour taken after opaque, sky and stars, declared only when an
@@ -631,7 +631,7 @@ or to carry an explicit joint or approximate integration policy. Admitting and c
   cheaper recipe-specific source is `SEA`'s decision.
 - **An absent effect adds nothing:** no pass, no copy, and no storage beyond what the other readers already need.
 - **Where it sits.** After the star composite, so a volume that writes no depth still dims the stars behind it;
-  before the pre-tone input that `APPLE-TILE:M3` exposes, so reconstruction and tone see the effect.
+  before the pre-tone input that `APPLE-TILE:WP3` exposes, so reconstruction and tone see the effect.
 
 ### Async-compute eligibility
 
@@ -642,18 +642,18 @@ queue on Metal or WebGPU. The flag exists so a later recipe can use it without c
 ### Check that it can work
 
 - **Kinds.** wgpu 30 creates 3D and cube-compatible textures on Metal and WebGPU, and the atmosphere already
-  writes a cube through a 2D-array view. M1 proves each kind by exact readback before anything depends on it.
+  writes a cube through a 2D-array view. WP1 proves each kind by exact readback before anything depends on it.
 - **A compiled graph with skipped passes.** The soundness argument is the cadence rules; the atmosphere's validity
   bits have run this way since G3s. The static graph declares both sides of each pair, and no frame reads and
   writes one side: `previous` and `next` are different sides, and `result` is read only after the producer.
 - **Repeated ticks.** The equal-tick row keeps the state, so a nonempty trail survives the second display frame of
   a tick and a pause of any length. A CPU oracle that shared a wrong rule with the GPU would agree with it, so
-  M2's test also asserts the table's rows directly: the field is nonempty and unchanged after repeated ticks and
+  WP2's test also asserts the table's rows directly: the field is nonempty and unchanged after repeated ticks and
   a pause, and at its declared reset after a backward tick and after a timeline change.
 - **State under discard.** A discarded encoder executes nothing, so GPU state is the last submitted state, and the
-  commit point is already `submitted`. The diagnostic's state is integer, so M2 compares it bit for bit after
+  commit point is already `submitted`. The diagnostic's state is integer, so WP2 compares it bit for bit after
   every kind of frame.
-- **Time-slicing from nothing.** A full frame covers every texel before any sliced frame reads one. M2 reads every
+- **Time-slicing from nothing.** A full frame covers every texel before any sliced frame reads one. WP2 reads every
   texel back after the first frame of an epoch and after a reset.
 - **Portable limits.** Ping-pong removes the need for read-write float storage. The remaining limits are counts,
   which the compiler checks from the record.
@@ -669,8 +669,8 @@ queue on Metal or WebGPU. The flag exists so a later recipe can use it without c
 | The observation and the lead a frame consumes | The host that drives the frame; the frame host records them |
 | An effect's resources, epoch, state tick and shaders | The effect's module (`SEA`, `CLOUDS`) |
 | The view record, motion and reactive targets, history acceptance | `APPLE-PRESENTATION` |
-| The pre-tone input and pass-name timing | `APPLE-TILE:M3` |
-| Environment products an effect lights with | `ATMOSPHERE:M5` |
+| The pre-tone input and pass-name timing | `APPLE-TILE:WP3` |
+| Environment products an effect lights with | `ATMOSPHERE:WP5` |
 
 **A frame with one effect, in order.** The host reads the tick page and builds the frame record. `upload` copies.
 `simulate` does what the state table says for the frame's tick, each pass as its cadence allows, with consumers
@@ -684,18 +684,18 @@ public seam, as `SEA` and `CLOUDS` will from their own crates. It carries one re
 CPU can reproduce exactly: a wrapping ping-pong field, stepped every tick, in which a moving source leaves a trail
 that spreads and fades; a second ping-pong field derived from the first at a runtime cadence; a consumer pass that
 reads both results into a persistent texture the tests read back; a 3D volume rewritten time-sliced in place; a
-mipped array at a runtime cadence; a cube; and in M3 a slab drawn after opaque that samples them, refracts the
+mipped array at a runtime cadence; a cube; and in WP3 a slab drawn after opaque that samples them, refracts the
 scene behind it and reports motion.
 
 ## Shared files and exact baselines
 
-`graph.rs`, `scene_graph.rs`, `contribution.rs` and the frame host are also edited by `APPLE-TILE` M3 (pre-tone
-input, pass-name timing), `APPLE-PRESENTATION` M2 (the third forward target, history protocol), `CULLING` and
-`CREATOR` M2 (the timing-demand switch). M1 stays inside the graph's descriptor, validation and allocation. M2 and
-M3 integrate sequentially with whatever has landed and rerun the affected witnesses of each. Once the
+`graph.rs`, `scene_graph.rs`, `contribution.rs` and the frame host are also edited by `APPLE-TILE` WP3 (pre-tone
+input, pass-name timing), `APPLE-PRESENTATION` WP2 (the third forward target, history protocol), `CULLING` and
+`CREATOR` WP2 (the timing-demand switch). WP1 stays inside the graph's descriptor, validation and allocation. WP2 and
+WP3 integrate sequentially with whatever has landed and rerun the affected witnesses of each. Once the
 timing-demand switch exists, effect timing is not gathered while it is off.
 
-M4 also edits `thrum-core`'s clock, world lane and clocked world, the frame host's world observer and sample,
+WP4 also edits `thrum-core`'s clock, world lane and clocked world, the frame host's world observer and sample,
 `thrum-app`'s sky world and offscreen runner, the V1 game's world wrappers, and the V1 game's capture time
 record, under [the module list's ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-m4).
 It adds to each and changes two things any of them gives today: the lead `Offscreen::step_for` measures, by
@@ -708,15 +708,15 @@ is caught. This module must move none, on the Mac or in Chrome: with no effect a
 compiles to the same passes and storage and draws the same bytes. Exact images are verified on main after a
 merge, by the main-branch check `exact-images`, under
 [the ruling that proofs run once, on main](../ARCHITECTURE.md#proofs-run-once-on-main) and `ORCHESTRATE.md`. No
-proof is needed before a merge and none is repeated after a rebase. M3.8 and M4.5 pass from that shared run.
-M1 to M3 were built under the earlier rule, a proof gate in `./dev check` before each landing, which that
+proof is needed before a merge and none is repeated after a rebase. WP3.8 and WP4.5 pass from that shared run.
+WP1 to WP3 were built under the earlier rule, a proof gate in `./dev check` before each landing, which that
 ruling replaced on 15 November.
 
-A verifier run can fail with no image moved. Until `CULLING` M3's coverage output is on main, the valley is not
+A verifier run can fail with no image moved. Until `CULLING` WP3's coverage output is on main, the valley is not
 one image under GPU load on the Mac, and Chrome shows the same signature: one frame of a capture can differ from
-its reference along shared triangle edges, as M3's qualification at `324586ee` did at one Chrome record of 481.
+its reference along shared triangle edges, as WP3's qualification at `324586ee` did at one Chrome record of 481.
 [The module list's ruling](../ARCHITECTURE.md#a-frame-that-varies-under-load) gives the four tests by which such
-a run is set aside as load variation, and the record it needs. M3.9 holds this module to that ruling. A failed
+a run is set aside as load variation, and the record it needs. WP3.9 holds this module to that ruling. A failed
 run that misses any test is rule 1's: the builder stops, writes the proposal in the log and ends `BLOCKED`.
 
 ## Cost account
@@ -725,7 +725,7 @@ run that misses any test is rule 1's: the builder stops, writes the proposal in 
 - **Per effect and frame:** one callback per declared pass; skipped passes cost a branch.
 - **Stored depth and the refraction copy:** only on request. The copy is one scene-extent colour copy and a render
   pass break. The earlier culling session's harness put an empty second pass that loads and stores colour, motion
-  and depth at about 0.07 ms at 720p on this Mac, contended; its logs are not committed, so M3 measures it.
+  and depth at about 0.07 ms at 720p on this Mac, contended; its logs are not committed, so WP3 measures it.
 - **Memory:** an effect's own resources, reported per effect from their descriptors.
 
 Recorded as tripwires, never gates: per-pass GPU time by name, bytes per effect, and about 25% paired regression
@@ -736,12 +736,12 @@ on the valley route with no effect attached.
 1. **The cadence rules are too strict for a real consumer** (a time-sliced cloud march that wants a transient, or
    a partial write to a history). Early sign: `CLOUDS`'s cost account. Fallback: prepared variants for that pass,
    or a copy-forward history write, designed here before anyone builds it.
-2. **Chrome refuses a kind or count the Mac accepts.** Early sign: M1's recorded limits; M2's Chrome run. The
+2. **Chrome refuses a kind or count the Mac accepts.** Early sign: WP1's recorded limits; WP2's Chrome run. The
    compiler's record check turns it into a preparation error, not a lost frame.
 3. **The seam grows into a framework.** Each mechanism names its consumer above; a mechanism without one is cut.
 4. **A graph change moves an exact image.** The main-branch check `exact-images` finds it on main after the
    merge, and the module that moved it fixes it.
-5. **A tile GPU pays for the pass break.** Recorded in M3; `SEA` and `CLOUDS` choose their recipes from it.
+5. **A tile GPU pays for the pass break.** Recorded in WP3; `SEA` and `CLOUDS` choose their recipes from it.
 6. **A consumer needs true sub-steps in one frame**, such as a stability-limited solver after a hitch. Early sign:
    `SEA`'s design. Fallback: a declared, fixed number of sub-step passes, designed here before anyone builds it.
 
@@ -749,13 +749,13 @@ on the valley route with no effect attached.
 
 - **Targets.** `mac-metal` on both recipes, and `chrome-webgpu` through `scripts/check_v1_browser.mjs`, which needs
   a browser launch the Codex sandbox grants per run, as the existing cases do. `ios-sim` is not a target here.
-- **Capture.** The inspected items use T2 engine capture and name their mode: `realtime` for the trail in M2,
-  `fixed` stills for the slab in M3. The stills prove composition. No item here judges reconstructed motion.
-- **Timing.** M2 reads per-pass GPU time from the executor's named pass timings (`PassTiming` in `timing.rs`),
+- **Capture.** The inspected items use T2 engine capture and name their mode: `realtime` for the trail in WP2,
+  `fixed` stills for the slab in WP3. The stills prove composition. No item here judges reconstructed motion.
+- **Timing.** WP2 reads per-pass GPU time from the executor's named pass timings (`PassTiming` in `timing.rs`),
   which exist today, in its own test or bench. It does not change the host's frame-sample fields, which
-  `APPLE-TILE:M3` moves to pass names. M3 here needs that milestone and reports a skipped pass through its
+  `APPLE-TILE:WP3` moves to pass names. WP3 here needs that milestone and reports a skipped pass through its
   schema.
-- **M4.** `mac-metal` only: Chrome gives no lead and runs its world inline, so nothing there can differ, and
+- **WP4.** `mac-metal` only: Chrome gives no lead and runs its world inline, so nothing there can differ, and
   the exact baselines cover it. Its tests script the observations, the leads, the start and each resume, so
   they do not depend on how busy the machine is, and every expected due time and display time comes from that
   script and never from a phase or a due time the engine returned. A delayed frame's test reads its
@@ -764,19 +764,19 @@ on the valley route with no effect attached.
   reads the host clock before its request and after the reply, and holds the resume's tick to that bracket
   and the span to one origin. The one `realtime` run holds every interpolating frame under the bound to rule
   6, expired targets included, and counts the frames at the bound, the frames whose clock was stopped and
-  each change of origin instead of failing on them. No M4 item drives a window, so none needs an attended
+  each change of origin instead of failing on them. No WP4 item drives a window, so none needs an attended
   display.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<milestone>/`; selected evidence
   in `.orchestrate/evidence/EFFECT-GRAPH/`.
-- **Maturity.** A ledger row for the seam is added at M3, with implementation, correctness and device results kept
+- **Maturity.** A ledger row for the seam is added at WP3, with implementation, correctness and device results kept
   apart.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
-| Which storage formats, counts and view dimensions does Chrome's record allow? | M1 records them |
+| Which storage formats, counts and view dimensions does Chrome's record allow? | WP1 records them |
 | Do these cadence rules serve the first sea and cloud frames? | Their designs' cost accounts; a failure reopens [cadence](#cadence) here |
-| Is one shared refraction copy the right source on Apple tile? | M3 records its cost; `SEA` decides |
-| Do the camera, entities, waves and sprites move evenly under a display lead? | Not by M4. Their owners plan it; see [the display phase](#the-display-phase-m4) |
-| How far does a window's consumed target lie from the platform's, between the two clock reads of the Mac's render actor and the iPhone's render owner? | Not by M4, which leaves both hosts as they are. Whoever next plans those frame loops measures it, and pairs the two clocks once if it shows |
+| Is one shared refraction copy the right source on Apple tile? | WP3 records its cost; `SEA` decides |
+| Do the camera, entities, waves and sprites move evenly under a display lead? | Not by WP4. Their owners plan it; see [the display phase](#the-display-phase-m4) |
+| How far does a window's consumed target lie from the platform's, between the two clock reads of the Mac's render actor and the iPhone's render owner? | Not by WP4, which leaves both hosts as they are. Whoever next plans those frame loops measures it, and pairs the two clocks once if it shows |

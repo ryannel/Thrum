@@ -1,8 +1,8 @@
 {
   "module": "SEA",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "The sea's waves are computed on the CPU alone, from glassy calm to gale, and agree with wave theory",
       "status": "done",
       "failed_reviews": 0,
@@ -12,212 +12,212 @@
       "quality_bar": "An oracle a GPU can be held to: every result follows from wave theory or a closed form, as the reference evaluators in a shipped physics library do, and nothing in it needs a graphics device.",
       "items": [
         {
-          "id": "M1.1",
+          "id": "WP1.1",
           "statement": "From wind speed and direction, fetch and a list of swells, `thrum-sea-model` builds one spectrum split at 20 m: at most 192 long-wave components above the split and three cascade bands below it. No wave vector is in two layers, and the layers' variances sum to the spectrum's.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
           "ask": "Read the test. Is its tolerance on the summed variance derived from the quadrature it uses, and is it tighter than the smallest band's share? Does it cover a glassy calm, a trade wind and a gale, each with and without swell?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "Significant height rises with wind: under 5 cm with wind below 1 m/s and no swell, and 5 m or more for a fully developed sea at 20 m/s. Each long-wave component obeys the deep-water relation, frequency squared equals g times wavenumber.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "The f64 long-wave evaluator gives, for a world point and a time, the height of the surface above that point, its slope, the surface's velocity and the time derivative of height. A one-component sea matches the closed form, and a point 20 km from the origin after 24 hours agrees with the same sum taken in extended precision to a micrometre.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test long_waves",
           "ask": "Does the closed-form comparison use values the test worked out without calling the evaluator? Does the test cover a sea steep enough that the surface above a point must be found by iteration, and say when the iteration cannot converge?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "A direct f64 sum over one cascade band's wave vectors and a 256-square inverse transform of the same band agree at every texel centre, for displacement, slopes and the Jacobian, to one part in a billion of the band's RMS height.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test cascades",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.5",
+          "id": "WP1.5",
           "statement": "A change of wind or swell keeps every component's and every bin's phase and moves its power toward the new spectrum along the declared response curve. The model's height at a fixed point has no step at the change.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test transition",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.6",
+          "id": "WP1.6",
           "statement": "A conformance harness takes any provider of sea answers and reports its largest difference from the model in height, slope and velocity over a stated set of points and ticks. Given the model it reports zero; given the model with one component's phase moved, it reports the height that move makes.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.7",
+          "id": "WP1.7",
           "statement": "`thrum-sea-model` builds and its tests run with no graphics device and no dependency on `thrum-render` or `wgpu`, and it holds no preset, hull or water table.",
           "check": "cargo tree --locked --offline -p thrum-sea-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
           "ask": "Does any file in the crate or its tests name a sea preset, a hull or a water type that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.8",
+          "id": "WP1.8",
           "statement": "No file in this milestone is copied or translated from Broadsides unless the owner's licence for it is recorded in the log, and then `docs/evidence/SEA/PROVENANCE.md` lists the file with its source commit, path and licence.",
           "ask": "Does the provenance file exist and say either that nothing was lifted or which files were, and does the log hold the owner's licence if any were?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         },
         {
-          "id": "M1.9",
+          "id": "WP1.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/WP1.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "The GPU computes the same sea as the CPU model at every frame's time, after a day of running, through pauses, hitches and a replaced device",
       "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "EFFECT-GRAPH:M2"
+        "EFFECT-GRAPH:WP2"
       ],
       "quality_bar": "A sea that is the same waves at the same time however frames fall, as a shipped simulation's is, held to an independent oracle and not to its own earlier output.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "On Metal, for a gale 50 km from the origin after 24 hours of ticks, the long waves at 4,096 scattered points and at every field-cache texel centre match the CPU model within 2 mm in height. The largest difference in height and in slope is recorded.",
           "check": "cargo test --locked --offline -p thrum-sea --test ambient_gpu",
           "ask": "Is each field-cache level compared with the model restricted to the components that level holds, and are the scattered points evaluated by the kernel the body query will use?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "Each cascade's displacement and rate of change on Metal match the model's direct f64 sum at 1,024 texel centres, at a frame time between two ticks, within the first minute and after 24 hours. The largest difference is recorded as a share of the band's RMS height, and the test holds that one recorded bound at both times.",
           "check": "cargo test --locked --offline -p thrum-sea --test ambient_gpu",
           "ask": "Is the recorded difference under 1% of each band's RMS height, and was the bound written from a measurement on this Mac and in the record with its date and commit? Does the 24-hour case fail when the phase is formed from seconds in f32?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "Each cascade's mips hold the slope mean and covariance and the Jacobian's mean and variance, equal to the same moments computed from the base level.",
           "check": "cargo test --locked --offline -p thrum-sea --test ambient_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "Through a scripted run of frames between ticks, repeated ticks, a pause, a hitch of many ticks, a discarded frame, a capture frame at another tick, a backward tick, a new timeline and a replaced device, the long waves, the cascades and the field cache of every submitted frame are the model's sea at that frame's display time, and a capture frame's are the model's at the capture's own time. The sea keeps no ambient field from one frame for the next: a frame that follows a discarded frame or a replaced device is no different from any other.",
           "check": "cargo test --locked --offline -p thrum-sea --test frames_gpu",
           "ask": "Are the expectations written from the model at each frame's time, and not from an earlier run of the GPU code? Do two frames on one tick with different interpolation alphas show different seas, and does a pause show one?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "During a wind change the GPU's sea follows the model's transition at every frame's time, with no step in height at fixed points.",
           "check": "cargo test --locked --offline -p thrum-sea --test frames_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "The same tests pass on a Metal device held to WebGPU's default limits and to the storage formats and counts in the recorded Chrome capability record. A profile that exceeds a limit is refused at preparation, by name.",
           "check": "cargo test --locked --offline -p thrum-sea --test portable_limits_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.7",
+          "id": "WP2.7",
           "statement": "The GPU time of each sea simulate pass per frame, by pass name, and the bytes of every sea resource are on record for this Mac with the load on the machine, beside the design's estimates.",
-          "ask": "Does `docs/evidence/SEA/M2-cost.md` hold those rows at the claimed commit, and name a cause for any pass over its estimate?",
+          "ask": "Does `docs/evidence/SEA/WP2-cost.md` hold those rows at the claimed commit, and name a cause for any pass over its estimate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2-cost.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2-cost.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.8",
+          "id": "WP2.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2-baselines.json",
+          "evidence": ".orchestrate/evidence/SEA/WP2-baselines.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         },
         {
-          "id": "M2.9",
+          "id": "WP2.9",
           "statement": "Each cascade bin in `thrum-sea-model` turns a whole number of times in the profile's loop, with a frequency within half a cycle per loop of the deep-water value, so the cascades at a time and one loop later are equal. The long waves keep the exact deep-water relation and do not repeat.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test cascade_loop",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/WP2.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/WP2-review.md"
         }
       ]
     }

@@ -32,7 +32,7 @@ check." The design must say how the selection is computed, what a shared input s
 cannot compute falls back to the whole workspace, and the risk accepted, and the saving is measured before the
 switch is turned on.
 
-The owner once more that day, with M1 landed and a merge's check at 21 to 24 minutes: "A 20min merge check still
+The owner once more that day, with WP1 landed and a merge's check at 21 to 24 minutes: "A 20min merge check still
 sounds crazy. Tests are meant to be fast." The lead's task from it: set the merge check's goal at a few minutes for
 a typical landing, start from a measurement of where a check spends its time, and choose the approach that best
 gets there. Every test left in the merge tier is fast, a slow behaviour test belongs in the main tier with its
@@ -51,7 +51,7 @@ They were agreed later that day: "Yes, plan it." The lead's task from it: the fa
 first, few binaries, long runs off the merge path) hold "without anyone remembering them". What must hold every
 time goes in the merge check, because Codex and Claude builders both pass through it, and not in a hook, which a
 Codex builder never runs. Four rules go there, beside the counts that only fall: a test over the limit is stopped
-and fails, at sixty seconds now and ten once M9 lands; the tests exempt from that limit can only shrink; the
+and fails, at sixty seconds now and ten once WP9 lands; the tests exempt from that limit can only shrink; the
 main-tier list can only shrink unless a plan says otherwise; and the number of test binaries can only go down.
 The check's report gains the summed test time and the GPU tests' seconds, and no gate is put on a check's total
 time, which "would fail good work" at the load checks run under. The owner "accepted the 10 s limit and that a
@@ -60,12 +60,12 @@ the engineering skill on writing a test, and the project settings three rules fo
 
 ## The goal
 
-**The median merge Rust check takes at most 300 seconds of wall clock on this Mac while builders work.** M15
-lands [the build-cost reduction](#cargo-cache-for-merge-verification). M5 judges its effect using the checks
-orchestrate saved for the first 20 ordinary Rust landings after rollout. M7 and M8 retain their earlier timing
-records. M5 keeps both the thirty landings before `14a4a7c83` and the failed sample from `b69c9812f` as history.
+**The median merge Rust check takes at most 300 seconds of wall clock on this Mac while builders work.** WP15
+lands [the build-cost reduction](#cargo-cache-for-merge-verification). WP5 judges its effect using the checks
+orchestrate saved for the first 20 ordinary Rust landings after rollout. WP7 and WP8 retain their earlier timing
+records. WP5 keeps both the thirty landings before `14a4a7c83` and the failed sample from `b69c9812f` as history.
 
-At rollout, record the main-branch push that activates the M15 test command and its timestamp. Start the sample
+At rollout, record the main-branch push that activates the WP15 test command and its timestamp. Start the sample
 strictly after that push. Match each later landing in push order to the successful invocation used to verify
 its tree, using the saved check and its run ledger. The invocation must have started after rollout and finished
 before the push. A batched push is one landing, and a retry or memo reuse of the same timed invocation supplies
@@ -92,7 +92,7 @@ Two rules follow from the goal, and [the test tiers](../../../ORCHESTRATE.md#tes
   The owner accepted ten seconds on 21 November.
 - **No number here is a budget for the engine.** The goal is about how long the check takes, and its proof is a
   record of real merges. The one thing that fails a merge on time is a single test: one that runs for over a
-  minute, and from M13 one that runs for over ten seconds and does so again when run alone. Nothing fails on how
+  minute, and from WP13 one that runs for over ten seconds and does so again when run alone. Nothing fails on how
   long a whole check takes.
 
 ## Purpose and who it is for
@@ -103,13 +103,13 @@ fewer runs lost to a time limit. Nothing a player sees changes.
 
 ## Where a merge's check spends its time
 
-Measured on 20 November at main `9b3a90ddb`, after M1, from the script's saved output of each merge's check
+Measured on 20 November at main `9b3a90ddb`, after WP1, from the script's saved output of each merge's check
 (`.git/orchestrate/checks`), the merge lock's records and the planner's own runs.
 [The record](../../../.orchestrate/evidence/GATE-TIME/planning/merge-check-breakdown.md) has every figure, the
 scripts and the logs. `./dev check` prints no step times, so the split was rebuilt from what cargo and libtest
-print. M8 makes the check print it.
+print. WP8 makes the check print it.
 
-The ten holds of the merge lock after M1 ran 21 to 27 minutes, median 23.
+The ten holds of the merge lock after WP1 ran 21 to 27 minutes, median 23.
 
 | Part of one merge's check | Time |
 |---|---|
@@ -120,7 +120,7 @@ The ten holds of the merge lock after M1 ran 21 to 27 minutes, median 23.
 | Rebase, push and records | about a minute |
 
 - **Tests are 20 of the 23 minutes, and the time is in a few of them.** Four binaries take over a minute and are
-  7.5 minutes together: the foam scene's 240 s, which waits for M3, and the game's lent-product, cooked-asset and
+  7.5 minutes together: the foam scene's 240 s, which waits for WP3, and the game's lent-product, cooked-asset and
   cooked-row binaries at 65 to 75 s each. 24 binaries take over 10 s and are 79% of the run. 257 take a second
   or less, 31 s in all.
 - **Building and linting are not the problem.** They take under a minute and a half together on a typical
@@ -129,7 +129,7 @@ The ten holds of the merge lock after M1 ran 21 to 27 minutes, median 23.
   each time. The cloud crate's four GPU binaries, 105 s, make two distinct runs between them. A merge that fails
   is checked a second time without its branch.
 - **Waits.** The check takes no GPU lock. A merge waits for the merge ahead of it: three of the seven merges
-  after M1 took 37 to 43 minutes, because each waited 13 to 20 behind another's check. Inside five test files a
+  after WP1 took 37 to 43 minutes, because each waited 13 to 20 behind another's check. Inside five test files a
   device mutex makes the tests take turns: the 14 cooked-asset tests take 73 s one at a time, and the longest of
   them alone takes about 22.
 - **One test, many cases.** The slowest tests of the lent products (63 and 76 s) and the cooked rows (up to 92 s)
@@ -150,22 +150,22 @@ So running tests side by side is most of the answer, and no test needed a change
 build takes the cloud crate's 47 s tests to 9 s, `match-proof`'s 45 s test to 5 s and the lent products' to about
 20 s. It does not help the wake scene's three tests, the shore basin, three of the sea's or the cooked rows'
 slowest, which [the table below](#every-test-over-about-ten-seconds) takes one by one. One run each shows what a
-mechanism can do; M8 times them properly before it switches either on.
+mechanism can do; WP8 times them properly before it switches either on.
 
 Not measured: how often the script's run before Ready for Review finds another merge has landed and so runs the
-whole workspace again, and whether the side-by-side run passes every time. M8 runs it five times.
+whole workspace again, and whether the side-by-side run passes every time. WP8 runs it five times.
 
-The first measurement, before M1, is in [the log](LOG.md): tests alone took 42 to 56 minutes, 31 of them in the
+The first measurement, before WP1, is in [the log](LOG.md): tests alone took 42 to 56 minutes, 31 of them in the
 six long tests. [A replay](../../../.orchestrate/evidence/GATE-TIME/planning/selection-replay.md) of the selection
 of mechanism 4 over the 177 landings since 13 November put the tests a landing selects at a little over half of
 the whole on average: a quarter of landings select no Rust test, half select some packages, and a quarter fall
-back to the whole workspace. It is the planner's estimate, and M7 measures the selection as built before turning
+back to the whole workspace. It is the planner's estimate, and WP7 measures the selection as built before turning
 it on.
 
 <a id="measured-again-on-21-november"></a>
 
-**Measured again on 21 November**, after M8 and M7. The lead's figures come from the last 24 hours of
-`.git/orchestrate/locks.jsonl` and M8's merge-check records. The planner's come from one saved whole-workspace
+**Measured again on 21 November**, after WP8 and WP7. The lead's figures come from the last 24 hours of
+`.git/orchestrate/locks.jsonl` and WP8's merge-check records. The planner's come from one saved whole-workspace
 check (`.git/orchestrate/checks/c6c57db52a584b5183371f69-97fbad59fed9d769.stderr`, 329.6 s of wall time),
 `cargo metadata` and the open items of every module, at main `6cd8545ef`, and are in
 [the planning record](../../../.orchestrate/evidence/GATE-TIME/planning/test-speed-2026-11-21.md).
@@ -173,7 +173,7 @@ check (`.git/orchestrate/checks/c6c57db52a584b5183371f69-97fbad59fed9d769.stderr
 - **The time is still in a few tests.** The lead: a merge check runs 1,309 tests that sum to 1,395 s; 897 take
   under 0.1 s and are 1% of it, and 64 take over 5 s and are 81%. The river model, the water scene and the game
   hold 74%. The planner's check: 1,312 tests sum to 920 s, and the 18 that ran over ten seconds are 58% of it.
-  Every one of them is M9's or M3's.
+  Every one of them is WP9's or WP3's.
 - **GPU tests are half the time, and the slow ones are most of that.** The lead: 221 tests with a GPU in their
   name hold 53%. The planner's check: 279 tests with `gpu` or `metal` in their name sum to 549 s, the 14 over ten
   seconds hold 408 s of it, and the other 265 hold 141 s between them.
@@ -189,10 +189,10 @@ check (`.git/orchestrate/checks/c6c57db52a584b5183371f69-97fbad59fed9d769.stderr
   `thrum-render` 59, the game 33, the cloud model 24, the river model 19. Open items name 29 of them with
   `--test`. Open items also name 147 binaries that nobody has written yet, in 17 modules.
 - **Not measured: where a builder's session goes.** Builder sessions ran 40 to 210 minutes for each cleanup
-  milestone, and nothing splits that between the model's own time, test runs and waits. M10 measures it.
+  milestone, and nothing splits that between the model's own time, test runs and waits. WP10 measures it.
 
 For the guard rules the planner read the 18 whole-workspace checks the script saved in the 30 hours to 09:45
-that day, and counted at main `469a28671`, after M2 landed.
+that day, and counted at main `469a28671`, after WP2 landed.
 [The second planning record](../../../.orchestrate/evidence/GATE-TIME/planning/test-guards-2026-11-21.md) has
 the tables.
 
@@ -201,8 +201,8 @@ the tables.
   medians of 6 to 9.7 s. The two that ran at the same time had 13 and 22, and 7 and 15 of those take under five
   seconds at their median: one of 0.1 s took 10.6 s.
 - **Six tests off the exempt list are over ten seconds in every check**, at 11 to 25 s at their median: five of
-  the game's and one of the water scene's. M8 left them off because each is under ten seconds alone.
-- **What the three counts stand at.** Twelve names are exempt from the limit, eight under M9 and four under M3.
+  the game's and one of the water scene's. WP8 left them off because each is under ten seconds alone.
+- **What the three counts stand at.** Twelve names are exempt from the limit, eight under WP9 and four under WP3.
   The main-tier list has ten entries, and five tests are marked `long:`. Of the 275 integration test targets,
   43 are named by no done-when item's check and not by the main-tier list.
 - **The whole run on main takes six to eleven minutes**, of which the tests are about four.
@@ -210,7 +210,7 @@ the tables.
 ## Every test over about a minute
 
 Until this revision [the test tiers](../../../ORCHESTRATE.md#test-tiers) made a long test one that takes over about a
-minute in `./dev check`. This is every such test on 20 November. M1 moved all but the foam's, which is M3's.
+minute in `./dev check`. This is every such test on 20 November. WP1 moved all but the foam's, which is WP3's.
 
 | Test | In the check | Finding | Where it goes | What the merge tier still runs | Risk accepted |
 |---|---|---|---|---|---|
@@ -237,34 +237,34 @@ seconds or less. This is every test the planner measured over that, at main `9b3
 above. "Alone" is the test's own time with its binary run by itself, in the build as it is. "Side by side" is its
 time in the planner's optimised side-by-side run at a load of 40, which is the worst it was seen to do. The route
 is what the planner expects from reading the test; [mechanism 9](#mechanisms) says what a builder may do where
-the route turns out wrong. M8 measures again, and its list of exempt tests is the one M2, M9 and M3 work from.
+the route turns out wrong. WP8 measures again, and its list of exempt tests is the one WP2, WP9 and WP3 work from.
 
 | Test | Alone | Side by side | Why it is slow | Expected route | In |
 |---|---|---|---|---|---|
-| The game's lent products: `leased_texels_commit_edit_capture_discard_and_recovery`, `overlapping_edits_reuse_the_ready_publication` | 76 s, 63 s | 22 s, 18 s | Each runs 4 to 8 cases in turn, and cooks a 128-cubed volume several times in an unoptimised encoder | The build, then one case to a test | M9 |
-| The game's cooked rows: `visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows`, `edited_rows_equal_fresh_game_in_every_culling_mode`, `supersession_discarded_protected_switch_and_retired_space_reuse` | up to 92 s, 38 s, 25 s | 53 s, 23 s, 15 s | 12, 12 and several cases in turn, each with its own cooked store and host | One case to a test | M9 |
-| The game's cooked assets: `a_newer_publication_supersedes_an_upload_still_being_filled`, `a_publication_larger_than_staging_streams_through_the_bounded_ring`, `a_fetched_generation_draws_like_the_mapped_store` | 22 s, 15 s, 14 s | 4 s, under 4 s, 7 s | The unoptimised encoder; and the binary's 14 tests take turns behind one mutex, 73 s in all | The build. The turns are mechanism 8's | M9 |
-| The game's `frame_alloc`, two tests | 18 s, 21 s | 14 s | Not read. They take turns behind a mutex | The builder finds the cause | M9 |
-| The river model's `no_step_is_taken_beyond_the_budget` | 38 s | 100 s | 43 solves of `valley(0.25)` in one test, 36 of them run to within a dozen steps of convergence, to prove a rule about the step budget. The solve uses a thread pool | The smallest world: the rule holds on any grid whose solve takes more than a few steps; counted as heavy | M9 |
-| The river model's other 70 tests | 71 s for all of them, one binary at a time | about 10 s each, 474 s summed | Fourteen processes each start a thread pool | Counted as heavy, in M8. None is slow alone | M8 |
-| The water model's `enclosed_water_has_finite_lags_turning_and_fetch_energy` (`shore_basin`), `waves_arrive_round_land_and_exposure_closes_far_downwind` (`shore_island`) | 34 s, 11 s | 51 s, 20 s | Dense f64 shore solves over millions of cells, already built at `opt-level` 2 | A smaller basin if every assertion holds on it; otherwise a long test beside the shore blend. Risk: a lag, turning or fetch error in enclosed water, which costs `WATERS` alone | M9 |
-| The sea's `forward_fields_and_full_lean_pyramids_match_the_model`, `default_webgpu_limits_and_named_profile_refusals`, `frame_script_and_continuous_wind_change`, `metal_ambient_matches_independent_model` | 22 s, 16 s, 16 s, 17 s | 14 s, 18 s, 17 s, 16 s | Not read. The optimised build helps only the first | The builder finds the cause. These hold GPU state to the CPU query a game reads, so they are the last to move | M9 |
-| The cloud crate's four GPU conformance tests | 26 s, 26 s, 26 s, 19 s | 9 s each | A CPU reference at `opt-level` 0 | The build. M2 cuts the four to two | M8, M2 |
-| The cloud model's `band_tracks_slant_paths_and_rejects_wrong_substitutes`, `footprint_is_the_pointwise_voxel_integral` | 21 s, 17 s | about 1 s | `opt-level` 0 | The build | M8 |
-| `match-proof`'s `sixteen_bit_controls_keep_five_worlds_equal_on_a_conditioned_link` | 29 s | 5 s | Five worlds of 2,000 bodies for 600 ticks, twice, at `opt-level` 0 | The build | M8 |
-| `thrum-render`'s atmosphere tests `analytic_fields_preserve_direction_colour_and_physical_units`, `near_ground_reads_match_their_own_column`, and two at 11 s; `scene_view_air_shaded_gpu`; `visibility_buckets`' mixed field host; the game's `parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal` | 11 to 26 s | 6 s or less | `opt-level` 0 | The build | M8 |
-| The water scene's wake tests: `moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity`, `moored_craft_keeps_its_draft_when_only_one_level_admits_pressure`, `float_twenty_metres_off_track_responds_to_the_public_query` | 35 s or less each: the binary takes 35 s | 38 s, 39 s, 31 s | Each steps a GPU scene for 1,200 to 1,800 ticks, 20 to 30 simulated seconds | The two moored tests are long tests, whole. Risk: a moored craft that loses its draft only after tens of seconds of wake. The float's test holds the public query to the GPU's wake, so the builder first tries a float nearer the track | M3 |
-| The water scene's foam tests `beach_births_follow_lost_power_and_the_film_leaves_ground_depth` and `craft_trail_outlives_removed_source_and_spreads` | Not known: they wait behind the moored run's mutex | 18 s each | Not read | The builder finds the cause; a run whose length is what it tests is a long test | M3 |
+| The game's lent products: `leased_texels_commit_edit_capture_discard_and_recovery`, `overlapping_edits_reuse_the_ready_publication` | 76 s, 63 s | 22 s, 18 s | Each runs 4 to 8 cases in turn, and cooks a 128-cubed volume several times in an unoptimised encoder | The build, then one case to a test | WP9 |
+| The game's cooked rows: `visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows`, `edited_rows_equal_fresh_game_in_every_culling_mode`, `supersession_discarded_protected_switch_and_retired_space_reuse` | up to 92 s, 38 s, 25 s | 53 s, 23 s, 15 s | 12, 12 and several cases in turn, each with its own cooked store and host | One case to a test | WP9 |
+| The game's cooked assets: `a_newer_publication_supersedes_an_upload_still_being_filled`, `a_publication_larger_than_staging_streams_through_the_bounded_ring`, `a_fetched_generation_draws_like_the_mapped_store` | 22 s, 15 s, 14 s | 4 s, under 4 s, 7 s | The unoptimised encoder; and the binary's 14 tests take turns behind one mutex, 73 s in all | The build. The turns are mechanism 8's | WP9 |
+| The game's `frame_alloc`, two tests | 18 s, 21 s | 14 s | Not read. They take turns behind a mutex | The builder finds the cause | WP9 |
+| The river model's `no_step_is_taken_beyond_the_budget` | 38 s | 100 s | 43 solves of `valley(0.25)` in one test, 36 of them run to within a dozen steps of convergence, to prove a rule about the step budget. The solve uses a thread pool | The smallest world: the rule holds on any grid whose solve takes more than a few steps; counted as heavy | WP9 |
+| The river model's other 70 tests | 71 s for all of them, one binary at a time | about 10 s each, 474 s summed | Fourteen processes each start a thread pool | Counted as heavy, in WP8. None is slow alone | WP8 |
+| The water model's `enclosed_water_has_finite_lags_turning_and_fetch_energy` (`shore_basin`), `waves_arrive_round_land_and_exposure_closes_far_downwind` (`shore_island`) | 34 s, 11 s | 51 s, 20 s | Dense f64 shore solves over millions of cells, already built at `opt-level` 2 | A smaller basin if every assertion holds on it; otherwise a long test beside the shore blend. Risk: a lag, turning or fetch error in enclosed water, which costs `WATERS` alone | WP9 |
+| The sea's `forward_fields_and_full_lean_pyramids_match_the_model`, `default_webgpu_limits_and_named_profile_refusals`, `frame_script_and_continuous_wind_change`, `metal_ambient_matches_independent_model` | 22 s, 16 s, 16 s, 17 s | 14 s, 18 s, 17 s, 16 s | Not read. The optimised build helps only the first | The builder finds the cause. These hold GPU state to the CPU query a game reads, so they are the last to move | WP9 |
+| The cloud crate's four GPU conformance tests | 26 s, 26 s, 26 s, 19 s | 9 s each | A CPU reference at `opt-level` 0 | The build. WP2 cuts the four to two | WP8, WP2 |
+| The cloud model's `band_tracks_slant_paths_and_rejects_wrong_substitutes`, `footprint_is_the_pointwise_voxel_integral` | 21 s, 17 s | about 1 s | `opt-level` 0 | The build | WP8 |
+| `match-proof`'s `sixteen_bit_controls_keep_five_worlds_equal_on_a_conditioned_link` | 29 s | 5 s | Five worlds of 2,000 bodies for 600 ticks, twice, at `opt-level` 0 | The build | WP8 |
+| `thrum-render`'s atmosphere tests `analytic_fields_preserve_direction_colour_and_physical_units`, `near_ground_reads_match_their_own_column`, and two at 11 s; `scene_view_air_shaded_gpu`; `visibility_buckets`' mixed field host; the game's `parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal` | 11 to 26 s | 6 s or less | `opt-level` 0 | The build | WP8 |
+| The water scene's wake tests: `moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity`, `moored_craft_keeps_its_draft_when_only_one_level_admits_pressure`, `float_twenty_metres_off_track_responds_to_the_public_query` | 35 s or less each: the binary takes 35 s | 38 s, 39 s, 31 s | Each steps a GPU scene for 1,200 to 1,800 ticks, 20 to 30 simulated seconds | The two moored tests are long tests, whole. Risk: a moored craft that loses its draft only after tens of seconds of wake. The float's test holds the public query to the GPU's wake, so the builder first tries a float nearer the track | WP3 |
+| The water scene's foam tests `beach_births_follow_lost_power_and_the_film_leaves_ground_depth` and `craft_trail_outlives_removed_source_and_spreads` | Not known: they wait behind the moored run's mutex | 18 s each | Not read | The builder finds the cause; a run whose length is what it tests is a long test | WP3 |
 
-If M8's measurement leaves the build as it is, every row marked "the build" is M9's, by the same routes.
+If WP8's measurement leaves the build as it is, every row marked "the build" is WP9's, by the same routes.
 
-M8 switched the optimised build on, and its exempt list holds the tests over ten seconds alone. Six tests of the
+WP8 switched the optimised build on, and its exempt list holds the tests over ten seconds alone. Six tests of the
 table are under that alone and over it in every check, beside the others: the lent products' two, the cooked
 rows' `edited_rows_equal_fresh_game_in_every_culling_mode` and
 `supersession_discarded_protected_switch_and_retired_space_reuse`, `frame_alloc`'s
 `late_surface_submit_reports_main_thread_allocation_cost`, and the foam scene's
-`beach_births_follow_lost_power_and_the_film_leaves_ground_depth`. They stay M9's and M3's, by the routes the
-table gives: M9.1 and M3.3 hold a test to ten seconds in the check as well as alone, because
+`beach_births_follow_lost_power_and_the_film_leaves_ground_depth`. They stay WP9's and WP3's, by the routes the
+table gives: WP9.1 and WP3.3 hold a test to ten seconds in the check as well as alone, because
 [the stop at ten seconds](#the-stop-at-ten-seconds) would otherwise catch each of them in every check.
 
 ## Mechanisms
@@ -274,7 +274,7 @@ table gives: M9.1 and M3.3 hold a test to ten seconds in the check as well as al
 anyone diagnosing a fault runs it with one flag, and nobody has to show that a shorter run asserts the same thing.
 The foam test is the one that is split first, because it holds two behaviours: the ten-minute moored run becomes
 the long test, and the wind sweep becomes a test `./dev check` runs. The moored run starts itself again as a
-child process by name, and an ignored test's child skips unless it is told to run ignored tests, so M3 also
+child process by name, and an ignored test's child skips unless it is told to run ignored tests, so WP3 also
 changes the child's arguments in the water scene's `with_cooked_island`.
 
 **2. One command runs the main tier's tests from one list, and a main-branch check runs it.** `./dev long-tests`
@@ -283,24 +283,24 @@ runs the tests the main-tier list names and nothing else. The list is one tracke
 says what it gives for the tests behind a Cargo feature. The command runs the ignored tests of each long-test
 binary, so a binary on the list holds no ignored test that is not a long test: other ignored tests in the
 workspace need a cooked store, or are measurements. It uses the toolchain `./dev check` uses and requires a GPU,
-so a test that finds no adapter fails where it would have skipped. The list names the foam's binary from M1: a
+so a test that finds no adapter fails where it would have skipped. The list names the foam's binary from WP1: a
 binary with no ignored test passes.
 
 The build is release with overflow checks on. Debug assertions stay off, because the flythrough chooses its
-length by them and would stop at tick 460. M1 starts by running the six once in that build, because five of them
+length by them and would stop at tick 460. WP1 starts by running the six once in that build, because five of them
 have never run in it. A test that fails there is still marked and still leaves the merge check: the list gives it
 the debug build, the log gives the release failure and names the module that owns the test, and nobody changes
-the test here. Without that rule one release failure would leave M1 open, with every other landing paying the old
+the test here. Without that rule one release failure would leave WP1 open, with every other landing paying the old
 price behind it.
 
-M1 adds one line to `ORCHESTRATE.md`, in these words:
+WP1 adds one line to `ORCHESTRATE.md`, in these words:
 
 ```
 - **Main-branch check long-tests:** `./dev long-tests`; every 1h; lock gpu; timeout 60m  *(owner, 20 Nov 2026: long tests stay off every merge check)*
 ```
 
 The builder keeps every word but the timeout, which is 60m or twice the time its own first run took, whichever
-is longer; M6 sets it again the same way when the tests behind a feature join. The script runs the check on
+is longer; WP6 sets it again the same way when the tests behind a feature join. The script runs the check on
 main's tip after merges, in its own checkout, at most once an hour. It runs a failure again once, then traces one
 that holds to the first commit that fails, and that commit's module fixes it while the others keep merging, as
 for [exact images](../ARCHITECTURE.md#exact-baselines). Each step of that trace is a whole run under a `gpu`
@@ -331,7 +331,7 @@ the list and its guard work from the test files, not only from the manifests.
 - *On main*, `./dev long-tests` runs them with their features on and a GPU required, in the debug build, as the
   item checks that run them do. It runs the tests that are not ignored: an ignored test there is a measurement
   that a cost script runs.
-- A test that fails at the commit M6 starts from is listed as not run, with its failure and its owning module,
+- A test that fails at the commit WP6 starts from is listed as not run, with its failure and its owning module,
   and is not changed here. The builder's handoff names each one, so the lead can give it to its owner: until
   then it runs in no tier.
 - *Membership is held by a check that reads the tests.* `./dev check-docs` fails when a test target requires a
@@ -382,7 +382,7 @@ by package. `./dev check-all` runs everything, whatever changed, and a main-bran
   `docs/evidence` or a new top-level folder; a checkout with no merge base, as in a shallow clone or CI; a
   checkout that does not differ from the main branch, which is what the main tier runs, and the script's run
   before Ready for Review; and a dependency graph the check cannot read. The check prints what it selected and why.
-- *On main*, M7 adds one line to `ORCHESTRATE.md`, in these words:
+- *On main*, WP7 adds one line to `ORCHESTRATE.md`, in these words:
 
 ```
 - **Main-branch check workspace-tests:** `./dev check-all`; every 1h; timeout 60m  *(owner, 20 Nov 2026: a merge runs the tests its change touches, and the full workspace runs on main)*
@@ -403,7 +403,7 @@ by package. `./dev check-all` runs everything, whatever changed, and a main-bran
 - *The risk accepted*, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: the whole workspace is
   still built and linted at every merge, so no compile-time edge can be missed. What can be missed is a test
   whose result depends on something Cargo's graph does not show and no edge declares, such as a new test that
-  reads a file another package owns at run time. Nothing finds such a reader when it is added: M7's reviewer
+  reads a file another package owns at run time. Nothing finds such a reader when it is added: WP7's reviewer
   searches once, and after that the whole run on main is what catches it. The missed edge reaches main and sits
   there until the next whole run, up to an hour and one run, and some hours more to trace. Until it is fixed or
   reverted the script counts main as passing, because the merge that broke it passed its own check, and two
@@ -436,10 +436,10 @@ nothing objecting. Four things now notice, and [the guard rules](#the-guard-rule
   by counting it as heavy. A test that fails the limit from load alone is counted as heavy; the limit is not
   raised for it. The owner accepted the hard stop on 21 November, and ten seconds for it:
   [mechanism 13](#the-stop-at-ten-seconds) lowers it.
-- A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration. M8 writes
+- A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration. WP8 writes
   the list from its own measurement: every test that takes over ten seconds alone at its starting commit, each
-  with the milestone that removes it, which is M2 for a test M2 deletes, M3 for a test of the water scene and M9
-  for any other. So the list is also the work those milestones have left. It is empty when M3 is Done, apart
+  with the milestone that removes it, which is WP2 for a test WP2 deletes, WP3 for a test of the water scene and WP9
+  for any other. So the list is also the work those milestones have left. It is empty when WP3 is Done, apart
   from a test that mechanism 9 leaves to its own module's planner, and no milestone of any module adds a name to
   it: a module with a slow test makes it fast or makes it a long test.
 - `./dev check-docs` fails when a test marked `long:` sits in a binary the main-tier list does not name, so a
@@ -457,11 +457,11 @@ nothing objecting. Four things now notice, and [the guard rules](#the-guard-rule
 - The game's frustum-only flythrough of the mixed-mesh field repeats a subset of the occlusion flythrough, which
   already builds the direct and frustum hosts and makes the frustum assertions (L1-03). It goes, and the two
   flythroughs left, both long tests, share one binary.
-- `clouds_display_time_gpu.rs` is an older copy of the display-phase test, which `CLOUDS` M2.11 replaced it with
-  (G2-02). It goes whole: its one differing assertion encodes the formula M2.11 rejected.
+- `clouds_display_time_gpu.rs` is an older copy of the display-phase test, which `CLOUDS` WP2.11 replaced it with
+  (G2-02). It goes whole: its one differing assertion encodes the formula WP2.11 rejected.
 - `./dev check` runs the 14 cooked-asset tests in the workspace pass and again in its draw-probe pass, where four
   of them assert on the probe (L1-06). The probe pass runs only the tests that read the probe. The workspace pass
-  still runs all 14, because it is the only run against the production build. M8 builds this, in the check's
+  still runs all 14, because it is the only run against the production build. WP8 builds this, in the check's
   test step.
 
 Deleting a duplicate removes no assertion. Each case is shown by naming, for every assertion of the deleted
@@ -479,7 +479,7 @@ is the owner's call, carried as an assumption in [the plan](PLAN.md):
 | Scene-view shader hashes frozen at a 16 November commit | L5-06 | The test that patches later modules' shader edits back out, and its patch table | The comparison made at one commit, with default features, for each of the four air and shadow variants: the main shader composed with an empty observer equals the one composed with an observer that declares a view slot and leaves it idle, and holds no `secondary_view` text. Today that comparison is behind a feature `./dev check` does not turn on, and covers one variant |
 
 **8. Tests run side by side, on the build a measurement picks, and the check says where its time went.** This is
-what brings a merge's check from twenty minutes to a few, and M8 builds it.
+what brings a merge's check from twenty minutes to a few, and WP8 builds it.
 
 - *The runner.* `./dev check` and `./dev check-all` run tests through cargo-nextest: each test in a process of
   its own, as many at once as the machine has cores, across every test binary, from one build of the workspace's
@@ -495,14 +495,14 @@ what brings a merge's check from twenty minutes to a few, and M8 builds it.
   makes tests take turns. Five files hold one today: `cooked_assets_gpu.rs` and `frame_alloc.rs` in the game,
   `foam_scene_gpu.rs` in the water scene, `interaction_fixture.rs` in `thrum-water` and
   `generation_transition/metal.rs` in `thrum-render`. Where tests must still take turns, the runner's
-  configuration puts them in a group that runs one at a time, beside everything else. M8 keeps a file's tests in
+  configuration puts them in a group that runs one at a time, beside everything else. WP8 keeps a file's tests in
   such a group unless they pass five whole runs without it and measure nothing another test could move, such as
   GPU memory in residence. The planner's two runs passed with no group at all, which shows it is possible, not
   that it is safe.
 - *A test that fills the machine says so.* A test that starts a thread pool, as every river-model test does, is
   counted as several tests by the runner, so fourteen of them do not start fourteen pools. Without that the river
   model's 71 tests took 474 s summed, against 71 s for the package run alone.
-- *The build.* Test builds may optimise dependencies fully and workspace crates lightly. M8 times the whole
+- *The build.* Test builds may optimise dependencies fully and workspace crates lightly. WP8 times the whole
   workspace's tests three ways on one commit, each twice, alternating, each from the same starting state with its
   build counted: as the check ran them, side by side, and side by side on the optimised build. Side by side
   goes on if both its runs are shorter than both runs as it was. The optimised build goes on only if both its runs
@@ -512,28 +512,28 @@ what brings a merge's check from twenty minutes to a few, and M8 builds it.
   name by name.
 - *The check says where its time went.* It ends, pass or fail, with the wall time of each step and the ten
   slowest tests. The measurement above had to be rebuilt from cargo's and libtest's lines; the next one is read
-  from the check's own output, and M7 and M5 make their records from it.
+  from the check's own output, and WP7 and WP5 make their records from it.
 - *The draw-probe pass runs four tests.* It is a second build of one game binary with a feature on, and it ran
   all 14 cooked-asset tests again, 70 s. It runs only the tests that assert on the probe (mechanism 6).
 - *A capture waits for its own readback.* Tests side by side load the machine, and the first fault the load
-  found is in the engine, older than M8. `FrameHost::capture_pixels` waited for its submission, looked once for
+  found is in the engine, older than WP8. `FrameHost::capture_pixels` waited for its submission, looked once for
   its readback and failed with `capture readback incomplete` when another thread's poll of the same device had
   taken the readback's completion and not yet delivered it. The cooked loader polls that way, and
   `lent_products_gpu` failed so in one merge check. After its submission completes, `capture_pixels` keeps
   polling until its own readback arrives, whichever thread delivers it, and fails only when `GPU_WAIT` has
-  passed. No pixel a capture returns changes, and nothing a frame records. M8 builds it, with a test that fails
+  passed. No pixel a capture returns changes, and nothing a frame records. WP8 builds it, with a test that fails
   on the code before it: a second thread that only polls does not, and
   [the planner's probe](../../../.orchestrate/evidence/GATE-TIME/planning/capture-race-probe.md) shows what does.
 - *Steps that share nothing may run at once.* The Python guards and script suites, about a minute, read the tree
-  and build nothing the Rust steps use. M8 may run them beside the build if its timing shows a gain, with each
+  and build nothing the Rust steps use. WP8 may run them beside the build if its timing shows a gain, with each
   step's output printed whole.
 
-**9. A test over ten seconds is made fast, or leaves for the main tier with its risk written down.** M2, M9 and
-M3 empty the exempt list of mechanism 5, a test at a time, by the first of these routes that works. M9 and M3
+**9. A test over ten seconds is made fast, or leaves for the main tier with its risk written down.** WP2, WP9 and
+WP3 empty the exempt list of mechanism 5, a test at a time, by the first of these routes that works. WP9 and WP3
 take the same routes to a test that is under ten seconds alone and over it in the check, which
 [the table](#every-test-over-about-ten-seconds) names:
 
-- *The build.* If M8 switched the optimised build on, many tests are already under ten seconds and only lose
+- *The build.* If WP8 switched the optimised build on, many tests are already under ten seconds and only lose
   their exemption.
 - *One case to a test.* A test that runs several cases in turn becomes one test for each case, with the names
   saying which, so the runner spreads them over the cores. No case is dropped.
@@ -557,13 +557,13 @@ take the same routes to a test that is under ten seconds alone and over it in th
   unchanged, and the fault that now reaches main unseen is written beside its line in the main-tier list, where
   the next reader of the list finds it. It runs in release unless it fails there.
 
-Three limits. M9 and M3 rename no test binary, because open items of other modules run binaries by name;
-[mechanism 10](#one-test-binary-a-package) says which binaries M11 folds. A test is
+Three limits. WP9 and WP3 rename no test binary, because open items of other modules run binaries by name;
+[mechanism 10](#one-test-binary-a-package) says which binaries WP11 folds. A test is
 not marked as a long test while an open item of another module depends on what it asserts: before marking one,
 search the open items of every module for its binary and read each item that runs it. An item that needs only that
-the binary passes, as `PUDDLES` M5.4 does of the foam scene's, does not hold the test. Where an item does, the
-test keeps its exemption and the log names it for the planner of that module. M9.3, M3.1 and M3.4 are the
-done-when items that ask for these long tests, so from M12 the landing that marks one raises the version of the
+the binary passes, as `PUDDLES` WP5.4 does of the foam scene's, does not hold the test. Where an item does, the
+test keeps its exemption and the log names it for the planner of that module. WP9.3, WP3.1 and WP3.4 are the
+done-when items that ask for these long tests, so from WP12 the landing that marks one raises the version of the
 rule `main-tier`, as [mechanism 12](#the-guard-rules) says. And the proofs the bar keeps before
 a merge (cooked formats, leases and recovery, transport, determinism, and GPU state held to the CPU query a game
 reads) are the last to move: one is marked as a long test only when the log says what was tried to make it fast.
@@ -572,12 +572,12 @@ reads) are the last to move: one is marked as a long test only when the log says
 
 Two of mechanism 9's routes, the smallest world and without a device, are also standing rules for every test
 written or changed from 21 November 2026, in any module, and [the test tiers](../../../ORCHESTRATE.md#test-tiers)
-state them. M9 and M3 apply them to the tests over ten
+state them. WP9 and WP3 apply them to the tests over ten
 seconds that exist. No milestone sweeps the tests under ten seconds: [Not built here](#not-built-here) says why.
 
 <a id="one-test-binary-a-package"></a>
 
-**10. A package's integration tests are one test binary.** M11 builds it. Cargo makes every file in a package's
+**10. A package's integration tests are one test binary.** WP11 builds it. Cargo makes every file in a package's
 `tests/` folder a binary of its own, each linked against the package's whole dependency graph and each checked by
 macOS on its first run. So each test file becomes a module of one test target in its package, named `it` in every
 package, and a file's tests run as `cargo test -p <package> --test it <file>::`. Cargo's own repository and
@@ -594,23 +594,23 @@ allow, because a mass move would collide with every builder.
   - a binary a script or a tool runs by name.
 - *What the count becomes.* By the planner's count, about 110 test binaries where a whole run has 263: 248 of the
   277 integration test targets are named by no open item, and about 20 of those hold a long test or a test behind
-  a feature. M11's record gives the real figure, and what a freshly linked set costs to link and to run for the
+  a feature. WP11's record gives the real figure, and what a freshly linked set costs to link and to run for the
   first time, before and after. If the later timings are not shorter, the builder ends `BLOCKED` with the record.
 - *No test is lost.* A file that no target declares is compiled by nothing, and Rust does not say so. So the
   repository guards fail a Rust file under a package's `tests/` folder that no test target compiles, with a
-  message that says where to declare it, and M11 compares the names of every test before and after.
+  message that says where to declare it, and WP11 compares the names of every test before and after.
 - *Names that move.* A folded test's name gains its file's module, so the groups, heavy counts and exempt names
   of `.config/nextest.toml` are written again to select the same tests, and a test that starts itself again by
   name, as the water scene's cooked-island tests do, passes its new name.
 - *A target with no test in it is not a test binary.* A `bin` or `example` target that holds no test sets
   `test = false`, so the runner does not build and start it.
-- *From M11 on.* A new test file is a module of its package's `it`. A planner's new item runs it as
+- *From WP11 on.* A new test file is a module of its package's `it`. A planner's new item runs it as
   `cargo test -p <package> --test it <file>::`, and a planner who re-plans a module writes the checks of its
-  unstarted milestones the same way. An item approved before M11 keeps its check: its builder adds the file as a
+  unstarted milestones the same way. An item approved before WP11 keeps its check: its builder adds the file as a
   target of its own, and the file joins `it` in the first landing that edits it after the item's milestone is
   Done. So the count goes towards one a package as the open items are built, and no item is changed for it.
 
-**11. Where a builder's session goes is measured before any rule about it changes.** M10 makes a record and
+**11. Where a builder's session goes is measured before any rule about it changes.** WP10 makes a record and
 changes nothing else. For each builder session of track 6's milestones it splits the wall time into the model's
 own time, the commands the builder ran by kind, and waits: for a lock, behind another merge, and in a command
 that only sleeps or polls. The sources exist today. Each session's transcript gives the time of every tool call
@@ -618,29 +618,29 @@ and of its result (`~/.claude/projects/` for a Claude builder, `~/.codex/session
 session's id in `.git/orchestrate/usage.jsonl`), and the orchestrate script logs the jobs it starts, every lock
 asked for, got and released, and each merge's check (`jobs.jsonl`, `locks.jsonl`, `checks/` and `merge-queue/`
 under `.git/orchestrate`). The record ends with what it shows and proposes no rule: which rule to change, if
-any, is the owner's to decide from it. It is built straight after M2 and ahead of M9, where the lead asked for
+any, is the owner's to decide from it. It is built straight after WP2 and ahead of WP9, where the lead asked for
 new work to go last: it touches no tracked file but this module's records, it needs none of the later
 milestones, three of which wait for other modules, and the owner asked for it before any rule changes.
 
-M11 is likewise built ahead of M3 and M4, which wait for `WATERS` M7 and `REVIEW-RENDER` M2. It needs neither,
+WP11 is likewise built ahead of WP3 and WP4, which wait for `WATERS` WP7 and `REVIEW-RENDER` WP2. It needs neither,
 the binaries their items name stay targets of their own, and every merge pays the first-run cost until it lands.
-It follows M9, whose tests the runner's exempt list still names by binary.
+It follows WP9, whose tests the runner's exempt list still names by binary.
 
 <a id="the-guard-rules"></a>
 
-**12. Three counts that only fall hold the habits, in the merge check.** M12 builds them. The owner's purpose is
+**12. Three counts that only fall hold the habits, in the merge check.** WP12 builds them. The owner's purpose is
 that the fast-test habits hold "without anyone remembering them", and a merge's check is the one place every
 builder passes, on Codex or Claude. Each is a rule in `REPO-RULES`' rule engine, as `test-readback` is: it
 enters at the count of the commit it lands on, that count can only fall, and a landing that raises it fails
 `./dev check` and `./dev check-docs` with a message that says what to do and links to its entry in
 [the engineering patterns](../../../.agents/skills/thrum-engineering/references/patterns.md#tests), which
-[TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#writing-a-test) M6 writes. The engine itself does not change.
+[TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#writing-a-test) WP6 writes. The engine itself does not change.
 
 - *`limit-exempt`: the tests exempt from the limit.* It counts the test names in the overrides of
   `.config/nextest.toml` that change the limit on one test: twelve today. An override that changes the limit
   names its tests one by one, exactly; one that names anything wider, such as a binary or a package, fails
   outright, because it cannot be counted. So does a default limit later than the test tiers': sixty seconds,
-  and ten from M13. M2, M9 and M3 lower the count as they empty the list.
+  and ten from WP13. WP2, WP9 and WP3 lower the count as they empty the list.
 - *`main-tier`: what runs only on main.* It counts the entries of `.config/long-tests.txt` and the tests marked
   `#[ignore = "long: …"]`: ten and five today. Both are counted because a new long test in a binary the list
   already names adds no line. The owner accepted that "a new long test needs a plan decision", and the rule
@@ -663,7 +663,7 @@ enters at the count of the commit it lands on, that count can only fall, and a l
   hold. Every target is named by a plan or is on the list, so a new test file that makes a target nobody
   planned fails, with a message that says to add the test to a test file that exists. And the list only
   shrinks: the rule counts its lines, and a line whose target is gone fails until it is removed. A package's one
-  test target `it`, which M11 creates, is the test tiers' own and needs neither a name nor a line. M11 folds
+  test target `it`, which WP11 creates, is the test tiers' own and needs neither a name nor a line. WP11 folds
   what the list names into `it` and takes each folded target's line off: the freeze comes first and the
   consolidation second, as the owner asked. The list, and not a count of unnamed targets, is what the engine counts, because a count
   that a plan's wording can move would fail the next merge in every module whenever a planner named an old
@@ -671,13 +671,13 @@ enters at the count of the commit it lands on, that count can only fall, and a l
   check naming a binary which exists leaves it unnamed, so a planner keeps that name until the file has joined
   `it`. This reading of "can only go down" is an assumption in [the plan](PLAN.md).
 
-M12 is built after M10 and ahead of M9, so that the counts are frozen before M9 and M11 lower them. It waits for
-`TEST-SUPPORT` M6, because each message links to an entry M6 writes.
+WP12 is built after WP10 and ahead of WP9, so that the counts are frozen before WP9 and WP11 lower them. It waits for
+`TEST-SUPPORT` WP6, because each message links to an entry WP6 writes.
 
 <a id="the-stop-at-ten-seconds"></a>
 
-**13. A test is stopped at ten seconds, and one that load alone took there passes on a second run.** M13 builds
-it, straight after M9: the owner accepted the ten-second limit, to drop "once GATE-TIME M9 lands". The runner
+**13. A test is stopped at ten seconds, and one that load alone took there passes on a second run.** WP13 builds
+it, straight after WP9: the owner accepted the ten-second limit, to drop "once GATE-TIME WP9 lands". The runner
 stops a test at ten seconds where it stopped it at sixty. The test tiers define the bound for a test run alone,
 and the check runs beside builders, where 8 of the last 18 whole checks took a test of under ten seconds past
 it. So a test the limit stopped is run once more by the same check, alone, after the others, under the same
@@ -689,14 +689,14 @@ second run would fail good work for the reason a gate on a check's total time wo
 - A test that fails any other way is still not run again, so a test that fails one time in ten still fails the
   check. What the second run can hide is a test that hangs one time in ten: it is named in the closing lines of
   every check in which it was stopped, and nothing fails.
-- The exempt tests, which after M9 are the water scene's until M3, are reported and not stopped, as before.
-- Every test off the exempt list was under ten seconds alone when M8 wrote the list, so each passes its second
+- The exempt tests, which after WP9 are the water scene's until WP3, are reported and not stopped, as before.
+- Every test off the exempt list was under ten seconds alone when WP8 wrote the list, so each passes its second
   run. One that is over ten seconds in every check would be stopped and run again in every check, which is why
-  M9.1 and M3.3 hold a test to ten seconds in the check too, and M13.2 records three whole runs.
+  WP9.1 and WP3.3 hold a test to ten seconds in the check too, and WP13.2 records three whole runs.
 - The bound a test is written to is unchanged: about ten seconds or less alone, and far under it wherever the
   smallest world allows.
 
-**14. The check reports the tests' summed time and the GPU tests' share.** M12 adds two lines to the closing
+**14. The check reports the tests' summed time and the GPU tests' share.** WP12 adds two lines to the closing
 lines of `./dev check` and `./dev check-all`: the summed time of every test the run ran, and the summed time of
 its GPU tests. A GPU test here is one whose binary or name says `gpu` or `metal`, which is how the measurement
 of 21 November counted 221 of them at 53% of the time; a GPU test named otherwise is not counted, and the line
@@ -706,8 +706,8 @@ of 21 November.
 
 <a id="workspace-reruns-under-builder-load"></a>
 
-**15. The workspace check gives a stopped test one bounded serial rerun under builder load.** M14 builds this
-before M5. The runner already waits for its parallel nextest invocation to exit and runs exact timeout cases
+**15. The workspace check gives a stopped test one bounded serial rerun under builder load.** WP14 builds this
+before WP5. The runner already waits for its parallel nextest invocation to exit and runs exact timeout cases
 with one test thread. That releases its own test jobs. It leaves the builders, other main checks and `exact-images`
 running. On 24 November, at about 40 load on 14 cores with nine builders, both attempts reached ten seconds for
 different CPU and GPU cases across the three runs at 02:45:14, 03:54:31 and 04:00:03. The latter two checks even
@@ -721,7 +721,7 @@ rerun requires a passing result for that exact case. Assertion failures, repeat 
 runner errors still fail the check. The report gives the case, both times and the verdict, and calls out reruns
 that passed above ten seconds so they remain visible for speed work. `./dev check` uses ten seconds for both
 attempts, even when its selection runs the whole workspace. The fast-test target, the empty exemption list and
-the guard counts stay as in M12 and M13.
+the guard counts stay as in WP12 and WP13.
 
 Allowing more time on the workspace rerun covers both CPU scheduling and GPU contention and costs extra wall time
 only for a test that already stopped. A test that now takes more than ten seconds can pass `check-all` within the
@@ -740,18 +740,18 @@ The incident cases are `thrum-rain-model::it conformance::the_harness_passes_rai
 
 ## Cargo cache for merge verification
 
-The pre-rollout M5 record found 404.6 seconds median across 45 Rust landings, with 37 over five minutes. In the
+The pre-rollout WP5 record found 404.6 seconds median across 45 Rust landings, with 37 over five minutes. In the
 slow group the median test build was 142.0 seconds, compared with 12.7 seconds in the group at or under five
 minutes. The Nextest run median across all 45 was 59.3 seconds. Package-selected and whole-workspace checks both
 missed the wall-time target. The production runner uses a workspace build and filters which of its binaries run.
 The lead also removes idle `.git/orchestrate/verify/*/target` directories to protect free disk on the 14-core Mac
-shared by ten builders. The timings mix load, changes and cache states, so M15 measures reuse directly before
-switching on the new route. [Baseline](../../../.orchestrate/evidence/GATE-TIME/M5/record.md).
+shared by ten builders. The timings mix load, changes and cache states, so WP15 measures reuse directly before
+switching on the new route. [Baseline](../../../.orchestrate/evidence/GATE-TIME/WP5/record.md).
 
-M15 configures `THRUM_MERGE_VERIFY=1 ./dev check`. The environment variable opts into the cache on M15-capable
+WP15 configures `THRUM_MERGE_VERIFY=1 ./dev check`. The environment variable opts into the cache on WP15-capable
 checkouts. Earlier launchers receive the existing argument list and run their ordinary check. Orchestrate's
 broken-main diagnosis uses the current command on earlier revisions, so replay the configured invocation on a
-known-good revision before the M15 launcher was introduced and verify that its ordinary check passes.
+known-good revision before the WP15 launcher was introduced and verify that its ordinary check passes.
 
 On this Mac the cache runs the existing `./dev check` pipeline in one stable, detached checkout and reuses a
 Cargo target directory owned by that mode under the common Git directory, outside `orchestrate/verify`. The same
@@ -788,9 +788,9 @@ Compare cold ordinary checks with the warmed route on the same candidate/base pa
 selection and check steps. Use a preceding checkout to warm the cache for each candidate. An unchanged-tree
 repeat is a useful diagnostic. For promotion, the three candidate-route checks have a median of at most 300 seconds
 end to end and a lower median test build time than the matched cold checks. Record load, disk use, Cargo rebuilds,
-test build and run times, verdicts and executed coverage. If reuse falls short, M15 may also tune the test profile's
+test build and run times, verdicts and executed coverage. If reuse falls short, WP15 may also tune the test profile's
 debug-info generation, preserving test assertions and diagnostics and repeating the paired proof. Switch the project
-test command only after it passes this proof. M5 measures the real rollout independently of the replay.
+test command only after it passes this proof. WP5 measures the real rollout independently of the replay.
 
 ## Interfaces
 
@@ -799,12 +799,12 @@ test command only after it passes this proof. M5 measures the real rollout indep
 | A long test: marked `#[ignore]` with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | Any module with a test that takes over about ten seconds and cannot be made fast. Its builder adds the binary to the list, with the fault the test leaves unguarded before a merge |
 | The main-tier list, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary. The docs check fails a test file or target that names a feature the list does not cover | Any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole |
 | The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules and declared edges of mechanism 4; `./dev check-all` runs the whole workspace | Every builder. A module that adds a folder outside a package gets the whole workspace on every change there until it adds a path rule. A module that adds a test reading another package's files at run time declares the edge in the same landing |
-| The runner, from M8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. From M13 a test is stopped at ten seconds and rerun once serially under the same limit. From M14 only `./dev check-all` gives that serial rerun 30 seconds and reports passes above ten seconds. `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
+| The runner, from WP8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. From WP13 a test is stopped at ten seconds and rerun once serially under the same limit. From WP14 only `./dev check-all` gives that serial rerun 30 seconds and reports passes above ten seconds. `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
 | Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
-| The guard rules, from M12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
-| The check's closing lines, from M8 and M12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and M5's record |
-| The orchestrate test command, from M15: `THRUM_MERGE_VERIFY=1 ./dev check`, with a bounded local Cargo cache for equivalent committed inputs and the ordinary check verdict in the caller's worktree otherwise. Pre-M15 launchers run their ordinary `./dev check`. | Orchestrate singleton and batch verification, builder checks, broken-main diagnosis, `REPO-RULES`, the lead who manages free disk, and M5's record |
-| One test binary a package, from M11: a test file under a package's `tests/` folder is a module of the package's `it` target, and runs as `cargo test -p <package> --test it <file>::`. The repository guards fail a file there that no target compiles. A file is a target of its own only while something [mechanism 10](#one-test-binary-a-package) lists holds it | Every module that adds a test file, and every planner who writes a check that runs one |
+| The guard rules, from WP12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
+| The check's closing lines, from WP8 and WP12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and WP5's record |
+| The orchestrate test command, from WP15: `THRUM_MERGE_VERIFY=1 ./dev check`, with a bounded local Cargo cache for equivalent committed inputs and the ordinary check verdict in the caller's worktree otherwise. Pre-M15 launchers run their ordinary `./dev check`. | Orchestrate singleton and batch verification, builder checks, broken-main diagnosis, `REPO-RULES`, the lead who manages free disk, and WP5's record |
+| One test binary a package, from WP11: a test file under a package's `tests/` folder is a module of the package's `it` target, and runs as `cargo test -p <package> --test it <file>::`. The repository guards fail a file there that no target compiles. A file is a target of its own only while something [mechanism 10](#one-test-binary-a-package) lists holds it | Every module that adds a test file, and every planner who writes a check that runs one |
 
 ## Whose code this is built in
 
@@ -812,12 +812,12 @@ Every file belongs to another module, as with [track 4](../ARCHITECTURE.md#seam-
 water scene and shore tests, `SHOWCASE`'s exit scene test, `CULLING`'s field flythroughs, `CLOUDS`' conformance
 tests, `ATMOSPHERE`'s reference tests, `SCENE-VIEWS`' pool and scene-view tests, `CONTENT-LOOP`'s cooked tests,
 `RIVERS`' and `SEA`'s model and conformance tests, and `REPO-RULES`' check command and repository guards.
-Ownership does not move. M11 changes how every package's test files are built into binaries, and nothing a test
+Ownership does not move. WP11 changes how every package's test files are built into binaries, and nothing a test
 asserts. The Done items that name these tests keep their text, because
 [a Done item's check is its record](../../../ORCHESTRATE.md#targets).
 
 One change is to the engine and not to a test: the wait in `FrameHost::capture_pixels` (mechanism 8), in
-`APPLE-TILE`'s frame host. The lead gave it to M8 on 21 November, because it is about ten lines that change
+`APPLE-TILE`'s frame host. The lead gave it to WP8 on 21 November, because it is about ten lines that change
 nothing drawn or timed, no builder was at work in `thrum-render`'s runtime, and starting a finished module for it
 would cost more. `APPLE-TILE`'s log records the hand-over, its design stays the authority for the frame host, and
 the test belongs to it once landed. Any other engine fault a milestone here finds is still a proposal to its
@@ -832,32 +832,32 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
-| M1 | `examples/water/tests/floating_gpu.rs`; `examples/v1-game/tests/exit_scene.rs`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`; `crates/thrum-water-model/tests/shore_blend.rs`; the new command and the help text in `tools/xtask/src/main.rs` and its line in `dev`; the new `.config/long-tests.txt`; the listed-binary check in `scripts/repo_check.py` with its suite; the one settings line in `ORCHESTRATE.md` | Nothing. It merges first in wave 1 | No open item runs any of these tests. `DEAD-TOOLS` M1 and M2 edit other arms of `tools/xtask/src/main.rs` and the same help text. `scripts/repo_check.py` is imported by a pinned comparison file: it keeps its name and what that file uses. The check keeps a checkout and a release build of its own, so the lead checks free disk first: builders stall below about 16 GiB |
-| M6 | The lint step and the long-test command in `tools/xtask/src/main.rs`; `.config/long-tests.txt`; the feature check in `scripts/repo_check.py`, which already tells a test file from production code, with its suite; the timeout of the settings line | Nothing | `DEAD-CODE` M2 and M6 and `TEST-SUPPORT` M3 wait for it. `DEAD-TOOLS` M1 edits the script-suite step of the same `main.rs` |
-| M8 | The check command in `tools/xtask/src/` (how it runs tests and the draw-probe pass, the step times, the cargo-nextest version it asks for) and its tests; the new `.config/nextest.toml`; the `[profile]` tables of the root `Cargo.toml`; the install step of `.github/workflows/ci.yml`; the line of `CONTRIBUTING.md` that says what `./dev check` needs installed. Where a test fails only because it now has a process to itself, that test file. The wait in `FrameHost::capture_pixels`, in `crates/thrum-render/src/runtime.rs`, and its test under `crates/thrum-render/src/runtime/tests/`: no other line of the engine's source | Nothing | `REVIEW-RENDER` and `HOST` build in `thrum-render`'s runtime too, so the lead starts neither beside this. `DEAD-TOOLS` M2 edits the `baseline-inventory` command and the help text of the same `main.rs`, and other rows of `CONTRIBUTING.md`. `DEAD-CODE` M5 edits the workspace list of the root `Cargo.toml`, a different table. A changed test profile rebuilds the test artifacts of every worktree once, so the lead checks free disk first. `TEST-SUPPORT`'s design says `GATE-TIME` M5 narrows the draw-probe pass: that is this milestone now, in the check command only |
-| M7 | The check command in `tools/xtask/src/` (the selection with its path rules and declared edges, `check-all`) and its tests; one settings line in `ORCHESTRATE.md` | Nothing | `DEAD-TOOLS` M2 edits the `baseline-inventory` command and the help text of the same `main.rs`. The main-branch check keeps a fourth checkout with a debug build of the whole workspace, 8 to 16 GiB in the checkouts that hold one today, so the lead checks free disk first |
-| M2 | `crates/thrum-water/tests/query_gpu.rs`, `swash_gpu.rs` and `crates/thrum-water/Cargo.toml`; the four conformance files, `support.rs` and `Cargo.toml` of `crates/thrum-clouds/tests`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`, `examples/v1-game/tests/clouds_display_time_gpu.rs`, and the `[[test]]` tables of `examples/v1-game/Cargo.toml`; `.config/long-tests.txt`; the names of deleted tests in `.config/nextest.toml`; `crates/thrum-render/src/atmosphere/gpu/tests.rs` and `tests/reference*` | `TEST-SUPPORT` M2, which rewrote these test files | `CLOUDS` builds in `thrum-clouds`. No open item names any of these test binaries. `DEAD-TOOLS` M2 edits the `[[bench]]` tables of the same `Cargo.toml`, and its M3 edits `atmosphere/gpu/tests/aerial_ground.rs`, which `atmosphere/gpu/tests.rs` declares |
-| M10 | No tracked file but this module's log and done-when file: the record and its script are this milestone's evidence. It reads, and changes nothing in, the builders' transcripts under `~/.claude/projects/` and `~/.codex/sessions/` and the orchestrate script's logs under `.git/orchestrate` | Nothing | It can run beside any milestone |
-| M12 | The three rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, with their fixtures in `scripts/test_shape_rules.py`; the new list `.config/unplanned-test-binaries.txt`, with a path rule in the selection if it needs one to select no Rust test; `scripts/repo_check.py` only where the limit's own value is checked; the rules' sentences in the Tests section of the engineering patterns; the closing lines of the check command in `tools/xtask/src/` and its tests. It changes no test, no manifest, and neither the exempt list nor the main-tier list: the counts enter as they stand | `TEST-SUPPORT` M6, whose pattern entries the messages link to | `TEST-SUPPORT` M3 edits the exemptions of `test-readback` in `scripts/shape_matchers.py`: whichever lands second rebases. Both rule scripts are imported through a pinned comparison file, so each keeps its name and what that file uses. Every landing that lowers a count rewrites `.config/shape-baseline.json`, and from this milestone a module that deletes a test file, a long test or an exempt name does too |
-| M9 | The test files that hold a test on the exempt list outside `examples/water`, or one that [the table](#every-test-over-about-ten-seconds) names as over ten seconds in the check, with the support files those tests use. By the planner's measurement: `lent_products_gpu.rs`, `cooked_rows_gpu.rs`, `cooked_assets_gpu.rs` and `frame_alloc.rs` under `examples/v1-game/tests`; `report.rs` under `crates/thrum-river-model/tests`; `shore_basin.rs` and `shore_island.rs` under `crates/thrum-water-model/tests`; `forward_cache_gpu.rs`, `portable_limits_gpu.rs`, `frames_gpu.rs` and `ambient_gpu.rs` under `crates/thrum-sea/tests`. Also `.config/nextest.toml` and `.config/long-tests.txt` | Nothing | Open items run four of these binaries by name and need them to keep passing: `DEAD-CODE` M5.2 (`cooked_rows_gpu`), `HOST` M3.2 and `REVIEW-RENDER` M5.1 (`frame_alloc`), `TEST-SUPPORT` M4.2 (`cooked_assets_gpu`). `DEAD-CODE` M5 edits `cooked_rows_gpu.rs` and `TEST-SUPPORT` M4 `cooked_assets_gpu.rs`. `TEST-SUPPORT` M3 converts the test files of every crate under `crates/`, so the lead does not run it beside this where it can choose |
-| M13 | The check command in `tools/xtask/src/` (the second run of a stopped test, the closing lines, the help text) and its tests; the default limit in `.config/nextest.toml`, and a group or a heavy count there for a test the record finds stopped in every run; the limit's value in the rule `limit-exempt` | Nothing | `.config/nextest.toml` is a shared input, so this landing's own check runs the whole workspace. M11 writes the same file's filters again, after it |
-| M11 | The `[[test]]` tables, the `autotests` line and the `test` keys of each workspace package's manifest; one new root file in each package's `tests/` folder; in each test file it folds, the lines that declare or import shared helpers, and a test's own name where the test starts itself again by name; the root file of a folder-style target, where it has to be renamed to stay a module; `.config/nextest.toml` and `.config/long-tests.txt`, for the names that moved; the lines of `.config/unplanned-test-binaries.txt` for the targets it folds; the new guard in the repository guards under `scripts/`, with its suite; the check command in `tools/xtask/src/` only where it names a test binary | Nothing | The widest set in this module. Every module that adds a test adds a file or a `[[test]]` table in these folders and manifests, so the lead starts it when few builders are in test files, and whichever lands second rebases. `TEST-SUPPORT` M3 converts the test files of every crate and M4 edits the cooked tests: the lead does not run either beside this where it can choose. `REVIEW-RENDER` and `HOST` build in the renderer's tests, and `DEAD-CODE` M5 edits `cooked_rows_gpu.rs`. The binaries this module's own open items name stay targets of their own: `foam_scene_gpu` (M3.1), `pool_gpu` (M4.1) and `scene_view_absent_gpu` (M4.4). A changed set of test targets links every worktree's tests again once, so the lead checks free disk first |
-| M3 | `examples/water/tests/foam_scene_gpu.rs`, `wake_scene_gpu.rs` and any other test file of the water scene that holds a test on the exempt list; the child's arguments in `examples/water/tests/support/island.rs`; `.config/long-tests.txt` and `.config/nextest.toml` | `WATERS` M7, whose open items run the foam test for its ten minutes and which is building in these files | `PUDDLES` M5.4 runs the foam scene's binary and M3.2 `stage_gpu`, and each needs only that the binary passes. `stage_gpu`, `inland_floating_gpu` and `bodies_gpu` also start a child through `island.rs`, each with a test that is not ignored, so running ignored tests in the child changes nothing for them |
-| M4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` M2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
-| M14 | The check runner, its tests and help in `tools/xtask/src/`, `.config/nextest.toml`, and the corresponding timeout text in `ORCHESTRATE.md` and `CONTRIBUTING.md`. Load evidence in the working folder | The landed M13 runner | `REPO-RULES` owns the check command outside the test runner. M5 uses the contributor guide's merge timing |
-| M15 | `dev` and its merge-verification helper and tests under `scripts/`, the check entry point and selection inputs in `tools/xtask/src/` if needed, the test-command line in `ORCHESTRATE.md`, the cache operation notes in `CONTRIBUTING.md`, and the test-profile debug-info setting in `Cargo.toml` only if the paired proof needs it | The landed M14 check runner | `REPO-RULES` owns the check command. Its guards and callers keep their contracts. The lead coordinates the test-command cutover and verifier cleanup |
-| M5 | The commands table and test-command text of `CONTRIBUTING.md`, plus the closing record in the working folder | M15 and `DEAD-TOOLS` M2 | `DEAD-TOOLS` M3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` M3, the one rename, waits for this milestone |
+| WP1 | `examples/water/tests/floating_gpu.rs`; `examples/v1-game/tests/exit_scene.rs`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`; `crates/thrum-water-model/tests/shore_blend.rs`; the new command and the help text in `tools/xtask/src/main.rs` and its line in `dev`; the new `.config/long-tests.txt`; the listed-binary check in `scripts/repo_check.py` with its suite; the one settings line in `ORCHESTRATE.md` | Nothing. It merges first in wave 1 | No open item runs any of these tests. `DEAD-TOOLS` WP1 and WP2 edit other arms of `tools/xtask/src/main.rs` and the same help text. `scripts/repo_check.py` is imported by a pinned comparison file: it keeps its name and what that file uses. The check keeps a checkout and a release build of its own, so the lead checks free disk first: builders stall below about 16 GiB |
+| WP6 | The lint step and the long-test command in `tools/xtask/src/main.rs`; `.config/long-tests.txt`; the feature check in `scripts/repo_check.py`, which already tells a test file from production code, with its suite; the timeout of the settings line | Nothing | `DEAD-CODE` WP2 and WP6 and `TEST-SUPPORT` WP3 wait for it. `DEAD-TOOLS` WP1 edits the script-suite step of the same `main.rs` |
+| WP8 | The check command in `tools/xtask/src/` (how it runs tests and the draw-probe pass, the step times, the cargo-nextest version it asks for) and its tests; the new `.config/nextest.toml`; the `[profile]` tables of the root `Cargo.toml`; the install step of `.github/workflows/ci.yml`; the line of `CONTRIBUTING.md` that says what `./dev check` needs installed. Where a test fails only because it now has a process to itself, that test file. The wait in `FrameHost::capture_pixels`, in `crates/thrum-render/src/runtime.rs`, and its test under `crates/thrum-render/src/runtime/tests/`: no other line of the engine's source | Nothing | `REVIEW-RENDER` and `HOST` build in `thrum-render`'s runtime too, so the lead starts neither beside this. `DEAD-TOOLS` WP2 edits the `baseline-inventory` command and the help text of the same `main.rs`, and other rows of `CONTRIBUTING.md`. `DEAD-CODE` WP5 edits the workspace list of the root `Cargo.toml`, a different table. A changed test profile rebuilds the test artifacts of every worktree once, so the lead checks free disk first. `TEST-SUPPORT`'s design says `GATE-TIME` WP5 narrows the draw-probe pass: that is this milestone now, in the check command only |
+| WP7 | The check command in `tools/xtask/src/` (the selection with its path rules and declared edges, `check-all`) and its tests; one settings line in `ORCHESTRATE.md` | Nothing | `DEAD-TOOLS` WP2 edits the `baseline-inventory` command and the help text of the same `main.rs`. The main-branch check keeps a fourth checkout with a debug build of the whole workspace, 8 to 16 GiB in the checkouts that hold one today, so the lead checks free disk first |
+| WP2 | `crates/thrum-water/tests/query_gpu.rs`, `swash_gpu.rs` and `crates/thrum-water/Cargo.toml`; the four conformance files, `support.rs` and `Cargo.toml` of `crates/thrum-clouds/tests`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`, `examples/v1-game/tests/clouds_display_time_gpu.rs`, and the `[[test]]` tables of `examples/v1-game/Cargo.toml`; `.config/long-tests.txt`; the names of deleted tests in `.config/nextest.toml`; `crates/thrum-render/src/atmosphere/gpu/tests.rs` and `tests/reference*` | `TEST-SUPPORT` WP2, which rewrote these test files | `CLOUDS` builds in `thrum-clouds`. No open item names any of these test binaries. `DEAD-TOOLS` WP2 edits the `[[bench]]` tables of the same `Cargo.toml`, and its WP3 edits `atmosphere/gpu/tests/aerial_ground.rs`, which `atmosphere/gpu/tests.rs` declares |
+| WP10 | No tracked file but this module's log and done-when file: the record and its script are this milestone's evidence. It reads, and changes nothing in, the builders' transcripts under `~/.claude/projects/` and `~/.codex/sessions/` and the orchestrate script's logs under `.git/orchestrate` | Nothing | It can run beside any milestone |
+| WP12 | The three rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, with their fixtures in `scripts/test_shape_rules.py`; the new list `.config/unplanned-test-binaries.txt`, with a path rule in the selection if it needs one to select no Rust test; `scripts/repo_check.py` only where the limit's own value is checked; the rules' sentences in the Tests section of the engineering patterns; the closing lines of the check command in `tools/xtask/src/` and its tests. It changes no test, no manifest, and neither the exempt list nor the main-tier list: the counts enter as they stand | `TEST-SUPPORT` WP6, whose pattern entries the messages link to | `TEST-SUPPORT` WP3 edits the exemptions of `test-readback` in `scripts/shape_matchers.py`: whichever lands second rebases. Both rule scripts are imported through a pinned comparison file, so each keeps its name and what that file uses. Every landing that lowers a count rewrites `.config/shape-baseline.json`, and from this milestone a module that deletes a test file, a long test or an exempt name does too |
+| WP9 | The test files that hold a test on the exempt list outside `examples/water`, or one that [the table](#every-test-over-about-ten-seconds) names as over ten seconds in the check, with the support files those tests use. By the planner's measurement: `lent_products_gpu.rs`, `cooked_rows_gpu.rs`, `cooked_assets_gpu.rs` and `frame_alloc.rs` under `examples/v1-game/tests`; `report.rs` under `crates/thrum-river-model/tests`; `shore_basin.rs` and `shore_island.rs` under `crates/thrum-water-model/tests`; `forward_cache_gpu.rs`, `portable_limits_gpu.rs`, `frames_gpu.rs` and `ambient_gpu.rs` under `crates/thrum-sea/tests`. Also `.config/nextest.toml` and `.config/long-tests.txt` | Nothing | Open items run four of these binaries by name and need them to keep passing: `DEAD-CODE` WP5.2 (`cooked_rows_gpu`), `HOST` WP3.2 and `REVIEW-RENDER` WP5.1 (`frame_alloc`), `TEST-SUPPORT` WP4.2 (`cooked_assets_gpu`). `DEAD-CODE` WP5 edits `cooked_rows_gpu.rs` and `TEST-SUPPORT` WP4 `cooked_assets_gpu.rs`. `TEST-SUPPORT` WP3 converts the test files of every crate under `crates/`, so the lead does not run it beside this where it can choose |
+| WP13 | The check command in `tools/xtask/src/` (the second run of a stopped test, the closing lines, the help text) and its tests; the default limit in `.config/nextest.toml`, and a group or a heavy count there for a test the record finds stopped in every run; the limit's value in the rule `limit-exempt` | Nothing | `.config/nextest.toml` is a shared input, so this landing's own check runs the whole workspace. WP11 writes the same file's filters again, after it |
+| WP11 | The `[[test]]` tables, the `autotests` line and the `test` keys of each workspace package's manifest; one new root file in each package's `tests/` folder; in each test file it folds, the lines that declare or import shared helpers, and a test's own name where the test starts itself again by name; the root file of a folder-style target, where it has to be renamed to stay a module; `.config/nextest.toml` and `.config/long-tests.txt`, for the names that moved; the lines of `.config/unplanned-test-binaries.txt` for the targets it folds; the new guard in the repository guards under `scripts/`, with its suite; the check command in `tools/xtask/src/` only where it names a test binary | Nothing | The widest set in this module. Every module that adds a test adds a file or a `[[test]]` table in these folders and manifests, so the lead starts it when few builders are in test files, and whichever lands second rebases. `TEST-SUPPORT` WP3 converts the test files of every crate and WP4 edits the cooked tests: the lead does not run either beside this where it can choose. `REVIEW-RENDER` and `HOST` build in the renderer's tests, and `DEAD-CODE` WP5 edits `cooked_rows_gpu.rs`. The binaries this module's own open items name stay targets of their own: `foam_scene_gpu` (WP3.1), `pool_gpu` (WP4.1) and `scene_view_absent_gpu` (WP4.4). A changed set of test targets links every worktree's tests again once, so the lead checks free disk first |
+| WP3 | `examples/water/tests/foam_scene_gpu.rs`, `wake_scene_gpu.rs` and any other test file of the water scene that holds a test on the exempt list; the child's arguments in `examples/water/tests/support/island.rs`; `.config/long-tests.txt` and `.config/nextest.toml` | `WATERS` WP7, whose open items run the foam test for its ten minutes and which is building in these files | `PUDDLES` WP5.4 runs the foam scene's binary and WP3.2 `stage_gpu`, and each needs only that the binary passes. `stage_gpu`, `inland_floating_gpu` and `bodies_gpu` also start a child through `island.rs`, each with a test that is not ignored, so running ignored tests in the child changes nothing for them |
+| WP4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` WP2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
+| WP14 | The check runner, its tests and help in `tools/xtask/src/`, `.config/nextest.toml`, and the corresponding timeout text in `ORCHESTRATE.md` and `CONTRIBUTING.md`. Load evidence in the working folder | The landed WP13 runner | `REPO-RULES` owns the check command outside the test runner. WP5 uses the contributor guide's merge timing |
+| WP15 | `dev` and its merge-verification helper and tests under `scripts/`, the check entry point and selection inputs in `tools/xtask/src/` if needed, the test-command line in `ORCHESTRATE.md`, the cache operation notes in `CONTRIBUTING.md`, and the test-profile debug-info setting in `Cargo.toml` only if the paired proof needs it | The landed WP14 check runner | `REPO-RULES` owns the check command. Its guards and callers keep their contracts. The lead coordinates the test-command cutover and verifier cleanup |
+| WP5 | The commands table and test-command text of `CONTRIBUTING.md`, plus the closing record in the working folder | WP15 and `DEAD-TOOLS` WP2 | `DEAD-TOOLS` WP3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` WP3, the one rename, waits for this milestone |
 
 ## Not built here
 
-- **A sweep of the tests under ten seconds** for the two rules. M9 and M3 take the 18 tests that hold 58% of the
+- **A sweep of the tests under ten seconds** for the two rules. WP9 and WP3 take the 18 tests that hold 58% of the
   time. The 265 GPU-named tests under ten seconds hold 141 s between them, summed over 14 cores, and each is
   another module's proof to read and rewrite. The rules bind one when it is next changed. This is an assumption
   in [the plan](PLAN.md).
 - **A lint that tells a GPU test should have been a CPU test, or a world a smaller one.** Nothing in a test's
   text says so. The guard rules hold what can be counted, the limit on one test catches the worst case, and the
   judgement is the reviewer's, by [the project settings](../../../ORCHESTRATE.md#what-is-proved-and-how-hard).
-  The block in the engineering skill on writing a test is `TEST-SUPPORT` M6's.
+  The block in the engineering skill on writing a test is `TEST-SUPPORT` WP6's.
 - **A gate on a check's total time, or on the tests' summed time.** Checks run at load averages of 19 to 23, and
   the same tests summed to 820 s in one check and 1,471 s in another. The figures are reported.
 - **A hook in a builder's host.** A Codex builder never runs a Claude hook, so what must hold is in the check.
@@ -882,7 +882,7 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
   which is the script's to offer.
 - **A standing guard that finds a new run-time reader of another package's files.** A search by text misses a
   reader that reaches the path through a helper, and the whole run on main catches what it misses. The declared
-  edge and M7's one search are what is built.
+  edge and WP7's one search are what is built.
 - **A shorter main tier.** The long tests take about 26 minutes in release and run every four hours, by the
   owner's decision of 21 November. Nobody waits for them.
 - **Two changes to the orchestrate script**, which the lead can raise with the skill: the Ready for Review run
@@ -893,10 +893,10 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 
 Change what the engine draws, simulates or sends. Change a long test's body or assertions when marking it, or a
 test behind a feature when listing it. Remove an assertion without naming where it still runs, except the four
-references of mechanism 7. Drop a case when one test becomes several. Rename a test binary in M9 or M3, or in M11 one that an open item, the
+references of mechanism 7. Drop a case when one test becomes several. Rename a test binary in WP9 or WP3, or in WP11 one that an open item, the
 main-tier list or a script names. Drop a test, or leave one in a file nothing compiles, when files become modules
-of one binary. Change a rule, a setting or a skill on the strength of M10's record. Fail a check on its total time. Add a name to
-the exempt list, or raise a guard rule's count or version in M12 or M13. Edit a Done item.
+of one binary. Change a rule, a setting or a skill on the strength of WP10's record. Fail a check on its total time. Add a name to
+the exempt list, or raise a guard rule's count or version in WP12 or WP13. Edit a Done item.
 Change a registered exact baseline, its comparison or its references. Turn a test that ran on this Mac into one
 that skips. Run a failed test again to get a pass, but for the one second run of a test the limit stopped. Select fewer tests than the whole workspace where the selection
 cannot be computed. Change how anything but a test is built.
@@ -914,11 +914,11 @@ tests, which a reviewer reads, by scratch changes whose selection the reviewer p
 declared edge, and by the record of what it saves, made before it is switched on. A test made fast is proved by
 the reviewer's comparison of what it asserted with what it asserts, case by case, and by its time in the record.
 A deleted duplicate is proved by the reviewer's list of where each of its assertions still runs. A retired
-reference is proved by the test that replaces it, which the reviewer reads. M15 uses matched cold and warm
+reference is proved by the test that replaces it, which the reviewer reads. WP15 uses matched cold and warm
 candidate runs, a committed candidate with a failing test and its passing revert, and cache-pressure and
 concurrent-use cases. With the cache warm, it also runs the configured command on a passing commit with a failing
 assertion edited locally, then restores the file and checks that it passes. A replay of the configured command on
-a known-good pre-M15 revision proves the invocation works across activation. M5 uses the saved wall times in
+a known-good pre-M15 revision proves the invocation works across activation. WP5 uses the saved wall times in
 [the fixed post-rollout window](#the-goal).
 
 One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by

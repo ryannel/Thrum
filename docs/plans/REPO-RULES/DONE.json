@@ -1,8 +1,8 @@
 {
   "module": "REPO-RULES",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M1",
+      "id": "WP1",
       "name": "A change that adds a string error, a hidden reach across packages, an environment read in a library or a copied device request is refused by `./dev check`",
       "status": "done",
       "failed_reviews": 0,
@@ -12,73 +12,73 @@
       "quality_bar": "As strict and as plain as Clippy under `-D warnings` and rust-lang's own `tidy`: the smallest real violation fails, the message names the file, the rule and what to write instead, and code that was already there is left alone.",
       "items": [
         {
-          "id": "M1.1",
-          "statement": "Each rule the design's table marks M1 refuses its violation and passes the corrected code: for every such rule a fixture with one violation fails with the rule's name, the file and the line, and the same fixture corrected passes. `library-env` passes a read in a package registered `test_role = \"support\"` and refuses the same read in an engine library. `history-names` refuses a code in a file name, an environment variable name, a Cargo target name and a Cargo description.",
+          "id": "WP1.1",
+          "statement": "Each rule the design's table marks WP1 refuses its violation and passes the corrected code: for every such rule a fixture with one violation fails with the rule's name, the file and the line, and the same fixture corrected passes. `library-env` passes a read in a package registered `test_role = \"support\"` and refuses the same read in an engine library. `history-names` refuses a code in a file name, an environment variable name, a Cargo target name and a Cargo description.",
           "check": "python3 scripts/test_shape_rules.py",
-          "ask": "Read the test and the rules. Does every rule marked M1 have a violating and a corrected fixture? Do the fixtures include a `pub fn` whose `Result<_, String>` return spans two lines, an `include_str!` that climbs out of its package with `..`, a dependency from a package under `crates/` on one under `examples/`, and `THRUM_G5_CAPTURE_DIR` read in a file whose own name is clean? Is a name such as `rgba8` or `vec3` left alone?",
+          "ask": "Read the test and the rules. Does every rule marked WP1 have a violating and a corrected fixture? Do the fixtures include a `pub fn` whose `Result<_, String>` return spans two lines, an `include_str!` that climbs out of its package with `..`, a dependency from a package under `crates/` on one under `examples/`, and `THRUM_G5_CAPTURE_DIR` read in a file whose own name is clean? Is a name such as `rgba8` or `vec3` left alone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP1.md; .orchestrate/evidence/REPO-RULES/WP1-final-cpu.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md"
         },
         {
-          "id": "M1.2",
+          "id": "WP1.2",
           "statement": "A registered rule's total can only go down. In a scratch Git repository, a change that adds a violation is refused; a change that adds a violation and rewrites the baseline to match is refused before it is committed, after it is committed, and from a second worktree of the same repository; and removing a violation lowers the mark that later changes are held to. A file moved or split with its violations, a newly registered rule and a new version of a rule pass. A rule built on a branch whose base then gains a violation is refused while the branch's history still holds the lower count, and passes once the branch first lists the rule in a commit that holds the new base's counts.",
           "check": "python3 scripts/test_shape_ratchet.py",
           "ask": "Read the ratchet cases. Is the accepted total taken from the baseline's Git history and never from the working tree's baseline? Does the committed case run the check at the commit that raised the count, with no remote and no branch name given? After a violation that reached history is removed, does the check pass again with nothing waived? In the moved-base case, is the passing branch one whose every commit holds a baseline equal to its own tree?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP1.md; .orchestrate/evidence/REPO-RULES/WP1-final-cpu.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md"
         },
         {
-          "id": "M1.3",
+          "id": "WP1.3",
           "statement": "At the claimed commit the whole repository passes every rule against a checked-in baseline that holds each file's present count and nothing else, and `--zero` on a path fails wherever a violation of the named rule exists under it, and for a path that does not exist.",
           "check": "python3 scripts/shape_rules.py check",
           "ask": "Run `check --rule string-errors --zero crates/thrum-app` and `check --rule package-reach --zero crates/thrum-render`: does each fail and list the sites the review named there? Does the baseline hold any count above what its file has now?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP1.md; .orchestrate/evidence/REPO-RULES/WP1-final-cpu.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md"
         },
         {
-          "id": "M1.4",
+          "id": "WP1.4",
           "statement": "`./dev check` and `./dev check-docs` run the rules through `repo_check.py`, with no flag, feature or environment variable that skips them. A refusal names the patterns section to read and the shape to use, and the patterns reference names the rule that holds each shape.",
           "check": "sh -c 'grep -q shape_rules scripts/repo_check.py && grep -q shape_rules .agents/skills/thrum-engineering/references/patterns.md'",
           "ask": "Could a builder who has never seen the review fix a refusal of each rule from its message alone? Does any path through `./dev check` skip the rules?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP1.md; .orchestrate/evidence/REPO-RULES/WP1-final-cpu.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md"
         },
         {
-          "id": "M1.5",
-          "statement": "The counts the rules found are on record for each rule marked M1, in each crate and example, at the commit the build started from. Every difference between that record and the baseline at the claimed commit names the commit on the main branch that made it.",
+          "id": "WP1.5",
+          "statement": "The counts the rules found are on record for each rule marked WP1, in each crate and example, at the commit the build started from. Every difference between that record and the baseline at the claimed commit names the commit on the main branch that made it.",
           "ask": "Does the record give a count for every rule and package, taken from the rules' own output at a named commit? Where a total differs from what the review reported for string errors, reaches across packages or environment reads, does the record say why? Is every violation the baseline holds beyond the starting record the work of a commit that reached the main branch before the rules did, and none of them this milestone's own?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-main-differences.json; .orchestrate/evidence/REPO-RULES/M1-starting-inventory.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP1.md; .orchestrate/evidence/REPO-RULES/WP1-main-differences.json; .orchestrate/evidence/REPO-RULES/WP1-starting-inventory.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md"
         },
         {
-          "id": "M1.6",
+          "id": "WP1.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP1-review.md"
         }
       ]
     },
     {
-      "id": "M2",
+      "id": "WP2",
       "name": "The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves",
       "status": "done",
       "failed_reviews": 0,
@@ -88,90 +88,90 @@
       "quality_bar": "Nothing a reader could open before is lost, as with a careful `git lfs migrate`, but with no new service: the tree is lighter, each removed file is one command away with a hash that proves it, and no document was rewritten to hide a hole.",
       "items": [
         {
-          "id": "M2.1",
+          "id": "WP2.1",
           "statement": "No tracked file under `docs/evidence/` is over 2 MiB except the registered exact-baseline references. Every history entry in the manifest matches its blob in the object store, every local entry the store holds matches its hash, and a new `evidence-size` rule, with its fixtures, refuses a new oversized file.",
           "check": "python3 scripts/evidence_store.py check",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/item-checks.json; .orchestrate/evidence/REPO-RULES/M2/store-tests.log",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP2.md; .orchestrate/evidence/REPO-RULES/WP2/item-checks.json; .orchestrate/evidence/REPO-RULES/WP2/store-tests.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md"
         },
         {
-          "id": "M2.2",
+          "id": "WP2.2",
           "statement": "Every file that left the tree is a history entry in `docs/evidence/BULK.json` with its path, size, SHA-256, Git blob and the last commit that held it, and `restore` writes back bytes with that SHA-256. `put` stores a new file in the one local store beside the main checkout and lists it as a local entry, with no blob or commit; a file put from one worktree is restored with the same hash in another worktree of the repository.",
           "check": "python3 scripts/test_evidence_store.py",
           "ask": "Read the test. From a clean checkout, does it restore the largest file, a video and a sample of others, and compare hashes it computes itself? Does it make two worktrees of a scratch repository, put a file from one and restore it in the other? Does `restore` fail loudly for a path that is in neither history nor the local store, and does `check` name a local entry whose file is not on this machine without failing?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/item-checks.json; .orchestrate/evidence/REPO-RULES/M2/store-tests.log",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP2.md; .orchestrate/evidence/REPO-RULES/WP2/item-checks.json; .orchestrate/evidence/REPO-RULES/WP2/store-tests.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md"
         },
         {
-          "id": "M2.3",
+          "id": "WP2.3",
           "statement": "Every link in tracked Markdown still resolves, to a tracked file or to a path the manifest lists, whether or not a restored copy is on disk, and no review, record or `DESIGN.md` was edited to make it so. A link to a path that is neither tracked nor listed is still refused.",
           "check": "sh -c 'python3 scripts/evidence_store.py check && python3 scripts/repo_check.py'",
           "ask": "Does the milestone's diff change any file under `docs/plans/`, or the text of any review or record under `docs/evidence/`? Pick three links from reviews to files that left: does each resolve through the manifest, and does `restore` bring the file back?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/item-checks.json; .orchestrate/evidence/REPO-RULES/M2/audit.json; .orchestrate/evidence/REPO-RULES/M2/store-tests.log",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP2.md; .orchestrate/evidence/REPO-RULES/WP2/item-checks.json; .orchestrate/evidence/REPO-RULES/WP2/audit.json; .orchestrate/evidence/REPO-RULES/WP2/store-tests.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md"
         },
         {
-          "id": "M2.4",
+          "id": "WP2.4",
           "statement": "A builder with a new large capture knows what to do from the refusal and the storage rules: keep it in scratch with the record that reproduces it, or `put` it in the local store. `docs/ASSET-LIFECYCLE.md` and `CONTRIBUTING.md` say so.",
           "ask": "From the `evidence-size` refusal and the two documents alone, what does a builder do with a 60 MB real-time capture that a reviewer must see? Is any step missing, and is anything said about a remote copy that does not exist?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; docs/ASSET-LIFECYCLE.md#bulk-review-evidence; CONTRIBUTING.md#review-and-evidence; scripts/shape_matchers.py",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP2.md; docs/ASSET-LIFECYCLE.md#bulk-review-evidence; CONTRIBUTING.md#review-and-evidence; scripts/shape_matchers.py",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md"
         },
         {
-          "id": "M2.5",
+          "id": "WP2.5",
           "statement": "The tracked tree's size before and after is on record, with the count and bytes that left by file type, and what a cap of 1 MiB and of 0.5 MiB would remove.",
           "ask": "Are the figures taken from `git ls-files` at named commits? How large is `docs/evidence` in a fresh checkout after this milestone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/size.json; .orchestrate/evidence/REPO-RULES/M2/audit.json; scripts/evidence_inventory.py",
+          "evidence": ".orchestrate/evidence/REPO-RULES/WP2.md; .orchestrate/evidence/REPO-RULES/WP2/size.json; .orchestrate/evidence/REPO-RULES/WP2/audit.json; scripts/evidence_inventory.py",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md"
         },
         {
-          "id": "M2.6",
+          "id": "WP2.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/WP2-review.md"
         }
       ]
     },
     {
-      "id": "M3",
+      "id": "WP3",
       "name": "Names say what things do: the scene renderer is called the scene renderer, milestone codes are out of file names, and the renderer's layers point one way",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REVIEW-RENDER:M5",
-        "REVIEW-ENGINE:M5",
-        "HOST:M5",
-        "TEST-SUPPORT:M4",
-        "GAME-SPLIT:M3",
-        "GATE-TIME:M5",
-        "DEAD-TOOLS:M4",
-        "DEAD-CODE:M6"
+        "REVIEW-RENDER:WP5",
+        "REVIEW-ENGINE:WP5",
+        "HOST:WP5",
+        "TEST-SUPPORT:WP4",
+        "GAME-SPLIT:WP3",
+        "GATE-TIME:WP5",
+        "DEAD-TOOLS:WP4",
+        "DEAD-CODE:WP6"
       ],
       "quality_bar": "A reorganisation as clean as rust-lang's or Bevy's crate renames: one landing, no change of behaviour, history follows each file, nothing is left with two names, and an agent landing cold can guess where a thing lives.",
       "items": [
         {
-          "id": "M3.1",
+          "id": "WP3.1",
           "statement": "`thrum-render`'s scene renderer is named `scene`. No module, type, file, shader, GPU label, bench or comment under `crates/` or `examples/` calls it synthetic, and the crate's docs say it is the production renderer.",
           "check": "sh -c '! grep -rIli synthetic crates examples --include=*.rs --include=*.wgsl --include=*.toml | grep -q .'",
           "target": "mac-metal",
@@ -181,7 +181,7 @@
           "review": ""
         },
         {
-          "id": "M3.2",
+          "id": "WP3.2",
           "statement": "No file, bench, script, environment variable or Cargo description under `crates/`, `examples/`, `tools/` or `scripts/` is named for a milestone or gate: `history-names` is at zero over file names, environment variable names in source, Cargo target names and Cargo descriptions. The only names left are those an open item's check, `./dev` or the baseline registry uses, which the rule finds itself and lists with what pins each.",
           "check": "python3 scripts/shape_rules.py check --rule history-names --zero .",
           "ask": "Run the rule's list of pinned names: is each really named by an open item's check, by `./dev` or by the registry, and is any exception written by hand? Is `THRUM_G5_CAPTURE_DIR`, or any other environment variable with a gate code, still read anywhere? Pick five renamed test files: does each new name say what the test covers?",
@@ -192,7 +192,7 @@
           "review": ""
         },
         {
-          "id": "M3.3",
+          "id": "WP3.3",
           "statement": "Every name an open item's check used at the starting commit still works: each package, test target and script that existed then and is named by an open check exists now under the same name.",
           "check": "python3 scripts/open_check_names.py verify",
           "ask": "Read the script. Does it take names from every `DONE.json` at the claimed commit as well as at the starting one? Does it fail when a named test target is removed or renamed?",
@@ -203,7 +203,7 @@
           "review": ""
         },
         {
-          "id": "M3.4",
+          "id": "WP3.4",
           "statement": "Inside `thrum-render` the graph and timing import nothing from the scene renderer or the atmosphere, and the `layering` rule holds that at zero. The frame runtime's and the presenter's imports from the scene renderer are counted in the baseline, each on record with the type it needs, and the rule refuses a new one.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule layering --zero crates/thrum-render/src/graph.rs crates/thrum-render/src/graph crates/thrum-render/src/timing.rs crates/thrum-render/src/timing && python3 scripts/shape_rules.py check --rule layering'",
           "target": "mac-metal",
@@ -214,7 +214,7 @@
           "review": ""
         },
         {
-          "id": "M3.5",
+          "id": "WP3.5",
           "statement": "The files the review named as holding several jobs are split by responsibility, as moves with no change of behaviour: the scene renderer's root file, `graph.rs` and `runtime.rs` in `thrum-render`, and `runtime.rs` and `registered_world.rs` in `thrum-core`. The tests that ran before run after, and pass.",
           "ask": "Does each new file hold one responsibility you can name in a line? Does the list from `cargo test --workspace -- --list` at the starting commit equal the list at the claimed one, apart from renames the record maps one to one?",
           "target": "mac-metal",
@@ -224,7 +224,7 @@
           "review": ""
         },
         {
-          "id": "M3.6",
+          "id": "WP3.6",
           "statement": "`thrum-engineering`'s table of where things are, the README and CONTRIBUTING name the new paths, and say that approved designs written before the rename still say `synthetic`.",
           "ask": "Would an agent who lands cold in an approved design that names `synthetic/shadow.rs` find the file from the skill's table? Was any `DESIGN.md` under `docs/plans/` edited?",
           "target": "mac-metal",
@@ -234,7 +234,7 @@
           "review": ""
         },
         {
-          "id": "M3.7",
+          "id": "WP3.7",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -246,7 +246,7 @@
       ]
     },
     {
-      "id": "M4",
+      "id": "WP4",
       "name": "The repository is tidy: scripts are findable, superseded designs are marked, pins are declared once, and feature-gated code is checked",
       "status": "not_started",
       "failed_reviews": 0,
@@ -256,7 +256,7 @@
       "quality_bar": "A repository a newcomer can read from its top level, as ripgrep's or wgpu's can be: each folder says what it holds, nothing is orphaned, and nothing compiles only by luck.",
       "items": [
         {
-          "id": "M4.1",
+          "id": "WP4.1",
           "statement": "The top level of `scripts/` holds only what `./dev`, an open item's check or the baseline registry names. Every other script is in a named subfolder, and an index says in one line what each folder is for.",
           "check": "python3 scripts/repo_layout.py check",
           "target": "mac-metal",
@@ -264,7 +264,7 @@
           "evidence": ""
         },
         {
-          "id": "M4.2",
+          "id": "WP4.2",
           "statement": "Each document under `docs/design/` that a module design in `docs/plans/` supersedes says so in its first lines and links to what replaced it, and one index lists which documents are current authority. No path under `docs/design/` changed.",
           "ask": "Open three superseded documents the review named: does each say what replaced it? Did any path under `docs/design/` change, or any `DESIGN.md` under `docs/plans/`?",
           "target": "mac-metal",
@@ -274,7 +274,7 @@
           "review": ""
         },
         {
-          "id": "M4.3",
+          "id": "WP4.3",
           "statement": "A third-party dependency is pinned once, in `[workspace.dependencies]`, and the repository check refuses a second pin in a package manifest.",
           "check": "python3 scripts/repo_layout.py check --pins",
           "target": "mac-metal",
@@ -282,7 +282,7 @@
           "evidence": ""
         },
         {
-          "id": "M4.4",
+          "id": "WP4.4",
           "statement": "The orphan directories the review named are gone with every reference to them, and `./dev check` compiles each feature-gated path the review found outside it.",
           "ask": "Do `crates/thrum-source` and `examples/i1-mobile-game` still exist, or any ignore rule or script that names them? Which features does `./dev check` now build that it did not, and is any Cargo feature in the workspace still built by nothing?",
           "target": "mac-metal",
@@ -292,7 +292,7 @@
           "review": ""
         },
         {
-          "id": "M4.5",
+          "id": "WP4.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",

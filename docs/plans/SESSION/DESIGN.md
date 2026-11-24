@@ -1,7 +1,7 @@
 # SESSION: two to four players share one run and keep seeing the same crowd
 
 13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C02, C03 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
+[the brief](../VISION.md). C02, C03 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
 [the networking design](../../design/modules/NETWORKING.md), [the A0 decision](../../design/decisions/A0-N1-TRANSPORT-CODEC.md),
 [the input wire](../../design/decisions/A5-INPUT-WIRE.md) and
 [the A5 timing decision](../../design/decisions/A5-INPUT-TIMING-RECONCILIATION.md) govern.
@@ -11,7 +11,7 @@
 
 The owner's words weren't passed on with this task; this design answers the lead's task, "Plan module SESSION. It
 needs: SIM-2D, TRANSPORT", which is row 19 of the module list. What the owner asked for is on
-[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../BRIEF.md) carries
+[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../VISION.md) carries
 as decision 7:
 
 > - **A swarm survivor.** One or more players hold out against ever-growing crowds of enemies, with automatic
@@ -39,7 +39,7 @@ what their designs promise.
 **14 November 2026.** The owner said: "Let's move the 2d engine side of things to before v1 and decouple them.
 But we don't want to start working on the swarm game till v1 lands." This module is engine work and waits for
 nothing of V1's. One piece of engine work the game's plan had carried, a world that steps when a match says,
-moved here as [mechanism 12](#12-a-driven-world) and M7, so that it is built and proved without the game.
+moved here as [mechanism 12](#12-a-driven-world) and WP7, so that it is built and proved without the game.
 
 ## Purpose and scope
 
@@ -62,16 +62,16 @@ and its own predicted character. `GAME-UI` shows what the session reports about 
 future input frames; a runtime that can capture and restore a world inside one process. Nothing negotiates,
 relays, joins or repairs, and no test puts two worlds in step.
 
-**Commissioned.** The twelve mechanisms below. M1 to M6 prove the first eleven with no window: by four players
+**Commissioned.** The twelve mechanisms below. WP1 to WP6 prove the first eleven with no window: by four players
 and a host on the in-memory link with [the reference crowd](../SIM-2D/DESIGN.md#7-the-reference-crowd), then on
-real sockets across `mac-metal`, `chrome-webgpu` and `ios-sim`. M7 proves the twelfth, and what a player sees of
+real sockets across `mac-metal`, `chrome-webgpu` and `ios-sim`. WP7 proves the twelfth, and what a player sees of
 the sixth, in a window on the Mac and on a Chrome page.
 
 **Not built.** Host migration: when the host stops, the match ends. Matchmaking, accounts, passwords and a public
 host. Interest management: every peer holds the whole world. Whole-world rollback. Spectators. A replay file. Any
 protection against a player who reads the world from a modified client. More than four players. Travelling state
 for a game without deterministic rules: A5's acknowledged deltas stay in `thrum-network`, unused and unqualified
-by this module. Drawing a game: M1 to M6's proofs have no window, and M7 draws only the reference crowd, through
+by this module. Drawing a game: WP1 to WP6's proofs have no window, and WP7 draws only the reference crowd, through
 `RENDER-2D`'s crowd view. Extrapolating a picture past the newest confirmed tick: in a stall the picture holds.
 
 ## What a consumer must be able to do
@@ -109,7 +109,7 @@ committed that tick with that input, as C13 and
 [the A5 timing decision](../../design/decisions/A5-INPUT-TIMING-RECONCILIATION.md) require: origins are "reported
 committed only **after** `Simulation::step` commits". No set is a proposal and a client needs no second signal.
 The price is that a client's wait for a set includes the host's own tick: about 5 ms at 10,000 bodies by
-`SIM-2D`'s probe, beside a wait of 76 ms at A0. M2 records it.
+`SIM-2D`'s probe, beside a wait of 76 ms at A0. WP2 records it.
 
 **When the host's step fails.** The runtime can refuse a tick and leave the world where it was (`TickError` in
 `thrum-core`'s `sim`). A game in a match makes its rules step for every set its admission accepts, so no peer's
@@ -137,7 +137,7 @@ lagging client.
 
 **What would change the decision.** If `SIM-2D`'s first milestone cannot hold the three targets equal,
 [the module list's fallback](../ARCHITECTURE.md#mechanisms-settled-here) applies and this design is replanned. If
-M2's record shows the host's tick to be a large part of a client's wait, a later plan can send a set early as a
+WP2's record shows the host's tick to be a large part of a client's wait, a later plan can send a set early as a
 proposal and confirm it with a committed tick in the next datagram; that is not built here.
 
 ### 2. The world knows slots, the session knows peers
@@ -262,7 +262,7 @@ the authoring tick less the host tick it infers from its newest set and half the
 After the first minute about one tick a minute was held at A0. When the link worsened mid-run 46 ticks were held
 in the next ten seconds and the lead followed; when it recovered the lead came back down. A lead fixed at the old
 fixture's five ticks missed every tick on the harsh profile. The probe's host and client shared one virtual time,
-so it did not try a wrong first estimate or a clock that runs fast; M2 does, with an origin for each client and
+so it did not try a wrong first estimate or a clock that runs fast; WP2 does, with an origin for each client and
 one clock at another rate.
 
 **Limits.** A client authors at most one frame for a tick, and its target ticks only rise: when the lead falls it
@@ -271,7 +271,7 @@ staging window, a match setting. A client whose link needs more is told so ([mec
 and its frames arrive late until the link improves.
 
 **Repeats.** Each input datagram repeats recent frames so one loss costs nothing. The probe found two frames
-recover nearly all of A0's loss and eight no more, at 31 bytes each, so the depth is a match setting and M2
+recover nearly all of A0's loss and eight no more, at 31 bytes each, so the depth is a match setting and WP2
 records the held ticks at each depth.
 
 ### 6. The playout clock
@@ -349,13 +349,13 @@ undo history, which a match never uses.
 **Where it lives.** `thrum-core` can restore a capture only into the runtime that made it. The image is the same
 operation through bytes, into a fresh runtime in another process, so it is built in `thrum-core` beside the
 digest: each component and resource type gains the decoding half of `SIM-2D`'s state encoding, and the compiler
-refuses a rule set whose type has one half without the other. It is built by this module's M1 builder under
+refuses a rule set whose type has one half without the other. It is built by this module's WP1 builder under
 [a seam ruling](../ARCHITECTURE.md#seam-rulings-for-session). `SIM-2D`'s retained digests do not move.
 
 **One boundary asks for both halves.** Registering a component under the profile, and naming a rule set's
 authority resources, each require the encoding and the decoding together, so any rule set that can be digested
 can be sent. The types registered before this module, the crowd's and the fixtures of `thrum-core`'s tests, gain
-the decoding half in M1, and that is the one change the seam ruling allows to a test `SIM-2D` was accepted with:
+the decoding half in WP1, and that is the one change the seam ruling allows to a test `SIM-2D` was accepted with:
 its assertions, inputs and expected values stay. A second registration for types that can be sent, leaving the
 old one as it was, was weighed and left out. It would keep those fixtures untouched at the price of two kinds
 of rule set, one of which no match can take, and of a refusal that moves from where a type is registered to
@@ -374,7 +374,7 @@ the player input" since, and then "tries to update it as fast as possible to cat
 ([Friday Facts 149](https://www.factorio.com/blog/post/fff-149)).
 
 **Range.** An image of the reference crowd at 10,000 bodies is estimated at about 1.3 MiB (130 bytes a body, most
-of it identities and change ticks); M1 measures it. `TRANSPORT`'s probe moved 1 MiB down the reliable lane under
+of it identities and change ticks); WP1 measures it. `TRANSPORT`'s probe moved 1 MiB down the reliable lane under
 A0's profile in 0.7 s with BBR and 18 s with Cubic. Sets cost a few kilobytes a second, so the ring can hold a
 minute of them, and a join has a deadline, a match setting, after which the host gives up on it and the client
 may try again. A client steps a 10,000-body tick in about 5 ms, so while it catches up it steps about three
@@ -487,7 +487,7 @@ and each cap has one outcome.
 threshold starts at 30 ticks: the probe's playout buffer was about three ticks on the harsh profile, and a stall
 or a join leaves a backlog of hundreds. The same threshold is where a playing client stops gliding back to its
 target and [skips](#6-the-playout-clock). The catch-up deadline starts at 600 ticks, counted in host ticks from the
-first report above the threshold. Both are match settings, and M3 records the backlogs they are set against. The
+first report above the threshold. Both are match settings, and WP3 records the backlogs they are set against. The
 deadline judges a playing client. One that is synchronising or repairing is judged by the join deadline alone,
 and the catch-up deadline first applies when it is in step. A client closed as unable to keep up leaves its slot
 away for the grace period and may return with its token. The two ticks are the client's own word: a client that
@@ -538,7 +538,7 @@ the prediction is dropped and the confirmed character is drawn until the client 
 (C02); and each correction, with the state before and after, to smooth as it chooses (C07). The confirmed world
 and its pages are never written by prediction.
 
-**What would change the decision.** M4 puts `SIM-2D`'s recorded eight-tick replay beside the frame period. If a
+**What would change the decision.** WP4 puts `SIM-2D`'s recorded eight-tick replay beside the frame period. If a
 game's crowd is small enough that the replay is a small part of a frame on every target, a later plan can add
 whole-world prediction as a client's choice; nothing here prevents it.
 
@@ -564,11 +564,11 @@ the picture three ticks. The session stays driven by time
 from the world's task, which drains the link at the barrier as
 [`TRANSPORT`'s design](../TRANSPORT/DESIGN.md#4-the-world-lane-never-waits-on-the-network) expects.
 
-This is new work in core's and the app runner's state, built in M7 under
+This is new work in core's and the app runner's state, built in WP7 under
 [seam ruling 3](../ARCHITECTURE.md#seam-rulings-for-session). It is proved with the reference crowd drawn by
 `RENDER-2D`'s crowd view, on a Mac host, a Mac client and a Chrome page, so no game is needed to prove it. It
-is M7 and not part of M5 because M1 to M6 need no window and no GPU, and this needs both. The playout position
-itself is session logic and is proved in M2 in virtual time. M7 proves that a frame is drawn where the position
+is WP7 and not part of WP5 because WP1 to WP6 need no window and no GPU, and this needs both. The playout position
+itself is session logic and is proved in WP2 in virtual time. WP7 proves that a frame is drawn where the position
 says, and that the result looks as promised.
 
 *Range.* A driver may name no tick for as long as it likes; the world holds its last pair and the picture holds
@@ -657,13 +657,13 @@ envelope.
 
 **For `SWARM`'s planner.**
 - The engine's world lane steps by its own clock. A client's world has to step when the session says, which
-  [a driven world](#12-a-driven-world) allows from M7. The game supplies only the driver. After a stall the
+  [a driven world](#12-a-driven-world) allows from WP7. The game supplies only the driver. After a stall the
   crowd runs up to a tenth fast until it is back on its clock, and a client that fell behind skips; the
   connection state says which, for a screen to show.
 - A hero the crowd can push is corrected every tick it is pushed. Keep the hero's movement a function of its own
   state and input where the game allows.
-- The crowd is drawn at the confirmed tick and the hero ahead of it, by the lead plus the confirmed delay. M4 and
-  M5 record that offset. How it feels is the owner's to judge in the game.
+- The crowd is drawn at the confirmed tick and the hero ahead of it, by the lead plus the confirmed delay. WP4 and
+  WP5 record that offset. How it feels is the owner's to judge in the game.
 - One match has one crowd. A peer that cannot step it at the pace of play is dropped; the match does not slow
   down for it.
 - A setting the rules read, such as a mode or a difficulty, goes in the world as an authority resource or in
@@ -683,13 +683,13 @@ No budget is set (brief, decision 3). The account, for a host and four players a
 | Host to each client | One datagram a tick: the envelope and about 7 sets at A0 | About 6.5 KB/s when axes change now and then, about 19 KB/s when four players' axes change every tick. Arithmetic, not measured |
 | A join or a repair | One image write on the host, one transfer, one restore, then a catch-up | About 1.3 MiB at 10,000 bodies (estimate); 0.7 s under BBR, 18 s under Cubic (`TRANSPORT`'s probe) |
 | A correction of the predicted controller | When the host held a tick: about one a minute at A0 | 9 to 10 steps of a function of a few operations |
-| Memory on the host, for each client | A ring of sets, staged frames, at most one baseline in flight | Bounded by the match settings; M3 records it |
-| Memory on a client | Its buffer of sets, up to the backlog cap | Bounded by the match settings; M3 records the largest backlog |
+| Memory on the host, for each client | A ring of sets, staged frames, at most one baseline in flight | Bounded by the match settings; WP3 records it |
+| Memory on a client | Its buffer of sets, up to the backlog cap | Bounded by the match settings; WP3 records the largest backlog |
 
 The costs that matter are the wait a set adds before a client can step, which the playout buffer turns into
 latency, and the tick the host writes an image in. The design sends a set as soon as its tick has committed,
 which puts the host's own tick, about 5 ms at 10,000 bodies, in every client's wait; it writes a set once for all
-clients, and writes an image in one pass. The session's buffers are reused, and M2 counts what a warmed
+clients, and writes an image in one pass. The session's buffers are reused, and WP2 counts what a warmed
 host tick and client tick allocate.
 
 **A0's proposed 64 kbit/s** was written for travelling state at 20 Hz. By the arithmetic above the upward stream
@@ -709,7 +709,7 @@ adapt holds all of them. The floor catches a collapse and is no target.
 ## Risks
 
 - **The image misses something a later tick reads.** Early sign: a restored world has the right digest and
-  drifts later. M1 steps a restored world through the rest of a retained trace on each target.
+  drifts later. WP1 steps a restored world through the rest of a retained trace on each target.
 - **A convincing fake of N1:** clients that are sent the host's state, or that step in the host's process. The
   sockets record names each peer's process and platform, and the review reads what crosses the link.
 - **A convincing fake of a join:** a client that starts with the others. The join is after tick 3,600, and the
@@ -719,23 +719,23 @@ adapt holds all of them. The floor catches a collapse and is no target.
 - **The lead hunts.** Early sign: it changes more than a few times a minute on a steady profile. The record
   counts its changes.
 - **A client cannot catch up.** At 10,000 bodies a tick in Chrome takes a third of its period, so a long join
-  catches up slowly, and a denser crowd might not at all. Early sign: M5's Chrome join time. The join deadline
+  catches up slowly, and a denser crowd might not at all. Early sign: WP5's Chrome join time. The join deadline
   bounds it and the finding goes to `SWARM`'s planner.
-- **The host hitches when it writes an image.** Early sign: M3's row for that tick. If it is long, the image is
+- **The host hitches when it writes an image.** Early sign: WP3's row for that tick. If it is long, the image is
   written over several ticks from a leased page, which is a new design.
 - **A hidden browser tab** is throttled and falls behind. It is closed as unable to keep up or as absent, or
-  repaired when it returns, by whichever rule its reports meet first, and it can come back with its token. M5
+  repaired when it returns, by whichever rule its reports meet first, and it can come back with its token. WP5
   records what the host sees.
 - **A convincing fake of smooth play:** equal digests and correct interpolation values over a picture that
-  jumps, or a frame record written from the session's own log. M2 fails the policy that commits every set held,
-  and M7's record is of the position each frame was drawn at.
-- **Running a tenth fast shows.** Early sign: M7's inspection after the underrun. The two rates are settings.
-- **The rate hunts** on a steady link. Early sign: M7's frame record, which carries the rate of each frame.
-- **The lag rule closes a client that would have caught up.** Early sign: M3's record of how long a backlog
+  jumps, or a frame record written from the session's own log. WP2 fails the policy that commits every set held,
+  and WP7's record is of the position each frame was drawn at.
+- **Running a tenth fast shows.** Early sign: WP7's inspection after the underrun. The two rates are settings.
+- **The rate hunts** on a steady link. Early sign: WP7's frame record, which carries the rate of each frame.
+- **The lag rule closes a client that would have caught up.** Early sign: WP3's record of how long a backlog
   stays above the threshold after a stall and a join, set beside the catch-up deadline. Both are settings.
-- **The host's tick in every client's wait.** Early sign: M2's time from a tick's barrier to its set leaving the
+- **The host's tick in every client's wait.** Early sign: WP2's time from a tick's barrier to its set leaving the
   host, beside the confirmed delay.
-- **Cubic.** If `TRANSPORT` falls back to it, a join at 10,000 bodies takes tens of seconds. M5 records both.
+- **Cubic.** If `TRANSPORT` falls back to it, a join at 10,000 bodies takes tens of seconds. WP5 records both.
 - **Loopback hides the network,** as [TRANSPORT's risks](../TRANSPORT/DESIGN.md#risks) say. Nothing here is run
   between two machines.
 
@@ -748,18 +748,18 @@ adapt holds all of them. The floor catches a collapse and is no target.
 - **Two tiers.** A short match on the in-memory link runs inside `./dev check`, in virtual time. The full sizes,
   10,000 bodies for 36,000 ticks, run in release through **the match command**, one script with the scenario as
   its argument.
-- **Targets.** The host is always native on the Mac. In M1 to M6 clients run natively on the Mac, as a plain
+- **Targets.** The host is always native on the Mac. In WP1 to WP6 clients run natively on the Mac, as a plain
   executable in the iPhone 18 Pro simulator through `simctl spawn`, and as Wasm in headless Chrome with no flag
-  that touches certificates, QUIC or origins; none of them opens a window or needs the GPU. M7 alone opens
+  that touches certificates, QUIC or origins; none of them opens a window or needs the GPU. WP7 alone opens
   windows on the Mac and a visible Chrome page, takes the GPU lock, and shows a reviewer motion through T2
   engine capture in `realtime` mode. The simulator proves function, never speed.
 - **The sandbox.** Nothing in `./dev check` opens a socket, starts Chrome or calls the simulator: every such
   proof is behind the match command. [The project settings](../../../ORCHESTRATE.md) give Codex full access
   ([owner decision 11](../ARCHITECTURE.md#owner-decisions)), so a builder or a reviewer runs the match command
   as it is, with no request.
-- **Smooth play is proved twice.** In M2 the playout position is driven in virtual time through a burst inside
+- **Smooth play is proved twice.** In WP2 the playout position is driven in virtual time through a burst inside
   the buffer, an underrun and a fall behind, beside the policy that commits every set held, which must fail.
-  In M7 the same three are made on a real link by cutting the path at the relay for a time, so that the sets
+  In WP7 the same three are made on a real link by cutting the path at the relay for a time, so that the sets
   lost in the cut arrive together in the next datagram. The frame record is checked against
   [the promise](#6-the-playout-clock), and a reviewer watches the three places.
 - **Equal digests** are read from each peer's own record of the digests it took, never from one process on
@@ -771,7 +771,7 @@ adapt holds all of them. The floor catches a collapse and is no target.
 - **Exact baselines.** This module edits `crates/` and `scripts/`, which are covered paths, and moves no retained
   image and no retained digest. Each milestone carries the verifier.
 
-### Simulator lifecycle in the proof harnesses (M5)
+### Simulator lifecycle in the proof harnesses (WP5)
 
 Use one repository-owned lifecycle for the SESSION socket and image proofs, SIM-2D conformance, the V1
 shell route used by HOST, APPLE-PRESENTATION and PLATFORM-RUNTIME-IOS, HOST overload, and the TRANSPORT,
@@ -785,11 +785,11 @@ For Cooked Draw and T2 capture, the waiting supervisor owns admission and cleanu
 handoff and passes its selected UDID to the attributed launcher and driver. Keep the existing permission
 preflights and their launcher-to-driver attribution.
 
-The outer check declarations for [HOST M4.5](../HOST/DONE.json),
-[APPLE-PRESENTATION D6.7](../APPLE-PRESENTATION/DONE.json), [CULLING M2.2](../CULLING/DONE.json),
-[COOKED-DRAW M1.7–M1.9](../COOKED-DRAW/DONE.json), [PLATFORM-RUNTIME-IOS M7.2](../PLATFORM-RUNTIME-IOS/DONE.json)
+The outer check declarations for [HOST WP4.5](../HOST/DONE.json),
+[APPLE-PRESENTATION D6.7](../APPLE-PRESENTATION/DONE.json), [CULLING WP2.2](../CULLING/DONE.json),
+[COOKED-DRAW WP1.7–WP1.9](../COOKED-DRAW/DONE.json), [PLATFORM-RUNTIME-IOS WP7.2](../PLATFORM-RUNTIME-IOS/DONE.json)
 and [the T2 capture guide's command](../../CAPTURE.md#ios-simulator-submitted-output-workflow) already take
-`simulator`. M5 adapts those entry points to reuse that admission through verified shutdown. Update the Culling,
+`simulator`. WP5 adapts those entry points to reuse that admission through verified shutdown. Update the Culling,
 Cooked Draw, V1 route and T2 script usage text to match, and update the capture guide when reuse lands.
 Acquire one resource per turn and build outside it where the entry point controls admission. When an item or
 the published command holds outer admission during preparation, count that preparation toward its hold limit.
@@ -818,7 +818,7 @@ backgrounding or recovery preserve the app state those steps depend on within th
 simulators and their data.
 
 The outer orchestrate lock holder waits for the process it launched. Run supervision in that process or use
-`exec` to hand its PID to the supervisor before touching the device. The HOST M4.5 shell checks for one
+`exec` to hand its PID to the supervisor before touching the device. The HOST WP4.5 shell checks for one
 `SAMPLE_SLOTS` definition across `crates` and `examples`, then execs the iOS-only HOST command. That command
 supervises its route and overload workers in process. APPLE-PRESENTATION D6.7 execs the presentation command,
 which also supervises its iOS route in process. Treat the existing 1,500-second presentation route limit as a
@@ -839,7 +839,7 @@ Thrum device before any new device work. Abort the turn if recovery remains unve
 Keep simulator work out of `./dev check`. The fast guard exercises ownership and failure handling with
 simulated state. The real device proof runs supervision in process and queries CoreSimulator independently
 under admission. A separate CPU record uses the installed runner's `install_stop` and `run_check`, as a
-build does, with a second `simulator` contender in an isolated lock namespace. Run the HOST M4.5 and
+build does, with a second `simulator` contender in an isolated lock namespace. Run the HOST WP4.5 and
 APPLE-PRESENTATION D6.7 commands as declared, using the production wrappers and supervisor with simulated
 device and route workers. Queue the contender while the first turn owns the lock. With the worker active,
 signal the lock holder to cancel each outer check. Also exercise the presentation deadline with an injected
@@ -850,18 +850,18 @@ while its supervisor is still cleaning up.
 
 ## Open questions
 
-- Whether a 10,000-body image and its catch-up fit a join a player will wait for. Settled by M1's sizes and M5's
+- Whether a 10,000-body image and its catch-up fit a join a player will wait for. Settled by WP1's sizes and WP5's
   join times.
-- Whether the envelope should be shortened for datagrams. Settled when M5's bytes are on record; a planner
+- Whether the envelope should be shortened for datagrams. Settled when WP5's bytes are on record; a planner
   decides then.
-- Whether a tenth over pace, and a skip beyond the behind threshold, look right. Recorded by M7's inspection;
+- Whether a tenth over pace, and a skip beyond the behind threshold, look right. Recorded by WP7's inspection;
   both are match settings, and the owner judges them in `SWARM`.
 - Whether the confirmed crowd's delay behind the hero feels right. Recorded here; judged by the owner in
   `SWARM`.
 
 ## World-image compatibility
 
-Under [seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-session), a SIM-2D test accepted before SESSION M1
+Under [seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-session), a SIM-2D test accepted before SESSION WP1
 changes only to decode its types and follow the encoding interface, keeping its assertions, inputs and
 expected values. The reference crowd’s `control` field injects faults for conformance and stays out of
 [the rule-set identity](#9-negotiation-and-leaving).
@@ -879,7 +879,7 @@ expected values. The reference crowd’s `control` field injects faults for conf
 - Record only runs of the commit being claimed, with the load on the machine.
 - Follow the [shared exact-baseline proof on main](../ARCHITECTURE.md#proofs-run-once-on-main).
 
-## Reliable-lane recovery fixture (M8)
+## Reliable-lane recovery fixture (WP8)
 
 Use the in-memory transport with a small roster, queue and world and step simulated time to the same
 boundaries. Still drive the reliable lane to backpressure, drain and acknowledge on the same link, advance

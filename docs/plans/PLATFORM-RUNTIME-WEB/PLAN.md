@@ -8,5 +8,5 @@ Built before the loop, so there is no done-when file. The two follow-ups in
 [the design](DESIGN.md#follow-ups) are not planned; a milestone and a done-when file are written when one is
 commissioned.
 
-## M1 The V1 page runs unchanged in Chrome on the engine's own web shell: done
-[record and reviews](../../../.orchestrate/evidence/PLATFORM-RUNTIME-WEB/M1-record.md)
+## WP1 The V1 page runs unchanged in Chrome on the engine's own web shell: done
+[record and reviews](../../../.orchestrate/evidence/PLATFORM-RUNTIME-WEB/WP1-record.md)

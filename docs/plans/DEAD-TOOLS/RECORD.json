@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/DEAD-TOOLS/design-review.md",
     "commit": "d8094d1b01c7eb4333734cb47d6f4451de569ccc",
-    "hash": "4050753a588c19bdcb6b5a897a1e46808c31f7f4cc0d7158a0f4fb31561d64bc",
+    "hash": "7def8be00539b3d2209b9bc9ff7ad71b36c79fc77c8d766c76b7340797c1c2c5",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
@@ -23,29 +23,29 @@
     },
     "at": "2026-11-20T13:03:27Z"
   },
-  "milestones": {
-    "M1": {
+  "work_packages": {
+    "WP1": {
       "definitions": "35f4ecf665b2506181d3cea1ea865298fb31dcc7a98fda28fc4e96c67af0d4e4",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "8e400661a763260bb8ac8278d773f2fdc6047dd3",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review-1.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP1-review-1.md",
           "items": {
-            "M1.1": "fail",
-            "M1.2": "pass",
-            "M1.3": "fail",
-            "M1.4": "pass"
+            "WP1.1": "fail",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass"
           },
           "findings": [
             {
               "name": "Discovered suites run as plain scripts, so six test_t2_capture tests no longer run",
-              "item": "M1.3",
+              "item": "WP1.3",
               "repeat": false
             },
             {
               "name": "Three maturity rows still describe the toolchain as present or candidate",
-              "item": "M1.1",
+              "item": "WP1.1",
               "repeat": false
             }
           ],
@@ -69,12 +69,12 @@
         {
           "verdict": "pass",
           "commit": "5bd1598be8ca49cb5f41818f64e4115584ef7687",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -132,22 +132,22 @@
       "done": {
         "by": "review",
         "commit": "5bd1598be8ca49cb5f41818f64e4115584ef7687",
-        "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/WP1-review.md",
         "checked": "c02fc277e2a9fc57f1690044b6c4ceed425d58ce",
         "at": "2026-11-20T21:39:35Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "052bfec82e9783bdd40773b609c6e94277862336065b7e81a394ff7f3d3308e0",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "a45adfaa6f1bd7106a36af35cb246fe7fda20d2a",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M2-review.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -205,29 +205,29 @@
       "done": {
         "by": "review",
         "commit": "a45adfaa6f1bd7106a36af35cb246fe7fda20d2a",
-        "review": ".orchestrate/evidence/DEAD-TOOLS/M2-review.md",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/WP2-review.md",
         "checked": "11e07670d863772bbe62d2cdeb5e11cae0fa89e2",
         "at": "2026-11-20T23:33:12Z"
       }
     },
-    "M3": {
-      "definitions": "356c74e2a5c00c89fb057864b53370ba63ead9abd695508af8a1f32036b66083",
+    "WP3": {
+      "definitions": "1469fb0ecb52ecd0ab7c95a51b90103a63574a04344707b066f60a7770ab3f50",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "d115db4998851b6e361797fb41d17b8db036aebd",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review-1.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review-1.md",
           "items": {
-            "M3.1": "fail",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "fail",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "maturity ledger points at four deleted SIM-2D records",
-              "item": "M3.1",
+              "item": "WP3.1",
               "repeat": false
             }
           ],
@@ -251,18 +251,18 @@
         {
           "verdict": "fail",
           "commit": "ffab2fc7a1359d20eaced5753a927564ff14b8d5",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review-2.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review-2.md",
           "items": {
-            "M3.1": "fail",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "fail",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "findings": [
             {
               "name": "maturity ledger points at three deleted RAY-TRACING and SESSION records through ../evidence paths",
-              "item": "M3.1",
+              "item": "WP3.1",
               "different": "The four SIM-2D pointers named last time are fixed. These are three other ledger entries (RAY_TRACING_M2 evidence, SESSION M2 deterministic_session evidence), written as paths relative to docs/design (../evidence/...), which neither the earlier review's search nor the fix's git grep for docs/evidence/... strings could match.",
               "repeat": false
             }
@@ -287,13 +287,13 @@
         {
           "verdict": "pass",
           "commit": "eddd1a289bf791605813472208dd6cb7cf5e0533",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -351,23 +351,23 @@
       "done": {
         "by": "review",
         "commit": "eddd1a289bf791605813472208dd6cb7cf5e0533",
-        "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/WP3-review.md",
         "checked": "199c58df01fa8a2b4e676b5993936e45ee2a0487",
         "at": "2026-11-21T02:36:50Z"
       }
     },
-    "M4": {
-      "definitions": "2e8c52a6d02f7c7a5c49f856075fc3e4fce835d72d0ea7a38e50c93c008a7260",
+    "WP4": {
+      "definitions": "c21e76d4cd0628c258b281a641ed976e968608ce29b071b9cb3047c307490bd9",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "92e79961696e93e9e9396eea47e87b21dc4536a9",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP4-review.md",
           "items": {
-            "M4.1": "pass",
-            "M4.2": "pass",
-            "M4.3": "pass",
-            "M4.4": "pass"
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -398,8 +398,8 @@
         "at": "2026-11-21T03:29:16Z",
         "reused": [
           "Test command",
-          "M4.1",
-          "M4.3"
+          "WP4.1",
+          "WP4.3"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -427,20 +427,20 @@
       "done": {
         "by": "review",
         "commit": "92e79961696e93e9e9396eea47e87b21dc4536a9",
-        "review": ".orchestrate/evidence/DEAD-TOOLS/M4-review.md",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/WP4-review.md",
         "checked": "891cb9e333b557d1848f85a820842ceae885c590",
         "at": "2026-11-21T03:41:50Z"
       }
     },
-    "M5": {
+    "WP5": {
       "definitions": "fba43e4ec0749d405981d3df76bd78ac6f09e49e81705bf69ea027ffc53c9354",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "b575d2b436834083f17d609c069995af922dcc6f",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M5-review.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP5-review.md",
           "items": {
-            "M5.1": "pass"
+            "WP5.1": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -471,7 +471,7 @@
         "at": "2026-11-20T17:59:34Z",
         "reused": [
           "Test command",
-          "M5.1"
+          "WP5.1"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -499,21 +499,21 @@
       "done": {
         "by": "review",
         "commit": "b575d2b436834083f17d609c069995af922dcc6f",
-        "review": ".orchestrate/evidence/DEAD-TOOLS/M5-review.md",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/WP5-review.md",
         "checked": "33190fc8c88c1d37b8538bc5a70225a0288186fd",
         "at": "2026-11-20T18:01:53Z"
       }
     },
-    "M6": {
+    "WP6": {
       "definitions": "4e6c6339cad720b15ac1d29a7ce3738d7566f57ce3cec3d993f973a4b7244a12",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "068fab487825d630017d5ad148521e1db72e44f4",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M6-review.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -571,13 +571,13 @@
       "done": {
         "by": "review",
         "commit": "068fab487825d630017d5ad148521e1db72e44f4",
-        "review": ".orchestrate/evidence/DEAD-TOOLS/M6-review.md",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/WP6-review.md",
         "checked": "30bf39522cd241c02127dbef336f3801d045ee61",
         "at": "2026-11-20T19:08:06Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and consolidation for Thrum.\" The purpose is to make Thrum cheaper to change: a shorter merge gate, no tools, records or code that nothing uses, and no proof heavier than the fault it guards. It must not change what the engine draws, simulates or sends.\n\nStart from /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/REPORT.md. Read it in place; don't copy it or edit it. Beside it, results.json holds every finding, findings/<reviewer>.md holds the full write-ups, and verified/<reviewer>-<n>.md holds the second agents' corrections. Where a verifier corrected a finding, the verifier is right.\n\nIn scope: the report's sections 1 to 4 (gate time, dead tools and records, dead engine code, and small API changes that delete stubs). Also in scope: the parts of section 6 that are code or files, meaning the fixtures and record writers that still use docs/evidence, and the water settings that are parsed twice. Section 5, the test kit, belongs to TEST-SUPPORT as a milestone after its M2, so plan it there. Section 7 needs designs of its own: list each part as not planned, with one line each.\n\nSection 6's plan and settings text belongs to the lead and the planners:\n- L8-01: no rule says a Done item's check is history, so about 770 path mentions are treated as frozen.\n- L8-05: `! grep` and `test ! -e` checks pass when their path is missing (HOST M4.5, CLOUDS M14.13, SHOWCASE M9.7, HOST M3.2).\n- L8-07: ten open items ask for new tracked files under docs/evidence, which the merge guard refuses.\nFix those in the open done-when items and in ORCHESTRATE.md where it's within planner authority. Name any change that only the orchestrate skill can make, and keep that out of this plan.\n\nWhat the plan must respect:\n- A done-when item names a behaviour, not a file location. SHOWCASE M9.6 failed review over a byte-identical fixture move because its items named paths.\n- Up to three Claude builders (Opus 5.5 medium) can work at once. Shape the work so that milestones with disjoint files can run side by side, as separate modules if that's what it takes, and say which ones can.\n- Other builders are live, on Codex, in APPLE-PRESENTATION, HOST, RAY-TRACING, REVIEW-RENDER, SESSION, TEST-SUPPORT and RENDER-2D. The findings' verifier notes say which files are busy and which open done-when items name them. Declare each milestone's files, so the lead can confirm them before a builder starts.\n- A deletion that drops a capability or a proof is the owner's call. Carry each one as an assumption, with the other choice stated. That covers the headless release-trust toolchain (8,500 lines), the nine benches nothing runs, the ten-minute gale soak (actual_gale_keeps_the_fleet_in_contact_on_metal) moving from the gate to a main-branch check with a 60-second run left in the gate, and the reference tests that the 17 November bar may retire. The state-delta codec stays unless SESSION's design changes, because that design says keep.\n- scripts/ is a covered path for exact baselines, so script deletions land together.\n- Changes to the gate's machinery (the test profile, nextest) are measured before they're switched on.\n- Order by payoff. Gate time comes first, because every merge pays it.\n\nDone when the design has passed its review and the plan is merged.",
       "at": "2026-11-20T10:12:46Z"

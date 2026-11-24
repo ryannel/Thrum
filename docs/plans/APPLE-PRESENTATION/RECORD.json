@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md",
     "commit": "7d573e340c8738b9dc40284bdb75ebbab9fc8e10",
-    "hash": "2e0c51bef2fb9a7da45978866bb54c8f6e9f0620bedee15246c5845f1d17918b",
+    "hash": "4aa57f15eefe4ad0851d3df85a1f0c756a5634b565f78bacd868929dc2e1e80f",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -23,14 +23,14 @@
     },
     "at": "2026-11-23T21:17:09Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "725f33df97a7d80dbf172e590547323279b37838dda8db48034cbe08fab9756f",
+  "work_packages": {
+    "WP1": {
+      "definitions": "0b14c4590543758b4597b03808b1f31304cea4854b4e5618832232d01c0de1c1",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "5b54fec6d434fc8713a2496d4f276a652adccaa5",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review-1.md",
           "items": {
             "D1.1": "pass",
             "D1.2": "pass",
@@ -64,7 +64,7 @@
         {
           "verdict": "pass",
           "commit": "70d63ac4a0454143d8511fedb2cdaf21482984c8",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md",
           "items": {
             "D1.1": "pass",
             "D1.2": "pass",
@@ -126,18 +126,18 @@
       "done": {
         "by": "review",
         "commit": "70d63ac4a0454143d8511fedb2cdaf21482984c8",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md",
         "checked": "f715731383cef6aa2a3bc278d30bdbb4e5b8b517",
         "at": "2026-11-11T13:30:12Z"
       }
     },
-    "M2": {
-      "definitions": "15d275beaf3b3b7fdd018bce7ae1eb4332654a275d7be73521a1170cc7a0c88a",
+    "WP2": {
+      "definitions": "fd532bb5c98640214514e817424dd22deee46a374268a069459c14bd3c973099",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "14ad3e95859b6badf352a28a9efead443d50d504",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review-1.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -174,7 +174,7 @@
         {
           "verdict": "pass",
           "commit": "64d03d02e6316e08fb94ecae41057ee563793690",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -247,18 +247,18 @@
       "done": {
         "by": "review",
         "commit": "64d03d02e6316e08fb94ecae41057ee563793690",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP2-review.md",
         "checked": "5a80244c9ff8ec46f220f01cba84b8213115e268",
         "at": "2026-11-13T14:16:37Z"
       }
     },
-    "M3": {
-      "definitions": "b9ad647b4a8915e2661d77ce687178b583c1d5e469b67db5a22ab80f97968c3c",
+    "WP3": {
+      "definitions": "1594ff88176415f63a95562077c8b10b514857d22d2ec699dd9b72696bf6026f",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "f228ff9aad415756e32b3112c713989e30e3c6e2",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review-1.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -299,7 +299,7 @@
         {
           "verdict": "pass",
           "commit": "dfcc286bcf83aec89b2916a40357a5c6821e1da5",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -363,18 +363,18 @@
       "done": {
         "by": "review",
         "commit": "dfcc286bcf83aec89b2916a40357a5c6821e1da5",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md",
         "checked": "33b3930b0ebe4066a1153c2b1bfa0b76190e7584",
         "at": "2026-11-18T22:21:00Z"
       }
     },
-    "M4": {
+    "WP4": {
       "definitions": "6cd3b9eb6c8c3836a430ce97bd680c0467740371d09c37ddbc270341d9f8d1e3",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "165ccb226b9366121c7bc9c84cf07c926e805f12",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review-1.md",
           "items": {
             "D4.1": "pass",
             "D4.2": "pass",
@@ -432,7 +432,7 @@
         {
           "verdict": "fail",
           "commit": "c9c13d132b966f3ab651b7bda426192a527ed785",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review-2.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review-2.md",
           "items": {
             "D4.1": "pass",
             "D4.2": "pass",
@@ -472,7 +472,7 @@
         {
           "verdict": "pass",
           "commit": "8d21ee104ab19a957a9abaf1f4f85c1ab6a11ece",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
           "items": {
             "D4.1": "pass",
             "D4.2": "pass",
@@ -543,18 +543,18 @@
       "done": {
         "by": "review",
         "commit": "8d21ee104ab19a957a9abaf1f4f85c1ab6a11ece",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md",
         "checked": "db918ef75ea50743ed01eff487989a9aa8513a75",
         "at": "2026-11-20T11:46:06Z"
       }
     },
-    "M5": {
-      "definitions": "3bb8bafb9b4d10ffa3a21de74ca5c659798302b60c79d97e5583a53801a4ede4",
+    "WP5": {
+      "definitions": "6adfa4a3dcec9e2dc2749d5b5a6ff4ac4a93f838423892463a916a7b020322b1",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "c3ae0a47ae425fa5f228a2bae440f664a93cec7b",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review-1.md",
           "items": {
             "D5.1": "pass",
             "D5.2": "pass",
@@ -596,7 +596,7 @@
         {
           "verdict": "pass",
           "commit": "51a73c3e8f3d656482dbe1379a51133bdfe1a277",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
           "items": {
             "D5.1": "pass",
             "D5.2": "pass",
@@ -670,18 +670,18 @@
       "done": {
         "by": "review",
         "commit": "51a73c3e8f3d656482dbe1379a51133bdfe1a277",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M5-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md",
         "checked": "1b59172775c50948985ddb1b188efabf507db1c9",
         "at": "2026-11-23T12:35:24Z"
       }
     },
-    "M6": {
+    "WP6": {
       "definitions": "b085846955d40217c1fc79aa80995e1421633ddcee98471aa696aaa0f2f17bfb",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "fc180052232daaf8eaf50ca245dbe47821935578",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review-1.md",
           "items": {
             "D6.1": "fail",
             "D6.2": "pass",
@@ -733,7 +733,7 @@
         {
           "verdict": "fail",
           "commit": "8ecd3a30a990fde7ff6f15f987a6882cdc00b149",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review-2.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review-2.md",
           "items": {
             "D6.1": "pass",
             "D6.2": "pass",
@@ -774,7 +774,7 @@
         {
           "verdict": "fail",
           "commit": "f5ac353d4d9f05ebacd013068d38f7ddd7c8f63d",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review-3.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review-3.md",
           "items": {
             "D6.1": "pass",
             "D6.2": "pass",
@@ -815,7 +815,7 @@
         {
           "verdict": "fail",
           "commit": "268f467ffe16885d975d81a0156f1825875e25aa",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review-4.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review-4.md",
           "items": {
             "D6.1": "pass",
             "D6.2": "pass",
@@ -858,7 +858,7 @@
         {
           "verdict": "pass",
           "commit": "280f0ab2a88e296728327379cabf213a9cc91cc5",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
           "items": {
             "D6.1": "pass",
             "D6.2": "pass",
@@ -924,12 +924,12 @@
       "done": {
         "by": "review",
         "commit": "280f0ab2a88e296728327379cabf213a9cc91cc5",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md",
         "checked": "d13125a25275e102335311771759d794df6b4ee2",
         "at": "2026-11-24T01:52:58Z"
       }
     },
-    "M7": {
+    "WP7": {
       "definitions": "725471207fa46c9e28621c4895d5fa7ea4ea7389c5c93074295b1dfc7c049a28",
       "reviews": [],
       "authorised": {
@@ -945,8 +945,8 @@
         }
       ]
     },
-    "M8": {
-      "definitions": "17a4e593842da6b9d09be3f91857ca7228712e6519cc30e85ba41814d30505a8",
+    "WP8": {
+      "definitions": "dc585c5f16d60631bca0c45dc75951368ad061466a16fb051f54b9faac5ba527",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -961,7 +961,7 @@
         }
       ]
     },
-    "M9": {
+    "WP9": {
       "definitions": "53d9c99ba9b1ed9f667b93463d0b450c3911915c47104977a877d5633fd666d9",
       "reviews": [],
       "authorised": {
@@ -977,8 +977,8 @@
         }
       ]
     },
-    "M10": {
-      "definitions": "5fa4983608bbcb03f3befaed8435dcd0a3522edb12c652d5e038daadb1a1d041",
+    "WP10": {
+      "definitions": "0f92017b376f1f2169ed832650d5e939dd7578234a9d1138936d827fd86d3cd6",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -986,8 +986,8 @@
         "at": "2026-11-19T06:13:45Z"
       }
     },
-    "M12": {
-      "definitions": "26a8d5ad6b86bd0b91b0322a9e4819bc6f854698de647e2cd9f47b6d945d85a6",
+    "WP12": {
+      "definitions": "e7b6a62568b31941a24fcbb6e62c7fe1aef7c6a8c7d513fc196b94b424e8de56",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -995,8 +995,8 @@
         "at": "2026-11-15T08:54:22Z"
       }
     },
-    "M11": {
-      "definitions": "51a62f65920d14b87fa0f5e7981b34aab6ae767d81f02df3cc020fddf0458f87",
+    "WP11": {
+      "definitions": "f6220ab78ded97f14a4598d0eef35b1a5a0be376e4730bb62eba56eee74aee99",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -1012,15 +1012,15 @@
       ],
       "ends_stretch": true
     },
-    "M13": {
+    "WP13": {
       "definitions": "5de658f5c235547cdcb196ca431293788e7ef842ec180861a21f7a54df79594b",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "8206105532efab6a794e1a5fef29bc5de935569f",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M13-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP13-review.md",
           "items": {
-            "M13.1": "pass"
+            "WP13.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -1077,20 +1077,20 @@
       "done": {
         "by": "review",
         "commit": "8206105532efab6a794e1a5fef29bc5de935569f",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M13-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP13-review.md",
         "checked": "20a4c35d9ae42845a04d35205b4065f0156fd859",
         "at": "2026-11-23T15:47:07Z"
       }
     },
-    "M14": {
+    "WP14": {
       "definitions": "a827d3f49fa8fe0714197b6216f51542bdde8347825cdddad50e9b44de4ed9ef",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "13999c9bf1952baf5ab347e081d3f2a3974969d6",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M14-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP14-review.md",
           "items": {
-            "M14.1": "pass"
+            "WP14.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -1147,20 +1147,20 @@
       "done": {
         "by": "review",
         "commit": "13999c9bf1952baf5ab347e081d3f2a3974969d6",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M14-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP14-review.md",
         "checked": "a07d0c1bffe2b90c8d8924f332cb7312d635ef26",
         "at": "2026-11-23T15:13:10Z"
       }
     },
-    "M15": {
-      "definitions": "0cec792cd1816f6b2d13d6530e22cebcf27c41ba4a1bd6cbe6ae0d0c537ed29c",
+    "WP15": {
+      "definitions": "b3feb312f86aa3a92918f63c4470c4e884d83268159501d9b3f1ba1b7b976f83",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "c3ec29a312f51968fb46f871c2b7de454dffc213",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M15-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP15-review.md",
           "items": {
-            "M15.1": "pass"
+            "WP15.1": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -1217,13 +1217,13 @@
       "done": {
         "by": "review",
         "commit": "c3ec29a312f51968fb46f871c2b7de454dffc213",
-        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M15-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP15-review.md",
         "checked": "2faa2e22dc7a7ea831f904425d15429750a8d4bd",
         "at": "2026-11-23T22:48:11Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.\n\nPurpose. The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always have a next milestone, and wants water and clouds finished and consolidated. Today only PLATFORM-RUNTIME-MAC M2 and APPLE-TILE (G3t) are planned and open; everything after them is unplanned.\n\nWater and clouds are built in the Broadsides repository at /Users/ryannel/Workspace/Broadsides, not here. Water is on branch codex/water-rust-system, with notes/water/DESIGN.md, DESIGN-PLAN.md and HANDOFF.md. Three spikes on 10 November left results on branches claude/fable-hull-release, claude/fable-near-waterline and claude/fable-foam (notes/water/FABLE-*.md on each). Two cloud paths, a baked library and a procedural one, were built by separate Codex agents in Broadsides; find their branches and notes there. docs/design/decisions/SEA-AND-CLOUD-PORT.md governs bringing them into Thrum: it says Thrum wasn't ready on 6 November and that the owner schedules porting. The owner has now asked for both to be finished and consolidated. Decide, with reasons, what finished means for each, whether that finishing happens in Broadsides first or as Thrum modules, and where in the build order the port's readiness conditions are met.\n\nDone means: the project plan (module map, build order, contracts and a brief per module) covers the remaining work to the V1 exit plus water and clouds; each module that can start next has its design, plan and done-when file, so a builder can start it; and the build plan's active section points to it. List anything that needs an owner decision, such as port timing or spending, in your result rather than deciding it.\n\nBoundaries. Don't change the definitions of PLATFORM-RUNTIME-MAC M2 or APPLE-TILE, because builders are on them. Read Broadsides but don't change it.",
       "at": "2026-11-10T22:13:33Z"
@@ -1456,7 +1456,7 @@
       },
       "at": "2026-11-19T07:12:17Z",
       "items_owed": [
-        "M13"
+        "WP13"
       ]
     },
     {
@@ -1482,7 +1482,7 @@
       },
       "at": "2026-11-23T12:38:16Z",
       "items_owed": [
-        "M14"
+        "WP14"
       ]
     },
     {
@@ -1508,7 +1508,7 @@
       },
       "at": "2026-11-23T13:15:27Z",
       "items_owed": [
-        "M15"
+        "WP15"
       ]
     }
   ]

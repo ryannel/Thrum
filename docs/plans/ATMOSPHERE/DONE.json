@@ -1,12 +1,12 @@
 {
   "module": "ATMOSPHERE",
-  "milestones": [
+  "work_packages": [
     {
-      "id": "M5",
+      "id": "WP5",
       "name": "Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once",
       "items": [
         {
-          "id": "M5.1",
+          "id": "WP5.1",
           "statement": "Each frame every scene contribution is lent one environment identity: source epoch and simulation time, and the true Sun (geometric direction, raw perpendicular illuminance, colour, angular radius, no attenuation applied) kept apart from the apparent surface light. The epoch changes when the sky model, the air profile or a LUT generation (a replacement of resources or model) changes, and never when only time advances and chart contents are recomputed.",
           "check": "./dev check",
           "lock": "gpu",
@@ -14,11 +14,11 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.2",
+          "id": "WP5.2",
           "statement": "Through the lent bind-group layout and WGSL library alone, a contribution's own pipeline evaluates the five lent operations on Metal: Sun light at a world position, sky radiance along a direction, incident diffuse, aerial (T,S) from the camera to a point, and environment reflection with its split-sum pair. Each meets its handoff row H1-H5 in the design's numerical acceptance table, and the wrong lookups that H2 and H4 name fail.",
           "check": "./dev check",
           "lock": "gpu",
@@ -26,11 +26,11 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.3",
+          "id": "WP5.3",
           "statement": "In Chrome on hardware WebGPU the same five lent operations meet the same handoff rows H1-H5, wrong lookups included, with expected values from the same references and not from Metal's GPU output.",
           "check": "node scripts/check_v1_browser.mjs --case environment",
           "lock": "gpu",
@@ -38,11 +38,11 @@
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.4",
+          "id": "WP5.4",
           "statement": "With no optical-depth provider, the composed forward and cooked-volume shader text and the route stills are byte-identical to the recorded base commit on the Mac, and no texture, binding, pass or per-frame write is added.",
           "check": "python3 scripts/environment_products.py off-parity --target mac-metal",
           "lock": "gpu",
@@ -50,22 +50,22 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.5",
+          "id": "WP5.5",
           "statement": "The same holds in Chrome: with no provider the route stills are byte-identical to the base commit in one browser session.",
           "check": "python3 scripts/environment_products.py off-parity --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.6",
+          "id": "WP5.6",
           "statement": "A registered provider's optical depth multiplies direct sunlight by exp(-tau), read for the receiver's own world point, exactly once on every direct-Sun receiver (terrain, synthetic instances, cooked meshes and each lit march sample of the cooked volume) and changes nothing else: sky light, emission and geometric shadow are unchanged, the factor is exactly 1 outside the field's declared support, and toggling the provider resets only the history it must.",
           "check": "./dev check",
           "lock": "gpu",
@@ -73,31 +73,31 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.7",
+          "id": "WP5.7",
           "statement": "In the V1 valley on the Mac with the diagnostic provider on, shade patches cross terrain, instances and cooked meshes together in world space at the declared drift; shaded ground stays sky-lit and is not darkened again inside geometric shadow; the boundary lines up across receiver kinds.",
           "inspect": "Capture the valley at noon and at low Sun with the Mac real-time engine capture, provider off then on, with a slow pan. Look at whole frames and native-size crops of: a patch edge crossing from terrain onto a cooked mesh, shaded ground beside sunlit ground, a patch passing over ground already in a ridge's shadow, and the same world point over two seconds of drift.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.8",
+          "id": "WP5.8",
           "statement": "The same shade reads the same way in Chrome on the valley at noon and low Sun.",
           "inspect": "Capture the same four views with Chrome fixed-time capture and a short real-time sequence. Compare each with the Mac capture for the placement and depth of shade and for any receiver that disagrees.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.9",
+          "id": "WP5.9",
           "statement": "Cost on the Mac is recorded, not gated: forward GPU time and whole-frame time on the valley, paired and order-alternated with the provider off and on, and each forward pipeline's sampled-texture count with the provider on against the adapter's limit.",
           "check": "python3 scripts/environment_products.py cost --target mac-metal",
           "lock": "gpu",
@@ -105,18 +105,18 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M5.10",
+          "id": "WP5.10",
           "statement": "In Chrome the same is recorded: whole-frame time on the valley paired with the provider off and on, and each forward pipeline's sampled-texture count with the provider on against the browser adapter's limit, with every pipeline created.",
           "check": "python3 scripts/environment_products.py cost --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP5-review.md",
           "builder_result": "pass"
         }
       ],
@@ -127,276 +127,276 @@
       "quality_bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were."
     },
     {
-      "id": "M9",
+      "id": "WP9",
       "name": "Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This milestone holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS M2, which waits for it.",
+      "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This milestone holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS WP2, which waits for it.",
       "items": [
         {
-          "id": "M9.1",
+          "id": "WP9.1",
           "statement": "Near the ground a read of the lent aerial `(T,S)` is what the point's own line holds. In the cases of the design's `Numerical acceptance for the air at the ground`, at all eight camera pitches, the read at a point between two rows of the volume matches the product's own column along that point's line: transmittance within 0.01 \u00d7 expected + 0.001, solar in-scatter within 0.025 \u00d7 expected + 0.0025 \u00d7 that column's in-scatter at 32 km, each plus one stored step, and the night term within 10%. The same reads with every column held at its value where it met the ground miss that allowance by more than five times, at one pitch or more, for the points 30 km away above the horizon and the ground points 10 km away. The worst share of the allowance by Sun and channel is on record, with the same reads at a Sun 0.5\u00b0 up dead ahead and at a 90\u00b0 field of view beside it; the record decides nothing.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib aerial_ground::near_ground_reads 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "lock": "gpu",
           "ask": "Is the reference a column stored by the production pass for a camera turned so that a texel's centre lies on the point's line, and is the read an f64 evaluation of the lent operation's blend on the volume read back, so that no expected value comes from the test's own model of the air? Are the cases, the four Suns and the allowance the design's, unchanged? Under the ground, does the pass follow the density law below zero altitude and dim the Sun's light with depth, and not hold the surface's air or its light?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M9-numerical.md; .orchestrate/evidence/ATMOSPHERE/M9-continuation.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-numerical.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.2",
+          "id": "WP9.2",
           "statement": "Nothing above the ground moved. For frames recorded at the commit this milestone started from, every texel of a line that never meets the ground, and every layer that ends before its line meets the ground, holds the bytes that commit stored. Past the ground every stored value is finite, and each layer's stored transmittance lies between 0 and 1 and is no higher than the layer's before it. Two layers may store the same transmittance, zero included, because half-float storage rounds a value that is still falling to the same step. On a line with two or more layers past the ground, the last layer's stored transmittance is lower than that of the first layer past the ground.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib aerial_ground::above_ground_bytes 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "lock": "gpu",
           "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on? Past the ground, does the test accept equal stored transmittance in neighbouring layers and refuse a rise, and does it compare the values read back, not a model of the air?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M9-numerical.md; .orchestrate/evidence/ATMOSPHERE/M9-continuation.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-numerical.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.3",
+          "id": "WP9.3",
           "statement": "On Metal the preserved referees P1-P11 and the handoff rows H1-H5 of the design's numerical acceptance table pass against the production producers with no reference, case or bound changed, and the all-orders solar grid still reports all 198 rows.",
           "check": "./dev check",
           "lock": "gpu",
           "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M9-resume.md; .orchestrate/evidence/ATMOSPHERE/M9-resume/checks.json.gz; .orchestrate/evidence/ATMOSPHERE/M9-continuation/all-orders.tsv.gz",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-resume.md; .orchestrate/evidence/ATMOSPHERE/WP9-resume/checks.json.gz; .orchestrate/evidence/ATMOSPHERE/WP9-continuation/all-orders.tsv.gz",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.4",
+          "id": "WP9.4",
           "statement": "In Chrome on hardware WebGPU the handoff rows H1-H5 pass at their declared bounds on the changed pass.",
           "check": "node scripts/check_v1_browser.mjs --case environment",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M9-checks.md; .orchestrate/evidence/ATMOSPHERE/M9-continuation.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-checks.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.5",
-          "statement": "The registered exact baselines are refreshed in the landing that changes the pass, as the module list's ruling on this milestone allows. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. In `.config/exact-baselines.json` that landing changed the `pin` and the `refresh` of each baseline whose reference moved, each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`, and nothing else; the comparisons, their sampling and every script are as they were. The verifier passed at the commit this milestone started from, before any change. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
+          "id": "WP9.5",
+          "statement": "The registered exact baselines are refreshed in the landing that changes the pass, as the module list's ruling on this milestone allows. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. In `.config/exact-baselines.json` that landing changed the `pin` and the `refresh` of each baseline whose reference moved, each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `WP9`, and nothing else; the comparisons, their sampling and every script are as they were. The verifier passed at the commit this milestone started from, before any change. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`? Did the landing leave the comparison scripts and their sampling as they were?",
+          "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `WP9`? Did the landing leave the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
-          "evidence": "main-branch check exact-images; .orchestrate/evidence/ATMOSPHERE/M9-continuation.md; .orchestrate/evidence/ATMOSPHERE/M9-baseline-refresh.json",
+          "evidence": "main-branch check exact-images; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md; .orchestrate/evidence/ATMOSPHERE/WP9-baseline-refresh.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.6",
+          "id": "WP9.6",
           "statement": "Only the air moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel is low terrain kilometres away, which the volume's descending lines reach. The sky, the stars, the near ground, the props and the letterbox bars hold their old bytes. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and of the claimed one.",
           "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: differences on distant low terrain only, none in the sky, on the near ground, on a prop or in the bars. Then read the builder's Chrome difference images for the day and night checkpoints the same way, and the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M9-images.md; .orchestrate/evidence/ATMOSPHERE/M9-continuation.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-images.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.7",
+          "id": "WP9.7",
           "statement": "The valley's six route stops pass `SHOWCASE`'s comparison with its baseline and thresholds as they were.",
           "check": "python3 scripts/run_v1_showcase.py check",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M9-resume.md; .orchestrate/evidence/ATMOSPHERE/M9-resume/showcase-run.json; .orchestrate/evidence/ATMOSPHERE/M9-resume/checks.json.gz",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-resume.md; .orchestrate/evidence/ATMOSPHERE/WP9-resume/showcase-run.json; .orchestrate/evidence/ATMOSPHERE/WP9-resume/checks.json.gz",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.8",
+          "id": "WP9.8",
           "statement": "The aerial pass's GPU time on the valley is on record before and after, on the Mac and in Chrome: paired in one session between the starting commit and the claimed one, with load and order. A pass about 25% over its time before has its investigation beside it. No figure in the record decides this item.",
-          "ask": "Is the record in `docs/evidence/ATMOSPHERE/M9-cost.md` paired on the two commits in one session, order alternated, with the load on the machine and the Chrome record beside the Mac's, and no budget claimed?",
+          "ask": "Is the record in `docs/evidence/ATMOSPHERE/WP9-cost.md` paired on the two commits in one session, order alternated, with the load on the machine and the Chrome record beside the Mac's, and no budget claimed?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M9-cost.md; .orchestrate/evidence/ATMOSPHERE/M9-continuation.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP9-cost.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M9.9",
+          "id": "WP9.9",
           "statement": "The maturity ledger's atmosphere rows say what this milestone proved, implementation, correctness, visuals and device apart: the aerial product's read near the ground against its own column, on Metal. They still name solar aerial transport as not qualified against an independent reference, and the look at sea level as not yet judged.",
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
-          "evidence": "docs/design/maturity.json; .orchestrate/evidence/ATMOSPHERE/M9-numerical.md; .orchestrate/evidence/ATMOSPHERE/M9-images.md; .orchestrate/evidence/ATMOSPHERE/M9-cost.md; .orchestrate/evidence/ATMOSPHERE/M9-continuation.md",
+          "evidence": "docs/design/maturity.json; .orchestrate/evidence/ATMOSPHERE/WP9-numerical.md; .orchestrate/evidence/ATMOSPHERE/WP9-images.md; .orchestrate/evidence/ATMOSPHERE/WP9-cost.md; .orchestrate/evidence/ATMOSPHERE/WP9-continuation.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP9-review.md",
           "builder_result": "pass"
         }
       ]
     },
     {
-      "id": "M10",
+      "id": "WP10",
       "name": "A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "done",
-      "quality_bar": "Far shadows as over Red Dead Redemption 2's New Austin or Forza Horizon 5's Mexico seen from high ground: ridges and mesas shade the far ground steadily, and nothing in the air draws a hard bar across it or blinks one on and off. This milestone judges that one defect on the exit camera. The stepped edge of far terrain shadows and the finished image are judged in SHOWCASE M8.",
+      "quality_bar": "Far shadows as over Red Dead Redemption 2's New Austin or Forza Horizon 5's Mexico seen from high ground: ridges and mesas shade the far ground steadily, and nothing in the air draws a hard bar across it or blinks one on and off. This milestone judges that one defect on the exit camera. The stepped edge of far terrain shadows and the finished image are judged in SHOWCASE WP8.",
       "items": [
         {
-          "id": "M10.1",
+          "id": "WP10.1",
           "statement": "A caster in a mesh row its scene marks as aloft is drawn into both Sun cascades and into no texel of the caster height layer. In a scene with ground, a marked caster in the air above it and an unmarked caster standing on it that reaches higher than the marked one, so both scenes fit the same depth range, the height layer read back equals that of the same scene without the marked caster, and both cascades equal those of the same scene with that caster unmarked. This holds under Direct, Frustum and Occlusion.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib aloft_casters 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "lock": "gpu",
           "ask": "Read the test. Are all three layers read back from the GPU, and is each expected layer taken from another run of the scene, not from the test's own model of a layer? Does it run each of the three culling modes on the bucket route? Would it fail if the mark were ignored, and if a marked caster were dropped from a cascade?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M10/README.md#m101--metal-shadow-layers",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP10/README.md#m101--metal-shadow-layers",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M10-review.md"
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP10-review.md"
         },
         {
-          "id": "M10.2",
+          "id": "WP10.2",
           "statement": "On the exit flythrough on the Mac, with every tick submitted, no dark strip lies on the ground beneath or down-Sun of a balloon beyond the Sun cascades, and none appears or vanishes from one tick to the next, committed ticks 228 to 240 included. Balloons near the camera still cast shadows that move with them, and ridges still shade the far ground.",
-          "inspect": "Capture the exit flythrough with T2 engine capture in `fixed` mode with every tick submitted: committed ticks 200 to 320, and the stretch round the route's `balloons` checkpoint. Judge consecutive frames whole and in native-size crops of the far ground under balloons, and set ticks 232 to 235 beside `docs/evidence/SHOWCASE/M5-motion-fixed-shadow-crop.png`, in the crop its record names.",
+          "inspect": "Capture the exit flythrough with T2 engine capture in `fixed` mode with every tick submitted: committed ticks 200 to 320, and the stretch round the route's `balloons` checkpoint. Judge consecutive frames whole and in native-size crops of the far ground under balloons, and set ticks 232 to 235 beside `docs/evidence/SHOWCASE/WP5-motion-fixed-shadow-crop.png`, in the crop its record names.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M10/README.md#m102--fixed-metal-exit-flythrough",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP10/README.md#m102--fixed-metal-exit-flythrough",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M10-review.md"
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP10-review.md"
         },
         {
-          "id": "M10.3",
+          "id": "WP10.3",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: a scene that marks no row draws the bytes it drew.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M10-review.md"
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP10-review.md"
         }
       ]
     },
     {
-      "id": "M11",
+      "id": "WP11",
       "name": "Small Metal probes keep the atmospheric lookup checks fast",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
-          "id": "M11.1",
+          "id": "WP11.1",
           "statement": "The two listed atmosphere regressions stay in the fast tier. The Metal results still reject each H4 wrong lookup on the relevant fields and preserve diffuse direction, colour and units against the analytic fields. Guard: small GPU lookup witnesses with CPU arithmetic checks.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --lib -E 'test(=atmosphere::gpu::tests::diffuse::analytic_fields_preserve_direction_colour_and_physical_units) | test(=atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query)' --no-tests=fail --test-threads 1",
           "ask": "Does the evidence account for every test listed in the plan, and do its fast cases retain the original assertions, boundary cases and tolerances at the smaller scale? Do the alone and focused batch runs show margin below the ten-second limit?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M11/README.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP11/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M11-review.md"
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP11-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
     },
     {
-      "id": "M6",
+      "id": "WP6",
       "name": "The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes",
       "items": [
         {
-          "id": "M6.1",
+          "id": "WP6.1",
           "statement": "On the Mac, on the six-stop route and a continuous dawn-to-night scrub with slow pans, a clean-context reviewer finds none of: a horizontal brightness step across the ground, a flat near ridge with a hard bright rim at low Sun, a ridge lit warm with the Sun behind it, missing object shadows at sunrise, shadow acne at low Sun, a hard horizon line, banding in the sky gradient and twilight, or sky light reflected off a surface in blotches, separate spots or with a seam.",
           "inspect": "Capture the route stops as fixed-time stills and the scrub and pans, including the Ground E pan, with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the moving shadow edge on the authored spur between 17.40 and 17.80 h. The held 17.4 h stop is judged, and the Ground E terrain lip is judged as a brightness step.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/README.md#m61-and-m62-visual-inspection",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP6/README.md#m61-and-m62-visual-inspection",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.2",
+          "id": "WP6.2",
           "statement": "The same review passes in Chrome on the same route and scrub.",
           "inspect": "Capture the same stops and scrub with Chrome fixed-time and real-time capture, TAAU on. Judge the same list, and note any stop where Chrome and the Mac differ in more than texture profile.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/README.md#m61-and-m62-visual-inspection",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP6/README.md#m61-and-m62-visual-inspection",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.4",
+          "id": "WP6.4",
           "statement": "In Chrome on hardware WebGPU, on the final build, a contribution with its own pipeline, using only the lent layout and library, receives each of the five lent operations as the atmosphere stores it, in physical units and with the exposure scale not applied. Every contract comparison of H1-H5 passes, the reflection cube's probe and the split-sum pair's stored-table rule among them. H5 passes or fails on no comparison with the reflection model: its differences from P7's closed forms and P8's quadrature are in the run's report as records. Each of the five guards made through the library in H1-H4 passes against the expected values the Metal test holds, and every expected value this milestone changed is in the log with the change to the look that moved it.",
           "check": "node scripts/check_v1_browser.mjs --case environment",
           "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this milestone started from. In H1-H4, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. In H5, are the changes only the ones the design names: the stored-cube probe and the stored-table rule added, and the closed-form and quadrature comparisons kept as recorded differences with no assertion on them, while the night term, the agreement across edges and corners, the furnace and the source scaling stand as they were? Is every changed expected value one of the design's five guards, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/integrated/chrome/environment.json",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP6/integrated/chrome/environment.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.7",
-          "statement": "The split-sum pair a contribution receives is the pair the atmosphere stored for the requested view cosine and roughness. On Metal the lent reflection operation meets the design's stored-table rule at its cases and at exposure scales of 1 and 2, and each of the rule's three wrong lookups misses the bound at every query between texel centres. The Chrome referee holds the same rule, which M6.4's check runs.",
+          "id": "WP6.7",
+          "statement": "The split-sum pair a contribution receives is the pair the atmosphere stored for the requested view cosine and roughness. On Metal the lent reflection operation meets the design's stored-table rule at its cases and at exposure scales of 1 and 2, and each of the rule's three wrong lookups misses the bound at every query between texel centres. The Chrome referee holds the same rule, which WP6.4's check runs.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib split_sum_reads_stored 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "ask": "Read the stored-table comparison in `crates/thrum-render/src/atmosphere/products/tests/reflection.rs` and in `scripts/environment_referee.mjs`. In both, does the expected pair come from the table's stored texels, read back in that run and blended by the test's own evaluation, with no call to the lent library and no quadrature, and do the three wrong lookups go through the same bound as the right one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/rebased-metal-stored-pass.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP6/rebased-metal-stored-pass.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.8",
-          "statement": "The reflection radiance a contribution receives is read from the atmosphere's cube, at the face its direction names and the level its roughness names, in physical units, and a roughness between two levels receives the linear blend of the two. On Metal, with the design's probe stored in that cube, the lent reflection operation returns each face's colour at every level and at the midpoint of every pair of neighbouring levels, at raw Sun 1, 0 and 2 and exposure scales of 1 and 2, and each of the probe's wrong lookups misses the bound at every query it is run at with the raw Sun on. The Chrome referee holds the same probe, which M6.4's check runs.",
+          "id": "WP6.8",
+          "statement": "The reflection radiance a contribution receives is read from the atmosphere's cube, at the face its direction names and the level its roughness names, in physical units, and a roughness between two levels receives the linear blend of the two. On Metal, with the design's probe stored in that cube, the lent reflection operation returns each face's colour at every level and at the midpoint of every pair of neighbouring levels, at raw Sun 1, 0 and 2 and exposure scales of 1 and 2, and each of the probe's wrong lookups misses the bound at every query it is run at with the raw Sun on. The Chrome referee holds the same probe, which WP6.4's check runs.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib reflection_reads_stored_cube 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "ask": "Read the probe in `crates/thrum-render/src/atmosphere/products/tests/reflection.rs` and in `scripts/environment_referee.mjs`. In both, is the probe stored in the cube the lent layout binds, and not in a texture or a layout the test made; does each expected value come from the colour the fixture stored, with no call to the lent library and no closed form or quadrature; is a midpoint's expected value the blend of the two colours stored for its two levels, and are the lower level alone and the upper level alone run there as wrong lookups; and do all the wrong lookups go through the same bound as the right one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M6/rebased-metal-stored-pass.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP6/rebased-metal-stored-pass.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.5",
-          "statement": "The route's cost is on record: on the Mac, the whole frame's GPU time and each atmosphere pass's GPU time by name on the six-stop route, on the final build and, in the same session and configuration (extent, TAAU on, load class, order alternated), on the commit this milestone started from, with the load on the machine. The record says whether a hitch was seen in the scrub. A visible hitch, or a pass about 25% over its arm on the starting commit, has its investigation beside it. The M1 and M2 records are quoted as history only, and none is called paired. No figure in the record decides this item.",
+          "id": "WP6.5",
+          "statement": "The route's cost is on record: on the Mac, the whole frame's GPU time and each atmosphere pass's GPU time by name on the six-stop route, on the final build and, in the same session and configuration (extent, TAAU on, load class, order alternated), on the commit this milestone started from, with the load on the machine. The record says whether a hitch was seen in the scrub. A visible hitch, or a pass about 25% over its arm on the starting commit, has its investigation beside it. The WP1 and WP2 records are quoted as history only, and none is called paired. No figure in the record decides this item.",
           "check": "python3 scripts/atmosphere_cost.py check --scene route",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "examples/v1-game/tests/fixtures/atmosphere-route-cost.json; .orchestrate/evidence/ATMOSPHERE/M6/integrated/route-cost-check.json",
+          "evidence": "examples/v1-game/tests/fixtures/atmosphere-route-cost.json; .orchestrate/evidence/ATMOSPHERE/WP6/integrated/route-cost-check.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.6",
+          "id": "WP6.6",
           "statement": "The maturity ledger's G3s rows state implementation, correctness, visuals and device separately, and name what is not qualified: the west-lookout crossing, the exact disk match, solar sky and solar aerial accuracy against an all-orders reference, Moon, weather, calibrated night colour and physical display cadence.",
           "ask": "Do the ledger rows and the build plan's G3s line match the evidence, with the known defects listed and nothing claimed for a physical iPhone?",
           "target": "mac-metal",
-          "evidence": "docs/design/maturity.json; docs/plans/BRIEF.md#the-gates; .orchestrate/evidence/ATMOSPHERE/M6/README.md",
+          "evidence": "docs/design/maturity.json; docs/plans/VISION.md#the-gates; .orchestrate/evidence/ATMOSPHERE/WP6/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M6.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit. If this milestone changed the look of the sky or the sunlight, each reference that moved was regenerated by `APPLE-TILE`'s own scripts in the landing that made the change, the registry changed only in the `pin` and the `refresh` of each baseline that moved, each refresh naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `M6`, and `APPLE-TILE`'s log and this module's each record the change to the look and every moved reference's old and new SHA-256. The valley's source is as `SHOWCASE` M9 left it.",
+          "id": "WP6.9",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit. If this milestone changed the look of the sky or the sunlight, each reference that moved was regenerated by `APPLE-TILE`'s own scripts in the landing that made the change, the registry changed only in the `pin` and the `refresh` of each baseline that moved, each refresh naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `WP6`, and `APPLE-TILE`'s log and this module's each record the change to the look and every moved reference's old and new SHA-256. The valley's source is as `SHOWCASE` WP9 left it.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "ask": "Read this milestone's own commits with `git diff`. Do they leave `examples/v1-game/assets/showcase/` and the stop presets as they were? If they change `.config/exact-baselines.json`, is every change a `pin` or a `refresh` naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `M6`, does the log name the change to the look that moved each reference with its old and new SHA-256, and are the comparison scripts and their sampling as they were?",
+          "ask": "Read this milestone's own commits with `git diff`. Do they leave `examples/v1-game/assets/showcase/` and the stop presets as they were? If they change `.config/exact-baselines.json`, is every change a `pin` or a `refresh` naming `ruling-on-the-valley-fix`, `ATMOSPHERE` and `WP6`, does the log name the change to the look that moved each reference with its old and new SHA-256, and are the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M6-review.md"
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP6-review.md"
         }
       ],
       "depends_on": [
-        "APPLE-PRESENTATION:M3",
-        "SHOWCASE:M9"
+        "APPLE-PRESENTATION:WP3",
+        "SHOWCASE:WP9"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -405,137 +405,137 @@
       "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged."
     },
     {
-      "id": "M7",
+      "id": "WP7",
       "name": "Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome",
       "items": [
         {
-          "id": "M7.1",
+          "id": "WP7.1",
           "statement": "A scene that declares no view volume is untouched: its composed shader text, passes, resources and submitted frames are what they were before this milestone, on the Mac and in Chrome.",
           "check": "python3 scripts/view_volume.py off-parity",
           "lock": "gpu",
           "ask": "Is the base the commit this milestone started from, recorded before any change, and does the Chrome arm run the same comparison?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/off-parity.json",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/off-parity.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.2",
+          "id": "WP7.2",
           "statement": "The air's aerosol is an input of the air profile in two numbers: its amount, as the extinction at 550 nm, and its kind, as an \u00c5ngstr\u00f6m exponent from 0 to 2. At the defaults, today's amount and an exponent of 0, every chart holds the bytes it held before. At another amount the lent Sun light and the transmittance chart change with it, and at an exponent of 1.3 the bands take different aerosol, so a profile that gives every band the 550 nm aerosol fails the test. The charts follow a change of either number within the lag the profile declares, and a change of either does not move the environment epoch.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test air_state_gpu",
           "lock": "gpu",
           "ask": "Did any existing reference, case, bound or test in the numerical acceptance table change? None may: the defaults draw as before.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/metal-air-state.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/metal-air-state.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.4",
+          "id": "WP7.4",
           "statement": "Inside the view volume the air's solar in-scatter is shadowed once. Behind an occluder that the shadow cascades hold, a cell takes no single-scattered sunlight; under a registered Sun-path optical depth a cell takes the cloud factor at its own position; and a registered haze scale is not applied as well. Transmittance and the night term are unchanged by either.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_shadow_gpu",
           "lock": "gpu",
           "ask": "Does the test show that the forward decoder's own split of solar in-scatter by a surface's shadow is not applied on top of the volume's, by comparing a shadowed surface's aerial term with the volume's value at its depth?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/README.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/README.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.13",
+          "id": "WP7.13",
           "statement": "A ray that leaves the volume takes the volume's terminal pair once: its sky pixel is `R\u00b7L + \u0394S`, with `L` the clear sky's radiance there and `(R, \u0394S)` the pair the volume itself reports for that ray. With no provider `R` is exactly 1. Where nothing shadows a ray's air, `\u0394S` is exactly 0 and the pixel is the clear sky's to the bit. On a ray whose near air a cascade occluder shadows, and on one the registered Sun-path optical depth shadows, `\u0394S` is negative and the pixel equals `L + \u0394S` at a tolerance the test states. On each of those two rays a sky that takes `\u0394S` twice, and a sky left as the clear sky, miss that tolerance: the test runs both through the same comparison and each fails.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_sky_gpu",
           "ask": "Does the test take `L` from the clear sky and `(R, \u0394S)` from the volume's own output for the same ray, and neither from the composed pixel? Does it run a sky that takes `\u0394S` twice and a sky left as the clear sky through the same comparison on both shadowed rays, and does each fail there?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/metal-terminal.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/metal-terminal.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md"
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md"
         },
         {
-          "id": "M7.5",
+          "id": "WP7.5",
           "statement": "The volume's history follows the frame contract: it advances only with submitted frames, a cut, a new epoch and a replaced device reset it, and after a reset the lent transport is whole in that frame and settled within the number of frames the profile declares. No pipeline or resource is created while the game runs.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_history_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/metal-history.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/metal-history.log",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.6",
+          "id": "WP7.6",
           "statement": "As the haze control goes from a 300 km visual range to 5 km, at noon and at a 10\u00b0 Sun, the land fades with distance into the sky's colour at the horizon. The sky and the farthest land meet without a line, and there is no banding, slice step or tile pattern in the haze. With the kind control moved from an exponent of 0 to 1.3 at a 10\u00b0 Sun, the haze at 20 km and 5 km keeps its depth and changes colour from grey-blue toward a warmer, neutral-to-yellow horizon, as the design's measurement says; at noon it changes little.",
           "inspect": "Capture `fixed` stills with T2 engine capture at visual ranges of 300, 60, 20 and 5 km, at noon and at a 10\u00b0 Sun, from 2 m and from 40 m, and at 20 and 5 km again with the exponent at 1.3. Judge each whole, the set side by side, the two exponents in pairs, and native-size crops along the horizon and across the middle distance.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/inspection.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/inspection.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.7",
+          "id": "WP7.7",
           "statement": "In haze of a 20 km visual range at a 10\u00b0 Sun, shafts of sunlight stand below a ridge line and below the test cloud field's gaps, lined up with the sunlit and shaded ground beneath them, soft-edged, with no stair-step along their depth.",
           "inspect": "Capture `fixed` stills toward and across the Sun with the labelled test cloud field on and off. Judge each whole and in native-size crops of a shaft against dark terrain and of where it meets the ground.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/inspection.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/inspection.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.8",
+          "id": "WP7.8",
           "statement": "In a pan, a 40 m walk and a time scrub through sunset, the haze and its shafts do not crawl, flicker or trail, and after a cut they are whole in the first frame.",
           "inspect": "Capture `realtime` sequences of each at a 20 km visual range. Judge consecutive frames at 1x, whole and in native-size crops of a shaft's edge.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/inspection.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/inspection.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.9",
-          "statement": "In Chrome the haze sweep and the shafts pass M7.6's, M7.7's and M7.8's lists.",
+          "id": "WP7.9",
+          "statement": "In Chrome the haze sweep and the shafts pass WP7.6's, WP7.7's and WP7.8's lists.",
           "inspect": "Capture the same stills, the pan, the walk, the scrub and the cut in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/inspection.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/inspection.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.10",
+          "id": "WP7.10",
           "statement": "The view volume's cost is on record: on the Mac and in Chrome, a paired record of the valley with the view volume and without gives the whole frame, each added pass's GPU time by name, the grid chosen and the bytes of each resource. A visible hitch, a pass about 25% over its last comparable record, or a cost that grows faster than the grid has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/view_volume.py cost --scene haze",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/cost.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP7/sun-path-graph/cost.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.11",
+          "id": "WP7.11",
           "statement": "The maturity ledger's atmosphere rows state implementation, correctness, visuals and device apart for the view volume and the haze input, and name what is not qualified: the joint volume against an all-orders reference, and local lights in the air.",
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
           "evidence": "docs/design/maturity.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         },
         {
-          "id": "M7.12",
+          "id": "WP7.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP7-review.md",
           "builder_result": "pass"
         }
       ],
@@ -552,11 +552,11 @@
       ]
     },
     {
-      "id": "M8",
+      "id": "WP8",
       "name": "A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome",
       "items": [
         {
-          "id": "M8.1",
+          "id": "WP8.1",
           "statement": "The view volume integrates a provider's medium coefficients with the air, each counted once. For a uniform slab of known extinction, solar kernel and ambient source standing in the air inside the provider's ramp, at visual ranges of 30 m, 150 m and 2 km, the lent transmittance to a point beyond the slab is the air's times the slab's, at a tolerance the test states, with the grid's slices as they are and with twice as many, and a slab in sunlight adds light on the ray. A volume that applies the slab twice, or the air twice, fails the test.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_medium_gpu",
           "lock": "gpu",
@@ -568,7 +568,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.2",
+          "id": "WP8.2",
           "statement": "A ray that leaves the volume composes once. Through a slab near the camera a sky pixel is `R\u00b7L + \u0394S`, and a star drawn over it adds `R` times its own light and no second `\u0394S`: a pixel that holds sky and a star equals the reference for their sum, and the Sun's disc dims by `R`. With a provider registered and its coefficients zero, sky pixels hold the same bytes as with none.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_terminal_gpu",
           "lock": "gpu",
@@ -580,7 +580,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.3",
+          "id": "WP8.3",
           "statement": "The Sun-path optical depth has a ground band that holds the whole path to the Sun. With one registered, the factor on terrain, synthetic instances, cooked meshes, each lit sample of the cooked volume and the incident-light meter is the exponential of minus one read: the band at the receiver's own position for a receiver inside it, and the 2D field at or above the band's top and outside its region. The two are never added. A receiver in the band under an upper cloud of optical depth ln 2, with no condensate near it, takes 0.5, and condensate near it adds its own path alone. The factor is continuous across the band's top and across its border. With none registered the shaders are composed without the read, as before.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test ground_band_receivers_gpu",
           "lock": "gpu",
@@ -592,7 +592,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.4",
+          "id": "WP8.4",
           "statement": "A provider's near weight bounds what the volume holds: beyond the end of the ramp the volume integrates air and haze alone, and the lent transport to a point beyond it is the joint value at the ramp's end composed with clear air from there.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_handover_gpu",
           "lock": "gpu",
@@ -603,7 +603,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.5",
+          "id": "WP8.5",
           "statement": "With the labelled test bank in the valley at noon and at a 10\u00b0 Sun: the land, props and movers fade into the fog with depth along clean edges; a prop's shadow inside the fog weakens with the fog over it; the Sun's disc dims through it; toward the low Sun the fog is bright and away from it grey. There is no tile, slice or banding pattern on the fog or where it meets terrain.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from outside the bank, at its edge and inside it, toward and away from the Sun. Judge each whole and in native-size crops of the fog against a ridge, a prop and the ground.",
           "target": "mac-metal",
@@ -613,7 +613,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.6",
+          "id": "WP8.6",
           "statement": "As the camera walks into the bank, pans inside it and walks out, and as a mover passes through its edge, nothing pops at the edge, no trail follows the mover and the exposure does not pump.",
           "inspect": "Capture `realtime` sequences of the walk, the pan and the mover. Judge consecutive frames at 1x, whole and in native-size crops.",
           "target": "mac-metal",
@@ -623,8 +623,8 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.7",
-          "statement": "In Chrome the test bank passes M8.5's and M8.6's lists.",
+          "id": "WP8.7",
+          "statement": "In Chrome the test bank passes WP8.5's and WP8.6's lists.",
           "inspect": "Capture the same stills, the walk, the pan and the mover in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
           "evidence": "",
@@ -633,7 +633,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.8",
+          "id": "WP8.8",
           "statement": "The number of sampled textures each forward pipeline and the view volume's passes bind, with a ground band and a medium provider registered, is on record against the capability record and WebGPU's default limits, and every count is within its limit.",
           "ask": "Does this milestone's evidence give the count for each pipeline and the limit it was checked against?",
           "target": "mac-metal",
@@ -643,8 +643,8 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.9",
-          "statement": "With the test bank, the paired cost record is taken again on the Mac and in Chrome beside M7's, with the medium's passes timed by name. Each tripped wire has its investigation beside it. No figure in the record decides this item.",
+          "id": "WP8.9",
+          "statement": "With the test bank, the paired cost record is taken again on the Mac and in Chrome beside WP7's, with the medium's passes timed by name. Each tripped wire has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/view_volume.py cost --scene medium",
           "lock": "gpu",
           "ask": "Is the record paired, with load and order, on this milestone's work, with the Chrome record beside it?",
@@ -655,7 +655,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.10",
+          "id": "WP8.10",
           "statement": "The maturity ledger's atmosphere rows are current, with the test medium named as a stand-in that `CLOUDS` replaces.",
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
@@ -665,7 +665,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M8.11",
+          "id": "WP8.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",

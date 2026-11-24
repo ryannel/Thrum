@@ -49,7 +49,7 @@ example's island behind a selection.
 - **A float that grounds on the bed, and the sound of water.** The engine has no physics owner and no audio.
 - **Water above water in one column**, as in `WATERS`: a fall's sheet is not a body and answers no query.
 
-**What exists.** `WATERS` M1 builds the map and its chart; its M9 draws a hand-made chart, carries detail and foam
+**What exists.** `WATERS` WP1 builds the map and its chart; its WP9 draws a hand-made chart, carries detail and foam
 along it and joins it to a lake and the sea. Thrum has no solver. Broadsides' inland code was never accepted and
 is not used.
 
@@ -66,7 +66,7 @@ words, at the display's full refresh.
 | **R4** Foam where the flow breaks: white below a ledge, behind a rock and down a steep chute, trailing downstream in streaks that thin and vanish; none on a glide or a pool but what drifts in | Head lost from none to a metre in a step; the same water type as the lake; calm to gale | Foam painted where the artist saw rapids, or foam from the surface's present shape. Rejected by a trail that outlives a source turned off, and by a rock moved in the ground, whose foam must move with it |
 | **R5** A waterfall: a smooth tongue at the lip, a sheet that thins and breaks into white strands as it gathers speed, and a plunge that boils, foams and sends rings across the pool | Falls of 0.75 m to 12 m; 0.005 to 1 m² of water a second for each metre of lip; the pool's level moved through its range; from 2 m to 200 m, in front, beside and behind | A scrolling texture on a card. Rejected by strands that must stretch as they fall, by a trickle that must be strands where a flood is a sheet, and by rings and foam that must stop when the fall is dry |
 | **R6** A river answers its source: raise the lake and its outlet runs deeper, wider and faster, the fall thickens and the foam grows; lower it and the river thins | The source's level through its declared range; a spring's flow through the range the game declares | One prepared flow with the level added. Rejected by discharge at two lake levels against the outlet's own sill, and by a waterline that must move up the bank |
-| **R7** One water: the river has the lake's light, foam, query, mirror and view from beneath, and no seam where it leaves the lake, lands below a fall or meets the sea | The joins of [W6](../WATERS/DESIGN.md#cues), with a solved chart; a swell at the mouth; dawn to night; a gorge in shadow | A river drawn by its own shader. Rejected by the surface either side of each join, and by a fall in a gorge's shadow, which the Sun must not light |
+| **R7** One water: the river has the lake's light, foam, query, mirror and view from beneath, and no seam where it leaves the lake, lands below a fall or meets the sea | The joins of [WP6](../WATERS/DESIGN.md#cues), with a solved chart; a swell at the mouth; dawn to night; a gorge in shadow | A river drawn by its own shader. Rejected by the surface either side of each join, and by a fall in a gorge's shadow, which the Sun must not light |
 | **R8** Rings on running water: a stone dropped in a pool sends rings that stay with the pool's water, beside a riffle that runs | A pool at 0.2 m/s beside a riffle at 1.5 m/s in one window, with rings on both at once | Rings carried at one speed for the whole window. Rejected by the centre of each set of rings after five seconds |
 
 ## Research and selection
@@ -191,7 +191,7 @@ and discharge in two directions. The inputs are the bed, the sources, the bodies
 6. *Deterministic:* f64, a fixed order of sums, the same bytes for any thread count.
 
 The order in space is the builder's. The reproduction is first order, and stands a fast reach on a slope 6% too
-deep at 0.25 m cells and 3% at 0.125 m (part 1c); M1.2 holds the solver to no worse. A second-order
+deep at 0.25 m cells and 3% at 0.125 m (part 1c); WP1.2 holds the solver to no worse. A second-order
 reconstruction is the designed remedy if a steep reach on the island shows it.
 
 **Reaching the steady state.** The solve marches in pseudo-time, each cell at its own step, from pools filled to
@@ -251,7 +251,7 @@ water takes to reach each, the discharge for each metre of lip, and the launch d
 body below; and stable IDs for its segments.
 
 The river file holds the loss in watts a square metre. It is handed to the map's chart in the units that chart
-documents ([`WATERS` M9.6](../WATERS/DONE.json)); its meaning is fixed here.
+documents ([`WATERS` WP9.6](../WATERS/DONE.json)); its meaning is fixed here.
 
 ### A river answers its source
 
@@ -363,8 +363,8 @@ wind's layers stay on a river at the gains its fetch gives.
 answers a cascade: from the frame's evaluation, at the mip the point's footprint chooses, at the chart's gains
 at the point, with the current's carriage applied as the field is read, and brought from the frame's `t` to
 the point's use tick by their rate of change. So a float in a windless riffle rides the chop drawn under it,
-and a hull wider than a band's waves does not feel that band. M5.10 holds the dispatch to the model's bands
-(M3.5) read the same way, at the tolerance `WATERS` M5.1's test states for a cascade. A declared approximation,
+and a hull wider than a band's waves does not feel that band. WP5.10 holds the dispatch to the model's bands
+(WP3.5) read the same way, at the tolerance `WATERS` WP5.1's test states for a cascade. A declared approximation,
 `WATERS`' own for anything brought forward in time: the short band's strongest wave, 0.75 m long, passes a
 fixed point in a 1.1 m/s current at up to 18 rad/s, so brought two ticks forward it is misstated by up to a
 fifth of its height, which is millimetres. The band's shortest waves are not followed to the phase, and hold
@@ -385,7 +385,7 @@ runs on a frame when either reader asks:
 
 The producer writes the whole field from `t` alone and runs before the dispatch, so every dispatch that reads
 a flow band reads it as evaluated at its own frame's `t`. An answer is then the same to the bit at any cadence
-and with the camera anywhere, the river out of every view included, and M5.6 holds the mailbox to that. There
+and with the camera anywhere, the river out of every view included, and WP5.6 holds the mailbox to that. There
 is still one field: an evaluation the query asked for is the display's newest too, and the display carries on
 from it. What a lower cadence saves is the frames no dispatch needs: all of those it skips while no posted
 point is on a river, and the repeat frames between ticks while one is. It is `EFFECT-GRAPH`'s
@@ -464,9 +464,9 @@ Each tick, for each segment of a fall whose path meets water, at the place it me
   and its variance 1, and
   `α` the profile's wave share, 0.1 at first. So rings come from the strands a viewer sees land, stop when the
   fall is dry, and are the same causes on every machine. `α` is a declared closure, tuned by eye against
-  M6.5's rings and recorded. Its ceiling is physical, the waves' power never exceeding the fall's, and it is a
+  WP6.5's rings and recorded. Its ceiling is physical, the waves' power never exceeding the fall's, and it is a
   diagnostic for a plunge that looks wrong: `thrum-water-model` gives the fall's power and each impulse
-  (M2.5), and no item asserts the ceiling.
+  (WP2.5), and no item asserts the ceiling.
 
 Rings exist where the interaction windows are, which is round the body the game names
 ([`WATERS`' reach](../WATERS/DESIGN.md#interaction-waves)). A path that lands on bare ground gives neither.
@@ -514,10 +514,10 @@ weights, and the figure is the share of the ring's height energy left after 5 s,
 carried at one current. In steps of 1 tick the ring keeps 93.6% midway between 0.2 and 1.5 m/s on a straight
 reach. For a 90° bend carried by rest and three tangent currents, the runs sampled are five speeds from the
 pool's to the riffle's at headings every 5° round the turn, and the least kept among them is 88.7%. So a ring
-on blended water softens and is still a ring, and M6.10 fails a step that leaves less than half. Steps of 8
+on blended water softens and is still a ring, and WP6.10 fails a step that leaves less than half. Steps of 8
 ticks blur more: 5 s of nothing but such steps would keep 50% to 72% in the same runs. A hitch gives one such
 step, and no item asserts its energy. A ring that travels through weights that change from cell to cell, as
-on a real bend, is a different calculation, which part 12 does not make: M6.10's ring on the bend is its
+on a real bend, is a different calculation, which part 12 does not make: WP6.10's ring on the bend is its
 first run here.
 
 The ladder is built in `thrum-water`'s interaction step. An f64 reference of it in `thrum-water-model` is a
@@ -548,7 +548,7 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   | Flow bands | The two bands and their gains on charts | Waves |
   | Falls | Sheets, and plunges where the scene has whitewater or interaction waves | A river with a fall record; a foam pattern |
 
-  A solved river needs neither: it is then drawn as `WATERS` M9 draws a chart.
+  A solved river needs neither: it is then drawn as `WATERS` WP9 draws a chart.
 - **The physical profile**, never a quality setting (C04): the flow samples and the gauge's mix, the brink rule,
   the chop's law and bands, the loss, the sheet's laws, the wave share and the segments of a plunge.
 - **Limits are inputs.** The flow bands are layers of the cascades' arrays and the samples layers of a chart's,
@@ -563,31 +563,31 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   made bed, a steep thin sheet, a pool level to 15 mm behind its sill, a narrows where the water quickens 2.5
   times as its width falls to 40%, and discharge the same through every section within 0.2%. The reproduction
   is first order in space and 64 by 16 cells in plan. The solver in Rust, its second order and a whole valley
-  are unrun; M1 is the first.
+  are unrun; WP1 is the first.
 - **R2.** Part 2 gives the chop's size along a section from the law. That two bands at those sizes, carried by
-  the current, read as a riffle and not as a small sea is unrun; M5 is the first look ([risk 2](#risks)). Carriage
-  by two cross-faded samples is Uncharted 4's, and `WATERS` M9 measures it.
+  the current, read as a riffle and not as a small sea is unrun; WP5 is the first look ([risk 2](#risks)). Carriage
+  by two cross-faded samples is Uncharted 4's, and `WATERS` WP9 measures it.
 - **R3.** The current is the map's and the query is `WATERS`'. Unrun here. That a float's answer over a riffle
   does not change with the bands' cadence or the camera follows from the schedule alone: the bands are a
-  function of `t`, and [a query's demand](#the-flows-own-waves) evaluates them on the frame that answers. M5.6
+  function of `t`, and [a query's demand](#the-flows-own-waves) evaluates them on the frame that answers. WP5.6
   is the first run.
 - **R4.** Parts 2 and 6 put the loss at the ledge, the chute and the rock. How much foam that power makes with
-  the shallows' constant is unrun; M5 records it.
-- **R5.** Part 4 is arithmetic, and a section for the depth at a lip. The sheet's look is unrun; M6 is the
+  the shallows' constant is unrun; WP5 records it.
+- **R5.** Part 4 is arithmetic, and a section for the depth at a lip. The sheet's look is unrun; WP6 is the
   first ([risk 4](#risks)).
 - **R6.** Part 3, in section, for cells both samples wet; parts 8 and 10, in plan, for what is wet between
   two samples: a hollow behind a ridge, and a reach that goes from dry to running. Both work on levels
-  written by hand. The solver's own samples of a valley, and its own lip that starts to run, are unrun; M3
+  written by hand. The solver's own samples of a valley, and its own lip that starts to run, are unrun; WP3
   tests them.
 - **R8.** Part 7 is arithmetic on part 2's flow. Part 9 steps two ring sets at once on a pool and a riffle in
   one region, in section. Part 11 is the span of the carriage currents round a bend, and part 12 what the
   blend costs a ring's height energy, in plan, from the step's multiplier, with one set of weights in every
   cell. The ladder stepped in plan and on the GPU, and a ring crossing weights that change along a bend, are
-  unrun; M6.10 is the first.
-- **What the looks cover.** The island's fall is about 4 m, and M6 judges it from 2 m to 200 m at three
-  gauges. Falls of other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (M2.4)
+  unrun; WP6.10 is the first.
+- **What the looks cover.** The island's fall is about 4 m, and WP6 judges it from 2 m to 200 m at three
+  gauges. Falls of other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (WP2.4)
   and are not judged by eye: the ledger says so until a game shows one.
-- **Cost.** Unrun. M1 records the solve and M4 the first frame.
+- **Cost.** Unrun. WP1 records the solve and WP4 the first frame.
 
 ## The system as it runs
 
@@ -626,15 +626,15 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-rivers), each b
 `WATERS`' crates, with no item, test, bound or reference of `WATERS` or `SEA` changed and all kept passing. A
 scene with no river and neither capability compiles to the shader text, passes and storage it has today.
 
-1. A chart's end may be a brink (M2).
-2. A chart may hold several flow samples that a gauge reads between, with a wetting gauge for each cell (M3 on
-   the CPU, M4 on the GPU).
-3. Flow bands: wave layers the wind does not fill, at gains a chart holds (M3 on the CPU, M5 on the GPU).
-4. Births from a chart's loss and at a plunge (M5 and M6), which `WATERS`' design already books.
-5. A current ladder in the interaction step (M6).
-6. A river selection in `examples/water` (M4).
-7. The sheet is drawn in the water's contribution before its gather (M6), and water's direct Sun takes the
-   lent Sun visibility (M7, after `WATERS:M16` lends it).
+1. A chart's end may be a brink (WP2).
+2. A chart may hold several flow samples that a gauge reads between, with a wetting gauge for each cell (WP3 on
+   the CPU, WP4 on the GPU).
+3. Flow bands: wave layers the wind does not fill, at gains a chart holds (WP3 on the CPU, WP5 on the GPU).
+4. Births from a chart's loss and at a plunge (WP5 and WP6), which `WATERS`' design already books.
+5. A current ladder in the interaction step (WP6).
+6. A river selection in `examples/water` (WP4).
+7. The sheet is drawn in the water's contribution before its gather (WP6), and water's direct Sun takes the
+   lent Sun visibility (WP7, after `WATERS:WP16` lends it).
 
 Used as built: the chart and its joins, carriage, the foam stocks, impulse records, the query, the foam
 pattern's lease, the typed controls. Nothing is asked of `EFFECT-GRAPH`, `ATMOSPHERE`, `CONTENT-LOOP` or
@@ -646,46 +646,46 @@ Estimates, unmeasured.
 
 | Work | Rate | Size | Estimate |
 |---|---|---|---|
-| The solve | Prepared, once for each flow sample | Wet cells times steps. A 350 m stream 4 m wide at 0.25 m cells is 22,400 wet cells and about 24,000 steps: 540 million cell updates a sample (part 5) | Tens of seconds a sample on one core; M1 records it. Each cell's own time step saves a third; a filled start and a coarser grid first save little in a section |
+| The solve | Prepared, once for each flow sample | Wet cells times steps. A 350 m stream 4 m wide at 0.25 m cells is 22,400 wet cells and about 24,000 steps: 540 million cell updates a sample (part 5) | Tens of seconds a sample on one core; WP1 records it. Each cell's own time step saves a third; a filled start and a coarser grid first save little in a section |
 | A river file | Loaded at preparation | For each reach: its rectangle's cells × samples × 7 values at 16 bits. A 300 m by 30 m reach at 0.25 m cells with 6 samples is about 12 MiB | Cutting a winding river into more reaches is the remedy where a rectangle is mostly ground |
 | Samples in the map | Every read of a chart with more than one sample | Two layers in place of one, and the wetting gauge | Three reads on river pixels; none elsewhere |
 | Flow bands | Frame, at their cadence while a chart with a flow gain is inside a view's reach; and every frame that answers a query point over such a chart, wherever the camera is | Two transforms of 256² and their mips | About half the cascades' cost again; two more layer reads in the surface where a gain is not zero. With a float on a river the cadence saves only repeat frames, half the frames at a 60 Hz tick and 120 Hz |
 | Births from loss | Tick | One read of the chart's loss in the foam's births | Inside the foam's pass |
-| Sheets | Frame, while a fall is in view | A lip's cells × up to 32 points; the sheet's pixels, blended | Small beside the surface; M6 records it |
+| Sheets | Frame, while a fall is in view | A lip's cells × up to 32 points; the sheet's pixels, blended | Small beside the surface; WP6 records it |
 | Plunges | Tick | A record and a birth for each segment | Negligible |
-| The current ladder | Tick, for each region whose currents differ | One more transform back for each carriage current beyond the first at each ladder depth, inside the profile's 16 solves a level; choosing the currents is CPU work when regions are labelled | Up to four times a still region's step where a pool and a riffle share a window; nothing on still water or a uniform current. M6.8 records it |
+| The current ladder | Tick, for each region whose currents differ | One more transform back for each carriage current beyond the first at each ladder depth, inside the profile's 16 solves a level; choosing the currents is CPU work when regions are labelled | Up to four times a still region's step where a pool and a riffle share a window; nothing on still water or a uniform current. WP6.8 records it |
 
 Records and tripwires are [`WATERS`'](../WATERS/DESIGN.md#cost-account): `scripts/water_cost.py`, with scenes this
 module adds, and `scripts/river_cost.py` for the solve. No timing figure decides an item
-([brief](../BRIEF.md#goal-and-exit-rule), decision 3).
+([brief](../VISION.md#goal-and-exit-rule), decision 3).
 
 ## Risks
 
 1. **The solve is slow, or will not settle**: a pool that sloshes, a wet and dry edge that flickers. Early sign:
-   M1's report. The designed remedies are each cell's own step, a start from filled pools, a stopping rule on
+   WP1's report. The designed remedies are each cell's own step, a start from filled pools, a stopping rule on
    discharge between sections, and a coarser grid first. The wrong fix is stopping on a step count.
-2. **Flow bands read as a small sea, or pulse.** Early sign: M5's first captures. The designed remedies are the
+2. **Flow bands read as a small sea, or pulse.** Early sign: WP5's first captures. The designed remedies are the
    bands' sizes and spectrum, a period that varies from place to place (`WATERS`' risk 13) and `c`. The wrong
    fixes are a painted amplitude and a scrolled normal map.
-3. **Too much foam, or none.** One constant serves a beach and a ledge. Early sign: M5's record of cover at the
+3. **Too much foam, or none.** One constant serves a beach and a ledge. Early sign: WP5's record of cover at the
    test valley's stations. The designed remedy is a constant of the water type for flow, recorded with its
    reason. The wrong fix is foam where the surface is steep.
-4. **The sheet reads as a card**: flat, evenly lit, hard at its foot. Early sign: M6's captures. The designed
+4. **The sheet reads as a card**: flat, evenly lit, hard at its foot. Early sign: WP6's captures. The designed
    remedies are the pattern's relief as displacement, the white share and presence, and the plunge's foam and
    air at the foot. Three failed looks on one cue go to the log. Mist is the remedy this plan does not have.
-5. **A seam where a river meets a lake, a fall's foot or the sea.** Early sign: M4's joins. The map's joins are
+5. **A seam where a river meets a lake, a fall's foot or the sea.** Early sign: WP4's joins. The map's joins are
    `WATERS`'; the solve gives a level at each end that already matches the body there.
 6. **`WATERS` moves under this module's changes**, since both builders edit its crates. Early sign: a rebase
    that fails `WATERS`' tests. Each ruling keeps its change behind a declaration that existing scenes do not
    make, and each milestone here runs `WATERS`' tests.
-7. **A reach's rectangle is mostly ground.** Early sign: M4's bytes. Remedy: more reaches.
-8. **Samples in the map cost the surface too much.** Early sign: M4's record. Remedy: mix the two samples into one
+7. **A reach's rectangle is mostly ground.** Early sign: WP4's bytes. Remedy: more reaches.
+8. **Samples in the map cost the surface too much.** Early sign: WP4's record. Remedy: mix the two samples into one
    set of layers when the gauge moves, a few times a second, and read one.
-9. **A steady flow looks frozen**: nothing surges. Early sign: M5's sequences. The flow bands, the carried
+9. **A steady flow looks frozen**: nothing surges. Early sign: WP5's sequences. The flow bands, the carried
    cascades and the foam are what moves; a slow wander of the gauge is the game's. The wrong fix is noise in the
    level.
-10. **The current ladder multiplies a window's solves** where a pool and a riffle share it. Early sign: M6.8's
-    record, and carriage currents dropped in M6.10's report. Remedy: fewer carriage currents, which part 9
+10. **The current ladder multiplies a window's solves** where a pool and a riffle share it. Early sign: WP6.8's
+    record, and carriage currents dropped in WP6.10's report. Remedy: fewer carriage currents, which part 9
     prices at 1.3% of a midway wave's energy a second for two. The wrong fix is one current again.
 
 ## Proof and builder handoff
@@ -699,27 +699,27 @@ dependencies. In addition:
 - **`WATERS`' crates.** A change inside a file `WATERS` wrote is one a ruling names, behind a declaration no
   existing scene makes. Anything else it needs is a proposal in this module's log.
 - **The bar.** `WATERS`' handoff carries [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026,
-  and it holds here: M4 to M7 pass on their look and their speed, and what a game reads is tested against
-  `thrum-water-model`: the river in the map and the query at the tolerance `WATERS` M4.1's test states, and
-  the flow bands in the query's answers (M5.10) at the one `WATERS` M5.1's test states, the same to the bit
-  at any cadence and camera (M5.6). The look of the sheet,
+  and it holds here: WP4 to WP7 pass on their look and their speed, and what a game reads is tested against
+  `thrum-water-model`: the river in the map and the query at the tolerance `WATERS` WP4.1's test states, and
+  the flow bands in the query's answers (WP5.10) at the one `WATERS` WP5.1's test states, the same to the bit
+  at any cadence and camera (WP5.6). The look of the sheet,
   the flow bands and the river's caustics is not held to an f64 reference or to a bound measured first, and
-  nor are the rings: M6.10 compares the step with itself. Parts 1 to 10 are the source of the bounds M1 to M3
-  were proved with and of M6.10's carriage figures, and part 12 of its half.
-- **Maturity.** A ledger row for `E1.rivers` is added in M4 and kept current.
+  nor are the rings: WP6.10 compares the step with itself. Parts 1 to 10 are the source of the bounds WP1 to WP3
+  were proved with and of WP6.10's carriage figures, and part 12 of its half.
+- **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
-| What does a solve cost in Rust, for the test valley and the island? | M1 and M4 record it |
-| Does `c = 2` read right, and do two bands suffice? | M5; [risk 2](#risks) |
-| Does the shallows' birth constant serve a river? | M5 records the cover; [risk 3](#risks) |
-| What wave share makes rings that read? | M6.5's look, tuned by eye from 0.1 and recorded. The fall's power is a diagnostic ([the plunge](#the-plunge)), and no item asserts it |
-| How many reaches does a winding river need? | M4's bytes; [risk 7](#risks) |
-| Does a fall need mist to meet its bar? | M6's review; the owner ([plan](PLAN.md#open-for-the-human)) |
+| What does a solve cost in Rust, for the test valley and the island? | WP1 and WP4 record it |
+| Does `c = 2` read right, and do two bands suffice? | WP5; [risk 2](#risks) |
+| Does the shallows' birth constant serve a river? | WP5 records the cover; [risk 3](#risks) |
+| What wave share makes rings that read? | WP6.5's look, tuned by eye from 0.1 and recorded. The fall's power is a diagnostic ([the plunge](#the-plunge)), and no item asserts it |
+| How many reaches does a winding river need? | WP4's bytes; [risk 7](#risks) |
+| Does a fall need mist to meet its bar? | WP6's review; the owner ([plan](PLAN.md#open-for-the-human)) |
 
-## Compact river solver fixtures (M8)
+## Compact river solver fixtures (WP8)
 
 Use small CPU fixtures for the listed cases. For closed-form, stopping and serialization checks, use a
 short reach with enough steps to exercise the solver and its report. Keep the terrain features the other
@@ -729,7 +729,7 @@ or fall record, use only the samples and geometry needed to exercise the interpo
 dry-reach cases. Use already-made charts for checks whose subject is sampling, with the solver-to-chart
 and river-file round trips still exercised by the tests that own those boundaries.
 
-## Compact chart gauge and determinism fixtures (M9)
+## Compact chart gauge and determinism fixtures (WP9)
 
 The chained-gauge test builds two 136 × 64 lake valleys at 0.25 m spacing, solves both across their
 gauge samples and solves the lower valley again at an interior gauge. Most of that work sets up a

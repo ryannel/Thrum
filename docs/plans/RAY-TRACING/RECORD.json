@@ -3,39 +3,39 @@
   "design": {
     "verdict": "ok",
     "by": "review_limit",
-    "hash": "3d9918857a313efb6408ab7116400b07edbaaf033d8f29c7a997a59c60cddcb4",
+    "hash": "ca5baba64d05b8aed8469116092146249980797327608163568b07d11b3ded2c",
     "after": [
       ".orchestrate/evidence/RAY-TRACING/design-review-7.md",
       ".orchestrate/evidence/RAY-TRACING/design-review.md"
     ],
     "at": "2026-11-23T09:26:20Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "47d362dccd28a28d302abf3bb53a81122e534891c55e8a74b629fbdd9cadc648",
+  "work_packages": {
+    "WP1": {
+      "definitions": "b13e7a35dd2206666e2a276b1eb6784c53746e386bb317e31b4990ff95b8ad0c",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "0b4fd10a0bd612ecbb5bdfe14ee9c8283e2d73f1",
-          "review": ".orchestrate/evidence/RAY-TRACING/M1-review-1.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP1-review-1.md",
           "items": {
-            "M1.1": "fail",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "fail",
-            "M1.6": "pass",
-            "M1.7": "pass"
+            "WP1.1": "fail",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "fail",
+            "WP1.6": "pass",
+            "WP1.7": "pass"
           },
           "findings": [
             {
               "name": "Portable structure request allocates and builds ray structures",
-              "item": "M1.5",
+              "item": "WP1.5",
               "repeat": false
             },
             {
               "name": "Shared native test gate bypasses registry device admission",
-              "item": "M1.1",
+              "item": "WP1.1",
               "repeat": false
             },
             {
@@ -63,15 +63,15 @@
         {
           "verdict": "pass",
           "commit": "6a8986e5180f82ac2748eb89d53d86b3076d7656",
-          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.4": "pass",
-            "M1.5": "pass",
-            "M1.6": "pass",
-            "M1.7": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -128,32 +128,32 @@
       "done": {
         "by": "review",
         "commit": "6a8986e5180f82ac2748eb89d53d86b3076d7656",
-        "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md",
+        "review": ".orchestrate/evidence/RAY-TRACING/WP1-review.md",
         "checked": "28e75266d58c8ede49ba2c06cb135eea5f0e9f7b",
         "at": "2026-11-18T12:28:06Z"
       }
     },
-    "M2": {
+    "WP2": {
       "definitions": "e64d45bf9c2bb2f8613cfabdf428237bd8d22d89369c1324653d8eadacb27604",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "3a29b3e41fc389827c16da2e640d8649ff527f2c",
-          "review": ".orchestrate/evidence/RAY-TRACING/M2-review-1.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "fail",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "fail",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass"
           },
           "findings": [
             {
               "name": "Initial mesh builds run after the generation is ready",
-              "item": "M2.5",
+              "item": "WP2.5",
               "repeat": false
             },
             {
@@ -181,16 +181,16 @@
         {
           "verdict": "pass",
           "commit": "e6771e9b1be8cbc6dbad82f4a352416676c867eb",
-          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.3": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.6": "pass",
-            "M2.7": "pass",
-            "M2.8": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass"
           },
           "host": "codex",
           "model": "gpt-6.2-astra",
@@ -247,51 +247,51 @@
       "done": {
         "by": "review",
         "commit": "e6771e9b1be8cbc6dbad82f4a352416676c867eb",
-        "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md",
+        "review": ".orchestrate/evidence/RAY-TRACING/WP2-review.md",
         "checked": "8429cf30443e6545f16e059eb38ff0c6c29cc571",
         "at": "2026-11-18T20:43:14Z"
       }
     },
-    "M3": {
-      "definitions": "cf9315e34900aa69ca174177deae3da045ff0093c962ba5de88e3e2d1b8140aa",
+    "WP3": {
+      "definitions": "401c2ddae06e0599a6d64ea6cf6d624e53f839402268be9dadf693d7acc4dc3e",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "0b58b9efb1f39afc467aba542c683427ada50547",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-1.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP3-review-1.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "fail",
-            "M3.3": "pass",
-            "M3.4": "fail",
-            "M3.5": "fail",
-            "M3.6": "fail",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "fail",
+            "WP3.3": "pass",
+            "WP3.4": "fail",
+            "WP3.5": "fail",
+            "WP3.6": "fail",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass"
           },
           "findings": [
             {
               "name": "Native traced pipeline errors bypass Maps fallback",
-              "item": "M3.6",
+              "item": "WP3.6",
               "repeat": false
             },
             {
               "name": "Mirrored lamp receiver shadows its exposed faces",
-              "item": "M3.5",
+              "item": "WP3.5",
               "repeat": false
             },
             {
               "name": "Dark facets interrupt low-Sun balloon terminators",
-              "item": "M3.2",
+              "item": "WP3.2",
               "repeat": false
             },
             {
               "name": "Off-screen lamp wall overlaps the Sun height pass",
-              "item": "M3.4",
+              "item": "WP3.4",
               "repeat": false
             }
           ],
@@ -315,25 +315,25 @@
         {
           "verdict": "fail",
           "commit": "d9d616781d8394289719e904e00ca01b5c09f950",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-2.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP3-review-2.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "fail",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "fail",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass"
           },
           "findings": [
             {
               "name": "Cooked pipeline failure drops the contribution on device replacement",
-              "item": "M3.6",
+              "item": "WP3.6",
               "different": "The earlier failure escaped the primary pipeline error scope. Here wgpu validation is caught by CookedAssets, but the contribution rebuild runs outside the Maps retry and publication drops the cooked content.",
               "repeat": false
             }
@@ -358,26 +358,26 @@
         {
           "verdict": "fail",
           "commit": "9fa6860363e020e9cc144ea50027d48999201cd2",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-3.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP3-review-3.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "fail",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass",
-            "M3.13": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "fail",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.13": "pass"
           },
           "findings": [
             {
               "name": "Cooked scene preparation misses Maps fallback on initial attachment and visual republication",
-              "item": "M3.6",
+              "item": "WP3.6",
               "different": "Generation-2 device replacement now retains the cooked receiver and matches Maps. On generation 1 the initial attachment returns an error, and publishing a visual on the same device drops an already drawn contribution.",
               "repeat": false
             }
@@ -402,26 +402,26 @@
         {
           "verdict": "fail",
           "commit": "dc3118ad82c5a494667d504171c1e03f8389fed5",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-4.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP3-review-4.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "fail",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass",
-            "M3.13": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "fail",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.13": "pass"
           },
           "findings": [
             {
               "name": "Same-device Maps fallback drops a resident cooked receiver from the first submitted frame",
-              "item": "M3.6",
+              "item": "WP3.6",
               "different": "Initial attachment and visual republication now retry with Maps and keep the contribution attached. The new failure occurs after a successful visual publication: previously resident geometry disappears while its cooked buffers upload again, so the first submitted image differs from the no-request control.",
               "repeat": false
             }
@@ -446,26 +446,26 @@
         {
           "verdict": "fail",
           "commit": "c7cbfaf35537db630fe4cb62596f263eee96ca05",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-5.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP3-review-5.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "fail",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass",
-            "M3.13": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "fail",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.13": "pass"
           },
           "findings": [
             {
               "name": "Same-device Maps fallback drops a resident cooked receiver from the first submitted frame",
-              "item": "M3.6",
+              "item": "WP3.6",
               "repeat": true
             }
           ],
@@ -489,35 +489,35 @@
         {
           "verdict": "fail",
           "commit": "9d56b7e29f5d39d2d4b31552ced59ab27bb15096",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-6.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP3-review-6.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "fail",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass",
-            "M3.13": "pass",
-            "M3.14": "fail",
-            "M3.15": "pass",
-            "M3.16": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "fail",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.13": "pass",
+            "WP3.14": "fail",
+            "WP3.15": "pass",
+            "WP3.16": "pass"
           },
           "findings": [
             {
               "name": "A dark facet interrupts the noon rock\u2019s lit surface",
-              "item": "M3.2",
+              "item": "WP3.2",
               "different": "The verified receiver is the cooked rock at noon. The previously named low-Sun balloon edges have distinct distant casters.",
               "repeat": false
             },
             {
               "name": "The CPU guard passes when host publication discards the prepared list",
-              "item": "M3.14",
+              "item": "WP3.14",
               "repeat": false
             }
           ],
@@ -541,29 +541,29 @@
         {
           "verdict": "fail",
           "commit": "b3fbbbaf3f6002eb870012db4ee0d8b02d7de49c",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass",
-            "M3.6": "pass",
-            "M3.7": "pass",
-            "M3.8": "pass",
-            "M3.9": "pass",
-            "M3.10": "pass",
-            "M3.11": "pass",
-            "M3.12": "pass",
-            "M3.13": "fail",
-            "M3.14": "pass",
-            "M3.15": "pass",
-            "M3.16": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.13": "fail",
+            "WP3.14": "pass",
+            "WP3.15": "pass",
+            "WP3.16": "pass"
           },
           "findings": [
             {
               "name": "The terminator check has no sheet beyond the widened passage reach",
-              "item": "M3.13",
+              "item": "WP3.13",
               "repeat": false
             }
           ],
@@ -620,8 +620,8 @@
         }
       }
     },
-    "M4": {
-      "definitions": "8ffbc403ea1a509566cf41658cbac9632412752207efd7f37c35181ed41c3cb5",
+    "WP4": {
+      "definitions": "f8bd06a6737dffdedcfdb4d1fda7e9284c71def1d7f47cb1f674336f7832f1a1",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -629,8 +629,8 @@
         "at": "2026-11-19T20:13:14Z"
       }
     },
-    "M5": {
-      "definitions": "2354275c3b49767412353ece4941f3d1612ae6cf95a14741e1ac2fc6934f6e89",
+    "WP5": {
+      "definitions": "c1ebd3f6e95122bd51a5c60e2369640e72563af2c31111dca42b8acae1a3539f",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -638,8 +638,8 @@
         "at": "2026-11-23T09:26:20Z"
       }
     },
-    "M6": {
-      "definitions": "56344f2cf69e371899af5b9a94821eb8152464532179f44dc609b0a4c7297791",
+    "WP6": {
+      "definitions": "006ca0236c73c83357fac88504980b8356ab14278482ada621b19eefc58e5a69",
       "reviews": [],
       "authorised": {
         "by": "plan",
@@ -649,7 +649,7 @@
       "ends_stretch": true
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Metal ray queries / intersection) and mesh shaders (Metal object and mesh stages) on the Apple tile recipe, verified on this M3 Max, under the hardware-native decision (docs/design/decisions/HARDWARE-NATIVE-ENGINE.md): registry-selected accelerated paths, the portable path stays as fallback and reference, and each path is promoted only by a measured win. Decide from first principles and current state of the art which rendering problems in Thrum they should serve (for example GPU-driven geometry and culling, shadows, reflections, occlusion or GI) and whether this is a new module or milestones added to an existing one, following the module-decomposition rules. It must not delay V1 (SHOWCASE M8): schedule it off the critical path unless a piece clearly earns a place on it, and say which. Desktop high / PC stays out of scope; keep designs reusable for a later Vulkan/D3D12 recipe where that costs nothing. Done when the module list, a design and milestones with done-when files exist and are ready for design review.",
       "at": "2026-11-17T22:30:25Z"

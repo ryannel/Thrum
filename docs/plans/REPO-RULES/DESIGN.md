@@ -1,7 +1,7 @@
 # Repo rules: the shapes held by check, bulk files out of the tree, names and layout
 
 14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/REPO-RULES/design-review.md),
-and again that day when M1's first landing was refused ([log](LOG.md)).
+and again that day when WP1's first landing was refused ([log](LOG.md)).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md) ·
@@ -88,18 +88,18 @@ every fix is kept.
 
 | Rule | Refuses | Theme | Added in |
 |---|---|---|---|
-| `string-errors` | `Result<_, String>` as the return of a `pub fn` in `crates/` and `examples/` | T3 | M1 |
-| `package-reach` | A `#[path]`, `include!`, `include_str!` or `include_bytes!` whose target resolves outside the file's own package, and a manifest dependency of any kind from a package under `crates/` on one under `examples/` | T5 | M1 |
-| `path-attribute` | Any `#[path]` attribute, which shares code outside the module tree | T6 | M1 |
-| `library-env` | `std::env::var`, `var_os` or `vars` in a library crate's non-test source. One exemption: a package registered in `.config/architecture.toml` with `test_role = "support"`, which is a process edge ([TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#mechanisms)'s GPU gate reads `THRUM_REQUIRE_GPU`). No other package and no other role is exempt | T8 | M1 |
-| `device-request` | A call to `request_adapter` or `request_device` outside the modules [HOST](../HOST/DESIGN.md) and [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md) register as the owners | T4, T6 | M1 |
-| `whole-file-gpu-gate` | A file-level `#![cfg(target_os = …)]` on a test file | T6 | M1 |
-| `history-names` | A name that carries a milestone or gate code, in any of the places such names live: a path segment of a tracked file under `crates/`, `examples/`, `tools/` or `scripts/`; an environment variable name in source; a Cargo target name; a Cargo `description`. A code is one of the measured families (`g<n>` with an optional letter, `t2`, `a1`, `m<n>` with an optional letter) standing as a whole word or segment | T9 | M1 |
-| `evidence-size` | A tracked file under `.orchestrate/evidence/` over the cap, unless it is a registered exact-baseline reference. Added with the store that gives a refused file somewhere to go | T13 | M2 |
-| `layering` | In `thrum-render`, an import from the scene renderer or the atmosphere in the graph or timing, and a new one in the frame runtime or the presenter (mechanism 5) | T10 | M3 |
+| `string-errors` | `Result<_, String>` as the return of a `pub fn` in `crates/` and `examples/` | T3 | WP1 |
+| `package-reach` | A `#[path]`, `include!`, `include_str!` or `include_bytes!` whose target resolves outside the file's own package, and a manifest dependency of any kind from a package under `crates/` on one under `examples/` | T5 | WP1 |
+| `path-attribute` | Any `#[path]` attribute, which shares code outside the module tree | T6 | WP1 |
+| `library-env` | `std::env::var`, `var_os` or `vars` in a library crate's non-test source. One exemption: a package registered in `.config/architecture.toml` with `test_role = "support"`, which is a process edge ([TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#mechanisms)'s GPU gate reads `THRUM_REQUIRE_GPU`). No other package and no other role is exempt | T8 | WP1 |
+| `device-request` | A call to `request_adapter` or `request_device` outside the modules [HOST](../HOST/DESIGN.md) and [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md) register as the owners | T4, T6 | WP1 |
+| `whole-file-gpu-gate` | A file-level `#![cfg(target_os = …)]` on a test file | T6 | WP1 |
+| `history-names` | A name that carries a milestone or gate code, in any of the places such names live: a path segment of a tracked file under `crates/`, `examples/`, `tools/` or `scripts/`; an environment variable name in source; a Cargo target name; a Cargo `description`. A code is one of the measured families (`g<n>` with an optional letter, `t2`, `a1`, `m<n>` with an optional letter) standing as a whole word or segment | T9 | WP1 |
+| `evidence-size` | A tracked file under `.orchestrate/evidence/` over the cap, unless it is a registered exact-baseline reference. Added with the store that gives a refused file somewhere to go | T13 | WP2 |
+| `layering` | In `thrum-render`, an import from the scene renderer or the atmosphere in the graph or timing, and a new one in the frame runtime or the presenter (mechanism 5) | T10 | WP3 |
 
-M1 proves the rules marked M1. The names that exist when `history-names` is registered are its baseline, like any
-other rule's; M3 takes it to zero.
+WP1 proves the rules marked WP1. The names that exist when `history-names` is registered are its baseline, like any
+other rule's; WP3 takes it to zero.
 
 Other modules add rules through the same engine, each in the milestone that first needs it: `test-crate-edges`
 (`TEST-SUPPORT`) and `game-names` (`GAME-SPLIT`). A rule is added only with its fixtures.
@@ -158,14 +158,14 @@ every test hold it.
   `runtime.rs`, `registered_world.rs` in core.
 - Inside `thrum-render` the `layering` rule holds what moves and the other modules' fixes can deliver, and no
   more. The graph imports nothing from the scene renderer or the atmosphere today, and timing stops once
-  [REVIEW-RENDER](../REVIEW-RENDER/DESIGN.md) M3 gives passes their own timing categories: for those two the rule
+  [REVIEW-RENDER](../REVIEW-RENDER/DESIGN.md) WP3 gives passes their own timing categories: for those two the rule
   is absolute. The frame runtime and the presenter are different. The frame host is created from a scene, holds
   the prepared scene renderer and its offscreen target, and its capture holds the renderer's readback; the
   presenter binds that target. A rename and a split leave those dependencies where they are, and moving
   scene code under a neutral file name would only hide them. For those two the rule is a ratchet: their imports
   are counted when the rule is registered and may not grow.
 - Taking the runtime and the presenter to zero needs the frame host to hold its scene through an interface. No
-  module plans that: `RENDER-2D` M1 lets a host be created for a 2D or a 3D scene, and the host still names both.
+  module plans that: `RENDER-2D` WP1 lets a host be created for a 2D or a 3D scene, and the host still names both.
   It is not built here, and it is open for the human in the plan.
 - `thrum-render` is not split into crates, for the same reason: a crate boundary between the frame runtime and
   the scene renderer cannot be drawn while one names the other's types.

@@ -1,7 +1,7 @@
 # TRANSPORT: two processes exchange messages over real internet protocols, one of them a browser
 
 13 November 2026, revised the same day and on 15 November after its design reviews, which [the log](LOG.md) lists. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C11, C12 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
+[the brief](../VISION.md). C11, C12 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
 [the networking design](../../design/modules/NETWORKING.md#transport-and-overload),
 [the A0 decision](../../design/decisions/A0-N1-TRANSPORT-CODEC.md) and
 [the input wire](../../design/decisions/A5-INPUT-WIRE.md) govern.
@@ -10,7 +10,7 @@
 
 The owner's words weren't passed on with this task; this design answers the lead's task, "Plan module TRANSPORT. It
 needs: SHOWCASE", which is row 17 of the module list. What the owner asked for is on
-[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../BRIEF.md) carries
+[the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../VISION.md) carries
 as decision 7:
 
 > - **A swarm survivor.** One or more players hold out against ever-growing crowds of enemies, with automatic
@@ -26,11 +26,11 @@ moves bytes between those processes. The module list's brief for it, which
 WebTransport crate, where the network's thread sits beside the world lane, and whether A0's WebSocket fallback is
 built.
 
-**When it is built.** Before or after the V1 exit, whenever a builder slot is free: M1 waits for no other
+**When it is built.** Before or after the V1 exit, whenever a builder slot is free: WP1 waits for no other
 module's milestone. The owner, 15 November 2026, on transport's timing: "it can come before V1 if we have space
 for it, but it's not urgent". So this module is last in line for a builder, and the lead starts one only when a
 slot is free. The ruling replaces "transport stays after V1", which decision 1 of
-[the brief](../BRIEF.md#goal-and-exit-rule) carried until that day; transport is still no part of the V1 exit
+[the brief](../VISION.md#goal-and-exit-rule) carried until that day; transport is still no part of the V1 exit
 and never gates it. Nothing here uses anything `SHOWCASE` builds, and the proof programs run without the game.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-network` (the envelope and the
@@ -71,7 +71,7 @@ machines: every proof here is on this Mac.
 | **N3 Get the same behaviour from every adapter** | In-memory, Mac, iPhone simulator, Chrome | A Chrome row driven by hand-written JavaScript, or a simulator row run by the Mac binary. Rejected by [one script](#8-one-link-script-four-adapters) run through the engine's own adapter on each, with the peer's platform in the record |
 | **N4 Know that a link opened, that it closed, and why** | A link on which neither end has sent a message yet; a clean close from either end; a peer that is killed; a path cut for longer than the idle timeout; a native client frozen and resumed; a wrong ticket; a full host | Learning of a dead peer only when the next send fails. Rejected by a cut on a link that is sending nothing |
 | **N5 Be sure who the host is** | Every adapter; a host on a local machine with no public certificate | Switching certificate checks off to make Chrome connect. Rejected by a wrong ticket that must be refused on every target, and a Chrome launch with no flag that touches certificates |
-| **N6 Keep running when one peer is slow or hostile** | A peer that stops reading, floods either lane, breaks the framing, or never finishes a handshake; three healthy links beside it | A host that is fine with well-behaved peers. Rejected by M2's hostile and stalled peers beside healthy links |
+| **N6 Keep running when one peer is slow or hostile** | A peer that stops reading, floods either lane, breaks the framing, or never finishes a handshake; three healthy links beside it | A host that is fine with well-behaved peers. Rejected by WP2's hostile and stalled peers beside healthy links |
 | **N7 Rehearse a match with no socket** | A0's delay, jitter and loss; reordering; a cut; a stall; a slow peer; the same seed twice | A lossless in-process queue. Rejected by running the link script, loss and all, on the in-memory link |
 | **N8 See what the link is doing** | Bytes and messages each way on each lane, what was refused or discarded, how old the oldest waiting message is, and round trip and loss where the adapter knows them | Counters only on the Mac. The record marks what an adapter cannot supply as absent, never as zero |
 | **N9 Pay nothing when the game is not networked** | The V1 game, the starter and the creator scenes; and any package that uses the link's interface without sockets | A feature flag inside an existing crate. Rejected by a check of each package's dependency closure |
@@ -275,7 +275,7 @@ Every queue has a cap, so a link's memory is the sum of its caps and a host's is
 ### 6. Congestion control on the Quinn ends
 
 **Decision.** The host and the native clients use Quinn's BBR controller. The profile can select Cubic, Quinn's
-default, and M1 records both.
+default, and WP1 records both.
 
 **Why.** A0's conditioner loses 2% of packets at random. A loss-based controller reads each loss as congestion, and
 its rate is bounded by about `1.22 × packet size / (round trip × √loss)`
@@ -294,9 +294,9 @@ datagrams did not notice.
 whether it honoured it. A 256 KiB message from Chrome took about 5.5 s in the probe. The game sends only input
 upward, so `SESSION` should keep anything large flowing from the host down.
 
-**What would change the decision.** If M1 finds BBR stalling, or its overhead growing with the length of a run,
+**What would change the decision.** If WP1 finds BBR stalling, or its overhead growing with the length of a run,
 the profile's default returns to Cubic and `SESSION` sizes its baseline for about 50 KB/s under loss. Either way
-M1's record gives `SESSION`'s planner both controllers' rows.
+WP1's record gives `SESSION`'s planner both controllers' rows.
 
 ### 7. Conditioning: one profile, two carriers
 
@@ -399,7 +399,7 @@ A host's port is open to anyone who can reach it, so every byte from a peer is u
   the link closes with that reason and the bytes are never delivered.
 - **Parsed beneath:** QUIC, TLS and HTTP/3 are Quinn's, rustls's and `web-transport-quinn`'s. No cryptography is
   written here.
-- **Proved on sockets in M2:** random UDP at the port, a wrong ALPN, a wrong path, each rule broken in turn, a
+- **Proved on sockets in WP2:** random UDP at the port, a wrong ALPN, a wrong path, each rule broken in turn, a
   stream stalled mid-message, a flood on each lane, more clients than the link cap, handshakes that never
   finish and clients that connect and never send the hello, each beside healthy links that must not lose a
   reliable message.
@@ -478,7 +478,7 @@ No budget is set (brief, decision 3). The account, per link at the game's rates:
 
 A host with four links moves about 500 packets a second, so the cost that matters is latency added to a message,
 not throughput. The design keeps that to one queue and one wake. The adapters are written to reuse their buffers,
-and M1 counts what a warmed send and drain allocate.
+and WP1 counts what a warmed send and drain allocate.
 
 **Baselines and tripwires.** Every time, byte count and allocation count this module records is a baseline. The
 cost command succeeds when its record is complete and made at the claimed commit, whatever the figures are. Three
@@ -488,9 +488,9 @@ each application byte that grow with the length of a run.
 
 ## Risks
 
-- **BBR is experimental upstream.** Early sign: M1's overhead row grows, or a run stalls. Mechanism 6 says what
+- **BBR is experimental upstream.** Early sign: WP1's overhead row grows, or a run stalls. Mechanism 6 says what
   changes.
-- **Chrome differs from the probe**: the Wasm adapter, a headed window, a later version. Early sign: M1's Chrome
+- **Chrome differs from the probe**: the Wasm adapter, a headed window, a later version. Early sign: WP1's Chrome
   row loses datagrams the Mac row keeps. The record holds the browser's version, and the builder stops as
   [the handoff](#proof-and-builder-handoff) says.
 - **A convincing fake of the conditioned run:** a client that connects straight to the host. The record holds the
@@ -533,9 +533,9 @@ each application byte that grow with the length of a run.
 
 ## Open questions
 
-- Whether Quinn's loss detection should tolerate more reordering under A0's profile. M1 records the default; a
+- Whether Quinn's loss detection should tolerate more reordering under A0's profile. WP1 records the default; a
   builder who tunes it records both.
-- Whether `SESSION`'s baseline fits a join under each controller. Settled by M1's transfer rows and `SIM-2D`'s
+- Whether `SESSION`'s baseline fits a join under each controller. Settled by WP1's transfer rows and `SIM-2D`'s
   state size.
 - Whether the I/O thread needs a priority beside the render and world threads. Settled when `SWARM` measures the
   link inside the running game; here it runs at the default.

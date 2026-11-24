@@ -31,7 +31,7 @@ in the loader, `SIM-2D` and `SESSION` in core) and anyone who runs the game on a
 features only and for `downlevel_defaults` limits. So cooked textures never take the ASTC profile on the one
 platform whose profile it is, and a stage gets four storage buffers where `thrum-sea` refuses fewer than eight.
 The request takes every content feature the adapter offers and the adapter's own limits, as the Mac window's
-does. This is the contained fix; `HOST` M1 then replaces every host's request with one recipe.
+does. This is the contained fix; `HOST` WP1 then replaces every host's request with one recipe.
 
 **2. One publication model (H14).** `GameRuntime` supports a page the game fills and a page the engine fills, and
 branches on which in every publication method. The G2S decision gives layout and page capture to the engine, and
@@ -39,7 +39,7 @@ the only production consumer uses the engine's page: the game path runs in tests
 V1 game passes never runs. The engine's page is the one model. The game-authored capture, the state only that
 path used and the rewind patch callbacks are removed, and the tests that used them are rebuilt on the engine's
 page. What the engine's own path keeps for a deferred publication stays: its undo preimages, the skipped-with-undo
-state and the previous poses, which a later publication and M5's replay fix rely on. What must
+state and the previous poses, which a later publication and WP5's replay fix rely on. What must
 stay true is the behaviour, so it gets a test it never had: after a rewind and replay the published page equals
 a fresh capture of the same world. No planned module (`SIM-2D`, `SESSION`, `SWARM`) uses a game-authored page.
 
@@ -65,7 +65,7 @@ edit-to-visible test and tripwire measure, goes: the test and bench drive `thrum
 profile preference both copies held becomes one function in `thrum-asset`. The tripwire then measures other code,
 so its history breaks once: the old and new figures are recorded side by side and the new one is the baseline.
 This milestone starts before [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine exists, so that the cooker reaches
-no example is proved here by a search of the cooker's manifest and sources; `GAME-SPLIT` M2 later holds it, with
+no example is proved here by a search of the cooker's manifest and sources; `GAME-SPLIT` WP2 later holds it, with
 every other reach, by rule.
 
 **5. Errors (T3).** Each public boundary in these crates gets one enum with `Display` and `Error`, as

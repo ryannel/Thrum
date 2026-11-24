@@ -3,41 +3,41 @@
 | # | Module | What it's for | Needs |
 |---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss | |
-| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 |
-| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 |
-| 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 |
-| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 |
+| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE WP0, APPLE-TILE WP3 |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 |
+| 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and M1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 |
+| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, M2, M3, M11 and M12 |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its M9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its M6 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it | |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; ATMOSPHERE M10 for the populated valley's motion review; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close |
-| 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU |
-| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
-| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
-| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes, and DEAD-TOOLS M5 for the record of the library it copies; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
-| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE WP2 and M3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION WP2 and M3, EFFECT-GRAPH WP2, CULLING WP3 |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION's last milestone, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3 and CREATOR WP3 as well to close |
+| 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU |
+| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and M9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 |
+| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH WP2 and M4 and ATMOSPHERE WP5 for its shade; EFFECT-GRAPH WP3 for its first frame; CONTENT-LOOP WP1 for placed volumes, and DEAD-TOOLS WP5 for the record of the library it copies; APPLE-PRESENTATION WP3 and CREATOR WP1 for controls and motion; ATMOSPHERE WP8 for mist and fog; WATERS WP8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS WP1 for its flow on the CPU; WATERS WP9 for its first running stream; WATERS WP10 and M16 to close |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, M14 and M16 to close |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone |
-| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last |
-| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 |
-| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its last milestone |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second milestone and TRANSPORT WP2 for its socket milestones; RENDER-2D WP5 for its last |
+| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP5 and APPLE-PRESENTATION WP6 |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up |
-| 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors |
-| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests; GATE-TIME M2 and M6, DEAD-CODE M2 and REVIEW-RENDER M2 for adopting the test kit; nothing for the small target and the block on writing a test |
-| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors |
-| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 |
-| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
-| 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close |
-| 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close |
-| 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; TEST-SUPPORT M6 for the guard rules; WATERS M7 for the water scene's slow tests; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the contributor guide |
-| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone |
-| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers |
+| 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES WP1 for its errors |
+| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES WP1 to start; HOST WP1, GAME-SPLIT WP2, ATMOSPHERE WP9, APPLE-TILE WP10, APPLE-PRESENTATION WP3, EFFECT-GRAPH WP3 and CULLING WP3 for the renderer's tests; GATE-TIME WP2 and M6, DEAD-CODE WP2 and REVIEW-RENDER WP2 for adopting the test kit; nothing for the small target and the block on writing a test |
+| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE WP9, APPLE-TILE WP10, APPLE-PRESENTATION WP3, EFFECT-GRAPH WP3 and CULLING WP3 to start; REPO-RULES WP1 for its errors |
+| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR WP3, APPLE-TILE WP10, APPLE-PRESENTATION WP3, EFFECT-GRAPH WP3, CULLING WP3, REVIEW-ENGINE WP1 and REPO-RULES WP1 |
+| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES WP1 and TEST-SUPPORT WP1 to start; REVIEW-ENGINE WP3, CULLING WP3, EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 for the boundary; HOST WP4 to cut the game free; SHOWCASE WP8 for the move; CLOUDS WP12, GAME-UI WP6, PUDDLES WP6, RENDER-2D WP5, ATMOSPHERE WP8, CONTENT-LOOP WP2, SESSION WP6 and TRANSPORT WP2 for the rename |
+| 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING WP3 and CONTENT-LOOP WP2 to start; ATMOSPHERE WP5, APPLE-PRESENTATION WP3 and SHOWCASE WP5 for shadows; EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP2 for soft shadows; SHOWCASE WP8 to close |
+| 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP WP2 and COOKED-DRAW WP1 to start; SHOWCASE WP8 to close |
+| 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT WP2 for the runs that happen twice; TEST-SUPPORT WP6 for the guard rules; WATERS WP7 for the water scene's slow tests; REVIEW-RENDER WP2 for the reference tests; DEAD-TOOLS WP2 for the contributor guide |
+| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last milestone |
+| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
 are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 milestone. Rows 34 to 36 are [track 6](#track-6-the-cleanup-of-20-november), the cleanup of 20 November, built beside the rest by Claude builders. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
@@ -46,7 +46,7 @@ loop writes.
 
 This is the project plan the orchestrate loop builds from: the modules, what each owns, the build order, the
 interfaces between them and a brief for each module not yet planned. First written 10 November 2026.
-[The brief](BRIEF.md) owns the purpose and the V1 exit. [The architecture brief](../design/ARCHITECTURE-BRIEF.md)
+[The brief](VISION.md) owns the purpose and the V1 exit. [The architecture brief](../design/ARCHITECTURE-BRIEF.md)
 owns the engine-wide responsibility map (F1–T2) and [CONTRACTS](../design/CONTRACTS.md) owns shared invariants. A
 module here is a unit of build ownership: one builder can work on it without touching the others, and each kind of
 state has exactly one module in charge of it. A swarm-survival game with 2D and online multiplayer is
@@ -62,7 +62,7 @@ Quoted word for word from the 10 November planning task:
 > it.
 >
 > Purpose. The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always
-> have a next milestone, and wants water and clouds finished and consolidated. Today only PLATFORM-RUNTIME-MAC M2
+> have a next milestone, and wants water and clouds finished and consolidated. Today only PLATFORM-RUNTIME-MAC WP2
 > and APPLE-TILE (G3t) are planned and open; everything after them is unplanned.
 >
 > Water and clouds are built in the Broadsides repository at /Users/ryannel/Workspace/Broadsides, not here. Water is
@@ -80,7 +80,7 @@ Quoted word for word from the 10 November planning task:
 > a builder can start it; and the build plan's active section points to it. List anything that needs an owner
 > decision, such as port timing or spending, in your result rather than deciding it.
 >
-> Boundaries. Don't change the definitions of PLATFORM-RUNTIME-MAC M2 or APPLE-TILE, because builders are on them.
+> Boundaries. Don't change the definitions of PLATFORM-RUNTIME-MAC WP2 or APPLE-TILE, because builders are on them.
 > Read Broadsides but don't change it.
 
 ## Three tracks
@@ -137,25 +137,25 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 
 | Exit clause | Closed by |
 |---|---|
-| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE` M7 and M8; `PLATFORM-RUNTIME-MAC` M2 and M3 |
-| Physical sky, Sun and aerial perspective with time controls | `ATMOSPHERE` M6 |
-| Cooked meshes and textures; hot reload | `CONTENT-LOOP` M3; `CREATOR` |
-| Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` M6; the far ground under the exit scene's balloons in `ATMOSPHERE` M10 |
-| GPU culling | `CULLING` M3 |
-| MetalFX, EDR and a quality governor; no pipeline compilation during play | `APPLE-TILE` M10–M12; `APPLE-PRESENTATION` M4–M12 |
+| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE` WP7 and M8; `PLATFORM-RUNTIME-MAC` WP2 and M3 |
+| Physical sky, Sun and aerial perspective with time controls | `ATMOSPHERE` WP6 |
+| Cooked meshes and textures; hot reload | `CONTENT-LOOP` WP3; `CREATOR` |
+| Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` WP6; the far ground under the exit scene's balloons in `ATMOSPHERE` WP10 |
+| GPU culling | `CULLING` WP3 |
+| MetalFX, EDR and a quality governor; no pipeline compilation during play | `APPLE-TILE` WP10–M12; `APPLE-PRESENTATION` WP4–M12 |
 | Display-link interpolation | G3b's function rows, closed before the loop; Mac cadence in `PLATFORM-RUNTIME-MAC` |
-| Profiler and native/browser demo UI | `CREATOR` M1 and M2 |
-| 10,000 entities and 1,000–2,000 movers as the representative scene | `SHOWCASE` M5 and M6, with `CULLING` and `CONTENT-LOOP` |
+| Profiler and native/browser demo UI | `CREATOR` WP1 and M2 |
+| 10,000 entities and 1,000–2,000 movers as the representative scene | `SHOWCASE` WP5 and M6, with `CULLING` and `CONTENT-LOOP` |
 | Headless corrected-run replay | G2S, closed before the loop |
-| A fresh agent builds a small scene from public docs alone | `CREATOR` M3 |
-| Outstanding physical-device runs reported | `SHOWCASE` M8 |
+| A fresh agent builds a small scene from public docs alone | `CREATOR` WP3 |
+| Outstanding physical-device runs reported | `SHOWCASE` WP8 |
 
 <a id="who-judges-frame-cadence"></a>
 
 **Who judges frame cadence on the culled valley (with `CULLING` and `SHOWCASE`), 17 November 2026.** `CULLING`
 M3's review left M3.7 and M3.8 unjudged for "full-refresh smoothness", from submission intervals in a loaded
 capture, and its builder asked for a paused-builder sitting
-([review](../../.orchestrate/evidence/CULLING/M3-review.md)). The brief's bar, "smooth at the display's full refresh", has one
+([review](../../.orchestrate/evidence/CULLING/WP3-review.md)). The brief's bar, "smooth at the display's full refresh", has one
 judge for the showcase, and it is not `CULLING`.
 
 - **`SHOWCASE` judges it**, on the exit scene, which is the valley populated and drawn in `CULLING`'s default
@@ -168,7 +168,7 @@ judge for the showcase, and it is not `CULLING`.
   Its items judge which geometry each submitted frame holds, and none judges cadence or takes a sitting
   ([its design](CULLING/DESIGN.md#frame-cadence)). When `SHOWCASE`'s record names a culling pass as the cause of
   a late frame, that is a proposal in `CULLING`'s log.
-- **Between the two.** Until `SHOWCASE` M7, no cadence figure exists for the valley with culling on, and none is
+- **Between the two.** Until `SHOWCASE` WP7, no cadence figure exists for the valley with culling on, and none is
   claimed. The intervals of an engine capture taken under load, with its observer on, are not one.
 
 ## Build order
@@ -176,46 +176,46 @@ judge for the showcase, and it is not `CULLING`.
 Riskiest and most depended-on first. A milestone's `needs` in its done-when file is the authority; this is the
 reasoning behind those entries. The project settings allow one Codex builder, so the lanes below say what is safe to run beside `APPLE-TILE` if the owner allows a second builder, and what a lone builder picks up while `APPLE-TILE` or the Mac qualification waits on an attended session.
 
-1. **First.** `PLATFORM-RUNTIME-MAC` M2. `APPLE-TILE` M0, then M1–M3. `APPLE-TILE` is first because everything
+1. **First.** `PLATFORM-RUNTIME-MAC` WP2. `APPLE-TILE` WP0, then M1–M3. `APPLE-TILE` is first because everything
    after it reads its graph, its recipe selection or its pre-tone input.
-2. **Beside them, in other files.** `CREATOR` M1 (`thrum-app`, `thrum-controls`, `examples/starter`, docs).
-   `ATMOSPHERE` M5 (`thrum-render/src/atmosphere`, the forward light group, the contribution seam), then its
-   M9 (the aerial pass at the model's ground), which waits for nothing and which `WATERS` M2 waits for.
-3. **After `APPLE-TILE:M0`.** `APPLE-PRESENTATION` M1 (jitter, matrices and motion), which runs on the current
+2. **Beside them, in other files.** `CREATOR` WP1 (`thrum-app`, `thrum-controls`, `examples/starter`, docs).
+   `ATMOSPHERE` WP5 (`thrum-render/src/atmosphere`, the forward light group, the contribution seam), then its
+   M9 (the aerial pass at the model's ground), which waits for nothing and which `WATERS` WP2 waits for.
+3. **After `APPLE-TILE:WP0`.** `APPLE-PRESENTATION` WP1 (jitter, matrices and motion), which runs on the current
    portable output and needs only M0's proof tools.
-4. **After `APPLE-TILE:M2`.** `APPLE-PRESENTATION` M2 (temporal inputs and history; it shares `runtime.rs`).
-   `CULLING` M1 (Occlusion on mixed meshes) and `EFFECT-GRAPH` M1 (3D, cube and mipped-array textures in the graph),
-   which both edit the graph and scene files M2 moves. `BASELINE-GUARD` M1 waits on nothing and is built first of
-   these. `CULLING` M1 and `EFFECT-GRAPH` M1 do not wait for it, by an assumption in each plan; their later
+4. **After `APPLE-TILE:WP2`.** `APPLE-PRESENTATION` WP2 (temporal inputs and history; it shares `runtime.rs`).
+   `CULLING` WP1 (Occlusion on mixed meshes) and `EFFECT-GRAPH` WP1 (3D, cube and mipped-array textures in the graph),
+   which both edit the graph and scene files M2 moves. `BASELINE-GUARD` WP1 waits on nothing and is built first of
+   these. `CULLING` WP1 and `EFFECT-GRAPH` WP1 do not wait for it, by an assumption in each plan; their later
    milestones do, so the proof gate is in place before most of their renderer changes land.
-5. **After `APPLE-TILE:M3`.** `APPLE-PRESENTATION` M3 (TAAU in the game). `PLATFORM-RUNTIME-MAC` M3. `CREATOR` M2
+5. **After `APPLE-TILE:WP3`.** `APPLE-PRESENTATION` WP3 (TAAU in the game). `PLATFORM-RUNTIME-MAC` WP3. `CREATOR` WP2
    (the profiler), which reads pass-name timing and adds the timing-demand switch in `runtime.rs`; it merges one
    after the other with the two beside it.
-6. **After TAAU.** `ATMOSPHERE` M6, because antialiasing changes every edge and gradient the sky review judges.
-   `APPLE-PRESENTATION` M4–M7 (extent, scale, EDR, governor). `APPLE-TILE` M10–M11, then `APPLE-PRESENTATION` M8
-   (MetalFX), M9, M10 and M12 (prepared paths, cooked shader libraries, the pipeline archive). `CONTENT-LOOP` M3 and `CREATOR` M3 close at any point here. `CONTENT-LOOP` M1
-   (leases) starts earlier, after `APPLE-PRESENTATION:M2`, and its M2 (cooked mesh rows) after `CULLING:M3`.
-7. **The exit.** `SHOWCASE` M5 and M6 (the populated valley and its culling) start once `CONTENT-LOOP:M2` is
-   Done, beside the work of step 6. `APPLE-TILE` M12 and `APPLE-PRESENTATION` M11 (paired proof) come next, then
-   `SHOWCASE` M7 and M8.
+6. **After TAAU.** `ATMOSPHERE` WP6, because antialiasing changes every edge and gradient the sky review judges.
+   `APPLE-PRESENTATION` WP4–M7 (extent, scale, EDR, governor). `APPLE-TILE` WP10–M11, then `APPLE-PRESENTATION` WP8
+   (MetalFX), M9, M10 and M12 (prepared paths, cooked shader libraries, the pipeline archive). `CONTENT-LOOP` WP3 and `CREATOR` WP3 close at any point here. `CONTENT-LOOP` WP1
+   (leases) starts earlier, after `APPLE-PRESENTATION:WP2`, and its M2 (cooked mesh rows) after `CULLING:WP3`.
+7. **The exit.** `SHOWCASE` WP5 and M6 (the populated valley and its culling) start once `CONTENT-LOOP:WP2` is
+   Done, beside the work of step 6. `APPLE-TILE` WP12 and `APPLE-PRESENTATION` WP11 (paired proof) come next, then
+   `SHOWCASE` WP7 and M8.
 8. **Track 2.** `SEA`, `WATERS` and `CLOUDS` each start with a CPU milestone that needs nothing from the renderer:
-   `SEA` M1 (the wave model), `WATERS` M1 (where water lies, after `SEA:M1`) and `CLOUDS` M1 (the weather). `SEA`
-   M2 (the wave field on the GPU, on `EFFECT-GRAPH:M2`) and `CLOUDS` M2 (shade with no cloud drawn, on
-   `EFFECT-GRAPH:M2` and `ATMOSPHERE:M5`) can run beside track 1 in files of their own. The first frames, `WATERS`
-   M2 and `CLOUDS` M3, follow `EFFECT-GRAPH:M3`, where [the readiness conditions](#where-the-ports-readiness-conditions-are-met)
+   `SEA` WP1 (the wave model), `WATERS` WP1 (where water lies, after `SEA:WP1`) and `CLOUDS` WP1 (the weather). `SEA`
+   M2 (the wave field on the GPU, on `EFFECT-GRAPH:WP2`) and `CLOUDS` WP2 (shade with no cloud drawn, on
+   `EFFECT-GRAPH:WP2` and `ATMOSPHERE:WP5`) can run beside track 1 in files of their own. The first frames, `WATERS`
+   M2 and `CLOUDS` WP3, follow `EFFECT-GRAPH:WP3`, where [the readiness conditions](#where-the-ports-readiness-conditions-are-met)
    are met. Their closing milestones need the governor. Water is built in the order
    [water as one system](#water-as-one-system) gives: the wave field, then still water with the shared system,
    then running water, then rain. `RIVERS`' flow solver is CPU work in files of its own and can run beside
-   `WATERS` once `WATERS:M1` is Done, and so can `PUDDLES`' two CPU milestones. `SCENE-VIEWS` is renderer work that only `WATERS` M14 waits for, on its M3, so it
-   can be built at any point after `CULLING:M1`, `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3`. It builds beside
-   `CULLING` M3 in that module's files and integrates on top of what has landed.
-9. **The atmosphere as a whole** ([below](#the-atmosphere-as-a-whole)). `CLOUDS` M13 (mist, fog and low cloud
-   on the CPU) follows its M1 and needs nothing. `ATMOSPHERE` M7 (the view volume, haze and shafts) and M8 (a
+   `WATERS` once `WATERS:WP1` is Done, and so can `PUDDLES`' two CPU milestones. `SCENE-VIEWS` is renderer work that only `WATERS` WP14 waits for, on its M3, so it
+   can be built at any point after `CULLING:WP1`, `ATMOSPHERE:WP5` and `EFFECT-GRAPH:WP3`. It builds beside
+   `CULLING` WP3 in that module's files and integrates on top of what has landed.
+9. **The atmosphere as a whole** ([below](#the-atmosphere-as-a-whole)). `CLOUDS` WP13 (mist, fog and low cloud
+   on the CPU) follows its M1 and needs nothing. `ATMOSPHERE` WP7 (the view volume, haze and shafts) and M8 (a
    test fog) follow its M6, so they wait for TAAU and for G3s to close, in `thrum-render`'s atmosphere files.
-   `CLOUDS` M14 to M16 (mist near the camera, far mist and low cloud, mist through a day) follow its M10 and
-   `ATMOSPHERE:M8`.
+   `CLOUDS` WP14 to M16 (mist near the camera, far mist and low cloud, mist through a day) follow its M10 and
+   `ATMOSPHERE:WP8`.
 
-**Every module is planned.** `APPLE-PRESENTATION` M4 to M12 were the last, on 14 November 2026.
+**Every module is planned.** `APPLE-PRESENTATION` WP4 to M12 were the last, on 14 November 2026.
 
 ## Where the port's readiness conditions are met
 
@@ -224,23 +224,23 @@ a named milestone.
 
 | Condition (6 November) | Met by |
 |---|---|
-| G3s: one shared sky, Sun, light-transmittance and environment-reflection products | `ATMOSPHERE:M5` (identity, lent products, the one cloud optical-depth path) |
-| Graph: 3D and cube resources, cadence; async-compute eligibility as a declared seam | `EFFECT-GRAPH:M3` (kinds in M1, state and cadence in M2, the stage after opaque and the declared seam in M3) |
-| Frame and V4: effects supply motion, reactivity and reset epochs; reconstruction | `APPLE-PRESENTATION:M2` (third forward target, history protocol) and `M3` (TAAU) |
-| G5: cook and map 3D-volume products; cloud volumes loaded | `CONTENT-LOOP:M1` (leased density volumes, R8 portable and BC4 desktop) |
-| Recipes and governor: resource and quality selection, history-safe cadence | `APPLE-TILE:M1` (recipe selection), `APPLE-PRESENTATION:M7` (governor), `M8` for the Apple reconstructor |
+| G3s: one shared sky, Sun, light-transmittance and environment-reflection products | `ATMOSPHERE:WP5` (identity, lent products, the one cloud optical-depth path) |
+| Graph: 3D and cube resources, cadence; async-compute eligibility as a declared seam | `EFFECT-GRAPH:WP3` (kinds in M1, state and cadence in M2, the stage after opaque and the declared seam in M3) |
+| Frame and V4: effects supply motion, reactivity and reset epochs; reconstruction | `APPLE-PRESENTATION:WP2` (third forward target, history protocol) and `M3` (TAAU) |
+| G5: cook and map 3D-volume products; cloud volumes loaded | `CONTENT-LOOP:WP1` (leased density volumes, R8 portable and BC4 desktop) |
+| Recipes and governor: resource and quality selection, history-safe cadence | `APPLE-TILE:WP1` (recipe selection), `APPLE-PRESENTATION:WP7` (governor), `M8` for the Apple reconstructor |
 
-So a first sea or cloud frame can be built in Thrum once `APPLE-TILE:M3`, `APPLE-PRESENTATION:M3`,
-`ATMOSPHERE:M5` and `EFFECT-GRAPH:M3` are Done. That point falls at step 5–6 of the build order, before G7. The
-ports close after `APPLE-PRESENTATION:M7`. Demo scenes in Chrome also need `CREATOR:M1`.
+So a first sea or cloud frame can be built in Thrum once `APPLE-TILE:WP3`, `APPLE-PRESENTATION:WP3`,
+`ATMOSPHERE:WP5` and `EFFECT-GRAPH:WP3` are Done. That point falls at step 5–6 of the build order, before G7. The
+ports close after `APPLE-PRESENTATION:WP7`. Demo scenes in Chrome also need `CREATOR:WP1`.
 
-Water's first frame, `WATERS` M2, waits only on `EFFECT-GRAPH:M3`, which itself waits on `APPLE-TILE:M3`, and on
-`SEA:M2`. How water looks under TAAU is its M10, after `APPLE-PRESENTATION:M3`. `CLOUDS` is the same: its first frame is its M3, on
-`EFFECT-GRAPH:M3`, and its look under TAAU is its M9.
+Water's first frame, `WATERS` WP2, waits only on `EFFECT-GRAPH:WP3`, which itself waits on `APPLE-TILE:WP3`, and on
+`SEA:WP2`. How water looks under TAAU is its M10, after `APPLE-PRESENTATION:WP3`. `CLOUDS` is the same: its first frame is its M3, on
+`EFFECT-GRAPH:WP3`, and its look under TAAU is its M9.
 
-`EFFECT-GRAPH:M3` proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs. How
+`EFFECT-GRAPH:WP3` proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs. How
 an effect looks after reconstruction (shimmer, ghosting, a cut) is accepted in `WATERS`' and `CLOUDS`' own
-milestones, on `APPLE-PRESENTATION:M3`'s reconstructor.
+milestones, on `APPLE-PRESENTATION:WP3`'s reconstructor.
 
 ## Interfaces
 
@@ -254,44 +254,44 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Capability registry, recipes, quality values | `APPLE-TILE` (selection), `APPLE-PRESENTATION` (governor) → all GPU modules | C04, [hardware-native decision](../design/decisions/HARDWARE-NATIVE-ENGINE.md) |
 | Graph declaration, GPU lifetime, device generations | `APPLE-TILE` → all GPU modules | C06, [graph decision](../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) |
 | **Effect passes and resources**: a contribution declares its own compute and render passes at five named frame stages, with 3D, cube and mipped storage-array textures, persistent, ping-pong and world-anchored wrapping state stepped by the tick and committed only with a submitted frame, a runtime cadence, and quality knobs. A scene holds an ordered list of contributions | `EFFECT-GRAPH` → `SEA`, `WATERS`, `CLOUDS`, `ATMOSPHERE`; `RENDER-2D` later | [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#mechanisms) |
-| **Display phase**: with the tick, the tick duration and the interpolation alpha, each frame gives every effect where its consumed target lies in ticks after the previous committed tick, with no stop at the committed one and at most 50 ms past it. The consumed target is the time the frame's host observed plus its bounded lead toward the platform's target, and is where alpha is taken today. A frame's display time is its tick less one plus the phase. It is a time of the world's, not of the host's clock: the world time of the tick before the frame's, plus the host time from the frame's tick falling due to the consumed target. So it holds none of the time a clock was paused or overloaded, equal intervals between consumed targets are equal steps of it while the clock runs, and an interpolating frame's record carries its tick's due time. An effect is given no host time. Alpha is the phase held to 1 and is the same function as before; sampling never advances authority; the tick a frame shows was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair; a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step | The world's clock in core and the frame host, built in `EFFECT-GRAPH:M4` → `CLOUDS` from its M2; `SEA`, `WATERS`, `RENDER-2D` and games when their owners plan it | C02, [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-timing-model), [the ruling below](#seam-ruling-for-effect-graph-m4) |
-| **Entity visibility**: an entity drawn through the instance field is culled per instance and draws a whole mesh row from the scene's mesh selection; a cooked placement is culled per meshlet; nothing is in both. Cooked meshes reach entities as mesh rows, and an edited mesh replaces its row's geometry while the game runs, switching in the frame the content publication names | `CULLING` (the route and its culling), `CONTENT-LOOP:M2` (cooked meshes as rows, by the ruling below) → `SHOWCASE` | [CULLING](CULLING/DESIGN.md#one-visibility-authority-per-entity), [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-m2) |
-| Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
-| **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `WATERS`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
-| **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `WATERS`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
-| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. A provider may add a **ground band** that holds the whole path to the Sun: a receiver inside it reads the band at its own position in place of the field, so land inside fog loses its Sun and an upper cloud is counted once ([ruling 7](#seam-rulings-for-clouds)). The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its M2, the ground band from its M14 (diagnostic stand-ins in `ATMOSPHERE:M5` and `M8`) → `ATMOSPHERE` receivers and its view volume, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
-| **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and, in a scene without the view volume, one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:M8` → `ATMOSPHERE`'s products, and through them the forward pass and `WATERS` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
+| **Display phase**: with the tick, the tick duration and the interpolation alpha, each frame gives every effect where its consumed target lies in ticks after the previous committed tick, with no stop at the committed one and at most 50 ms past it. The consumed target is the time the frame's host observed plus its bounded lead toward the platform's target, and is where alpha is taken today. A frame's display time is its tick less one plus the phase. It is a time of the world's, not of the host's clock: the world time of the tick before the frame's, plus the host time from the frame's tick falling due to the consumed target. So it holds none of the time a clock was paused or overloaded, equal intervals between consumed targets are equal steps of it while the clock runs, and an interpolating frame's record carries its tick's due time. An effect is given no host time. Alpha is the phase held to 1 and is the same function as before; sampling never advances authority; the tick a frame shows was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair; a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step | The world's clock in core and the frame host, built in `EFFECT-GRAPH:WP4` → `CLOUDS` from its M2; `SEA`, `WATERS`, `RENDER-2D` and games when their owners plan it | C02, [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-timing-model), [the ruling below](#seam-ruling-for-effect-graph-m4) |
+| **Entity visibility**: an entity drawn through the instance field is culled per instance and draws a whole mesh row from the scene's mesh selection; a cooked placement is culled per meshlet; nothing is in both. Cooked meshes reach entities as mesh rows, and an edited mesh replaces its row's geometry while the game runs, switching in the frame the content publication names | `CULLING` (the route and its culling), `CONTENT-LOOP:WP2` (cooked meshes as rows, by the ruling below) → `SHOWCASE` | [CULLING](CULLING/DESIGN.md#one-visibility-authority-per-entity), [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-m2) |
+| Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:WP3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
+| **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` WP1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `WATERS`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
+| **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:WP5` → forward contributors, `WATERS`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
+| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. A provider may add a **ground band** that holds the whole path to the Sun: a receiver inside it reads the band at its own position in place of the field, so land inside fog loses its Sun and an upper cloud is counted once ([ruling 7](#seam-rulings-for-clouds)). The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its M2, the ground band from its M14 (diagnostic stand-ins in `ATMOSPHERE:WP5` and `M8`) → `ATMOSPHERE` receivers and its view volume, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
+| **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and, in a scene without the view volume, one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:WP8` → `ATMOSPHERE`'s products, and through them the forward pass and `WATERS` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
 | Ordered medium segments `(T,S)` and the reflection provider. Condensate is split along a view ray by distance, at a handover: nearer, it is in `ATMOSPHERE`'s view volume, integrated jointly with the air; beyond, it is the trace's segment, which stops at the scene's depth and is composed with the air once ([CLOUDS](CLOUDS/DESIGN.md#the-visible-layer)). The two shares sum to one. Water composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `WATERS` precedes `CLOUDS` in a scene's contribution list | `WATERS`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [WATERS](WATERS/DESIGN.md#optics) |
-| **View volume and medium coefficients**: a scene may declare the view volume, and then the lent aerial `(T,S)` to a point is the joint transport of air, haze and a provider's medium near the camera, with the same arguments and units. A provider writes three coefficients (extinction, a solar kernel that already holds its own optical depth and phase, an ambient source) at the sample points the volume names, weighted by its near weight; `ATMOSPHERE` multiplies the kernel by its Sun light and the scene's shadow, sums with the air and integrates once. A ray that leaves the volume takes its terminal pair once: the sky behind it becomes `R·L + ΔS`, and stars and a disc drawn by itself are multiplied by `R` alone. A scene that declares none is unchanged | `ATMOSPHERE:M7` (the volume, with air and haze), `ATMOSPHERE:M8` (a medium) → every reader of the lent aerial operation; `CLOUDS:M14` provides the medium | C08, [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera), [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud), [rulings 6 to 8](#seam-rulings-for-clouds) |
-| **The air's haze**: the aerosol's amount, as the clear air's visual range, and its kind, as an Ångström exponent. The weather state holds both; `ATMOSPHERE` takes them as inputs of its air profile and recomputes its charts, with today's constant and an exponent of 0 as the defaults | `CLOUDS:M13` (the range), `CLOUDS:M16` (the exponent), `ATMOSPHERE:M7` (the inputs) → `ATMOSPHERE`'s charts | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) |
+| **View volume and medium coefficients**: a scene may declare the view volume, and then the lent aerial `(T,S)` to a point is the joint transport of air, haze and a provider's medium near the camera, with the same arguments and units. A provider writes three coefficients (extinction, a solar kernel that already holds its own optical depth and phase, an ambient source) at the sample points the volume names, weighted by its near weight; `ATMOSPHERE` multiplies the kernel by its Sun light and the scene's shadow, sums with the air and integrates once. A ray that leaves the volume takes its terminal pair once: the sky behind it becomes `R·L + ΔS`, and stars and a disc drawn by itself are multiplied by `R` alone. A scene that declares none is unchanged | `ATMOSPHERE:WP7` (the volume, with air and haze), `ATMOSPHERE:WP8` (a medium) → every reader of the lent aerial operation; `CLOUDS:WP14` provides the medium | C08, [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera), [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud), [rulings 6 to 8](#seam-rulings-for-clouds) |
+| **The air's haze**: the aerosol's amount, as the clear air's visual range, and its kind, as an Ångström exponent. The weather state holds both; `ATMOSPHERE` takes them as inputs of its air profile and recomputes its charts, with today's constant and an exponent of 0 as the defaults | `CLOUDS:WP13` (the range), `CLOUDS:WP16` (the exponent), `ATMOSPHERE:WP7` (the inputs) → `ATMOSPHERE`'s charts | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) |
 | **Surface field**: the height of the ground and the level of any water, on a grid, which a game gives the weather as data so that mist can pool in hollows and fog can keep to water. The engine never reads terrain meshes or the water map for it | games → `CLOUDS` | [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud) |
 | Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
-| **Content publication**: one cooked generation changes through every reader a scene has (the placement set, each lease, each cooked mesh row) in one submitted frame. The scene's residency owns it: each reader prepares under its own bound without showing, the publication is ready when the slowest reader is, a ready publication is not superseded, and one a reader cannot take is refused for all. This is C05's qualified visual preview for cooked products; C05 is unchanged | `CONTENT-LOOP:M1` (placements and leases), `CONTENT-LOOP:M2` (rows) → `CULLING`'s route, lease consumers (`SEA`, `CLOUDS`), games | C05, [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) |
-| **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
+| **Content publication**: one cooked generation changes through every reader a scene has (the placement set, each lease, each cooked mesh row) in one submitted frame. The scene's residency owns it: each reader prepares under its own bound without showing, the publication is ready when the slowest reader is, a ready publication is not superseded, and one a reader cannot take is refused for all. This is C05's qualified visual preview for cooked products; C05 is unchanged | `CONTENT-LOOP:WP1` (placements and leases), `CONTENT-LOOP:WP2` (rows) → `CULLING`'s route, lease consumers (`SEA`, `CLOUDS`), games | C05, [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) |
+| **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:WP1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
 | **Body query**: one batched asynchronous GPU query for all water, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (the body of water with its depth and current, or dry ground; height, slope, surface velocity and time derivative, valid at the use tick, with that tick, the times they were made from and a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `WATERS` → games and P3 | C09, [WATERS](WATERS/DESIGN.md#bodies-and-the-query) |
 | **Wave field**: the wind's waves as analytic long-wave components and spectral cascades with their slope and Jacobian moments, evaluated every frame at the display's time and keeping nothing between frames; an f64 evaluator of the same waves; the spectrum's energy in each layer's band for a given fetch | `SEA` → `WATERS` | [SEA](SEA/DESIGN.md#the-ambient-sea) |
 | **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss with a footprint, a source end and a mouth, and, by [ruling 1 for `PUDDLES`](#seam-rulings-for-puddles), hollows by a rectangle with its own bed, a label for each cell and a level for each hollow) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage, inside a declared range, moves a body's level. Bodies meet only at a chart's ends, where the chart's row is mixed to the joined body's, so level, current and waves are continuous across a join for every reader; preparation refuses a chart its banks do not hold and a basin that spills or merges. Each body also has a shore margin its waves wash, with its wave support, and, where a profile has surf, a shore transform that turns, shortens and raises its long waves over the bed. A chart is what a flow solver writes, and a hollows body is where puddles stand | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map), [PUDDLES](PUDDLES/DESIGN.md#hollows-the-tree-and-the-point-test) |
-| **Secondary view** (water's mirror view): a contribution declares slots when the scene is prepared and asks each frame for a view from a rigid camera it names on the main camera's vertical (its two horizontal coordinates, at any height, facing any way; any other is refused by name), with an optional clip plane, from which its air may start when the plane is level, and a least size. The view holds the scene's opaque geometry beyond the clip plane, entities and cooked placements, shaded by the scene's own shader with visibility, Sun cascades, local-light clusters and air made again for that view, in the scene target's encoding for it (radiance through the view's air, pre-exposed; for a mirror that air starts at the plane, and the reader applies the air from its own camera to the plane itself), with coverage and depth, at the frame's jitter phase, and no sky, water, fog, after-opaque effect or history. The asking contribution reads its own slot's colour, depth and record in its own passes. A scene that declares none compiles and draws as before, but for where [ruling 3](#seam-rulings-for-scene-views) lays its height map out | `SCENE-VIEWS:M3` (entities from its M1, cooked placements from its M2) → `WATERS:M14`; `PUDDLES` and `RIVERS` through `WATERS` | C07, [SCENE-VIEWS](SCENE-VIEWS/DESIGN.md#slots-and-requests), [WATERS](WATERS/DESIGN.md#mirror-views-scenery-the-camera-cannot-see) |
-| **Sun-path factor**: a water provider's factor on a receiver's direct Sun, read at the receiver's own position beside the cloud factor: `1 + D (C − 1)`, the beam's share times the caustic field's departure from even light, and exactly 1 at or above the water's level and outside the provider's window. With it goes the point at which a receiver under water reads its Sun visibility, where its refracted Sun ray leaves the water. This is C08's caustics, an illumination contribution whose owner is `WATERS`, applied once by V3's direct-Sun path | `WATERS:M16` → `ATMOSPHERE`'s direct-Sun receivers in the forward pass, and every contribution that compiles the scene's shader | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter), [ruling 5](#seam-rulings-for-waters) |
-| **Aloft casters**: a scene marks a mesh row of its entities as aloft. The row casts into the Sun cascades as before and is left out of the top-down caster height map, which holds the ground and what stands on it, so beyond the cascades it casts no shadow. A row is not aloft unless marked, and a scene that marks none draws the same bytes | `ATMOSPHERE:M10` → `SHOWCASE:M5`; any scene with entities in the air | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#what-the-caster-height-map-holds), [the ruling](#seam-ruling-for-atmosphere-m10) |
-| **Lent Sun visibility**: with the environment products, the scene's Sun visibility at a world point as one tap of its cascades and height map, for an effect's own volume samples; 1 in a scene with no shadows | `ATMOSPHERE` (built by `WATERS:M16`, [ruling 6](#seam-rulings-for-waters)) → `WATERS`' shafts | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
-| **Meter medium factor**: a camera request may carry three numbers that multiply the incident light the camera's meter reads, for a camera inside a medium; 1 by default, and with 1 the resolved exposure sample is unchanged to the bit. `thrum-water-model` gives the factor for a camera under water, and the game sets it | `APPLE-PRESENTATION` (V4; built by `WATERS:M16`, [ruling 7](#seam-rulings-for-waters)) → games | C07, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
-| **River**: everything one steady solve of the map's bed writes, as a stored file with a key: one chart for each reach, each holding one or more flow samples (level, current, loss and flow gains) and the gauge level of each; brink ends where the ground drops away; and a fall record for each fall. A chart's loss is the power that breaks the surface, in watts a square metre. A game declares a river's rectangle, sources, bodies and flow samples; a build step or a native game's preparation solves it, and a page only loads it | `RIVERS:M1` (one sample), `RIVERS:M2` (falls), `RIVERS:M3` (samples and gains) → games, and `WATERS`' map through [rulings 1 to 3](#seam-rulings-for-rivers) | [RIVERS](RIVERS/DESIGN.md#what-a-solve-writes) |
-| **Fall record**: along a fall's lip, for each flow sample, the water's path with the time it takes, its discharge for each metre of lip and its launch speed; the reach above and the body below; stable IDs for its segments; and so the fall's power, which a later mist may read | `RIVERS:M2` → `WATERS`' pass (the sheet, by ruling 7), games | [RIVERS](RIVERS/DESIGN.md#the-falls-sheet) |
+| **Secondary view** (water's mirror view): a contribution declares slots when the scene is prepared and asks each frame for a view from a rigid camera it names on the main camera's vertical (its two horizontal coordinates, at any height, facing any way; any other is refused by name), with an optional clip plane, from which its air may start when the plane is level, and a least size. The view holds the scene's opaque geometry beyond the clip plane, entities and cooked placements, shaded by the scene's own shader with visibility, Sun cascades, local-light clusters and air made again for that view, in the scene target's encoding for it (radiance through the view's air, pre-exposed; for a mirror that air starts at the plane, and the reader applies the air from its own camera to the plane itself), with coverage and depth, at the frame's jitter phase, and no sky, water, fog, after-opaque effect or history. The asking contribution reads its own slot's colour, depth and record in its own passes. A scene that declares none compiles and draws as before, but for where [ruling 3](#seam-rulings-for-scene-views) lays its height map out | `SCENE-VIEWS:WP3` (entities from its M1, cooked placements from its M2) → `WATERS:WP14`; `PUDDLES` and `RIVERS` through `WATERS` | C07, [SCENE-VIEWS](SCENE-VIEWS/DESIGN.md#slots-and-requests), [WATERS](WATERS/DESIGN.md#mirror-views-scenery-the-camera-cannot-see) |
+| **Sun-path factor**: a water provider's factor on a receiver's direct Sun, read at the receiver's own position beside the cloud factor: `1 + D (C − 1)`, the beam's share times the caustic field's departure from even light, and exactly 1 at or above the water's level and outside the provider's window. With it goes the point at which a receiver under water reads its Sun visibility, where its refracted Sun ray leaves the water. This is C08's caustics, an illumination contribution whose owner is `WATERS`, applied once by V3's direct-Sun path | `WATERS:WP16` → `ATMOSPHERE`'s direct-Sun receivers in the forward pass, and every contribution that compiles the scene's shader | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter), [ruling 5](#seam-rulings-for-waters) |
+| **Aloft casters**: a scene marks a mesh row of its entities as aloft. The row casts into the Sun cascades as before and is left out of the top-down caster height map, which holds the ground and what stands on it, so beyond the cascades it casts no shadow. A row is not aloft unless marked, and a scene that marks none draws the same bytes | `ATMOSPHERE:WP10` → `SHOWCASE:WP5`; any scene with entities in the air | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#what-the-caster-height-map-holds), [the ruling](#seam-ruling-for-atmosphere-m10) |
+| **Lent Sun visibility**: with the environment products, the scene's Sun visibility at a world point as one tap of its cascades and height map, for an effect's own volume samples; 1 in a scene with no shadows | `ATMOSPHERE` (built by `WATERS:WP16`, [ruling 6](#seam-rulings-for-waters)) → `WATERS`' shafts | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
+| **Meter medium factor**: a camera request may carry three numbers that multiply the incident light the camera's meter reads, for a camera inside a medium; 1 by default, and with 1 the resolved exposure sample is unchanged to the bit. `thrum-water-model` gives the factor for a camera under water, and the game sets it | `APPLE-PRESENTATION` (V4; built by `WATERS:WP16`, [ruling 7](#seam-rulings-for-waters)) → games | C07, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
+| **River**: everything one steady solve of the map's bed writes, as a stored file with a key: one chart for each reach, each holding one or more flow samples (level, current, loss and flow gains) and the gauge level of each; brink ends where the ground drops away; and a fall record for each fall. A chart's loss is the power that breaks the surface, in watts a square metre. A game declares a river's rectangle, sources, bodies and flow samples; a build step or a native game's preparation solves it, and a page only loads it | `RIVERS:WP1` (one sample), `RIVERS:WP2` (falls), `RIVERS:WP3` (samples and gains) → games, and `WATERS`' map through [rulings 1 to 3](#seam-rulings-for-rivers) | [RIVERS](RIVERS/DESIGN.md#what-a-solve-writes) |
+| **Fall record**: along a fall's lip, for each flow sample, the water's path with the time it takes, its discharge for each metre of lip and its launch speed; the reach above and the body below; stable IDs for its segments; and so the fall's power, which a later mist may read | `RIVERS:WP2` → `WATERS`' pass (the sheet, by ruling 7), games | [RIVERS](RIVERS/DESIGN.md#the-falls-sheet) |
 | **Impulse records**: a place, a vertical impulse, a radius, a tick and a stable ID, which raise interaction waves on any water; refused over capacity in ID order and counted. A footfall in a puddle is one; a raindrop is not, since rain's rings are [wave layers](PUDDLES/DESIGN.md#rain-rings) | games, `RIVERS` (a fall's plunge) → `WATERS` | [WATERS](WATERS/DESIGN.md#interaction-waves) |
 | **Rain record**: the rain's flux and the drying rate, in kilograms a square metre a second, uniform over a scene and held over a tick, which a game sets in its tick page, and the flux of each tick of the last second, which the rain state keeps and the rain bands read; with it a game's shelters, each a set of triangles with the share of rain it lets through, as prepared content, up to two in a column. `CLOUDS` may set the record once it has rain | games → `PUDDLES`, and through it `WATERS`' rain bands | C09, [PUDDLES](PUDDLES/DESIGN.md#rain-and-what-it-reaches) |
-| **Ground wetness**: the pores' fill and the surface water with its cover at a world point, one function in f64 and in WGSL of prepared fields (exposure, slope, relief) and the rain state a game steps, reading no camera. A forward surface reads it before it is lit, composed as the cloud factor is; with no provider a scene compiles the shader text and draws the bytes it does today | `PUDDLES:M2` (the function), `PUDDLES:M5` (the provider) → the scene's shader and the cooked material, `WATERS`' film, games | C09, [PUDDLES](PUDDLES/DESIGN.md#wet-ground), [ruling 5](#seam-rulings-for-puddles) |
-| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
+| **Ground wetness**: the pores' fill and the surface water with its cover at a world point, one function in f64 and in WGSL of prepared fields (exposure, slope, relief) and the rain state a game steps, reading no camera. A forward surface reads it before it is lit, composed as the cloud factor is; with no provider a scene compiles the shader text and draws the bytes it does today | `PUDDLES:WP2` (the function), `PUDDLES:WP5` (the provider) → the scene's shader and the cooked material, `WATERS`' film, games | C09, [PUDDLES](PUDDLES/DESIGN.md#wet-ground), [ruling 5](#seam-rulings-for-puddles) |
+| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:WP7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `WATERS` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
-| **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
+| **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:WP3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
 | Engine capture modes and evidence, and a realtime capture's admission policy: `omit` by default, `wait` for a sequence that must keep every submitted frame | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
 | **Resolved selections**: each selectable path tells the game what it resolved to on this device (recipe, reconstructor, display mode, governor state, culling mode), so a run can report what it ran and a fallback cannot pass as the feature | `APPLE-TILE`, `APPLE-PRESENTATION`, `CULLING` → `SHOWCASE`'s exit report | C04, [SHOWCASE](SHOWCASE/DESIGN.md#the-exit-configuration-one-file-three-rows-reported-and-not-echoed) |
 | **Exact baselines**: retained references, their owner, and the verifier that one run on main shares between every landing | Each baseline's owner (references), `BASELINE-GUARD` (registry, verifier, reference guard) → every module that edits the covered paths | [Exact baselines](#exact-baselines) |
 
-**Seam rulings for `APPLE-PRESENTATION` M1–M3.** Its design proposed nine seams to Thrum Core. Under the loop the
+**Seam rulings for `APPLE-PRESENTATION` WP1–M3.** Its design proposed nine seams to Thrum Core. Under the loop the
 module list settles them. Seams 1–4 are accepted as written there:
 - seam 1 (submission-order history acceptance, `history.rs` and `runtime.rs`) is built in M2, after
-  `APPLE-TILE:M2` has moved `runtime.rs`;
+  `APPLE-TILE:WP2` has moved `runtime.rs`;
 - seam 2 (the view-record change in RENDER-SPEC) is built in M1, and the builder refreshes the design hashes;
 - seam 3 (the third forward target) is built in M2 across `contribution.rs`, `thrum-asset-gpu` and the sky
   pipeline, keeping COOKED-DRAW's path selection and history rules;
@@ -308,7 +308,7 @@ tests passing.
   preparing a new extent in its render owner between two frames. GPU work a module runs off the render thread on
   the game's device runs as a job on the frame host's preparation thread, so that a surface switch can exclude
   every other submitter. The Mac's cadence
-  qualification (`PLATFORM-RUNTIME-MAC` M3) stands for the path it measured, and `SHOWCASE` M8's attended record
+  qualification (`PLATFORM-RUNTIME-MAC` WP3) stands for the path it measured, and `SHOWCASE` WP8's attended record
   measures the path as it ships;
 - seam 6 (the platform display record, the EDR layer properties, and engine capture's tap reading the float
   target; `thrum-app`'s platform files and `T2-CAPTURE`'s tap) is built in M6. T2's records in the 8-bit mode
@@ -316,7 +316,7 @@ tests passing.
 - seam 7 (the governor: missed ticks from the frame host, thermal state from the platform, value commits inside
   a profile generation, and the knob registry) is built in M7. The aerial lookup's cadence knob is built in
   `ATMOSPHERE`'s files by the M7 builder if that module has not declared one;
-- seam 8 (MetalFX as a provider in `APPLE-TILE`'s native segment) is built in M8, after `APPLE-TILE:M11`, under
+- seam 8 (MetalFX as a provider in `APPLE-TILE`'s native segment) is built in M8, after `APPLE-TILE:WP11`, under
   [the boundary decision](../design/decisions/G3T-METAL-BOUNDARY.md);
 - seam 9 (pipeline preparation: the library cook as a step beside `CONTENT-LOOP`'s cooker, the passthrough
   loader, and a pinned copy of wgpu's Metal backend) is built in M10 and M12. The pinned copy arrives in M10,
@@ -324,17 +324,17 @@ tests passing.
   every module builds against that copy, and its patches leave the WGSL path and every exact baseline as they
   are. No shipping package links the cook, and nothing is posted upstream.
 
-**Seam ruling for `CREATOR` M2.** The profiler needs the frame host to stop timing frames while it is off, which
+**Seam ruling for `CREATOR` WP2.** The profiler needs the frame host to stop timing frames while it is off, which
 no interface offered. The timing-demand switch and the "not requested" reason are built in `thrum-render`'s
-runtime and timing files by the `CREATOR` M2 builder, after `APPLE-TILE:M3` is Done, with the behaviour
+runtime and timing files by the `CREATOR` WP2 builder, after `APPLE-TILE:WP3` is Done, with the behaviour
 [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) defines. `APPLE-TILE`'s items do not change. Once built, the switch
-belongs to the frame runtime: later work there (`APPLE-TILE` M10–M12, `APPLE-PRESENTATION`, `EFFECT-GRAPH`) keeps
+belongs to the frame runtime: later work there (`APPLE-TILE` WP10–M12, `APPLE-PRESENTATION`, `EFFECT-GRAPH`) keeps
 its tests passing, and any timing it adds, a native segment's included, is not gathered while the switch is off.
 
-**Seam ruling for `CONTENT-LOOP` M2.** Replacing a mesh row's geometry in a prepared scene needs a change to the
+**Seam ruling for `CONTENT-LOOP` WP2.** Replacing a mesh row's geometry in a prepared scene needs a change to the
 mesh arena and the bucket route, which `CULLING` owns and which no interface offered. It is built in
 `thrum-render`'s `synthetic/{mesh_arena,mesh_route,camera_culling,shadow}.rs` and the frame host by the
-`CONTENT-LOOP` M2 builder, after `CULLING:M3` is Done, with the behaviour
+`CONTENT-LOOP` WP2 builder, after `CULLING:WP3` is Done, with the behaviour
 [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-m2) defines. The route writes a replacement, reports the
 write done, and switches the row only in the frame residency's
 [publication](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) names; `thrum-render` gains no dependency
@@ -342,10 +342,10 @@ on `thrum-asset-gpu`. `CULLING`'s items and its exact comparisons do not change.
 belongs to the route: later work there keeps its tests passing.
 
 <a id="seam-ruling-for-atmosphere-m10"></a>
-**Seam ruling for `ATMOSPHERE` M10.** `SHOWCASE` M5 found that a balloon in the air drops a dark strip on the
+**Seam ruling for `ATMOSPHERE` WP10.** `SHOWCASE` WP5 found that a balloon in the air drops a dark strip on the
 ground beyond the Sun cascades, which blinks on and off as it drifts: the top-down caster height map holds its
 top, and the march reads that as a tower. The Sun's visibility at a receiver is `ATMOSPHERE`'s, so which casters
-that map holds is too. The aloft mark is built by the `ATMOSPHERE` M10 builder in `thrum-render`'s scene mesh
+that map holds is too. The aloft mark is built by the `ATMOSPHERE` WP10 builder in `thrum-render`'s scene mesh
 table and Sun passes (`synthetic/{scene_source,scene_graph,shadow}.rs`), in the bucket route's caster draws
 (`synthetic/mesh_route.rs`, `CULLING`'s) and, as one mark on the balloon row, in
 `examples/v1-game/src/exit_scene.rs` (`SHOWCASE`'s), with the behaviour
@@ -355,10 +355,10 @@ generator, routes and launcher do not change. No registered exact baseline moves
 membership belongs to the Sun path and the mark to the exit scene.
 
 <a id="seam-ruling-for-effect-graph-m4"></a>
-**Seam ruling for `EFFECT-GRAPH` M4.** `CLOUDS` M2 found that the interpolation alpha is not the display's time:
+**Seam ruling for `EFFECT-GRAPH` WP4.** `CLOUDS` WP2 found that the interpolation alpha is not the display's time:
 it stops at the committed tick, and under a display lead the target is past that tick for part of every tick, so
 drift taken by alpha takes a short step and a long one in turn. No interface offered the target's place. The
-display phase is built by the `EFFECT-GRAPH` M4 builder in `thrum-core`'s clock, world lane and clocked world,
+display phase is built by the `EFFECT-GRAPH` WP4 builder in `thrum-core`'s clock, world lane and clocked world,
 the frame host's world observer, effect time and frame sample in `thrum-render`, `thrum-app`'s sky world and
 offscreen runner, the V1 game's world wrappers and its capture time record, with the behaviour
 [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-display-phase-m4) defines. The phase describes the target the clock
@@ -382,13 +382,13 @@ gains a field and loses none. `thrum-app`'s sky world with a tick duration, whic
 states its own clock's phase where it reported 1; its alpha and so the sea's images do not move. Readers
 change nothing: `CLOUDS` reads the same phase, its design now says that display time is the world's, and its
 items stand; readers of alpha are untouched. Once built, the phase belongs with
-the clock and the frame host: `HOST` M2 to M5, `SESSION` M7 and later work there keep its tests passing, and a
+the clock and the frame host: `HOST` WP2 to M5, `SESSION` WP7 and later work there keep its tests passing, and a
 [driven world](SESSION/DESIGN.md#12-a-driven-world) states its phase and its tick's due time from its driver's
 position as a clocked world does from its clock. `HOST` was the other candidate and is not the owner: what a frame tells an effect
 about time is `EFFECT-GRAPH`'s interface, and `HOST` waits on seven milestones. Readers are separate. `CLOUDS`
 M2 takes its drift at the phase. `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites and a game's camera and
 entities still read alpha and are uneven under a lead by the same arithmetic; each is for its owner's next plan,
-the camera and entities with `HOST` M4's contract.
+the camera and entities with `HOST` WP4's contract.
 
 <a id="seam-rulings-for-sea"></a>
 
@@ -396,55 +396,55 @@ the camera and entities with `HOST` M4's contract.
 
 Water draws after opaque geometry, and two things it needs there are not in `EFFECT-GRAPH`'s after-opaque
 stage as designed. Both are built in `contribution.rs` and `synthetic/{contributed,scene_graph}.rs` by the `WATERS`
-builder, after `EFFECT-GRAPH:M3` is Done, with the behaviour [WATERS](WATERS/DESIGN.md#the-surface-and-the-frame-contract)
+builder, after `EFFECT-GRAPH:WP3` is Done, with the behaviour [WATERS](WATERS/DESIGN.md#the-surface-and-the-frame-contract)
 defines. `EFFECT-GRAPH`'s items do not change and its tests keep passing: a scene with no effect that uses them
 compiles to the same passes and storage as before. If M3 as built already allows either, nothing is added. A
 third ruling covers the water example scene, the first game after the V1 game to run on the shell with a world
 that ticks.
 
-1. **An after-opaque pass may write scene depth** (`WATERS` M2). The stage let an effect read depth and write
+1. **An after-opaque pass may write scene depth** (`WATERS` WP2). The stage let an effect read depth and write
    colour, motion and reactive coverage. Water that left depth alone would hand reconstruction the depth of
    whatever lies behind the water, and a cloud march drawn later would run through it. Stored depth still follows
    the union of its readers.
 2. **An effect's own pass may read scene colour and scene depth as textures and write only that effect's
-   targets** (`WATERS` M8). Water copies opaque colour and depth only inside the screen rectangles its readers
+   targets** (`WATERS` WP8). Water copies opaque colour and depth only inside the screen rectangles its readers
    need: the bodies a scene registers, water thin enough to see through, and the screen while water still enough
    to mirror is in view. On an open sea with no body in view that is nothing. It does not request the shared
    refraction copy. Depth cannot be sampled
    in the pass that writes it, so the gather is a pass of its own.
 
-3. **The window, the page and the capture tap for a second ticking game** (`WATERS` M2 on the Mac, M3 in Chrome;
+3. **The window, the page and the capture tap for a second ticking game** (`WATERS` WP2 on the Mac, M3 in Chrome;
    `CREATOR`'s and `PLATFORM-RUNTIME-WEB`'s shell in `thrum-app`, `T2-CAPTURE`'s tap and the scene packaging
    scripts). `examples/water` is a game on the shell with its own ticking world and the engine's sky. Whatever the
    shell, the page, the packaging or the tap still assume of the V1 game, or of the sky kit's world that never
    ticks, is made a property of the game. The V1 game, the starter and the creator scenes build, run and draw as
    they did, no item of an owning module changes, and no engine crate gains a type or file of the water scene.
-   `CREATOR` M2 and M3 edit the same crate; the `WATERS` builder integrates on top of what has landed.
+   `CREATOR` WP2 and M3 edit the same crate; the `WATERS` builder integrates on top of what has landed.
    [`SWARM`'s ruling 2](#track-3-the-swarm-survival-game-after-v1) then covers only what a 2D game with no sky
    still needs.
 
-4. **A mirror view is `SCENE-VIEWS`' to draw** (`WATERS` M14). Water mirrors scenery the camera cannot see by
+4. **A mirror view is `SCENE-VIEWS`' to draw** (`WATERS` WP14). Water mirrors scenery the camera cannot see by
    reading a second draw of the scene, from the camera's mirror image. That draw needs the scene's culling,
    lights, shadows and air for another view, which no effect may reach, so it is a module of its own with the
    [secondary-view interface](#interfaces) and not work the `WATERS` builder does in the renderer's files. Every
    other `WATERS` milestone is built without it.
 
 Three more, for [light under water](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter), are
-built by the `WATERS` M16 builder with the behaviour that design defines. No item, test, bound or reference
+built by the `WATERS` WP16 builder with the behaviour that design defines. No item, test, bound or reference
 of `ATMOSPHERE` or `APPLE-PRESENTATION` changes, and a scene with no water provider and a camera with no
 medium factor composes the shader text and draws the bytes it does today.
 
-5. **A water provider on the direct-Sun path** (`WATERS` M16; `synthetic/scene_source.rs`, the light group and
+5. **A water provider on the direct-Sun path** (`WATERS` WP16; `synthetic/scene_source.rs`, the light group and
    `thrum-render`'s atmosphere files). The forward shader's direct Sun is `sun_irradiance · sun_factor ·
    cloud_factor`. A water provider may register a Sun-path factor with its textures, composed there as the
    cloud factor is, and, for a receiver the provider reports as under water, the point at which that
    receiver's Sun visibility is read. C08 says caustics are an illumination contribution with an explicit
    owner; this is that contribution, and V3 still applies each direct path once. `CLOUDS`' factor is
    unchanged and multiplies with it.
-6. **A lent Sun visibility** (`WATERS` M16; the lent environment products). An effect may read the scene's
+6. **A lent Sun visibility** (`WATERS` WP16; the lent environment products). An effect may read the scene's
    Sun visibility at a world point, one tap of the scene's cascades and height map, for volume samples of
    its own. `ATMOSPHERE`'s view volume reads the scene's shadow itself and is not changed by this.
-7. **A medium factor on the incident meter** (`WATERS` M16; `synthetic/view.rs` and `synthetic/exposure.{rs,wgsl}`,
+7. **A medium factor on the incident meter** (`WATERS` WP16; `synthetic/view.rs` and `synthetic/exposure.{rs,wgsl}`,
    V4's). The camera request's incident meter takes three numbers that multiply the light it reads. C07's
    request stays a declared physical incident meter: the factor is the medium's transmission to the metering
    point, as [ruling 3 for `CLOUDS`](#seam-rulings-for-clouds) gives the meter the cloud factor there.
@@ -466,12 +466,12 @@ same crates; whichever lands second integrates on top. Two of these replace what
 is no longer a gain on the wind's cascades (ruling 3), and a reach no longer keeps its prepared flow whatever
 its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-first-principles) gives the reasons.
 
-1. **A chart's end may be a brink** (`RIVERS` M2; the map's preparation in `thrum-water-model`, and the map on
+1. **A chart's end may be a brink** (`RIVERS` WP2; the map's preparation in `thrum-water-model`, and the map on
    the GPU in M6). Beside a source end and a mouth, a chart may declare a brink end: a stretch of its footprint's
    edge where the ground drops away and the water leaves as a fall. Preparation's rule for a footprint's edge
    does not refuse a cell on a declared brink, and the chart's row there is its own, with no mix. The ground
    below a brink is in no body. A chart whose source is a fall has no source body, as a spring has none.
-2. **A chart may hold several flow samples** (`RIVERS` M3 in `thrum-water-model`, M4 in `thrum-water`). Each
+2. **A chart may hold several flow samples** (`RIVERS` WP3 in `thrum-water-model`, M4 in `thrum-water`). Each
    sample is a chart's grids with a gauge level. The chart's row at a point is the mix, linear in the gauge, of
    the two samples that bracket it: the source body's level where the chart has one, else the river's own
    stage. Every chart of one river takes the same gauge. Between two samples each cell also has a prepared
@@ -482,33 +482,33 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
    wets from its landing when the lip above it runs. From its wetting gauge a cell's level and current run
    linearly to the upper sample's, which for a bank cell is the level of the water beside it. A chart with one sample is
    unchanged, and its stage adds to its level as [the map](WATERS/DESIGN.md#the-water-map) says.
-3. **Flow bands** (`RIVERS` M3 in `thrum-water-model`, M5 in `thrum-sea` and `thrum-water`). The world's wave
+3. **Flow bands** (`RIVERS` WP3 in `thrum-water-model`, M5 in `thrum-sea` and `thrum-water`). The world's wave
    field gains two layers the wind does not fill, of the cascades' kind, generated only where a scene's profile
    names them. A chart's row holds a gain for each, which may be any size the depth limit allows, and every
    other body's is zero. Every reader of the wave layers, the game's query among them, reads them through the
    one sum, with the rules a cascade has. Their cadence is a knob for the display alone: on a frame whose
    query dispatch holds a point over a chart with a flow gain they are evaluated at that frame's `t`, whatever
-   the cadence and the camera, so no query answer changes with either. `WATERS:M16`'s caustic field reads them too; whichever of it and
-   `RIVERS` M5 lands second makes
+   the cadence and the camera, so no query answer changes with either. `WATERS:WP16`'s caustic field reads them too; whichever of it and
+   `RIVERS` WP5 lands second makes
    that so.
-4. **Births from a chart's loss and at a plunge** (`RIVERS` M5 and M6; the foam's births in `thrum-water`), by
+4. **Births from a chart's loss and at a plunge** (`RIVERS` WP5 and M6; the foam's births in `thrum-water`), by
    the bounded rule the foam's other births use.
-5. **A current ladder in the interaction step** (`RIVERS` M6; the interaction step in `thrum-water`. An f64
+5. **A current ladder in the interaction step** (`RIVERS` WP6; the interaction step in `thrum-water`. An f64
    reference of the ladder in `thrum-water-model` is a diagnostic a builder may add, and is not required). A
    region whose wet cells run at different currents is stepped with a
    few carriage currents whose span, as vectors, holds them, and each cell takes the blend of the outputs
    carried at the currents that bracket its own, as the depth ladder blends by depth. So two sets of rings raised at once
    on a pool and on a riffle are each carried by their own water, whatever the other's strength. On still
    water and on a uniform current the ladder has one current and the step is what it was.
-6. **A river selection in `examples/water`** (`RIVERS` M4). The game gains a selection that is off by default.
+6. **A river selection in `examples/water`** (`RIVERS` WP4). The game gains a selection that is off by default.
    With it off, the game's ground, bodies, tick page, compiled graph and frames are what they were, and the
    hand-made channel is `WATERS`' stand-in as built. With it on, the island's ground gains a valley, a spring
    and a cliff, and its rivers are solved. `RIVERS` adds its cases and scenes to `scripts/check_water_browser.mjs`
    and `scripts/water_cost.py` and changes none of theirs.
-7. **The sheet, and the Sun's shadow on water** (`RIVERS` M6 and M7; the water's contribution in `thrum-water`).
+7. **The sheet, and the Sun's shadow on water** (`RIVERS` WP6 and M7; the water's contribution in `thrum-water`).
    A fall's sheet is drawn by a pass of the water's contribution that runs before its gather, under
    [rulings 1 and 2 for `WATERS`](#seam-rulings-for-waters), and writes colour, depth, motion and reactive
-   coverage. Once `WATERS:M16` has built the lent Sun visibility, the direct Sun on a sheet, on foam and in the
+   coverage. Once `WATERS:WP16` has built the lent Sun visibility, the direct Sun on a sheet, on foam and in the
    surface's Sun lobe takes it at the surface point, so water in a hill's shadow is not lit by the Sun. If
    `WATERS` has built that by then, nothing is added.
 
@@ -530,7 +530,7 @@ module: a puddle is not a basin with a seed (ruling 1), a raindrop is not an imp
 the film is drawn off the shore (ruling 4). [PUDDLES' design](PUDDLES/DESIGN.md#judged-from-first-principles)
 gives the reasons.
 
-1. **A hollows body in the map** (`PUDDLES` M1 in `thrum-water-model`, M3 in `thrum-water`). Beside the sea,
+1. **A hollows body in the map** (`PUDDLES` WP1 in `thrum-water-model`, M3 in `thrum-water`). Beside the sea,
    the basin and the chart, a game may declare hollows: a rectangle with a bed of its own, a label for each
    cell and a level for each hollow, which the game sets with the tick as it sets a stage. A point's water is
    its cell's hollow's level where that stands above the bed. Inside the rectangle the map's bed is the
@@ -539,28 +539,28 @@ gives the reasons.
    state. Preparation refuses a hollows body with a cell in another body's water or shore margin anywhere in
    that body's stage range, so this settles how puddles merge without changing what preparation refuses of a
    basin: two basins that would merge are still refused.
-2. **A fine interaction level** (`PUDDLES` M8, in `thrum-water-model` and `thrum-water`, after `WATERS:M6` has built the interaction step it extends). A profile may name
+2. **A fine interaction level** (`PUDDLES` WP8, in `thrum-water-model` and `thrum-water`, after `WATERS:WP6` has built the interaction step it extends). A profile may name
    a third level, of 2 cm cells with a depth ladder from 5 mm and surface tension in its frequency, which
    takes the waves under 1 m from the near level, so that no wave is on two levels, and steps one tick at a
    time. With none, the two levels hold and step what they did.
-3. **Rain bands** (`PUDDLES` M2 in `thrum-water-model`, M4 in `thrum-sea` and `thrum-water`). The world's wave
+3. **Rain bands** (`PUDDLES` WP2 in `thrum-water-model`, M4 in `thrum-sea` and `thrum-water`). The world's wave
    field gains two layers that are a function of time and of the rain's committed rate over the last second, and
    keep nothing of their own between frames, generated only where a scene's
    profile names them. Every body's row has a rain gain, exposure times the depth response at the point, and
    every reader of the wave layers reads them through the one sum, with the rules a cascade has. They are
    layers beside [`RIVERS`' flow bands](#seam-rulings-for-rivers) and share nothing with them.
-4. **The film over standing rain water** (`PUDDLES` M5; the water's contribution in `thrum-water`). The film
+4. **The film over standing rain water** (`PUDDLES` WP5; the water's contribution in `thrum-water`). The film
    `WATERS` draws on sand the waves wash is also drawn over a hollows body's ground, wherever the wetness
    function gives surface water and no puddle stands, with the cover as its weight. It stays a declared
    residual: no depth, no query, no optical depth.
-5. **A wetness provider on the forward surface** (`PUDDLES` M5; `synthetic/scene_source.rs` and
+5. **A wetness provider on the forward surface** (`PUDDLES` WP5; `synthetic/scene_source.rs` and
    `synthetic.wgsl` in `thrum-render`, and the cooked material in `thrum-asset-gpu`). A scene may register a
    provider of ground wetness with its textures, composed into the scene's shader as the cloud factor is and
    read by every contribution that compiles it. A surface's base colour and roughness take the wet look
    before it is lit, after any material hook. The light, the shadows, the air, the cloud factor and
-   `WATERS`' Sun-path factor are applied as they were. `WATERS` M16 adds to the same shader; whichever lands
+   `WATERS`' Sun-path factor are applied as they were. `WATERS` WP16 adds to the same shader; whichever lands
    second integrates.
-6. **A rain selection in two games** (`PUDDLES` M3 in `WATERS`' `examples/water`, M6 in `SHOWCASE`'s
+6. **A rain selection in two games** (`PUDDLES` WP3 in `WATERS`' `examples/water`, M6 in `SHOWCASE`'s
    `examples/v1-game`). Each game gains a selection that is off by default. With it off, the game's ground,
    bodies, world, tick page, compiled graph and frames are what they were. With it on, the game keeps a rain
    state in its world and steps it, registers the wetness provider, and adds ground with hollows: a yard on
@@ -568,11 +568,11 @@ gives the reasons.
    `PUDDLES` does not edit the showcase's terrain, generator, routes or exit configuration, and adds its cases
    to `scripts/check_water_browser.mjs`, `scripts/check_v1_browser.mjs` and `scripts/water_cost.py` and changes
    none of theirs. Putting rain in the V1 exit scene by default would change the exit, which is the owner's.
-7. **The Sun's shadow on the film** (`PUDDLES` M7). [`RIVERS`' ruling 7](#seam-rulings-for-rivers) gives the
-   surface's Sun lobe the lent Sun visibility once `WATERS:M16` has built it; the film's Sun lobe takes it
-   too. Whichever of `RIVERS` M7 and `PUDDLES` M7 lands first builds the surface's.
-8. **Mirror levels of a hollows body** (`PUDDLES` M7; the mirror views' selection and lookup in
-   `thrum-water`, which `WATERS:M14` builds). A hollows body has no one level. It gives the mirror each
+7. **The Sun's shadow on the film** (`PUDDLES` WP7). [`RIVERS`' ruling 7](#seam-rulings-for-rivers) gives the
+   surface's Sun lobe the lent Sun visibility once `WATERS:WP16` has built it; the film's Sun lobe takes it
+   too. Whichever of `RIVERS` WP7 and `PUDDLES` WP7 lands first builds the surface's.
+8. **Mirror levels of a hollows body** (`PUDDLES` WP7; the mirror views' selection and lookup in
+   `thrum-water`, which `WATERS:WP14` builds). A hollows body has no one level. It gives the mirror each
    puddle's level and the ground's height where its film stands. Each frame those are grouped into bands no
    taller than the profile's tolerance for hollows, 5 cm in the first, and a band's plane is its lowest
    water, so a view's cut removes nothing above a water it serves. Bands rank for the profile's views with
@@ -594,16 +594,16 @@ defines. No item, test, bound or reference of an owning module changes, and all 
 declares no view compiles to the same shader text, passes, pipelines and storage and draws the same bytes as
 before, but for where ruling 3 lays its height map out.
 
-1. **Slots on the contribution seam** (`SCENE-VIEWS` M1; `contribution.rs` and
+1. **Slots on the contribution seam** (`SCENE-VIEWS` WP1; `contribution.rs` and
    `synthetic/{contributed,scene_graph}.rs`, `EFFECT-GRAPH`'s). A contribution may declare secondary-view
    slots, ask for them in its upload, opt in to drawing in views, and read its own slots' colour, depth and
    record in its own passes, as [ruling 2 for `WATERS`](#seam-rulings-for-waters) reads scene colour and depth.
-2. **A camera-drawn compaction against another volume** (`SCENE-VIEWS` M1; `visibility.rs` and
+2. **A camera-drawn compaction against another volume** (`SCENE-VIEWS` WP1; `visibility.rs` and
    `synthetic/{camera_culling,mesh_route,buckets}.rs`, `CULLING`'s). One more compaction of the scene's
    instances for each asked view, against that view's frustum, clip plane and least size, into lists of its
    own, as `CULLING` already culls casters for each Sun pass. Occlusion is never used in a view, and the main
    view's lists, bits and byte-equality with Direct are untouched.
-3. **Lighting products for a second view** (`SCENE-VIEWS` M1; `synthetic/{shadow,cluster}.rs` and
+3. **Lighting products for a second view** (`SCENE-VIEWS` WP1; `synthetic/{shadow,cluster}.rs` and
    `atmosphere/{graph.rs,aerial.wgsl}`). A view has Sun cascades fitted to its own frustum by the scene's
    fit, a cluster table built by the scene's pass, and an aerial volume from `ATMOSPHERE`'s aerial pass.
    The caster height map and the air's shadow heights stay one of each for the frame, laid out round the
@@ -624,11 +624,11 @@ before, but for where ruling 3 lays its height map out.
    crossing, is what a view's air is held to. Air from a plane that is not level is refused. The reader owns
    the stretch from its own camera to the plane. With no such request the pass writes what it writes today, and the main view's
    shader text is unchanged. A view has clear air where a scene declares the view volume.
-4. **A view that is not presented** (`SCENE-VIEWS` M1; `synthetic/view.rs`, `APPLE-PRESENTATION`'s view
+4. **A view that is not presented** (`SCENE-VIEWS` WP1; `synthetic/view.rs`, `APPLE-PRESENTATION`'s view
    record). [C07](../design/CONTRACTS.md) now names a secondary view: a product of its presenting view that
    publishes no frame contract, has no history key and is never given to a reconstruction provider. It takes
    the frame's jitter phase at its own extent and the frame's exposure sample.
-5. **Cooked placements in a view** (`SCENE-VIEWS` M2; `thrum-asset-gpu`, `COOKED-DRAW`'s paths and
+5. **Cooked placements in a view** (`SCENE-VIEWS` WP2; `thrum-asset-gpu`, `COOKED-DRAW`'s paths and
    `CONTENT-LOOP`'s residency). The cooked contribution opts in: the direct path draws its placements in a
    view, and the indirect path culls meshlets for the view into arguments of its own. If the indirect path
    cannot hold a second set inside a device's limits, a view of cooked placements resolves to the direct
@@ -639,13 +639,13 @@ Once built, each belongs to the owner of the files it is in: later work there ke
 ### Seam rulings for CLOUDS
 
 Clouds shade and light the world through `ATMOSPHERE`, and four things they need are not in its lent interface
-as `ATMOSPHERE:M5` built it. Each is built in `thrum-render`'s atmosphere files by the `CLOUDS` builder, with the
+as `ATMOSPHERE:WP5` built it. Each is built in `thrum-render`'s atmosphere files by the `CLOUDS` builder, with the
 behaviour [CLOUDS](CLOUDS/DESIGN.md#what-clouds-asks-of-other-modules) defines. `ATMOSPHERE`'s items, tests,
 bounds and references do not change and keep passing. A scene with no cloud provider composes the same shader
-text and draws the same bytes as today, which is that module's cue E3. `ATMOSPHERE` M6 edits the same files;
+text and draws the same bytes as today, which is that module's cue E3. `ATMOSPHERE` WP6 edits the same files;
 whichever builder lands second integrates on top. A fifth ruling covers the two games clouds are shown in.
 
-1. **A provider may write the Sun-path optical depth on the GPU** (`CLOUDS` M2). M5's field is CPU bytes with a
+1. **A provider may write the Sun-path optical depth on the GPU** (`CLOUDS` WP2). M5's field is CPU bytes with a
    rigid drift, read along the true Sun, and a receiver below its lowest Sun elevation or outside its region gets
    exactly 1. A provider may instead register a 2D texture that its own `simulate` pass writes, with, each
    frame, its plane, region, displacement and validity, the **path direction** its columns follow, a border
@@ -656,36 +656,36 @@ whichever builder lands second integrates on top. A fifth ruling covers the two 
    the factor is continuous in the Sun's elevation and across the edge, whatever the field holds there. The
    CPU-fed form states none of these and its receivers get exactly what they do now. A receiver at or above the
    plane, and an invalid frame, still get exactly 1.
-2. **Aerial transport to a far sky point** (`CLOUDS` M3). The lent aerial operation stops at 32 km. For a point
+2. **Aerial transport to a far sky point** (`CLOUDS` WP3). The lent aerial operation stops at 32 km. For a point
    beyond it on a ray that ends in the sky, it returns the transmittance chart's ratio between the two ends, and
    an in-scatter that is the sky's radiance in that direction apportioned by optical depth: a stated
    approximation, continuous at 32 km and exact at infinity. At 32 km and nearer the operation is unchanged.
-3. **A sky overlay in the reflection and diffuse products** (`CLOUDS` M8). A provider may register a small cube
+3. **A sky overlay in the reflection and diffuse products** (`CLOUDS` WP8). A provider may register a small cube
    of `(S,T)` in physical units. The reflection and diffuse producers then filter a sky whose radiance in each
    direction is `T·L + S`. The lent sky radiance stays cloud-free, and the provider lights itself from that. If
    the incident-light meter has a Sun term without the cloud factor, it gains it at its metering point.
-4. **A haze scale** (`CLOUDS` M8). A provider may give one number a frame that multiplies the solar part of the
+4. **A haze scale** (`CLOUDS` WP8). A provider may give one number a frame that multiplies the solar part of the
    aerial in-scatter. Transmittance and the night term are untouched. It is the stated approximation
    `ATMOSPHERE`'s design left to `CLOUDS` for in-scatter under cloud: no shafts and no colour shift. A scene
    that declares the view volume does not take it, because there the air is lit sample by sample through the
-   cloud factor; whichever of `CLOUDS` M8 and `ATMOSPHERE` M7 lands second makes that so.
-5. **A cloud selection in two games** (`CLOUDS` M2 in `SHOWCASE`'s `examples/v1-game`, M11 in `WATERS`'
+   cloud factor; whichever of `CLOUDS` WP8 and `ATMOSPHERE` WP7 lands second makes that so.
+5. **A cloud selection in two games** (`CLOUDS` WP2 in `SHOWCASE`'s `examples/v1-game`, M11 in `WATERS`'
    `examples/water`). Each game gains a selection that is off by default. With it off, the game's world, tick page,
    compiled graph and frames are what they were, and no item of the owning module changes. With it on, the game
    keeps a weather state in its world, adds the cloud contribution after any sea, and the labelled stand-in
    shade provider is not used. `CLOUDS` does not edit the showcase's generator, routes or exit configuration.
    Putting clouds in the V1 exit scene by default would change the exit, which is the owner's. With the
    Ground capability the selection also gives the weather the game's surface field, made in the game from its
-   own terrain heights (`CLOUDS` M14) or its own bed and water levels (`CLOUDS` M11), and declares the view
+   own terrain heights (`CLOUDS` WP14) or its own bed and water levels (`CLOUDS` WP11), and declares the view
    volume.
 
 Rulings 6 to 8 are `ATMOSPHERE`'s own milestones and not the `CLOUDS` builder's, because the view volume is
 large, has its own inspections and must leave the V1 scene untouched:
 
-6. **The view volume takes a provider's medium coefficients** (`ATMOSPHERE` M8), as
+6. **The view volume takes a provider's medium coefficients** (`ATMOSPHERE` WP8), as
    [the interface](#interfaces) states. `ATMOSPHERE` never evaluates a density, a phase or a medium's own
    shadow, and a provider never integrates the air.
-7. **A ground band of the Sun-path optical depth** (`ATMOSPHERE` M8). A provider may register optical depth
+7. **A ground band of the Sun-path optical depth** (`ATMOSPHERE` WP8). A provider may register optical depth
    toward the Sun at heights above the ground, with its mapping and a border width, and with where the land
    blocks the Sun beyond the shadow cascades kept apart from it. The band holds the whole path: the
    provider's march from each node to where the ray leaves the band, plus the 2D field's value there. The
@@ -694,10 +694,10 @@ large, has its own inspections and must leave the V1 scene untouched:
    upper cloud dims a receiver in the band once. The factor is continuous at the band's top, where the
    band's value is the 2D field's, and mixes to the 2D field's across the band's border. Only the view
    volume's cells read the land's blocking; no surface does.
-8. **The air's haze is an input** (`ATMOSPHERE` M7) of two numbers: its amount, as the clear air's visual
+8. **The air's haze is an input** (`ATMOSPHERE` WP7) of two numbers: its amount, as the clear air's visual
    range, and its kind, as an Ångström exponent from 0 to 2. The defaults are today's constant and an exponent of
    0, today's grey aerosol, so a scene that sets neither draws as before, and neither number moves the epoch when
-   it moves. The weather state holds both (`CLOUDS` M13 the range, M16 the exponent); `ATMOSPHERE` turns them into
+   it moves. The weather state holds both (`CLOUDS` WP13 the range, M16 the exponent); `ATMOSPHERE` turns them into
    the aerosol in each band ([its design](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera)).
 
 Once built, rulings 1 to 4 belong to `ATMOSPHERE`: later work there keeps their tests passing. Rulings 6 to 8
@@ -712,11 +712,11 @@ Track 3's interfaces are in [their own table](#interfaces-track-3).
 ## Exact baselines
 
 An **exact baseline** is a set of retained bytes that a proof compares rendered output with, byte for byte. Each
-has one owner. On 11 November `APPLE-PRESENTATION` M1 applied jitter to every game view, which moved every
+has one owner. On 11 November `APPLE-PRESENTATION` WP1 applied jitter to every game view, which moved every
 rasterised pixel of `APPLE-TILE`'s M0 baseline. The builder changed two exact tests in `./dev check` to absorb it,
-and the change merged. `APPLE-TILE` M2 was then claimed on evidence from a binary built before its rebase
-([APPLE-TILE M2 review](../../.orchestrate/evidence/APPLE-TILE/M2-review.md), MF1;
-[APPLE-PRESENTATION M1 review](../../.orchestrate/evidence/APPLE-PRESENTATION/M1-review-1.md), MF1). Three rules close those holes.
+and the change merged. `APPLE-TILE` WP2 was then claimed on evidence from a binary built before its rebase
+([APPLE-TILE WP2 review](../../.orchestrate/evidence/APPLE-TILE/WP2-review.md), MF1;
+[APPLE-PRESENTATION WP1 review](../../.orchestrate/evidence/APPLE-PRESENTATION/WP1-review-1.md), MF1). Three rules close those holes.
 
 <a id="proofs-run-once-on-main"></a>
 
@@ -726,7 +726,7 @@ with more than three covered merges an hour a proof was usually void before it c
 milestones reached Ready for Review against 419 commits, 163 of 288 background jobs failed, and the one GPU lock
 was busy 92% to 94% of the day, mostly in rebase, re-prove and merge attempts that failed. Of 79 verifier runs,
 one failure was a real pixel change and 21 were flakes or infrastructure
-([the report](../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/proof-regime.md)). The owner approved its regime: "Ok, let's
+([the report](../../.orchestrate/evidence/BASELINE-GUARD/WP2-replan/proof-regime.md)). The owner approved its regime: "Ok, let's
 get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the
 lead on Thrum working." and "We want all these fixes in place before I head to bed tonight." In the lead's
 session that day the owner said "Go ahead" to a gate that only warns, an hourly verifier on main, `gpu: 2,
@@ -804,7 +804,7 @@ byte for byte. One run covers every commit merged since the last one, whoever me
 
 <a id="the-covered-paths-are-derived"></a>
 
-**Unlinked crates leave the covered paths: withdrawn (15 November 2026).** `BASELINE-GUARD` M2 was to take the
+**Unlinked crates leave the covered paths: withdrawn (15 November 2026).** `BASELINE-GUARD` WP2 was to take the
 files of crates the game never links out of the proof's key, so that fewer rebases lapsed a proof. No proof is
 asked before a merge now, so nothing lapses and the narrower key has no use. The work is set aside unmerged, and
 [the design](BASELINE-GUARD/DESIGN.md#later-work) records it. The covered paths are the listed paths in the
@@ -827,26 +827,26 @@ an exact test changed by a module that does not own it, with no ruling here, rec
 | `examples/v1-game/tests/fixtures/exact-images/native/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | Listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files. |
 | Four Chrome manifests: `examples/v1-game/tests/fixtures/exact-images/chrome/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `examples/v1-game/tests/fixtures/exact-images/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
 | `examples/v1-game/tests/fixtures/showcase/valley-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
-| `examples/v1-game/tests/fixtures/showcase/exit-baseline.json`, created by `SHOWCASE` M5, with one baseline per row planned for M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
+| `examples/v1-game/tests/fixtures/showcase/exit-baseline.json`, created by `SHOWCASE` WP5, with one baseline per row planned for M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
 
 The verifier, `python3 scripts/exact_baselines.py verify --full`, runs the first two rows.
 
 **Ruling on the Chrome reference (with `APPLE-TILE`).** The complete reference captures, 481 frames each, were
 kept only in the scratch of the builder that made them, so a clean checkout could not run the byte comparison.
 The retained manifests are the reference: each holds every record's identity fields and the SHA-256 of its decoded
-bytes. A fresh frame whose decoded bytes hash to the retained digest is taken as byte-equal. `BASELINE-GUARD` M1
+bytes. A fresh frame whose decoded bytes hash to the retained digest is taken as byte-equal. `BASELINE-GUARD` WP1
 adds this reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`; the script's byte mode, the
 retained files and `APPLE-TILE`'s items do not change. If a set does not match on untouched main, the builder
 ends `BLOCKED` and `APPLE-TILE` refreshes it under rule 1.
 
 <a id="ruling-on-native-mip-bias"></a>
 
-**Ruling on the material mip bias (with `APPLE-TILE`).** `APPLE-PRESENTATION` M5 deliberately restored
+**Ruling on the material mip bias (with `APPLE-TILE`).** `APPLE-PRESENTATION` WP5 deliberately restored
 the [designed mip bias](APPLE-PRESENTATION/DESIGN.md#techniques-and-evidence) of −1 at native width in
 `32dfd3c14`, including with temporal reconstruction off. That changes `apple-tile-native` starting at
 `portable-sdr-approach`. The formula applies on every target. The lead extended the ruling after a matched
 Chrome WebGPU control recovered all 1,924 retained frames by restoring zero bias in the spatial branch.
-`APPLE-PRESENTATION` M14 regenerates the affected native references and all four registered Chrome manifests
+`APPLE-PRESENTATION` WP14 regenerates the affected native references and all four registered Chrome manifests
 with `APPLE-TILE`'s capture scripts. Both modules' logs record the cause and each replaced file's old and new
 SHA-256. The refresh follows rule 2, including `verify --full` on the candidate before landing.
 The registry changes the five refreshed baselines' pins and refresh records. Each refresh names
@@ -856,7 +856,7 @@ they are. Report any other baseline mismatch to the lead with its capture record
 
 <a id="ruling-on-atmosphere-m9"></a>
 
-**Ruling on `ATMOSPHERE` M9 (with `APPLE-TILE` and `SHOWCASE`), 14 November 2026.** M9 is meant to change
+**Ruling on `ATMOSPHERE` WP9 (with `APPLE-TILE` and `SHOWCASE`), 14 November 2026.** M9 is meant to change
 the default output of every scene: the aerial pass no longer stops a line of sight at the model's ground
 ([its design](ATMOSPHERE/DESIGN.md#the-air-at-the-ground)). It is not built behind a selection, because the
 stop is a defect of the one aerial product and a selection would keep it in every scene that did not ask.
@@ -873,9 +873,9 @@ stop is a defect of the one aerial product and a selection would keep it in ever
   scripts, in the landing that makes the change. In the registry it changes the `pin` and the `refresh` of
   each baseline whose reference moved, as rule 2's planned refresh says, and the refresh names
   `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`. Every other field of the registry, the comparisons, their
-  sampling and every script stay as they are. The refresh is `APPLE-TILE`'s in every other respect: `ATMOSPHERE` M9.5 holds
+  sampling and every script stay as they are. The refresh is `APPLE-TILE`'s in every other respect: `ATMOSPHERE` WP9.5 holds
   the verifier at the starting commit and at the claimed one and the old and new hashes in both modules'
-  logs, M9.6 has a reviewer see that only distant low terrain moved, and `APPLE-TILE` M12 reruns its exact
+  logs, M9.6 has a reviewer see that only distant low terrain moved, and `APPLE-TILE` WP12 reruns its exact
   matrices on the refreshed references with its items unchanged.
 - **Other baselines.** `SHOWCASE`'s six route stops are compared within thresholds; M9.7 runs that comparison
   with its baseline and thresholds as they are. If it fails, the builder ends `BLOCKED` and `SHOWCASE`
@@ -886,7 +886,7 @@ stop is a defect of the one aerial product and a selection would keep it in ever
 
 <a id="ruling-on-culling-m3"></a>
 
-**Ruling on `CULLING` M3 (with `APPLE-TILE` and `BASELINE-GUARD`), 14 November 2026.** M3's builder stopped under rule 1: on Metal
+**Ruling on `CULLING` WP3 (with `APPLE-TILE` and `BASELINE-GUARD`), 14 November 2026.** M3's builder stopped under rule 1: on Metal
 the valley drawn Direct is not one image under GPU load, the correction moves `APPLE-TILE`'s references, and no
 plan said who owned either ([its design](CULLING/DESIGN.md#m3-one-image-under-load) has the defect, the
 mechanism and the evidence). The correction is an all-ones coverage output on the forward shader's opaque
@@ -894,7 +894,7 @@ fragment entries, which stops the driver's triangle merging. It is not built beh
 variation is a defect of the one forward pass, and a selection would leave it in every scene that did not ask
 and in every exact test of the default.
 
-- **Who builds the correction.** `CULLING` M3's builder, in `thrum-render`'s forward shader and wherever else
+- **Who builds the correction.** `CULLING` WP3's builder, in `thrum-render`'s forward shader and wherever else
   an opaque forward fragment entry takes an implicit derivative. No milestone is added to `APPLE-TILE`, which
   has a builder on M10. Once built, the output belongs to the forward pass: later work there keeps it, and an
   opaque fragment entry added by any module writes the same output.
@@ -909,10 +909,10 @@ and in every exact test of the default.
   own scripts, in the one landing that adds the output. In the registry it changes the `pin` and the `refresh`
   of each baseline whose reference moved, as rule 2's planned refresh says, and the refresh names
   `ruling-on-culling-m3`, `CULLING` and `M3`. Every other field of the registry, the comparisons, their
-  sampling and every script stay as they are. The references stay `APPLE-TILE`'s in every other respect: `CULLING` M3.10 holds
+  sampling and every script stay as they are. The references stay `APPLE-TILE`'s in every other respect: `CULLING` WP3.10 holds
   the verifier at the starting commit and at the claimed one and the old and new hashes in both modules' logs,
   M3.11 holds the proof that the corrected image no longer varies, M3.12 has a reviewer see that only shared
-  triangle edges moved, and `APPLE-TILE` M12 reruns its exact matrices on the refreshed references with its
+  triangle edges moved, and `APPLE-TILE` WP12 reruns its exact matrices on the refreshed references with its
   items unchanged. No other change of M3 may move a reference.
 - **Proved once, then merged.** (16 November 2026; replaces "Qualified before the push" of 15 November.) The
   earlier text had M3.11's campaign, M3.12's difference images and `verify --full` pass on a local candidate
@@ -940,7 +940,7 @@ and in every exact test of the default.
   [a frame that varies under load](#a-frame-that-varies-under-load) stops any module whose exact comparison
   varies on content that holds the output. [The design](CULLING/DESIGN.md#what-a-campaign-stands-for) says
   what the campaign stands for.
-- **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, holds a
+- **Order with `ATMOSPHERE` WP9.** Both landings regenerate references. Whichever lands second rebases, holds a
   verifier pass at its new starting commit (the main-branch check's, or one `verify --full` of its own) and
   regenerates from there. Each records its own old and new hashes, so the two causes stay apart.
 - **Other baselines.** `SHOWCASE`'s six route stops are compared within thresholds, which stay as they are.
@@ -953,7 +953,7 @@ and in every exact test of the default.
 <a id="ruling-on-the-valley-fix"></a>
 
 **Ruling on the valley's lookout rim and sunrise stop (with `SHOWCASE`, `APPLE-TILE`, `CULLING`, `EFFECT-GRAPH`
-and `ATMOSPHERE`), 19 November 2026.** `ATMOSPHERE` M6's builder stopped under rule 1. At the held sunset stop a
+and `ATMOSPHERE`), 19 November 2026.** `ATMOSPHERE` WP6's builder stopped under rule 1. At the held sunset stop a
 bright band lies along the rim of the lookout, on the Mac and in Chrome, and `APPLE-TILE`'s sunset references
 hold the same band. At the sunrise stop the sphere and the rock cast no shadow. Both causes are in the authored
 valley and neither is in the sky or the Sun: the terrain mesh is too coarse at the rim for the normals it
@@ -964,7 +964,7 @@ changes the valley's terrain, so it moves every registered set, and no plan said
 - **Who owns the valley.** `SHOWCASE`. One generator authors the terrain and the exit scene's layout, the six
   stop presets came from its route slice, and its M8 judges the picture. The valley's source folder and the
   presets join what that module owns.
-- **Who builds the fix.** `SHOWCASE` M9, a new milestone after its M6. `ATMOSPHERE` M6 waits for it and then
+- **Who builds the fix.** `SHOWCASE` WP9, a new milestone after its M6. `ATMOSPHERE` WP6 waits for it and then
   judges the whole route on the changed valley. No milestone is added to `APPLE-TILE`, whose milestones are
   all Done.
 - **What may change.** The terrain's mesh and normals, the layout regenerated on it, and the hour of the sunrise
@@ -974,23 +974,23 @@ changes the valley's terrain, so it moves every registered set, and no plan said
   generation if it moved, into each file that names an old one: `moving-v1.json` (`APPLE-TILE`'s),
   `culling-fast-yaw.json` (`CULLING`'s), `effect-state.json` and `effect-after-opaque.json` (`EFFECT-GRAPH`'s),
   its own exit routes and launcher, and any other pin of those roots that `./dev check` reads. In a file that
-  holds such a pin it changes nothing else (`SHOWCASE` M9.7). The refresh below is separate and changes
+  holds such a pin it changes nothing else (`SHOWCASE` WP9.7). The refresh below is separate and changes
   `APPLE-TILE`'s references, registry fields and log. Those modules' items do not change, and their tests keep
   passing.
 - **Which baselines move.** All five registered sets are expected to, since each draws the valley's
   terrain. M9's builder records which did. `SHOWCASE`'s own two thresholded baselines are calibrated again for
   the new roots, by the route decision's fixed rule.
-- **Who refreshes them.** As for [`ATMOSPHERE` M9](#ruling-on-atmosphere-m9), the change and the references land
+- **Who refreshes them.** As for [`ATMOSPHERE` WP9](#ruling-on-atmosphere-m9), the change and the references land
   together as rule 2's planned refresh. M9's builder regenerates each reference that moved, from the changed
   commit, with `APPLE-TILE`'s own scripts. In the registry it changes the `pin` and the `refresh` of each
   baseline whose reference moved, and the refresh names `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`. Every
   other field of the registry, the comparisons, their sampling and every script stay as they are, apart from
   the paths that [the relocation in the same landing](#ruling-on-relocated-references) moves. Both
-  modules' logs record the cause and each moved reference's old and new SHA-256. `SHOWCASE` M9.6 holds this.
-- **A change to the look in `ATMOSPHERE` M6.** After the valley is fixed, M6's list may still need a change to
+  modules' logs record the cause and each moved reference's old and new SHA-256. `SHOWCASE` WP9.6 holds this.
+- **A change to the look in `ATMOSPHERE` WP6.** After the valley is fixed, M6's list may still need a change to
   the sky or the sunlight, which [its design](ATMOSPHERE/DESIGN.md#closing-g3s) allows. Such a change also
   moves these sets. M6's builder then refreshes each set that moved in the same way, in the landing that makes
-  the change, and the refresh names `ruling-on-the-valley-fix`, `ATMOSPHERE` and `M6`. `ATMOSPHERE` M6.9 holds
+  the change, and the refresh names `ruling-on-the-valley-fix`, `ATMOSPHERE` and `M6`. `ATMOSPHERE` WP6.9 holds
   it. M6 does not change the valley's source; a defect it traces to the terrain goes to `SHOWCASE` as a
   proposal in its log.
 - **Records on the old valley.** A record another module took on the old root stands as history for what it
@@ -1002,11 +1002,11 @@ changes the valley's terrain, so it moves every registered set, and no plan said
 
 **Ruling on where retained references are kept (with `SHOWCASE`, `APPLE-TILE` and `BASELINE-GUARD`), 20 November
 2026.** Evidence left Git for the working folder on 19 November, and the loop's merge guard now refuses a commit
-that changes a file under `docs/evidence/`. The retained references were kept there, so `SHOWCASE` M9 could not
+that changes a file under `docs/evidence/`. The retained references were kept there, so `SHOWCASE` WP9 could not
 land its refresh. The lead ruled that a file a check reads is test data and not evidence, and the references
 moved to test fixtures in M9's landing. The 16 November text on a planned refresh and the valley ruling were
 written before that. Both say the registry's other fields and every comparison file stay as they are, and
-[M9's review](../../.orchestrate/evidence/SHOWCASE/M9-review.md) failed M9.6 on that wording. This ruling says
+[M9's review](../../.orchestrate/evidence/SHOWCASE/WP9-review.md) failed M9.6 on that wording. This ruling says
 what a relocation may change, so that the freeze keeps protecting what it was written for: what each comparison
 compares and how it decides.
 
@@ -1031,7 +1031,7 @@ compares and how it decides.
   by name and Git blob.
 - **Earlier text.** Where a ruling or an item written before this says a refresh changes only the `pin` and
   the `refresh`, or that the comparison files are as they were, it means apart from these paths. `SHOWCASE`
-  M9.6 is written again to say so. `ATMOSPHERE` M6.9 judges that milestone's own commits, which hold no
+  M9.6 is written again to say so. `ATMOSPHERE` WP6.9 judges that milestone's own commits, which hold no
   relocation, and stands.
 - **Another relocation** is named here first, with its old and new paths, as any change to an owner's
   interface is.
@@ -1039,25 +1039,25 @@ compares and how it decides.
 <a id="a-frame-that-varies-under-load"></a>
 
 **Ruling on a frame that varies under load (with `APPLE-TILE`, `BASELINE-GUARD`, `CULLING` and `EFFECT-GRAPH`),
-15 November 2026.** `EFFECT-GRAPH` M3's builder stopped under rule 1. At `324586ee` the verifier passed both
+15 November 2026.** `EFFECT-GRAPH` WP3's builder stopped under rule 1. At `324586ee` the verifier passed both
 native matrices and three Chrome sets, and failed Chrome night scene-linear at one record of 481, with every
 identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan said whose it was.
 
 - **What it is.** In the reference, records 0 and 1 of that set are one tick submitted twice, with one digest.
   In the failed capture record 0 hashes to it and record 1 does not. The two differ at 12,637 pixels, by a median
   of 2 half-float steps, and those pixels are thin lines along the triangle edges of the far hills
-  ([the planner's reading](../../.orchestrate/evidence/EFFECT-GRAPH/M3-replan/README.md)). `APPLE-TILE` M10 met the same a day
-  earlier on a build without `EFFECT-GRAPH` M3: Chrome day SDR, record 227, 299 pixels, at most two byte values,
-  and a retry that matched all 481 ([its record](../../.orchestrate/evidence/APPLE-TILE/M10/chrome-frame-227/chrome-diagnostic.json)).
+  ([the planner's reading](../../.orchestrate/evidence/EFFECT-GRAPH/WP3-replan/README.md)). `APPLE-TILE` WP10 met the same a day
+  earlier on a build without `EFFECT-GRAPH` WP3: Chrome day SDR, record 227, 299 pixels, at most two byte values,
+  and a retry that matched all 481 ([its record](../../.orchestrate/evidence/APPLE-TILE/WP10/chrome-frame-227/chrome-diagnostic.json)).
   This is the signature of the defect in [`CULLING`'s design](CULLING/DESIGN.md#m3-one-image-under-load), where
   derivatives at shared triangle edges change with GPU load, now seen in Chrome, which that design lists as not
   measured. It is an inference from where the pixels lie, not a reading of Chrome's derivatives.
 - **Whose it is.** Nothing is owed by `APPLE-TILE` or `BASELINE-GUARD`: the references, the comparisons, the
   registry and the verifier are right and stay as they are, and neither module gains a milestone. The correction
-  is `CULLING` M3's, by the ruling above. `EFFECT-GRAPH` M3 does not wait for it. Every landing on a covered path
+  is `CULLING` WP3's, by the ruling above. `EFFECT-GRAPH` WP3 does not wait for it. Every landing on a covered path
   meets the same variation, so a hold on one milestone would settle nothing, and a hold on all of them would stop
   the build until a milestone that must itself pass the verifier.
-- **The rule, for content without `CULLING` M3's coverage output.** A failed verifier run stays failed: it
+- **The rule, for content without `CULLING` WP3's coverage output.** A failed verifier run stays failed: it
   writes no proof, and nothing from it counts towards one. The builder may set it aside as **load variation**
   and run the verifier again, in place of stopping under rule 1, only when all four of these hold:
   1. *Identities.* Every identity field of every record matches. Only image bytes, or their digests, differ.
@@ -1084,7 +1084,7 @@ identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan 
   passing run's record on the same content key. The module's log gains one line that links it. At the review of
   a milestone that carries the verifier (rule 3), the reviewer reads each record. A run set aside without one,
   or a difference image that shows anything but those lines, is a Must Fix.
-- **When it ends.** With the landing that puts `CULLING` M3's coverage output on main. On content that holds
+- **When it ends.** With the landing that puts `CULLING` WP3's coverage output on main. On content that holds
   the output, a failure of this kind is evidence that the correction does not hold on that target: the builder
   ends `BLOCKED` with the record, and a planner settles it here. The same goes for a module's own exact
   comparison of two draws of the same content, when it differs only along such edges (16 November 2026): the
@@ -1093,7 +1093,7 @@ identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan 
 <a id="a-fixed-capture-that-stalls"></a>
 
 **Ruling on a Chrome record that holds the tick before (with `APPLE-TILE`, `BASELINE-GUARD`, `T2-CAPTURE`, `HOST`
-and `REPO-RULES`), 15 November 2026.** `REPO-RULES` M1's builder stopped under rule 1. At `db4a38fc` the verifier
+and `REPO-RULES`), 15 November 2026.** `REPO-RULES` WP1's builder stopped under rule 1. At `db4a38fc` the verifier
 passed both native matrices and Chrome day SDR, and refused Chrome day scene-linear at record 98 of 481 on its
 identity: the reference holds tick 218 with alpha 0, and the capture held tick 217 with alpha 1. The builder asked
 for `APPLE-TILE` to resolve it.
@@ -1101,14 +1101,14 @@ for `APPLE-TILE` to resolve it.
 - **What it is.** No image moved, and neither the reference nor the content key is stale. All 481 digests of the
   failed capture equal the retained ones, and tick 217 with alpha 1 is the instant of tick 218 with alpha 0. The
   same covered content, by its content key and with the same Wasm and native binaries, passed the whole verifier
-  less than an hour before ([`WATERS`' record](../../.orchestrate/evidence/WATERS/M1-baselines.json)), on the same Chrome. A fixed
+  less than an hour before ([`WATERS`' record](../../.orchestrate/evidence/WATERS/WP1-baselines.json)), on the same Chrome. A fixed
   capture gives the game a synthetic time at each callback, but in the browser the game's world stops committing
   due ticks once a callback's tick work has taken 2 ms of real time, and commits the rest at the next callback
   (`with_tick_work_slice` in `examples/v1-game/src/host/world.rs`). Record 98 is one of 140 that two ticks reach.
   Its callback took 12.9 ms, the longest of the 481, where the median is 1.6 ms
-  ([the planner's reading](../../.orchestrate/evidence/REPO-RULES/M1-replan/README.md)). So the page stalled inside the first
+  ([the planner's reading](../../.orchestrate/evidence/REPO-RULES/WP1-replan/README.md)). So the page stalled inside the first
   tick, and the second waited for record 99, where the capture is level with the reference again. This is an
-  inference from the callback's time: no tick was timed. `EFFECT-GRAPH` M3 met the same once, on earlier content.
+  inference from the callback's time: no tick was timed. `EFFECT-GRAPH` WP3 met the same once, on earlier content.
 - **Whose it is.** Nothing is owed by `APPLE-TILE` or `BASELINE-GUARD`: the references, the comparisons, the
   registry and the verifier are right and stay as they are, no reference is refreshed, and neither module gains
   a milestone. The defect is that real time reaches a fixed capture through the world's overload policy, which is
@@ -1120,7 +1120,7 @@ for `APPLE-TILE` to resolve it.
   place of stopping under rule 1, only when all three of these hold:
   1. *Images.* Every record of the failed Chrome set holds the retained digest. The comparison stops at the
      first refusal, so the builder reads the capture's manifest against the retained one for all 481
-     (`.orchestrate/evidence/REPO-RULES/M1-replan/identity_reading.py` is one way).
+     (`.orchestrate/evidence/REPO-RULES/WP1-replan/identity_reading.py` is one way).
   2. *Identities.* The only identity fields that differ are `tick`, `source_tick` and `alpha`, and in every
      record where they differ the reference holds a tick with alpha 0 and the capture holds the tick before it
      with alpha 1. Every other identity field of every record matches.
@@ -1139,7 +1139,7 @@ for `APPLE-TILE` to resolve it.
   identities; the time of each callback from the capture's `runtime.json`, where the scratch still holds it;
   and the passing run's record. The module's log gains one line that links it. At the review of a milestone
   that carries the verifier (rule 3), the reviewer reads each record. A run set aside without one is a Must Fix.
-- **`REPO-RULES` M1.** The failed half of its record is on its branch. Its builder rebases, runs the verifier
+- **`REPO-RULES` WP1.** The failed half of its record is on its branch. Its builder rebases, runs the verifier
   unchanged and lands as for any covered change. None of its items changes.
 - **When it ends.** With the landing that makes a fixed capture commit every due tick whatever real time its
   tick work takes. On content that holds it, a failure of this kind is evidence that the correction does not
@@ -1148,9 +1148,9 @@ for `APPLE-TILE` to resolve it.
 <a id="ruling-on-a-capture-that-drops-frames"></a>
 
 **Ruling on a motion capture that drops frames under load (with `T2-CAPTURE`, `APPLE-TILE`, `BASELINE-GUARD` and
-`REVIEW-ENGINE`), 16 November 2026.** `REVIEW-ENGINE` M3's builder stopped with every item passed: the
+`REVIEW-ENGINE`), 16 November 2026.** `REVIEW-ENGINE` WP3's builder stopped with every item passed: the
 main-branch check kept failing before any pixel was compared
-([its handoff](../../.orchestrate/evidence/REVIEW-ENGINE/M3-handoff.md)). The owner asked for the capture to keep every frame on
+([its handoff](../../.orchestrate/evidence/REVIEW-ENGINE/WP3-handoff.md)). The owner asked for the capture to keep every frame on
 a loaded machine and to exit 75 when it is incomplete.
 
 - **What it is.** Four runs of the verifier failed on 16 November, each at a different realtime motion arm of
@@ -1159,8 +1159,8 @@ a loaded machine and to exit 75 when it is incomplete.
   is stale. Those arms run on elapsed time, and their six-slot readback ring fills when other GPU work delays
   readbacks ([`T2-CAPTURE`'s design](T2-CAPTURE/DESIGN.md#a-full-ring-and-a-run-that-could-not-judge)).
 - **Whose it is.** The capture is `T2-CAPTURE`'s, and the work is its M3. `APPLE-TILE` and `BASELINE-GUARD`
-  gain no milestone and no item: `APPLE-TILE` M10 is waiting for an attended sitting, and this must not wait
-  with it. `REVIEW-ENGINE` M3 changes nothing and stays blocked until a shared run covers its commit, which the
+  gain no milestone and no item: `APPLE-TILE` WP10 is waiting for an attended sitting, and this must not wait
+  with it. `REVIEW-ENGINE` WP3 changes nothing and stays blocked until a shared run covers its commit, which the
   lead may get before M3 lands.
 - **What M3's builder changes in other modules' files, and nothing else there.** In `APPLE-TILE`'s
   `scripts/apple_tile_m0.py`, `apple_tile_m1.py` and `apple_tile_m2.py`: the realtime motion arms select `wait`
@@ -1182,19 +1182,19 @@ a loaded machine and to exit 75 when it is incomplete.
   one may. `BASELINE-GUARD`'s limit on editing the matrices binds its own builders.
 - **Everyone else.** Nothing is owed. A module's own realtime capture keeps `omit` unless that module selects
   `wait`, which it may do only for a claim that every submitted image was kept.
-- **Not part of this.** `.orchestrate/evidence/APPLE-TILE/M10/window-proof.py` ending "CUA app selection timed out" is
-  a wait for a computer-use action in the attended window proof. It stays with `APPLE-TILE` M10's sitting.
+- **Not part of this.** `.orchestrate/evidence/APPLE-TILE/WP10/window-proof.py` ending "CUA app selection timed out" is
+  a wait for a computer-use action in the attended window proof. It stays with `APPLE-TILE` WP10's sitting.
 
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
 
-`CULLING` M1 and `EFFECT-GRAPH` M1 may be built before the gate exists. Each carries the native matrix as its
+`CULLING` WP1 and `EFFECT-GRAPH` WP1 may be built before the gate exists. Each carries the native matrix as its
 rule-3 item, and its builder reruns that item after every rebase and before `land`; Chrome is first rechecked
-when `BASELINE-GUARD`'s builder runs the verifier on main. Their later milestones wait for `BASELINE-GUARD` M1 and
-carry the verifier. Milestones planned before this rule (`APPLE-PRESENTATION` M2 and M3, `ATMOSPHERE` M6, `CREATOR`
-M2, `APPLE-TILE` M3) need no new item: the gate covers their landings once it exists. `SHOWCASE` moves no exact
+when `BASELINE-GUARD`'s builder runs the verifier on main. Their later milestones wait for `BASELINE-GUARD` WP1 and
+carry the verifier. Milestones planned before this rule (`APPLE-PRESENTATION` WP2 and M3, `ATMOSPHERE` WP6, `CREATOR`
+M2, `APPLE-TILE` WP3) need no new item: the gate covers their landings once it exists. `SHOWCASE` moves no exact
 baseline: its exit scene is new content beside the grid and the field, and the valley's source folder and cooked
-root stay as they are ([design](SHOWCASE/DESIGN.md#exact-baselines)). `APPLE-PRESENTATION` M3 puts
+root stay as they are ([design](SHOWCASE/DESIGN.md#exact-baselines)). `APPLE-PRESENTATION` WP3 puts
 TAAU in the game: if that changes the default output, its planner settles the refresh under rule 1 before it is
 built.
 
@@ -1290,10 +1290,10 @@ would share its evidence folder's name with the 1 November `.orchestrate/evidenc
 the module is `WATERS`. The older water designs and [the water decision](../design/decisions/E1-GPU-WATER.md) are
 evidence `WATERS`' design judged; where they differ, that design holds.
 
-**Build order.** `SEA` M1 and M2; `WATERS` M1 and M12 (surf on the CPU) beside `SEA` M2; `WATERS` M2 to M7, M13
-(surf drawn), M8, M9, M15 (under water) and M16 (light under water); `RIVERS` from `WATERS:M9`, with its solver earlier; `PUDDLES` from
-`WATERS:M8`, with its CPU milestones earlier; `WATERS` M10, M14 (mirrored scenery, on `SCENE-VIEWS:M3`) and M11 close the shared system. `CLOUDS`
-M11 needs `WATERS:M8`. `WATERS`' milestones keep the numbers other plans name, so its file order, and not its
+**Build order.** `SEA` WP1 and M2; `WATERS` WP1 and M12 (surf on the CPU) beside `SEA` WP2; `WATERS` WP2 to M7, M13
+(surf drawn), M8, M9, M15 (under water) and M16 (light under water); `RIVERS` from `WATERS:WP9`, with its solver earlier; `PUDDLES` from
+`WATERS:WP8`, with its CPU milestones earlier; `WATERS` WP10, M14 (mirrored scenery, on `SCENE-VIEWS:WP3`) and M11 close the shared system. `CLOUDS`
+M11 needs `WATERS:WP8`. `WATERS`' milestones keep the numbers other plans name, so its file order, and not its
 numbering, is its build order.
 
 **The owner's three additions, 14 November 2026.** "Scenery reflections we must have, that's a main stay in high
@@ -1317,17 +1317,17 @@ shafts in the water's own composition, and the camera's meter reads the light at
 
 Briefs for the modules not yet planned. Modules with a design are linked from the table above.
 
-### APPLE-PRESENTATION M4–M11 (G4)
+### APPLE-PRESENTATION WP4–M11 (G4)
 
 Planned on 14 November 2026: [design](APPLE-PRESENTATION/DESIGN.md#m4-to-m12-settled-14-november-2026),
-[plan](APPLE-PRESENTATION/PLAN.md). [The drafted milestones](../../.orchestrate/evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)
+[plan](APPLE-PRESENTATION/PLAN.md). [The drafted milestones](../../.orchestrate/evidence/APPLE-PRESENTATION/WP4-M11-milestone-drafts.md)
 became done-when items, with the drafted M10 split in two: the order is M4 (extent and generation transitions),
 M5 (dynamic scale), M6 (EDR), M7 (the governor and its knob registry), M8 (MetalFX), M9 (prepared paths and
 launch-to-ready), M10 (cooked shader libraries and parallel preparation), M12 (the pipeline archive) and M11
-(the paired proof, which closes G4). Only two wait on another module: M8 on `APPLE-TILE:M11` and M11 on
-`APPLE-TILE:M12`. `SHOWCASE` M7 now waits for `APPLE-PRESENTATION:M11`, and `WATERS` M11 and `CLOUDS` M12 for
+(the paired proof, which closes G4). Only two wait on another module: M8 on `APPLE-TILE:WP11` and M11 on
+`APPLE-TILE:WP12`. `SHOWCASE` WP7 now waits for `APPLE-PRESENTATION:WP11`, and `WATERS` WP11 and `CLOUDS` WP12 for
 its M7 and M8. The owner's look at EDR on the built-in display is asked for in M11 and recorded as an
-observation; under decision 4 of [the brief](BRIEF.md#decisions) it gates nothing, G4's close included.
+observation; under decision 4 of [the brief](VISION.md#decisions) it gates nothing, G4's close included.
 
 ### CULLING (G3c)
 
@@ -1344,7 +1344,7 @@ staying parked: CAS garbage collection and leases on the store, layered EAC, par
 
 M4, added on 16 November 2026, is built at once and ahead of M2: the cooker's watcher scans its source tree on
 its own clock, because macOS left saves unreported on the fleet's Mac and `thrum-cook`'s watcher test failed the
-full check for every module ([diagnosis](../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)). `ATMOSPHERE` M9 is Blocked
+full check for every module ([diagnosis](../../.orchestrate/evidence/CONTENT-LOOP/WP4-diagnosis.md)). `ATMOSPHERE` WP9 is Blocked
 on it. It has no `depends_on` entry, so that its proved items stand, and the lead unblocks it when M4 is Done.
 
 ### SHOWCASE (G7)
@@ -1352,7 +1352,7 @@ on it. It has no `depends_on` entry, so that its proved items stand, and the lea
 Planned on 13 November 2026: [design](SHOWCASE/DESIGN.md), [plan](SHOWCASE/PLAN.md). Its milestones are M5 to M8;
 M1 to M4 were the route slice, built before the loop under
 [the route decision](../design/decisions/G7-SHOWCASE-ROUTE.md) and kept in
-[its record](../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). M5 and M6 need `CONTENT-LOOP:M2` and `CULLING:M3`; M7
+[its record](../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). M5 and M6 need `CONTENT-LOOP:WP2` and `CULLING:WP3`; M7
 needs the closing milestones it builds on and M8 the last milestone of every other track 1 module. The swarm game, `SWARM`, starts when M8 is Done.
 
 ### EFFECT-GRAPH (track 2 foundation)
@@ -1372,7 +1372,7 @@ scene's contribution list, and it puts clouds into the environment reflection pr
 
 Planned on 14 November 2026: [design](SCENE-VIEWS/DESIGN.md), [plan](SCENE-VIEWS/PLAN.md). Three milestones:
 entities in a view on the Mac, cooked placements with a mirror example, then Chrome, cost and the close.
-`WATERS` M14 needs its last, M3. Its planner judged ray query for the Apple recipe and did not select it:
+`WATERS` WP14 needs its last, M3. Its planner judged ray query for the Apple recipe and did not select it:
 the raster view has to exist for Chrome whatever else does, and wgpu's ray query is experimental. Later
 consumers whose camera stands elsewhere (a probe, a portal, a monitor in the world) are refused today: a view
 reads the frame's terrain shadows, which are its own only on the main camera's vertical. Serving one adds a
@@ -1386,18 +1386,18 @@ and published practice and reproductions of its own mechanisms. A cue that a sea
 settled here, with `WATERS`.
 
 **`RIVERS`** was planned on 14 November 2026: [design](RIVERS/DESIGN.md), [plan](RIVERS/PLAN.md). Seven
-milestones: the solver, falls and a river that answers its source on the CPU, after `WATERS:M1`; then the
-island's rivers, running water in a calm, the waterfall, and the close, after `WATERS:M9`. Its brief asked for
+milestones: the solver, falls and a river that answers its source on the CPU, after `WATERS:WP1`; then the
+island's rivers, running water in a calm, the waterfall, and the close, after `WATERS:WP9`. Its brief asked for
 a stream from a spring that pools, quickens and reaches the lake or the sea, water that reads as running, floats
 carried, foam where it loses height and at rocks, and a waterfall with its sheet, plunge, foam and rings. Its
 planner settled the brief's open mechanisms, and [seven rulings](#seam-rulings-for-rivers) say what that asks of
 `WATERS`. Mist at a fall is not planned and is [the owner's](#owner-decisions).
 
 **`PUDDLES`** was planned on 14 November 2026: [design](PUDDLES/DESIGN.md), [plan](PUDDLES/PLAN.md). Eight
-milestones: puddles, then wet ground and a drop's rings, on the CPU after `WATERS:M1`; the yard's puddles, the
-rain's rings, a footfall's rings and the wet ground on the island after `WATERS:M8`; the V1 valley after
-`SHOWCASE:M5`; and the close,
-after `WATERS:M10`, `M14` and `M16`. Its brief asked for rain that wets the ground it can reach and leaves
+milestones: puddles, then wet ground and a drop's rings, on the CPU after `WATERS:WP1`; the yard's puddles, the
+rain's rings, a footfall's rings and the wet ground on the island after `WATERS:WP8`; the V1 valley after
+`SHOWCASE:WP5`; and the close,
+after `WATERS:WP10`, `M14` and `M16`. Its brief asked for rain that wets the ground it can reach and leaves
 shelter dry; puddles that form in the ground's hollows as it rains, join when they overflow, ripple under
 drops and feet, reflect the sky and what stands in them, and dry out; sand that darkens where waves have
 run, under the sheen and foam `WATERS` draws there as [its film](WATERS/DESIGN.md#the-surface-and-the-frame-contract);
@@ -1423,35 +1423,35 @@ don't want to start working on the swarm game till v1 lands."
 |---|---|---|
 | Reusable engine work | `SIM-2D`, `RENDER-2D`, `SESSION`, `GAME-UI` | As soon as the milestones it uses are Done. None waits for `SHOWCASE` |
 | Transport | `TRANSPORT` | Before or after V1, when a builder slot is free. It waits for no milestone and is last in line for a builder |
-| The game | `SWARM`, all eight milestones, the owner's pick of a concept included | When `SHOWCASE:M8` is Done |
+| The game | `SWARM`, all eight milestones, the owner's pick of a concept included | When `SHOWCASE:WP8` is Done |
 
 <a id="transports-timing"></a>
 
 **Transport's timing.** The owner, 15 November 2026: "it can come before V1 if we have space for it, but it's
-not urgent". So `TRANSPORT` M1 has no edge to `SHOWCASE`, and `TRANSPORT` is the lowest priority of every
+not urgent". So `TRANSPORT` WP1 has no edge to `SHOWCASE`, and `TRANSPORT` is the lowest priority of every
 module: the lead starts its builder only when a builder slot is free. The ruling replaces "transport stays after
-V1" in decision 1 of [the brief](BRIEF.md#goal-and-exit-rule), on which this plan had held M1 behind
-`SHOWCASE:M8` since `TRANSPORT`'s design review earlier that day. Transport is still no part of the V1 exit.
+V1" in decision 1 of [the brief](VISION.md#goal-and-exit-rule), on which this plan had held M1 behind
+`SHOWCASE:WP8` since `TRANSPORT`'s design review earlier that day. Transport is still no part of the V1 exit.
 
 An engine milestone keeps an edge only where it uses another milestone's output:
 
 | Milestone | Waits for | Because |
 |---|---|---|
-| `SIM-2D` M1, `TRANSPORT` M1 | Nothing | Core's simulation (G2S) and the shells they run in are Done. `TRANSPORT` M1 starts when a builder slot is free, [as above](#transports-timing) |
-| `RENDER-2D` M1 | `EFFECT-GRAPH:M3`, `APPLE-PRESENTATION:M3` | It refuses a contribution that declares the after-opaque stage, which M3 defines, and it declares a scene with no reconstruction, which exists in the game from TAAU on. It no longer waits for `APPLE-TILE:M12`: it uses the split graph and the pre-tone input, which are Done, and nothing of M10 to M12 |
-| `RENDER-2D` M4 | `CONTENT-LOOP:M1` | The sheet product is lent as a lease and switched by the publication, both M1's. It no longer waits for `CONTENT-LOOP:M3`, which closes G5 and adds nothing a sheet uses |
-| `RENDER-2D` M5 | `SIM-2D:M1` | It draws the Crowd trace |
-| `SESSION` M1, M2, M5 | `SIM-2D:M3`, `TRANSPORT:M1`, `TRANSPORT:M2` | As before. M2 and what follows it wait on `TRANSPORT`, which is last in line for a builder, and not on V1 |
-| `SESSION` M7 | `RENDER-2D:M5` | The windowed match is the crowd view with a session attached |
-| `GAME-UI` M1 | `RENDER-2D:M5`, `APPLE-PRESENTATION:M6` | It runs the sprite pass a second time over the sprite scene M5 leaves, and it draws inside the EDR present pass, which M6 builds |
+| `SIM-2D` WP1, `TRANSPORT` WP1 | Nothing | Core's simulation (G2S) and the shells they run in are Done. `TRANSPORT` WP1 starts when a builder slot is free, [as above](#transports-timing) |
+| `RENDER-2D` WP1 | `EFFECT-GRAPH:WP3`, `APPLE-PRESENTATION:WP3` | It refuses a contribution that declares the after-opaque stage, which M3 defines, and it declares a scene with no reconstruction, which exists in the game from TAAU on. It no longer waits for `APPLE-TILE:WP12`: it uses the split graph and the pre-tone input, which are Done, and nothing of M10 to M12 |
+| `RENDER-2D` WP4 | `CONTENT-LOOP:WP1` | The sheet product is lent as a lease and switched by the publication, both M1's. It no longer waits for `CONTENT-LOOP:WP3`, which closes G5 and adds nothing a sheet uses |
+| `RENDER-2D` WP5 | `SIM-2D:WP1` | It draws the Crowd trace |
+| `SESSION` WP1, M2, M5 | `SIM-2D:WP3`, `TRANSPORT:WP1`, `TRANSPORT:WP2` | As before. M2 and what follows it wait on `TRANSPORT`, which is last in line for a builder, and not on V1 |
+| `SESSION` WP7 | `RENDER-2D:WP5` | The windowed match is the crowd view with a session attached |
+| `GAME-UI` WP1 | `RENDER-2D:WP5`, `APPLE-PRESENTATION:WP6` | It runs the sprite pass a second time over the sprite scene M5 leaves, and it draws inside the EDR present pass, which M6 builds |
 
 Engine work that the game's plan had carried moved to engine modules, so that it is built and proved without
 the game and the game changes no engine crate for it:
 
-- **A driven world**, a world that commits the ticks its match names, is `SESSION` M7
-  ([ruling 3](#seam-rulings-for-session)), proved with the reference crowd in a window. It was `SWARM` M7's.
-- **One iPhone shell for every game** is `GAME-UI` M6 ([ruling 5](#seam-rulings-for-game-ui)), proved with the
-  crowd view as a second app. It was `SWARM` M6's.
+- **A driven world**, a world that commits the ticks its match names, is `SESSION` WP7
+  ([ruling 3](#seam-rulings-for-session)), proved with the reference crowd in a window. It was `SWARM` WP7's.
+- **One iPhone shell for every game** is `GAME-UI` WP6 ([ruling 5](#seam-rulings-for-game-ui)), proved with the
+  crowd view as a second app. It was `SWARM` WP6's.
 
 Two things stay with the game because they name it: the repository guard's entry for a second external game,
 and whatever the window and page still assume of the V1 game when `SWARM` first runs.
@@ -1460,11 +1460,11 @@ Where an engine item was worded for this game it is now worded for any game: `GA
 modal choice of four cards. The engine modules' proof scenes are the reference crowd, the crowd view, and the
 sprite and interface scenes in the V1 game; none is the swarm game, and no engine check builds a package of it.
 
-**Shared files.** `RENDER-2D` M1 and M4 and `GAME-UI` M1 change the frame runtime and the content loop while
-`APPLE-TILE` M10 to M12, `APPLE-PRESENTATION` M4 to M12 and `CONTENT-LOOP` M2 and M3 are built in the same
+**Shared files.** `RENDER-2D` WP1 and M4 and `GAME-UI` WP1 change the frame runtime and the content loop while
+`APPLE-TILE` WP10 to M12, `APPLE-PRESENTATION` WP4 to M12 and `CONTENT-LOOP` WP2 and M3 are built in the same
 files. That is not an edge: each builder integrates on what has landed and keeps the other's tests passing, as
-the rulings below say. If it costs V1 too much, the owner can ask for `RENDER-2D` M1 to wait for
-`APPLE-TILE:M12` ([RENDER-2D's plan](RENDER-2D/PLAN.md#open-for-the-human)).
+the rulings below say. If it costs V1 too much, the owner can ask for `RENDER-2D` WP1 to wait for
+`APPLE-TILE:WP12` ([RENDER-2D's plan](RENDER-2D/PLAN.md#open-for-the-human)).
 
 ### The owner's request (track 3)
 
@@ -1580,18 +1580,18 @@ it to the asking module's builder. None is added now, so no V1 plan changes.
 
 | Owner | Ask | For |
 |---|---|---|
-| `CONTENT-LOOP` | A sprite-sheet product (pages, frames, pivots), cooked, mapped and hot-reloaded like meshes and textures. Built in `RENDER-2D:M4` under [ruling 2](#seam-rulings-for-render-2d) | `RENDER-2D` |
-| `CONTENT-LOOP` | A font product: a table of metrics and one sheet for each scale, in the sheet form `RENDER-2D` defines; a publication that waits for the interface's new layout, so text and sheets change in one frame. Built in `GAME-UI:M2` under [ruling 3](#seam-rulings-for-game-ui) | `GAME-UI` |
-| `APPLE-TILE` | A game selects the 2D scene half in place of the 3D one, and the output half gains a display-referred transfer. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
-| `APPLE-TILE`, with `APPLE-PRESENTATION` | The output half gains an interface stage at output extent, after reconstruction and the display transform, in the 8-bit display image and in the EDR present pass's float target. Built in `GAME-UI:M1` under [ruling 1](#seam-rulings-for-game-ui) | `GAME-UI` |
-| `RENDER-2D` | The sprite pass runs a second time in a frame, at the interface stage, with its own sheets and rows. Built in `GAME-UI:M1` under [ruling 2](#seam-rulings-for-game-ui) | `GAME-UI` |
-| `CREATOR`, `SHOWCASE` and `PLATFORM-RUNTIME-IOS` | The shells give a game pointer and touch events as well as keys, the display's density, the safe-area insets, text drops and the clipboard; the V1 game gains an interface scene. Built in `GAME-UI` M1 to M5 under [ruling 4](#seam-rulings-for-game-ui) | `GAME-UI` |
-| `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
-| `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game. Built in `GAME-UI:M6` for iOS and for a second program on the window and the page, under [its ruling 5](#seam-rulings-for-game-ui); what is left when the game first runs is `SWARM:M2`'s, under [its ruling 2](#seam-rulings-for-swarm) | Any second game |
-| Repository guard | `.config/architecture.toml` names one external game; it must admit a second. Built in `SWARM:M2` under [ruling 1](#seam-rulings-for-swarm) | `SWARM` |
-| Core (W1) and `SIM-2D` | A world image: the bytes the digest covers, with a way back into a fresh runtime in another process. Built in `SESSION:M1` under [ruling 1](#seam-rulings-for-session) | `SESSION` |
-| `SIM-2D` | The reference crowd's player movement as one function its own rule calls, so a predictor can call it too. Built in `SESSION:M4` under [ruling 2](#seam-rulings-for-session) | `SESSION` |
-| Core (F1 and W1), with `CREATOR` | A world lane that commits ticks when its driver says, in place of its own clock, for a host's and a client's copy of a match. Built in `SESSION:M7` under [ruling 3](#seam-rulings-for-session) | Any game in a match |
+| `CONTENT-LOOP` | A sprite-sheet product (pages, frames, pivots), cooked, mapped and hot-reloaded like meshes and textures. Built in `RENDER-2D:WP4` under [ruling 2](#seam-rulings-for-render-2d) | `RENDER-2D` |
+| `CONTENT-LOOP` | A font product: a table of metrics and one sheet for each scale, in the sheet form `RENDER-2D` defines; a publication that waits for the interface's new layout, so text and sheets change in one frame. Built in `GAME-UI:WP2` under [ruling 3](#seam-rulings-for-game-ui) | `GAME-UI` |
+| `APPLE-TILE` | A game selects the 2D scene half in place of the 3D one, and the output half gains a display-referred transfer. Built in `RENDER-2D:WP1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
+| `APPLE-TILE`, with `APPLE-PRESENTATION` | The output half gains an interface stage at output extent, after reconstruction and the display transform, in the 8-bit display image and in the EDR present pass's float target. Built in `GAME-UI:WP1` under [ruling 1](#seam-rulings-for-game-ui) | `GAME-UI` |
+| `RENDER-2D` | The sprite pass runs a second time in a frame, at the interface stage, with its own sheets and rows. Built in `GAME-UI:WP1` under [ruling 2](#seam-rulings-for-game-ui) | `GAME-UI` |
+| `CREATOR`, `SHOWCASE` and `PLATFORM-RUNTIME-IOS` | The shells give a game pointer and touch events as well as keys, the display's density, the safe-area insets, text drops and the clipboard; the V1 game gains an interface scene. Built in `GAME-UI` WP1 to M5 under [ruling 4](#seam-rulings-for-game-ui) | `GAME-UI` |
+| `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp. Built in `RENDER-2D:WP1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
+| `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game. Built in `GAME-UI:WP6` for iOS and for a second program on the window and the page, under [its ruling 5](#seam-rulings-for-game-ui); what is left when the game first runs is `SWARM:WP2`'s, under [its ruling 2](#seam-rulings-for-swarm) | Any second game |
+| Repository guard | `.config/architecture.toml` names one external game; it must admit a second. Built in `SWARM:WP2` under [ruling 1](#seam-rulings-for-swarm) | `SWARM` |
+| Core (W1) and `SIM-2D` | A world image: the bytes the digest covers, with a way back into a fresh runtime in another process. Built in `SESSION:WP1` under [ruling 1](#seam-rulings-for-session) | `SESSION` |
+| `SIM-2D` | The reference crowd's player movement as one function its own rule calls, so a predictor can call it too. Built in `SESSION:WP4` under [ruling 2](#seam-rulings-for-session) | `SESSION` |
+| Core (F1 and W1), with `CREATOR` | A world lane that commits ticks when its driver says, in place of its own clock, for a host's and a client's copy of a match. Built in `SESSION:WP7` under [ruling 3](#seam-rulings-for-session) | Any game in a match |
 
 `RENDER-2D`'s own sprite pass is declared in the one graph by `thrum-render`, as the 3D scene's forward pass is.
 An engine module outside `thrum-render` attaches to a 2D scene through `EFFECT-GRAPH`'s seam, at the upload and
@@ -1609,7 +1609,7 @@ tests passing, and a V1 builder who lands in the same files afterwards keeps `RE
 written while V1 was being built, so that no V1 plan changed; `CONTENT-LOOP`'s design says each ask becomes a
 milestone there, and ruling 2 replaces that for the sheet product.
 
-1. **The frame runtime, in `RENDER-2D:M1`** (`APPLE-TILE` and `APPLE-PRESENTATION`; `thrum-render`'s frame host,
+1. **The frame runtime, in `RENDER-2D:WP1`** (`APPLE-TILE` and `APPLE-PRESENTATION`; `thrum-render`'s frame host,
    scene graph and display files). A frame host is created for one
    [scene kind](RENDER-2D/DESIGN.md#1-the-scene-kind), 2D or 3D, and the 3D kind is the default. A 2D scene binds
    its own colour as the pre-tone input with a fixed exposure, selects a
@@ -1620,13 +1620,13 @@ milestone there, and ruling 2 replaces that for the sheet product.
    output extent and none of the provider inputs, the registry resolves no provider for it, and a request that
    names one is refused by name at preparation. Every view of a 3D scene still publishes the full form, so no
    provider, history rule or governor behaviour of `APPLE-PRESENTATION` changes. The declaration is the frame
-   runtime's and the refusal is `APPLE-PRESENTATION`'s; both are built in `RENDER-2D:M1`.
-2. **Content, in `RENDER-2D:M4`** (`CONTENT-LOOP` and `EFFECT-GRAPH`; `thrum-cook`, `thrum-asset`,
+   runtime's and the refusal is `APPLE-PRESENTATION`'s; both are built in `RENDER-2D:WP1`.
+2. **Content, in `RENDER-2D:WP4`** (`CONTENT-LOOP` and `EFFECT-GRAPH`; `thrum-cook`, `thrum-asset`,
    `thrum-asset-gpu` and the contribution list). The [sheet product](RENDER-2D/DESIGN.md#8-sheets) is a new
    product kind; its pages are lent as an array texture under the lease's rules, and they switch with its frame
    table under the content publication. In a 2D scene residency runs with leases only, and a contribution that
    declares a shadow, opaque or after-opaque stage is refused when it is attached.
-3. **The V1 game and its shells, in `RENDER-2D:M1` and, for the simulator, `M5`** (`SHOWCASE`, `T2-CAPTURE` and
+3. **The V1 game and its shells, in `RENDER-2D:WP1` and, for the simulator, `M5`** (`SHOWCASE`, `T2-CAPTURE` and
    `PLATFORM-RUNTIME-IOS`; `examples/v1-game`, `examples/v1-game-ios` and the capture and check scripts). A
    `sprites` scene selection, off by default, as the other modules' diagnostics are. It is never part of the
    showcase.
@@ -1640,7 +1640,7 @@ retained traces keep their retained digests: neither ruling refreshes an exact b
 it cannot hold them stops and ends `BLOCKED`. Once built, each belongs to its owner: later work there keeps its
 tests passing.
 
-1. **The world image, in `SESSION:M1`** (core and `SIM-2D`; `thrum-core`'s `sim` module and the component types
+1. **The world image, in `SESSION:WP1`** (core and `SIM-2D`; `thrum-core`'s `sim` module and the component types
    of `examples/crowd-2d`). The state encoding gains its decoding half, and a registered runtime gains a way to
    write [a world image](SESSION/DESIGN.md#7-the-world-image-and-the-baseline) and to be built from one in
    another process. The image carries exactly what the digest covers. A type that supplies one half of the
@@ -1649,11 +1649,11 @@ tests passing.
    tests, gain the decoding half in the same milestone. A test `SIM-2D` was accepted with may change for that
    alone: its types gain the decoding half and its code follows the encoding interface's new signatures, and
    no test, assertion, input or expected value is removed or altered.
-2. **The reference crowd in a match, in `SESSION:M4`** (`SIM-2D`; `examples/crowd-2d`). The player's movement
+2. **The reference crowd in a match, in `SESSION:WP4`** (`SIM-2D`; `examples/crowd-2d`). The player's movement
    becomes one function in the rule package, called by the crowd's own rule and by
    [the predicted controller](SESSION/DESIGN.md#11-the-predicted-controller). It is a change of shape only: the
    rule package still passes `SIM-2D`'s guard with nothing suppressed.
-3. **A driven world, in `SESSION:M7`** (core F1 and W1, with `CREATOR`; `thrum-core`'s world lane and clocked
+3. **A driven world, in `SESSION:WP7`** (core F1 and W1, with `CREATOR`; `thrum-core`'s world lane and clocked
    world, the frame host's world observer in `thrum-render`, and `thrum-app`). A world may be
    [driven](SESSION/DESIGN.md#12-a-driven-world): its driver names how many ticks to commit at each advance,
    none, one or several, and where the presentation stands between the last two. A driven world raises no
@@ -1665,12 +1665,12 @@ tests passing.
 
 **Seam rulings for `GAME-UI`.** `GAME-UI` needs five changes inside state other modules own, which no interface
 offered. Each is built by the `GAME-UI` builder of the milestone named, after `RENDER-2D`'s last milestone and,
-for ruling 1, `APPLE-PRESENTATION:M6`, on what the owning modules have landed by then, with the behaviour
+for ruling 1, `APPLE-PRESENTATION:WP6`, on what the owning modules have landed by then, with the behaviour
 [GAME-UI](GAME-UI/DESIGN.md#mechanisms) defines. No item of the owning module changes and its exact comparisons are not loosened. A host prepared with
 no interface compiles to the same passes and draws the same bytes, and a game that uses none of it links none of
 it. Once built, each belongs to its owner: later work there keeps its tests passing.
 
-1. **The interface stage, in `GAME-UI:M1`** (`APPLE-TILE` and `APPLE-PRESENTATION`; `thrum-render`'s frame
+1. **The interface stage, in `GAME-UI:WP1`** (`APPLE-TILE` and `APPLE-PRESENTATION`; `thrum-render`'s frame
    host, scene graph and display files). A host may be prepared with an interface, for either scene kind. It then
    has [one more stage](GAME-UI/DESIGN.md#1-the-interface-stage) after reconstruction and the display transform
    and before the frame is captured or shown, which draws a paint list into the target the transform wrote, in
@@ -1678,11 +1678,11 @@ it. Once built, each belongs to its owner: later work there keeps its tests pass
    transform and present. With `APPLE-PRESENTATION`'s EDR surface it is in the present pass, after the
    transform's draw into the `Rgba16Float` target, where 1.0 is SDR white. It changes no pixel that no row
    covers, and its pipelines for both are made when the host is prepared.
-2. **The sprite pass's second use, in `GAME-UI:M1`** (`RENDER-2D`; `thrum-render`'s sprite files).
+2. **The sprite pass's second use, in `GAME-UI:WP1`** (`RENDER-2D`; `thrum-render`'s sprite files).
    [The pass](RENDER-2D/DESIGN.md#interfaces) runs once more in a frame with the display image as its target,
    a view in output pixels, its own set of up to eight sheets and the paint list as its rows. The scene's use of
    the pass is unchanged.
-3. **The font product, in `GAME-UI:M2`** (`CONTENT-LOOP`; `thrum-cook`, `thrum-asset` and `thrum-asset-gpu`).
+3. **The font product, in `GAME-UI:WP2`** (`CONTENT-LOOP`; `thrum-cook`, `thrum-asset` and `thrum-asset-gpu`).
    [A font](GAME-UI/DESIGN.md#4-fonts) is a new product kind: a table and one pixel-kind sheet product for each
    scale, leased and switched as sheets are. The interface is one more reader of a publication that changes a
    sheet it uses: it [lays out again beside what is drawn](GAME-UI/DESIGN.md#11-a-list-and-its-sheets-change-together),
@@ -1690,14 +1690,14 @@ it. Once built, each belongs to its owner: later work there keeps its tests pass
    interface cannot take refuses the publication whole. `CONTENT-LOOP`'s design says each ask becomes a milestone there;
    this ruling replaces that for the font product, as `RENDER-2D`'s ruling 2 did for sheets. The cooker gains
    `skrifa`, `harfrust` and `zeno`; no shipping crate does.
-4. **The shells and the V1 game, in `GAME-UI` M1 to M5** (`CREATOR`'s `thrum-app` window and page; `SHOWCASE`'s
+4. **The shells and the V1 game, in `GAME-UI` WP1 to M5** (`CREATOR`'s `thrum-app` window and page; `SHOWCASE`'s
    `examples/v1-game` and its page; `T2-CAPTURE`'s scripts; `PLATFORM-RUNTIME-IOS`'s `examples/v1-game-ios`).
    Each shell gives every key, pointer and touch event to
    [the interface first](GAME-UI/DESIGN.md#8-who-gets-an-event), reports the output's extent, the display's
    density and the safe-area insets, and delivers text drops; the Mac shell also writes the clipboard. The
    translation sits behind a feature of `thrum-app`. An `interface` scene selection is added to the V1 game, off
    by default and never part of the showcase.
-5. **One iPhone shell for every game, in `GAME-UI:M6`** (`PLATFORM-RUNTIME-IOS` and `CREATOR`, with what
+5. **One iPhone shell for every game, in `GAME-UI:WP6`** (`PLATFORM-RUNTIME-IOS` and `CREATOR`, with what
    `COOKED-DRAW`, `RENDER-2D` and this module added; `examples/v1-game-ios`, `thrum-app`, and the capture and
    packaging scripts). The UIKit lifecycle, touch delivery, the render owner and its surface lease, rotation,
    device-loss recovery and the reports of extent, density and insets move into `thrum-app`,
@@ -1715,12 +1715,12 @@ module changes and its exact comparisons are not loosened. The V1 game, the star
 build, run and draw as they did. Once built, each belongs to its owner: later work there keeps its tests
 passing. No engine crate gains a type, string or file of either game.
 
-1. **The repository guard, in `SWARM:M2`** (`scripts/repo_check.py` and `.config/architecture.toml`). The guard
+1. **The repository guard, in `SWARM:WP2`** (`scripts/repo_check.py` and `.config/architecture.toml`). The guard
    admits more than one external game. No engine crate may depend on any game, and a game may not depend on
    another game. The V1 game's boundary is as it was, and `SIM-2D`'s rule-package guard is unchanged.
-2. **The window and the page for a second game, in `SWARM:M2`** (`CREATOR` and `PLATFORM-RUNTIME-WEB`;
-   `thrum-app`'s window and page, with `T2-CAPTURE`'s and the packaging scripts). `RENDER-2D:M5` runs a second
-   program on both, `GAME-UI` gives them events, density, insets and text drops, and `GAME-UI:M6` runs a
+2. **The window and the page for a second game, in `SWARM:WP2`** (`CREATOR` and `PLATFORM-RUNTIME-WEB`;
+   `thrum-app`'s window and page, with `T2-CAPTURE`'s and the packaging scripts). `RENDER-2D:WP5` runs a second
+   program on both, `GAME-UI` gives them events, density, insets and text drops, and `GAME-UI:WP6` runs a
    second program with an interface on them. Whatever they still assume
    of the V1 game or the sky kit when a game with a 2D scene, an interface and no sky kit runs, is capturable
    and is packaged for Chrome, is made a property of the game.
@@ -1758,9 +1758,9 @@ review passes. Changes to a numbered contract are settled with its producers and
 | **Driven world**: a world whose driver names how many ticks to commit at each advance and where the presentation stands between the last two, in place of the lane's fixed clock. The engine side names no session | core and `CREATOR`'s app runner → any game in a match, by [ruling 3](#seam-rulings-for-session) | [SESSION](SESSION/DESIGN.md#12-a-driven-world); C02 |
 | **Session**: a host and a client driven by time: join and leave, roster events for each player slot, the host's admitted set for each tick, how many ticks to commit now, the predicted controller and its corrections, and commands that happen once in order. A game says which of its actions are commands | `SESSION` → `SWARM` | [SESSION](SESSION/DESIGN.md#interfaces); C13, A0 and the A5 decisions |
 | **Connection state**: what a screen can show for this peer and for each slot, with the reason for a refusal or a close | `SESSION` → `SWARM`, which shows it in `GAME-UI`'s nodes; `GAME-UI` links neither | [SESSION](SESSION/DESIGN.md#9-negotiation-and-leaving) |
-| **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, by an identity derived from their sources, and refuses a peer that differs. A proposed addition to C13, written into the contract by `SESSION:M6` | `SESSION`, with `SIM-2D`, core and the game | [SESSION](SESSION/DESIGN.md#interfaces) |
+| **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, by an identity derived from their sources, and refuses a peer that differs. A proposed addition to C13, written into the contract by `SESSION:WP6` | `SESSION`, with `SIM-2D`, core and the game | [SESSION](SESSION/DESIGN.md#interfaces) |
 | Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged. `RENDER-2D` registers none: a 2D scene has no scale, cadence or step budget to lower |
-| The app runner and typed controls, with one iOS shell generic over a game from `GAME-UI:M6` | `CREATOR` and `PLATFORM-RUNTIME-IOS` → `SWARM`, any game | C11, [CREATOR](CREATOR/DESIGN.md); [GAME-UI](GAME-UI/DESIGN.md#12-one-shell-for-every-game) |
+| The app runner and typed controls, with one iOS shell generic over a game from `GAME-UI:WP6` | `CREATOR` and `PLATFORM-RUNTIME-IOS` → `SWARM`, any game | C11, [CREATOR](CREATOR/DESIGN.md); [GAME-UI](GAME-UI/DESIGN.md#12-one-shell-for-every-game) |
 | Engine capture, one for each peer process | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md); unchanged |
 
 ### Build order after the V1 exit
@@ -1777,17 +1777,17 @@ Approved before a builder starts its module.
    Chrome client and an iOS-simulator client over real sockets under the A0 conditioner. They share no files
    with each other or with the renderer.
 2. **Sprites.** `RENDER-2D`, which builds its asks of `APPLE-TILE` and `CONTENT-LOOP` itself under
-   [the seam rulings](#seam-rulings-for-render-2d). It starts after `EFFECT-GRAPH:M3` and
-   `APPLE-PRESENTATION:M3`; its last milestone draws `SIM-2D`'s crowd and waits for `SIM-2D`'s first.
+   [the seam rulings](#seam-rulings-for-render-2d). It starts after `EFFECT-GRAPH:WP3` and
+   `APPLE-PRESENTATION:WP3`; its last milestone draws `SIM-2D`'s crowd and waits for `SIM-2D`'s first.
 3. **A match.** `SESSION`, after `SIM-2D`'s last milestone, since its first milestone works in the same files.
    Its matches on the in-memory conditioned link follow `TRANSPORT`'s first milestone, which delivers that link,
    and its socket milestones follow `TRANSPORT`'s second. Its last milestone, the windowed match on a driven
    world, follows `RENDER-2D`'s last.
 4. **Interface, and a shell for every game.** `GAME-UI`, after `RENDER-2D`'s last milestone, whose sprite scene
-   its first milestone checks against, and after `APPLE-PRESENTATION:M6`, whose EDR present pass it draws in.
+   its first milestone checks against, and after `APPLE-PRESENTATION:WP6`, whose EDR present pass it draws in.
    It builds the interface-stage and font-product asks itself, and in its last milestone the shared iPhone
    shell, under [the seam rulings](#seam-rulings-for-game-ui).
-5. **The game, after V1.** `SWARM` opens with the owner's choice of concept, after `SHOWCASE:M8`. Then a
+5. **The game, after V1.** `SWARM` opens with the owner's choice of concept, after `SHOWCASE:WP8`. Then a
    single-player slice on `SIM-2D`, `SESSION`'s first milestone and `RENDER-2D`, the full run on `GAME-UI`'s
    fourth milestone, the iPhone simulator on its last, a rehearsed match on `SESSION`'s fourth milestone,
    co-op on sockets on its last, and the close. It builds its asks of the guard and the shells itself under
@@ -1853,7 +1853,7 @@ choices this brief carried: glyphs are rasterised when a font is cooked, with `s
 the cooker only, so a shipped game holds no font code; and a join ticket is never typed, but arrives as a text
 drop from a link, a launch argument or a paste. [A probe](../../.orchestrate/evidence/GAME-UI/planning-probe.md) sized a cooked
 font and checked the rules for spacing, event ownership and direction keys. Six milestones, all after
-`RENDER-2D:M5`, whose sprite scene the first checks against, and `APPLE-PRESENTATION:M6`, whose EDR present pass
+`RENDER-2D:WP5`, whose sprite scene the first checks against, and `APPLE-PRESENTATION:WP6`, whose EDR present pass
 the interface is drawn in. The sixth, added on 14 November, is the iPhone shell shared by every game. The asks of `APPLE-TILE`,
 `RENDER-2D`, `CONTENT-LOOP` and the shells are built in M1 to M5 under
 [the seam rulings](#seam-rulings-for-game-ui). `SWARM` needs M4 for its screens on the Mac and in Chrome and M6
@@ -1900,13 +1900,13 @@ rules this brief carried: one team level from shared pick-ups, every player choo
 same time between waves, a fallen hero back at the next wave, and no choice that pauses the run. It read
 "upgrades between waves" as Brotato's shape, with nothing paused inside a wave, and the brief's "thousands" as
 at least 2,000 enemies and projectiles in one view, which makes a common enemy about a fiftieth of the screen's
-height. Eight milestones: the owner's pick of a concept (after `SHOWCASE:M8`), a single-player slice that first
+height. Eight milestones: the owner's pick of a concept (after `SHOWCASE:WP8`), a single-player slice that first
 measures how large a crowd Chrome can hold, the whole run with its screens, the finished content and look, a
-rehearsed match (after `SESSION:M4`), the iPhone simulator (after `GAME-UI:M6`), co-op on sockets (after
-`SESSION:M7`), and the close with the owner's play and the record that ends track 3. Of the asks this brief
+rehearsed match (after `SESSION:WP4`), the iPhone simulator (after `GAME-UI:WP6`), co-op on sockets (after
+`SESSION:WP7`), and the close with the owner's play and the record that ends track 3. Of the asks this brief
 named, the guard and what the window and page still assume are built in M2 under
-[the seam rulings](#seam-rulings-for-swarm); the iPhone shell and the driven world moved to `GAME-UI` M6 and
-`SESSION` M7 on 14 November.
+[the seam rulings](#seam-rulings-for-swarm); the iPhone shell and the driven world moved to `GAME-UI` WP6 and
+`SESSION` WP7 on 14 November.
 
 ## Track 4: the code review and the game's separation
 
@@ -1942,41 +1942,41 @@ there keeps its tests passing.
 
 | Theme | Fixed by |
 |---|---|
-| Step 1, the canonical shapes and their rules | The shapes are in [patterns](../../.agents/skills/thrum-engineering/references/patterns.md); the rules are `REPO-RULES` M1 |
-| Confirmed bugs | H01: `REVIEW-ENGINE` M1 (iPhone features and limits), then `HOST` M1 (one recipe). H14: `REVIEW-ENGINE` M1. H09, M41, H11: `REVIEW-RENDER` M1 |
-| T1 Rust and WGSL records | `REVIEW-ENGINE` M2 (sea) and M3 (cooked assets); `REVIEW-RENDER` M2 |
-| T2 typed keys | `REVIEW-ENGINE` M2 (sea); `REVIEW-RENDER` M3 |
-| T6 test support and one GPU gate | `TEST-SUPPORT` M1 and M2 |
-| T5 the engine and game boundary | `GAME-SPLIT` M1 to M5; H19 in `REVIEW-ENGINE` M3; M56 in `HOST` M4 |
-| T4 one device recipe and host core | `HOST` M1 to M4 |
-| T3 errors | `REVIEW-ENGINE` M4, `REVIEW-RENDER` M4, `HOST` M5; the games keep string errors until they are their own repository's concern |
-| T12 cost | H16 and H18: `REVIEW-ENGINE` M2 and M3. M52, M67, M64: `REVIEW-ENGINE` M5. M40, M38: `REVIEW-RENDER` M5. M01: `HOST` M3 |
-| T9 and T10 names and splits | `REPO-RULES` M3, one landing |
-| T13 hygiene | `REPO-RULES` M2 (bulk files, H03) and M4 |
+| Step 1, the canonical shapes and their rules | The shapes are in [patterns](../../.agents/skills/thrum-engineering/references/patterns.md); the rules are `REPO-RULES` WP1 |
+| Confirmed bugs | H01: `REVIEW-ENGINE` WP1 (iPhone features and limits), then `HOST` WP1 (one recipe). H14: `REVIEW-ENGINE` WP1. H09, M41, H11: `REVIEW-RENDER` WP1 |
+| T1 Rust and WGSL records | `REVIEW-ENGINE` WP2 (sea) and M3 (cooked assets); `REVIEW-RENDER` WP2 |
+| T2 typed keys | `REVIEW-ENGINE` WP2 (sea); `REVIEW-RENDER` WP3 |
+| T6 test support and one GPU gate | `TEST-SUPPORT` WP1 and M2 |
+| T5 the engine and game boundary | `GAME-SPLIT` WP1 to M5; H19 in `REVIEW-ENGINE` WP3; M56 in `HOST` WP4 |
+| T4 one device recipe and host core | `HOST` WP1 to M4 |
+| T3 errors | `REVIEW-ENGINE` WP4, `REVIEW-RENDER` WP4, `HOST` WP5; the games keep string errors until they are their own repository's concern |
+| T12 cost | H16 and H18: `REVIEW-ENGINE` WP2 and M3. M52, M67, M64: `REVIEW-ENGINE` WP5. M40, M38: `REVIEW-RENDER` WP5. M01: `HOST` WP3 |
+| T9 and T10 names and splits | `REPO-RULES` WP3, one landing |
+| T13 hygiene | `REPO-RULES` WP2 (bulk files, H03) and M4 |
 | Not scheduled | T7 (shader source), T8 (configuration by environment variable, beyond a rule that stops new reads in libraries) and T11 (mechanisms built several times) are not in the review's order of attack. M24, M71 and M58 wait for the performance phase the brief puts after the exit, and M31 for the governor's cadence controls. Each is an assumption in the owning plan |
 
 ### What starts at once, and what waits
 
-Running when this was planned: `CULLING` M3, `APPLE-PRESENTATION` M3, `APPLE-TILE` M10, `CREATOR` M3, `EFFECT-GRAPH`
-M3, `ATMOSPHERE` M9, `CLOUDS` M1 and `WATERS` M1. A new milestone never rewrites a file one of them holds; it waits
+Running when this was planned: `CULLING` WP3, `APPLE-PRESENTATION` WP3, `APPLE-TILE` WP10, `CREATOR` WP3, `EFFECT-GRAPH`
+M3, `ATMOSPHERE` WP9, `CLOUDS` WP1 and `WATERS` WP1. A new milestone never rewrites a file one of them holds; it waits
 for that milestone. Later milestones of those modules are built on what has landed here.
 
 | Starts | Milestones | Because |
 |---|---|---|
-| At once | `REPO-RULES` M1; `REVIEW-ENGINE` M1, then M2 and M3 | Scripts and docs; `thrum-core`, the iPhone app's request, `thrum-sea`, `thrum-asset-gpu` and `thrum-cook`, where no builder is at work |
-| When `REPO-RULES` M1 is Done | `REPO-RULES` M2; `TEST-SUPPORT` M1; `REVIEW-ENGINE` M4 | They use the rule engine. None touches a held file |
-| When `TEST-SUPPORT` M1 is Done | `GAME-SPLIT` M1 | The game gate's `boundary` runs `TEST-SUPPORT`'s `test-crate-edges` rule. It touches no held file |
-| When `ATMOSPHERE` M9, `APPLE-TILE` M10, `APPLE-PRESENTATION` M3, `EFFECT-GRAPH` M3 and `CULLING` M3 are Done | `REVIEW-RENDER` M1 to M5 | Every one of them holds files in `thrum-render` |
-| When those, less `ATMOSPHERE` M9, and `CREATOR` M3 are Done | `HOST` M1 to M5 | They hold `thrum-app`, the frame runtime and the V1 game's host and capture files |
-| When `CULLING` M3, `EFFECT-GRAPH` M3 and `APPLE-PRESENTATION` M3 are Done | `GAME-SPLIT` M2 | They hold the visibility tests, the game's effect and the temporal witness |
-| After `HOST` | `TEST-SUPPORT` M2 (`HOST` M1, and `GAME-SPLIT` M2); `GAME-SPLIT` M3 (`HOST` M4) | The test device is the recipe's, and the last `#[path]` includes of game source go with `GAME-SPLIT` M2; the game must hold no host code before it is cut |
-| After every fix above | `REPO-RULES` M3, then M4 | A rename collides with everything, so it lands once, last |
-| After `SHOWCASE` M8 | `GAME-SPLIT` M4 | The V1 exit closes before the game moves |
-| After the last milestone whose check names `-p v1-game` | `GAME-SPLIT` M5 | A builder cannot edit a pinned check |
+| At once | `REPO-RULES` WP1; `REVIEW-ENGINE` WP1, then M2 and M3 | Scripts and docs; `thrum-core`, the iPhone app's request, `thrum-sea`, `thrum-asset-gpu` and `thrum-cook`, where no builder is at work |
+| When `REPO-RULES` WP1 is Done | `REPO-RULES` WP2; `TEST-SUPPORT` WP1; `REVIEW-ENGINE` WP4 | They use the rule engine. None touches a held file |
+| When `TEST-SUPPORT` WP1 is Done | `GAME-SPLIT` WP1 | The game gate's `boundary` runs `TEST-SUPPORT`'s `test-crate-edges` rule. It touches no held file |
+| When `ATMOSPHERE` WP9, `APPLE-TILE` WP10, `APPLE-PRESENTATION` WP3, `EFFECT-GRAPH` WP3 and `CULLING` WP3 are Done | `REVIEW-RENDER` WP1 to M5 | Every one of them holds files in `thrum-render` |
+| When those, less `ATMOSPHERE` WP9, and `CREATOR` WP3 are Done | `HOST` WP1 to M5 | They hold `thrum-app`, the frame runtime and the V1 game's host and capture files |
+| When `CULLING` WP3, `EFFECT-GRAPH` WP3 and `APPLE-PRESENTATION` WP3 are Done | `GAME-SPLIT` WP2 | They hold the visibility tests, the game's effect and the temporal witness |
+| After `HOST` | `TEST-SUPPORT` WP2 (`HOST` WP1, and `GAME-SPLIT` WP2); `GAME-SPLIT` WP3 (`HOST` WP4) | The test device is the recipe's, and the last `#[path]` includes of game source go with `GAME-SPLIT` WP2; the game must hold no host code before it is cut |
+| After every fix above | `REPO-RULES` WP3, then M4 | A rename collides with everything, so it lands once, last |
+| After `SHOWCASE` WP8 | `GAME-SPLIT` WP4 | The V1 exit closes before the game moves |
+| After the last milestone whose check names `-p v1-game` | `GAME-SPLIT` WP5 | A builder cannot edit a pinned check |
 
-`thrum-sea` becomes `WATERS`' to extend at its M2, and `thrum-core` is where `SIM-2D` M1 works. `REVIEW-ENGINE` M1
+`thrum-sea` becomes `WATERS`' to extend at its M2, and `thrum-core` is where `SIM-2D` WP1 works. `REVIEW-ENGINE` WP1
 and M2 are best landed before those start; if they have started, each builder integrates on what has landed.
-`REPO-RULES` M3 lands as one change: a builder in the renderer at that moment rebases once.
+`REPO-RULES` WP3 lands as one change: a builder in the renderer at that moment rebases once.
 
 <a id="seam-rulings-for-track-4"></a>
 
@@ -1987,70 +1987,70 @@ item, test assertion, bound or reference of the owning module changes, no exact 
 registered baseline stays exact: each milestone that edits a covered path carries the verifier. Once built, each
 belongs to its owner.
 
-1. **The rules bind everyone from `REPO-RULES` M1.** They are ratchets: a file may not gain a violation and a new
+1. **The rules bind everyone from `REPO-RULES` WP1.** They are ratchets: a file may not gain a violation and a new
    file starts at zero, so a running builder is refused only for a shape it adds. A rule's total may only go
    down: the accepted total is the lowest the checked-in baseline has held in Git history, so rewriting the
    baseline does not admit a new violation, and a moved file carries its allowance. A rule is registered when it
    reaches main, so a violation that reaches main before the rule does is in its baseline. Another module adds
    a rule through the same engine, with fixtures, in the milestone that first needs it.
-2. **Bulk evidence** (`REPO-RULES` M2). A file over the cap leaves the tree and stays in Git history, listed in
+2. **Bulk evidence** (`REPO-RULES` WP2). A file over the cap leaves the tree and stays in Git history, listed in
    `.orchestrate/evidence/BULK.json`; the link check accepts a link to a listed path. Evidence folders stay their
    modules'. No review, record or design is edited, and a registered exact-baseline reference never leaves. From
    then on a builder keeps large captures in scratch or the local store, as
    [the design](REPO-RULES/DESIGN.md#mechanisms) says. The local store is one folder beside the main checkout,
    the same from every worktree, so what a builder puts there a reviewer's clean checkout restores.
-3. **One publication model in core** (`REVIEW-ENGINE` M1; G2S). The engine's page is the only one. The V1 game's
+3. **One publication model in core** (`REVIEW-ENGINE` WP1; G2S). The engine's page is the only one. The V1 game's
    dead patch closure is deleted by the same builder.
-4. **The sea's keys, records and upload** (`REVIEW-ENGINE` M2 and M5; `SEA`, and `WATERS` from its M2). The wave
+4. **The sea's keys, records and upload** (`REVIEW-ENGINE` WP2 and M5; `SEA`, and `WATERS` from its M2). The wave
    field interface and `SEA`'s bounds are unchanged. `WATERS`, `RIVERS` and `PUDDLES` extend the typed table, not
    positions.
-5. **The cooked loader** (`REVIEW-ENGINE` M3; `CONTENT-LOOP`, `COOKED-DRAW`). The cooked format, every content
+5. **The cooked loader** (`REVIEW-ENGINE` WP3; `CONTENT-LOOP`, `COOKED-DRAW`). The cooked format, every content
    address and `COOKED-DRAW`'s equivalence are unchanged. `examples/asset-loop` is removed. The edit-to-visible
    tripwire measures the engine's loader from then on, so its baseline is recorded again once, with the old and
-   new figures side by side; `scripts/check_g5_tripwires.sh` keeps its name for `CONTENT-LOOP` M3.
-6. **The renderer** (`REVIEW-RENDER` M1 to M5). The light group gains a second buffer, so every reader of the
+   new figures side by side; `scripts/check_g5_tripwires.sh` keeps its name for `CONTENT-LOOP` WP3.
+6. **The renderer** (`REVIEW-RENDER` WP1 to M5). The light group gains a second buffer, so every reader of the
    contribution seam's light layout follows in the same landing (`thrum-asset-gpu`, `thrum-sea`). In that landing
    the scene shader's two indirect-light functions also take a world position and a pixel position, with no
    value changed ([ruling 4 on work left until after V1](#held-open-for-after-v1)). Pass names stay
    exported constants and the frame timing feed gives `CREATOR`'s profiler what it gave. The timing-demand switch
    keeps its meaning. A change that cannot keep a retained image exact is not built: the builder ends `BLOCKED`.
-7. **The device recipe** (`HOST` M1; `APPLE-TILE`'s capabilities and registry, the three shells). Recipe selection
+7. **The device recipe** (`HOST` WP1; `APPLE-TILE`'s capabilities and registry, the three shells). Recipe selection
    does not change. The browser keeps today's request as the recipe's named portable profile, so no Chrome
    baseline moves; compressed textures in Chrome would change default output and are `CONTENT-LOOP`'s to propose
    under [rule 1](#exact-baselines). On the Mac an uncaptured GPU error is recorded and survived. A test that
    needs a reduced device asks the recipe for a restriction, which only lowers limits and removes features; no
    shell passes one.
-8. **The host core and the game contract** (`HOST` M2 to M5; `CREATOR`, the platform modules, core's clock).
-   `SESSION` M7's driven world extends the one lifecycle policy. `GAME-UI` M6 still moves the iPhone app's UIKit
+8. **The host core and the game contract** (`HOST` WP2 to M5; `CREATOR`, the platform modules, core's clock).
+   `SESSION` WP7's driven world extends the one lifecycle policy. `GAME-UI` WP6 still moves the iPhone app's UIKit
    lifecycle into `thrum-app`, onto this contract. `APPLE-PRESENTATION`'s seams 5 to 7, `WATERS`' ruling 3,
    `RENDER-2D`'s and `GAME-UI`'s shell rulings are built on whichever of these has landed.
-9. **Test support** (`TEST-SUPPORT` M1 and M2; every module's tests). A test's device and gate change; what it
+9. **Test support** (`TEST-SUPPORT` WP1 and M2; every module's tests). A test's device and gate change; what it
    asserts does not. No test that ran on the Mac becomes one that skips, and a skip elsewhere is a line on
    standard error that an ordinary run shows. `thrum-test-support` is a dev-dependency only. `thrum-fixtures`
    holds each shared fixture once, as plain data: any package's tests may use it, and the proving ground alone
-   may take it as a normal dependency. `TEST-SUPPORT` owns both packages and that rule; `GAME-SPLIT` M2 creates
+   may take it as a normal dependency. `TEST-SUPPORT` owns both packages and that rule; `GAME-SPLIT` WP2 creates
    `thrum-fixtures` with its first fixture, the mixed-mesh field.
-10. **Names** (`REPO-RULES` M3). `synthetic` becomes `scene` and milestone codes leave file names, in one landing.
+10. **Names** (`REPO-RULES` WP3). `synthetic` becomes `scene` and milestone codes leave file names, in one landing.
     A name that an open check, `./dev` or the baseline registry uses keeps working. No `DESIGN.md` is edited:
     approved designs keep saying `synthetic`, and `thrum-engineering`'s table maps old paths to new. The graph
     and timing import nothing from the scene renderer from then on; the frame runtime and the presenter still
     do, held from growing by a rule, until a module is planned to put an interface between them.
-11. **The proving ground and the game** (`GAME-SPLIT` M2 to M5; `SHOWCASE`, `CULLING`'s visibility tests,
+11. **The proving ground and the game** (`GAME-SPLIT` WP2 to M5; `SHOWCASE`, `CULLING`'s visibility tests,
     `APPLE-PRESENTATION`'s temporal witness, `BASELINE-GUARD`'s registry). Until M5 the proving ground is the
     package `v1-game` at `examples/v1-game`, so every approved check that names it runs as written, and its
     `proving` feature is on by default. M5 changes paths in `.config/exact-baselines.json` and no reference.
     Everything the verifier and its drivers read (the scenes, the valley's sources, the presets, the routes, the
     pages) stays in Thrum as the proving ground's frozen content; the game takes its own copies, and the
-    verifier passes with the games repository unavailable. The verifier is `BASELINE-GUARD`'s; `GAME-SPLIT` M4
+    verifier passes with the games repository unavailable. The verifier is `BASELINE-GUARD`'s; `GAME-SPLIT` WP4
     has it hand `THRUM_GAMES`, alone of the `THRUM_` variables, to the commands it starts, and changes nothing
     else in it.
 
 ### The proving ground, and where a game lives
 
 An engine milestone proves itself in its own crate's tests or in the proving ground, never in a game. Where an
-approved design says a selection or a test lives in `examples/v1-game` (`CLOUDS`, `PUDDLES`, `ATMOSPHERE` M7 and
-M8, `CONTENT-LOOP` M2, `RENDER-2D`, `GAME-UI`), that is the proving ground, and those plans stand as written.
-`PUDDLES` M6 draws rain over the populated valley: `SHOWCASE` M5 builds that scene before the game moves, and the
+approved design says a selection or a test lives in `examples/v1-game` (`CLOUDS`, `PUDDLES`, `ATMOSPHERE` WP7 and
+M8, `CONTENT-LOOP` WP2, `RENDER-2D`, `GAME-UI`), that is the proving ground, and those plans stand as written.
+`PUDDLES` WP6 draws rain over the populated valley: `SHOWCASE` WP5 builds that scene before the game moves, and the
 proving ground keeps its frozen copy.
 
 A game lives in the games repository, `/Users/ryannel/Workspace/thrum-games`, and reaches the engine only through
@@ -2058,10 +2058,10 @@ packages under `crates/`, by sibling path. Its plan, done-when file, reviews and
 loop runs in one repository; its builder commits the game's code there and proves it through
 [the game gate](GAME-SPLIT/DESIGN.md#mechanisms).
 
-- **`SHOWCASE`** builds M5 to M8 in `examples/v1-game` as planned. `GAME-SPLIT` M4 then moves what it owns and
+- **`SHOWCASE`** builds M5 to M8 in `examples/v1-game` as planned. `GAME-SPLIT` WP4 then moves what it owns and
   shows the V1 exit from outside ([how](GAME-SPLIT/DESIGN.md#how-the-v1-gate-is-verified-once-the-game-lives-outside)).
 - **`SWARM`** is built in the games repository from its first line, at `thrum-games/swarm/`, by the owner's
-  decision of 14 November. Its M2 now waits for `GAME-SPLIT:M4`. Its design and checks still say `examples/swarm`,
+  decision of 14 November. Its M2 now waits for `GAME-SPLIT:WP4`. Its design and checks still say `examples/swarm`,
   and its ruling 1 (a second external game in the repository guard) is overtaken: the guard has no game to admit.
   `SWARM` is re-planned onto the gate before its M2 starts; that is a planning task, with nothing for the owner
   to decide.
@@ -2070,14 +2070,14 @@ loop runs in one repository; its builder commits the game's code there and prove
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **Shape rules**: `shape_rules.py check`, the ratchet baseline, `--rule R --zero PATH` as a proof that a path is clean, and how a module adds a rule | `REPO-RULES:M1` → every module | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
-| **Bulk evidence**: the manifest, `evidence_store.py check`, `restore` and `put` | `REPO-RULES:M2` → every builder and reviewer | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
-| **GPU gate and test device**: a test asks for a GPU and runs, is skipped with a `thrum-gpu-skip:` line on standard error, or fails under `THRUM_REQUIRE_GPU=1` | `TEST-SUPPORT:M1` → every GPU test | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
-| **Shared fixtures**: `thrum-fixtures`, plain data defined once; `test_role`, `proving_ground` and the `test-crate-edges` rule | `TEST-SUPPORT:M1` (the rule), `GAME-SPLIT:M2` (the package and the field) → `CULLING`'s visibility tests, the proving ground, `REPO-RULES`' `library-env`, the game gate | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
-| **Device recipe**: a device, its capability record and its fault watch from one request, native or portable, optionally restricted | `HOST:M1` → shells, captures, benches, `TEST-SUPPORT` | C04, [HOST](HOST/DESIGN.md#mechanisms) |
-| **World lifecycle policy**, **render once** and **await drawn** | `HOST:M2` and `M3` → shells, captures, tests; `SESSION:M7` | [HOST](HOST/DESIGN.md#mechanisms) |
-| **Game contract**: what a game implements to run in the window, on the page and offscreen; and the render owner's **frame job and reply** | `HOST:M4` → games, kit scenes, the iPhone app; `GAME-UI:M6` adds the iPhone | C11, [HOST](HOST/DESIGN.md#mechanisms) |
-| **Game gate**: a game in the games repository built and checked against the engine checkout under test, with both revisions recorded | `GAME-SPLIT:M1` → `SHOWCASE` after the move, `SWARM` | [GAME-SPLIT](GAME-SPLIT/DESIGN.md#mechanisms) |
+| **Shape rules**: `shape_rules.py check`, the ratchet baseline, `--rule R --zero PATH` as a proof that a path is clean, and how a module adds a rule | `REPO-RULES:WP1` → every module | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
+| **Bulk evidence**: the manifest, `evidence_store.py check`, `restore` and `put` | `REPO-RULES:WP2` → every builder and reviewer | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
+| **GPU gate and test device**: a test asks for a GPU and runs, is skipped with a `thrum-gpu-skip:` line on standard error, or fails under `THRUM_REQUIRE_GPU=1` | `TEST-SUPPORT:WP1` → every GPU test | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
+| **Shared fixtures**: `thrum-fixtures`, plain data defined once; `test_role`, `proving_ground` and the `test-crate-edges` rule | `TEST-SUPPORT:WP1` (the rule), `GAME-SPLIT:WP2` (the package and the field) → `CULLING`'s visibility tests, the proving ground, `REPO-RULES`' `library-env`, the game gate | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
+| **Device recipe**: a device, its capability record and its fault watch from one request, native or portable, optionally restricted | `HOST:WP1` → shells, captures, benches, `TEST-SUPPORT` | C04, [HOST](HOST/DESIGN.md#mechanisms) |
+| **World lifecycle policy**, **render once** and **await drawn** | `HOST:WP2` and `M3` → shells, captures, tests; `SESSION:WP7` | [HOST](HOST/DESIGN.md#mechanisms) |
+| **Game contract**: what a game implements to run in the window, on the page and offscreen; and the render owner's **frame job and reply** | `HOST:WP4` → games, kit scenes, the iPhone app; `GAME-UI:WP6` adds the iPhone | C11, [HOST](HOST/DESIGN.md#mechanisms) |
+| **Game gate**: a game in the games repository built and checked against the engine checkout under test, with both revisions recorded | `GAME-SPLIT:WP1` → `SHOWCASE` after the move, `SWARM` | [GAME-SPLIT](GAME-SPLIT/DESIGN.md#mechanisms) |
 
 <a id="held-open-for-after-v1"></a>
 
@@ -2100,32 +2100,32 @@ baseline. C05, C07 and C08 each gained the lines these rulings rest on.
 2. **The forward shader's two steps** (nothing to build; the forward pass, as
    [APPLE-TILE's design](APPLE-TILE/DESIGN.md#mechanisms) describes it). `shade` keeps a surface step and a light
    step with only the surface's values, the world position, the view direction and the pixel position between
-   them (C08). It binds every milestone that edits `shade` or adds a term to it, among them `RAY-TRACING` M3 to
-   M5, `PUDDLES`' wet ground, `WATERS` M16's Sun-path factor and `REVIEW-RENDER` M2. A light term takes those
+   them (C08). It binds every milestone that edits `shade` or adds a term to it, among them `RAY-TRACING` WP3 to
+   M5, `PUDDLES`' wet ground, `WATERS` WP16's Sun-path factor and `REVIEW-RENDER` WP2. A light term takes those
    values as arguments; a surface effect changes the surface before any light is evaluated. Nobody splits the
    shader text for this now.
 3. **Guide buffers** (nothing to build; C07). Normals and roughness, when a later module builds them, are the
    output of a thin depth prepass declared in the one graph, selected at preparation, and absent from a scene
    that does not ask. They are never a fourth forward colour target: `SceneSurface`'s three colour formats stay
-   three through `APPLE-PRESENTATION` M4 to M12 and for every forward contributor. The buffers are render-extent
+   three through `APPLE-PRESENTATION` WP4 to M12 and for every forward contributor. The buffers are render-extent
    attachments under `APPLE-PRESENTATION`'s extent and generation rules. The prepass's fragment entries write
-   [`CULLING` M3's coverage output](#ruling-on-culling-m3), and `CULLING`'s occlusion prepass stays private: it
+   [`CULLING` WP3's coverage output](#ruling-on-culling-m3), and `CULLING`'s occlusion prepass stays private: it
    draws only last frame's visible set, so it cannot be the producer. A contribution joins through one optional
    method on the contribution seam whose default draws nothing.
-4. **The indirect-light query** (`REVIEW-RENDER` M1, item M1.5; `synthetic.wgsl`, its two composed variants,
+4. **The indirect-light query** (`REVIEW-RENDER` WP1, item M1.5; `synthetic.wgsl`, its two composed variants,
    `thrum-asset-gpu`'s cooked volume and the test shaders that stub the functions). `ambient_irradiance` and
    `indirect_radiance` take the lit point's world position and pixel position, in the landing that splits the
    light buffer. Nothing reads them, so every byte is as it was, and M1's verifier item holds it. The cooked
    volume is a medium and not a caller of the query: it reads the ambient light as a source, by direction, through
    `ambient_source`, which that landing splits out of `ambient_irradiance`, so its one read and its pixels stay.
-   `RAY-TRACING` M5 gives the pixel its first reader under [track 5's ruling 6](#seam-rulings-for-track-5), on
+   `RAY-TRACING` WP5 gives the pixel its first reader under [track 5's ruling 6](#seam-rulings-for-track-5), on
    the signature it finds. `ATMOSPHERE`'s lent `environment_diffuse` and `environment_reflection` do not change:
    they are the sky as a source, asked by direction, and `WATERS`, `CLOUDS` and `SEA` keep reading them as they
    do.
 5. **Metal's one draw for each meshlet** (a note for track 5). The code review's M71, which `REVIEW-ENGINE`
    parked, is the finding `MESH-SHADING` closes for cooked placements, and its natural entry point.
    `REVIEW-ENGINE`'s plan now says so. Ruling 1 is what lets entities follow without a new cook, if
-   `MESH-SHADING` M3's record asks for them.
+   `MESH-SHADING` WP3's record asks for them.
 
 | Module | What changed on 18 November 2026 |
 |---|---|
@@ -2161,9 +2161,9 @@ design gives the research.
 | Lamps cast no shadow | `RAY-TRACING`: one ray for each lamp a surface faces | Raster needs a shadow map for each lamp. A ray needs none |
 | Nothing darkens where objects meet | `RAY-TRACING`: ambient occlusion by ray | The scene's own geometry, including what is off screen |
 | A cooked mesh costs one Metal draw for each meshlet, rejected ones included, and its shadows draw it whole | `MESH-SHADING`: the object stage culls and the mesh stage draws, in one draw for each placement | wgpu has no GPU-counted multi-draw on Metal, and the stages are the public way to draw a GPU-chosen set |
-| Reflections of scenery, on water and on glossy things | Not planned | They shade what a ray hits. The consumer is water's mirror lookup, `WATERS` M14 on `SCENE-VIEWS`, which is not built; [owner decision 23](#owner-decisions) stands until a plan replaces it |
+| Reflections of scenery, on water and on glossy things | Not planned | They shade what a ray hits. The consumer is water's mirror lookup, `WATERS` WP14 on `SCENE-VIEWS`, which is not built; [owner decision 23](#owner-decisions) stands until a plan replaces it |
 | Light bounced from the ground and walls | Not planned | A radiance cache with state of its own, on hit shading. A later module on `RAY-TRACING`'s structure |
-| The exit scene's 10,000 entities drawn a meshlet at a time | Not planned yet | It changes `CULLING`'s route, whose every mode is byte-equal to an oracle. `MESH-SHADING` M3's record decides whether it is planned |
+| The exit scene's 10,000 entities drawn a meshlet at a time | Not planned yet | It changes `CULLING`'s route, whose every mode is byte-equal to an oracle. `MESH-SHADING` WP3's record decides whether it is planned |
 
 ### Why two new modules
 
@@ -2193,18 +2193,18 @@ culling, and both are built.
 - A launch that names no hardware feature makes the device it makes today, and a scene that asks for nothing
   draws the bytes it draws today. Each milestone proves it against [the exact baselines](#exact-baselines).
 - Neither module changes the Mac window's default, before the exit or after it, and the verifier's runs name
-  no hardware feature, so no registered baseline moves. Each module's last milestone waits for `SHOWCASE` M8
+  no hardware feature, so no registered baseline moves. Each module's last milestone waits for `SHOWCASE` WP8
   so that its record describes the valley as the exit leaves it.
 - A builder takes a milestone here only when no V1 milestone can start. Order among the other work that is
   off the exit is the lead's.
-- Milestones running in the same crates when this was planned: `SCENE-VIEWS` M1 in `thrum-render` and
-  `REVIEW-ENGINE` M4 in `thrum-asset-gpu`. Still to come there: `APPLE-PRESENTATION` M4 to M12, `ATMOSPHERE`
-  M6 to M8, `REVIEW-RENDER`, `HOST` and `CONTENT-LOOP` M3. A track 5 milestone adds to a file one of them
+- Milestones running in the same crates when this was planned: `SCENE-VIEWS` WP1 in `thrum-render` and
+  `REVIEW-ENGINE` WP4 in `thrum-asset-gpu`. Still to come there: `APPLE-PRESENTATION` WP4 to M12, `ATMOSPHERE`
+  M6 to M8, `REVIEW-RENDER`, `HOST` and `CONTENT-LOOP` WP3. A track 5 milestone adds to a file one of them
   holds and never rewrites it, and where one of them has changed a shape (typed errors, one struct for each
   shader record, typed pass names) it uses the shape it finds.
 
-`RAY-TRACING` M1 and `MESH-SHADING` M1 can start at once, in different crates. `RAY-TRACING` M3 waits for TAAU
-(`APPLE-PRESENTATION` M3) and for the populated valley (`SHOWCASE` M5), which the proving ground keeps.
+`RAY-TRACING` WP1 and `MESH-SHADING` WP1 can start at once, in different crates. `RAY-TRACING` WP3 waits for TAAU
+(`APPLE-PRESENTATION` WP3) and for the populated valley (`SHOWCASE` WP5), which the proving ground keeps.
 
 <a id="seam-rulings-for-track-5"></a>
 
@@ -2214,7 +2214,7 @@ Each is built by the milestone named, inside state another module owns, with the
 design defines. No item of the owning module changes and no exact comparison is loosened. Once built, each
 belongs to its owner: later work there keeps its tests passing.
 
-1. **Hardware features at launch** (`RAY-TRACING` M1 and `MESH-SHADING` M1; `thrum-render`'s
+1. **Hardware features at launch** (`RAY-TRACING` WP1 and `MESH-SHADING` WP1; `thrum-render`'s
    `capabilities.rs`, the device requests in `thrum-app`, the proving ground's hosts and
    `thrum-test-support`). One function of the registry makes the device for every host, from the host's own
    request, the adapter and a launch's list of names (`ray-query`, `mesh-stages`), each given as required or
@@ -2222,17 +2222,17 @@ belongs to its owner: later work there keeps its tests passing.
    refused by name. A preferred name is left out where the adapter does not offer it, and where the device
    request with it fails the function asks once more without the preferred names; the registry records what
    was enabled and why any name was not. With no list the request is today's. Whichever milestone lands first
-   builds the function and the other adds its name. `HOST` M1 gathers the device requests into its recipe when
+   builds the function and the other adds its name. `HOST` WP1 gathers the device requests into its recipe when
    it is built, and the recipe carries the list. No host adds `ray-query` or `mesh-stages` unasked, and the
    registry holds no list of machines for either.
-2. **Mesh pipelines in the creation ledger** (`MESH-SHADING` M1; `runtime/creation.rs`). The creation authority
+2. **Mesh pipelines in the creation ledger** (`MESH-SHADING` WP1; `runtime/creation.rs`). The creation authority
    gains an entry for mesh pipelines beside `render` and `compute`, counted as they are.
-3. **A mesh structure for each arena row** (`RAY-TRACING` M1; `synthetic/mesh_arena.rs`, `mesh_route.rs`). In a
+3. **A mesh structure for each arena row** (`RAY-TRACING` WP1; `synthetic/mesh_arena.rs`, `mesh_route.rs`). In a
    scene whose preparation resolved [ray demand](RAY-TRACING/DESIGN.md#the-structure-m1-m2), the arena's
    buffers carry the usage a structure build reads, and a row's mesh structure is built with the row's write,
    switched with the row and retired with it. In any other scene the arena is today's, on any device.
    `CULLING`'s route and `CONTENT-LOOP`'s row replacement behave as before.
-4. **Cooked residency** (`RAY-TRACING` M2 and `MESH-SHADING` M1 and M2; `thrum-asset-gpu`'s `load.rs`, `lib.rs`,
+4. **Cooked residency** (`RAY-TRACING` WP2 and `MESH-SHADING` WP1 and M2; `thrum-asset-gpu`'s `load.rs`, `lib.rs`,
    `draw.rs`, `placement.rs` and `material.rs`). In a contribution whose scene's surface carries ray demand, a
    resident cooked mesh's buffers carry the usages a structure build reads and its mesh structure is part of
    its residency; under any other surface it uploads nothing more and changes no usage, on any device.
@@ -2243,10 +2243,10 @@ belongs to its owner: later work there keeps its tests passing.
    candidate, and is otherwise unchanged. A content publication keeps its three kinds of reader and its eight
    rules: a mesh's structure and meshlet storage are prepared, shown and retired with the mesh. C05 is
    unchanged. `COOKED-DRAW`'s selection between the direct and indirect paths is unchanged.
-5. **Ray instances on the contribution seam** (`RAY-TRACING` M2; `contribution.rs`). `SceneContribution` gains
+5. **Ray instances on the contribution seam** (`RAY-TRACING` WP2; `contribution.rs`). `SceneContribution` gains
    one optional method through which a contribution offers, each frame, every opaque placement it holds in
    the scene, whether or not a view or a pass draws it. The default offers none. `thrum-render` gains no dependency on `thrum-asset-gpu`.
-6. **The scene's shader and light group** (`RAY-TRACING` M3 to M5; `synthetic.wgsl`,
+6. **The scene's shader and light group** (`RAY-TRACING` WP3 to M5; `synthetic.wgsl`,
    `synthetic_environment.wgsl`, `synthetic_plain.wgsl`, the light group's layout, and which shadow passes
    `synthetic/shadow.rs` records). In a scene that asked, `sun_visibility` is the traced operation, lamps
    trace in `local_radiance`, the ambient term takes the traced occlusion, the light group holds the scene
@@ -2254,7 +2254,7 @@ belongs to its owner: later work there keeps its tests passing.
    scene that did not ask, the shader text and every byte are today's. `ATMOSPHERE`'s direct-Sun path, its
    products and the Sun-path optical depth are unchanged: the traced value takes the place of the map lookup
    and nothing else.
-7. **The frame graph, history and timing** (`RAY-TRACING` M1, M3 and M4; `graph.rs`, the frame host,
+7. **The frame graph, history and timing** (`RAY-TRACING` WP1, M3 and M4; `graph.rs`, the frame host,
    `timing.rs`). The structure build and the traced visibility pass are passes of the one graph, with their
    reads and writes declared. The visibility history is accepted, reset and committed by
    `APPLE-PRESENTATION`'s history rules. The frame's timing record gains the timed-pass span: from the begin
@@ -2262,9 +2262,9 @@ belongs to its owner: later work there keeps its tests passing.
    pass times and the scene sum it has, which keep their meaning. The time between those passes lies inside
    it. It is a pass interval and not the whole frame's GPU time: transfers a frame queues with
    `Queue::write_buffer` run before its first pass and lie outside the span, and every record that reads the
-   span names it so and says which transfers those are. `RAY-TRACING` M3 or `MESH-SHADING` M2 adds the span,
+   span names it so and says which transfers those are. `RAY-TRACING` WP3 or `MESH-SHADING` WP2 adds the span,
    whichever lands first, and the other uses it as found.
-8. **Scene layouts for the object and mesh stages** (`MESH-SHADING` M1: the view and light group layouts and
+8. **Scene layouts for the object and mesh stages** (`MESH-SHADING` WP1: the view and light group layouts and
    `SceneSurface`; M2: the caster view layout of `synthetic/shadow.rs`, which each Sun map pass binds at
    group 0 and lends as `SceneShadowSurface::view_layout`). On a generation that enabled the stages, those
    layouts are visible to the object and mesh stages as they are to the vertex stage. Nothing else about
@@ -2272,16 +2272,16 @@ belongs to its owner: later work there keeps its tests passing.
 9. **Secondary views** (no build). A view of `SCENE-VIEWS` shades with the map method and its own cascade and
    draws cooked meshes by the path that module resolves, whatever the main view resolved. Rays or the stages
    in a view are proposals for that module's next plan.
-10. **Resolved selections** (`RAY-TRACING` M3, `MESH-SHADING` M1). The report that names the culling mode also
+10. **Resolved selections** (`RAY-TRACING` WP3, `MESH-SHADING` WP1). The report that names the culling mode also
     names the hardware features the device enabled, the Sun shadow method, the penumbra, lamp shadows, ambient
     occlusion and the cooked draw path, each as resolved, with the reason where it did not resolve as asked.
     `SHOWCASE`'s exit report prints what it reads; no item of `SHOWCASE` changes.
 11. **Pipeline preparation** (no build). A scene with a ray or mesh-stage request creates its pipelines
-    through the creation authority before it is ready, from WGSL. `APPLE-PRESENTATION` M10's shaders compiled
+    through the creation authority before it is ready, from WGSL. `APPLE-PRESENTATION` WP10's shaders compiled
     ahead of time and M12's pipeline archive cover a launch with no hardware request, which is what their
     strict runs take. Bringing track 5's shaders into the library cook is a proposal for that module once M10
     is Done.
-12. **A preferred recipe** (`MESH-SHADING` M3 or `RAY-TRACING` M6, whichever lands first, and the other
+12. **A preferred recipe** (`MESH-SHADING` WP3 or `RAY-TRACING` WP6, whichever lands first, and the other
     uses it as found; `capabilities.rs`, `capabilities/recipe.rs` and the proving ground's Mac host). The registry's recipe resolution gains one
     input beside the named recipe: a recipe the host prefers. It is read only when no recipe is named. Where
     the facts that admit a named Apple tile admit it, the generation resolves to Apple tile. Where they do
@@ -2291,19 +2291,19 @@ belongs to its owner: later work there keeps its tests passing.
     `MESH-SHADING`'s launch selection states a preference for Apple tile, and only on a generation that
     enabled `mesh-stages`. `RAY-TRACING`'s states the same preference, and only on a generation that
     enabled `ray-query`.
-13. **Candidate preparation with the valley's cloud sky** (`RAY-TRACING` M5, in `thrum-clouds` and the
+13. **Candidate preparation with the valley's cloud sky** (`RAY-TRACING` WP5, in `thrum-clouds` and the
     proving ground). The production list includes cooked geometry and `Shade`. `Shade` stages for traced and
     Maps surfaces through the [M3 preparation boundary](RAY-TRACING/DESIGN.md#scene-preparation-and-maps-fallback-m3)
-    and keeps its cloud lighting and Sun-path product. `CLOUDS` M7 provides the overcast preset for inspection.
+    and keeps its cloud lighting and Sun-path product. `CLOUDS` WP7 provides the overcast preset for inspection.
 
 ### Interfaces (track 5)
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **Hardware features at launch**: a launch names the hardware features it wants, each as required or preferred, and one function makes the device. A required name is enabled or the launch is refused by name. A preferred name never fails a launch: it is left out where the adapter does not offer it or the device request with it fails. The registry records what was enabled and why any name was not. Default: none. No host adds either name unasked | `RAY-TRACING:M1`, `MESH-SHADING:M1` → hosts, tests, captures | C04, [RAY-TRACING](RAY-TRACING/DESIGN.md#hardware-features-at-launch) |
-| **Ray instances**: a contribution offers each frame, for each opaque thing it holds in the scene, drawn or not, a mesh structure, a transform and a mask (casts shadows, occludes ambient light); the scene structure is rebuilt from them each frame | `RAY-TRACING:M2` → `CONTENT-LOOP`'s cooked contribution; any later contribution with opaque geometry | [RAY-TRACING](RAY-TRACING/DESIGN.md#the-structure-m1-m2) |
-| **Traced visibility**: a scene's preparation takes the Sun's shadow method (`Maps` or `Traced` with penumbra on or off), lamp shadows and ambient occlusion with a radius. Admission before allocation requires ray queries, the Apple tile recipe and candidate preparation support from every contribution. If admission or traced preparation fails, the scene draws Maps with lamp shadows and occlusion off and reports why. Ordinary Maps callers keep the existing rebuild hooks. Ray effects are off by default | `RAY-TRACING:M3` (Sun, lamps), `M4` (penumbra), `M5` (ambient occlusion) → games, the proving ground | C04, C08, [Selection](RAY-TRACING/DESIGN.md#selection-fallback-and-the-opt-in), [contribution admission](RAY-TRACING/DESIGN.md#scene-preparation-and-maps-fallback-m3) |
-| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported with the reason where it did not resolve as asked. `Auto` is `COOKED-DRAW`'s selection on every device and never the stages. `MeshStages` is met only on a device that enabled the stages and on the Apple tile recipe. Anywhere else, which includes the portable recipe whether named or resolved, and where a stage pipeline fails to build, the scene draws what `Auto` draws. It is not refused | `MESH-SHADING:M1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-the-opt-in) |
+| **Hardware features at launch**: a launch names the hardware features it wants, each as required or preferred, and one function makes the device. A required name is enabled or the launch is refused by name. A preferred name never fails a launch: it is left out where the adapter does not offer it or the device request with it fails. The registry records what was enabled and why any name was not. Default: none. No host adds either name unasked | `RAY-TRACING:WP1`, `MESH-SHADING:WP1` → hosts, tests, captures | C04, [RAY-TRACING](RAY-TRACING/DESIGN.md#hardware-features-at-launch) |
+| **Ray instances**: a contribution offers each frame, for each opaque thing it holds in the scene, drawn or not, a mesh structure, a transform and a mask (casts shadows, occludes ambient light); the scene structure is rebuilt from them each frame | `RAY-TRACING:WP2` → `CONTENT-LOOP`'s cooked contribution; any later contribution with opaque geometry | [RAY-TRACING](RAY-TRACING/DESIGN.md#the-structure-m1-m2) |
+| **Traced visibility**: a scene's preparation takes the Sun's shadow method (`Maps` or `Traced` with penumbra on or off), lamp shadows and ambient occlusion with a radius. Admission before allocation requires ray queries, the Apple tile recipe and candidate preparation support from every contribution. If admission or traced preparation fails, the scene draws Maps with lamp shadows and occlusion off and reports why. Ordinary Maps callers keep the existing rebuild hooks. Ray effects are off by default | `RAY-TRACING:WP3` (Sun, lamps), `M4` (penumbra), `M5` (ambient occlusion) → games, the proving ground | C04, C08, [Selection](RAY-TRACING/DESIGN.md#selection-fallback-and-the-opt-in), [contribution admission](RAY-TRACING/DESIGN.md#scene-preparation-and-maps-fallback-m3) |
+| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported with the reason where it did not resolve as asked. `Auto` is `COOKED-DRAW`'s selection on every device and never the stages. `MeshStages` is met only on a device that enabled the stages and on the Apple tile recipe. Anywhere else, which includes the portable recipe whether named or resolved, and where a stage pipeline fails to build, the scene draws what `Auto` draws. It is not refused | `MESH-SHADING:WP1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-the-opt-in) |
 
 
 ## Track 6: the cleanup of 20 November
@@ -2331,7 +2331,7 @@ every merge pays it.
 | `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, the merge selection with `./dev check-all` and the main-branch check `workspace-tests`, and how the check runs tests: side by side through cargo-nextest, with its configuration `.config/nextest.toml` and the limit on one test; the two rules for how a merge-tier test is written, one test binary a package, and the record of where a builder's session goes, by [ruling 13](#seam-rulings-for-track-6); the guard rules `limit-exempt`, `main-tier` and `test-binary`, by ruling 14 | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards; one wait in `APPLE-TILE`'s frame host, by [ruling 12](#seam-rulings-for-track-6); from M11 the test manifest and test files of every package |
 | `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rules `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, where the evidence manifest is kept, and where a provenance record is tracked ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `docs/provenance`, `REPO-RULES`' evidence store |
 | `DEAD-CODE` | Sections 3 and 4, and the water settings that are parsed twice | `thrum_render::binding`, and the five defaults of `SceneContribution` ([design](DEAD-CODE/DESIGN.md)) | `thrum-core`, `thrum-sea`, `thrum-water`, `thrum-render`, `thrum-rain-model`, the water scene, the game's host |
-| `TEST-SUPPORT` M5, M6, M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support`, and the rules `test-readback` and `test-deadline` ([design](TEST-SUPPORT/DESIGN.md#the-kit)); from M6 the kit's small target, and how a test is written, in the engineering skill's block and pattern entries, by ruling 14 | Every crate's tests; the engineering skill |
+| `TEST-SUPPORT` WP5, M6, M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support`, and the rules `test-readback` and `test-deadline` ([design](TEST-SUPPORT/DESIGN.md#the-kit)); from M6 the kit's small target, and how a test is written, in the engineering skill's block and pattern entries, by ruling 14 | Every crate's tests; the engineering skill |
 
 ### What can run side by side
 
@@ -2341,23 +2341,23 @@ gives, which is the order of each cell below. By the owner's word of 20 November
 milestone starts until this track has landed, so the only other builders are the ones finishing the milestones
 this track waits for.
 
-**`GATE-TIME` M1 merges first.** The other wave 1 milestones are built beside it and queue their merges behind
+**`GATE-TIME` WP1 merges first.** The other wave 1 milestones are built beside it and queue their merges behind
 it, because each merge before M1 pays about 50 minutes of the merge lock and each one after pays about half that. After
 M1 merges the lead fast-forwards the main checkout, where the script reads the settings, or the new main-branch
-check never starts. The same holds after `GATE-TIME` M7.
+check never starts. The same holds after `GATE-TIME` WP7.
 
 | Wave | `GATE-TIME` | `DEAD-TOOLS` | `DEAD-CODE` | `TEST-SUPPORT` | Files they share |
 |---|---|---|---|---|---|
-| 1, at once | M1: six tests marked, `./dev long-tests`, the main-tier list, one settings line. M6: tests behind a Cargo feature compiled at every merge and run on main. M8: tests run side by side, the test build a measurement picks, step times and the limit on one test. M7: the merge selection, `./dev check-all`, one settings line | M5: five new files under `docs/provenance`. M6: four frozen rules. M1: `scripts/`, the script-suite step, three designs, ledger rows | M1, once `GATE-TIME` M1 is Done: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | M5, once M2 is Done: the kit's functions and two frozen rules | `tools/xtask/src/main.rs`: `GATE-TIME` M1, M6, M8 and M7 and `DEAD-TOOLS` M1 edit different arms of it and one help text, which M1 puts on a line for each command. The rule files `scripts/shape_matchers.py`, `shape_rules.py` and `test_shape_rules.py`: `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 each add rules. `scripts/repo_check.py`: `GATE-TIME` M1 and M6. Whichever lands second rebases |
-| 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere. M10: a record of where a builder's session goes, with no tracked file. M12, after `TEST-SUPPORT` M6: three rules in the rule files, and two lines of the check's report. M9: the test files that hold a test over ten seconds, in the game and the river, water-model and sea crates. M13: the check command's second run of a stopped test, and the limit in `.config/nextest.toml`. M11: the test manifest and test files of every package, folded into one test binary a package | M2: benches and the `baseline-inventory` command. M3: `docs/evidence`, the evidence store, five documents | M2, after `GATE-TIME` M6: `contribution.rs` and every implementation. M3: `thrum-core`'s runtime, three small deletions | M6: the kit's small target, and the block and entries on writing a test in the engineering skill. M3, after `GATE-TIME` M2 and M6 and `DEAD-CODE` M2: test files of every crate and kit scene | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables. `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares. `TEST-SUPPORT` M3 is the widest set: its design says what it runs beside. `GATE-TIME` M11 edits the manifests and test files of every package, so the lead does not run it beside `TEST-SUPPORT` M3 or M4 where it can choose, and whichever lands second rebases. `GATE-TIME` M12 adds rules to the rule files where `TEST-SUPPORT` M3 edits one rule's exemptions, and both it and `TEST-SUPPORT` M6 edit the Tests section of the engineering patterns, M6 first |
-| 3, each after another module's milestone | M3, after `WATERS` M7: the foam test and the water scene's other slow tests. M4, after `REVIEW-RENDER` M2. M15: the bounded Cargo cache for merge verification. M5, after M15 and `DEAD-TOOLS` M2: the post-rollout record and contributor guide | M4, after `TEST-SUPPORT` M2: the cost scripts | M4, after `WATERS` M7. M5, after `HOST` M3. M6, after `REVIEW-RENDER` M3 and `GATE-TIME` M6 | M4, after `REVIEW-RENDER` M2 | `GATE-TIME` M8 and `DEAD-CODE` M5 both edit the root `Cargo.toml`, in different tables. `GATE-TIME` M8 edits the check's test step and `DEAD-TOOLS` M2 another arm of the same file. `GATE-TIME` M9 and `TEST-SUPPORT` M3 both edit test files under `crates/`: the lead does not run them side by side where it can choose |
+| 1, at once | M1: six tests marked, `./dev long-tests`, the main-tier list, one settings line. M6: tests behind a Cargo feature compiled at every merge and run on main. M8: tests run side by side, the test build a measurement picks, step times and the limit on one test. M7: the merge selection, `./dev check-all`, one settings line | M5: five new files under `docs/provenance`. M6: four frozen rules. M1: `scripts/`, the script-suite step, three designs, ledger rows | M1, once `GATE-TIME` WP1 is Done: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | M5, once M2 is Done: the kit's functions and two frozen rules | `tools/xtask/src/main.rs`: `GATE-TIME` WP1, M6, M8 and M7 and `DEAD-TOOLS` WP1 edit different arms of it and one help text, which M1 puts on a line for each command. The rule files `scripts/shape_matchers.py`, `shape_rules.py` and `test_shape_rules.py`: `DEAD-TOOLS` WP6 and `TEST-SUPPORT` WP5 each add rules. `scripts/repo_check.py`: `GATE-TIME` WP1 and M6. Whichever lands second rebases |
+| 2 | M2, after `TEST-SUPPORT` WP2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere. M10: a record of where a builder's session goes, with no tracked file. M12, after `TEST-SUPPORT` WP6: three rules in the rule files, and two lines of the check's report. M9: the test files that hold a test over ten seconds, in the game and the river, water-model and sea crates. M13: the check command's second run of a stopped test, and the limit in `.config/nextest.toml`. M11: the test manifest and test files of every package, folded into one test binary a package | M2: benches and the `baseline-inventory` command. M3: `docs/evidence`, the evidence store, five documents | M2, after `GATE-TIME` WP6: `contribution.rs` and every implementation. M3: `thrum-core`'s runtime, three small deletions | M6: the kit's small target, and the block and entries on writing a test in the engineering skill. M3, after `GATE-TIME` WP2 and M6 and `DEAD-CODE` WP2: test files of every crate and kit scene | `GATE-TIME` WP2 and `DEAD-TOOLS` WP2 both edit `examples/v1-game/Cargo.toml`, in different tables. `DEAD-TOOLS` WP3 edits a test module that `GATE-TIME` WP2's `atmosphere/gpu/tests.rs` declares. `TEST-SUPPORT` WP3 is the widest set: its design says what it runs beside. `GATE-TIME` WP11 edits the manifests and test files of every package, so the lead does not run it beside `TEST-SUPPORT` WP3 or M4 where it can choose, and whichever lands second rebases. `GATE-TIME` WP12 adds rules to the rule files where `TEST-SUPPORT` WP3 edits one rule's exemptions, and both it and `TEST-SUPPORT` WP6 edit the Tests section of the engineering patterns, M6 first |
+| 3, each after another module's milestone | M3, after `WATERS` WP7: the foam test and the water scene's other slow tests. M4, after `REVIEW-RENDER` WP2. M15: the bounded Cargo cache for merge verification. M5, after M15 and `DEAD-TOOLS` WP2: the post-rollout record and contributor guide | M4, after `TEST-SUPPORT` WP2: the cost scripts | M4, after `WATERS` WP7. M5, after `HOST` WP3. M6, after `REVIEW-RENDER` WP3 and `GATE-TIME` WP6 | M4, after `REVIEW-RENDER` WP2 | `GATE-TIME` WP8 and `DEAD-CODE` WP5 both edit the root `Cargo.toml`, in different tables. `GATE-TIME` WP8 edits the check's test step and `DEAD-TOOLS` WP2 another arm of the same file. `GATE-TIME` WP9 and `TEST-SUPPORT` WP3 both edit test files under `crates/`: the lead does not run them side by side where it can choose |
 
 Three files are everyone's: `.config/shape-baseline.json`, which each landing that lowers a rule's count
 rewrites, `docs/design/maturity.json` and `Cargo.lock`. A builder changes them when its landing moves them,
-whatever its row says, and one that meets a conflict there rebases and makes its edit again. `REPO-RULES` M3, the
+whatever its row says, and one that meets a conflict there rebases and makes its edit again. `REPO-RULES` WP3, the
 one rename, waits for all of track 6.
 
-Waves 2 and 3 wait for `TEST-SUPPORT` M2, `WATERS` M7, `REVIEW-RENDER` M2 and M3 and `HOST` M3. The track cannot
+Waves 2 and 3 wait for `TEST-SUPPORT` WP2, `WATERS` WP7, `REVIEW-RENDER` WP2 and M3 and `HOST` WP3. The track cannot
 land while any of them is held.
 
 ### Seam rulings for track 6
@@ -2366,53 +2366,53 @@ land while any of them is held.
    plan on. Track 6 moves, merges and deletes tests and scripts that only Done items name, and edits no Done
    item. An owning module's design that names a proof this track moved or retired is corrected at that
    module's next re-plan, as after [the ruling of 15 November](#proofs-run-once-on-main).
-2. **Long tests** (`GATE-TIME` M1, M9 and M3; `WATERS`, `SHOWCASE`, `CULLING`, and from M9 any module with a
+2. **Long tests** (`GATE-TIME` WP1, M9 and M3; `WATERS`, `SHOWCASE`, `CULLING`, and from M9 any module with a
    test over about ten seconds that cannot be made fast). By the owner's decisions of 20
    November, kept as [the test tiers](../../ORCHESTRATE.md#test-tiers), no test over about a minute runs in a
-   merge's check, and no short run of one stays there. From `GATE-TIME` M9 the bound is about ten seconds: a
+   merge's check, and no short run of one stays there. From `GATE-TIME` WP9 the bound is about ten seconds: a
    slower test is made fast with every assertion kept, or becomes a long test with the fault it leaves unguarded
    before a merge written beside it in the main-tier list. The ten-minute gale, the moored foam's ten minutes, the
    exit scene's stepped hour, the field flythroughs and the shore-blend solve still run, whole and with the
    assertions they had, in the main-branch check `long-tests` after merges: in release, or in the debug build for
    a test that fails in release at the starting commit, whose owner the log names. `WATERS`', `SHOWCASE`'s
    and `CULLING`'s designs and Done items stand, because the proof they name still runs. A failure on main is
-   fixed by the module whose commit caused it, as for exact images. The builder of `GATE-TIME` M1 writes the one
+   fixed by the module whose commit caused it, as for exact images. The builder of `GATE-TIME` WP1 writes the one
    settings line, in its design's words.
-3. **References retired under the 17 November bar** (`GATE-TIME` M2 and M4; `ATMOSPHERE`, `SCENE-VIEWS`,
-   `CONTENT-LOOP`). The atmosphere's guards P3, P4 and P11 stay. Nothing an open item of `ATMOSPHERE` M6 reads
+3. **References retired under the 17 November bar** (`GATE-TIME` WP2 and M4; `ATMOSPHERE`, `SCENE-VIEWS`,
+   `CONTENT-LOOP`). The atmosphere's guards P3, P4 and P11 stay. Nothing an open item of `ATMOSPHERE` WP6 reads
    changes: its referee and `products/tests/` are untouched. Each retirement is the owner's call and an
    assumption in [GATE-TIME's plan](GATE-TIME/PLAN.md).
-4. **The evidence manifest** (`DEAD-TOOLS` M3; `REPO-RULES` M2's bulk evidence interface). The manifest moves
+4. **The evidence manifest** (`DEAD-TOOLS` WP3; `REPO-RULES` WP2's bulk evidence interface). The manifest moves
    under `.config/` and the two become one. `evidence_store.py check` and `restore` keep their names and
    results, and the link check still accepts a link to a listed path.
-5. **`SceneContribution`** (`DEAD-CODE` M2; every contribution). Five hooks gain defaults equal to today's empty
+5. **`SceneContribution`** (`DEAD-CODE` WP2; every contribution). Five hooks gain defaults equal to today's empty
    bodies; `passes`, `rebuild` and `encode_upload` stay required. No implementation's behaviour changes, and a
    builder in another module may delete a stub of its own or leave it.
-6. **`thrum_render::binding`** (`DEAD-CODE` M6). New public API in `thrum-render`, accepted because five crates
+6. **`thrum_render::binding`** (`DEAD-CODE` WP6). New public API in `thrum-render`, accepted because five crates
    and the examples already write these entries by hand. Every layout stays what it was.
 7. **Exact baselines.** No track 6 milestone may move a retained image. Each that touches a covered path carries
    the verifier, and none edits a file the registry pins. A script a pinned file imports, directly or through
    another script, is not pinned: a milestone may edit it, and it keeps its name and everything the pinned files
-   use from it. `DEAD-TOOLS` M6, M3 and M4 edit four such scripts, as
-   [their design](DEAD-TOOLS/DESIGN.md#mechanisms) lists, `TEST-SUPPORT` M5 edits two of the same four, and
-   `GATE-TIME` M1 and M6 edit `repo_check.py`.
-8. **Provenance records** (`DEAD-TOOLS` M5; `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS`). By the owner's
+   use from it. `DEAD-TOOLS` WP6, M3 and M4 edit four such scripts, as
+   [their design](DEAD-TOOLS/DESIGN.md#mechanisms) lists, `TEST-SUPPORT` WP5 edits two of the same four, and
+   `GATE-TIME` WP1 and M6 edit `repo_check.py`.
+8. **Provenance records** (`DEAD-TOOLS` WP5; `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS`). By the owner's
    decision of 20 November, a module's record of what it copied, from where and under what licence is tracked at
    `docs/provenance/<MODULE>.md`. It is not evidence, because a person must read it to publish the code. Each
-   module still owns what its record says. `CLOUDS` M6, the first milestone that copies a library, waits for
-   `DEAD-TOOLS` M5. The five designs still name the working-folder file; [the settings](../../ORCHESTRATE.md#starting-from-a-clean-clone)
+   module still owns what its record says. `CLOUDS` WP6, the first milestone that copies a library, waits for
+   `DEAD-TOOLS` WP5. The five designs still name the working-folder file; [the settings](../../ORCHESTRATE.md#starting-from-a-clean-clone)
    say that means the tracked record, and each design is corrected at its module's next re-plan.
 
-9. **Tests behind a Cargo feature** (`GATE-TIME` M6; the modules whose tests they are, among them
+9. **Tests behind a Cargo feature** (`GATE-TIME` WP6; the modules whose tests they are, among them
    `RAY-TRACING`, `MESH-SHADING`, `CONTENT-LOOP` and `SCENE-VIEWS`). Every merge compiles them, and the main-branch check `long-tests` runs
    them, from the main-tier list. The list covers a package's feature tests whole or by test binary, and
    `thrum-render` is covered whole, so a new gated test file there runs with no edit to the list. Anywhere else
    the docs check fails a test file whose `cfg` names a feature, or a test target that requires one, until the
    list names it. No test is edited to join the list: one that fails at the commit M6 starts
    from is listed as not run, with its failure, and its owning module fixes it. Open items that run these tests
-   by name keep their text. `DEAD-CODE` M2 and M6 and `TEST-SUPPORT` M3 edit files that hold them, wait for M6
+   by name keep their text. `DEAD-CODE` WP2 and M6 and `TEST-SUPPORT` WP3 edit files that hold them, wait for M6
    and carry the main-branch item.
-10. **The merge selection** (`GATE-TIME` M7; every module, and `REPO-RULES`, whose check command it is). By the
+10. **The merge selection** (`GATE-TIME` WP7; every module, and `REPO-RULES`, whose check command it is). By the
     owner's decision of 20 November, `./dev check` runs the tests of the packages a change can reach, by Cargo's
     graph, and the main-branch check `workspace-tests` runs the whole workspace. A shared input, or a path the
     selection has no rule for, selects everything. A test that reads another package's files when it runs is
@@ -2423,7 +2423,7 @@ land while any of them is held.
     until it is fixed or reverted a later merge can be refused for it, and so can any milestone's Ready for
     Review, which runs the whole workspace on main's tip. A module that adds a folder outside a package gets the
     whole workspace on every change there until it adds a path rule. No merge waits for the whole run.
-11. **Frozen rules** (`DEAD-TOOLS` M6, `TEST-SUPPORT` M5; `REPO-RULES`' rule engine, and every builder). Six
+11. **Frozen rules** (`DEAD-TOOLS` WP6, `TEST-SUPPORT` WP5; `REPO-RULES`' rule engine, and every builder). Six
     rules enter the shape check at the count of the commit they land on, before the cleanups that lower them:
     `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`.
     They go in through the engine with fixtures, as the track 4 rules did, and the engine itself does not
@@ -2438,7 +2438,7 @@ land while any of them is held.
     [not planned yet](#not-planned-in-track-6); until that design exists a new variant is made the way the
     engineering patterns already ask, through a hook with a stub.
 
-12. **How the check runs tests** (`GATE-TIME` M8; every module that writes a test, and `REPO-RULES`, whose check
+12. **How the check runs tests** (`GATE-TIME` WP8; every module that writes a test, and `REPO-RULES`, whose check
     command it is). By the owner's words of 20 November, "A 20min merge check still sounds crazy. Tests are meant
     to be fast", a merge's check is planned to about five minutes for a typical landing. From M8 `./dev check`
     runs tests through cargo-nextest, each test in a process of its own beside the tests of every other binary,
@@ -2454,7 +2454,7 @@ land while any of them is held.
     frame timing changes. `APPLE-TILE` keeps the frame host and, once landed, the test; its log records the
     hand-over. Any other engine fault the runner exposes goes to its owner as a proposal.
 
-13. **How a test is written, and one test binary a package** (`GATE-TIME` M10, M9, M3 and M11; every module that
+13. **How a test is written, and one test binary a package** (`GATE-TIME` WP10, M9, M3 and M11; every module that
     writes a test). By the owner's approval of 21 November, "These all sound really reasonable", kept in
     [the test tiers](../../ORCHESTRATE.md#test-tiers): a merge-tier test uses the smallest world that shows its
     behaviour, and logic is tested without a device. Both bind a test written or changed from that day. M9 and
@@ -2469,7 +2469,7 @@ land while any of them is held.
     compiles. Each owning module keeps its tests. M10 measures where a builder's session goes and changes no
     rule: what follows from its record is the owner's to decide.
 
-14. **The guard rules, and how to write a test** (`GATE-TIME` M12 and M13, `TEST-SUPPORT` M6; `REPO-RULES`' rule
+14. **The guard rules, and how to write a test** (`GATE-TIME` WP12 and M13, `TEST-SUPPORT` WP6; `REPO-RULES`' rule
     engine, and every builder and planner). By the owner's approval of 21 November, "Yes, plan it", the
     fast-test habits are held in the merge check, which Codex and Claude builders both pass, and not in a hook.
     From M12 three counts enter the shape check as they stand and only fall, with the engine unchanged:
@@ -2485,12 +2485,12 @@ land while any of them is held.
     [the project settings](../../ORCHESTRATE.md#what-is-proved-and-how-hard) now ask of every plan, with a
     guard or a record named for each check. From M13 a test is stopped at ten seconds, and one that passes
     within ten when the check reruns it serially does not fail the merge. M14 gives only the `./dev check-all`
-    rerun 30 seconds, with proof under builder load. It precedes GATE-TIME M5. `TEST-SUPPORT` owns how a test
+    rerun 30 seconds, with proof under builder load. It precedes GATE-TIME WP5. `TEST-SUPPORT` owns how a test
     is written: its M6 adds the kit's small target and one block in the
     engineering skill, with the pattern entries M12's messages link to, and M12 waits for it. `GATE-TIME` owns
     the tiers and the limits, which the entries link to and do not restate.
 
-15. **Merge verification's Cargo cache** (`GATE-TIME` M15 and M5, `REPO-RULES`, and the lead). M15 owns the
+15. **Merge verification's Cargo cache** (`GATE-TIME` WP15 and M5, `REPO-RULES`, and the lead). M15 owns the
     bounded cache and the test-command cutover for both singleton and batch merges. `REPO-RULES` keeps the
     check's coverage and verdict. The lead coordinates the cutover and disk cleanup. M5 measures the first 20
     qualifying Rust landings after activation. [Cache design](GATE-TIME/DESIGN.md#cargo-cache-for-merge-verification).
@@ -2516,9 +2516,9 @@ Each of these needs a design of its own, or a decision, before it is planned.
   **changing open items so that the binaries they name fold at once**: each is an assumption in
   [GATE-TIME's plan](GATE-TIME/PLAN.md). One test binary for each water model crate (W2-01) is now `GATE-TIME`
   M11's, less the binaries that open items name.
-- **Selecting a merge's tests more finely than by package** (L1-12): `GATE-TIME` M7 selects by package, and
+- **Selecting a merge's tests more finely than by package** (L1-12): `GATE-TIME` WP7 selects by package, and
   nothing says which test binary of a package a source file reaches without a coverage map.
-- **From the hardening pass, not applied**: moving `scripts/open_check_names.py` ahead of `REPO-RULES` M3, and
+- **From the hardening pass, not applied**: moving `scripts/open_check_names.py` ahead of `REPO-RULES` WP3, and
   an owner for fifteen medium findings no plan names (its A8); its eleven proposals other than the frozen rules.
 - **Three benches the review did not look at**: `thrum-core`'s `v1_workload`, `thrum-water-model`'s `surf` and
   the game's `recipe_cost`.
@@ -2526,28 +2526,28 @@ Each of these needs a design of its own, or a decision, before it is planned.
 - **The frozen pre-sprite graph snapshot** (G2-09): a guard, kept under an assumption in
   [DEAD-TOOLS' plan](DEAD-TOOLS/PLAN.md).
 - **Dead scripts the review confirmed at low payoff** (L5-02, P2-04, P1-02, P2-05, L2-07), about 4,700 lines.
-- **Plan text left for the modules' planners**: `GAME-SPLIT` M5 does not wait for `REVIEW-RENDER` M5 or `SWARM`
-  M8, whose checks name the package it renames (L8-09); `ATMOSPHERE` M6.4 and M6.9 name folders where they could
-  name what must not change (L8-11); `REPO-RULES` M3.2 would force an edit to a pinned comparison script (L8-02).
+- **Plan text left for the modules' planners**: `GAME-SPLIT` WP5 does not wait for `REVIEW-RENDER` WP5 or `SWARM`
+  M8, whose checks name the package it renames (L8-09); `ATMOSPHERE` WP6.4 and M6.9 name folders where they could
+  name what must not change (L8-11); `REPO-RULES` WP3.2 would force an edit to a pinned comparison script (L8-02).
 
 ### Interfaces (track 6)
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **Long test**: a test over about a minute, and from `GATE-TIME:M9` one over about ten seconds that cannot be made fast, marked ignored with a reason that starts `long:`, in a binary the main-tier list names, with the fault it leaves unguarded before a merge beside it; the main-branch check `long-tests` runs it | `GATE-TIME:M1` and `M9` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
-| **The main-tier list**, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary | `GATE-TIME:M1` and `M6` → any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
-| **The merge selection**: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the declared edges; `./dev check-all` and the main-branch check `workspace-tests` run the whole workspace | `GATE-TIME:M7` → every builder, and any module with a test that reads another package's files at run time | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
-| **The runner**: `./dev check` runs each test in its own process, side by side through cargo-nextest. `.config/nextest.toml` holds the groups and heavy tests. From M13 a test stopped at ten seconds runs once more serially, with the same cap. From M14 the `./dev check-all` serial rerun has a 30-second cap and reports passes above ten seconds | `GATE-TIME:M8`, `M13` and `M14` → every module that writes a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Long test**: a test over about a minute, and from `GATE-TIME:WP9` one over about ten seconds that cannot be made fast, marked ignored with a reason that starts `long:`, in a binary the main-tier list names, with the fault it leaves unguarded before a merge beside it; the main-branch check `long-tests` runs it | `GATE-TIME:WP1` and `M9` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **The main-tier list**, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary | `GATE-TIME:WP1` and `M6` → any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
+| **The merge selection**: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the declared edges; `./dev check-all` and the main-branch check `workspace-tests` run the whole workspace | `GATE-TIME:WP7` → every builder, and any module with a test that reads another package's files at run time | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **The runner**: `./dev check` runs each test in its own process, side by side through cargo-nextest. `.config/nextest.toml` holds the groups and heavy tests. From M13 a test stopped at ten seconds runs once more serially, with the same cap. From M14 the `./dev check-all` serial rerun has a 30-second cap and reports passes above ten seconds | `GATE-TIME:WP8`, `M13` and `M14` → every module that writes a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
 | **Two rules for a merge-tier test**, written or changed from 21 November 2026: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test what a device alone can show | `GATE-TIME` → every module that writes a test, and every planner and reviewer | [the test tiers](../../ORCHESTRATE.md#test-tiers), [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
-| **One test binary a package**: a test file under a package's `tests/` folder is a module of the package's `it` target and runs as `cargo test -p <package> --test it <file>::`; the repository guards fail a file there that no target compiles; a file is a target of its own only while an open item, the main-tier list, a Cargo feature, a long test or a script holds it | `GATE-TIME:M11` → every module that adds a test file, and every planner who writes a check that runs one | [GATE-TIME](GATE-TIME/DESIGN.md#one-test-binary-a-package), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
-| **Guard rules**: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall; `main-tier` rises only through its version, in a landing a done-when item asks for; a test target is named by a plan when an item's check runs it with `--test` or the main-tier list names it, and one that is neither named nor on `.config/unplanned-test-binaries.txt` fails | `GATE-TIME:M12` → every builder and planner | [GATE-TIME](GATE-TIME/DESIGN.md#the-guard-rules), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
-| **Writing a test**: the small target `thrum_test_support::target`; one block in the engineering skill; the pattern entries `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test` | `TEST-SUPPORT:M6` → every builder who writes a test, and `GATE-TIME:M12`, whose messages link to the entries | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#writing-a-test) |
-| **Frozen rules**: `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`, each a count that can only fall | `DEAD-TOOLS:M6` and `TEST-SUPPORT:M5` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms), [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
-| **Provenance record**: what a module copied or translated, from where and under what licence, tracked at `docs/provenance/<MODULE>.md` | `DEAD-TOOLS:M5` → `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS` and any module that copies a file | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
-| **Where evidence goes**: run records in the working folder, test data in fixtures, held by the rule `evidence-path`; the evidence manifest under `.config/` | `DEAD-TOOLS:M3` and `M4` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
-| **Contribution defaults**: five hooks of `SceneContribution` need not be written | `DEAD-CODE:M2` → every contribution | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
-| **Layout entries**: `thrum_render::binding`, and a graph resource declared from a texture | `DEAD-CODE:M6` → every crate that creates a bind-group layout or declares a graph texture | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
-| **The test kit**: readback, the prologue, waits, scratch folders and the record reflection check | `TEST-SUPPORT:M5`, `M3` and `M4` → every GPU test under `crates/` and in the kit scenes | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
+| **One test binary a package**: a test file under a package's `tests/` folder is a module of the package's `it` target and runs as `cargo test -p <package> --test it <file>::`; the repository guards fail a file there that no target compiles; a file is a target of its own only while an open item, the main-tier list, a Cargo feature, a long test or a script holds it | `GATE-TIME:WP11` → every module that adds a test file, and every planner who writes a check that runs one | [GATE-TIME](GATE-TIME/DESIGN.md#one-test-binary-a-package), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Guard rules**: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall; `main-tier` rises only through its version, in a landing a done-when item asks for; a test target is named by a plan when an item's check runs it with `--test` or the main-tier list names it, and one that is neither named nor on `.config/unplanned-test-binaries.txt` fails | `GATE-TIME:WP12` → every builder and planner | [GATE-TIME](GATE-TIME/DESIGN.md#the-guard-rules), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Writing a test**: the small target `thrum_test_support::target`; one block in the engineering skill; the pattern entries `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test` | `TEST-SUPPORT:WP6` → every builder who writes a test, and `GATE-TIME:WP12`, whose messages link to the entries | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#writing-a-test) |
+| **Frozen rules**: `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`, each a count that can only fall | `DEAD-TOOLS:WP6` and `TEST-SUPPORT:WP5` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms), [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
+| **Provenance record**: what a module copied or translated, from where and under what licence, tracked at `docs/provenance/<MODULE>.md` | `DEAD-TOOLS:WP5` → `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS` and any module that copies a file | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
+| **Where evidence goes**: run records in the working folder, test data in fixtures, held by the rule `evidence-path`; the evidence manifest under `.config/` | `DEAD-TOOLS:WP3` and `M4` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
+| **Contribution defaults**: five hooks of `SceneContribution` need not be written | `DEAD-CODE:WP2` → every contribution | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
+| **Layout entries**: `thrum_render::binding`, and a graph resource declared from a texture | `DEAD-CODE:WP6` → every crate that creates a bind-group layout or declares a graph texture | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
+| **The test kit**: readback, the prologue, waits, scratch folders and the record reflection check | `TEST-SUPPORT:WP5`, `M3` and `M4` → every GPU test under `crates/` and in the kit scenes | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
 
 ## Owner decisions
 
@@ -2589,7 +2589,7 @@ For [water as one system](#water-as-one-system), each recorded as an assumption 
 For [the atmosphere as a whole](#the-atmosphere-as-a-whole), each recorded as an assumption in
 [CLOUDS' plan](CLOUDS/PLAN.md#open-for-the-human) or [ATMOSPHERE's](ATMOSPHERE/PLAN.md#open-for-the-owner):
 
-19. **Where fog sits in the order.** Fog near the camera waits for `ATMOSPHERE` M6, so for TAAU and for G3s to
+19. **Where fog sits in the order.** Fog near the camera waits for `ATMOSPHERE` WP6, so for TAAU and for G3s to
     close. The owner can ask for the view volume sooner, at the cost of track 2 work in the atmosphere files
     while G3s is still open.
 20. **What the mist does by itself.** It forms after dusk and burns off after sunrise from the weather state,
@@ -2632,10 +2632,10 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
     Reflections by ray and global illumination are not planned; decision 23 stands. The owner can ask for
     either, as a later plan on the same structure.
 32. **What the mesh stages draw.** Cooked placements. Whether the exit scene's 10,000 entities follow is
-    decided by the next plan from `MESH-SHADING` M3's record. The owner can ask for them now.
+    decided by the next plan from `MESH-SHADING` WP3's record. The owner can ask for them now.
 33. **Nothing in track 5 is a default.** No ray effect and no mesh-stage path is on by default on any
     machine. A person turns each on with a launch setting, it falls back to the path it replaces where its
-    feature is missing, and `RAY-TRACING` M6 and `MESH-SHADING` M3 record how it looks and what it costs on
+    feature is missing, and `RAY-TRACING` WP6 and `MESH-SHADING` WP3 record how it looks and what it costs on
     this Mac, timed while other builders work. Making either a default needs a measured win on a quiet
     machine and a rule for which Macs it covers, and in the showcase it would change the V1 exit. The two can
     be turned on together; neither module checks the pair. The mesh stages and the ray effects draw only on
@@ -2646,7 +2646,7 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
 35. **Where track 5 sits in the queue.** Behind every V1 milestone. Its order among the other work off the
     exit is the lead's; the owner can set it.
 36. **wgpu's experimental features.** Both modules depend on them. A fault in wgpu waits for
-    `APPLE-PRESENTATION` M10's pinned copy, and nothing is reported upstream without the owner.
+    `APPLE-PRESENTATION` WP10's pinned copy, and nothing is reported upstream without the owner.
 
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
@@ -2692,11 +2692,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 
 ## Log
 
-- 2026-11-10 First module list. Planned from the owner's request above. `CREATOR`, `ATMOSPHERE` M5–M6 and
-  `APPLE-PRESENTATION` M1–M3 gained done-when files; the other modules gained briefs. Assumptions that belong to a planned module are in that module's plan, under `Open for the owner`; those for modules not yet planned are above.
+- 2026-11-10 First module list. Planned from the owner's request above. `CREATOR`, `ATMOSPHERE` WP5–M6 and
+  `APPLE-PRESENTATION` WP1–M3 gained done-when files; the other modules gained briefs. Assumptions that belong to a planned module are in that module's plan, under `Open for the owner`; those for modules not yet planned are above.
 - 2026-11-11 `CREATOR` revised after its design review. Its profiler could not be built as a reader of the
-  existing timing interfaces, so the frame timing feed and its seam ruling were added above, and `CREATOR` M2
-  moved from step 2 to step 5 of the build order, behind `APPLE-TILE:M3`. No other module's plan changed.
+  existing timing interfaces, so the frame timing feed and its seam ruling were added above, and `CREATOR` WP2
+  moved from step 2 to step 5 of the build order, behind `APPLE-TILE:WP3`. No other module's plan changed.
 - 2026-11-10 Track 3 added from the owner's second request, quoted in its section: six modules with briefs, the
   asks of existing modules, interfaces and a build order after the exit. No V1 module's plan, no done-when file
   and no part of the exit changed. The brief's three defaults are unchanged. Researched: Vampire Survivors' online
@@ -2704,42 +2704,42 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - 2026-11-11 Reshaped for orchestrate 1.7.0. The module table now opens the page, in build order and without
   status; the status column, the readiness table's state column and the paragraphs on what was ready or owed are
   gone, since [the status page](STATUS.md) reports them. The capability designs the migration had carried into the
-  plans folder went back to `docs/design/modules/`, and the build plan was folded into [the brief](BRIEF.md). No
+  plans folder went back to `docs/design/modules/`, and the build plan was folded into [the brief](VISION.md). No
   module's ownership, interface, build order or done-when item changed.
 - 2026-11-11 `CULLING` and `EFFECT-GRAPH` planned, each with a design, plan and done-when file, from the owner's
   request quoted in their designs. `EFFECT-GRAPH` has three milestones, so the port's graph condition moved from its
-  M1 to its M3. [Exact baselines](#exact-baselines) added after `APPLE-TILE` M2's review found that another module's
+  M1 to its M3. [Exact baselines](#exact-baselines) added after `APPLE-TILE` WP2's review found that another module's
   change had moved its baseline unnoticed: three rules, a registry, and a new one-milestone module,
   `BASELINE-GUARD`, inserted at row 9 (later rows renumbered). The entity-visibility interface settles the open
   decision between `CULLING` and `CONTENT-LOOP`. No other module's done-when item changed.
 - 2026-11-11 `BASELINE-GUARD`, `CULLING` and `EFFECT-GRAPH` revised after their design reviews.
   [Exact baselines](#exact-baselines): rule 2 is now a proof gate in `./dev check`, keyed to the exact covered
   content, because `land` cannot hand control back between its rebase and its push; rule 3 is the backstop; the
-  Chrome baseline is four retained digest manifests, by a ruling with `APPLE-TILE`. `CULLING` M2 and `EFFECT-GRAPH`
-  M2 gained `BASELINE-GUARD:M1` in their `needs`. `CULLING` no longer builds a live mode switch. No other module's
+  Chrome baseline is four retained digest manifests, by a ruling with `APPLE-TILE`. `CULLING` WP2 and `EFFECT-GRAPH`
+  M2 gained `BASELINE-GUARD:WP1` in their `needs`. `CULLING` no longer builds a live mode switch. No other module's
   done-when item changed.
 - 2026-11-13 `CONTENT-LOOP` planned, with a design, plan and done-when file, from the lead's task quoted in its
-  design. Three milestones: leases (after `APPLE-PRESENTATION:M2`), cooked mesh rows with live replacement (after
-  `CULLING:M3`) and the close of G5 (after `APPLE-PRESENTATION:M3`). The leases interface and the seam ruling for
-  row replacement were added above; `SEA` and `CLOUDS` now name `CONTENT-LOOP` M1, and the port's G5 condition is
+  design. Three milestones: leases (after `APPLE-PRESENTATION:WP2`), cooked mesh rows with live replacement (after
+  `CULLING:WP3`) and the close of G5 (after `APPLE-PRESENTATION:WP3`). The leases interface and the seam ruling for
+  row replacement were added above; `SEA` and `CLOUDS` now name `CONTENT-LOOP` WP1, and the port's G5 condition is
   met there. No other module's done-when item changed.
 - 2026-11-13 `CONTENT-LOOP` revised after its second design review (MF3). The content-publication interface was
   added: placements, leases and cooked mesh rows switch in one frame, as C05's qualified visual preview asks.
   The leases and entity-visibility lines and the M2 seam ruling name that frame. C05 is unchanged, and no other
   module's done-when item changed.
 - 2026-11-13 `SHOWCASE` planned, with a design, plan and done-when file, from the lead's task. Four milestones, M5
-  to M8: the populated valley (after `CONTENT-LOOP:M2` and `CULLING:M3`), its culling, the three rows from one
+  to M8: the populated valley (after `CONTENT-LOOP:WP2` and `CULLING:WP3`), its culling, the three rows from one
   exit configuration, and the review with the V1 exit record (after every other track 1 module's last milestone).
   The resolved-selections interface and the exit baselines' row were added above. No exact baseline moves and no
-  other module's done-when item changed. `APPLE-PRESENTATION` M4 to M11 are still to be planned, and the exit
+  other module's done-when item changed. `APPLE-PRESENTATION` WP4 to M11 are still to be planned, and the exit
   waits on them.
 - 2026-11-13 `SIM-2D` planned, the first module of track 3, with a design, plan and done-when file, from the
-  lead's task. Three milestones: the three-target proof at 10,000 bodies (after `SHOWCASE:M8`), the queries
+  lead's task. Three milestones: the three-target proof at 10,000 bodies (after `SHOWCASE:WP8`), the queries
   against a brute-force search, and the check that refuses a rule which breaks the profile. Its three interfaces
   now link to its design. No contract, exact baseline or other module's done-when item changed.
 - 2026-11-13 `TRANSPORT` planned, the second module of track 3, with a design, plan and done-when file, from the
   lead's task. Two milestones: one host holding Mac, Chrome and simulator clients through A0's conditioner (after
-  `SHOWCASE:M8`), and the hostile, stalled and frozen peers with the close. The message-link interface now links to
+  `SHOWCASE:WP8`), and the hostile, stalled and frozen peers with the close. The message-link interface now links to
   its design and names its limits and the join ticket. Two assumptions moved to its plan. No contract, exact
   baseline or other module's done-when item changed.
 - 2026-11-13 `TRANSPORT`'s design review asked for changes, and the message-link row and `TRANSPORT`'s entry now
@@ -2747,10 +2747,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   datagram's wait is bounded in the link's own queue only, so `SESSION` rejects old ones by content. No contract,
   exact baseline or other module's done-when item changed.
 - 2026-11-13 `RENDER-2D` planned, the third module of track 3, with a design, plan and done-when file, from the
-  lead's task. Five milestones: a 2D scene through the game's frame with nothing 3D (after `SHOWCASE:M8`,
-  `APPLE-TILE:M12` and `EFFECT-GRAPH:M3`), ten thousand rows that glide in a stable order, crisp sampling at
-  every window size, cooked sheets with live edits (after `CONTENT-LOOP:M3`), and the reference crowd with the
-  simulator and the close (after `SIM-2D:M1`). Its asks of `APPLE-TILE`, `APPLE-PRESENTATION` and `CONTENT-LOOP`
+  lead's task. Five milestones: a 2D scene through the game's frame with nothing 3D (after `SHOWCASE:WP8`,
+  `APPLE-TILE:WP12` and `EFFECT-GRAPH:WP3`), ten thousand rows that glide in a stable order, crisp sampling at
+  every window size, cooked sheets with live edits (after `CONTENT-LOOP:WP3`), and the reference crowd with the
+  simulator and the close (after `SIM-2D:WP1`). Its asks of `APPLE-TILE`, `APPLE-PRESENTATION` and `CONTENT-LOOP`
   are settled as [seam rulings](#seam-rulings-for-render-2d) that its own builder builds after V1, so no V1
   module's design, plan or done-when item changed. The sprite-rows, sheets and 2D-scene-half interfaces now link
   to its design. No contract or exact baseline changed.
@@ -2762,8 +2762,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   is kept from tick to tick with a band between near rows, replacing a band on each row's own value that the
   review showed could not hold.
 - 2026-11-13 `SESSION` planned, with a design, plan and done-when file, from the lead's task quoted in its design.
-  Six milestones: the world image (after `SIM-2D:M3`), the steady match and its faults on the in-memory link
-  (after `TRANSPORT:M1`), the predicted controller, the match on sockets (after `TRANSPORT:M2`) and the close,
+  Six milestones: the world image (after `SIM-2D:WP3`), the steady match and its faults on the in-memory link
+  (after `TRANSPORT:WP1`), the predicted controller, the match on sockets (after `TRANSPORT:WP2`) and the close,
   which writes the rule-set addition into C13. The seam rulings for `SESSION`, the world-image and
   connection-state interfaces and three asks were added above, one of them open for `SWARM`'s planner. Two
   assumptions moved to [SESSION's plan](SESSION/PLAN.md). No other module's done-when item changed.
@@ -2771,27 +2771,27 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   miss from spreading now says the digest catches a divergence that lasts to the next digest tick, since a digest
   is taken over one committed endpoint. No interface, seam ruling or other module's done-when item changed.
 - 2026-11-13 `SWARM` planned, the last module of track 3, with a design, plan and done-when file, from the
-  lead's task. Eight milestones: the owner's pick of a concept (after `SHOWCASE:M8`), a slice alone at the
-  brief's crowd size (after `SIM-2D:M3`, `SESSION:M1`, `RENDER-2D:M5` and `GAME-UI:M5`), the whole run, the
-  finished content, a rehearsed match (after `SESSION:M4`), the simulator, co-op on sockets (after
-  `SESSION:M6`) and the close. The seam rulings for `SWARM` settle the three asks its brief carried and a
+  lead's task. Eight milestones: the owner's pick of a concept (after `SHOWCASE:WP8`), a slice alone at the
+  brief's crowd size (after `SIM-2D:WP3`, `SESSION:WP1`, `RENDER-2D:WP5` and `GAME-UI:WP5`), the whole run, the
+  finished content, a rehearsed match (after `SESSION:WP4`), the simulator, co-op on sockets (after
+  `SESSION:WP6`) and the close. The seam rulings for `SWARM` settle the three asks its brief carried and a
   fourth, the window and the page for a game with no sky kit; the ask of core that was open for this planner is
   ruling 4. The last two assumptions for unplanned modules moved to [SWARM's plan](SWARM/PLAN.md). No contract,
   exact baseline or other module's done-when item changed.
 - 2026-11-13 `SEA` planned, with a design, plan and done-when file, from the lead's task and
   [its brief](SEA/BRIEF.md), on the owner's words of 13 November quoted in its design. Ten milestones: the CPU
-  model (needs nothing), GPU state (on `EFFECT-GRAPH:M2`), the first frame at cost (after `EFFECT-GRAPH:M3`),
+  model (needs nothing), GPU state (on `EFFECT-GRAPH:WP2`), the first frame at cost (after `EFFECT-GRAPH:WP3`),
   Chrome, bodies and the query, the wake, foam, optics, the whole range in motion (after
-  `APPLE-PRESENTATION:M3`) and the close, which waits for the governor and MetalFX. The body-query, medium-segment
+  `APPLE-PRESENTATION:WP3`) and the close, which waits for the governor and MetalFX. The body-query, medium-segment
   and quality-knob rows now link to its design, and [three seam rulings](#seam-rulings-for-sea) settle its asks
   of `EFFECT-GRAPH` and the shell. The sea's assumption moved to [its plan](SEA/PLAN.md). No contract, exact
   baseline or other module's done-when item changed.
 - 2026-11-13 `CLOUDS` planned, with a design, plan and done-when file, from the lead's task and
   [its brief](CLOUDS/BRIEF.md), on the owner's words of 13 November quoted in its design. Twelve milestones: the
-  CPU weather (needs nothing), shade with no cloud drawn (on `EFFECT-GRAPH:M2` and `ATMOSPHERE:M5`), the first
-  frame at cost (after `EFFECT-GRAPH:M3`), Chrome, light through the day, placed volumes with stand-in shapes
-  (on `CONTENT-LOOP:M1`), the weather range, the world lit by clouds, controls and motion (after
-  `APPLE-PRESENTATION:M3`), the accepted library (after the owner's licence), the sea (after `SEA:M8`) and the
+  CPU weather (needs nothing), shade with no cloud drawn (on `EFFECT-GRAPH:WP2` and `ATMOSPHERE:WP5`), the first
+  frame at cost (after `EFFECT-GRAPH:WP3`), Chrome, light through the day, placed volumes with stand-in shapes
+  (on `CONTENT-LOOP:WP1`), the weather range, the world lit by clouds, controls and motion (after
+  `APPLE-PRESENTATION:WP3`), the accepted library (after the owner's licence), the sea (after `SEA:M8`) and the
   close, which waits for the governor and MetalFX. The Sun-path row now names the GPU-written field, a row for
   the sky overlay and haze scale was added, and [five seam rulings](#seam-rulings-for-clouds) settle its asks of
   `ATMOSPHERE` and of the two games it is shown in. The clouds' assumption moved to [its plan](CLOUDS/PLAN.md).
@@ -2823,7 +2823,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   [Water as one system](#water-as-one-system) gives the decision. The body-query, medium-segment, knob and
   control rows now name `WATERS`; rows for the wave field, the water map and impulse records were added; the
   three sea rulings are now [rulings for `WATERS`](#seam-rulings-for-waters), with ruling 2 covering see-through
-  and mirror-still water; `CLOUDS` M11 waits on `WATERS:M8`. Track 3's rows are renumbered 19 to 24. No
+  and mirror-still water; `CLOUDS` WP11 waits on `WATERS:WP8`. Track 3's rows are renumbered 19 to 24. No
   contract, exact baseline or other module's item changed.
 - 2026-11-14 `WATERS` re-planned after [its design review](../../.orchestrate/evidence/WATERS/design-review.md) asked for changes.
   The water-map row now carries a chart's ends and joins, stage ranges, what preparation refuses and the shore
@@ -2842,18 +2842,18 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   cloud tops to ground mist and the amount of haze; `ATMOSPHERE` owns the air's optics and the view volume that
   integrates air, haze and a medium jointly near the camera. `CLOUDS` gained M13 to M16 and three items in M11;
   `ATMOSPHERE` gained M7 and M8 after G3s. Rulings 6 to 8 and three interfaces were added and ruling 4 narrowed.
-  `CLOUDS` M1's items are unchanged. No contract's text and no exact baseline changed.
+  `CLOUDS` WP1's items are unchanged. No contract's text and no exact baseline changed.
 - 2026-11-14 `SCENE-VIEWS` planned, with a design, plan and done-when file, from the lead's task and
-  [its brief](#scene-views). Three milestones: entities in a view (after `CULLING:M3`, `ATMOSPHERE:M5` and
-  `EFFECT-GRAPH:M3`), cooked placements with the mirror example, and Chrome, cost and the close. The
+  [its brief](#scene-views). Three milestones: entities in a view (after `CULLING:WP3`, `ATMOSPHERE:WP5` and
+  `EFFECT-GRAPH:WP3`), cooked placements with the mirror example, and Chrome, cost and the close. The
   mirror-view row became the secondary-view interface, [five seam rulings](#seam-rulings-for-scene-views)
   settle its asks of `EFFECT-GRAPH`, `CULLING`, `ATMOSPHERE`, `APPLE-PRESENTATION` and the cooked draw, and
-  C07 gained a paragraph naming a secondary view. `WATERS` M14 now waits for `SCENE-VIEWS:M3`. No exact
+  C07 gained a paragraph naming a secondary view. `WATERS` WP14 now waits for `SCENE-VIEWS:WP3`. No exact
   baseline and no other module's done-when item changed.
 - 2026-11-14 `WATERS` re-planned for light under water, on the bar the owner's words of that day set: the
   caustic field, shafts and a meter that follows the light, in a new M16 after M15. Rows for the Sun-path
   factor, the lent Sun visibility and the meter's medium factor were added, with
-  [rulings 5 to 7](#seam-rulings-for-waters) for `ATMOSPHERE` and `APPLE-PRESENTATION`. `WATERS` M1 is
+  [rulings 5 to 7](#seam-rulings-for-waters) for `ATMOSPHERE` and `APPLE-PRESENTATION`. `WATERS` WP1 is
   unchanged. C07's incident meter gained a clause for the medium's transmission. No other contract text, no
   exact baseline and no other module's item changed.
 - 2026-11-14 `RIVERS` planned from [its brief](#rivers-and-puddles): [design](RIVERS/DESIGN.md), seven
@@ -2882,11 +2882,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - 2026-11-14 The same revision, for water: a chart's samples carry a wetting gauge
   ([ruling 2 for `RIVERS`](#seam-rulings-for-rivers)); the interaction step gains a current ladder in place
   of a weighted mean current (ruling 5); `PUDDLES`' fine interaction level moved to a new milestone after
-  `WATERS:M6` (ruling 2), and a hollows body gives the mirror bands of levels in place of the mean of its
+  `WATERS:WP6` (ruling 2), and a hollows body gives the mirror bands of levels in place of the mean of its
   ground ([ruling 8 for `PUDDLES`](#seam-rulings-for-puddles)); the rain bands read the rain's rate over the
   last second, so stopping the rain lets its rings run out (ruling 3), and shelter is up to two layers in a
   column. No contract text and no exact baseline
-  changed, and no item of a module other than these four, `CLOUDS` M14.3 and `WATERS` M14.2 changed.
+  changed, and no item of a module other than these four, `CLOUDS` WP14.3 and `WATERS` WP14.2 changed.
 - 2026-11-14 `SCENE-VIEWS` and `RIVERS` revised after their second design reviews, one Must Fix each. A
   view's air is laid out from the crossing and held to `ATMOSPHERE`'s own product drawn from there, with no
   transport bound of its own ([ruling 3 for `SCENE-VIEWS`](#seam-rulings-for-scene-views)). A chart's
@@ -2907,70 +2907,70 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   line of sight on under the model's ground, with the air's density by its own law and the Sun's light dimmed
   by that air. No interface's arguments or units change. [Exact baselines](#exact-baselines) gains a ruling:
   M9 changes the default output, all five registered sets are expected to move, and M9's builder refreshes
-  them in its own landing. `WATERS` M2 now waits for `ATMOSPHERE:M9`. `ATMOSPHERE` M7.3 gains probes near
+  them in its own landing. `WATERS` WP2 now waits for `ATMOSPHERE:WP9`. `ATMOSPHERE` WP7.3 gains probes near
   the ground. No design or item of `SCENE-VIEWS`, `CLOUDS` or `APPLE-TILE` changed, no other item of
   `WATERS`, and no contract text.
 - 2026-11-14 Dependency audit, on the lead's task from the owner's word that too few milestones can start at
   once: [the record](../../.orchestrate/evidence/dependency-audit-2026-11-14/README.md) gives a verdict for each of the 82
-  edges. Five only set an order: `SCENE-VIEWS` M1 now waits for `CULLING:M1`, `PUDDLES` M6 for `SHOWCASE:M5`,
-  `SHOWCASE` M8 and not M7 for `PLATFORM-RUNTIME-MAC:M3` and `CREATOR:M3`, and `SWARM` M3 and M6, not M2, for
-  `GAME-UI`. `SHOWCASE` M7.1 no longer asks for `ATMOSPHERE`'s track-2 milestones. The swarm gate stays, by the
+  edges. Five only set an order: `SCENE-VIEWS` WP1 now waits for `CULLING:WP1`, `PUDDLES` WP6 for `SHOWCASE:WP5`,
+  `SHOWCASE` WP8 and not M7 for `PLATFORM-RUNTIME-MAC:WP3` and `CREATOR:WP3`, and `SWARM` WP3 and M6, not M2, for
+  `GAME-UI`. `SHOWCASE` WP7.1 no longer asks for `ATMOSPHERE`'s track-2 milestones. The swarm gate stays, by the
   owner's decision. Nine milestones can start once the running ones finish, as before: the limit is one
-  milestone a module, two designs not approved and `APPLE-PRESENTATION` M4 to M11 not planned.
+  milestone a module, two designs not approved and `APPLE-PRESENTATION` WP4 to M11 not planned.
 - 2026-11-14 Two changes, from the lead's task. (1) The owner's decision of that day, quoted in
   [the split](#the-split-of-14-november-2026): the five engine modules of track 3 lost their gate on
-  `SHOWCASE:M8` and keep only the edges that section lists; `SWARM` keeps the gate. A driven world moved from
-  `SWARM` M7 to a new `SESSION` M7 and the shared iPhone shell from `SWARM` M6 to a new `GAME-UI` M6, with their
-  rulings. (2) `APPLE-PRESENTATION` M4 to M12 planned, seams 5 to 9 settled, and `SHOWCASE` M7, `WATERS` M11
-  and `CLOUDS` M12 given their real edges. `APPLE-PRESENTATION` M1 to M3 are unchanged.
+  `SHOWCASE:WP8` and keep only the edges that section lists; `SWARM` keeps the gate. A driven world moved from
+  `SWARM` WP7 to a new `SESSION` WP7 and the shared iPhone shell from `SWARM` WP6 to a new `GAME-UI` WP6, with their
+  rulings. (2) `APPLE-PRESENTATION` WP4 to M12 planned, seams 5 to 9 settled, and `SHOWCASE` WP7, `WATERS` WP11
+  and `CLOUDS` WP12 given their real edges. `APPLE-PRESENTATION` WP1 to M3 are unchanged.
 - 2026-11-14 Track 4 added from two requests of the owner's, quoted in its section: the code review's fixes and
   the game's separation, as six modules (rows 26 to 31) with designs, plans and done-when files. No item of any
-  other module changed. `SWARM` M2 gained a dependency on `GAME-SPLIT:M4`, since the swarm game is built in the
+  other module changed. `SWARM` WP2 gained a dependency on `GAME-SPLIT:WP4`, since the swarm game is built in the
   games repository; `SWARM`'s paths are re-planned before that milestone. Decided here: fixes are built in new
   modules under rulings, because eight owning modules have builders at work and an approved design cannot gain a
-  mechanism without stopping them; the game moves after `SHOWCASE:M8`; no Git history is rewritten.
-- 2026-11-14 [Exact baselines](#exact-baselines) gained a ruling on `CULLING` M3, from the lead's task after
-  its builder stopped under rule 1. `CULLING` M3 builds the forward pass's coverage output and regenerates the
-  `APPLE-TILE` references it moves in the same landing; the references stay `APPLE-TILE`'s. `CULLING` M3.10 was
+  mechanism without stopping them; the game moves after `SHOWCASE:WP8`; no Git history is rewritten.
+- 2026-11-14 [Exact baselines](#exact-baselines) gained a ruling on `CULLING` WP3, from the lead's task after
+  its builder stopped under rule 1. `CULLING` WP3 builds the forward pass's coverage output and regenerates the
+  `APPLE-TILE` references it moves in the same landing; the references stay `APPLE-TILE`'s. `CULLING` WP3.10 was
   rewritten and M3.11 to M3.13 added. No item of any other module changed, and no module or milestone was added.
 - 2026-11-15 Track 4's six designs revised after their first design reviews (16 Must Fix), on the lead's task.
   Settled between modules: shared fixtures are `TEST-SUPPORT`'s second package, `thrum-fixtures`, which the
-  proving ground may take as a normal dependency and `GAME-SPLIT` M2 fills (ruling 9); the device recipe takes a
-  restriction for tests (ruling 7); `library-env` exempts the registered test-support package; `TEST-SUPPORT` M2
-  now waits for `GAME-SPLIT:M2`. `REVIEW-RENDER` M5 keeps the timestamp resolve in a later submission, because
+  proving ground may take as a normal dependency and `GAME-SPLIT` WP2 fills (ruling 9); the device recipe takes a
+  restriction for tests (ruling 7); `library-env` exempts the registered test-support package; `TEST-SUPPORT` WP2
+  now waits for `GAME-SPLIT:WP2`. `REVIEW-RENDER` WP5 keeps the timestamp resolve in a later submission, because
   the retained Metal evidence outranks the code review's M40. The owner's decisions stand: no history rewrite,
   the game at `/Users/ryannel/Workspace/thrum-games` with path dependencies, `CLOUDS` and `WATERS` unchanged.
   No item of any module outside track 4 changed.
-- 2026-11-15 The ruling on `CULLING` M3 gained "Qualified before the push", after that design's review (MF2):
+- 2026-11-15 The ruling on `CULLING` WP3 gained "Qualified before the push", after that design's review (MF2):
   the coverage output and the refreshed references are qualified on a local candidate and then pushed together.
   Ownership, the registry, the comparisons and every other module's items are unchanged.
-- 2026-11-15 `GAME-SPLIT` revised after its second design review (one Must Fix). `GAME-SPLIT` M1 now waits for
-  `TEST-SUPPORT:M1`, which delivers the `test-crate-edges` rule the game gate's `boundary` runs; the start order
+- 2026-11-15 `GAME-SPLIT` revised after its second design review (one Must Fix). `GAME-SPLIT` WP1 now waits for
+  `TEST-SUPPORT:WP1`, which delivers the `test-crate-edges` rule the game gate's `boundary` runs; the start order
   and row 31 say so. Ruling 11 gained the verifier's one change: it hands `THRUM_GAMES` to the commands it
   starts. No item of any other module changed.
 - 2026-11-15 [Exact baselines](#exact-baselines) gained a ruling on a frame that varies under load, after
-  `EFFECT-GRAPH` M3's builder stopped on one Chrome record of 481 and named `APPLE-TILE`. The planner's reading
-  of the retained frames puts the difference on shared triangle edges, the variation `CULLING` M3 corrects. A
+  `EFFECT-GRAPH` WP3's builder stopped on one Chrome record of 481 and named `APPLE-TILE`. The planner's reading
+  of the retained frames puts the difference on shared triangle edges, the variation `CULLING` WP3 corrects. A
   failed run of that kind may be set aside, with a record, when the whole verifier then passes on the same
-  content; the rule ends with `CULLING` M3's landing. `EFFECT-GRAPH` M3 gained M3.9. The registry, the
+  content; the rule ends with `CULLING` WP3's landing. `EFFECT-GRAPH` WP3 gained M3.9. The registry, the
   verifier, the comparisons, every reference and every other module's items are unchanged.
 - 2026-11-15 [Exact baselines](#exact-baselines) gained a ruling on a Chrome record that holds the tick before,
-  after `REPO-RULES` M1's builder stopped on one identity of 481 with every image equal and named `APPLE-TILE`.
+  after `REPO-RULES` WP1's builder stopped on one identity of 481 with every image equal and named `APPLE-TILE`.
   The planner's reading: no drift and no stale key, since the same content passed within the hour; a stall of
   the page left one due tick for the next callback of a fixed capture. A failed run of that kind may be set
   aside, with a record, when the whole verifier then passes. No milestone was added to `APPLE-TILE`; the
   correction is `HOST`'s to make and is not planned. The registry, the verifier, the comparisons, every
   reference and every module's items are unchanged.
-- 2026-11-15 `TRANSPORT` M1 waits for `SHOWCASE:M8` again, after its design review of 15 November (`d686fe75`,
+- 2026-11-15 `TRANSPORT` WP1 waits for `SHOWCASE:WP8` again, after its design review of 15 November (`d686fe75`,
   one Must Fix): the brief's decision 1 says "transport stays after V1", and the owner's words of 14 November
   name the 2D engine side. The split, the edge table, the build order, row 21 and owner decision 7 say so.
-  `SESSION`'s files are unchanged: its M2 onward wait through `TRANSPORT:M1`, and the sentence in its design
+  `SESSION`'s files are unchanged: its M2 onward wait through `TRANSPORT:WP1`, and the sentence in its design
   that it "waits for nothing of V1's" now holds for its own edges only; reword it when that plan next changes.
 - 2026-11-15 The owner ruled on transport's timing: "it can come before V1 if we have space for it, but it's not
-  urgent". `TRANSPORT` M1 no longer waits for `SHOWCASE:M8`, and `TRANSPORT` is the lowest priority: the lead
+  urgent". `TRANSPORT` WP1 no longer waits for `SHOWCASE:WP8`, and `TRANSPORT` is the lowest priority: the lead
   starts its builder only when a builder slot is free. Row 21, the split, the edge table, the build order, its
   entry and owner decision 7 say so, and the brief's decision 1 carries the ruling. `SESSION`'s files are
-  unchanged: its M2 onward wait on `TRANSPORT:M1` alone, so its design's "waits for nothing of V1's" holds again.
+  unchanged: its M2 onward wait on `TRANSPORT:WP1` alone, so its design's "waits for nothing of V1's" holds again.
 - 2026-11-15 [Exact baselines](#exact-baselines) rule 2 gained "The covered paths are derived", on the lead's
   task with the owner's approval. `BASELINE-GUARD` gained M2: the proof key covers the files a verified build or
   comparison reads, taken from Cargo's resolved graph, the scripts' references and the compilers' dependency
@@ -2990,48 +2990,48 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   [proofs run once, on main](#proofs-run-once-on-main), on the lead's task with the owner's approval. Rule 2
   moved from a proof before each push to one run on main after the merge, by the main-branch check
   `exact-images`; rule 3's item now passes from that shared run and takes no lock; the gate in `./dev check`
-  only warns. "The covered paths are derived" is withdrawn, and `BASELINE-GUARD` M2 is planned again as the
+  only warns. "The covered paths are derived" is withdrawn, and `BASELINE-GUARD` WP2 is planned again as the
   reference guard. `ORCHESTRATE.md` declares `gpu: 2` and `chrome: 1` as shared and `simulator` as exclusive.
   No baseline, comparison or item text of another module changed; only items' `lock` fields did.
-- 2026-11-16 `CULLING` M3's builder stopped before its landing: M3.10 and the ruling on M3 said the registry
+- 2026-11-16 `CULLING` WP3's builder stopped before its landing: M3.10 and the ruling on M3 said the registry
   stays as it is, and the reference guard, which landed after both were written, refuses moved references
   without a new pin and refresh. Rule 2 now says what a planned refresh changes in the registry: the `pin` and
   `refresh` of each baseline whose reference moved, and nothing else, in a commit that repeats no image proof.
-  The rulings on `CULLING` M3 and `ATMOSPHERE` M9 say the same and gained anchors for a refresh to name,
-  `ruling-on-culling-m3` and `ruling-on-atmosphere-m9`. `CULLING` M3.10 and `ATMOSPHERE` M9.5 are written
+  The rulings on `CULLING` WP3 and `ATMOSPHERE` WP9 say the same and gained anchors for a refresh to name,
+  `ruling-on-culling-m3` and `ruling-on-atmosphere-m9`. `CULLING` WP3.10 and `ATMOSPHERE` WP9.5 are written
   again for it. Nothing of `BASELINE-GUARD` or `APPLE-TILE` changed.
-- 2026-11-16 The ruling on `CULLING` M3 lost "Qualified before the push" and gained "Proved once, then
+- 2026-11-16 The ruling on `CULLING` WP3 lost "Qualified before the push" and gained "Proved once, then
   merged", on the lead's task after a job audit traced about 30% of failed background jobs to the pipeline
   that enforced the old order. M3 lands as rule 2's planned refresh; its campaign runs once and is tied to main
-  through the references. `CULLING` M3.10 and M3.11 are written again. The second of two refreshes may take
+  through the references. `CULLING` WP3.10 and M3.11 are written again. The second of two refreshes may take
   the main-branch check's pass as its starting record. No reference, comparison, registry rule or other
   module's item changed.
-- 2026-11-16 The display phase added as an interface, with a seam ruling for `EFFECT-GRAPH` M4, on the lead's
-  task after `CLOUDS` M2 ended `BLOCKED needs_dependency`. `CLOUDS` M2 now needs `EFFECT-GRAPH:M4`. No other
+- 2026-11-16 The display phase added as an interface, with a seam ruling for `EFFECT-GRAPH` WP4, on the lead's
+  task after `CLOUDS` WP2 ended `BLOCKED needs_dependency`. `CLOUDS` WP2 now needs `EFFECT-GRAPH:WP4`. No other
   module's item or file changed. `SEA`, `WATERS`, `RENDER-2D`, `HOST` and `SESSION` are named in the ruling:
   their planners read it there.
-- 2026-11-16 The ruling on `CULLING` M3 gained "The loaded proof is made on main", after a design review
+- 2026-11-16 The ruling on `CULLING` WP3 gained "The loaded proof is made on main", after a design review
   found that the registered references are drawn Direct and so cannot tie a campaign made on the branch to
   the culled and bucket pipelines of the merged build. M3.11's campaign is taken once on main after the
-  merge. `CULLING` M3.11 is written again. The ruling on a frame that varies under load now also stops a
+  merge. `CULLING` WP3.11 is written again. The ruling on a frame that varies under load now also stops a
   module whose own exact comparison varies along triangle edges on content that holds the output. No
   reference, comparison, registry rule or other module's item changed.
 - 2026-11-16 The display phase and its ruling revised after the design reviews of `EFFECT-GRAPH` and `CLOUDS`
   each found one Must Fix in it. The phase describes the consumed target, the host's observed time plus its
   lead; the offscreen runner reads the clock once; a prediction past the committed tick is carried a tick at
-  a time. `EFFECT-GRAPH` M4.1 to M4.4 and `CLOUDS` M2.7 and M2.11 are written again and `CLOUDS` gains M2.13.
+  a time. `EFFECT-GRAPH` WP4.1 to M4.4 and `CLOUDS` WP2.7 and M2.11 are written again and `CLOUDS` gains M2.13.
   No other module's item or file changed.
 - 2026-11-16 `SCENE-VIEWS` ruling 3 and the secondary-view interface now say where a view's camera stands,
   after its design review found one Must Fix: a view reads the frame's caster height map and air shadow
   heights, which are its own only on the main camera's vertical, so a request from a camera off it is
-  refused. Every water mirror is on it. `SCENE-VIEWS` M1.1 and M2.1 are written again and it gains M1.13. No
+  refused. Every water mirror is on it. `SCENE-VIEWS` WP1.1 and M2.1 are written again and it gains M1.13. No
   other module's item, file or design changed.
 - 2026-11-16 `SCENE-VIEWS` ruling 3 now has the scene's fit lay the caster height map out from the position a
   camera declares, in every scene, after its sixth design review carried the Must Fix forward: taken back
   out of a view matrix, that position rounds differently by direction and height, so on a texel's edge two
   cameras on one vertical could have maps 32 m apart. A scene with no view changes only at such a camera.
   A reproduction of the showcase valley's cameras expects no registered exact baseline to move
-  ([part G](../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)); the verifier decides. `SCENE-VIEWS` M1.1, M1.7
+  ([part G](../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)); the verifier decides. `SCENE-VIEWS` WP1.1, M1.7
   and M1.13 are written again and it gains M1.14. No other module's item or design changed.
 - 2026-11-16 `T2-CAPTURE` gained M3 and the ruling on
   [a motion capture that drops frames under load](#ruling-on-a-capture-that-drops-frames), after the
@@ -3041,8 +3041,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - 2026-11-17 [Ruling 8 for `CLOUDS`](#seam-rulings-for-clouds) and the air's-haze interface now carry the
   haze's kind, an Ångström exponent, beside its amount, after `ATMOSPHERE`'s f64 reference sky showed the
   colour it gives visible at a low Sun in haze of 20 and 3 km
-  ([the check](../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md)). The weather state holds it (`CLOUDS` M16) and
-  `ATMOSPHERE` M7 applies it; the default, 0, is today's grey aerosol, so no scene and no exact baseline changes.
+  ([the check](../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md)). The weather state holds it (`CLOUDS` WP16) and
+  `ATMOSPHERE` WP7 applies it; the default, 0, is today's grey aerosol, so no scene and no exact baseline changes.
   No contract changed.
 - 2026-11-17 Track 5 added from the owner's words, quoted in its section: `RAY-TRACING` (six milestones) and
   `MESH-SHADING` (three), each with a design, plan and done-when file, at rows 32 and 33. A planning probe
@@ -3073,7 +3073,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   quoted in [its design](MESH-SHADING/DESIGN.md#the-request): the mesh stages are an opt-in a launch and a
   scene ask for and no host or `Auto` selects them, a `MeshStages` request that cannot be met falls back with
   a reason, the caster view layout is visible to the object and mesh stages on a device that enabled them,
-  and whichever of `RAY-TRACING` M3 and `MESH-SHADING` M2 lands first adds the whole-frame GPU span. No V1
+  and whichever of `RAY-TRACING` WP3 and `MESH-SHADING` WP2 lands first adds the whole-frame GPU span. No V1
   module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.
 - 2026-11-18 Track 5 ruling 7, the cooked-draw-path interface and owner decision 33 were amended and ruling 12
   was added after [MESH-SHADING's third design review](../../.orchestrate/evidence/MESH-SHADING/design-review.md):
@@ -3082,58 +3082,58 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   disclosed. No V1 module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.
   Its design still calls the span the whole frame's and says its opt-in leaves the recipe as it is today.
 - 2026-11-18 Track 5 ruling 12 and owner decision 33 were amended after
-  [RAY-TRACING's third design review](../../.orchestrate/evidence/RAY-TRACING/design-review.md): `RAY-TRACING` M6 builds
-  the recipe preference if `MESH-SHADING` M3 has not, and its launch selection prefers Apple tile on a
+  [RAY-TRACING's third design review](../../.orchestrate/evidence/RAY-TRACING/design-review.md): `RAY-TRACING` WP6 builds
+  the recipe preference if `MESH-SHADING` WP3 has not, and its launch selection prefers Apple tile on a
   generation that enabled `ray-query`. Its design now names ruling 7's timed-pass span as that ruling does.
   No V1 module's item, contract or exact baseline changed, and no file of `MESH-SHADING` changed.
-- 2026-11-18 `SHOWCASE` M5 ended blocked on a Sun-shadow strip under the exit scene's balloons. Added
-  `ATMOSPHERE` M10, the aloft-casters interface and [its seam ruling](#seam-ruling-for-atmosphere-m10): the
-  caster height map holds the ground and what stands on it, and a marked row is left out of it. `SHOWCASE` M5
-  now waits for `ATMOSPHERE:M10`. No contract or registered exact baseline changed, and no item of `CULLING`.
-- 2026-11-18 `SCENE-VIEWS` M3 ended blocked asking for a timing sitting with the other builders paused, the
-  second last milestone to stop that way after `CULLING` M3. The project's rule now makes every timing a
+- 2026-11-18 `SHOWCASE` WP5 ended blocked on a Sun-shadow strip under the exit scene's balloons. Added
+  `ATMOSPHERE` WP10, the aloft-casters interface and [its seam ruling](#seam-ruling-for-atmosphere-m10): the
+  caster height map holds the ground and what stands on it, and a marked row is left out of it. `SHOWCASE` WP5
+  now waits for `ATMOSPHERE:WP10`. No contract or registered exact baseline changed, and no item of `CULLING`.
+- 2026-11-18 `SCENE-VIEWS` WP3 ended blocked asking for a timing sitting with the other builders paused, the
+  second last milestone to stop that way after `CULLING` WP3. The project's rule now makes every timing a
   tripwire taken under load, a last milestone's included; quiet figures wait for one batched window if they are
-  still wanted, and only a sitting a design names, as `SHOWCASE` M8's, pauses the others
-  ([settings](../../ORCHESTRATE.md#targets)). `SCENE-VIEWS` M3.4 was written again to it. No interface,
+  still wanted, and only a sitting a design names, as `SHOWCASE` WP8's, pauses the others
+  ([settings](../../ORCHESTRATE.md#targets)). `SCENE-VIEWS` WP3.4 was written again to it. No interface,
   contract or exact baseline changed, and no item of another module.
-- 2026-11-18 `SESSION` M1's review found that [ruling 1](#seam-rulings-for-session) asked for two things no build
+- 2026-11-18 `SESSION` WP1's review found that [ruling 1](#seam-rulings-for-session) asked for two things no build
   could give together: a compiler that refuses a type with half the encoding, and `SIM-2D`'s accepted tests
   left as they were, whose fixtures register such types. The ruling now says those fixtures gain the decoding
   half and nothing else in an accepted test changes. `SESSION`'s design also has a rule set's settings in its
   identity, so the crowd's Crowd and Mixed rules state two. No item of `SIM-2D`, contract or exact baseline
   changed.
-- 2026-11-19 `ATMOSPHERE` M6 ended blocked on "Assign the shipped valley fix and authorize the affected
+- 2026-11-19 `ATMOSPHERE` WP6 ended blocked on "Assign the shipped valley fix and authorize the affected
   APPLE-TILE exact-reference refresh." [The ruling on the valley's lookout rim and sunrise stop](#ruling-on-the-valley-fix)
-  gives the valley's source and stop presets to `SHOWCASE`, adds `SHOWCASE` M9 to fix the rim's mesh and move
+  gives the valley's source and stop presets to `SHOWCASE`, adds `SHOWCASE` WP9 to fix the rim's mesh and move
   the sunrise stop's hour, lets that milestone refresh `APPLE-TILE`'s five sets and write the new cooked root
-  into the route files of `APPLE-TILE`, `CULLING` and `EFFECT-GRAPH`, and lets `ATMOSPHERE` M6 refresh the sets
-  once more if its list needs a change to the look. `ATMOSPHERE` M6 now waits for `SHOWCASE` M9 and carries the
+  into the route files of `APPLE-TILE`, `CULLING` and `EFFECT-GRAPH`, and lets `ATMOSPHERE` WP6 refresh the sets
+  once more if its list needs a change to the look. `ATMOSPHERE` WP6 now waits for `SHOWCASE` WP9 and carries the
   verifier as M6.9. No item of `APPLE-TILE`, `CULLING` or `EFFECT-GRAPH`, comparison or contract changed.
-- 2026-11-20 `SHOWCASE` M9's review failed M9.6 on the lead's move of the retained references out of
+- 2026-11-20 `SHOWCASE` WP9's review failed M9.6 on the lead's move of the retained references out of
   `docs/evidence/`, which the item's wording forbade. [Exact baselines](#exact-baselines) gained
   [the ruling on where retained references are kept](#ruling-on-relocated-references): a relocation keeps
   every file's name and bytes, and only the paths that say where the references are follow it. The text on a
-  planned refresh and the valley ruling point at it, and `SHOWCASE` M9.6 is written again. No comparison,
+  planned refresh and the valley ruling point at it, and `SHOWCASE` WP9.6 is written again. No comparison,
   sampling, reference byte or contract changed, and no item of `APPLE-TILE`, `BASELINE-GUARD` or `ATMOSPHERE`.
 - 2026-11-20 [Track 6](#track-6-the-cleanup-of-20-november) added from the owner's request, "We want to do a
   code cleanup and consolidation for Thrum", and the cleanup review of that day: `GATE-TIME`, `DEAD-TOOLS` and
   `DEAD-CODE`, rows 34 to 36, and M3 and M4 of `TEST-SUPPORT`. The project settings gained the rule that a Done
   item's check is its record, and three rules for wording an item. Open items of `HOST`, `CLOUDS`, `SHOWCASE`,
   `WATERS`, `ATMOSPHERE`, `SWARM` and `PUDDLES` were reworded where a check passed on a missing path or an item
-  asked for a file under `docs/evidence`; each module's log says which. `REPO-RULES` M3 now waits for track 6.
+  asked for a file under `docs/evidence`; each module's log says which. `REPO-RULES` WP3 now waits for track 6.
   No Done item, exact baseline, comparison or contract changed.
 - 2026-11-20 Track 6 revised after its first design reviews and three owner decisions of that day. The gale and
   every other test over about a minute leave the merge's check whole, under
   [the test tiers](../../ORCHESTRATE.md#test-tiers) now in the project settings, and run in release on main
   (seam ruling 2). All nine benches go. Provenance records are tracked under `docs/provenance` (seam ruling 8):
-  `DEAD-TOOLS` gained M5, built first, and `CLOUDS` M6 waits for it. Seam ruling 7 now says what the designs
+  `DEAD-TOOLS` gained M5, built first, and `CLOUDS` WP6 waits for it. Seam ruling 7 now says what the designs
   say: a pinned comparison file is never edited, and a script it imports keeps its name and what the pinned
   files use. Open items of `CLOUDS` and `WATERS` that named the working-folder provenance file were reworded.
 - 2026-11-20 Track 6 revised a third time, in one pass over `GATE-TIME`, `DEAD-TOOLS`, `DEAD-CODE` and
   `TEST-SUPPORT`: the second design reviews' Must Fix findings, the hardening pass, and the owner's decision that
   the merge tier is targeted, which the lead gave as "Every merge runs only the tests for what the change
-  touches, and the full workspace runs on main." New milestones: `GATE-TIME` M6 (tests behind a Cargo feature)
-  and M7 (the merge selection), `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 (six rules frozen before their cleanups).
+  touches, and the full workspace runs on main." New milestones: `GATE-TIME` WP6 (tests behind a Cargo feature)
+  and M7 (the merge selection), `DEAD-TOOLS` WP6 and `TEST-SUPPORT` WP5 (six rules frozen before their cleanups).
   Seam rulings 9 to 11 and four interfaces were added, the wave table gained `TEST-SUPPORT`, and the test tiers
   in the project settings were written again. No Done item, exact baseline, comparison or contract changed.
 - 2026-11-20 `GATE-TIME` and `DEAD-TOOLS` revised after their third design reviews. Seam rulings 9 to 11 and
@@ -3148,7 +3148,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   (tests side by side through cargo-nextest, a measured test build, a limit on one test) and M9 (tests over ten
   seconds made fast or moved to the main tier). Seam ruling 2 changed, ruling 12 and one interface were added,
   and the test tiers in the project settings say the same. No other module's dependency changed.
-- 2026-11-21 `GATE-TIME` M8 gained one fix in the engine, by the lead's decision: the wait in
+- 2026-11-21 `GATE-TIME` WP8 gained one fix in the engine, by the lead's decision: the wait in
   `FrameHost::capture_pixels`, in `APPLE-TILE`'s frame host, which failed when another thread's poll took its
   readback's completion and stopped M8's merge. Seam ruling 12 and track 6's table say so, and `APPLE-TILE`'s
   log records the hand-over. No module's dependency changed.

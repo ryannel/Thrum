@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/DEAD-CODE/design-review.md",
     "commit": "309d5ee4e14142c11d394b0943a9bf499d54afef",
-    "hash": "3e7a0920e8a056a6844154e1f590d26366292cd247c7cd427afc3f4a071ff00a",
+    "hash": "f441fb201a3ac2a1107fcc4d792c38e3ed4ff5db5c4d4df245158b6fcf005dd0",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
@@ -23,20 +23,20 @@
     },
     "at": "2026-11-21T02:32:02Z"
   },
-  "milestones": {
-    "M1": {
-      "definitions": "6455e00dbf22493dfc932b95d2674546cc3ed3b54e30d13879d567912c77cdd8",
+  "work_packages": {
+    "WP1": {
+      "definitions": "e584a532bdbbf8f16c9920f13d09bb71ce7401f338e099baaed506f993fb0785",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "64958bfe4718d8b38de2f845eb869f90c6075251",
-          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/WP1-review.md",
           "items": {
-            "M1.1": "pass",
-            "M1.2": "pass",
-            "M1.3": "pass",
-            "M1.5": "pass",
-            "M1.4": "pass"
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.5": "pass",
+            "WP1.4": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -94,28 +94,28 @@
       "done": {
         "by": "review",
         "commit": "64958bfe4718d8b38de2f845eb869f90c6075251",
-        "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md",
+        "review": ".orchestrate/evidence/DEAD-CODE/WP1-review.md",
         "checked": "ccc1990916c6be621f3676959e1d34797083d1c1",
         "at": "2026-11-21T00:31:56Z"
       }
     },
-    "M2": {
-      "definitions": "d2ad151812bc1bb1ef62aa0cc90a0cebb950cd25eeff39fcf14419d0d36a738c",
+    "WP2": {
+      "definitions": "73ad69b5b15a5bf8a5b24bdfdd15c74701bf5889e660671feb220665c287aa50",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "c21a04911871fbeaf1299b8e23554395cd2065c9",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review-1.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/WP2-review-1.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.4": "fail",
-            "M2.3": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.4": "fail",
+            "WP2.3": "pass"
           },
           "findings": [
             {
               "name": "mesh_stage_gpu edited but run in no tier",
-              "item": "M2.4",
+              "item": "WP2.4",
               "planner": "M2.4's named proof, the main-branch check long-tests, cannot run examples/v1-game's mesh_stage_gpu: GATE-TIME listed it not-run (owner MESH-SHADING) after M2.4 was written. The edited contribution's tests pass serially (10 passed). Only a planner can say how M2.4 treats a not-run binary; no DEAD-CODE builder turn can make the statement true.",
               "repeat": false
             }
@@ -140,13 +140,13 @@
         {
           "verdict": "pass",
           "commit": "2dce6c9c65f00a33797f7e477b3ff117a9689bc0",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/WP2-review.md",
           "items": {
-            "M2.1": "pass",
-            "M2.2": "pass",
-            "M2.4": "pass",
-            "M2.5": "pass",
-            "M2.3": "pass"
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.3": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -177,10 +177,10 @@
         "at": "2026-11-21T03:41:10Z",
         "reused": [
           "Test command",
-          "M2.1",
-          "M2.2",
-          "M2.5",
-          "M2.3"
+          "WP2.1",
+          "WP2.2",
+          "WP2.5",
+          "WP2.3"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -208,24 +208,24 @@
       "done": {
         "by": "review",
         "commit": "2dce6c9c65f00a33797f7e477b3ff117a9689bc0",
-        "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md",
+        "review": ".orchestrate/evidence/DEAD-CODE/WP2-review.md",
         "checked": "7ef9fdc5ca63b7e02f3332a1f5088157491f77f5",
         "at": "2026-11-21T03:44:38Z"
       }
     },
-    "M3": {
+    "WP3": {
       "definitions": "b32905f6afe1e2cc91e6b79485dcaf84740bc04f278ac445f1ba12763b3fc775",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "5688eab00a73e5dd88523e23cdfe37f823522108",
-          "review": ".orchestrate/evidence/DEAD-CODE/M3-review.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/WP3-review.md",
           "items": {
-            "M3.1": "pass",
-            "M3.2": "pass",
-            "M3.3": "pass",
-            "M3.4": "pass",
-            "M3.5": "pass"
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -283,20 +283,20 @@
       "done": {
         "by": "review",
         "commit": "5688eab00a73e5dd88523e23cdfe37f823522108",
-        "review": ".orchestrate/evidence/DEAD-CODE/M3-review.md",
+        "review": ".orchestrate/evidence/DEAD-CODE/WP3-review.md",
         "checked": "0d36f6e11b8f335e679c1d915fd7e405d9597367",
         "at": "2026-11-21T04:27:16Z"
       }
     },
-    "M4": {
-      "definitions": "a826c5b8d00edd38b524bb971ab85b5bfa27e36737d3fa9a301a5f6859ebf06d",
+    "WP4": {
+      "definitions": "26e5ad11c2af214f063347455ae3b00044f69202f328f1794f976b0373d5cf4e",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "cfdce3b3ef019fde8c78738d74d23b125eb8de7d",
-          "review": ".orchestrate/evidence/DEAD-CODE/M4-review.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/WP4-review.md",
           "items": {
-            "M4.1": "pass"
+            "WP4.1": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -327,7 +327,7 @@
         "at": "2026-11-21T15:56:49Z",
         "reused": [
           "Test command",
-          "M4.1"
+          "WP4.1"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -355,22 +355,22 @@
       "done": {
         "by": "review",
         "commit": "cfdce3b3ef019fde8c78738d74d23b125eb8de7d",
-        "review": ".orchestrate/evidence/DEAD-CODE/M4-review.md",
+        "review": ".orchestrate/evidence/DEAD-CODE/WP4-review.md",
         "checked": "7838efee1c624ea504db69583dbcf53f592b00a8",
         "at": "2026-11-21T16:03:31Z"
       }
     },
-    "M5": {
-      "definitions": "1be47024257778daa284d1a2ebe27e86fddb0373afdc3ae4c6c4739c25f0d3a2",
+    "WP5": {
+      "definitions": "5f8f71983a6bdcee9314bbd1370bcf0c6896a8a74874cd00e7336757db892b58",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "b686a8779d184bfddd3151a93beb382fc295fffe",
-          "review": ".orchestrate/evidence/DEAD-CODE/M5-review.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/WP5-review.md",
           "items": {
-            "M5.1": "pass",
-            "M5.2": "pass",
-            "M5.3": "pass"
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -401,8 +401,8 @@
         "at": "2026-11-21T19:33:45Z",
         "reused": [
           "Test command",
-          "M5.1",
-          "M5.2"
+          "WP5.1",
+          "WP5.2"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -430,24 +430,24 @@
       "done": {
         "by": "review",
         "commit": "b686a8779d184bfddd3151a93beb382fc295fffe",
-        "review": ".orchestrate/evidence/DEAD-CODE/M5-review.md",
+        "review": ".orchestrate/evidence/DEAD-CODE/WP5-review.md",
         "checked": "d22b9d2035cb2665df345e2c458a2c20f49be676",
         "at": "2026-11-21T19:36:35Z"
       }
     },
-    "M6": {
-      "definitions": "2f9fd5872ebdf0c4cd7aed146aac234271c3eb98b2d9b936136050e3fe3502d2",
+    "WP6": {
+      "definitions": "c339a8d2bcce750806129ad7da84801336b33024bdb515409f99914d6413e836",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "46987285e5e5ecf2ce4751409dd152206e9f7825",
-          "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/WP6-review.md",
           "items": {
-            "M6.1": "pass",
-            "M6.2": "pass",
-            "M6.4": "pass",
-            "M6.5": "pass",
-            "M6.3": "pass"
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.3": "pass"
           },
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -478,10 +478,10 @@
         "at": "2026-11-22T01:48:07Z",
         "reused": [
           "Test command",
-          "M6.1",
-          "M6.2",
-          "M6.5",
-          "M6.3"
+          "WP6.1",
+          "WP6.2",
+          "WP6.5",
+          "WP6.3"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -509,13 +509,13 @@
       "done": {
         "by": "review",
         "commit": "46987285e5e5ecf2ce4751409dd152206e9f7825",
-        "review": ".orchestrate/evidence/DEAD-CODE/M6-review.md",
+        "review": ".orchestrate/evidence/DEAD-CODE/WP6-review.md",
         "checked": "8d66e3cf2129e3552c6d5358fb0ba885a74ed12f",
         "at": "2026-11-22T01:54:09Z"
       }
     }
   },
-  "briefs": [
+  "tasks": [
     {
       "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and consolidation for Thrum.\" The purpose is to make Thrum cheaper to change: a shorter merge gate, no tools, records or code that nothing uses, and no proof heavier than the fault it guards. It must not change what the engine draws, simulates or sends.\n\nStart from /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/REPORT.md. Read it in place; don't copy it or edit it. Beside it, results.json holds every finding, findings/<reviewer>.md holds the full write-ups, and verified/<reviewer>-<n>.md holds the second agents' corrections. Where a verifier corrected a finding, the verifier is right.\n\nIn scope: the report's sections 1 to 4 (gate time, dead tools and records, dead engine code, and small API changes that delete stubs). Also in scope: the parts of section 6 that are code or files, meaning the fixtures and record writers that still use docs/evidence, and the water settings that are parsed twice. Section 5, the test kit, belongs to TEST-SUPPORT as a milestone after its M2, so plan it there. Section 7 needs designs of its own: list each part as not planned, with one line each.\n\nSection 6's plan and settings text belongs to the lead and the planners:\n- L8-01: no rule says a Done item's check is history, so about 770 path mentions are treated as frozen.\n- L8-05: `! grep` and `test ! -e` checks pass when their path is missing (HOST M4.5, CLOUDS M14.13, SHOWCASE M9.7, HOST M3.2).\n- L8-07: ten open items ask for new tracked files under docs/evidence, which the merge guard refuses.\nFix those in the open done-when items and in ORCHESTRATE.md where it's within planner authority. Name any change that only the orchestrate skill can make, and keep that out of this plan.\n\nWhat the plan must respect:\n- A done-when item names a behaviour, not a file location. SHOWCASE M9.6 failed review over a byte-identical fixture move because its items named paths.\n- Up to three Claude builders (Opus 5.5 medium) can work at once. Shape the work so that milestones with disjoint files can run side by side, as separate modules if that's what it takes, and say which ones can.\n- Other builders are live, on Codex, in APPLE-PRESENTATION, HOST, RAY-TRACING, REVIEW-RENDER, SESSION, TEST-SUPPORT and RENDER-2D. The findings' verifier notes say which files are busy and which open done-when items name them. Declare each milestone's files, so the lead can confirm them before a builder starts.\n- A deletion that drops a capability or a proof is the owner's call. Carry each one as an assumption, with the other choice stated. That covers the headless release-trust toolchain (8,500 lines), the nine benches nothing runs, the ten-minute gale soak (actual_gale_keeps_the_fleet_in_contact_on_metal) moving from the gate to a main-branch check with a 60-second run left in the gate, and the reference tests that the 17 November bar may retire. The state-delta codec stays unless SESSION's design changes, because that design says keep.\n- scripts/ is a covered path for exact baselines, so script deletions land together.\n- Changes to the gate's machinery (the test profile, nextest) are measured before they're switched on.\n- Order by payoff. Gate time comes first, because every merge pays it.\n\nDone when the design has passed its review and the plan is merged.",
       "at": "2026-11-20T10:12:46Z"

@@ -1,7 +1,7 @@
 # Content loop: edited meshes, textures and volumes appear in the running game without a stall
 
 13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
-[the brief](../BRIEF.md). C05, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
+[the brief](../VISION.md). C05, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
 [the G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md),
 [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) and
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) govern.
@@ -12,11 +12,11 @@ The owner's words weren't passed on; this design answers the lead's planning tas
 word:
 
 > Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear
-> in the running game without a stall; needs APPLE-PRESENTATION M2). Write its design, milestones and done-when
-> file so M1 is buildable as soon as APPLE-PRESENTATION M2 passes review. SEA, CLOUDS and RENDER-2D depend on it;
+> in the running game without a stall; needs APPLE-PRESENTATION WP2). Write its design, milestones and done-when
+> file so WP1 is buildable as soon as APPLE-PRESENTATION WP2 passes review. SEA, CLOUDS and RENDER-2D depend on it;
 > account for what they will need from it.
 
-What the module is for comes from [the brief](../BRIEF.md):
+What the module is for comes from [the brief](../VISION.md):
 
 - Decision 1, the V1 exit, asks for "cooked meshes/textures" and "hot reload".
 - Gate G5 reads: "Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC and BC7, atomic
@@ -30,7 +30,7 @@ volumes as content-addressed products, and "placement, product identity and hist
 inputs". The module list's interface rules add two more: cooked meshes reach entities as mesh rows, and `SEA`,
 `CLOUDS` and later `RENDER-2D` take cooked products from this module.
 
-M4 answers the lead's task of 16 November 2026, about `thrum-cook`'s
+WP4 answers the lead's task of 16 November 2026, about `thrum-cook`'s
 `the_watcher_publishes_an_edited_source`, which was failing the full check on a busy machine:
 
 > Find whether it is a real defect in the cooker's watcher or a timing-dependent test, and get it fixed fast: a
@@ -38,7 +38,7 @@ M4 answers the lead's task of 16 November 2026, about `thrum-cook`'s
 > as the first item of the owning module. A test that only passes on an idle machine is a defect here, because
 > the fleet keeps the machine busy. Do not weaken what the test proves.
 
-It is a defect in the watcher ([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)), so it is this
+It is a defect in the watcher ([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/WP4-diagnosis.md)), so it is this
 module's next milestone, and the test stays as it is.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-asset`, `thrum-cook`,
@@ -55,7 +55,7 @@ Shipping builds map the same products and never link the cooker.
 
 **What exists.** The loop is built and runs in the V1 game on the Mac and in Chrome. The
 [G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) stays the reference for the mechanisms it
-describes; where it and this design disagree, this design wins, and M3 brings its status lines up to date.
+describes; where it and this design disagree, this design wins, and WP3 brings its status lines up to date.
 
 - `thrum-asset` (shipping): the store layout, `HEAD`, the manifest, mapped mesh and KTX2 views, validation, and
   the dev-server client for targets that cannot map a store.
@@ -69,11 +69,11 @@ describes; where it and this design disagree, this design wins, and M3 brings it
 
 **Commissioned.**
 
-1. **Leases** (M1): another engine module is lent resident cooked textures and volumes to sample in its own
+1. **Leases** (WP1): another engine module is lent resident cooked textures and volumes to sample in its own
    passes, with identity and a change signal. The staging failure path gets its missing test.
-2. **Cooked mesh rows** (M2): the instance field's entities draw meshes read from cooked products, and an edit
+2. **Cooked mesh rows** (WP2): the instance field's entities draw meshes read from cooked products, and an edit
    replaces a row's geometry while the game runs.
-3. **The close of G5** (M3): the edits proved in the running valley on the Mac and in Chrome under
+3. **The close of G5** (WP3): the edits proved in the running valley on the Mac and in Chrome under
    reconstruction, the gate's clauses checked one at a time, current maturity rows, and the closing review.
 
 **Not built.** CAS garbage collection and reader leases; layered EAC volumes; any iPhone volume encoding (owed,
@@ -135,7 +135,7 @@ streaming in a shipped open-world game such as Marvel's Spider-Man 2. It is judg
   [Mutagen](https://mutagen.io/documentation/synchronization/watching/) polls beside its native watches, and
   [Meteor's safe watcher](https://codeclimate.com/github/meteor/meteor/tools/fs/safe-watcher.ts/source) keeps a
   polling safety net under them. kqueue would avoid `fseventsd` but holds a descriptor open for every watched
-  file and directory. M4 keeps the notices as the fast path and adds the scan.
+  file and directory. WP4 keeps the notices as the fast path and adds the scan.
 - **What would change the selection.** If a consumer's cost account needs many volumes in one pass and the
   portable limit of 16 sampled textures per stage binds, the answer is a cook-time atlas (one volume product), not
   a different lease. If Chrome loses frames on products of showcase size, the dev-server client moves its
@@ -143,7 +143,7 @@ streaming in a shipped open-world game such as Marvel's Spider-Man 2. It is judg
 
 ## Mechanisms
 
-### Leases (M1)
+### Leases (WP1)
 
 A **lease** is a named request, by an engine module, for a set of cooked 2D textures and volumes. The scene's
 residency makes them resident and lends them as read-only texture views. Its names are fixed when residency is
@@ -185,7 +185,7 @@ configured, as placements are.
     are the decoded data. A CPU reader takes the product the lease names, by its content hash, and never
     whatever `HEAD` names, so it changes in the frame the lease does.
 
-### Cooked mesh rows (M2)
+### Cooked mesh rows (WP2)
 
 [The entity-visibility interface](../ARCHITECTURE.md#interfaces) says an entity draws a whole mesh row from the
 scene's mesh selection. Today those rows are authored in code and "changing a slot's mesh means preparing again".
@@ -231,18 +231,18 @@ scene's mesh selection. Today those rows are authored in code and "changing a sl
 
 The arena, its rows and the route belong to `CULLING`. By
 [the seam ruling](../ARCHITECTURE.md#interfaces), this module's builder adds row replacement to them after
-`CULLING:M3` is Done, and the route's bounded write is its own, beside residency's belt. The route allows 64
+`CULLING:WP3` is Done, and the route's bounded write is its own, beside residency's belt. The route allows 64
 buckets, three per selected mesh, so a scene selects at most 21 distinct meshes; `SHOWCASE` sizes its entity
 meshes inside that.
 
-### One publication, one switch (M1, M2)
+### One publication, one switch (WP1, WP2)
 
 A **publication** is one generation of the store as residency resolves it for the scene: every product that
 differs from what a reader shows, for every reader the scene has. There are three kinds of reader: the placement
 set (the cooked meshes and the diagnostic volume residency draws, with their textures), each lease, and each
 cooked mesh row. This is the "entire affected presentation closure" of C05's qualified visual preview. The rules
 below are that clause as this module builds it: prepare the replacements, publish at extraction, change no
-gameplay. M1 builds them for placements and leases, and M2 adds rows as a third reader.
+gameplay. WP1 builds them for placements and leases, and WP2 adds rows as a third reader.
 
 1. **One owner.** Residency owns the publication: what it contains and whether it is preparing, ready or shown.
    The route's row writes are part of its preparation and report to it. No reader decides alone when to show new
@@ -286,19 +286,19 @@ The cost is latency, never a frame's time: with a lease attached a texture edit 
 does today, and a mesh that entities draw holds its publication for the frames its row write takes. The switch
 frame itself records no copy and no row write.
 
-### Failure (M1)
+### Failure (WP1)
 
 A staging chunk that cannot be filled frees its slot, records the error once, and the render thread drops the
 pending set; the drawn and lent sets stay. wgpu cannot be made to fail a mapped range on demand, which is why
-this path has no test. M1 adds a fault probe, compiled only on request as `draw-probe` is, at the point where a
+this path has no test. WP1 adds a fault probe, compiled only on request as `draw-probe` is, at the point where a
 chunk is mapped or written, so the production branch is the code that runs.
 
-### The sweep (M4)
+### The sweep (WP4)
 
 **The defect.** `watch` re-reads a source only when a change notice names it. On 16 November macOS left saves
 unreported on this Mac, with no notice of loss, and those saves were never cooked: 12 of 240 runs of the test's
 steps missed its ten seconds, and 8 of those 12 were still unreported after 60
-([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)). The watcher has to reach every save by itself.
+([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/WP4-diagnosis.md)). The watcher has to reach every save by itself.
 
 **One loop, two ways to learn of a save.** The loop that `thrum-cook watch` runs starts a cook cycle for either
 of two reasons.
@@ -334,21 +334,21 @@ last sweep took, so sweeping takes a set share of the time at most, however larg
 500 ms floor and missed nothing in 240 runs while notices were being lost. The builder sets the two constants
 and records the sweep's time at 1,000 and 10,000 files. They are baselines, not gates (brief decision 3).
 
-**Proved without the machine's help.** M4's new tests replace the notice source or switch the sweep off,
+**Proved without the machine's help.** WP4's new tests replace the notice source or switch the sweep off,
 through one seam the builder chooses, and nothing else differs from the loop the command runs. With a notice
 source that never reports, every save still publishes. With the sweep off, a notice still publishes at once.
 The settle rule is tested with times the test supplies. None of these waits on macOS, so none depends on the
 machine's load. `the_watcher_publishes_an_edited_source` stays word for word, on real notices and its
 ten-second deadline, and with the sweep under it the test holds whether or not a notice arrives. It cannot show
 the fix by itself, however often it runs: the loss comes in episodes, and 100 runs in a row of the loop on main
-passed between two of them. M4.1 is the proof.
+passed between two of them. WP4.1 is the proof.
 
 **Set aside.** A longer deadline in the test: most missed saves were still unreported after 60 seconds, and the
 store would stay wrong for a creator. Polling alone: it gives up the notice path's speed on a healthy machine.
 Restarting `fseventsd`: it probably helps on this Mac, needs an administrator, and leaves the watcher wrong on
 the next machine that drops a notice.
 
-### What a publication promises (M3)
+### What a publication promises (WP3)
 
 G5 publications are **previews**: the watcher cooks working files, not an admitted source revision. Three
 promises hold for every publication and one does not. The items claim only the first three.
@@ -376,15 +376,15 @@ a changed glTF over its old buffer when the accessors still fit, or a file an ed
 on. The creator sees that intermediate content, whole in C3's sense, until the rest of the save lands. The next
 cook then publishes exactly what a fresh cook of the finished sources publishes, because a product is keyed by
 the bytes of every input. Refusing such a save needs source admission, which is cooking from T1's captured tree,
-and that is not built here. M4's sweep holds back a file modified in the last 250 ms, which keeps it from making
+and that is not built here. WP4's sweep holds back a file modified in the last 250 ms, which keeps it from making
 this worse and does not close it. Readers confined to presentation, an atomic manifest and whole resident sets do not
 supply it, and no item claims it.
 
 The limit is an assumption in [the plan](PLAN.md#open-for-the-owner) for the owner to overturn.
 
-### Closing G5 (M3)
+### Closing G5 (WP3)
 
-The built evidence is offscreen with no present on the Mac and function-only in Chrome. M3 runs three edits in
+The built evidence is offscreen with no present on the Mac and function-only in Chrome. WP3 runs three edits in
 the running valley with reconstruction on, on the Mac and in Chrome, and proves C2 and C3 there: a mesh that is
 both placed and an entity's mesh row, a texture that a placement samples and a lease lends, and a leased volume.
 Two of the three change a product read through two paths, so the cross-reader switch is judged where the exit
@@ -406,9 +406,9 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
 - **Row replacement.** Every reader of a row reads data, never pipeline state: `BucketRoute`'s ranges, the mesh
   records, the arena buffers and the caster set are all buffers or CPU tables. Occlusion's proof needs only that
   a mesh lies inside its row's bounds, which admission recomputes. A grown mesh with stale bounds would lose
-  pixels, which M2.2's oracle shows.
+  pixels, which WP2.2's oracle shows.
 - **Frames in flight.** A submitted frame executes before any later write, by queue order. An unsubmitted one
-  holds the host, so no write or switch can be recorded behind it. That leaves three orderings to prove, and M2.3
+  holds the host, so no write or switch can be recorded behind it. That leaves three orderings to prove, and WP2.3
   proves them: a discarded switch frame, a newer edit that arrives behind a discarded switch frame, and a newer
   edit that supersedes a replacement still being written.
 - **One switch.** Each reader's switch only changes which resident data a frame reads: a bind group for
@@ -418,7 +418,7 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
   time, so "ready before this frame" has one meaning for every reader. A reader that could show sooner only
   waits; it holds prepared content, which the overlap account below already counts.
 - **An incomplete save converges.** The action key hashes every input's bytes, so the cook after the last file
-  lands cannot reuse a product of the intermediate state. M3.7 checks it against a fresh cook.
+  lands cannot reuse a product of the intermediate state. WP3.7 checks it against a fresh cook.
 - **Chrome.** A fetched feed has no loader thread: verification, conversion and staging run on the page's thread
   between frames. That is cheap at showcase sizes (the valley's whole first load is under 3 MiB) and grows with
   size, which is why C2's range in Chrome is narrower than on the Mac.
@@ -447,7 +447,7 @@ new set to leases and switches the rows, and the switch commits for all of them 
 
 ## What later modules will ask
 
-| Module | Takes from M1 to M3 | Will ask for, not built now |
+| Module | Takes from WP1 to WP3 | Will ask for, not built now |
 |---|---|---|
 | `CLOUDS` | A lease of density volumes with mips, identity and the change signal; CPU reads of the portable product | A cook-time atlas if its cost account wants one texture; an iPhone encoding |
 | `SEA` | A lease of a linear 2D texture for the foam pattern (a `.linear` source) | A single-channel 2D format, if four channels are wasteful |
@@ -480,15 +480,15 @@ path, with no change to the store, the manifest, residency or publication.
 
 ## Shared files and exact baselines
 
-`thrum-asset-gpu` is also edited by `APPLE-PRESENTATION` M2 (the reactive target in `draw.rs`), which is why M1
-waits for it. M2 edits `CULLING`'s route files and waits for `CULLING:M3`. `scripts/check_v1_browser.mjs` is
+`thrum-asset-gpu` is also edited by `APPLE-PRESENTATION` WP2 (the reactive target in `draw.rs`), which is why WP1
+waits for it. WP2 edits `CULLING`'s route files and waits for `CULLING:WP3`. `scripts/check_v1_browser.mjs` is
 shared with every module that has a Chrome case; add cases, change none. `thrum-cook` is also edited by
-`REVIEW-ENGINE` M3 to M5 and, for new product kinds, by `RENDER-2D` M4 and `GAME-UI` M2. M4 keeps to the
+`REVIEW-ENGINE` WP3 to WP5 and, for new product kinds, by `RENDER-2D` WP4 and `GAME-UI` WP2. WP4 keeps to the
 watcher, the stat cache, the cook cycle's idle path and `main.rs`.
 
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change to another module's exact images is
 caught. This module must move none: a scene with no lease and no cooked rows compiles to the same passes and
-draws the same bytes. M1 to M3 each carry the verifier as a claim-time check. M4 draws nothing and carries none; main's
+draws the same bytes. WP1 to WP3 each carry the verifier as a claim-time check. WP4 draws nothing and carries none; main's
 `exact-images` check covers it. `CULLING`'s relative
 comparisons (each mode against its oracle) and `APPLE-PRESENTATION`'s temporal witness, which drives the cooked
 volume, belong to those modules and are not loosened.
@@ -502,7 +502,7 @@ volume, belong to those modules and are not loosened.
   1.9 ms on this Mac, so the row bound is set from that and recorded.
 - **Staging:** at most four chunks of one budget, whatever is loading.
 - **A switch frame:** bind groups for the changed placements and the row's table writes; no copy.
-- **A watching cooker with nothing to do (M4):** one stat pass over the source tree per sweep, and no write.
+- **A watching cooker with nothing to do (WP4):** one stat pass over the source tree per sweep, and no write.
   [The sweep](#the-sweep-m4) says how its interval is set.
 - **Latency:** an edit shows when its slowest reader is ready. Recorded per publication as frames from first
   copy to switch.
@@ -518,9 +518,9 @@ route with nothing attached.
 
 1. **The lease is the wrong shape for a real consumer** (it wants a product before commit, or partial sets).
    Early sign: the `CLOUDS` or `SEA` cost account. The rules above reopen here before anyone builds around them.
-2. **Row replacement breaks an exact culling equality.** Early sign: M2.2 in any mode. The oracle is a fresh
+2. **Row replacement breaks an exact culling equality.** Early sign: WP2.2 in any mode. The oracle is a fresh
    scene, so there is nothing to tune; stop and diagnose.
-3. **Chrome loses frames on an edit.** Early sign: M3's interval record. The fallback is named under research.
+3. **Chrome loses frames on an edit.** Early sign: WP3's interval record. The fallback is named under research.
 4. **The fault probe tests itself.** A probe that returns an error above the failure branch proves nothing; the
    item asks a reviewer where it sits.
 5. **Tripwires on a shared machine flap.** They are judged per load class and catch doublings; a failure is
@@ -528,10 +528,10 @@ route with nothing attached.
 6. **A cooked-draw change moves a retained image.** The proof gate refuses it at every landing.
 7. **Saves arrive faster than a publication prepares, so each is superseded and nothing shows.** Residency has
    this rule for placements today, and a row write lengthens the window. Early sign: superseded publications
-   counted in the game's record during M3's edits. The answer is to finish the one being prepared before taking
+   counted in the game's record during WP3's edits. The answer is to finish the one being prepared before taking
    the next, decided here first.
 8. **A creator takes an intermediate preview for the result.** It lasts until the save finishes and is replaced
-   without a restart. M3.9's documentation says so; source admission removes it.
+   without a restart. WP3.9's documentation says so; source admission removes it.
 9. **A sweep reads a save that is still being written.** The 250 ms rule covers a writer that keeps writing.
    Early sign: `failed` lines from `thrum-cook watch` for a file that cooks cleanly a moment later.
 
@@ -539,7 +539,7 @@ route with nothing attached.
 
 - **Targets.** `mac-metal`, and `chrome-webgpu` through `scripts/check_v1_browser.mjs`, which needs a browser
   launch the Codex sandbox grants per run. `ios-sim` is not a target here: the simulator's cooked function was
-  accepted in `COOKED-DRAW` M1 and nothing in this plan changes its draw path.
+  accepted in `COOKED-DRAW` WP1 and nothing in this plan changes its draw path.
 - **Capture.** Inspected items use T2 engine capture in `realtime` mode and judge consecutive frames at 1x.
   Frame records for C2 are taken with capture off; the proof records whether a drawable was presented and does
   not depend on it.
@@ -547,26 +547,26 @@ route with nothing attached.
   fixture is generated. Nothing is lifted from Broadsides: its cloud library waits on the owner's licence.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/content-loop-<milestone>/`; selected
   evidence in `.orchestrate/evidence/CONTENT-LOOP/`.
-- **M4.** Proved on the CPU: no GPU lock, no browser launch and no capture. Its checks name tests by words in
+- **WP4.** Proved on the CPU: no GPU lock, no browser launch and no capture. Its checks name tests by words in
   their names, which the plan's note lists.
-- **Maturity.** The ledger's G5 row is brought up to date in M3, with implementation, correctness, visuals and
+- **Maturity.** The ledger's G5 row is brought up to date in WP3, with implementation, correctness, visuals and
   device results kept apart.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
-| Which encoding serves volumes on iPhone: R8 as today, ASTC sliced 3D where the record allows, or the parked layered EAC draft with its recorded defect? | Owed. Recorded in the ledger at M3; built when a physical device or `CLOUDS` asks |
+| Which encoding serves volumes on iPhone: R8 as today, ASTC sliced 3D where the record allows, or the parked layered EAC draft with its recorded defect? | Owed. Recorded in the ledger at WP3; built when a physical device or `CLOUDS` asks |
 | Does `CLOUDS` want separate volumes or one atlas? | Its cost account; an atlas is a cook-time ask here |
-| At what product size does Chrome first lose a frame on an edit? | M3 records it |
-| How large may the route's per-frame row write be? | M2 measures render-thread time and records the bound |
+| At what product size does Chrome first lose a frame on an edit? | WP3 records it |
+| How large may the route's per-frame row write be? | WP2 measures render-thread time and records the bound |
 
 ## Builder rules
 
 - A scene with no lease and no cooked rows must compile to the same passes and draw the same bytes. If it does not, stop and fix that first.
 - If your change fails an exact test, a baseline or a witness another module owns (`APPLE-TILE`'s baselines, `CULLING`'s equalities, `APPLE-PRESENTATION`'s temporal witness), do not edit it. Write the proposal in the log and end `BLOCKED`.
-- In M2, if a live-edited scene differs from a fresh one in any pixel, stop and diagnose. Never widen the comparison or change the oracle.
-- In M2, never test a row switch by changing the arena or the route around the host's encoded-frame token. If a proof seems to need a frame encoded before a switch and submitted after it, write the proposal in the log.
+- In WP2, if a live-edited scene differs from a fresh one in any pixel, stop and diagnose. Never widen the comparison or change the oracle.
+- In WP2, never test a row switch by changing the arena or the route around the host's encoded-frame token. If a proof seems to need a frame encoded before a switch and submitted after it, write the proposal in the log.
 - A consumer never gets its own loader, store access or upload path. If a lease cannot serve a consumer, write the proposal in the log.
 - No reader switches alone. If one switch for every reader cannot be kept, write the proposal in the log and end `BLOCKED`; C05 changes only through the module list.
 - Follow the [shared exact-baseline proof on main](../ARCHITECTURE.md#proofs-run-once-on-main).
@@ -574,7 +574,7 @@ route with nothing attached.
 - Lift nothing from Broadsides. Fixtures are generated here.
 - If Chrome refuses to launch, record the refusal and leave the Chrome item open.
 
-## Cooked publication regressions (M5)
+## Cooked publication regressions (WP5)
 
 Keep the cooked-row and upload regressions in the fast tier. Shrink the publications and staging limits
 together so the superseded upload still spans polls. The row test must still cross discard, protected

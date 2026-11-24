@@ -1,11 +1,11 @@
 # Test support: one GPU gate, one test device, shared fixtures
 
 14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/TEST-SUPPORT/design-review.md),
-and on 20 November, when [the kit](#the-kit) and M3 and M4 were added from the cleanup review, and again that day
-after the kit's design review and the hardening pass, when M5 was added ahead of them. Revised once more that day
-after M2's third failed review: [other platforms](#other-platforms) is new, and M2's items changed with it. Nothing
-M1 is held to changed. Revised 21 November, when [writing a test](#writing-a-test) and M6 were added, and again
-that day after M3's first review: [Proof](#proof) says how a test another module removed counts.
+and on 20 November, when [the kit](#the-kit) and WP3 and WP4 were added from the cleanup review, and again that day
+after the kit's design review and the hardening pass, when WP5 was added ahead of them. Revised once more that day
+after WP2's third failed review: [other platforms](#other-platforms) is new, and WP2's items changed with it. Nothing
+WP1 is held to changed. Revised 21 November, when [writing a test](#writing-a-test) and WP6 were added, and again
+that day after WP3's first review: [Proof](#proof) says how a test another module removed counts.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T6 ·
@@ -88,15 +88,15 @@ stage to prove that the sea refuses it before shader preparation, and the sea's 
 default limits and once on the adapter's. Those are the native profile restricted to seven buffers, the portable
 profile, and the native profile.
 
-Until `HOST` M1 lands the recipe, M1 here answers the same request (profile and restriction) from a stand-in in the
-support package, with the features `DeviceCapabilities` already names. M2 replaces the stand-in's body with the
+Until `HOST` WP1 lands the recipe, WP1 here answers the same request (profile and restriction) from a stand-in in the
+support package, with the features `DeviceCapabilities` already names. WP2 replaces the stand-in's body with the
 recipe; no test changes again.
 
 **4. Fixtures are plain data, and each exists once.** A fixture is data and the functions that build it, with no
 type of any game or engine crate; each consumer converts it to its own types at its edge. This module owns the
 fixtures package, its rule and what a fixture is. The first fixture is the mixed-mesh field: its entities,
 materials, camera path, prop meshes and the day cycle its tests light it with, which `thrum-render`'s visibility
-tests compile from the game's source today. [GAME-SPLIT](../GAME-SPLIT/DESIGN.md) M2 creates the package with that
+tests compile from the game's source today. [GAME-SPLIT](../GAME-SPLIT/DESIGN.md) WP2 creates the package with that
 fixture, because the visibility tests are held until then; after it, the field's data is defined in
 `thrum-fixtures` and nowhere else. A fixture that is one crate's own data stays in that crate behind its API.
 
@@ -108,7 +108,7 @@ them to zero: first in the crates no builder is working in, then across the rend
 
 **6. The kit: a job every GPU test repeats is written once.** Added 20 November 2026 from section 5 of the
 cleanup review, which is kept in the main checkout at `/Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/`
-(`REPORT.md`, with each finding and its verifier's note in `results.json`). After M2 every GPU test goes through
+(`REPORT.md`, with each finding and its verifier's note in `results.json`). After WP2 every GPU test goes through
 the gate, but each file still writes the same jobs by hand: about 44 staging readbacks, a gate-and-device
 prologue at about 286 sites, five reflection tests of WGSL records, and its own frame waits, scratch folders and image
 writers. The kit is in `thrum-test-support`, which every engine test already depends on. It covers tests under
@@ -116,17 +116,17 @@ writers. The kit is in `thrum-test-support`, which every engine test already dep
 use only the public API.
 
 The kit is built before it is adopted. The copies were multiplying while the plan waited: hand-written readbacks
-in test files went from 10 to 34 in a week, and hand-written deadline asserts from 64 to 145. So M5 builds the
-kit's functions and adds two rules through [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine, as M1 added
+in test files went from 10 to 34 in a week, and hand-written deadline asserts from 64 to 145. So WP5 builds the
+kit's functions and adds two rules through [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine, as WP1 added
 `test-crate-edges`, each entered at the count of the commit it lands on: `test-readback`, a buffer mapped for
 reading in a test file outside the kit, and `test-deadline`, a hand-written deadline assert in a test file. The
-engine holds a count that can only fall, so from then on a new test uses the kit or fails `./dev check`, and M3
+engine holds a count that can only fall, so from then on a new test uses the kit or fails `./dev check`, and WP3
 converts what is already there.
 
 - **Readback** (R4-01, L7-06, L3-01, R5-08), in wgpu types only: read a buffer, a whole mip of a 2D, 3D or array
   texture or one layer of it, or a byte range of either, with one bounded wait. It has two forms, because some
   tests must read inside the encoder under test: one submits its own copy, and one appends the copy to the
-  caller's encoder and waits on that submission. When M3 takes `test-readback` to zero under `crates/` and the kit
+  caller's encoder and waits on that submission. When WP3 takes `test-readback` to zero under `crates/` and the kit
   scenes, a site that does a different job keeps its code and is exempted by name in the rule, with its reason: a
   test that yields to a browser timer on wasm, one that maps a range the engine copied into itself inside the
   host's retirement loop, and those that poll the host between submissions on purpose.
@@ -140,7 +140,7 @@ converts what is already there.
   prologue never turns that failure into a skip here.
 - **Waiting, scratch and images** (G2-06, L1-08): one wait with a deadline, one scratch folder that removes
   itself, one PPM writer, and a counting allocator type. The wait serves a frame's completion and the deadline
-  loops tests write by hand. M3 converts the frame waits; the hand-written deadline asserts, in about 61 files,
+  loops tests write by hand. WP3 converts the frame waits; the hand-written deadline asserts, in about 61 files,
   are not swept here. They stay under the frozen `test-deadline` count, a new test uses the kit's wait, and a
   conversion that removes one lowers the count. The allocator type counts allocations and bytes on the calling
   thread, behind a switch the test turns on, because the six copies it replaces count one or the other: a
@@ -189,7 +189,7 @@ The check takes about a minute for both targets from cold, with no lock. It belo
 [the test tiers](../../../ORCHESTRATE.md#test-tiers) all the same. The merge tier holds what would stop every
 builder, and a break here stops none: nobody builds for these platforms. The risk accepted is that a change which
 breaks the Linux or Windows build of a test reaches main and sits there for up to an hour and one run, until the
-lead gives its module the fix. M2 adds this line under the settings' Rules, in these words:
+lead gives its module the fix. WP2 adds this line under the settings' Rules, in these words:
 
 ```text
 - **Main-branch check cross-target:** `bash scripts/check_cross_target.sh`; every 1h; timeout 15m  *(planner, 20 Nov 2026: the Linux and Windows type-check of the tests runs on main, not in a merge's check)*
@@ -197,7 +197,7 @@ lead gives its module the fix. M2 adds this line under the settings' Rules, in t
 
 <a id="writing-a-test"></a>
 
-**8. How to write a test is said once, in five lines, and the kit has the target they name.** M6 builds both. A
+**8. How to write a test is said once, in five lines, and the kit has the target they name.** WP6 builds both. A
 habit that lives only in the project settings is read by planners and reviewers; a builder about to write a test
 reads the engineering skill. So the skill carries the habits, and the settings stay the authority for them.
 
@@ -208,7 +208,7 @@ reads the engineering skill. So the skill carries the habits, and the settings s
   kit chooses the size once: 64 texels a side is, after a single texel, the commonest width in the test files
   today, and small enough that a clear, a draw and a readback cost milliseconds while a mip chain still has
   levels. A test whose subject is a size, such as a resize or a tiled recipe, says so and keeps its own. Existing tests are not moved to the target: that would
-  change what they assert, which this module must not do. `GATE-TIME` M9 and M3 may use it where they make a GPU
+  change what they assert, which this module must not do. `GATE-TIME` WP9 and WP3 may use it where they make a GPU
   test's target smaller.
 - **The block.** In the skill's adopted-shapes table the rows "Unit tests" and "GPU tests" go, and one block
   stands in their place with the five lines the owner approved, each a link to its entry in the patterns
@@ -217,20 +217,20 @@ reads the engineering skill. So the skill carries the habits, and the settings s
   block is about the size of the two rows it replaces, which were 57 words: the skill grows by no more than
   about forty words from its 1,657. `AGENTS.md` and `CLAUDE.md` get nothing.
 - **The entries.** The Tests section of the patterns reference gains one entry for each line, under fixed
-  anchors, because `GATE-TIME` M12's rule messages link to them: `the-smallest-world`, `logic-without-a-device`,
+  anchors, because `GATE-TIME` WP12's rule messages link to them: `the-smallest-world`, `logic-without-a-device`,
   `simulated-time`, `an-existing-test-binary` and `a-main-tier-test`. An entry says what to write, with the call
   or command to copy, and what a builder does when the habit cannot hold. For a full-size or long run that is: it
   needs a done-when item that says what only it can show, so a builder with none writes the proposal in its
   module's log for a planner. The entries state no limit of their own. The ten-second bound, the tiers and the
   guard rules are in [the test tiers](../../../ORCHESTRATE.md#test-tiers), and an entry links there, so one
-  place changes when a limit does. The entry on an existing test binary holds before and after `GATE-TIME` M11:
+  place changes when a limit does. The entry on an existing test binary holds before and after `GATE-TIME` WP11:
   a test goes in a test file that exists, and where a package has the one test target `it`, a new file is a
-  module of it. `GATE-TIME` M12 adds each rule's name to the entry its message links to.
+  module of it. `GATE-TIME` WP12 adds each rule's name to the entry its message links to.
 - **Simulated time.** The entry on time separates two waits. A test that needs the world to advance steps the
   engine's clock by ticks or frames, and never sleeps or polls the wall clock for it. A test that waits on the
   device, for a readback or a submission, uses the kit's `wait::until`, which `test-deadline` already holds.
 
-M6 is built before M3, as M5 was: it converts no test, so it can run beside any milestone, and `GATE-TIME` M12
+WP6 is built before WP3, as WP5 was: it converts no test, so it can run beside any milestone, and `GATE-TIME` WP12
 waits for it.
 
 ## Interfaces
@@ -243,8 +243,8 @@ waits for it.
 | `test_role` and `proving_ground` in `.config/architecture.toml`, and the `test-crate-edges` rule | `REPO-RULES`' `library-env`, `GAME-SPLIT`'s boundary |
 | The kit: readback, the prologue, the wait, scratch folders, the PPM writer and the counting allocator type; the record reflection check through the `render` feature | Every GPU test under `crates/` and in the kit scenes |
 | The rules `test-readback` and `test-deadline`, each a count that can only fall | Every builder who writes a GPU test: read back and wait through the kit |
-| The small target, `thrum_test_support::target`: a colour target, and a depth target where asked, at the kit's one small size, with the size as a constant | Every new GPU test that draws, and `GATE-TIME` M9 and M3 where they shrink a target |
-| The block on writing a test in the engineering skill, and the five pattern entries under the anchors `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test` | Every builder who writes a test. `GATE-TIME` M12, whose rule messages link to the entries and which adds each rule's name to its entry |
+| The small target, `thrum_test_support::target`: a colour target, and a depth target where asked, at the kit's one small size, with the size as a constant | Every new GPU test that draws, and `GATE-TIME` WP9 and WP3 where they shrink a target |
+| The block on writing a test in the engineering skill, and the five pattern entries under the anchors `the-smallest-world`, `logic-without-a-device`, `simulated-time`, `an-existing-test-binary` and `a-main-tier-test` | Every builder who writes a test. `GATE-TIME` WP12, whose rule messages link to the entries and which adds each rule's name to its entry |
 | The cross-target type-check, `scripts/check_cross_target.sh`, and the main-branch check `cross-target` that runs it | Every module that writes a test: a change that breaks the Linux or Windows build of one is its module's to fix. `GATE-TIME`, which owns the tiers, names the check with the main tier's others |
 
 ## Files each milestone touches
@@ -252,15 +252,15 @@ waits for it.
 The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
 outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`. Three files are
 everyone's: `.config/shape-baseline.json`, `docs/design/maturity.json` and `Cargo.lock`. Change them when your
-landing moves them, whatever your row says. The rows are in build order: M5 and M6 are built before M3.
+landing moves them, whatever your row says. The rows are in build order: WP5 and WP6 are built before WP3.
 
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
-| M2 | Besides the conversion, which is in the tree: the type-check's script and its stand-in compilers, under `scripts/`; the test files and dev-dependencies of whichever package the type-check or M2's questions name, which today are `crates/thrum-asset-gpu` and `examples/water/tests/`; one line of `ORCHESTRATE.md` | Nothing more | `GATE-TIME` M1 edits `examples/water/tests/floating_gpu.rs` and the same list in `ORCHESTRATE.md`, and `WATERS` builds in the water scene's tests: whichever lands second rebases |
-| M5 | `crates/thrum-test-support/` (the kit's functions, their tests, the manifest); `crates/thrum-render/src/test_device.rs`; the two rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`; the Tests section of the engineering patterns | Nothing outside this module | It converts no test, so it can run beside any milestone. `DEAD-TOOLS` M6 adds four rules to the same rule files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
-| M6 | The new `target` module of `crates/thrum-test-support/` with its test; the adopted-shapes table and the new block of `.agents/skills/thrum-engineering/SKILL.md`; the Tests section of that skill's `references/patterns.md` | Nothing | It converts no test, so it can run beside any milestone. `GATE-TIME` M12 edits the same Tests section after it, and M5 of that module the contributor guide, which says the same things for a person |
-| M3 | Test files only: the integration tests and unit-test modules of every crate under `crates/`, and the `tests/` folders of the kit scenes (`examples/water`, `mirror`, `starter`, `lighthouse` and `stones`); `crates/thrum-test-support/` and `crates/thrum-render/src/test_device.rs` where a conversion needs the kit extended; the exemptions of `test-readback` in `scripts/shape_matchers.py` with their fixtures | `GATE-TIME` M2 and `DEAD-CODE` M2, which delete tests and stubs in these files; `GATE-TIME` M6, because some of these files hold tests behind a Cargo feature that no merge compiled before it | The widest set in track 6, so it runs beside milestones that touch no test file (`DEAD-TOOLS` M1, M2 and M4, `DEAD-CODE` M5, `GATE-TIME` M5 and M7) and not, where the lead can choose, beside one whose row names test files: `GATE-TIME` M3 (`foam_scene_gpu.rs`, `support/island.rs`) and M4 (the mirror's pool tests, `draw/tests.rs`, `scene_view_absent_gpu.rs`), `DEAD-TOOLS` M3 (`atmosphere/gpu/tests/aerial_ground.rs`, a readback site), `DEAD-CODE` M3 (two renderer test files), M4 (the water scene's proof tests) and M6. Where one of those is building anyway, whichever lands second rebases. `REVIEW-RENDER` and `HOST` build in the renderer's tests |
-| M4 | The reflection check in `crates/thrum-test-support/`; `crates/thrum-render/tests/wgsl_records.rs`; the `wgsl_records` tests and bound-struct walks of `thrum-sea`, `thrum-asset-gpu`, `thrum-water` and `thrum-clouds`; `examples/v1-game/tests/cooked_assets_gpu.rs`, `cooked_material_gpu.rs` and the test support they share | `REVIEW-RENDER` M2, which owns the renderer's checker | `GATE-TIME` M5 narrows the draw-probe pass that runs `cooked_assets_gpu`, in the check command only. `DEAD-CODE` M5 edits `cooked_rows_gpu.rs`, which this leaves alone |
+| WP2 | Besides the conversion, which is in the tree: the type-check's script and its stand-in compilers, under `scripts/`; the test files and dev-dependencies of whichever package the type-check or WP2's questions name, which today are `crates/thrum-asset-gpu` and `examples/water/tests/`; one line of `ORCHESTRATE.md` | Nothing more | `GATE-TIME` WP1 edits `examples/water/tests/floating_gpu.rs` and the same list in `ORCHESTRATE.md`, and `WATERS` builds in the water scene's tests: whichever lands second rebases |
+| WP5 | `crates/thrum-test-support/` (the kit's functions, their tests, the manifest); `crates/thrum-render/src/test_device.rs`; the two rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`; the Tests section of the engineering patterns | Nothing outside this module | It converts no test, so it can run beside any milestone. `DEAD-TOOLS` WP6 adds four rules to the same rule files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
+| WP6 | The new `target` module of `crates/thrum-test-support/` with its test; the adopted-shapes table and the new block of `.agents/skills/thrum-engineering/SKILL.md`; the Tests section of that skill's `references/patterns.md` | Nothing | It converts no test, so it can run beside any milestone. `GATE-TIME` WP12 edits the same Tests section after it, and WP5 of that module the contributor guide, which says the same things for a person |
+| WP3 | Test files only: the integration tests and unit-test modules of every crate under `crates/`, and the `tests/` folders of the kit scenes (`examples/water`, `mirror`, `starter`, `lighthouse` and `stones`); `crates/thrum-test-support/` and `crates/thrum-render/src/test_device.rs` where a conversion needs the kit extended; the exemptions of `test-readback` in `scripts/shape_matchers.py` with their fixtures | `GATE-TIME` WP2 and `DEAD-CODE` WP2, which delete tests and stubs in these files; `GATE-TIME` WP6, because some of these files hold tests behind a Cargo feature that no merge compiled before it | The widest set in track 6, so it runs beside milestones that touch no test file (`DEAD-TOOLS` WP1, WP2 and WP4, `DEAD-CODE` WP5, `GATE-TIME` WP5 and M7) and not, where the lead can choose, beside one whose row names test files: `GATE-TIME` WP3 (`foam_scene_gpu.rs`, `support/island.rs`) and WP4 (the mirror's pool tests, `draw/tests.rs`, `scene_view_absent_gpu.rs`), `DEAD-TOOLS` WP3 (`atmosphere/gpu/tests/aerial_ground.rs`, a readback site), `DEAD-CODE` WP3 (two renderer test files), WP4 (the water scene's proof tests) and WP6. Where one of those is building anyway, whichever lands second rebases. `REVIEW-RENDER` and `HOST` build in the renderer's tests |
+| WP4 | The reflection check in `crates/thrum-test-support/`; `crates/thrum-render/tests/wgsl_records.rs`; the `wgsl_records` tests and bound-struct walks of `thrum-sea`, `thrum-asset-gpu`, `thrum-water` and `thrum-clouds`; `examples/v1-game/tests/cooked_assets_gpu.rs`, `cooked_material_gpu.rs` and the test support they share | `REVIEW-RENDER` WP2, which owns the renderer's checker | `GATE-TIME` WP5 narrows the draw-probe pass that runs `cooked_assets_gpu`, in the check command only. `DEAD-CODE` WP5 edits `cooked_rows_gpu.rs`, which this leaves alone |
 
 ## Not built here
 
@@ -280,16 +280,16 @@ The kit is proved as adoption was: by its rules' counts, by the tests' results f
 after with a GPU required, and by a reviewer reading that no assertion, bound or device changed in a converted
 test. The kit's own functions have tests in the support package. `cargo test --workspace` does not run a long
 test or a test behind a Cargo feature, so for those the proof is the main-branch check `long-tests`: its run
-that covers M3's commits, compared test by test with its last run on a commit that held none of them.
+that covers WP3's commits, compared test by test with its last run on a commit that held none of them.
 
-Both comparisons span other modules' commits, and the cleanup deletes tests on purpose: `GATE-TIME` M2 and
-`DEAD-CODE` M5 did between M3's two `long-tests` runs. So M3 is held to its own commits. A test that passed in
-the earlier run and is missing from the later one counts against M3 unless a commit of another module took it
-out of the run, by deleting it, renaming it or taking it off what the command runs. M3's record names that commit
+Both comparisons span other modules' commits, and the cleanup deletes tests on purpose: `GATE-TIME` WP2 and
+`DEAD-CODE` WP5 did between WP3's two `long-tests` runs. So WP3 is held to its own commits. A test that passed in
+the earlier run and is missing from the later one counts against WP3 unless a commit of another module took it
+out of the run, by deleting it, renaming it or taking it off what the command runs. WP3's record names that commit
 for each such test, and a reviewer confirms from its diff that it removes the test and that it is another
-module's. Whether the removal was right is a question for the review of the milestone that made it, so M3's
-review does not ask it again, and M3 never restores such a test. A test that is missing with no such commit to
-name is M3's loss.
+module's. Whether the removal was right is a question for the review of the milestone that made it, so WP3's
+review does not ask it again, and WP3 never restores such a test. A test that is missing with no such commit to
+name is WP3's loss.
 
 The small target is proved by the kit's own test, which draws to it and reads it back, and which a reviewer
 reads. The block and the entries are proved by a check that the two rows are gone, the five links and anchors

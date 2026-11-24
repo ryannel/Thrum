@@ -24,14 +24,14 @@
     },
     "at": "2026-11-11T05:56:59Z"
   },
-  "milestones": {
-    "M0": {
-      "definitions": "2e5589327aafa45baba4a5f1acbcf6d22e8665fccc092bd822ac1b77ff58251b",
+  "work_packages": {
+    "WP0": {
+      "definitions": "2eeba652e0e37de59523eed2b14843b67e8934ed42164fc13a91a63e0e39ec58",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "a2cee95b72ee9fd7b3d414ba16c5805033b9bb3c",
-          "review": ".orchestrate/evidence/APPLE-TILE/M0-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP0-review.md",
           "host": "claude",
           "model": "claude-opus-5-5",
           "effort": "high",
@@ -78,18 +78,18 @@
       "done": {
         "by": "review",
         "commit": "a2cee95b72ee9fd7b3d414ba16c5805033b9bb3c",
-        "review": ".orchestrate/evidence/APPLE-TILE/M0-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP0-review.md",
         "checked": "19898ef95389cc9780d261fa36c751adf745865c",
         "at": "2026-11-11T03:34:51Z"
       }
     },
-    "M1": {
-      "definitions": "497e0bedb637fb5a167b935858d23169f2c25cf13439af18596a63b818c592e9",
+    "WP1": {
+      "definitions": "a54cf0b59babad8f38cc3c7dcd5b259038d565383d02343992a6a2f712365673",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "d9de577ed2153c73f14c5c090c56e9649b342a98",
-          "review": ".orchestrate/evidence/APPLE-TILE/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP1-review.md",
           "items": {
             "D1.1": "pass",
             "D1.2": "pass",
@@ -143,18 +143,18 @@
       "done": {
         "by": "review",
         "commit": "d9de577ed2153c73f14c5c090c56e9649b342a98",
-        "review": ".orchestrate/evidence/APPLE-TILE/M1-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP1-review.md",
         "checked": "d9de577ed2153c73f14c5c090c56e9649b342a98",
         "at": "2026-11-11T05:52:52Z"
       }
     },
-    "M2": {
-      "definitions": "4d6f335f923bf2bab90ee8452e0d0110cd26d77a338905a5ef56ed4c59d0fae9",
+    "WP2": {
+      "definitions": "a40578120f9a20e7396bbaf8520c6a1244c7ba19f9b855a4d8658c8b09882884",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "a6101020a94c50e386bc33ce7f41743a84937957",
-          "review": ".orchestrate/evidence/APPLE-TILE/M2-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP2-review-1.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -189,7 +189,7 @@
         {
           "verdict": "pass",
           "commit": "17ba4eea225b079dafd40834ee5a719ece87323c",
-          "review": ".orchestrate/evidence/APPLE-TILE/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP2-review.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -277,18 +277,18 @@
       "done": {
         "by": "review",
         "commit": "17ba4eea225b079dafd40834ee5a719ece87323c",
-        "review": ".orchestrate/evidence/APPLE-TILE/M2-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP2-review.md",
         "checked": "ed30a65bcb08a0c71195dc8d235305a04816596f",
         "at": "2026-11-11T15:24:43Z"
       }
     },
-    "M3": {
-      "definitions": "68482204cbe19c4a6b26d0d406bc3f047d8c2fe608eeb2e77c4cf9c2f4a042dc",
+    "WP3": {
+      "definitions": "89bae4b032ae6bde8c1ecf02c3b88e3088db68a14ccce3cb6d46d332984e4313",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "4c792301355d0eca75304dd688030f5606799268",
-          "review": ".orchestrate/evidence/APPLE-TILE/M3-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP3-review-1.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -323,7 +323,7 @@
         {
           "verdict": "pass",
           "commit": "3df9587b8c27006c3d6873b68ee32c3df4bea73f",
-          "review": ".orchestrate/evidence/APPLE-TILE/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP3-review.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -384,18 +384,18 @@
       "done": {
         "by": "review",
         "commit": "3df9587b8c27006c3d6873b68ee32c3df4bea73f",
-        "review": ".orchestrate/evidence/APPLE-TILE/M3-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP3-review.md",
         "checked": "3d46c1c11ed14471970e39cfb9b94e4d3a769b7f",
         "at": "2026-11-14T03:18:03Z"
       }
     },
-    "M10": {
-      "definitions": "150ae298e726d562d690337eadc8be3e7b3d7948e12cbd818e29fded39b7129e",
+    "WP10": {
+      "definitions": "30dbfea3ba6e7b9ed375f00cb0ed02f71d6f2b1a0199a13a2e53042b718ffc41",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "f9559727bd1ecc8fbb009319763196e88e7ba3ab",
-          "review": ".orchestrate/evidence/APPLE-TILE/M10-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP10-review.md",
           "items": {
             "D10.1": "pass",
             "D10.2": "pass",
@@ -459,18 +459,18 @@
       "done": {
         "by": "review",
         "commit": "f9559727bd1ecc8fbb009319763196e88e7ba3ab",
-        "review": ".orchestrate/evidence/APPLE-TILE/M10-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP10-review.md",
         "checked": "dd83938996e82af79d39681c09ae691330f20626",
         "at": "2026-11-16T20:14:58Z"
       }
     },
-    "M11": {
+    "WP11": {
       "definitions": "3e35fe0b1eb719be5c57bddb462add2199a6ee96e72b1cbec8e174611f4ee48a",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "8dce532e9f0013124a07396f56a3b2e6b0928c47",
-          "review": ".orchestrate/evidence/APPLE-TILE/M11-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP11-review-1.md",
           "items": {
             "D11.1": "pass",
             "D11.2": "fail",
@@ -503,7 +503,7 @@
         {
           "verdict": "pass",
           "commit": "103444f022d06354c41ca970feac0fa471b33da0",
-          "review": ".orchestrate/evidence/APPLE-TILE/M11-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP11-review.md",
           "items": {
             "D11.1": "pass",
             "D11.2": "pass",
@@ -564,18 +564,18 @@
       "done": {
         "by": "review",
         "commit": "103444f022d06354c41ca970feac0fa471b33da0",
-        "review": ".orchestrate/evidence/APPLE-TILE/M11-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP11-review.md",
         "checked": "390abd364e08c6f1471075f5904836623f0090bf",
         "at": "2026-11-17T03:56:17Z"
       }
     },
-    "M12": {
-      "definitions": "98ed0d853354d84484bed8a164addcf996e4f283e93f38c59be9e984f1de9fda",
+    "WP12": {
+      "definitions": "1eb49dffa6a55479186d42460faa84da0b992c04660d7f9d58d0d99093649902",
       "reviews": [
         {
           "verdict": "pass",
           "commit": "978c2df6532d512d2b5a9d3be01f6bd13ce4d079",
-          "review": ".orchestrate/evidence/APPLE-TILE/M12-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP12-review.md",
           "items": {
             "D12.1": "pass",
             "D12.2": "pass",
@@ -647,7 +647,7 @@
       "done": {
         "by": "review",
         "commit": "978c2df6532d512d2b5a9d3be01f6bd13ce4d079",
-        "review": ".orchestrate/evidence/APPLE-TILE/M12-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP12-review.md",
         "checked": "e451366458d93f8de784d54e4a203c64d0362275",
         "at": "2026-11-17T14:14:57Z"
       }
@@ -656,39 +656,39 @@
   "decisions": [
     {
       "action": "unpark",
-      "milestone": "M0",
+      "work_package": "WP0",
       "words": "Owner instructed in chat (10 Nov 2026): the scoped re-plan passed design review at e3cce53a",
       "at": "2026-11-10T21:46:34Z"
     },
     {
       "action": "answer",
-      "milestone": "M2",
+      "work_package": "WP2",
       "words": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
       "at": "2026-11-11T08:37:37Z",
       "item": "D2.5"
     },
     {
       "action": "answer",
-      "milestone": "M2",
+      "work_package": "WP2",
       "words": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
       "at": "2026-11-11T08:37:44Z",
       "item": "D2.3"
     },
     {
       "action": "answer",
-      "milestone": "M2",
+      "work_package": "WP2",
       "words": "[Asked how to finish the resize and 1x playback checks, given Codex Computer Use calls Thrum M2 and IINA not approved:] Show it in Codex",
       "at": "2026-11-11T10:16:52Z",
       "item": "D2.5"
     },
     {
       "action": "scope",
-      "milestone": "M3",
+      "work_package": "WP3",
       "words": "Yes, move d3.5 (answering: move APPLE-TILE M3's attended window check D3.5 to a later milestone so M3 can be reviewed now?)",
       "at": "2026-11-13T23:35:19Z"
     }
   ],
-  "briefs": [
+  "tasks": [
     {
       "task": "Resolve APPLE-TILE M0's scope conflict: the builder blocked because done-when item D0.2 requires a native witness that the plan assigns to M10 (see the M0 blocked note and docs/evidence/render/apple-tile-m0/README.md at 03bc878a). Make M0's criteria and M10's consistent so M0 can be claimed on what it can prove, without weakening what V1 needs.",
       "at": "2026-11-11T01:45:14Z"

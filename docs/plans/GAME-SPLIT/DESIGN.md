@@ -68,7 +68,7 @@ thrum-games/                 a sibling Git repository, local, no remote
 
 ## Mechanisms
 
-**1. The game gate** (M1). One engine-side command, `python3 scripts/game_gate.py <game> <command>`, builds a game
+**1. The game gate** (WP1). One engine-side command, `python3 scripts/game_gate.py <game> <command>`, builds a game
 from the games repository against the engine checkout the command runs in, and runs the game's own command there.
 It is how a builder in a worktree, the loop's clean checkout and a reviewer each test the game against the exact
 engine commit in question, when the game's manifests say `../../thrum/crates/…`.
@@ -87,10 +87,10 @@ engine commit in question, when the game's manifests say `../../thrum/crates/…
   packages under the engine's `crates/`, nothing reaches out of the game by any other route, and
   [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md)'s `test-crate-edges` holds, so a game may use the engine's test
   packages in its tests and ship neither. The gate has no rule of its own for this. The rule and the registration
-  it reads are `TEST-SUPPORT` M1's, so M1 waits for that milestone as well as for `REPO-RULES` M1.
+  it reads are `TEST-SUPPORT` WP1's, so WP1 waits for that milestone as well as for `REPO-RULES` WP1.
 - With no games repository it says so and exits with its own code.
 
-**2. No hidden reach** (M2). `package-reach` goes to zero.
+**2. No hidden reach** (WP2). `package-reach` goes to zero.
 
 - The mixed-mesh field becomes the first fixture in `crates/thrum-fixtures`, which this milestone creates under
   [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md#mechanisms)'s interface: plain data with no engine or game type, and no
@@ -105,7 +105,7 @@ engine commit in question, when the game's manifests say `../../thrum/crates/…
 Then the proof that matters: the engine's packages build their tests with the game's folders absent, and the
 proving ground builds for the Mac and for wasm32 with the field read from the fixture.
 
-**3. The game is extractable** (M3). Inside the package, everything that qualifies an engine module sits behind a
+**3. The game is extractable** (WP3). Inside the package, everything that qualifies an engine module sits behind a
 `proving` feature that is on by default. With it off, the package builds for the Mac and the browser and the
 game's own tests pass, which is what the copy that leaves will be. The feature is on by default, and no test
 target is declared with `required-features`, because Cargo passes a named test it skipped: every approved
@@ -113,7 +113,7 @@ target is declared with `required-features`, because Cargo passes a named test i
 scene move to the crate they test. A normal web or iPhone build ships no qualification hook. A `game-names` rule
 keeps a game's package name, crate name and control keys out of `crates/`.
 
-**4. The move** (M4), after the V1 exit. `thrum-games` is created with one commit: the package as built with
+**4. The move** (WP4), after the V1 exit. `thrum-games` is created with one commit: the package as built with
 `proving` off, with what `SHOWCASE` owns. In Thrum, what stays at `examples/v1-game` is the proving ground, with
 the game's launcher, exit configuration and exit baselines gone. Both sides keep a copy of what they both draw
 or read, a preset or a route included: the engine's is the frozen qualification content, which its baselines
@@ -121,11 +121,11 @@ pin, and the game's is the game, free to change. That holds for a fixture too: i
 engine's are the fixture and the game's are its own source from the first commit, because a game cannot depend
 on the fixtures package.
 
-**5. The name** (M5). The proving ground keeps the folder and package name `v1-game` while any approved open
+**5. The name** (WP5). The proving ground keeps the folder and package name `v1-game` while any approved open
 check names it, because a builder cannot edit a pinned check. When the last such milestone is Done it is renamed
 to `examples/proving-ground`, package `proving-ground`,
 the registry's covered paths follow with no reference changed, and the game's iPhone app, by then on the shared
-shell `GAME-UI` M6 builds, follows the game.
+shell `GAME-UI` WP6 builds, follows the game.
 
 ## The frozen qualification content
 
@@ -145,7 +145,7 @@ is the proving ground's from the move on. Today that is:
 The list is what was read at planning. The test is the behaviour, not the list: with the games repository
 unavailable, the verifier passes and every approved check that names the proving ground finds what it names.
 Unavailable has to mean to the whole run. The verifier starts its builds and captures with every `THRUM_`
-variable removed, so from M4 it keeps `THRUM_GAMES`, and that one only: a command it starts then looks for the
+variable removed, so from WP4 it keeps `THRUM_GAMES`, and that one only: a command it starts then looks for the
 games repository where the run was told to, and finds none. The
 game takes its own live copies of the presets, routes and sources it uses; from then on a change to the game's
 copy touches no engine reference, and a change to the engine's copy is a baseline change under
@@ -162,8 +162,8 @@ against the engine commit it is recording. An engine module's builder never edit
 
 ## How the V1 gate is verified once the game lives outside
 
-`SHOWCASE` builds and closes the V1 exit before the move, unchanged. M4 then shows the exit's function from
-outside. The gate passes a game's own arguments through, so each command line that `SHOWCASE` M5.5 and M7.2 to
+`SHOWCASE` builds and closes the V1 exit before the move, unchanged. WP4 then shows the exit's function from
+outside. The gate passes a game's own arguments through, so each command line that `SHOWCASE` WP5.5 and M7.2 to
 M7.8 pinned on `scripts/run_v1_showcase.py` runs as `python3 scripts/game_gate.py v1-game` with the same
 arguments, on the game in the games repository and the engine at the commit under test, with the thresholds and
 baselines as `SHOWCASE` left them. `exit` with no further argument runs them all:
@@ -175,7 +175,7 @@ baselines as `SHOWCASE` left them. `exit` with no further argument runs them all
   the ground texture appears without a restart, and the profiler's rows are current. The edit is made to the
   game's own asset, in the tree the gate built from, so a watcher still pointed at Thrum's frozen copy fails.
 
-What the move does not re-judge is the frame evidence: `SHOWCASE` M7.9 and M7.10's whole-frame records, M8's
+What the move does not re-judge is the frame evidence: `SHOWCASE` WP7.9 and M7.10's whole-frame records, M8's
 visual reviews and its attended cadence. Those were accepted at the commit `SHOWCASE` claimed and stay valid
 history in `.orchestrate/evidence/SHOWCASE/`. The game's `frames` command still runs through the gate, as a record and
 never a verdict. So after the move the gate claims function and image agreement at an engine commit, and nothing
@@ -187,16 +187,16 @@ function is re-verified at any engine commit by one command: `python3 scripts/ga
 
 ## Why the move waits for the exit
 
-Moving sooner means building `SHOWCASE` M5 to M8 across two repositories, on a gate that does not exist yet, on
+Moving sooner means building `SHOWCASE` WP5 to M8 across two repositories, on a gate that does not exist yet, on
 the path every V1 module's closing proof runs through; it also needs `SHOWCASE` re-planned and re-reviewed. The
-boundary is what the owner asked for, and it is real from M3: rules at zero, the host in the engine, the game
+boundary is what the owner asked for, and it is real from WP3: rules at zero, the host in the engine, the game
 buildable alone. The move itself is then a copy.
 
 ## Exact baselines
 
 No baseline moves. The registered references are drawn through the proving ground, from
 [the frozen qualification content](#the-frozen-qualification-content), and the proving ground stays at its path
-until M5. M5 changes paths in `.config/exact-baselines.json` and no reference, under
+until WP5. WP5 changes paths in `.config/exact-baselines.json` and no reference, under
 [the ruling](../ARCHITECTURE.md#seam-rulings-for-track-4). `SHOWCASE`'s threshold baselines are the game's and go
 with it.
 

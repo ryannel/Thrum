@@ -4,7 +4,7 @@
 [Environment source](../../design/modules/ENVIRONMENT.md) · [Milestones](PLAN.md) · [Done when](DONE.json) ·
 [Module list](../ARCHITECTURE.md)
 
-**The owner's request** for the work added on 10 November (M5 and M6), word for word from that day's planning
+**The owner's request** for the work added on 10 November (WP5 and WP6), word for word from that day's planning
 task: "The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always
 have a next milestone, and wants water and clouds finished and consolidated ... Decide, with reasons ... where in
 the build order the port's readiness conditions are met." The exit clause this module closes is "physical sky, Sun
@@ -12,33 +12,33 @@ and aerial perspective with time controls". The readiness condition it meets, fr
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november), is "G3s: finish and qualify the one
 shared sky, Sun, light-transmittance and environment-reflection products."
 
-[The view volume](#the-view-volume-haze-fog-and-light-near-the-camera), at the end, governs M7 and M8, added on
+[The view volume](#the-view-volume-haze-fog-and-light-near-the-camera), at the end, governs WP7 and WP8, added on
 14 November for haze, fog and shafts of light; it is track 2 and follows G3s.
-[The air at the ground](#the-air-at-the-ground) governs M9, added the same day. M9 is built before M6: it
+[The air at the ground](#the-air-at-the-ground) governs WP9, added the same day. WP9 is built before WP6: it
 corrects the aerial product where the view meets the ground, which every scene at sea level shows.
-[What the caster height map holds](#what-the-caster-height-map-holds) governs M10, added on 18 November for a
-defect `SHOWCASE` M5 found on the populated valley. M10 is built before M6 and waits on nothing.
-[Closing G3s](#closing-g3s) was revised on 19 November, after M6's builder traced two of its list's entries to
-the authored valley: `SHOWCASE` M9 fixes them, and M6 waits for it.
+[What the caster height map holds](#what-the-caster-height-map-holds) governs WP10, added on 18 November for a
+defect `SHOWCASE` WP5 found on the populated valley. WP10 is built before WP6 and waits on nothing.
+[Closing G3s](#closing-g3s) was revised on 19 November, after WP6's builder traced two of its list's entries to
+the authored valley: `SHOWCASE` WP9 fixes them, and WP6 waits for it.
 
 **The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
-plausible result as fast as possible, not physical accuracy. For the milestones not yet Done (M10, M6, M7 and M8) the
+plausible result as fast as possible, not physical accuracy. For the milestones not yet Done (WP10, WP6, WP7 and WP8) the
 look and the speed decide: each is judged against its inspection list at the bar of shipped games, with cost as
 tripwire records. An f64 reference is a diagnostic for a picture that looks wrong, and none is a pass mark.
 [Closing G3s](#closing-g3s) and [How the view volume is proved](#how-the-view-volume-is-proved) apply it; the
 [project settings](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) hold the rule. The numerical acceptance
-tables below record how M1 to M5 and M9 were proved, and their tests stay in the workspace check as regression
+tables below record how WP1 to WP5 and WP9 were proved, and their tests stay in the workspace check as regression
 guards.
 
-The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
-unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
-[Closing G3s](#closing-g3s) governs M6. Both were revised on 10 November after
+The sections below through [Frame and cost](#frame-and-cost) are the design WP1–WP4 were built from and are
+unchanged. [Environment identity and products](#environment-identity-and-products) governs WP5 and
+[Closing G3s](#closing-g3s) governs WP6. Both were revised on 10 November after
 [the first design review](../../../.orchestrate/evidence/ATMOSPHERE/design-review-1.md): the numerical acceptance is written out
 product by product, environment reflection is a lent and tested operation, and the limits of each lent lookup
 and of the cloud field are stated. They were revised again on 11 November after
 [the second review](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md): the sky and aerial handoff rows H2 and H4 now
 compare against an independently evaluated filtered decode, with wrong lookups that must fail, and the lent
-values are stated to be free of pre-exposure. A third revision the same day follows M5's builder measuring that
+values are stated to be free of pre-exposure. A third revision the same day follows WP5's builder measuring that
 Metal returns a filtered half-float read at the stored format's precision
 ([entry 3](../../../.orchestrate/evidence/ATMOSPHERE/log-entries.md#entry-3)): the filtered-decode bound gains one stored step,
 the known field's steps are sized against it, and each lookup stays one hardware-filtered read.
@@ -131,9 +131,9 @@ airglow variations and calibrated night colour are outside this profile.
   Earth night spectrum remain open. [Jones et al. §3](https://arxiv.org/pdf/1310.7030)
   and [USGS ROLO](https://www.usgs.gov/publications/spectral-irradiance-moon) inform that extension.
 
-### M3 surface Sun visibility
+### WP3 surface Sun visibility
 
-M3 uses the established combination of stable cascades, overlapping
+WP3 uses the established combination of stable cascades, overlapping
 handoffs and directional percentage-closer soft shadows (PCSS).
 Guerrilla shipped stable cascades, and Godot and Unreal expose split
 blending and a far fade. Thrum already snaps the cascades and blends
@@ -178,7 +178,7 @@ establish the need for a novel coverage model.
 [Saved-field evidence](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
 [Filterable shadow-map limits](https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-8-summed-area-variance-shadow-maps).
 
-M4 retains the independent finite-disk reference. Clip terrain and
+WP4 retains the independent finite-disk reference. Clip terrain and
 detached spans to the same solar chord and union them before integrating
 solid angle. The projected circle-area approximation has a normalized
 solid-angle error below 0.0033 percentage points for the actual Sun.
@@ -186,7 +186,7 @@ Original-triangle rays remain the referee. Frozen original-edge packets
 match the finite samples, while three conservative omission proofs
 leave moving-receiver admission unresolved. Keep those witnesses and
 a predeclared work limit for the bounded follow-up. Exact matching does not
-gate the M3 visual outcome.
+gate the WP3 visual outcome.
 
 ## Frame and cost
 
@@ -204,7 +204,7 @@ day variant retains today's depth discard where no other consumer needs it.
 Select it only on a profile range where the brightest star is shown to be
 subvisible. Record logical attachment area, named GPU intervals, full-frame cost and motion on Mac and Chrome.
 Physical tile traffic at night and through the transition is queued with
-[Apple tile M0.4](../APPLE-TILE/PLAN.md#m0-proof-route-counters-and-capture-probe-pending).
+[Apple tile M0.4](../APPLE-TILE/PLAN.md#wp0-proof-route-counters-and-capture-probe-pending).
 Investigate visible hitches
 and comparable regressions over the build plan tripwire.
 
@@ -219,7 +219,7 @@ model checks. Packed GPU transport and visible night remain open.
 
 ## Environment identity and products
 
-M5. Other engine modules read the one sky and Sun instead of bringing their own, and one cloud optical depth
+WP5. Other engine modules read the one sky and Sun instead of bringing their own, and one cloud optical depth
 dims direct sunlight once. `SEA` and `CLOUDS` are the consumers ([module list](../ARCHITECTURE.md#interfaces)); the
 forward pass and cooked draws already are.
 
@@ -267,7 +267,7 @@ texels are already rounded to that step.
 | Sun light at a world position | RGB illuminance on a plane facing the Sun, from the true Sun through the air only; no geometric shadow, no cloud factor | Any world position. Above the 100 km top the light is unattenuated unless the ray enters the shell. Below the first chart row (6.15 m) the altitude clamps, a known approximation that reaches 1.2% in blue at sea level with the Sun on the horizon. A Sun behind the planet at that point returns exactly zero |
 | Sky radiance along a direction | RGB radiance of the sky without the Sun's disk: the solar part and the night part, already summed | The active camera's observer altitude only; any direction, including the ground side below the horizon. The night part exists for 0–15 km observer altitude; outside that the result is Sun-only and the fallback is reported, as today |
 | Incident diffuse on a normal | RGB irradiance from the sky, never negative | One answer per frame at the camera's location, for any normal. It does not vary with world position |
-| Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. From M9 the air goes on under the model's ground, so a point on low ground or just above the horizon takes the haze of its own line ([The air at the ground](#the-air-at-the-ground)). A segment that starts anywhere but the camera, and any second camera, is not offered in M5; a consumer that needs one proposes it through [the module list](../ARCHITECTURE.md#interfaces) |
+| Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. From WP9 the air goes on under the model's ground, so a point on low ground or just above the horizon takes the haze of its own line ([The air at the ground](#the-air-at-the-ground)). A segment that starts anywhere but the camera, and any second camera, is not offered in WP5; a consumer that needs one proposes it through [the module list](../ARCHITECTURE.md#interfaces) |
 | Environment reflection | RGB radiance of the disk-free sky filtered to a GGX lobe around a direction at a roughness, solar and night parts decoded and summed; and the split-sum pair `(scale, bias)` for a view cosine and the same roughness | One cube per frame at the camera's location, no parallax. Roughness is the material roughness the forward pass uses, clamped to 0.045–1. View cosine 0–1. The library maps roughness to its filtered level, and between two levels returns their linear blend, so the radiance does not step as roughness changes; a contribution never names a mip |
 
 The reflection operation is the one `SEA` uses as the fallback under its screen-space reflection. It returns the
@@ -286,7 +286,7 @@ in-scatter by clouds is `CLOUDS`' later decision.
 The cooked volume is the one receiver that does not go through the direct-Sun term today: its march lights each
 sample from the frame's directional light. With a provider, the march multiplies that Sun term by the same
 cloud-factor function at each lit march sample's world position. Without one, the volume's shader and lighting
-are exactly today's. M5 does not move the volume onto per-sample air transmittance; that would change every
+are exactly today's. WP5 does not move the volume onto per-sample air transmittance; that would change every
 scene with a volume and nobody asked for it.
 
 **Where the factor is exactly 1.** A receiver at or above the plane, a read that falls outside the validity
@@ -294,7 +294,7 @@ region, a frame the provider marks invalid, and a true Sun below the provider's 
 cloud shade: the factor is exactly 1, never a clamped edge value. The read moves further from the receiver as
 the Sun lowers and has no answer at a horizontal Sun, which is why the provider declares a lowest elevation. The
 provider owns continuity at these limits, by bringing `tau` to zero toward the region's edge and toward its
-lowest elevation. With the Sun behind the planet the direct term is already zero. M5 supports one plane.
+lowest elevation. With the Sun behind the planet the direct term is already zero. WP5 supports one plane.
 
 **Absent means absent.** Provider presence is a scene-build fact. Without a provider the forward shader and the
 cooked-volume shader are composed without the lookup, as they are today, so there is no added texture, binding or
@@ -302,7 +302,7 @@ sample. With one, the shader variant adds one sampled texture to the light group
 
 **A diagnostic provider** in `examples/v1-game`, behind an opt-in control and labelled as a stand-in, supplies a
 moving analytic `tau` pattern with a declared drift, plane, region and lowest valid Sun elevation; that elevation is
-below the low-Sun views M5 captures. It exists to prove the path; `CLOUDS` replaces it.
+below the low-Sun views WP5 captures. It exists to prove the path; `CLOUDS` replaces it.
 
 ### Alternatives considered
 
@@ -318,7 +318,7 @@ below the low-Sun views M5 captures. It exists to prove the path; `CLOUDS` repla
   read, and sixteen replace the aerial volume's four, on every sky pixel and lit fragment. The forward pass shares
   these functions, so its shader text and every scene's image would change. The stored texels are already rounded
   to the same half-float step, so the product would be no more accurate at a texel; between texels it would be
-  smoother by less than a step. Whether a step shows is M6's to judge by eye in the sky and at twilight, and a
+  smoother by less than a step. Whether a step shows is WP6's to judge by eye in the sky and at twilight, and a
   visible one there reopens this.
 - **Float32 charts.** Filtering a 32-bit float texture is an optional WebGPU feature (`float32-filterable`), so
   the portable recipe could not rely on it, and the charts' memory and bandwidth would double.
@@ -337,8 +337,8 @@ referee, which cases and which bound each operation must meet is the table below
 Two different things are proved, and they are kept apart.
 
 **Preserved referees.** These tests already run in `./dev check` on Metal against the production producers.
-Each compares one product with a reference inside a stated scope. M5 left their references, cases and bounds
-unchanged and passing, and they are the whole of what was claimed for product accuracy. From M6 they are
+Each compares one product with a reference inside a stated scope. WP5 left their references, cases and bounds
+unchanged and passing, and they are the whole of what was claimed for product accuracy. From WP6 they are
 regression guards, and [Closing G3s](#closing-g3s) says how a deliberate change to the look gives one new
 expected values.
 
@@ -361,14 +361,14 @@ the storage, not the sky. The all-orders solar comparison (198 rows against quad
 the check as a **report**. It has no bound, and passing it qualifies nothing.
 
 **What stays unqualified.** No test bounds the solar sky radiance or the solar aerial `(T,S)` against an
-independent transport reference, apart from the one row of P11. That was true before M5, M5 and M6 do not change
-it, and M6 writes it in the maturity ledger. Closing it is a separate accuracy campaign, with its own plan and
+independent transport reference, apart from the one row of P11. That was true before WP5, WP5 and WP6 do not change
+it, and WP6 writes it in the maturity ledger. Closing it is a separate accuracy campaign, with its own plan and
 cost.
 
-**The handoff, new in M5.** For each lent operation, a contribution with its own pipeline, using only the lent
+**The handoff, new in WP5.** For each lent operation, a contribution with its own pipeline, using only the lent
 layout and library, must return the stored product in the right units. This runs on Metal in `./dev check` and
 in Chrome on hardware WebGPU. The expected values come from the same references on both; Chrome is never judged
-against Metal's GPU output. That is how M5 proved the rows. From M6 the comparisons in them are of three kinds:
+against Metal's GPU output. That is how WP5 proved the rows. From WP6 the comparisons in them are of three kinds:
 the contract, the guards made through the library, and in H5 the records. [Closing G3s](#closing-g3s) says
 which is which and what a deliberate change to the look does to each.
 
@@ -378,7 +378,7 @@ which is which and what a deliberate change to the look does to each.
 | H2 | Sky radiance along a direction | Night part: the cases and bound of P3. Solar part: the filtered-decode rule below, on the live sky-view chart at the 11 view directions and six Sun elevations of the all-orders grid, and on a known field. Its three wrong lookups fail. Plus the P11 row at its bound |
 | H3 | Incident diffuse on a normal | The cases and bounds of P6; with nightglow on, the added horizontal irradiance within P4's bound |
 | H4 | Aerial `(T,S)` to a point | Night part: the cases and bound of P5. Solar part and transmittance: P10's fixed-texel decode at its bound, and the filtered-decode rule below, on the live volume at P10's Sun elevations and on a known field. Its three wrong lookups fail |
-| H5 | Environment reflection | In M5: the cases and bounds of P7, P8 and P9 through the lent library, with a known night term stored in the fixture and required back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance. From M6 the radiance meets the stored-cube probe below and the split-sum pair the stored-table rule below, and the wrong lookups of both fail. P9's cases, the night term and P7's agreement across the cube's edges and corners stay as they were. The differences from P7's closed forms and from P8's quadrature are recorded and decide nothing |
+| H5 | Environment reflection | In WP5: the cases and bounds of P7, P8 and P9 through the lent library, with a known night term stored in the fixture and required back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance. From WP6 the radiance meets the stored-cube probe below and the split-sum pair the stored-table rule below, and the wrong lookups of both fail. P9's cases, the night term and P7's agreement across the cube's edges and corners stay as they were. The differences from P7's closed forms and from P8's quadrature are recorded and decide nothing |
 
 **The filtered-decode rule, for H2 and H4.** Lying between the neighbouring texels is not enough: a lookup that
 returns one depth slice instead of blending two stays in that range at every query. So each result is compared
@@ -428,7 +428,7 @@ with the one value a correct lookup returns at that point.
 
 The rule proves the handoff, the addressing and the units. It does not prove the accuracy of what is stored.
 
-**The stored-table rule, for H5's split-sum pair, from M6.** P8 made through the library asks whether the pair
+**The stored-table rule, for H5's split-sum pair, from WP6.** P8 made through the library asks whether the pair
 agrees with a quadrature of the reflection model. That is a question about the producer. A table made by a
 cheaper estimator fails it while the consumer returns every texel exactly: at view cosine 0.5 and roughness
 0.5225 a 32-sample table stores a scale of 0.8105 where the quadrature gives 0.8198, 0.0093 apart against P8's
@@ -463,7 +463,7 @@ This rule proves that the pair is the stored one. Whether the stored table is a 
 question. The producer's own test keeps asking it on Metal, and through the library
 [Closing G3s](#closing-g3s) makes it a record.
 
-**The stored-cube probe, for H5's reflection radiance, from M6.** M5 proved the radiance against closed forms
+**The stored-cube probe, for H5's reflection radiance, from WP6.** WP5 proved the radiance against closed forms
 of the lobe on a sky the fixture wrote: the sky itself at the sharpest level, and the lobe's mean at the
 widest. That too is a question about the producer. The cube is a sampled estimate, and one made with fewer
 samples leaves the closed form while the consumer reads every texel correctly: at the centre of a face of the
@@ -476,7 +476,7 @@ its roughness names, blending the two levels a roughness lies between, and decod
   texture, the one the lent layout binds, and no producer pass runs between the store and the queries. Every
   face of every level holds one colour, exact in half-float, that names it: with values between 1 and 4 at unit
   Sun, one channel steps by an eighth or more from face to face and another from level to level. The fourth
-  channel holds a known night term, 1/16 in absolute units as in M5's fixture.
+  channel holds a known night term, 1/16 in absolute units as in WP5's fixture.
 - **Expected value.** The raw Sun's illuminance times the colour the fixture stored for that face and level,
   plus the night term. Between two levels it is the two colours the fixture stored for that face, blended
   linearly by the query's place between the levels. It comes from what the fixture wrote. It does not call the
@@ -499,7 +499,7 @@ its roughness names, blending the two levels a roughness lies between, and decod
   the raw Sun at 0 every query returns the night term alone.
 - **Why the midpoints.** A library that rounded, floored or raised its level to a whole one before sampling
   returns the stored colour at every query on a level, and the forward pass's own lookup would hide it in every
-  picture M6 judges. Between levels it returns one level alone. At level 2.5 the example colours give a green
+  picture WP6 judges. Between levels it returns one level alone. At level 2.5 the example colours give a green
   of 2.375 with the night term, and either level alone gives 2.3125 or 2.4375.
 - **What it tells apart.** With the example colours of parts E and F, a correct read whose level weight is 1/64
   off uses 0.33 of the bound at a level and at a midpoint. A neighbouring level misses it by 12 times or more,
@@ -509,7 +509,7 @@ its roughness names, blending the two levels a roughness lies between, and decod
   the Sun at 0.
 
 The probe proves which texture, face and levels were read, that two levels are blended, and the units. Whether
-the cube is a good filter of the sky is the producer's question: P7 keeps guarding it on Metal, and M6's
+the cube is a good filter of the sky is the producer's question: P7 keeps guarding it on Metal, and WP6's
 inspection list judges it in the picture.
 
 **Exposure control.** At least one case of each row H1–H5 whose expected value is larger than its bound is
@@ -564,12 +564,12 @@ scene with a volume is on the route.
 - Whether the field needs more than one height band. The diagnostic uses one plane; `CLOUDS` may propose more
   through [the module list](../ARCHITECTURE.md#interfaces).
 - Whether a consumer needs aerial transport for a segment that does not start at the camera, or for a second
-  camera. Neither is offered in M5; `CLOUDS` or `SEA` proposes it the same way.
+  camera. Neither is offered in WP5; `CLOUDS` or `SEA` proposes it the same way.
 
 ## The air at the ground
 
-M9, added on 14 November 2026. It is built before M6 and waits for nothing: the sea and sunsets are seen
-from sea level, and M6 waits for TAAU.
+WP9, added on 14 November 2026. It is built before WP6 and waits for nothing: the sea and sunsets are seen
+from sea level, and WP6 waits for TAAU.
 
 **The request**, the lead's task of 14 November 2026, acting on
 [`SCENE-VIEWS`' proposal](LOG.md): "the aerial pass stops a descending column at the model's ground, so
@@ -677,7 +677,7 @@ second copy:
   defines as this pass's own for an observer at the mirror plane's height. A mirror of the sea stands on the
   model's ground, where every descending line is under it from the start;
 - [the view volume](#the-view-volume-haze-fog-and-light-near-the-camera), whose cells take the same rule
-  for the air's terms in M7.
+  for the air's terms in WP7.
 
 **A drawn point under the model's ground**, such as land below sea level, takes the air of its whole line,
 the part under the ground included. `WATERS` removes the forward pass's air from a sea bed with the same
@@ -707,11 +707,11 @@ in f64, in single scattering, with the engine's molecules and aerosol in one ban
   0.1%.
 
 Unrun: the engine's spectral integrator, its multiple scattering and its charts' own interpolation near the
-ground, which M9.1 sees first; and the look, which `WATERS` M2 judges on a sea.
+ground, which WP9.1 sees first; and the look, which `WATERS` WP2 judges on a sea.
 
 ### Numerical acceptance for the air at the ground
 
-M9.1 compares a read with **the product's own column along the point's line**: the stored column of a texel
+WP9.1 compares a read with **the product's own column along the point's line**: the stored column of a texel
 whose centre lies on that line, in a volume made for a camera turned so that one does. The reference is made
 by the same pass, charts and layers as the read, and takes no blend of rows. So the comparison measures what
 the rule decides and nothing else, and it qualifies nothing about how far the stored transport is from true
@@ -739,10 +739,10 @@ transport, which stays [unqualified](#numerical-acceptance).
 - **A miss is a plan change.** If a pass the builder believes follows the mechanism misses the allowance,
   the builder records where and by how much and ends `BLOCKED`. The allowance is not widened in the build.
 
-M9.2 pins what does not move: every texel of a line that never meets the ground, and every layer that ends
-before its line meets the ground, holds the bytes the commit before M9 stored, for the same frames.
+WP9.2 pins what does not move: every texel of a line that never meets the ground, and every layer that ends
+before its line meets the ground, holds the bytes the commit before WP9 stored, for the same frames.
 
-Past the ground M9.2 holds the stored values to what half-float storage can show. Every value is finite. A
+Past the ground WP9.2 holds the stored values to what half-float storage can show. Every value is finite. A
 layer's stored transmittance lies between 0 and 1 and is never higher than the layer's before it. It may be
 equal: a steep line's transmittance falls below the smallest half-float within some 20 km, and two layers
 that are both still falling round to the same step, zero included, so a strict fall from layer to layer
@@ -751,7 +751,7 @@ or more layers past the ground, the last layer stores less than the first one pa
 texel of the volume, from 3 m and 245 m, level and pitched down to straight down, at 60° and 90° fields of
 view, that fall is 30 stored half-float steps or more, and a column held at its value at the ground fails it
 ([the arithmetic](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/m9-storage-rule.txt), which estimated 40, and
-[the exact count](../../../.orchestrate/evidence/ATMOSPHERE/design-review-9/storage-revision-check.txt)). M9.1 is what proves the
+[the exact count](../../../.orchestrate/evidence/ATMOSPHERE/design-review-9/storage-revision-check.txt)). WP9.1 is what proves the
 continuation is the right one.
 
 P10's fixture, a camera at 245 m with rows 1.1° below the level, already holds lines that meet the ground
@@ -760,36 +760,36 @@ covers the air under the ground. No preserved referee's reference, case or bound
 
 ### Exact baselines
 
-M9 is meant to change every scene's default output, so [rule 1](../ARCHITECTURE.md#exact-baselines) applies
+WP9 is meant to change every scene's default output, so [rule 1](../ARCHITECTURE.md#exact-baselines) applies
 as a planned move. [A reading of the valley's mesh](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/README.md) predicts
 which pixels: terrain whose altitude is less than about 3% of its distance, which from the valley's cameras is
 the low ground 3 to 12 km out. That is up to 0.4% of the covered pixels at the moving route's checkpoints, 4% to
 5% in the sunset still and 0.1% to 0.2% in the night still. Those pixels gain haze; nothing else is predicted
 to move. All five registered sets hold such pixels, so all five are expected to move, the scene-linear ones
 with certainty. [The module list's ruling](../ARCHITECTURE.md#exact-baselines) says who refreshes them and
-how; M9.5 and M9.6 carry it.
+how; WP9.5 and WP9.6 carry it.
 
 ### Risks
 
 | Risk | Early sign | Wrong substitute to refuse |
 |---|---|---|
-| The engine's read misses the allowance where the stand-in passes | M9.1's first run | Widening the allowance, or dropping the low Suns |
-| Only the density is continued, with the Sun's light of the surface | In-scatter high toward a Sun 2° up; M9.1 misses there | Tuning the density to hide it |
-| A refresh hides an unrelated change | A reference moves at pixels the volume cannot reach: sky, near ground, a prop | Refreshing without M9.6's images |
+| The engine's read misses the allowance where the stand-in passes | WP9.1's first run | Widening the allowance, or dropping the low Suns |
+| Only the density is continued, with the Sun's light of the surface | In-scatter high toward a Sun 2° up; WP9.1 misses there | Tuning the density to hide it |
+| A refresh hides an unrelated change | A reference moves at pixels the volume cannot reach: sky, near ground, a prop | Refreshing without WP9.6's images |
 | Values far under the ground overflow or go to NaN | A non-finite texel in the volume read back | Clamping the stored value after the fact |
-| Another builder is in `aerial.wgsl` (`SCENE-VIEWS` M1, `CLOUDS`' rulings) | A merge that restores the stop | A second copy of the pass |
+| Another builder is in `aerial.wgsl` (`SCENE-VIEWS` WP1, `CLOUDS`' rulings) | A merge that restores the stop | A second copy of the pass |
 
 ### Cost
 
 A descending line now runs all 32 layers, where it used to skip those past the ground: at most the work the
 upward lines already do, with one more chart read for each sample under the ground. The volume is 1,024
-lines of 128 steps. M9.8 records the aerial pass's GPU time paired before and after on the valley, on the Mac
-and in Chrome, with tripwires and no budget ([brief](../BRIEF.md), decision 3).
+lines of 128 steps. WP9.8 records the aerial pass's GPU time paired before and after on the valley, on the Mac
+and in Chrome, with tripwires and no budget ([brief](../VISION.md), decision 3).
 
 ## Closing G3s
 
-M6. The gate closes when the valley's sky and sunlight pass a clean-context review in motion on Mac and Chrome.
-It runs after TAAU is in the game (`APPLE-PRESENTATION:M3`), because reconstruction changes every edge and
+WP6. The gate closes when the valley's sky and sunlight pass a clean-context review in motion on Mac and Chrome.
+It runs after TAAU is in the game (`APPLE-PRESENTATION:WP3`), because reconstruction changes every edge and
 gradient a reviewer judges.
 
 **What is reviewed.** The fixed six-stop route of [the route decision](../../design/decisions/G7-SHOWCASE-ROUTE.md) and one
@@ -802,13 +802,13 @@ judged here and by no number: sky light reflected off a surface in blotches, sep
 The bar is the time of day in Red Dead Redemption 2 and Horizon
 Forbidden West, in words.
 
-**The valley is `SHOWCASE`'s.** M6's builder found two entries whose cause is the authored valley and not the
-sky or the Sun ([its handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md)). The bright band along the lookout's rim
+**The valley is `SHOWCASE`'s.** WP6's builder found two entries whose cause is the authored valley and not the
+sky or the Sun ([its handoff](../../../.orchestrate/evidence/ATMOSPHERE/WP6-handoff.md)). The bright band along the lookout's rim
 at the held 17.4 h stop comes from a terrain mesh too coarse there for the normals it stores. At the 6.1 h
 sunrise stop the east ridge still hides the Sun from the lookout, so no prop can cast a shadow. By
-[the module list's ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) `SHOWCASE` M9 resolves the rim in the
+[the module list's ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) `SHOWCASE` WP9 resolves the rim in the
 mesh and moves the sunrise stop to the first hour the Sun reaches the props
-([its design](../SHOWCASE/DESIGN.md#the-lookouts-rim-and-the-sunrise-stop)). M6 waits for M9 and judges the
+([its design](../SHOWCASE/DESIGN.md#the-lookouts-rim-and-the-sunrise-stop)). WP6 waits for WP9 and judges the
 whole list on the changed valley, on both targets and in motion. It does not change the valley's source: a
 defect it traces to the terrain is a proposal in the log.
 
@@ -821,9 +821,9 @@ Neither is the defect. For the crest that stays warm at the held 17.9 h stop, th
 terrain say which it is, and the evidence records it.
 
 **What guards the products.** The referees P1–P11 and the handoff rows H1–H5 of
-[the numerical acceptance](#numerical-acceptance) run in the workspace check on Metal, as they have since M5,
-and M6.4 runs the handoff in Chrome. M6.7 adds the stored-table rule and M6.8 the stored-cube probe, on both
-targets. Their comparisons are of three kinds, and M6 treats each differently.
+[the numerical acceptance](#numerical-acceptance) run in the workspace check on Metal, as they have since WP5,
+and WP6.4 runs the handoff in Chrome. WP6.7 adds the stored-table rule and WP6.8 the stored-cube probe, on both
+targets. Their comparisons are of three kinds, and WP6 treats each differently.
 
 - **The contract: what a consumer receives.** These take their expected value from the atmosphere's own stored
   product, read back in the same run on the same target, or from a known field the fixture wrote. None takes it
@@ -834,7 +834,7 @@ targets. Their comparisons are of three kinds, and M6 treats each differently.
   lookups, the known night term, the agreement across the cube's edges and corners, and the furnace and
   source-scaling cases. They prove the sampling, the addressing and the units. A deliberate change to the sky,
   the air, the cube's filter or the split-sum table moves both sides of each together, or neither side where
-  the fixture wrote the field, so none needs an edit to keep passing. M6 adds the stored-table rule and the
+  the fixture wrote the field, so none needs an edit to keep passing. WP6 adds the stored-table rule and the
   probe and changes none of the other cases, bounds or wrong lookups. One that fails is a broken handoff,
   whatever the picture looks like.
 - **Guards: where a product stood.** P1–P11 are regression guards: they catch a product that moved when nobody
@@ -846,7 +846,7 @@ targets. Their comparisons are of three kinds, and M6 treats each differently.
 - **Records: H5 against the reflection model.** The cube and the split-sum table are sampled estimates, and
   their sample counts are a cost a builder may lower. A comparison with the reflection model made through the
   library then measures the estimator and not the handoff, as the two rules above show. So the H5 run still
-  makes both, on the producer's own cube and table at the cases M5 gave them: the radiance against P7's closed
+  makes both, on the producer's own cube and table at the cases WP5 gave them: the radiance against P7's closed
   forms on the sky the fixture writes, and the pair against P8's quadrature. It writes the largest difference
   of each, for each channel, into the Chrome report and the Metal test's output, and passes or fails on
   neither. They are there to find the cause when a reflection looks wrong.
@@ -871,8 +871,8 @@ value the Mac's producer stored: that is a guard at the row's bound and no claim
 every contract comparison in Chrome still reads Chrome's own product. The log names each guard that changed, the
 change to the look that moved it, and its old and new values. No review asks for a model that justifies the new
 values. A change that moves a product also moves `APPLE-TILE`'s registered exact sets.
-[The ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) lets M6's builder refresh the sets that moved, in the
-landing that makes the change, and M6.9 holds the verifier and the refresh's record. So a twilight adjustment
+[The ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) lets WP6's builder refresh the sets that moved, in the
+landing that makes the change, and WP6.9 holds the verifier and the refresh's record. So a twilight adjustment
 that moves P11's blue channel by 4% lands with P11's three recorded values replaced on both targets, and H2's
 live arm passes untouched because it reads the new chart. In the same way, a split-sum table or a cube filter
 made with fewer samples lands with the producer's own guard, P8 or P7 on Metal, given expected values from the
@@ -883,21 +883,21 @@ The solar sky and solar aerial transport are not qualified against an all-orders
 owner's bar no such campaign is planned.
 
 **Cost.** Whole-frame and atmosphere pass costs on the route are measured on the final build and, in the same
-session and configuration (extent, TAAU on, load class, order alternated), on the commit M6 started from. That
-pair is the comparison. The M1 and M2 records predate TAAU and describe other builds and loads; they are quoted
+session and configuration (extent, TAAU on, load class, order alternated), on the commit WP6 started from. That
+pair is the comparison. The WP1 and WP2 records predate TAAU and describe other builds and loads; they are quoted
 as history and not called paired. The record is a tripwire and sets no budget
-([brief](../BRIEF.md), decision 3). A visible hitch in the scrub, or a pass about 25% over its arm on the
-starting commit, is investigated, and the finding is kept beside the record. M6.5's check passes the record: it
+([brief](../VISION.md), decision 3). A visible hitch in the scrub, or a pass about 25% over its arm on the
+starting commit, is investigated, and the finding is kept beside the record. WP6.5's check passes the record: it
 fails on an arm, a named pass or the load that is missing, on a run that did not complete, on a record that
 does not say whether a hitch was seen in the scrub, and on a tripped wire with no investigation, and on no
-figure. The reviewer's question on the module's timing is M8.9's, in the last milestone, where the qualified
+figure. The reviewer's question on the module's timing is WP8.9's, in the last milestone, where the qualified
 numbers are taken.
 
-**What is out.** The west-lookout shadow crossing (M3) stays a parked spike and the exact finite-disk match (M4)
+**What is out.** The west-lookout shadow crossing (WP3) stays a parked spike and the exact finite-disk match (WP4)
 stays deferred; both are named in the review as known and are not judged. The exclusion is narrow: it covers the
 moving shadow edge on the authored spur between 17.40 and 17.80 h. The held `sunset-clear-sun` stop at 17.4 h is
 judged like every other stop, and the terrain lip recorded on the shipped Ground E pan is a separate finding,
-judged under the brightness-step entry once `SHOWCASE` M9 has fixed its mesh. Moon, weather and calibrated night
+judged under the brightness-step entry once `SHOWCASE` WP9 has fixed its mesh. Moon, weather and calibrated night
 colour stay outside the profile, as the first section says.
 
 **Risk.** Shadow defects have consumed days here before. If the review fails on one item twice, the builder stops
@@ -905,7 +905,7 @@ and reports it instead of opening a new shadow method; a new method is a re-plan
 
 ## What the caster height map holds
 
-M10, added on 18 November 2026. `SHOWCASE` M5 ended blocked on it: its builder's words were "Fix the Sun-shadow
+WP10, added on 18 November 2026. `SHOWCASE` WP5 ended blocked on it: its builder's words were "Fix the Sun-shadow
 discontinuity and the remaining frame stalls". The stalls are `SHOWCASE`'s to record; the shadow is this
 module's, which owns the direct-Sun path to receivers.
 
@@ -921,12 +921,12 @@ hour the Sun is up, on the Mac and in Chrome.
 
 On the Mac, on the exit flythrough, a dark stair-stepped strip appears across lit ground between committed
 ticks 233 and 234 and stays. A fixed capture with every tick submitted reproduces it, so no missed frame
-causes it ([the record](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.md#reproduced-shadow-transition),
-[the four ticks](../../../.orchestrate/evidence/SHOWCASE/M5-motion-fixed-shadow-crop.png)). `SHOWCASE` M5's reviewer had
+causes it ([the record](../../../.orchestrate/evidence/SHOWCASE/WP5-motion-diagnostics.md#reproduced-shadow-transition),
+[the four ticks](../../../.orchestrate/evidence/SHOWCASE/WP5-motion-fixed-shadow-crop.png)). `SHOWCASE` WP5's reviewer had
 already noted long ground shadows with "coarse stair steps and broad straight sides" at the shelf and slope
 checkpoints.
 
-The cause below is read from the code and the layout. No run has yet confirmed it, which is why M10's builder
+The cause below is read from the code and the layout. No run has yet confirmed it, which is why WP10's builder
 confirms it first.
 
 - The Sun's three depth layers are drawn from one caster set (`synthetic/scene_graph.rs`, the passes
@@ -988,7 +988,7 @@ Limits, known and not built here. Only entity mesh rows can be marked. A contrib
 and cooked placements, all enter the layer as today, so a placed thing that floats would still drop a tower,
 a steady one. Nothing in the valley does. A balloon's shadow on ground past the reach is absent, as past any
 engine's shadow distance; whether the exit scene wants a longer reach is `SHOWCASE`'s choice of profile, judged
-on the finished image in its M8.
+on the finished image in its WP8.
 
 ### Check that it can work
 
@@ -1006,8 +1006,8 @@ another shadow method.
 
 ### Exact baselines
 
-No registered scene has a marked row, so no registered reference moves, and M10.3 holds that. `SHOWCASE`'s own
-exit baseline, coarse grids of its six stops, may move at a stop where a tower's strip stood; `SHOWCASE` M5
+No registered scene has a marked row, so no registered reference moves, and WP10.3 holds that. `SHOWCASE`'s own
+exit baseline, coarse grids of its six stops, may move at a stop where a tower's strip stood; `SHOWCASE` WP5
 replaces it by its own rule.
 
 ### Cost
@@ -1017,23 +1017,23 @@ nothing pays nothing. No figure is asked for.
 
 ### How it is proved
 
-- **M10.1**, a test on Metal: with one caster marked aloft above the ground and one unmarked standing on it,
+- **WP10.1**, a test on Metal: with one caster marked aloft above the ground and one unmarked standing on it,
   the height layer read back equals that of the same scene without the marked caster, and both cascades equal
   those of the same scene with it unmarked, under each culling mode. The unmarked caster stands apart from the
   marked one and reaches higher than it. The fit keeps every caster, so a marked caster that was the highest
   thing in the scene would set the layer's depth range, and taking it out would move the stored depth of ground
   that is correctly kept. With the standing caster highest, both scenes fit the same range and the read-backs
   differ only by what the marked caster drew.
-- **M10.2**, a reviewer's inspection of the exit flythrough with every tick submitted: no strip under a
+- **WP10.2**, a reviewer's inspection of the exit flythrough with every tick submitted: no strip under a
   balloon on the far ground, none appearing or vanishing, the near balloons' shadows and the ridges' far
   shadows still there.
-- **M10.3**, the exact-baseline verifier.
+- **WP10.3**, the exact-baseline verifier.
 
-Chrome runs the same route code and shader. `SHOWCASE` M5.9 looks at it there.
+Chrome runs the same route code and shader. `SHOWCASE` WP5.9 looks at it there.
 
 ## The view volume: haze, fog and light near the camera
 
-M7 and M8, added on 14 November 2026. They are track 2: they follow M6, gate nothing in the V1 exit, and leave
+WP7 and WP8, added on 14 November 2026. They are track 2: they follow WP6, gate nothing in the V1 exit, and leave
 every scene that does not ask for them as it is.
 
 **The owner's request**, 14 November 2026: "Oh and for clouds we also need to be taking into account mist / fog.
@@ -1051,7 +1051,7 @@ files, one of which splits solar in-scatter by the surface's shadow, which the v
 volume's history uses `EFFECT-GRAPH`'s state kinds, as `examples/v1-game/src/effect` does. The control and the scene's declaration go behind a selection in `examples/v1-game` that is off by
 default; that game is `SHOWCASE`'s, so leave its generator, routes and exit configuration alone. `CLOUDS`
 builds rulings 1 to 4 in these same files; integrate on top of what has landed, and if its haze scale is
-present make sure the volume does not take it. Record M7.1's base before changing anything.
+present make sure the volume does not take it. Record WP7.1's base before changing anything.
 [The look decides](#how-the-view-volume-is-proved): the f64 quadrature is there to find the cause of a
 picture that looks wrong, and no item compares the volume with it. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
 terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind makes its eight band values differ;
@@ -1082,7 +1082,7 @@ jointly by one owner; the aerial product is already that owner's, so the joint i
   transport of air, haze and a provider's medium, at a finer grain near the camera. A scene that does not
   declare it keeps the 32³ product, bit for bit.
 - **One plane for the Sun-path optical depth**, with a factor of exactly 1 at or above it
-  ([M5](#environment-identity-and-products), and its open question on a second height band). A provider may add
+  ([WP5](#environment-identity-and-products), and its open question on a second height band). A provider may add
   a ground band, which a receiver inside it reads at its own position in place of the plane's value.
 - **In-scatter under cloud is `CLOUDS`' scalar** (that section's first open question). Inside the view volume
   the air is lit sample by sample, through the scene's shadows and the cloud factor. The scalar stays for a
@@ -1145,7 +1145,7 @@ lag the profile declares; at the defaults their bytes are today's. Changing eith
 contents, like the Sun moving, and does not move the environment epoch. A weather provider supplies both;
 without one a scene sets them.
 
-What the kind does was measured before M7 was built, with the module's own f64 reference sky in all orders of
+What the kind does was measured before WP7 was built, with the module's own f64 reference sky in all orders of
 scattering ([the haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md)). At a fixed visual range,
 `α = 1.3` against 0 moves the sky's colour near the horizon by a CIEDE2000 difference of 4 to 6 in 20 km haze and 6 to
 12 in 3 km with the Sun at 10°, and distant land by 5 to 7 in 3 km. With the Sun at 60° the sky from the
@@ -1183,7 +1183,7 @@ baseline**: the air and haze alone, with no shadow, no cloud factor and no mediu
 
 **A cell under the model's ground.** The grid's rows descend as the aerial volume's do, and a read blends
 them the same way. So a cell's point under the ground takes the air's terms by
-[the rule M9 gives a column](#the-air-at-the-ground): the densities their laws give at that depth, and the
+[the rule WP9 gives a column](#the-air-at-the-ground): the densities their laws give at that depth, and the
 Sun's light of the ground point above dimmed by the air between. The joint cell and the clear baseline both
 take it. A provider's coefficients are the provider's at every point the volume names, and the scene's
 shadow and the cloud factor are read at the point as anywhere. On 90 rows the stop would lose 78% of the
@@ -1214,7 +1214,7 @@ With no medium `R` is exactly 1. Where no medium stands on a ray and nothing sha
 baseline cells are the same numbers, so `ΔS` is exactly 0 and the sky's radiance is the clear sky's to the bit.
 Where the scene's shadows or the cloud factor darken the near air, `ΔS` is negative with no medium at all: the
 baseline is unshadowed and the joint source is not. That is how a shaft shows against the sky, and it is why
-the terminal pair is built in M7 with the air alone. `CLOUDS`' compose already reads the lent transport at its
+the terminal pair is built in WP7 with the air alone. `CLOUDS`' compose already reads the lent transport at its
 cloud's front distance, so it needs no change.
 
 **The ground band.** A provider may register, beside its 2D Sun-path field, a ground band: optical depth toward
@@ -1232,7 +1232,7 @@ fog's shade once. The band may also say where the land blocks the Sun beyond the
 volume's cells read that, never a surface.
 
 **A test medium** in `examples/v1-game`, behind an opt-in control and labelled as a stand-in, writes the medium
-coefficients and a ground band for an analytic bank. It proves the path; `CLOUDS` M14 replaces it.
+coefficients and a ground band for an analytic bank. It proves the path; `CLOUDS` WP14 replaces it.
 
 ### Check that it can work
 
@@ -1258,8 +1258,8 @@ history. Its parts are shipped practice at 1 to 3 ms on a 2013 console.
 `CLOUDS`' design proof ([part I](../../../.orchestrate/evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a
 medium split by a near weight composes with the far part to the exact transmittance. Its in-scatter is an
 approximation whose size depends on what stands in the ramp: 0.002 in that proof's uniform medium, and 0.011
-in 0.65 for a bank that occupies a 300 to 500 m ramp (the design review's case). `CLOUDS` M15.4 judges the
-handover by eye, with a bank walked through the ramp. Unrun: the look, the history's steadiness and the cost, which M7 sees first.
+in 0.65 for a bank that occupies a 300 to 500 m ramp (the design review's case). `CLOUDS` WP15.4 judges the
+handover by eye, with a bank walked through the ramp. Unrun: the look, the history's steadiness and the cost, which WP7 sees first.
 
 <a id="numerical-acceptance-for-the-view-volume"></a>
 
@@ -1269,18 +1269,18 @@ Under [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) the
 its speed.
 
 - **The look decides.** Haze from crisp air to murk, shafts below ridges and broken cloud, and a bank of fog
-  the camera walks into are judged in the running valley against M7's and M8's inspection lists, on the Mac and
+  the camera walks into are judged in the running valley against WP7's and WP8's inspection lists, on the Mac and
   in Chrome.
-- **Speed is a tripwire.** M7.10's and M8.9's paired records, as [Cost](#cost-2) says.
+- **Speed is a tripwire.** WP7.10's and WP8.9's paired records, as [Cost](#cost-2) says.
 - **Contracts are tested.** At the defaults every chart holds the bytes it held, and a scene without the
-  volume composes what it did (M7.1, M7.2). The volume's history follows the frame contract (M7.5). A ray that
+  volume composes what it did (WP7.1, WP7.2). The volume's history follows the frame contract (WP7.5). A ray that
   leaves the volume takes its terminal pair once. With nothing in the way the sky is the clear sky's to the
   bit. On a ray whose near air is shadowed, the composed sky is the clear sky's radiance plus the `ΔS` the
   volume itself reports for that ray, and the test runs a sky that takes `ΔS` twice and one that takes none
   through the same comparison, where each fails: with a clear sky of 4 and `ΔS` of −0.25, once gives 3.75 and
-  twice 3.5, and both are dimmer, so dimming alone would pass either (M7.13). A sky and a star behind a slab
-  compose once together (M8.2). A provider's medium is counted once with the air: the transmittance beyond a slab is the
-  air's times the slab's, and a volume that applies either twice fails (M8.1).
+  twice 3.5, and both are dimmer, so dimming alone would pass either (WP7.13). A sky and a star behind a slab
+  compose once together (WP8.2). A provider's medium is counted once with the air: the transmittance beyond a slab is the
+  air's times the slab's, and a volume that applies either twice fails (WP8.1).
 - **The f64 quadrature is a diagnostic.** The reference in `atmosphere/gpu/tests/reference/` and the proof
   scripts stay. A builder whose haze bands, steps or sits too bright compares the volume with them to find the
   cause, and part III says which grids to expect trouble from. No item holds the volume to the quadrature, and
@@ -1298,10 +1298,10 @@ choose the grid. It decides nothing in a build.
 | The off path is not free | A scene without the view volume composes different shader text or one more pass | Filling the volume and not reading it |
 | Sunlight is shadowed twice in the air | Shafts are too dark, or a shadowed surface's haze differs from the haze beside it | Leaving the forward decoder's own split of solar in-scatter on top of the volume's |
 | The history trails or flickers | A mover leaves a wake in fog; a shaft's edge crawls in a pan | A longer history |
-| The night profile cannot follow a moving haze | Preparing it for a new amount takes longer than the declared lag | Freezing the haze at night without saying so. If preparation is too slow, M7 records it and the proposal for a prepared set of amounts goes to the log |
+| The night profile cannot follow a moving haze | Preparing it for a new amount takes longer than the declared lag | Freezing the haze at night without saying so. If preparation is too slow, WP7 records it and the proposal for a prepared set of amounts goes to the log |
 | Chrome's sampled-texture limit | Pipeline creation fails with a ground band and a medium registered | Dropping a texture silently |
 | The grid is too coarse for a fog's edge on terrain | Tiles show where fog meets a slope | Blurring the fog |
-| The far cells are too thick for the haze | Far land in haze of 20 km or thicker bands, steps or sits too bright in M7's stills | A longer history that smears it. More slices beyond the handover is the remedy. A blend of optical depth repairs the transmittance alone and leaves the in-scatter as it was, so it is no remedy by itself |
+| The far cells are too thick for the haze | Far land in haze of 20 km or thicker bands, steps or sits too bright in WP7's stills | A longer history that smears it. More slices beyond the handover is the remedy. A blend of optical depth repairs the transmittance alone and leaves the in-scatter as it was, so it is no remedy by itself |
 | The sky keeps haze the land has lost | A line where shadowed land meets the sky; no shaft against the sky | Holding `ΔS` at 0 when no medium is registered |
 
 ### Cost
@@ -1309,14 +1309,14 @@ choose the grid. It decides nothing in a build.
 Without the view volume: nothing. With it, each frame: one sample for each cell (0.6 to 1.4 million at the
 proposed sizes) of the air, the charts, the cascades and the Sun-path field, then the integration of the joint
 pair and the clear baseline; with a provider, three more reads a cell and the provider's own pass. Recorded paired, on and off, on the Mac and in
-Chrome, with tripwires and no budget ([brief](../BRIEF.md), decision 3).
+Chrome, with tripwires and no budget ([brief](../VISION.md), decision 3).
 
 ### Not built
 
 Local lights in the air, a volume for a second camera (so [a mirror view](../ARCHITECTURE.md#scene-views)
 carries clear air until its own plan says otherwise), fog indoors, and any density of this module's own.
 
-## Atmosphere lookup regressions (M11)
+## Atmosphere lookup regressions (WP11)
 
 Share setup and use compact fields and readbacks for the two cases. Test lookup coordinates, expected
 arithmetic and the analytic reference on the CPU where possible. Keep real Metal sampling of the

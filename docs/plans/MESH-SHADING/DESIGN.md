@@ -1,7 +1,7 @@
 # Mesh shading: meshlets culled and drawn by the object and mesh stages on the Mac
 
 17 November 2026, revised 18 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
-[module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac) · [the brief](../BRIEF.md) ·
+[module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac) · [the brief](../VISION.md) ·
 [planning probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md). C04, C05, C06, C07 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md), [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md),
 [the cooked draw design](../COOKED-DRAW/DESIGN.md) and
@@ -112,8 +112,8 @@ This module has four proofs.
   shows where the pixels it does not judge lie (a triangle's edge, a depth tie) and counts them. No bound is
   measured first and asserted later, and the difference images are kept as the diagnostic.
 - **The look.** One inspection in the valley on the mesh-stage path, against the list in
-  [M2's done-when item](DONE.json), with the existing path's stops beside it.
-- **The speed.** Tripwire records under load, in M2 and in M3's pair, which pass on their check. Nothing is
+  [WP2's done-when item](DONE.json), with the existing path's stops beside it.
+- **The speed.** Tripwire records under load, in WP2 and in WP3's pair, which pass on their check. Nothing is
   performance-qualified here, so no sitting with other builders paused is asked for.
 
 ## Research and selection
@@ -133,7 +133,7 @@ Read for this design, 17 November 2026:
   and Aaltonen (SIGGRAPH 2015) and Karis (Nanite, 2021) cull instances, then clusters; the stages are how
   current engines draw the survivors on hardware that has them.
 - **A reason to doubt.** A 2023 Apple developer forum report found meshlet culling in the mesh pipeline on an
-  M1 no faster with a depth test than without, and suspected the driver reserves output for the worst case. No
+  WP1 no faster with a depth test than without, and suspected the driver reserves output for the worst case. No
   primary source settles how the stages compare with indirect draws on a tile GPU. So this module measures
   before it widens: the cooked placements are the smallest complete use, and entities wait for the record.
 - **Limits that bind a mesh, not a meshlet.** The stages read a mesh's streams as storage, where the existing
@@ -203,7 +203,7 @@ cannot bind. The report counts the mesh with the limit that excluded it. Its eli
 the stages in the same pass. A publication that carries a mesh across the line, either way, moves that mesh
 alone to the other path in the publication's frame.
 
-### The draw (M1)
+### The draw (WP1)
 
 One draw for each placement of an eligible mesh: `draw_mesh_tasks` with enough object workgroups to cover the
 mesh's meshlets.
@@ -231,7 +231,7 @@ are to the vertex stage.
 A pass draws a mixed scene in one go, each placement by its mesh's path. The cull pass runs only for meshes
 on the indirect path.
 
-### One material for both paths (M1)
+### One material for both paths (WP1)
 
 A creator changes a cooked material through `MaterialReload`. Today a request compiles the hooked scene source
 into a replacement for the indexed forward pipeline off the frame, the next frame boundary draws it, and the
@@ -255,7 +255,7 @@ compilations of the scene's source with the one accepted hook. They change toget
 
 The shadow pipelines have no fragment stage, and a reload does not touch them.
 
-### The shadow passes (M2)
+### The shadow passes (WP2)
 
 The Sun's maps are two cascades and a top-down height layer (`synthetic/shadow.rs`), and the cooked
 contribution draws its casters into each. On the mesh-stage path each of the three passes draws an eligible
@@ -337,10 +337,10 @@ So a pass rasterises only the meshlets that reach it, and what it stores is what
   its report. With no selection nothing here is read and the launch is today's. The opt-in is recorded in
   two places: every run's report says what was asked, enabled and resolved, and this Mac's record says what
   the opt-in was found to do here.
-- **This Mac's record (M3).** It is written for a person deciding whether to opt a machine in, and nothing in
+- **This Mac's record (WP3).** It is written for a person deciding whether to opt a machine in, and nothing in
   the engine reads it. It holds the machine as the OS reports it (chip, GPU core count, memory, OS version)
-  with the registry's digest, the commit, the launch line, the look, and the paired timing. The look is M3's
-  inspection of the final build against [M2's list](DONE.json).
+  with the registry's digest, the commit, the launch line, the look, and the paired timing. The look is WP3's
+  inspection of the final build against [WP2's list](DONE.json).
 - **The paired timing is a tripwire.** On the final build with capture off, with the Sun's shadows as maps,
   at 1280×720 and at 1920×1080, the valley's route runs from two launches. One is the opt-in launch as the
   record's launch line gives it, with no recipe named. The other is the same launch without the selection
@@ -381,7 +381,7 @@ So a pass rasterises only the meshlets that reach it, and what it stores is what
   same-device comparison with its image difference and a sustained run, on a quiet machine, and it belongs
   with a decision to make the path a default. The maturity ledger
   records the path as run on this Mac, not performance-qualified and not a default.
-- **Why M3 waits for the exit.** M3 waits for `SHOWCASE` M8 so that its inspection, its record and its
+- **Why WP3 waits for the exit.** WP3 waits for `SHOWCASE` WP8 so that its inspection, its record and its
   estimate for entities describe the valley as the V1 exit leaves it. Nothing here changes the window's
   default, before the exit or after it. The verifier's runs name no hardware feature and ask for no path, so
   no registered exact baseline moves.
@@ -397,7 +397,7 @@ So a pass rasterises only the meshlets that reach it, and what it stores is what
 - **The streams as storage.** Positions and attributes keep their 12-byte records, which no WGSL vector array
   matches, so the mesh stage reads them as arrays of scalars. The packed triangles are read the same way.
 - **The fragment contract.** The mesh stage writes the fields the scene's `VertexOutput` declares, with the
-  same interpolation, so the fragment entry is shared. M1 compares the path with its cull off against the
+  same interpolation, so the fragment entry is shared. WP1 compares the path with its cull off against the
   existing path in every frame-contract output.
 - **The material.** `material.rs` builds a reload's module by appending the cooked entries to the hooked scene
   source. The hook point is in the fragment path, which the stage entries do not touch, so the stage module is
@@ -417,7 +417,7 @@ So a pass rasterises only the meshlets that reach it, and what it stores is what
   is made after the device, so the host knows whether the stages were enabled before it states one.
 - **Order.** The cooked index buffer is already in meshlet order, so both paths submit triangles in the same
   order if a mesh draw rasterises its workgroups in order. Metal's documentation does not say that it does.
-  Order decides a pixel only where two triangles tie in depth, and M1's comparison counts those pixels.
+  Order decides a pixel only where two triangles tie in depth, and WP1's comparison counts those pixels.
 
 ## The system as it runs
 
@@ -458,7 +458,7 @@ about 25% worse than its last record, growth that is not linear in what it shoul
 
 - **Memory.** A mesh-stage scene holds, for each eligible mesh, 16 bytes for each meshlet, 4 for each meshlet
   vertex and 3 for each triangle more. The existing path's index buffer and draw arguments stay, as the
-  prepared fallback. M2 records resident bytes for both.
+  prepared fallback. WP2 records resident bytes for both.
 - **CPU each frame.** One draw for each placement in each pass, where the indirect path records one for each
   meshlet.
 - **GPU each frame.** No cull pass. Object workgroups in proportion to meshlets; mesh workgroups in
@@ -466,7 +466,7 @@ about 25% worse than its last record, growth that is not linear in what it shoul
 - **A material reload.** Two pipelines compiled off the frame where there was one.
 - **What the record counts.** In each pass, the meshlets and triangles submitted, and those rejected by the
   cone test and by the frustum test apart, with terrain kept apart from the other cooked meshes. Meshlets
-  differ in size, so the triangles are what M3's estimate for entities rests on, and the reason is kept
+  differ in size, so the triangles are what WP3's estimate for entities rests on, and the reason is kept
   because entities already pass a frustum test for each instance.
 
 ## Risks
@@ -476,10 +476,10 @@ about 25% worse than its last record, growth that is not linear in what it shoul
 2. **The stages may not be faster on this GPU.** Then the record says so, the path stays a choice a launch
    can make, and the next plan has its answer about entities. That is a result, not a failure of the module.
 3. **The two paths differ by more than rounding.** The early sign is a pixel that differs away from an edge
-   or a tie in M1's difference images. The cause is found there, before anything is built on the path.
+   or a tie in WP1's difference images. The cause is found there, before anything is built on the path.
 4. **A hook validates for the indexed pipeline and not for the stage pipeline.** The reload is refused whole
    with the stage pipeline's diagnostics. If the cause is wgpu's, it is risk 1.
-5. **Other builders are in `thrum-asset-gpu`.** `SCENE-VIEWS` M2, `CONTENT-LOOP` M3, `RAY-TRACING` M2 and
+5. **Other builders are in `thrum-asset-gpu`.** `SCENE-VIEWS` WP2, `CONTENT-LOOP` WP3, `RAY-TRACING` WP2 and
    `REVIEW-ENGINE` work there. This module adds a path; it rewrites nothing another milestone holds.
 
 ## Proof and builder handoff
@@ -497,8 +497,8 @@ about 25% worse than its last record, growth that is not linear in what it shoul
   and keeps its report of the resolved recipe and path beside its frames, so they cannot be the fallback's.
   The existing path's stops beside them are taken on the Apple tile recipe too, so the two differ in the
   path alone. What the Mac window itself resolves is
-  proved from its report (M3.2), not from pictures.
-- Every timing of this module is a tripwire taken under load, M3's pair included: it records the load and
+  proved from its report (WP3.2), not from pictures.
+- Every timing of this module is a tripwire taken under load, WP3's pair included: it records the load and
   fails only on a missing measurement. No sitting with other builders paused is asked for.
 - Scratch goes in `tmp/mesh-shading-<milestone>/`, selected evidence in `.orchestrate/evidence/MESH-SHADING/`.
 
