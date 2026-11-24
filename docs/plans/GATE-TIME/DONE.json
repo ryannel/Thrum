@@ -838,8 +838,36 @@
       "failed_reviews_with_repeat": 0
     },
     {
+      "id": "M15",
+      "name": "Merge verification reuses a bounded local Cargo cache",
+      "status": "not_started",
+      "quality_bar": "The configured merge check makes real Cargo rebuilds cheaper on the busy Mac and returns the ordinary check's verdict on the exact candidate.",
+      "items": [
+        {
+          "id": "M15.1",
+          "statement": "The configured test command uses the same bounded, local Cargo cache for clean singleton and batch merge candidates on the Mac. Both run the ordinary selection and check steps for the exact candidate and base. A source edit that introduces a test failure fails with the cache warm, and reverting it passes. Cargo invalidates affected builds when the toolchain, profile or features change. Concurrent use, an interrupted run, a cache over its retention cap and insufficient free space recover through the owned cache lifecycle or the ordinary check path. Ordinary developer and scheduled main-branch checks still use their own build directories.",
+          "ask": "Trace the configured command from a singleton and a batch replay to their candidate, selection and verdict. Do the warm edit, failure and revert and the build-input changes show fresh artifacts? Check the concurrent, interruption, over-cap and low-space cases. Does the exclusive cache owner protect the active checkout and remove only its own artifacts? Does a fallback run the full check with its original inputs and preserve a real check failure?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.2",
+          "statement": "A three-pair Mac trial under ordinary builder contention compares fresh ordinary checks with the warmed configured route on the same distinct candidate transitions. The trial includes package and whole-workspace selection. Selection, build features and executed check coverage agree between arms. The warmed route's median end-to-end time is at most 300 seconds and its median test build time is lower than the fresh arm's. The record gives the raw runs, build and test times, load, peak and retained disk use and the main push that activates the qualified command. The contributor guide explains how the cache is managed and disabled.",
+          "ask": "Recompute the paired trial from its raw runs. Were the candidates matched, warmed from a preceding checkout, and measured under comparable builder load with the same executed check coverage? Is the warmed median at most 300 seconds end to end with a lower median test build time, and do the logs establish the tail costs and disk use? Verify the activation push and the documented cache location, pressure policy and bypass.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M5",
-      "name": "The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs",
+      "name": "The post-rollout record shows a five-minute median for Rust landings",
       "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -851,8 +879,8 @@
       "items": [
         {
           "id": "M5.1",
-          "statement": "The record lists the run of `./dev check` that the script saved for each merge from `b69c9812f` on, where the check took its present shape, before the claimed commit: the wall time and the tests' time the check printed, its `selected:` line, and the landing's subject and module. A merge whose check selected at least one Rust test binary is counted; one whose check printed `selected: no Rust test binary` is listed and not counted. At least five are counted, and no more of them took over five minutes than the design's goal allows for that count, which is none while fewer than nine are counted. The record gives the counted merges' median, and says how many of them are `GATE-TIME`'s own landings and how many selected the whole workspace. It keeps the thirty merges before `14a4a7c83` and their median as the trend, which is not judged. For each run over ten minutes in either list it says where the time went. It also gives how long one run of each main-branch check, `long-tests` and `workspace-tests`, takes now.",
-          "ask": "Recompute from the saved checks under `.git/orchestrate/checks`: is every merge from `b69c9812f` on, before the claimed commit, in the record; is each merge whose check selected a Rust test binary counted, and no other; are at least five counted; and how many of them took over five minutes: is that within the limit the design's goal gives for the count? For each run over ten minutes, does the record's reason match that run's own step times?",
+          "statement": "The record identifies the push and timestamp that activated M15's test command on main. It gives, in push order, the first 20 subsequent ordinary landings verified by a saved run that started after activation and selected at least one Rust test binary. Each timed invocation contributes one observation, including batch, cold and fallback runs. The command's median wall time from the orchestrate run ledger is at most 300 seconds, with at most five observations over 300 seconds. The record gives each landing's identity, selection, wall and step times, cache mode and available load data. It lists exclusions and explains runs over ten minutes. It retains the thirty-landing trend, the failed pre-rollout sample and current times for one run each of long-tests and workspace-tests. The contributor guide's merge timing matches the closing record.",
+          "ask": "Starting at the M15 activation push, trace the first 20 Rust landings to the commands and timed runs that proved their trees. Do the timestamps, checkout keys, and selection lines establish the window in push order, with batch or reused records counted once and cold and fallback runs included? Are all exclusions accounted for? Recompute the median and the count above 300 seconds from the run ledger. Do both pass the design's bounds, with the timing in the guide matching the record and each run over ten minutes explained by its saved output?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ".orchestrate/evidence/GATE-TIME/M5/record.md",

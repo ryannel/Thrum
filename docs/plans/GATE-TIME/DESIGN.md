@@ -60,52 +60,29 @@ the engineering skill on writing a test, and the project settings three rules fo
 
 ## The goal
 
-**A typical landing's merge check takes about five minutes of wall clock on this Mac, while builders work.** Five
-minutes is an assumption in [the plan](PLAN.md) that the owner may change. A typical landing is the middle one, so
-the goal is that the median merge check takes five minutes or less. M5, the last milestone, shows it from the
-merge checks the script saves, by the rule below, and M8 and M7 each record how far they brought it.
+**The median merge Rust check takes at most 300 seconds of wall clock on this Mac while builders work.** M15
+lands [the build-cost reduction](#cargo-cache-for-merge-verification). M5 judges its effect using the checks
+orchestrate saved for the first 20 ordinary Rust landings after rollout. M7 and M8 retain their earlier timing
+records. M5 keeps both the thirty landings before `14a4a7c83` and the failed sample from `b69c9812f` as history.
 
-The merges judged are those from `b69c9812f` on, the first merge after M11 gave each package one test binary.
-From there the check has its present shape: the selection, the side-by-side run and one binary a package. An
-earlier merge timed a check that no longer runs, or was M11's own landing, which started every new binary for the
-first time. So M5's record keeps the thirty merges before `14a4a7c83`, its first landing, as the trend, and they
-are not judged. A merge is counted when its check selected at least one Rust test binary. One whose check prints
-`selected: no Rust test binary`, such as a change to Markdown alone, takes about a minute whatever the tests cost,
-so it is listed and not counted. Every other merge in the span is counted, however slow.
+At rollout, record the main-branch push that activates the M15 test command and its timestamp. Start the sample
+strictly after that push. Match each later landing in push order to the successful invocation used to verify
+its tree, using the saved check and its run ledger. The invocation must have started after rollout and finished
+before the push. A batched push is one landing, and a retry or memo reuse of the same timed invocation supplies
+one observation. List untimed, plan-only and no-Rust landings separately with their reasons. A Rust landing is
+one whose check reports that it selected at least one Rust test binary. Count package selections, whole-workspace
+selections, cache misses and local fallbacks in order, including slow runs. Report a missing or legacy check for a
+Rust landing as a gap and resolve the provenance before judging the window. Use ordinary landings while the
+builders keep working. Replays, warm-up runs and landings made for the count supply no observations.
 
-M5 closes on the merges that have landed, without waiting for thirty, and a few merges cannot be judged by their
-median: if half of all checks took over five minutes, three or more of five would still be under it one time in
-two. So M5 counts the merges that took over five minutes, and the goal is shown when they are few enough. Few
-enough means that, if a typical check took over five minutes, and so at least half of all merges did, a sample
-that good would turn up at most once in 32 times.
-
-| Counted merges | Over five minutes, at most |
-|---|---|
-| 5 to 8 | none |
-| 9 to 11 | 1 |
-| 12 or 13 | 2 |
-| 14 to 16 | 3 |
-| 17 to 19 | 4 |
-
-Beyond nineteen the limit is found the same way, and
-[the planner's script](../../../.orchestrate/evidence/GATE-TIME/planning/sample_limit.py) prints it for any
-count: the largest number for which that many or fewer heads, in as many tosses of a fair coin as there are
-counted merges, has a chance of 1 in 32 or less. Five is the smallest count that can show the goal: five with none
-over turns up once in 32 times, where four would once in 16. A sample inside its limit has a median of five
-minutes or less, and the record gives that median as the typical time.
-
-A sample over its limit is one of two things. If its median is over five minutes, it says the goal is missed, and
-the plan has to change. If its median is five minutes or less, it is too small to say either way, and M5 waits
-for more landings: with one of five over, for four more with none over. No merge is landed to be counted, because
-a merge made for the count is not a typical landing.
-
-One in 32 is the chance at one count of independent merges, and M5 meets neither condition fully. It may count
-again after a wait, and with half of all merges over five minutes, a count made after every landing up to the
-nineteenth would pass about once in 15 times.
-Merges that share a day and a machine's load are not independent, so the record gives each landing's subject and
-module, and says how many of the counted are this module's own landings and how many selected the whole
-workspace: a reader can see whose landings a small sample holds, and whether they make it slower or faster than
-a typical one. The check records no load. A run over ten minutes is explained.
+Judge the fixed 20 once. The median must be at most 300 seconds and at most five of the 20 may exceed 300 seconds.
+Five is the largest count with a one-sided fair-coin probability at or below the previous 1-in-32 rule at 20
+observations. Shared machine load can correlate the observations, so this is an acceptance rule for the observed
+window. The record gives each landing's subject and module, how many counted landings are GATE-TIME's, how many
+selected the whole workspace, and the available load and cache-mode data. Measure the entire command from the
+orchestrate run ledger, including cache setup, any cache lock wait and the launcher build. Also retain the check's
+step times and explain runs over ten minutes. An incomplete window waits for ordinary landings. A complete window
+that misses either bound goes back to planning with the time breakdown.
 
 Two rules follow from the goal, and [the test tiers](../../../ORCHESTRATE.md#test-tiers) state both:
 
@@ -761,6 +738,50 @@ The incident cases are `thrum-rain-model::it conformance::the_harness_passes_rai
 `water-scene::foam_scene_gpu craft_trail_outlives_removed_source_and_spreads` and
 `thrum-sea::it portable_limits_gpu::default_webgpu_limits_match_the_model_a_day_in`.
 
+## Cargo cache for merge verification
+
+The pre-rollout M5 record found 404.6 seconds median across 45 Rust landings, with 37 over five minutes. In the
+slow group the median test build was 142.0 seconds, compared with 12.7 seconds in the group at or under five
+minutes. The Nextest run median across all 45 was 59.3 seconds. Package-selected and whole-workspace checks both
+missed the wall-time target. The production runner uses a workspace build and filters which of its binaries run.
+The lead also removes idle `.git/orchestrate/verify/*/target` directories to protect free disk on the 14-core Mac
+shared by ten builders. The timings mix load, changes and cache states, so M15 measures reuse directly before
+switching on the new route. [Baseline](../../../.orchestrate/evidence/GATE-TIME/M5/record.md).
+
+M15 gives the orchestrate test command an explicit merge-verification mode. On this Mac it runs the existing
+`./dev check` pipeline in one stable, detached checkout and reuses a Cargo target directory owned by that mode
+under the common Git directory, outside `orchestrate/verify`. The same route serves singleton and batch candidate
+trees. Check out the exact candidate and preserve the caller's merge base and selection inputs. Cargo owns
+freshness and invalidation. Keep rustc incremental compilation disabled. Keep the existing test selection,
+workspace features, lints, doc tests, draw-probe, GPU requirement and failure handling. Run guards and selected
+tests for the candidate normally. The persistent files are build artifacts, and orchestrate still owns reuse of
+successful check results. [Cargo build cache](https://doc.rust-lang.org/cargo/reference/build-cache.html).
+
+One process exclusively owns the checkout and target through the full check, including test execution and
+maintenance. Ordinary developer commands and the scheduled main-branch checks use their existing directories.
+If the cache is disabled, unavailable or busy, the configured command runs the normal check for that candidate
+in the caller's checkout and reports the fallback. Only cache setup or admission can choose the fallback. A
+failure once the check starts returns its verdict. The shared checkout tracks one candidate at a time. Keep
+generated per-run state isolated, and check that changes to source, features, profile and toolchain rebuild what
+they affect. Recovery after interruption starts from the next candidate's clean inputs.
+
+Start with an 8 GiB retained build-cache cap and the lead's 30 GB free-space floor. Define a measured headroom
+allowance for transient build growth. Before a run that cannot fit, and after an oversized run, reclaim only
+this mode's idle or obsolete artifacts under its lock. In low space, release this mode's retained data as needed
+and use the ordinary check path if the shared cache cannot be admitted. The floor controls this cache's retention
+and admission on a shared volume. Report retained bytes, available space, and cache use, resets and fallbacks.
+The contributor guide tells the lead where the cache lives, how disk pressure is handled and how to disable it.
+
+Use three distinct representative candidate transitions on the Mac under ordinary builder contention. Include a
+package-selected and a whole-workspace check, and exercise the configured command on singleton and batch inputs.
+Compare cold ordinary checks with the warmed route on the same candidate/base pairs, preserving the production
+selection and check steps. Use a preceding checkout to warm the cache for each candidate. An unchanged-tree
+repeat is a useful diagnostic. For promotion, the three candidate-route checks have a median of at most 300 seconds
+end to end and a lower median test build time than the matched cold checks. Record load, disk use, Cargo rebuilds,
+test build and run times, verdicts and executed coverage. If reuse falls short, M15 may also tune the test profile's
+debug-info generation, preserving test assertions and diagnostics and repeating the paired proof. Switch the project
+test command only after it passes this proof. M5 measures the real rollout independently of the replay.
+
 ## Interfaces
 
 | Interface | For |
@@ -772,6 +793,7 @@ The incident cases are `thrum-rain-model::it conformance::the_harness_passes_rai
 | Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
 | The guard rules, from M12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
 | The check's closing lines, from M8 and M12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and M5's record |
+| The orchestrate test command, from M15: an explicit merge-verification mode of `./dev check`, with a bounded local Cargo cache and the same check verdict | Orchestrate singleton and batch verification, `REPO-RULES`, the lead who manages free disk, and M5's record |
 | One test binary a package, from M11: a test file under a package's `tests/` folder is a module of the package's `it` target, and runs as `cargo test -p <package> --test it <file>::`. The repository guards fail a file there that no target compiles. A file is a target of its own only while something [mechanism 10](#one-test-binary-a-package) lists holds it | Every module that adds a test file, and every planner who writes a check that runs one |
 
 ## Whose code this is built in
@@ -813,7 +835,8 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 | M3 | `examples/water/tests/foam_scene_gpu.rs`, `wake_scene_gpu.rs` and any other test file of the water scene that holds a test on the exempt list; the child's arguments in `examples/water/tests/support/island.rs`; `.config/long-tests.txt` and `.config/nextest.toml` | `WATERS` M7, whose open items run the foam test for its ten minutes and which is building in these files | `PUDDLES` M5.4 runs the foam scene's binary and M3.2 `stage_gpu`, and each needs only that the binary passes. `stage_gpu`, `inland_floating_gpu` and `bodies_gpu` also start a child through `island.rs`, each with a test that is not ignored, so running ignored tests in the child changes nothing for them |
 | M4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` M2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
 | M14 | The check runner, its tests and help in `tools/xtask/src/`, `.config/nextest.toml`, and the corresponding timeout text in `ORCHESTRATE.md` and `CONTRIBUTING.md`. Load evidence in the working folder | The landed M13 runner | `REPO-RULES` owns the check command outside the test runner. M5 uses the contributor guide's merge timing |
-| M5 | The commands table and test-command text of `CONTRIBUTING.md` | `DEAD-TOOLS` M2, which edits other rows of the same table | `DEAD-TOOLS` M3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` M3, the one rename, waits for this milestone |
+| M15 | `dev` and its merge-verification helper and tests under `scripts/`, the check entry point and selection inputs in `tools/xtask/src/` if needed, the test-command line in `ORCHESTRATE.md`, the cache operation notes in `CONTRIBUTING.md`, and the test-profile debug-info setting in `Cargo.toml` only if the paired proof needs it | The landed M14 check runner | `REPO-RULES` owns the check command. Its guards and callers keep their contracts. The lead coordinates the test-command cutover and verifier cleanup |
+| M5 | The commands table and test-command text of `CONTRIBUTING.md`, plus the closing record in the working folder | M15 and `DEAD-TOOLS` M2 | `DEAD-TOOLS` M3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` M3, the one rename, waits for this milestone |
 
 ## Not built here
 
@@ -850,9 +873,6 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 - **A standing guard that finds a new run-time reader of another package's files.** A search by text misses a
   reader that reaches the path through a helper, and the whole run on main catches what it misses. The declared
   edge and M7's one search are what is built.
-- **A faster build.** Building and linting take under a minute and a half on a typical landing. A linker or a
-  shared build cache would each save seconds of it. Fewer test binaries is mechanism 10, for the first-run cost
-  more than for the link.
 - **A shorter main tier.** The long tests take about 26 minutes in release and run every four hours, by the
   owner's decision of 21 November. Nobody waits for them.
 - **Two changes to the orchestrate script**, which the lead can raise with the skill: the Ready for Review run
@@ -884,9 +904,9 @@ tests, which a reviewer reads, by scratch changes whose selection the reviewer p
 declared edge, and by the record of what it saves, made before it is switched on. A test made fast is proved by
 the reviewer's comparison of what it asserted with what it asserts, case by case, and by its time in the record.
 A deleted duplicate is proved by the reviewer's list of where each of its assertions still runs. A retired
-reference is proved by the test that replaces it, which the reviewer reads. The goal is proved by the wall time of
-the merge checks the script saved, read from the check's own lines: of
-[the merges the goal counts](#the-goal), no more took over five minutes than the goal allows for that count.
+reference is proved by the test that replaces it, which the reviewer reads. M15 proves cache reuse and correctness
+with matched cold and warm candidate runs, a changed candidate that fails as expected, and cache-pressure and
+concurrent-use cases. M5 proves the goal from the saved wall times in [the fixed post-rollout window](#the-goal).
 
 One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by
 the count of test targets; by a check that no open item lost the binary it names; by a scratch test file that the

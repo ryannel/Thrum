@@ -8,9 +8,10 @@ Read [the goal](DESIGN.md#the-goal), [Mechanisms](DESIGN.md#mechanisms) and
 [the files each milestone touches](DESIGN.md#files-each-milestone-touches) before any milestone. Every file here is
 another module's: change nothing those tests assert about the engine. The milestones are in build order.
 
-## Open for the human
+## Open for the user
 
-- Assumption: a merge's check takes about five minutes for a typical landing, on this Mac while builders work. It is judged on real merges since the check took its present shape: at least five that ran Rust tests, and too few of them over five minutes to be chance, which is none while fewer than nine are counted. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure.
+- Assumption: merge verification shares a single local Cargo cache across candidate worktrees on this Mac. It starts with an 8 GiB retention cap and honors the lead's 30 GB free-space floor. Cargo keeps the existing checks and test coverage. Test-profile debug-info tuning is available if the cache alone falls short in the paired trial.
+- Assumption: the five-minute goal is judged once on the first 20 qualifying Rust landings after rollout, allowing at most five over 300 seconds under the previous tail-count rule. This sample includes ordinary cold starts and fallbacks.
 - Assumption: the merge check reruns a test stopped at ten seconds once, serially, under the same limit. Load took a test of under ten seconds past it in 8 of the last 18 whole checks, 22 tests in one.
 - Assumption: `./dev check-all` gets a 30-second cap for its one serial rerun, subject to proof under the builder load that caused the failures. Ten seconds remains the fast-test target and the merge limit.
 - Assumption: "the number of test binaries can only go down" counts the binaries no plan names, 43 of 275 today, because approved open items name 147 not yet written; M11 takes the whole number from 263 to about 110. The other choice rewrites the 176 binary names in 17 modules' open items now, and freezes the whole number.
@@ -76,14 +77,19 @@ the load evidence. Accept the over-ten-second recovery from either run when the 
 timeout, passing serial retry within thirty seconds and production verdict to the same real case and fixed
 revision. Keep the checker cheap so milestone checks can rerun from the records.
 
-## M5 The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs
+## M15 Merge verification reuses a bounded local Cargo cache
 
-The times come from the checks the script saved, `.git/orchestrate/checks`. The first builder's record, with its
-script `landing_times.py`, is in `.orchestrate/evidence/GATE-TIME/M5/`: its thirty merges are the trend, and
-[the goal](DESIGN.md#the-goal) says which merges are counted and how many of them may be over five minutes. Before
-anything else, count the merges that qualify, and those of them over five minutes. With fewer than five counted,
-or with more over than the goal allows while the counted median is five minutes or less, end `BLOCKED` saying how
-many more landings M5 waits for at the least, and land nothing to make one: a merge made to be counted is not a
-typical landing. If the counted median is over five minutes, say where the time goes and end `BLOCKED`: the plan
-is what has to change. `CONTRIBUTING.md`'s `./dev check` row quotes the trend's median: make it agree with the
-record you close on. Its section on tests doesn't name the `cross-target` check, which M5.2 asks for.
+Build and qualify [the cached check](DESIGN.md#cargo-cache-for-merge-verification) before switching the project
+test command. Exercise both merge entry points with replay candidates without pushing them to main. Coordinate
+the cutover with the lead so new requests load the updated test command. Record the activation push and time,
+along with the paired trials and raw logs, in `.orchestrate/evidence/GATE-TIME/M15/`.
+
+## M5 The post-rollout record shows a five-minute median for Rust landings
+
+Start after M15's activation push. Use `.git/orchestrate/checks` and the check-run ledger to assemble the fixed
+window in [the goal](DESIGN.md#the-goal). Keep both earlier samples from `.orchestrate/evidence/GATE-TIME/M5/`
+and reuse `landing_times.py` where it can trace the qualifying runs. Record the number still needed while the
+window fills, and use only ordinary landings. Send a completed sample that misses either bound back to planning
+with its cache, build and run timing breakdown. Update the timing in `CONTRIBUTING.md` to agree with the closing
+record. The test guide and `cross-target` instructions were verified at `039ac3b9f`. Reuse the M5.2 evidence
+and check the guide against M15's command before closing.
