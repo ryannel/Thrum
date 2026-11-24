@@ -750,11 +750,11 @@
   projected sheet retained all 189 coarse three-surface probes at eight times the
   resolution. The two earlier inspections also found split crests, so M13 reaches the
   design's three-look stop. The wider taper is retained as an experiment.
-  [Target inspection and diagnostic](../../../.orchestrate/evidence/WATERS/M13/metal-crest-comparison.md).
+  [Target inspection and diagnostic](../../../.orchestrate/evidence/WATERS/WP13/metal-crest-comparison.md).
   Chrome WebGPU checked 14,275 transformed nodes with 0.422 mm maximum error and no faults.
   Native Metal returned all 48 gale stations at 1440p. The captured-off query took 12.39 s
   for 51.11 million cut nodes under shared load. The isolated Metal trail guard passed in
-  6.022 s. [Recovered target records](../../../.orchestrate/evidence/WATERS/M13/recovered-device-checks.md).
+  6.022 s. [Recovered target records](../../../.orchestrate/evidence/WATERS/WP13/recovered-device-checks.md).
 
 - 2026-11-24 Kept the incoming phase through the swash and drove foam uprush from the
   transformed wave. A plane-beach test verifies that the section can fade while the
@@ -762,8 +762,8 @@
   and shore-birth checks. The sea shadow now recovers over the bed's border, with the
   interior sector rays retained. The existing round-island reference and a compact
   shadow-to-ambient transition both passed.
-  [Metal guards](../../../.orchestrate/evidence/WATERS/M13/continuous-metal-guards.log) ·
-  [Model checks](../../../.orchestrate/evidence/WATERS/M13/continuous-shadow-and-film-check.log).
+  [Metal guards](../../../.orchestrate/evidence/WATERS/WP13/continuous-metal-guards.log) ·
+  [Model checks](../../../.orchestrate/evidence/WATERS/WP13/continuous-shadow-and-film-check.log).
 - 2026-11-24 An asymmetric island section produced a narrower fold in the f64
   projection and in the elevated Metal view. Neither it nor the optical edge trial
   removed the disconnected strip of water early in the sequence. The f64 long-wave
@@ -771,8 +771,8 @@
   between two wet regions. The change in edge appearance cannot repair that
   geometry. A subsequent design decision should address the close-shore trough of a
   coherent set while retaining the regular-wave draw-back rule.
-  [Long-wave cut](../../../.orchestrate/evidence/WATERS/M13/continuous-swash-cut.log) ·
-  [Metal frame](../../../.orchestrate/evidence/WATERS/M13/soft-edge-metal-0015.png).
+  [Long-wave cut](../../../.orchestrate/evidence/WATERS/WP13/continuous-swash-cut.log) ·
+  [Metal frame](../../../.orchestrate/evidence/WATERS/WP13/soft-edge-metal-0015.png).
 - 2026-11-24 The Chrome capture initially spent part of its interval at tick zero.
   The page's initial visibility event set a clock origin before the harness's
   synthetic timestamps. The surf preview now warms cooked content and drives
@@ -781,8 +781,8 @@
   faults or omissions. A wider 40 m Metal framing and the sand view showed the
   approaching ridge and the pitch, but left crest spacing unclear. The
   alternative lee view still showed a raised wave. Kept these cameras as
-  experiments. [Chrome timing](../../../.orchestrate/evidence/WATERS/M13/continuous-chrome-clock-receipt.json) ·
-  [Metal overview stills](../../../.orchestrate/evidence/WATERS/M13/overview-fixed-receipt.json).
+  experiments. [Chrome timing](../../../.orchestrate/evidence/WATERS/WP13/continuous-chrome-clock-receipt.json) ·
+  [Metal overview stills](../../../.orchestrate/evidence/WATERS/WP13/overview-fixed-receipt.json).
 
 - 2026-11-24 Implemented the revised bounded swash with references on the prepared
   still-water contours. The CPU model and GPU share the shoreward phase, the
@@ -792,7 +792,7 @@
   hardware Chrome compared 15,983 cache nodes with 0.759 mm maximum error and
   zero faults. Native Metal recorded 48 gale stations and 51,108,744 cut nodes
   in the paired 1440p cost run, with 19.02 s in the query pass under concurrent
-  load. [Target receipts and scope](../../../.orchestrate/evidence/WATERS/M13/bounded-swash-iteration.md).
+  load. [Target receipts and scope](../../../.orchestrate/evidence/WATERS/WP13/bounded-swash-iteration.md).
 
 - 2026-11-24 Three fresh reads of submitted 40 m Metal motion could follow
   one breaking front into the wash. None could follow two adjacent ridges
@@ -802,7 +802,7 @@
   in the third take, where an isolated sand patch and a doubled lip returned.
   Retained the second take. Review the visible scale of the crest and the
   combined displacement at the bore before tuning again.
-  [Three takes and the measured positions](../../../.orchestrate/evidence/WATERS/M13/bounded-swash-iteration.md).
+  [Three takes and the measured positions](../../../.orchestrate/evidence/WATERS/WP13/bounded-swash-iteration.md).
 
 - 2026-11-24 Raised native surf realtime capture to 2560 × 1440.
   Portable Metal submitted all fixed trade views and both tide sweeps
@@ -812,5 +812,21 @@
   limit the judgement of small waterline jumps. M13.8 remains open.
   The retained model profile locates two closer peaks without height
   gain across the sampled approach. The three-look stop still applies.
-  [Target inspection](../../../.orchestrate/evidence/WATERS/M13/review1440-metal-controls.md).
-  [Model profile](../../../.orchestrate/evidence/WATERS/M13/review1440-retained-profile.log).
+  [Target inspection](../../../.orchestrate/evidence/WATERS/WP13/review1440-metal-controls.md).
+  [Model profile](../../../.orchestrate/evidence/WATERS/WP13/review1440-retained-profile.log).
+
+
+- 2026-11-24 Rebased WP13 onto main, kept the proof for the eight unchanged items still in the package,
+  and tried three trade-wind takes under the planner's restart. The wider shelf gives the two model
+  crests room to rise and close during part of the approach. Three independent looks at 1440p Metal
+  motion could not follow a pair through both turning and visible narrowing. The latest cut is wet
+  continuously to its moving edge and has no displaced cross-shore fold in the sampled slices.
+  The visible front travels along the break, but the pitch and the thin sheet draining off the sand
+  remain unclear. The shared analytic sheet is at the three-look stop for WP13.4.
+  [Three takes and matched model cuts](../../../.orchestrate/evidence/WATERS/WP13/restart-inspection.md).
+- 2026-11-24 On the extended-shelf candidate, hardware Chrome compared 17,420 nodes with a maximum
+  displacement error of 0.446 mm and zero faults. The capture-off 1440p Metal gale query returned all
+  48 stations at tick 69, evaluating 47.43 million cut nodes in 20.71 s under shared load. The paired
+  arm without surf took 0.316 ms. The query still exceeds the real-time budget by a wide margin.
+  [Chrome target receipt](../../../.orchestrate/evidence/WATERS/WP13/shelf-chrome-conformance.json) ·
+  [Metal cost and tripwires](../../../.orchestrate/evidence/WATERS/WP13/surf-cost.json).

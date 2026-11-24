@@ -1235,7 +1235,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP13/clearance-chrome-conformance.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/shelf-chrome-conformance.json",
           "verdict": "",
           "review": ""
         },
@@ -1256,7 +1256,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP13/clearance-metal-cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/surf-cost.json",
           "verdict": "",
           "review": ""
         },

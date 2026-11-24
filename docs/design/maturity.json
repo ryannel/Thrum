@@ -3221,11 +3221,11 @@
         "implementation": "partial",
         "functional_validation": "target_guards_passed",
         "experienced_quality": "qualification_open",
-        "scope": "WATERS M13 draws the forward surf sheet with contour-driven bounded swash, cuts its highest surface for gameplay, and redistributes depth-limited shore birth in the existing whitewater stocks.",
-        "correctness": "Metal verified the folded float column, submitted depth and motion, and the birth budget across breaking, subcritical, calm, omitted-wave and dry cases. Hardware Chrome verified 15,983 cache nodes at 2.000 s with 0.759 mm maximum displacement error and zero faults. The CPU plane beach retained the regular-wave extrema with short geometry present.",
-        "visuals": "Metal and Chrome submit curved crests, a spreading bore and a distant surf line. Elevated Metal sequences still leave two-ridge shoaling ambiguous and show a local crest facet. The visual items remain open.",
-        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 × 1440 gale arm evaluated 51.11 million nodes for 48 stations and took 19.02 s in the query pass under shared load. The query exceeds the real-time budget at that load.",
-        "evidence": "../../.orchestrate/evidence/WATERS/M13-handoff.md"
+        "scope": "WATERS WP13 draws the forward surf sheet with contour-driven bounded swash, cuts its highest surface for gameplay, and redistributes depth-limited shore birth in the existing whitewater stocks.",
+        "correctness": "Metal verified the folded float column, submitted depth and motion, and the birth budget across breaking, subcritical, calm, omitted-wave and dry cases. Hardware Chrome verified 17,420 cache nodes at 1.983 s with 0.446 mm maximum displacement error and zero faults. The CPU plane beach retained the regular-wave extrema with short geometry present.",
+        "visuals": "Metal and Chrome submit curved crests, a spreading bore and a distant surf line. The extended shelf gives two model crests room to shoal. On Metal, three independent looks could not follow a pair through both the turn and the narrowing. Pitch and swash retreat remain unclear.",
+        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 × 1440 gale arm evaluated 47.43 million nodes for 48 stations and took 20.71 s in the query pass under shared load. The query exceeds the real-time budget at that load.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP13-handoff.md"
       },
       "waters_whitewater": {
         "implementation": "partial",
