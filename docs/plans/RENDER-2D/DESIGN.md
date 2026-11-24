@@ -87,13 +87,13 @@ is one sprite to draw: a **world row** comes from the tick page and a **frame ro
 
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
-| **C1 A crowd.** Thousands of sprites on screen, smooth at the display's refresh | 2,000, 5,000 and 10,000 moving rows, packed three deep, with spawn and despawn churn; the built-in display's full 3456×2234 pixels and 1920×1080; Chrome | A sparse crowd, or a small window. Rejected by `SIM-2D`'s packed crowd at the display's pixel size, with shaded pixels recorded beside each time. Times are baselines ([cost](#cost-account)) |
+| **C1 A crowd.** Thousands of sprites on screen, smooth at the display's refresh | 2,000, 5,000 and 10,000 moving rows, packed three deep, with spawn and despawn churn; the built-in display's full 3456×2234 pixels and 1920×1080; Chrome | A sparse crowd, a small window or the V1 sprite field. Rejected by timing the rendered replay of `SIM-2D`'s packed Crowd trace, with shaded pixels recorded beside each time. Times are baselines ([cost](#cost-account)) |
 | **C2 Crisp and still.** Pixel art stays legible through a scroll, with clean edges and no visible contrast pulse or crawl | Pixel art from 1 to 6 output pixels per texel, with exact aligned whole scales, and smooth art from 0.25 to 2. Subpixel scroll and rotation use the WP3 motion scales. The output follows window size and both densities | Crisp stills can hide a pulse in motion. Too much softening can erase fine marks. Judge the same one-texel stripes and checker at normal size in elapsed-time motion and fixed stills |
-| **C3 Order holds still.** Where two sprites overlap, the same one stays in front until one has passed the other by more than the band | Equal sort values; slots reused; rows that jitter inside the band, standing and while travelling together; three or more rows overlapping at once; sheets and blends mixed | An unstable sort. An order that only looks stable because nothing overlaps. A band on each row's own value, which lets two rows that travel together swap. A band so wide that nothing reorders. Rejected by overlapping rows of known colours read back at the overlap, by [the travelling pair](#4-order), and by a row that passes its neighbour and must exchange |
+| **C3 Order holds still.** Where two world rows with history overlap on one layer, the same one stays in front until one has passed the other by more than the band | Equal sort values; slots reused; rows that jitter inside the band, standing and while travelling together; three or more rows overlapping at once; sheets and blends mixed | An unstable sort. An order that only looks stable because nothing overlaps. A band on each row's own value, which lets two rows that travel together swap. A band so wide that nothing reorders. Rejected by overlapping rows of known colours read back at the overlap, by [the travelling pair](#4-order), and by a row that passes its neighbour and must exchange |
 | **C4 Smooth between ticks.** Sprites glide when the display runs faster than the simulation | 60 Hz ticks on a 120 Hz display; a repeated tick; a pause; a spawn into a reused slot; a new timeline | The same pose shown twice, or a new sprite sliding in from where the slot's last owner died. Rejected by positions at known alphas, and by a reused slot that must not move |
 | **C5 Sprite effects.** Frame animation in step with the world, tint, hit flash, transparency, additive glow | Any mix, interleaved in one pass | Additive drawn in a second pass, out of order. Rejected by a normal sprite over an additive one over a normal one, compared with a CPU blend |
 | **C6 Nothing 3D is paid for.** | Every pass, resource and pipeline of a 2D scene | A flag that hides the 3D output while its work continues. Rejected by the compiled pass list, the generation's storage and the creation counters, with the 3D scene as a control |
-| **C7 Art edits appear live.** Saving a sprite's source changes the running game in one frame | A changed image; frames added, removed or repacked; a bad save | A reload that restarts the scene, or new pixels under old rectangles. Rejected by frames compared with all-old and all-new references |
+| **C7 Art edits appear live.** Saving a sprite's source switches the art in one frame while the game keeps moving | A changed image; frames added, removed or repacked; a bad save | New pixels under old rectangles, or an atomic switch after a visible freeze. Rejected by all-old and all-new comparisons and elapsed-time motion through the edit |
 | **C8 It survives the lifecycle.** | Resize, a change of density, a discarded frame, a capture frame, a replaced device | A target left at the old size and scaled. Rejected by equality with a fresh scene at the new size |
 | **C9 A second game builds on it.** | The sprite scene in the V1 game and the crowd view | An engine crate that names a game's type. Rejected by a question on the code |
 
@@ -162,7 +162,7 @@ frame token, submission and completion, device generations, engine capture, timi
 A 2D scene's compiled graph holds its own passes and the output half's. With no contribution attached that is
 one render pass named for the sprites, then tone, capture and present, and nothing else. A contribution that
 declares only upload and simulate stages attaches through
-[the existing seam](../EFFECT-GRAPH/DESIGN.md#effects-and-stages-m2-m3) and adds its own passes at those two
+[the existing seam](../EFFECT-GRAPH/DESIGN.md#effects-and-stages-wp2-wp3) and adds its own passes at those two
 stages, before the sprite pass; no second way to declare passes is built.
 
 The scene's generation allocates the sprite target, the row, order and frame-table buffers, and a view record. It
@@ -221,17 +221,17 @@ during a pause and replays after a rewind.
 
 **Frame rows** are a list the game gives with each frame, for things that are not simulated: a cursor, a damage
 number, a mark. They have the same fields, no identity and no interpolation, and are drawn in the same pass and
-the same order as world rows.
+interleaved with world rows by [mechanism 4](#4-order).
 
 Both capacities are declared when the scene is prepared. A row beyond capacity, and a row with a value that is
 not finite or a position the view's origin cannot represent, is dropped and counted, as a 3D instance is.
 
 ### 4. Order
 
-Rows are drawn back to front by one total key: layer, then sort value, then stable identity. A frame row has no
-identity, so at an equal layer and sort value it follows every world row, in its place in the list. The sort
-value defaults to minus Y, so a sprite lower on the screen is in front; a game may supply its own, in world units.
-Equal values never fall in an arbitrary order, because the last term breaks the tie.
+Layers draw in increasing order. The exact world-row key within a layer is sort value then stable identity.
+The sort value defaults to minus Y, so a sprite lower on the screen draws in front in exact order. A game may
+supply its own value, in world units. Frame rows on a layer are sorted by value, with input list order breaking
+ties.
 
 **The band.** In a packed crowd, neighbours at nearly the same height push each other back and forth, and an exact
 sort would swap them every few ticks. So the order is not rebuilt from the key at each tick. It is **kept**: one
@@ -241,14 +241,20 @@ their bounding circles at the committed pose, each grown by `b`, touch:
 
 - Two near rows on one layer exchange only when the sort value of the one moving in front is more than `b` above
   the other's.
-- Any other two rows exchange on the exact key. They cannot overlap on screen, so nobody sees it.
+- Other world-row pairs exchange on the exact key. Layers always draw in increasing order.
 
 Exchanges go on until no two neighbours in the list should exchange. A world row with no valid history (a spawn,
-a reused slot, a new timeline) enters the list in exact key order with the rows on either side of it. Frame rows
-are merged in by the exact key each frame. The band applies to neither, so a mark that must sit steadily on a
-jittering body goes on a layer above it. `b` is a value of the scene, in world units; at 0 the list is the exact
-key order at every tick. The kept order is presentation memory and never reaches the simulation. How the
-exchanges are found is the builder's.
+a reused slot, a new timeline) enters the list in exact key order with the rows on either side of it.
+`b` is a value of the scene, in world units. At 0 the world list follows the exact key at every tick. The kept
+order is presentation memory and never reaches the simulation. How the exchanges are found is the builder's.
+
+**Frame rows.** Each frame row goes immediately before the first world row being drawn on its layer with a
+strictly greater sort value, or at the end of its layer if there is none. The world order is kept and frame rows
+at the same insertion point follow their sort and tie order. At zero band this puts every equal-value world row
+before the frame row. With a positive band, an earlier greater value can put the frame row behind a later
+equal-value world row. For example, with band 1, overlapping world rows A and B can keep order A, B as their
+values move from 0 and 1 to 0.75 and 0.25. A frame row F at 0.25 then draws in order F, A, B. A mark that must
+cover a body through jitter goes on a higher layer. The public row documentation and 2D guide explain this rule.
 
 **What that guarantees**, for any `b` above 0, any number of rows and any motion, within one timeline:
 
@@ -379,13 +385,26 @@ the sprite-sheet product the module list asks of `CONTENT-LOOP`.
 The cooker produces the same mip levels, transparent gutters and extruded tile edges as the embedded path.
 Both products use the sampling rules in [mechanism 6](#6-sampling-two-kinds-of-sheet).
 
-**Residency.** A sheet is a [lease](../CONTENT-LOOP/DESIGN.md#leases-m1): residency uploads the pages under its
+**Placement.** A row's position anchors the pivot. A cooked pivot is in original, untrimmed frame texels
+(each cell is its own frame), measured from the top-left corner, X right and Y down. The default is half the
+original width and height. For a corner or sample at `q` relative to the trimmed rectangle, its offset from
+the pivot is `trim_origin + q - pivot`, where `trim_origin` is the rectangle's top-left in the original frame.
+Convert that offset to world units using the sheet density, apply the row's signed scale and the Y-axis
+conversion, then rotate counterclockwise and translate by the row position. World rows use the interpolated
+pose and the committed frame. Frame rows use the supplied pose. Bounds follow the same placement, and texture
+sampling stays relative to the packed rectangle. Existing embedded frames keep their top-left anchor.
+
+**Residency.** A sheet is a [lease](../CONTENT-LOOP/DESIGN.md#leases-wp1): residency uploads the pages under its
 own budget and lends them after the frame that recorded the last copy is submitted. In a 2D scene residency runs
 with leases only. The frame table is read from the product the lease names, by its content hash.
 
 **One switch.** An edited sheet's pages and its frame table change in one submitted frame, under
-[the content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2). No frame shows new pixels
-under old rectangles. A discarded switch frame commits nothing.
+[the content publication](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-wp1-wp2). No frame shows new pixels
+under old rectangles. A discarded switch frame commits nothing. On Mac and Chrome, the game keeps updating and
+submitting frames with the old sheet while the edit cooks, the changed product loads and the budgeted upload
+stages it. Fetch and preparation must let the frame loop advance while the replacement is pending. WP4 records
+the moving scene on elapsed time from before the save through first use and checks for a visible pause against
+the same run's pre-save motion. The reload has no separate numerical timing budget.
 
 **Frames by name.** A game asks a sheet for a frame by name and keeps the handle. The handle stays valid across
 edits and shows whatever the current sheet gives that name, wherever the cooker packed it. A name the current
@@ -555,6 +574,16 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 - **Exact sprite checks.** The aligned image, resize, tile and mip witnesses use expectations taken from
   the source texels and this design's rules. No sprite image is registered as an exact baseline. These tests
   are this module's under [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines).
+- **Mac window resize (WP3.6).** The unattended check records AppKit points, scale and backing extent for the
+  three requested window sizes and the resize transition. When the surface supplies drawables, join each
+  window's presented submission and the first presented submission after resize to the engine-captured pixels
+  by submission ID. Check extents, one-to-one present and the aligned card. A run with observed surface
+  occlusion and no drawable for a required sample can report geometry only for that sample.
+  A timeout, renderer error or missing geometry is a check
+  failure. Console state is recorded as metadata. The reviewer needs a complete presented-window record covering
+  the landed path, from a run with a drawable. Use a retained record if it covers that path. For a new run,
+  preflight for a visible window before taking the GPU lock. This uses the engine tap and the shell's presentation
+  record, with no desktop capture or panel claim. Density 1 is exercised in the extent and Chrome proofs.
 - **Capture.** Inspected items use T2 engine capture and name their mode. Motion is judged from `realtime`
   captures at 1920×1080 as consecutive frames at 1x; the display's full 3456×2234 is captured as `fixed` stills
   and timed in the cost records, because twenty seconds of it would not fit capture's output bound.
@@ -564,8 +593,12 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 - **Filter cost.** Use the existing profile record for the WP3.1 comparison of sprite-pass timings before
   and after the change at 1920×1080 on Metal and Chrome for the 1.5× scroll. Include recipe, device, shaded
   pixels, overdraw and load. The timings are tripwires. WP5 measures the packed crowd.
-- **Cost records.** Record the revision and machine load. Keep the specified crowd size and backing extent
-  when investigating a tripwire. Record the observed cost and finding, then continue the build.
+- **Cost records.** WP5.4 and WP5.5 launch the crowd view with `SIM-2D`'s packed Crowd trace at 2,000, 5,000 and
+  10,000 bodies. In each timed take and size, match retained digests at ticks 120 and 240, and link timing and
+  overdraw samples in that interval to the submissions and tick publications of that same replay. Record build,
+  revision, backing extent and machine load. Keep the trace's packing and the view's sprite size when
+  investigating a tripwire. Record the observed cost and finding, then continue the build. The V1 sprite field
+  keeps its WP2 cost command.
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,
   and moves no retained image. Each work package uses the shared main-branch verifier. Diagnose a failed
   source-texel comparison against its original expectation. If another module owns a failing test, baseline

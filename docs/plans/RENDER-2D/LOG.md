@@ -194,3 +194,24 @@
   [Exact images](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/e0aeaf6be8acad28f2c9046e789a33ca26126dc8/main-exact-images.json) ·
   [Long tests](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/e0aeaf6be8acad28f2c9046e789a33ca26126dc8/main-long-tests.json) ·
   [Milestone check](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/separable-milestone-check.json)
+- 2026-11-24 [Design review](../../../.orchestrate/evidence/RENDER-2D/design-review.md) Must Fix 1. Mechanism 4
+  specifies that a frame row goes before the first world row with a greater value on the layer. It explains the
+  A, B, F inversion and the zero-band tie. WP5.11 carries the rule into public guidance. WP5.14 checks overlap
+  pixels with the band on and off and on a higher layer. The completed WP2 proofs stay as recorded.
+- 2026-11-24 Must Fix 2. Mechanism 8 anchors cooked frames at the original-frame pivot through trim, scale,
+  flip and rotation. Existing embedded frames keep their top-left anchor. WP4.3 compares the submitted
+  positions for two trimmed animation frames and the default-centre and embedded controls. WP4.10 explains
+  the conventions for artists.
+- 2026-11-24 Must Fix 3. Mechanism 8 keeps frame progress during cooking, fetch and budgeted staging.
+  WP4.8 and WP4.9 judge elapsed-time motion across the save and switch, using actual submission times and the
+  run's pre-save motion. The existing atomic-switch proofs still cover the pictures. No timing budget was added.
+- 2026-11-24 Must Fix 4. WP3.6 retains the actual-window card and first resized submission witness. Its
+  unattended check can report observed AppKit geometry alone when the surface reports occlusion and supplies no
+  drawable. The reviewer needs a complete presented record covering the landed path. Console state is metadata.
+- 2026-11-24 Must Fix 5. WP5.4 and WP5.5 use a separate crowd cost command. Each take ties timings and
+  overdraw to submissions of the packed Crowd replay, with the retained tick 120 and 240 digests checked at
+  each size. WP2 keeps the V1 field cost command. This review included no Suggestions.
+- 2026-11-24 Revision validation. The done-when schema, mixed-row ordering examples and retained Crowd
+  checkpoints checked out. The item dry runs reached the unimplemented window option, sheet test and Chrome
+  case, and crowd cost action. WP5.14 stopped in the GPU queue. The repository guard reproduced existing
+  diagnostics in a clean checkout. Three stale links in this design were corrected.

@@ -40,17 +40,22 @@ Then tune the [spatial filter](DESIGN.md#6-sampling-two-kinds-of-sheet) for the 
 full off-grid 2× transition in the Metal pan. Keep the authored patterns, camera paths and backing extents for
 comparison. Reuse the camera-sweep proof on Metal and Chrome, and verify bleed neighbours in the uploaded
 atlas. Retire the exact-box checks and their tracked tolerance fixtures when the replacement proofs are ready.
+For WP3.6, collect the real-window submission and resize record when drawables are available. The unattended
+check can establish shell geometry during reported occlusion. The review still requires a full window witness.
 Close WP3 with the shared `long-tests` result covering the merged work package (WP3.13). [WP3 items](DONE.json)
 
 ## WP4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
 
 Start from the lease and content publication delivered by CONTENT-LOOP WP1. Build the cooker and residency
-integration under [seam ruling 2](../ARCHITECTURE.md#seam-rulings-for-render-2d).
+integration under [seam ruling 2](../ARCHITECTURE.md#seam-rulings-for-render-2d). Prove placement from the original
+frame's pivot through trim and sample the submitted result. Use elapsed-time motion through the live edit on
+both targets to catch a freeze before the atomic switch.
 [WP4.1–WP4.11](DONE.json)
 
 ## WP5 The reference crowd of 10,000 is drawn on the Mac and in Chrome, the sprite scene works on the iPhone simulator, and a game maker can start a 2D scene from the guide
 
 Register `examples/crowd-2d-view` in `.config/architecture.toml`. Use SIM-2D's rule package and reference
-traces from `examples/crowd-2d`. For the simulator, use the V1 scene selection in `examples/v1-game-ios`
-and the runner pattern in `scripts/culling_sim.py`. Update the creator guide and maturity ledger.
-[WP5.1–WP5.13](DONE.json)
+traces from `examples/crowd-2d`. Measure the crowd view's own replay on Mac and Chrome. For the simulator, use
+the V1 scene selection in `examples/v1-game-ios` and the runner pattern in `scripts/culling_sim.py`.
+Update the creator guide, including frame-row placement and layer guidance, and the maturity ledger.
+[WP5.1–WP5.14](DONE.json)
