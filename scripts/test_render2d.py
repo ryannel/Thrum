@@ -63,22 +63,33 @@ class OccludedWindow(unittest.TestCase):
             log = arm / "game.log"
             summary = (
                 "v1-game: 90 presented frames unavailable: presented=0, tick=30, "
-                "display_link_callbacks=60, render_callbacks=60, unavailable=60, "
-                "occluded=60, surface_faults=0, dropped_views=60, dropped_stale_views=0, dropped_surface=60\n"
+                "display_link_callbacks=62, render_callbacks=62, unavailable=61, "
+                "occluded=60, surface_faults=1, pre_acquire_epoch_changes=1, "
+                "drawable_acquire_attempts=60, device_losses=0, configuration_error=false, "
+                "dropped_views=60, dropped_stale_views=0, dropped_surface=60\n"
             )
             log.write_text(summary)
             result = CompletedProcess([], 1)
             occluded = dict(status="Occluded", scale=2, presented=False, drawable=None, transition_error=None)
             initial = dict(occluded, sequence=1, window=[1920, 1080])
             resized = dict(occluded, sequence=50, window=[1552, 896])
-            self.assertEqual(occluded_transition(result, arm, [initial, resized])["result"], "geometry_only")
+            evidence = occluded_transition(result, arm, [initial, resized])
+            self.assertEqual(evidence["result"], "geometry_only")
+            self.assertEqual(evidence["surface"]["pre_acquire_epoch_changes"], 1)
+            self.assertEqual(evidence["surface"]["drawable_acquire_attempts"], 60)
             for changed in (dict(window=[1904, 1072]), dict(drawable=[[1552, 896], [1552, 896]]),
-                            dict(presented=True), dict(status="DrawableTimeout")):
+                            dict(presented=True), dict(status="DrawableTimeout"),
+                            dict(status="NeedsReconfigure"), dict(transition_error="configuration refused")):
                 with self.subTest(changed=changed), self.assertRaises(ValueError):
                     occluded_transition(result, arm, [initial, resized | changed])
-            log.write_text(summary.replace("occluded=60", "occluded=0"))
-            with self.assertRaisesRegex(ValueError, "did not report an occluded surface"):
-                occluded_transition(result, arm, [initial, resized])
+            for field, change in (("occluded=60", "occluded=0"),
+                                  ("pre_acquire_epoch_changes=1", "pre_acquire_epoch_changes=0"),
+                                  ("drawable_acquire_attempts=60", "drawable_acquire_attempts=61"),
+                                  ("device_losses=0", "device_losses=1"),
+                                  ("configuration_error=false", "configuration_error=true")):
+                log.write_text(summary.replace(field, change))
+                with self.subTest(field=field), self.assertRaises(ValueError):
+                    occluded_transition(result, arm, [initial, resized])
 
 
 if __name__ == "__main__":

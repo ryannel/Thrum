@@ -153,6 +153,8 @@ struct App<G: Game> {
     unavailable: usize,
     occluded: usize,
     surface_faults: usize,
+    pre_acquire_epoch_changes: usize,
+    drawable_acquire_attempts: usize,
     surface_configuration_error: Option<String>,
     callback_walls: Vec<Duration>,
     worker_walls: Vec<Duration>,
@@ -253,6 +255,8 @@ impl<G: WindowGame + 'static> App<G> {
             unavailable: 0,
             occluded: 0,
             surface_faults: 0,
+            pre_acquire_epoch_changes: 0,
+            drawable_acquire_attempts: 0,
             surface_configuration_error: None,
             callback_walls: Vec::with_capacity(reserved * 8),
             worker_walls: Vec::with_capacity(reserved * 4),
@@ -775,6 +779,7 @@ impl<G: WindowGame + 'static> App<G> {
         self.worker_walls.push(reply.platform.worker_wall);
         if let Some(acquire_wall) = reply.acquire_wall {
             self.acquire_walls.push(acquire_wall);
+            self.drawable_acquire_attempts += 1;
         }
         match reply.platform.surface_status {
             SurfaceStatus::Presented => {
@@ -801,8 +806,14 @@ impl<G: WindowGame + 'static> App<G> {
                 self.unavailable += 1;
                 self.occluded += 1;
             }
-            SurfaceStatus::NeedsReconfigure | SurfaceStatus::SurfaceEpochChanged => {
+            SurfaceStatus::NeedsReconfigure => {
                 self.surface_faults += 1;
+            }
+            SurfaceStatus::SurfaceEpochChanged => {
+                self.surface_faults += 1;
+                if reply.acquire_wall.is_none() {
+                    self.pre_acquire_epoch_changes += 1;
+                }
             }
             SurfaceStatus::ConfigurationRefused(error) => {
                 self.surface_faults += 1;
@@ -852,7 +863,7 @@ impl<G: WindowGame + 'static> App<G> {
 
     fn deadline_error(&self) -> String {
         format!(
-            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}{}",
+            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, surface_faults={}, pre_acquire_epoch_changes={}, drawable_acquire_attempts={}, device_losses={}, configuration_error={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}{}",
             self.target_frames,
             self.presented,
             self.world_tick,
@@ -861,6 +872,10 @@ impl<G: WindowGame + 'static> App<G> {
             self.unavailable,
             self.occluded,
             self.surface_faults,
+            self.pre_acquire_epoch_changes,
+            self.drawable_acquire_attempts,
+            self.device_losses,
+            self.surface_configuration_error.is_some(),
             self.counters.skipped_views,
             self.counters.expired_views,
             self.counters.missed_surfaces,

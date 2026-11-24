@@ -42,13 +42,22 @@ def require_occluded(result, folder, frames):
     match = re.search(
         rf"^v1-game: {frames} presented frames unavailable: presented=0, tick=\d+, "
         r"display_link_callbacks=\d+, render_callbacks=\d+, unavailable=(\d+), "
-        r"occluded=([1-9]\d*), surface_faults=0, dropped_views=\d+, "
+        r"occluded=([1-9]\d*), surface_faults=(\d+), pre_acquire_epoch_changes=(\d+), "
+        r"drawable_acquire_attempts=(\d+), device_losses=0, configuration_error=false, dropped_views=\d+, "
         r"dropped_stale_views=\d+, dropped_surface=\d+$", log, re.MULTILINE,
     )
     if result.returncode != 1 or match is None:
         raise ValueError(f"Window run did not report an occluded surface in {folder}: {log[-4000:]}")
-    unavailable, occluded = map(int, match.groups())
+    unavailable, occluded, faults, pre_acquire_epoch_changes, acquire_attempts = map(int, match.groups())
+    # AppKit can invalidate a queued frame before the worker asks for a drawable.
+    # Every other surface fault invalidates the geometry-only witness.
+    if faults != pre_acquire_epoch_changes:
+        raise ValueError(f"Window run reported a surface fault in {folder}: {match[0]}")
+    # Unavailable frames include skips that never reached drawable acquisition.
+    if acquire_attempts != occluded:
+        raise ValueError(f"Window run reported an acquire result other than occlusion in {folder}: {match[0]}")
     return {"status": "Occluded", "presented": 0, "unavailable": unavailable, "occluded": occluded,
+            "pre_acquire_epoch_changes": pre_acquire_epoch_changes, "drawable_acquire_attempts": acquire_attempts,
             "drawable": None, "host_report": match[0]}
 
 
@@ -77,8 +86,8 @@ def card_capture(binary, env, output, points, *, allow_occluded):
         raise ValueError(f"Expected the built-in Retina display: {window}")
     if result.returncode and allow_occluded:
         observation = require_occluded(result, folder, 12)
-        if observation["occluded"] != observation["unavailable"] or any(folder.glob("submitted.*")):
-            raise ValueError(f"Expected only occlusion with no submitted image in {folder}: {observation}")
+        if any(folder.glob("submitted.*")):
+            raise ValueError(f"Occluded run wrote a submitted image in {folder}: {observation}")
         return dict(result="geometry_only", window=window, surface=observation)
     result.check_returncode()
     submitted = json.loads((folder / "submitted.json").read_text())
@@ -94,7 +103,7 @@ def card_capture(binary, env, output, points, *, allow_occluded):
 def occluded_transition(result, arm, frames):
     observation = require_occluded(result, arm, 90)
     if any(row["presented"] or row["drawable"] is not None or row["transition_error"]
-           or row["status"] == "DrawableTimeout" for row in frames):
+           or row["status"] in {"DrawableTimeout", "NeedsReconfigure"} for row in frames):
         raise ValueError(f"Resize run acquired a drawable, presented or reported an error in {arm}")
     retina = [row for row in frames if row["status"] == "Occluded" and row["scale"] == 2]
     initial = next((row for row in retina if row["window"] == [1920, 1080]), None)
