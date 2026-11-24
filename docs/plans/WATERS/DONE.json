@@ -1122,7 +1122,7 @@
     {
       "id": "M13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1281,7 +1281,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The WATERS planner needs to choose how to make two approaching ridges visibly turn, tighten and rise while keeping the pitching crest intact.",
+        "work": {
+          "commit": "641ff184355bdb5e924d9c225611399283e8f4b5",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/M13-handoff.md"
+      }
     },
     {
       "id": "M8",
