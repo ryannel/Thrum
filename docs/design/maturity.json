@@ -3035,11 +3035,11 @@
         "record": "../../.orchestrate/evidence/CLOUDS/M6/recheck/README.md"
       },
       "weather_presets_evidence": {
-        "implementation": "On the CLOUDS M7 builder branch, V1 authors four weather presets and a tick-driven weather sequence. Metal and Chrome can capture held-Sun weather motion.",
+        "implementation": "CLOUDS WP7 adds four V1 weather presets and a tick-driven weather sequence. Metal and Chrome can capture held-Sun weather motion. The native offscreen clock can consume a future target after its scheduled request time.",
         "correctness": "Metal proves exact whole-frame equality for clear and clouds absent, as well as CPU/GPU weather and optical depths for cell, deck and placed clouds. Consecutive consumed 120 Hz wind targets advance the correct world distance.",
-        "visuals": "Metal captures show the low-Sun overcast underside with soft relief and an obscured disc. Independent inspection followed three complete cloud lives in both fair and broken weather at 8x and 60x on Metal. Metal playback shows all four weather transitions without a visible step or late cloud return. Full-sequence visible wind cadence still needs qualification. Sunward stills confirm visible broken-bank rims and a hidden overcast solar disc at noon on both targets.",
+        "visuals": "Metal captures show the low-Sun overcast underside with soft relief and an obscured disc. Independent inspection followed three complete cloud lives in both fair and broken weather at 8x and 60x on Metal. Metal playback shows all four weather transitions without a visible step or late cloud return. A release Metal take showed even wind and shade travel through 2,514 consecutive active targets at 120 Hz. The loaded comparison records genuine host and frame-slot misses. Sunward stills confirm visible broken-bank rims and a hidden overcast solar disc at noon on both targets.",
         "device": "Apple M3 Max Metal and Chrome WebGPU engine output. Matched loaded 1440p Metal GPU means were 6.52 ms absent, 72.26 ms fair, 77.14 ms broken and 35.60 ms overcast.",
-        "record": "../../.orchestrate/evidence/CLOUDS/M7/README.md"
+        "record": "../../.orchestrate/evidence/CLOUDS/WP7/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",

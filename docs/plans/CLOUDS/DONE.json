@@ -954,7 +954,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.2-current.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/WP7.2-rebased-metal.txt",
           "verdict": "",
           "review": ""
         },
@@ -973,8 +973,8 @@
           "statement": "At 1x, in still air, at 10 m/s and at 40 m/s, and at 60x at 40 m/s, clouds drift in world space at the wind's speed with their shade under them, by even steps from frame to frame at the display's refresh, and no texture slides inside a cloud's shape. A change of wind direction turns the drift and does not move a cloud.",
           "inspect": "Capture `realtime` sequences of 20 seconds at each wind and rate and one across a 90\u00b0 change of direction. Judge consecutive frames, following one cloud and its shade.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/wind-final.md",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/wind-qualified.md",
           "verdict": "",
           "review": ""
         },
@@ -995,7 +995,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.6-current.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/WP7.6-rebased-metal.txt",
           "verdict": "",
           "review": ""
         },
@@ -1016,7 +1016,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.8-current.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/WP7.8-rebased-metal.txt",
           "verdict": "",
           "review": ""
         },
@@ -1025,8 +1025,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
