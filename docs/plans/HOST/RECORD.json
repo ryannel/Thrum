@@ -668,20 +668,13 @@
       }
     },
     "WP5": {
-      "definitions": "b363210fc72feb8e02bc7a455a3f97b0b7077bc34ff3d510001f52ac9e0c0bd1",
+      "definitions": "009a9c4f996c26e6a8268a27f2c1bc2e8bb5e4f54916056bf508343afe3d08a8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",
-        "at": "2026-11-14T22:15:19Z"
+        "task": "Unblock HOST WP5. The builder wrote: WP5.3 needs a planner-approved check the runner accepts, and the plan-reader repair",
+        "at": "2026-11-24T20:11:40Z"
       },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ],
       "ends_stretch": true
     }
   },
@@ -705,11 +698,15 @@
     {
       "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.\n\nA planner limited to SESSION stopped. The end of its report:\nThe CPU probe reproduced the Must Fix. The installed runner returned immediately on cancellation of HOST M4.5\u2019s shell, while simulated shutdown took 400 ms. With an explicit `exec` into the supervisor, the runner waited through shutdown.\n\n[HOST M4.5](docs/plans/HOST/DONE.json#L266) needs a check command that preserves its existing assertion and hands the runner\u2019s PID to the simulator supervisor. The [APPLE-PRESENTATION wrapper](scripts/apple_presentation.py#L559) also needs to keep that supervisor in charge through its own timeout. The revised acceptance case should cancel the outer command and prove that a second contender acquires `simulator` only after verified shutdown, accounting for the runner\u2019s ten-second grace.\n\nThe worktree is unchanged. The fix requires a check definition outside SESSION\u2019s scope.\n\nBLOCKED: needs HOST's files",
       "at": "2026-11-23T23:33:41Z"
+    },
+    {
+      "task": "Unblock HOST WP5. The builder wrote: WP5.3 needs a planner-approved check the runner accepts, and the plan-reader repair must land before merge. The builder's handoff, .orchestrate/evidence/HOST/WP5-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/host at 5b3303a58cd4, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP HOST WP5: builder: <where the plan provides it>`.\n\nThe plan-reader repair is REPO-RULES WP5, being planned now to land first; HOST WP5 only needs to wait for it at merge, not change it.",
+      "at": "2026-11-24T20:11:40Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-23T23:33:41Z"
+    "at": "2026-11-24T20:11:40Z"
   },
   "design_history": [
     {

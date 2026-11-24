@@ -300,7 +300,7 @@
     {
       "id": "WP5",
       "name": "A failure in the shells can be matched and printed: `thrum-app`'s public functions return typed errors",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -313,7 +313,9 @@
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-app",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP5.2",
@@ -332,19 +334,11 @@
           "check": "python3 scripts/exact_baselines.py guard",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "WP5.3 needs a planner-approved check the runner accepts, and the plan-reader repair must land before merge.",
-        "work": {
-          "commit": "5b3303a58cd459ca38c43e81b8981f2f37d24903",
-          "branch": "build/host",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/HOST/WP5-handoff.md"
-      }
+      ]
     }
   ]
 }
