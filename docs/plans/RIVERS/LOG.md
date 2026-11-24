@@ -177,3 +177,12 @@
   already hit it in the batch at `747909d1cd25` and retried in 5.362 s and 5.746 s respectively.
   The failure revision changes capture code outside these tests. M9 removes the oversized setup
   and keeps both guards in the fast tier.
+
+- 2026-11-24 M9 built. A prepared four-cell upper pool drives a compact solved lower reach.
+  The gauge checks both sample intervals and all seven refusals. Its off-sample comparison
+  covered 28 unblended wet cells within 1.4 mm in depth and 2.8% in speed.
+  A 12 × 94 reach crossed the parallel threshold and gave identical bytes in two serial
+  solves and one eight-thread solve. Both tests passed on the first attempt alone and together
+  on the M3 Max, with focused batch times of 0.032 s and 0.266 s.
+  [Gauge evidence](../../../.orchestrate/evidence/RIVERS/M9/M9.1.md)
+  [Determinism evidence](../../../.orchestrate/evidence/RIVERS/M9/M9.2.md)

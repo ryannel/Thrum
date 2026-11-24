@@ -337,7 +337,7 @@
     {
       "id": "M9",
       "name": "Chart gauges and solver determinism run within the fast-suite limit",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Preserve the chart-source and byte-determinism proofs on compact CPU fixtures in the default Nextest tier.",
       "items": [
         {
@@ -346,8 +346,8 @@
           "check": "CARGO_INCREMENTAL=0 rustup run stable cargo nextest run --locked --offline --profile default -p thrum-river-model --test it -E 'test(=gauge::a_river_whose_source_is_another_river_s_chart_follows_that_chart_s_level)' --no-tests=fail",
           "ask": "Do the gauge place, sample intervals, wet unblended cells and nonzero fall discharge independently witness the original assertions and refusals on the smaller fixture? Do the isolated and focused batch results pass on the first attempt under normal builder load?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/M9/M9.1.md"
         },
         {
           "id": "M9.2",
@@ -355,8 +355,8 @@
           "check": "CARGO_INCREMENTAL=0 rustup run stable cargo nextest run --locked --offline --profile default -p thrum-river-model --test it -E 'test(=report::the_same_input_gives_the_same_bytes_on_one_thread_and_on_eight)' --no-tests=fail",
           "ask": "What shows that the eight-thread solve crosses the active span threshold and performs work in multiple row chunks? Do the isolated and focused batch results pass on the first attempt under normal builder load?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/M9/M9.2.md"
         }
       ],
       "failed_reviews": 0,
