@@ -1108,8 +1108,8 @@
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Does the covering log show the light- and high-wind portable sweeps running and passing in the long tier on a main commit that includes this repair?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M17/M17.4-main-long.md",
           "verdict": "",
           "review": ""
         }

@@ -602,6 +602,10 @@
   on `build/waters` at `2eda168cb`. Start a new M17 run from `build/waters-m17` so it takes the authorized M13
   entry as its starting point.
 
+- 2026-11-24 The official Mac Metal `long-tests` run passed on main at `d10ed33175dd`, which contains the
+  M17 repair. Both full portable sea sweeps passed in 3.43 s combined. The sprite inventory check also passed
+  after the RENDER-2D fix. [Covering run](../../../.orchestrate/evidence/WATERS/M17/M17.4-main-long.md).
+
 - 2026-11-24 The craft-trail guard reached the ten-second limit both in the workspace batch and alone
   at `299376222cb1`. It already timed out in the batch at `747909d1cd25` and retried in 5.112 s.
   The cost is the number of full wake-scene submissions. The M13 branch's 50 ms test tick kept all
