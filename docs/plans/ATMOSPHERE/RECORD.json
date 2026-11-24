@@ -1,10 +1,10 @@
 {
   "module": "ATMOSPHERE",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
-    "commit": "d1ef5f9187923b8a6632497f0f9021f6be95cf64",
-    "hash": "3d0f7bf4ff67aef68e625d44481f485e0bfd9b7ccab00e3f5a6de28a8abf6539",
+    "commit": "32069ddfd7d6db9bbf844006613feb00fdc5f10e",
+    "hash": "d1c23a54745ac7c10ba9771e9444dbf3a5faa41c9f3138c56dd49d9af8b66bc3",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,16 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 89636,
-      "cached": 752512,
-      "output": 3941,
+      "input": 111918,
+      "cached": 2262272,
+      "output": 8675,
       "turns": 1
     },
-    "at": "2026-11-23T15:00:08Z",
-    "items_owed": [
-      "WP3",
-      "WP4"
-    ]
+    "at": "2026-11-24T22:03:19Z"
   },
   "work_packages": {
     "WP5": {
@@ -1103,6 +1099,33 @@
       "at": "2026-11-19T11:07:31Z",
       "items_owed": [
         "WP11"
+      ]
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-16.md",
+      "commit": "d1ef5f9187923b8a6632497f0f9021f6be95cf64",
+      "hash": "3d0f7bf4ff67aef68e625d44481f485e0bfd9b7ccab00e3f5a6de28a8abf6539",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 89636,
+        "cached": 752512,
+        "output": 3941,
+        "turns": 1
+      },
+      "at": "2026-11-23T15:00:08Z",
+      "items_owed": [
+        "WP3",
+        "WP4"
       ]
     }
   ]
