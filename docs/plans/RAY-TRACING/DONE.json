@@ -346,8 +346,8 @@
           "ask": "Is the value the operation the forward pass compiles, and does the test hold both a joined sheet facing away from the ray and a lit band point with no sheet, so that a rule which skips hits by instance and facing fails the first and a rule with no exception fails the second?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/terminator/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },

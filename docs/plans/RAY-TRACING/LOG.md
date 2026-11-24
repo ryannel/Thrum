@@ -172,3 +172,7 @@
   refusal. Dropping the prepared contribution there now fails both publication tests.
   [Sun inspection](../../../.orchestrate/evidence/RAY-TRACING/M3/reopened/sun-stills.md) ·
   [Publication proof](../../../.orchestrate/evidence/RAY-TRACING/M3/reopened/publication.md).
+- 2026-11-24 M3.13 now tests sheets at 0.25 m and 3.0 m from the receiver, both beyond the
+  prism's far face. Apple M3 Max Metal verified occlusion for both windings and both mesh
+  arrangements, with the adjacent point lit. Removing the far face in two controls verified that the distances straddle
+  the forward shader's passage reach. [Metal readbacks](../../../.orchestrate/evidence/RAY-TRACING/M3/terminator/README.md).
