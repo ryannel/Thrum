@@ -104,7 +104,9 @@ async function assets(directory) {
 
 async function qualifyGovernor(cdp, origin, output, wasm) {
   const arms = [];
-  const rounds = 6144;
+  // A loaded headless host can establish a 30 Hz callback cadence.
+  // Exercise pressure at that budget as well as the 60 Hz budget.
+  const rounds = 8192;
   for (const timestamps of [true, false]) {
     const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
     const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });

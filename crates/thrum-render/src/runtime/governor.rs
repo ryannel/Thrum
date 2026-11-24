@@ -293,6 +293,10 @@ impl GovernorHost {
             };
             let ns = |value| Duration::try_from_secs_f64(value * 1e-9).ok();
             let elapsed = ns(span + segment)?;
+            // The native owner records this frame before kicking its GPU
+            // work. Both costs use the frame's delivery headroom.
+            #[cfg(not(target_arch = "wasm32"))]
+            let elapsed = elapsed.saturating_add(sample.render_cpu);
             let scale_dependent = ns(scale_work)?;
             Some(FrameCost {
                 elapsed,
@@ -301,13 +305,11 @@ impl GovernorHost {
             })
         });
         #[cfg(not(target_arch = "wasm32"))]
-        let gpu = gpu
-            .filter(|cost| cost.elapsed >= sample.render_cpu)
-            .or(Some(FrameCost {
-                elapsed: sample.render_cpu,
-                scale_dependent: Duration::ZERO,
-                source: TimingSource::RenderCpu,
-            }));
+        let gpu = gpu.or(Some(FrameCost {
+            elapsed: sample.render_cpu,
+            scale_dependent: Duration::ZERO,
+            source: TimingSource::RenderCpu,
+        }));
         if let Some(cost) = gpu {
             self.policy
                 .observe(sample.submission_order, frame.mark, cost);
