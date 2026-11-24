@@ -94,6 +94,7 @@ pub(crate) struct Layer {
     committed: Option<LayerSample>,
     pending: Option<LayerSample>,
     ordinal: u32,
+    trace_stride: u32,
     params: wgpu::Buffer,
     queue: wgpu::Queue,
     textures: [wgpu::Texture; 2],
@@ -308,6 +309,10 @@ impl Layer {
             raster: frame.view_proj,
         });
         let stride = self.profile.refresh_stride;
+        let full_trace = reset
+            || frame.time.capture
+            || self.profile.extent.iter().any(|&x| x.div_ceil(2) < stride);
+        self.trace_stride = if full_trace { 1 } else { stride };
         let mut heights = weather.height_range();
         if let Some(shapes) = shapes {
             heights = shapes.heights(state, kind, heights);
@@ -351,11 +356,7 @@ impl Layer {
                 u32::from(!reset && !frame.time.capture),
                 self.ordinal % (stride * stride),
                 stride,
-                u32::from(
-                    reset
-                        || frame.time.capture
-                        || self.profile.extent.iter().any(|&x| x.div_ceil(2) < stride),
-                ),
+                u32::from(full_trace),
             ],
             noise: [
                 (anchor[0].rem_euclid(SHAPE_PERIOD) / SHAPE_PERIOD) as f32,
@@ -397,8 +398,8 @@ impl Layer {
             pass.set_bind_group(3, &shapes.group, &[]);
         }
         pass.dispatch_workgroups(
-            self.textures[0].width().div_ceil(8),
-            self.textures[0].height().div_ceil(8),
+            self.textures[0].width().div_ceil(8 * self.trace_stride),
+            self.textures[0].height().div_ceil(8 * self.trace_stride),
             1,
         );
     }

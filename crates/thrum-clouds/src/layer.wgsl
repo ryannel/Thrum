@@ -225,11 +225,14 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
 
 @compute @workgroup_size(8,8)
 fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
-    let size=textureDimensions(transport);if any(id.xy>=size) {return;}
+    let size=textureDimensions(transport);
     let stride=cloud.temporal.z;
     let offset=vec2(cloud.temporal.y%stride,cloud.temporal.y/stride);
-    if cloud.temporal.w==0u && any(id.xy%stride!=offset) {return;}
-    let uv=(vec2<f32>(id.xy)+0.5)/vec2<f32>(size);
+    // Dispatch just the current phase of a sparse trace. This visits the
+    // same texels as a full dispatch with skipped lanes, without idle groups.
+    let texel=select(id.xy*stride+offset,id.xy,cloud.temporal.w!=0u);
+    if any(texel>=size) {return;}
+    let uv=(vec2<f32>(texel)+0.5)/vec2<f32>(size);
     let clip=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let camera=atmosphere.camera_altitude.xyz;let ray=normalize(clip.xyz/clip.w-camera);
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);
@@ -303,7 +306,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     }
     let front_distance=weighted/max(opacity,1e-10);
     total=cloud_then(total,cloud_air_part(part,part_weighted,part_mass,camera,ray,uv));
-    textureStore(transport,vec2<i32>(id.xy),vec4(total.scattering*environment_storage_scale(),total.transmittance));
+    textureStore(transport,vec2<i32>(texel),vec4(total.scattering*environment_storage_scale(),total.transmittance));
     // Distances are kilometres to remain representable in fp16.
-    textureStore(front,vec2<i32>(id.xy),vec4(front_distance*0.001,opacity,f32(samples),1.0));
+    textureStore(front,vec2<i32>(texel),vec4(front_distance*0.001,opacity,f32(samples),1.0));
 }

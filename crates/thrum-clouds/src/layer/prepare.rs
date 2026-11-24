@@ -216,6 +216,7 @@ impl Layer {
             committed: None,
             pending: None,
             ordinal: 0,
+            trace_stride: 1,
             params,
             queue: surface.queue.clone(),
             textures,
