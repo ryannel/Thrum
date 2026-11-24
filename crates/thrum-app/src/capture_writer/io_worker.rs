@@ -1,4 +1,5 @@
 //! Finite encoded-byte handoff; disk waits never serialize the next image hash.
+use super::WriterError;
 use std::{
     io::{self, Write},
     sync::{
@@ -9,6 +10,22 @@ use std::{
     thread::{self, JoinHandle},
     time::{Duration, Instant},
 };
+
+#[derive(Debug)]
+struct Stopped;
+
+impl std::fmt::Display for Stopped {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("encoded I/O worker stopped")
+    }
+}
+
+impl std::error::Error for Stopped {}
+
+pub(super) fn is_stopped(error: &io::Error) -> bool {
+    error.get_ref().is_some_and(|cause| cause.is::<Stopped>())
+}
+
 const CHUNK: usize = 4 * 1024 * 1024;
 // A 580 MB moving burst over two seconds needs ~180 MB reserve at 200 MB/s.
 // 256 MiB provides explicit encoded headroom, independently of pixel leases.
@@ -78,14 +95,14 @@ impl Output {
         self.counts.1.fetch_max(count, Ordering::Relaxed);
         self.send
             .send(std::mem::take(&mut self.current))
-            .map_err(|_| io::Error::other("encoded I/O worker stopped"))?;
+            .map_err(|_| io::Error::other(Stopped))?;
         self.free.extend(self.returned.try_iter());
         self.current = if let Some(buffer) = self.free.pop() {
             buffer
         } else {
             self.returned
                 .recv()
-                .map_err(|_| io::Error::other("encoded I/O worker stopped"))?
+                .map_err(|_| io::Error::other(Stopped))?
         };
         Ok(())
     }
@@ -108,10 +125,10 @@ impl Write for Output {
     }
 }
 impl Worker {
-    pub(super) fn finish(self) -> Result<IoReport, String> {
+    pub(super) fn finish(self) -> Result<IoReport, WriterError> {
         self.thread
             .join()
-            .expect("spool I/O worker unexpectedly panicked")
-            .map_err(|e| e.to_string())
+            .map_err(|_| WriterError::WorkerStopped)?
+            .map_err(WriterError::Io)
     }
 }

@@ -18,6 +18,18 @@ pub struct OpportunityClock {
     timebase: Timebase,
 }
 
+/// A capture opportunity rate outside the supported range.
+#[derive(Debug)]
+pub struct OpportunityRateError;
+
+impl std::fmt::Display for OpportunityRateError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("capture opportunity rate must be 1..=1000 Hz")
+    }
+}
+
+impl std::error::Error for OpportunityRateError {}
+
 /// One requested opportunity. Missing indices represent elapsed scheduling gaps.
 pub struct Opportunity {
     /// Requested opportunity index, independent of submission IDs.
@@ -52,9 +64,9 @@ impl OpportunityClock {
     /// Start after a primed initial submission at time zero.
     /// # Errors
     /// Refuses zero or implausibly high opportunity rates.
-    pub fn new(origin: Instant, hz: u32, timebase: Timebase) -> Result<Self, String> {
+    pub fn new(origin: Instant, hz: u32, timebase: Timebase) -> Result<Self, OpportunityRateError> {
         if !(1..=1000).contains(&hz) {
-            return Err("capture opportunity rate must be 1..=1000 Hz".to_owned());
+            return Err(OpportunityRateError);
         }
         Ok(Self {
             origin,

@@ -290,7 +290,9 @@ fn the_ground_is_one_wide_slab_with_its_top_at_zero() {
     );
     assert_eq!(scene.materials[0].base_rgba[..3], DEFAULT_GROUND);
     assert!(!ground_scene(None, &[]).unwrap().instances[0].is_active());
-    let message = ground_scene(Some([0.2, 1.5, 0.1]), &[]).unwrap_err();
+    let message = ground_scene(Some([0.2, 1.5, 0.1]), &[])
+        .unwrap_err()
+        .to_string();
     assert!(message.contains("within 0–1"), "{message}");
 }
 

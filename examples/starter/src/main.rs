@@ -14,10 +14,11 @@ fn main() {
 }
 
 mod scene {
-    use std::error::Error;
-    use thrum_app::sky::{Camera, Controls, CookedMaterial, Display, MeshPlacement, SkyGame};
+    use thrum_app::sky::{
+        Camera, Controls, CookedMaterial, Display, MeshPlacement, SkyBuildError, SkyGame,
+    };
 
-    pub(crate) fn build() -> Result<SkyGame, Box<dyn Error>> {
+    pub(crate) fn build() -> Result<SkyGame, SkyBuildError> {
         let mut controls = Controls::new();
         let elevation = controls
             .slider("sun.elevation", "Sun elevation", -8.0..=60.0)
@@ -49,6 +50,6 @@ mod scene {
             sky.sun_azimuth_degrees = controls.get(azimuth);
             sky.exposure_zones = controls.is_on(zones);
         });
-        Ok(game.with_meshes(vec![rock])?)
+        game.with_meshes(vec![rock]).map_err(Into::into)
     }
 }

@@ -22,8 +22,8 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
     };
 
     use thrum_app::{
-        Edits, Game, Gpu, KeyCode, KeyResponse, Prepared, WindowGame,
-        offscreen::Offscreen,
+        Edits, Game, GameError, Gpu, KeyCode, KeyResponse, Prepared, WindowGame,
+        offscreen::{Offscreen, OffscreenError},
         sky::{Camera, Controls, SkyEdits, SkyGame, SkyScene, StillWorld},
     };
     use thrum_render::{capabilities::DeviceProfile, runtime::FrameHost};
@@ -66,7 +66,7 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
             &'a mut self,
             gpu: Gpu<'a>,
             wake: Box<dyn Fn() + Send>,
-        ) -> Result<Prepared<StillWorld, SkyScene>, String> {
+        ) -> Result<Prepared<StillWorld, SkyScene>, GameError> {
             self.sky.prepare(gpu, wake).await
         }
 
@@ -98,7 +98,7 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
             }
         }
 
-        fn apply(host: &mut Host, edits: ProbeEdits) -> Result<(), String> {
+        fn apply(host: &mut Host, edits: ProbeEdits) -> Result<(), GameError> {
             if let Some(timing) = edits.timing {
                 assert_eq!(host.device_capabilities().generation(), 2);
                 assert!(host.last_submitted_clock().is_none());
@@ -115,7 +115,7 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
             self.observed.push(submission);
         }
 
-        fn key(&mut self, code: KeyCode, pressed: bool) -> Result<KeyResponse, String> {
+        fn key(&mut self, code: KeyCode, pressed: bool) -> Result<KeyResponse, GameError> {
             if code == KeyCode::Space {
                 self.pressed = pressed;
                 Ok(KeyResponse::Input)
@@ -161,6 +161,12 @@ fn game_receives_portable_keys_frame_edits_and_offscreen_readback() {
     assert!(!game.pressed);
 
     let mut run = offscreen(game, &gpu);
+    assert!(matches!(
+        run.parameters("{"),
+        Err(OffscreenError::Parameters(
+            thrum_controls::ControlError::InvalidFile(_)
+        ))
+    ));
     let prepared = updates.load(Ordering::Relaxed);
     assert!(run.step_at(Duration::ZERO).unwrap().submitted);
     assert!(run.step_at(Duration::from_millis(16)).unwrap().submitted);

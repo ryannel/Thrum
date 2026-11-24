@@ -65,3 +65,8 @@ path = "tests/it.rs"
 [[test]]
 name = "game_contract"
 path = "tests/game_contract.rs"
+
+# HOST WP5 calls this target by name.
+[[test]]
+name = "error_types"
+path = "tests/error_types.rs"

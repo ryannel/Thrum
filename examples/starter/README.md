@@ -113,7 +113,7 @@ do not guard your scene with `#[cfg(target_os = "macos")]`, since that removes i
 
 `thrum_app::sky::run(thrum_app::Config::new(name, title), build)` opens the window. `Config` lives at
 `thrum_app::Config`; the scene types below live under `thrum_app::sky`. `build` returns
-`Result<SkyGame, Box<dyn Error>>`, so `?` works on control declarations and the kit's own errors alike. A
+`Result<SkyGame, SkyBuildError>` from `thrum_app::sky`. Use `?` for control declarations and cooked setup, and match `SkyBuildError::Control` or `SkyBuildError::Cooked` to distinguish them. A
 `SkyGame` is built from:
 
 - `Controls`: the sliders and toggles shown in the panel and set by parameter files. `.slider(key, label, range)`

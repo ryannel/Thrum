@@ -211,7 +211,7 @@ pub(super) fn record(
         if capture {
             host.enable_submitted_capture_from(tick + 1, CaptureLimits::default(), source)?;
         }
-        let frame = driver.step_at(time)?;
+        let frame = driver.step_at(time).map_err(|error| error.to_string())?;
         let host = driver.host_mut();
         if !frame.surface_presented
             || frame.dropped_view

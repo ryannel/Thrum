@@ -1,26 +1,26 @@
 //! Kit-owned bindings. A scene registers its ordinary builder through `run`.
-use std::{cell::RefCell, error::Error, rc::Rc, time::Duration};
+use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use thrum_asset::{BrowserFetch, DevClient};
 use thrum_asset_gpu::RemoteFeed;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
-use super::{SkyGame, StillWorld};
+use super::{SkyBuildError, SkyGame, StillWorld};
 use crate::{
-    Config, InlineWorld,
+    Config, GameError, InlineWorld,
     web::{ControlTiming, PageGame, PageRuntime},
 };
 use thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 
-type Builder = Box<dyn FnOnce() -> Result<SkyGame, Box<dyn Error>>>;
+type Builder = Box<dyn FnOnce() -> Result<SkyGame, SkyBuildError>>;
 thread_local! {
     static BUILDER: RefCell<Option<(Config, Builder)>> = RefCell::new(None);
     static FEED: RefCell<Option<RemoteFeed>> = const { RefCell::new(None) };
 }
 
 /// Register the scene's builder. The page fetches assets before invoking it.
-pub fn run(config: Config, build: impl FnOnce() -> Result<SkyGame, Box<dyn Error>> + 'static) {
+pub fn run(config: Config, build: impl FnOnce() -> Result<SkyGame, SkyBuildError> + 'static) {
     BUILDER.with(|slot| *slot.borrow_mut() = Some((config, Box::new(build))));
 }
 
@@ -33,11 +33,11 @@ pub(super) fn feed() -> Result<RemoteFeed, String> {
 }
 
 impl InlineWorld for StillWorld {
-    fn pause(&mut self) -> Result<(), String> {
+    fn pause(&mut self) -> Result<(), GameError> {
         StillWorld::pause(self);
         Ok(())
     }
-    fn resume(&mut self, now: Duration) -> Result<(), String> {
+    fn resume(&mut self, now: Duration) -> Result<(), GameError> {
         StillWorld::resume(self, now);
         Ok(())
     }

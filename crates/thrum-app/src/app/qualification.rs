@@ -359,12 +359,15 @@ impl Observer {
                 ("frames.zst", SpoolEncoding::ZstdDelta)
             };
             let file = File::create(output.join(name)).map_err(|e| e.to_string())?;
-            Some(ImageWriter::start(
-                BufWriter::with_capacity(4 * 1024 * 1024, file),
-                96,
-                8 * 1024 * 1024 * 1024,
-                encoding,
-            )?)
+            Some(
+                ImageWriter::start(
+                    BufWriter::with_capacity(4 * 1024 * 1024, file),
+                    96,
+                    8 * 1024 * 1024 * 1024,
+                    encoding,
+                )
+                .map_err(|error| error.to_string())?,
+            )
         } else {
             None
         };
@@ -598,7 +601,9 @@ impl Observer {
             marks.flush().map_err(|error| error.to_string())?;
         }
         if let Some(writer) = self.writer.take() {
-            let report = writer.finish(Duration::from_secs(10))?;
+            let report = writer
+                .finish(Duration::from_secs(10))
+                .map_err(|error| error.to_string())?;
             std::fs::write(
                 self.output.join("hashes.txt"),
                 report.frame_hashes.join("\n"),

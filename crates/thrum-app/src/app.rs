@@ -492,7 +492,11 @@ impl<G: WindowGame + 'static> App<G> {
         if pressed && code == KeyCode::KeyL {
             return file_watch::deliver(self, Kinds::ALL, false);
         }
-        match self.game.key(code, pressed)? {
+        match self
+            .game
+            .key(code, pressed)
+            .map_err(|error| error.to_string())?
+        {
             KeyResponse::Ignored => Ok(()),
             KeyResponse::Edited => self.controls_edited(),
             KeyResponse::Input => {
@@ -596,7 +600,8 @@ impl<G: WindowGame + 'static> App<G> {
             Box::new(move || {
                 let _ = world_wake.send_event(UserEvent::WorldAdvanced);
             }),
-        ))?;
+        ))
+        .map_err(|error| error.to_string())?;
         if gpu.watch.is_lost() {
             return Err("initial device lost during preparation".to_owned());
         }
@@ -1536,7 +1541,11 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                     Ok(())
                 }
             }
-            WindowEvent::Focused(false) => self.game.focus_lost().map(|()| self.input_changed()),
+            WindowEvent::Focused(false) => self
+                .game
+                .focus_lost()
+                .map(|()| self.input_changed())
+                .map_err(|error| error.to_string()),
             _ => Ok(()),
         };
         if let Err(error) = result {
@@ -1598,17 +1607,20 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
 ///
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
-pub fn run<G: WindowGame + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
+pub fn run<G: WindowGame + 'static, E: std::error::Error>(
+    config: Config,
+    game: impl FnOnce() -> Result<G, E>,
+) {
     run_with(config, false, None, None, None, None, game);
 }
 
 /// Run the ordinary window with a caller-supplied control qualification observer.
 /// # Panics
 /// If the platform refuses to create the event loop.
-pub fn run_with_qualification<G: WindowGame + 'static>(
+pub fn run_with_qualification<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     observer: WindowQualification,
-    game: impl FnOnce() -> Result<G, String>,
+    game: impl FnOnce() -> Result<G, E>,
 ) {
     run_with_qualification_and_display(config, observer, None, game);
 }
@@ -1616,11 +1628,11 @@ pub fn run_with_qualification<G: WindowGame + 'static>(
 /// Run the control qualification observer with an optional display override.
 /// # Panics
 /// If the platform refuses to create the event loop.
-pub fn run_with_qualification_and_display<G: WindowGame + 'static>(
+pub fn run_with_qualification_and_display<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     observer: WindowQualification,
     display: Option<WindowDisplayOptions>,
-    game: impl FnOnce() -> Result<G, String>,
+    game: impl FnOnce() -> Result<G, E>,
 ) {
     run_with(config, false, None, None, Some(observer), display, game);
 }
@@ -1628,10 +1640,10 @@ pub fn run_with_qualification_and_display<G: WindowGame + 'static>(
 /// Run the ordinary window and retain one submitted image with its extent witnesses.
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
-pub fn run_with_extent_capture<G: WindowGame + 'static>(
+pub fn run_with_extent_capture<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     capture: WindowExtentCapture,
-    game: impl FnOnce() -> Result<G, String>,
+    game: impl FnOnce() -> Result<G, E>,
 ) {
     run_with(config, false, Some(capture), None, None, None, game);
 }
@@ -1639,10 +1651,10 @@ pub fn run_with_extent_capture<G: WindowGame + 'static>(
 /// Run the ordinary window with a scripted resize and retain the frame records.
 /// # Panics
 /// If the platform refuses to create the event loop.
-pub fn run_with_transition_proof<G: WindowGame + 'static>(
+pub fn run_with_transition_proof<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     proof: WindowTransitionProof,
-    game: impl FnOnce() -> Result<G, String>,
+    game: impl FnOnce() -> Result<G, E>,
 ) {
     run_with(config, false, None, Some(proof), None, None, game);
 }
@@ -1655,9 +1667,9 @@ pub fn run_with_transition_proof<G: WindowGame + 'static>(
 ///
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
-pub fn run_until_closed<G: WindowGame + 'static>(
+pub fn run_until_closed<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
-    game: impl FnOnce() -> Result<G, String>,
+    game: impl FnOnce() -> Result<G, E>,
 ) {
     run_with(config, true, None, None, None, None, game);
 }
@@ -1666,10 +1678,10 @@ pub fn run_until_closed<G: WindowGame + 'static>(
 ///
 /// # Panics
 /// If the platform refuses to create the event loop.
-pub fn run_with_display<G: WindowGame + 'static>(
+pub fn run_with_display<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     options: WindowDisplayOptions,
-    game: impl FnOnce() -> Result<G, String>,
+    game: impl FnOnce() -> Result<G, E>,
 ) {
     run_with(config, false, None, None, None, Some(options), game);
 }
@@ -1686,14 +1698,14 @@ pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
     clippy::print_stderr,
     reason = "the diagnostic reports setup or GPU faults"
 )]
-fn run_with<G: WindowGame + 'static>(
+fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     until_closed: bool,
     extent_capture: Option<WindowExtentCapture>,
     transition_proof: Option<WindowTransitionProof>,
     qualification: Option<WindowQualification>,
     display_options: Option<WindowDisplayOptions>,
-    game: impl FnOnce() -> Result<G, String>,
+    game: impl FnOnce() -> Result<G, E>,
 ) {
     let target_frames = match frame_limit(
         config.frames_variable,

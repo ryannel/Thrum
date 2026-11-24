@@ -24,6 +24,7 @@ fn explicit_session_record_limit_is_validated_and_enforced() {
         writer
             .finish(Duration::from_secs(2))
             .unwrap_err()
+            .to_string()
             .contains("record limit")
     );
 }
@@ -71,6 +72,7 @@ fn slow_output_has_finite_leases_nonblocking_refusal_and_a_finalization_deadline
         writer
             .finish(Duration::from_millis(5))
             .unwrap_err()
+            .to_string()
             .contains("timeout")
     );
     assert!(begin.elapsed() < Duration::from_secs(1));
@@ -138,6 +140,7 @@ fn write_flush_and_output_limit_failures_cannot_finalize_successfully() {
                 writer
                     .finish(Duration::from_secs(1))
                     .unwrap_err()
+                    .to_string()
                     .contains(expected)
             );
         }
@@ -202,6 +205,7 @@ fn lossless_spool_reconstructs_every_byte_and_hash_and_refuses_changed_record_si
         writer
             .finish(Duration::from_secs(5))
             .unwrap_err()
+            .to_string()
             .contains("size changed")
     );
 }
@@ -230,7 +234,10 @@ fn live_encoding_reports_the_disk_error_after_its_io_channel_closes() {
     .unwrap();
     assert!(writer.submit(pixels).is_none());
     assert_eq!(
-        writer.finish(Duration::from_secs(10)).unwrap_err(),
+        writer
+            .finish(Duration::from_secs(10))
+            .unwrap_err()
+            .to_string(),
         "disk write refused"
     );
 }

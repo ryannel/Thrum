@@ -1,6 +1,6 @@
 //! V1's hosted runtime and control policy shared by its platform entry points.
 
-use thrum_app::{Edits, Game, Gpu, KeyCode, KeyResponse, Prepared};
+use thrum_app::{Edits, Game, GameError, Gpu, KeyCode, KeyResponse, Prepared};
 use thrum_controls::Controls;
 
 use crate::{
@@ -58,8 +58,11 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
         &'a mut self,
         gpu: Gpu<'a>,
         world_advanced: Box<dyn Fn() + Send>,
-    ) -> Result<Prepared<GameWorld, GameScene>, String> {
-        self.0.prepare_runtime(gpu, world_advanced).await
+    ) -> Result<Prepared<GameWorld, GameScene>, GameError> {
+        self.0
+            .prepare_runtime(gpu, world_advanced)
+            .await
+            .map_err(GameError::Rejected)
     }
 
     #[cfg(target_os = "macos")]
@@ -90,15 +93,15 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
         self.0.replay()
     }
 
-    fn apply(host: &mut Runtime, edits: ControlEdits) -> Result<(), String> {
+    fn apply(host: &mut Runtime, edits: ControlEdits) -> Result<(), GameError> {
         if let Some(value) = edits.time_of_day {
-            host::set_time_of_day(host, value)?;
+            host::set_time_of_day(host, value).map_err(GameError::Rejected)?;
         }
         if let Some(value) = edits.camera_pitch {
-            host::set_camera_pitch(host, value)?;
+            host::set_camera_pitch(host, value).map_err(GameError::Rejected)?;
         }
         if let Some(value) = edits.camera_yaw {
-            host::set_camera_yaw(host, value)?;
+            host::set_camera_yaw(host, value).map_err(GameError::Rejected)?;
         }
         if let Some(overlay) = edits.display_overlay() {
             host::set_display_overlay(host, overlay);
@@ -118,12 +121,12 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
         self.0.demo_mut().observe_paused(paused);
     }
 
-    fn key(&mut self, key: KeyCode, pressed: bool) -> Result<KeyResponse, String> {
-        self.0.key(key, pressed)
+    fn key(&mut self, key: KeyCode, pressed: bool) -> Result<KeyResponse, GameError> {
+        self.0.key(key, pressed).map_err(GameError::Rejected)
     }
 
-    fn focus_lost(&mut self) -> Result<(), String> {
-        self.0.focus_lost()
+    fn focus_lost(&mut self) -> Result<(), GameError> {
+        self.0.focus_lost().map_err(GameError::Rejected)
     }
 }
 

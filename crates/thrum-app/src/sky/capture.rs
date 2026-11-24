@@ -33,7 +33,11 @@ const RELOAD_WAIT: Duration = Duration::from_secs(30);
     clippy::print_stderr,
     reason = "capture failures are explained to the person who asked for them"
 )]
-pub(super) fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, String>, path: &Path) {
+pub(super) fn run(
+    config: Config,
+    game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
+    path: &Path,
+) {
     match capture(config, game, path) {
         Ok([width, height]) => {
             println!(
@@ -52,10 +56,10 @@ pub(super) fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, String>
 #[cfg(target_os = "macos")]
 fn capture(
     config: Config,
-    game: impl FnOnce() -> Result<SkyGame, String>,
+    game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
     path: &Path,
 ) -> Result<[u32; 2], String> {
-    let mut game = game()?;
+    let mut game = game().map_err(|error| error.to_string())?;
     apply_params(config.name, &mut game)?;
     let (device, queue, capabilities) =
         pollster::block_on(headless_device()).map_err(|error| error.to_string())?;
@@ -67,7 +71,8 @@ fn capture(
             render_extent: extent,
             surface: None,
         },
-    ))?;
+    ))
+    .map_err(|error| error.to_string())?;
     wait_drawn(&mut game, &mut host)?;
     reload(config.name, &mut game, &mut host)?;
     let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
@@ -188,12 +193,12 @@ fn reload(
     let Some((reload, report)) = game.reload.as_mut() else {
         return Ok(());
     };
-    reload()?;
+    reload().map_err(|error| error.to_string())?;
     loop {
         // Each drawn frame is a boundary at which a prepared reload can draw.
         draw(host)?;
         if let Some(first) = report().into_iter().next() {
-            let line = first?;
+            let line = first.map_err(|error| error.to_string())?;
             eprintln!("{name}: {line}");
             return Ok(());
         }
