@@ -45,7 +45,9 @@ export async function openLauncherControl() {
   return {
     port: server.address().port,
     token,
-    get admitted() { return Boolean(owner); },
+    // Only the receipt can confirm that the supervisor started. It alone
+    // creates and removes the profile once it receives start.
+    get startOffered() { return Boolean(owner); },
     get connected() { return Boolean(owner && !owner.destroyed && !owner.readableEnded); },
     get receipt() { return receipt; },
     request(phase) { if (this.connected) owner.write(phase + '\n'); },
@@ -86,7 +88,7 @@ const finalReceipt = receipt => receipt.chrome_final === true;
 const groupGone = receipt => finalReceipt(receipt) || receipt.owned_processes_gone;
 
 async function stopBrowser({ output, control, cdp }, { graceMs, termMs, killMs, finalMs }) {
-  if (!control?.admitted) return;
+  if (!control?.startOffered) return;
   let receipt = await readLauncherReceipt(output, control);
   if (receipt?.chrome_final) return receipt;
   // The supervisor checks for a prior exit before acknowledging this request.
@@ -111,7 +113,7 @@ async function stopBrowser({ output, control, cdp }, { graceMs, termMs, killMs, 
 }
 
 export async function finalizeBrowserCapture({
-  output, control, cdp, closeConnections, profile, manifest, captureError,
+  output, control, cdp, closeConnections, manifest, captureError,
   graceMs = 10000, termMs = 3000, killMs = 10000, finalMs = 15000,
 }) {
   const cleanupErrors = [];
@@ -119,13 +121,13 @@ export async function finalizeBrowserCapture({
     try { return await action(); }
     catch (error) { cleanupErrors.push(String(error)); }
   };
-  const launched = control?.admitted;
-  if (!launched) control?.close(); // Prevent a delayed LaunchServices launch.
+  const startOffered = control?.startOffered;
+  if (!startOffered) control?.close(); // Prevent a delayed LaunchServices launch.
   const receipt = await clean(() => stopBrowser(
     { output, control, cdp }, { graceMs, termMs, killMs, finalMs },
   ));
   control?.close();
-  if (launched) {
+  if (startOffered) {
     manifest.permission_preflight = receipt ?? manifest.permission_preflight;
     manifest.chrome_shutdown = {
       requested: receipt?.shutdown_requested ?? false,
@@ -147,7 +149,6 @@ export async function finalizeBrowserCapture({
     }
   }
   await clean(closeConnections);
-  if (profile && !launched) await clean(() => fs.rm(profile, { recursive: true }));
   let failure = captureError();
   if (cleanupErrors.length) {
     manifest.cleanup_errors = cleanupErrors;

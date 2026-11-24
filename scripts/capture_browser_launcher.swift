@@ -225,17 +225,26 @@ func runOwned(_ args: [String]) throws -> Int32 {
     guard let port = UInt16(args[3]) else { throw POSIXError(.EINVAL) }
     let control = try LauncherControl(port: port, token: args[4])
     let profile = URL(fileURLWithPath: args[5])
+    var profileCreated = false
     var status: Int32 = 1
     do {
         try requireDeniedPreflight()
         let log = try openLog()
+        // The supervisor creates the profile only after admission and
+        // removes it even if the harness loses the control socket.
+        guard mkdir(profile.path, 0o700) == 0 else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        profileCreated = true
         status = try supervise(Array(args.dropFirst(6)), log: log, control: control)
         try log.close()
     } catch {
         report["error"] = String(describing: error)
         if report["chrome_pid"] == nil { report["owned_processes_gone"] = true }
     }
-    if report["owned_processes_gone"] as? Bool == true {
+    if !profileCreated {
+        report["profile_removed"] = true
+    } else if report["owned_processes_gone"] as? Bool == true {
         do {
             try FileManager.default.removeItem(at: profile)
             report["profile_removed"] = true
@@ -251,8 +260,7 @@ func runOwned(_ args: [String]) throws -> Int32 {
 }
 
 if CommandLine.arguments[2] == "--owned" {
-    // Without admission the Node owner still owns the profile, and no
-    // browser has started. Do not write a receipt for a cancelled launch.
+    // Without admission there is no profile or browser to clean up.
     do { exit(try runOwned(CommandLine.arguments)) }
     catch { exit(1) }
 }

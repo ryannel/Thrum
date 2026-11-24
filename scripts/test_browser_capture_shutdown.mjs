@@ -57,6 +57,7 @@ async function supervisorFixture(output, mode, port, token) {
   lines.on('line', phase => phases.push(phase));
   socket.write(token + '\n');
   await until(() => phases.shift() === 'start');
+  await fs.mkdir(path.join(output, 'profile'));
   const browser = start('browser', output, mode);
   const helper = start('helper', output, mode);
   const browserExit = once(browser, 'exit');
@@ -130,8 +131,6 @@ async function supervisorFixture(output, mode, port, token) {
 
 async function commandFixture(output, mode) {
   const { closeBrowserConnections } = await import('./check_v1_browser.mjs');
-  const profile = path.join(output, 'profile');
-  await fs.mkdir(profile);
   const control = await openLauncherControl();
   const wrapper = spawn(process.execPath, ['-e', 'process.exit(0)']);
   const supervisor = start('supervisor', output, mode, String(control.port), control.token);
@@ -181,7 +180,7 @@ async function commandFixture(output, mode) {
   control.request = phase => { requests.push(phase); request(phase); };
   try {
     await finalizeBrowserCapture({
-      output, control, cdp, profile, manifest: { complete: !captureError },
+      output, control, cdp, manifest: { complete: !captureError },
       captureError: () => captureError,
       closeConnections: async () => {
         await closeBrowserConnections(undefined, server);
@@ -232,23 +231,46 @@ if (flag === '--fixture') {
     { mode: 'disconnect-during-validation', signal: 15, error: /exited before requested shutdown/ },
     { mode: 'disconnect-after-close', signal: 15, escalation: ['term'] },
   ];
-  test('cancels admission and removes the profile when the launcher never connects', async t => {
+  test('cancels admission when the launcher never connects', async t => {
     await fs.mkdir('tmp', { recursive: true });
     const output = await fs.mkdtemp('tmp/capture-shutdown-test-');
     t.after(() => fs.rm(output, { recursive: true }));
-    const profile = path.join(output, 'profile');
-    await fs.mkdir(profile);
     const control = await openLauncherControl();
     t.after(() => control.close());
     const error = new Error('startup timed out');
     await assert.rejects(finalizeBrowserCapture({
-      output, control, profile, manifest: { complete: false },
+      output, control, manifest: { complete: false },
       captureError: () => error, closeConnections: () => {},
     }), actual => actual === error);
-    await assert.rejects(fs.stat(profile), { code: 'ENOENT' });
     const late = createConnection({ host: '127.0.0.1', port: control.port });
     await assert.rejects(once(late, 'connect'), { code: 'ECONNREFUSED' });
-    assert.equal(control.admitted, false);
+    assert.equal(control.startOffered, false);
+  });
+
+  test('a launcher that times out before accepting start leaves no profile', async t => {
+    await fs.mkdir('tmp', { recursive: true });
+    const output = await fs.mkdtemp('tmp/capture-shutdown-test-');
+    t.after(() => fs.rm(output, { recursive: true }));
+    const control = await openLauncherControl();
+    t.after(() => control.close());
+    const launcher = createConnection({ host: '127.0.0.1', port: control.port });
+    t.after(() => launcher.destroy());
+    launcher.on('error', () => launcher.destroy());
+    await once(launcher, 'connect');
+    // The token was sent, but the launcher already abandoned admission when
+    // the harness gets to process it and discovers the disconnected socket.
+    launcher.end(control.token + '\n');
+    await until(() => control.startOffered && !control.connected);
+    const error = new Error('Chrome launcher control disconnected');
+    const manifest = { complete: false };
+    await assert.rejects(finalizeBrowserCapture({
+      output, control, manifest, captureError: () => error, closeConnections: () => {},
+      graceMs: 0, termMs: 0, killMs: 0, finalMs: 0,
+    }), actual => actual === error);
+    assert.deepEqual(await fs.readdir(output), ['manifest.json']);
+    assert.equal(manifest.complete, false);
+    assert.equal(manifest.error, String(error));
+    assert.equal(manifest.chrome_shutdown.requested, false);
   });
 
   for (const expected of cases) {

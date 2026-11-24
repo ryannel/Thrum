@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import { loadavg } from 'node:os';
 import path from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
 import { captureReceiver } from './browser_capture_receiver.mjs';
@@ -128,7 +128,7 @@ await fs.writeFile(path.join(bundle, 'Contents/Info.plist'), `<?xml version="1.0
 execFileSync('/usr/bin/swiftc', ['-module-cache-path', path.join(output, 'swift-cache'), 'scripts/capture_browser_launcher.swift', '-o', launcher]);
 execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', bundle]);
 manifest.launcher = { sha256: sha(await fs.readFile(launcher)), scope: 'LaunchServices app identity, preflight must be false before starting Chrome; no permission request' };
-let profile, control, launchError, socket, cdp, server, cook, failure;
+let control, launchError, socket, cdp, server, cook, failure;
 const retainRaw = args['retain-raw'] === 'on';
 const spoolPath = path.join(output, 'frames.rgba');
 const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
@@ -143,7 +143,7 @@ try {
     if (head.root !== route.cooked_root || head.generation !== route.cooked_generation) throw new Error(`Cooked root mismatch ${JSON.stringify(head)}`);
     manifest.cooked = head;
   }
-  profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
+  const profile = path.join(output, `chrome-profile-${randomUUID()}`);
   manifest.flags = [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-crashpad-for-testing', '--disable-component-update', '--window-size=1280,1100', 'about:blank'];
   if (spriteField) manifest.flags.splice(-1, 0, '--disable-renderer-backgrounding', '--disable-background-timer-throttling');
   control = await openLauncherControl();
@@ -157,7 +157,7 @@ try {
     if (receipt?.error || receipt?.chrome_exited || receipt?.chrome_final) {
       throw new Error(receipt.error ?? 'Chrome exited before DevTools was ready');
     }
-    if (control.admitted && !control.connected) throw new Error('Chrome launcher control disconnected');
+    if (control.startOffered && !control.connected) throw new Error('Chrome launcher control disconnected');
     return receipt?.chrome_pid ? receipt : undefined;
   };
   const endpoint = await waitFor(async () => {
@@ -324,7 +324,7 @@ finally {
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: extent[0] * 4, extent };
   manifest.spool_encoding = spriteField ? 'browser File download, raw RGBA8' : retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
   await finalizeBrowserCapture({
-    output, control, cdp, profile, manifest,
+    output, control, cdp, manifest,
     graceMs: drainLargeCapture ? 45000 : undefined,
     closeConnections: async () => {
       try { await closeBrowserConnections(socket, server); }
