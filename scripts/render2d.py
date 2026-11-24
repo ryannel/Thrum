@@ -23,6 +23,7 @@ BUILDS = {
     "mac-metal": "cargo build --locked --offline --release -p v1-game --bin v1-game",
     "chrome-webgpu": "sh examples/v1-game/web/build.sh --proving (locked offline release)",
 }
+LEGACY_CHROME_BUILD = "sh examples/v1-game/web/build.sh (locked offline release)"
 VALLEY_BUILD = "cargo build --locked --offline --release -p v1-game --bench valley_culling"
 EXTENTS = ((1920, 1080), (3456, 2234))
 SPRITES = "sprites"
@@ -213,10 +214,14 @@ def sha256_field(value):
 
 def validate(record, target):
     toolchain = record.get("toolchain")
+    build = record.get("build")
+    build_matches = build == BUILDS[target] or (
+        target == "chrome-webgpu" and build == LEGACY_CHROME_BUILD
+    )
     if (record["target"] != target or record["profile"] != "release" or
             not re.fullmatch("[a-f0-9]{40}", record["commit"]) or
             not sha256_field(record.get("binary_sha256")) or
-            record.get("build") != BUILDS[target] or not isinstance(toolchain, str) or
+            not build_matches or not isinstance(toolchain, str) or
             not re.match(r"^rustc \d+\.\d+\.\d+\b", toolchain) or
             len(record["runs"]) != 2):
         raise ValueError("missing target, release build identity or separate takes")
@@ -423,6 +428,12 @@ def field_tripwires(runs, target):
     return flagged
 
 
+def build_proving_web():
+    run(["sh", "examples/v1-game/web/build.sh", "--proving"], stdout=sys.stderr,
+        env={**os.environ, "CARGO_TARGET_DIR": "target", "RUSTC_WRAPPER": ""})
+    return ROOT / "target/v1-game-web-proving"
+
+
 def prove_field(args, scratch):
     metal = args.target == "mac-metal"
     if args.action == "field" and not metal:
@@ -435,9 +446,7 @@ def prove_field(args, scratch):
         identity = digest(binary)
     else:
         if web == ROOT / "target/v1-game-web":
-            web = ROOT / "target/v1-game-web-proving"
-            run(["sh", "examples/v1-game/web/build.sh", "--proving"], stdout=sys.stderr,
-                env={**os.environ, "CARGO_TARGET_DIR": "target", "RUSTC_WRAPPER": ""})
+            web = build_proving_web()
         else:
             build = f"{build}, prebuilt page at {web.relative_to(ROOT)}"
         identity = digest(web / "v1_game_bg.wasm")
@@ -515,7 +524,10 @@ def main():
             "before", "before_load", "base_binary", "binary", "route", "store")):
         parser.error("Metal collection requires both valley binaries, starting run, load, route and store")
     commit = git("rev-parse", "HEAD")
-    binary = args.binary.resolve() if metal else args.web_root.resolve() / "v1_game_bg.wasm"
+    web = args.web_root.resolve()
+    if not metal and web == ROOT / "target/v1-game-web":
+        web = build_proving_web()
+    binary = args.binary.resolve() if metal else web / "v1_game_bg.wasm"
     identity = digest(binary)
     compiler = ["rustc"] if metal else ["rustup", "run", "stable", "rustc"]
     record = {"target": args.target, "profile": "release", "commit": commit, "build": BUILDS[args.target],
@@ -525,7 +537,7 @@ def main():
         record["take_started_unix_ns"].append(time.time_ns())
         take = folder / f"take-{index}"
         record["runs"].append(metal_take(take, binary, identity, commit) if metal
-                              else chrome_take(take, args.web_root.resolve()))
+                              else chrome_take(take, web))
     if metal:
         record["valley"] = valley_pair(args, folder)
     validate(record, args.target)
