@@ -283,7 +283,7 @@ pub(crate) fn shader_source() -> String {
 }
 
 impl SoftSun {
-    const MAX_SETTLE: usize = 31;
+    const MAX_SETTLE: u32 = 31;
     pub(in crate::synthetic) const PENUMBRA: &str = "Sun penumbra";
     const SETTLE: &str = "Sun penumbra settle length";
     const DIVE: &str = "Sun penumbra dive limit";
@@ -304,7 +304,7 @@ impl SoftSun {
                 Self::SETTLE,
                 "Lifetime of a Sun disc sample in submitted frames",
                 16,
-                1..=Self::MAX_SETTLE as u32,
+                1..=Self::MAX_SETTLE,
             ),
             knob(
                 Self::DIVE,
@@ -326,7 +326,7 @@ impl SoftSun {
             submitted: None,
             pending: None,
             phase: 0,
-            directions: VecDeque::with_capacity(Self::MAX_SETTLE),
+            directions: VecDeque::with_capacity(Self::MAX_SETTLE as usize),
         }
     }
 
@@ -361,7 +361,11 @@ impl SoftSun {
             .get(self.directions.len().min(settle as usize).saturating_sub(1))
             .copied()
             .unwrap_or(direction);
-        let moved = valid && oldest.distance_squared(direction) > (radius / 16.0).powi(2);
+        let sweep = if valid {
+            (oldest.distance(direction) / radius).min(1.0)
+        } else {
+            0.0
+        };
         SoftSunFrame {
             inverse: relative.to_cols_array_2d(),
             previous: previous.view_proj_columns(),
@@ -376,7 +380,7 @@ impl SoftSun {
             radius,
             rim_rays: self.settings.knobs()[3].value,
             padding: 0,
-            oldest_sun: oldest.extend(if moved { 1.0 } else { 0.0 }).to_array(),
+            oldest_sun: oldest.extend(sweep).to_array(),
         }
     }
 
@@ -420,7 +424,7 @@ impl SoftSun {
             self.directions.clear();
         }
         if let Some(sample) = &self.submitted {
-            if self.directions.len() == Self::MAX_SETTLE {
+            if self.directions.len() == Self::MAX_SETTLE as usize {
                 self.directions.pop_back();
             }
             self.directions.push_front(sample.direction);

@@ -93,7 +93,7 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
         // Shadow motion alone clears the old edge immediately. If the Sun
         // moved, check the oldest retained disc on today's geometry: a
         // disagreement there can still be leaving the temporal window.
-        if soft_frame.oldest_sun.w == 0.0 || verify_sun_rim(origin, inside, receiver.normal,
+        if soft_frame.oldest_sun.w < 0.0625 || verify_sun_rim(origin, inside, receiver.normal,
             outward, soft_frame.oldest_sun.xyz, centre, granted) {
             return centre;
         }

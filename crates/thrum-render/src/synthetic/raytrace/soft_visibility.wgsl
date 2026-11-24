@@ -202,7 +202,16 @@ fn sample_counts(sample: vec4<u32>) -> vec2<u32> {
 }
 
 fn sample_mean(sample: vec4<u32>) -> vec2<f32> {
-    return vec2<f32>(countOneBits(sample.xy)) / vec2<f32>(sample_counts(sample));
+    let counts = sample_counts(sample);
+    let full = vec2<f32>(countOneBits(sample.xy)) / vec2<f32>(counts);
+    if frame.oldest_sun.w <= 0.0625 { return full; }
+    // As the disc sweeps across a caster, older votes describe a different
+    // part of the sky. Give current votes more influence before the
+    // neighbourhood reaches consensus. A held disc uses the whole window.
+    let recent = min(counts, vec2(4u));
+    let mask = (vec2(1u) << recent) - vec2(1u);
+    let latest = vec2<f32>(countOneBits(sample.xy & mask)) / vec2<f32>(recent);
+    return mix(full, latest, 0.875 * smoothstep(0.0625, 1.0, frame.oldest_sun.w));
 }
 
 fn sample_votes(sample: vec4<u32>) -> vec2<u32> {
