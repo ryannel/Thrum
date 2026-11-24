@@ -582,10 +582,10 @@ impl NativeCompletion {
         }
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         if let Some(receipt) = &self.receipt {
-            return match receipt.completed() {
+            return match receipt.completed(self.timing) {
                 Err(()) => NativeOutcome::Failed,
-                Ok(Some(times)) if self.timing => NativeOutcome::Timed(times),
-                Ok(_) => NativeOutcome::Unmeasured,
+                Ok(Some(times)) => NativeOutcome::Timed(times),
+                Ok(None) => NativeOutcome::Unmeasured,
             };
         }
         let _ = self.timing;

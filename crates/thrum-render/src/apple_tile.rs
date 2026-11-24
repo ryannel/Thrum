@@ -50,12 +50,11 @@ pub(crate) struct Receipt(Retained<ProtocolObject<dyn MTLCommandBuffer>>);
 unsafe impl Send for Receipt {}
 
 impl Receipt {
-    pub(crate) fn completed(&self) -> Result<Option<[f64; 2]>, ()> {
-        if self.0.status() == MTLCommandBufferStatus::Error {
-            return Err(());
-        }
-        if self.0.status() != MTLCommandBufferStatus::Completed {
-            return Ok(None);
+    pub(crate) fn completed(&self, timing_requested: bool) -> Result<Option<[f64; 2]>, ()> {
+        match self.0.status() {
+            MTLCommandBufferStatus::Error => return Err(()),
+            MTLCommandBufferStatus::Completed if timing_requested => {}
+            _ => return Ok(None),
         }
         let times = [self.0.GPUStartTime(), self.0.GPUEndTime()];
         Ok(
