@@ -83,13 +83,29 @@ impl WeatherSequence {
                     t if t < 180.0 => (WeatherPreset::Broken, WeatherPreset::Overcast, 120.0),
                     _ => (WeatherPreset::Overcast, WeatherPreset::Clear, 180.0),
                 };
-                let t = ((seconds - start) / 60.0).clamp(0.0, 1.0);
-                let blend = t * t * (3.0 - 2.0 * t);
+                let elapsed = seconds - start;
+                let ease = |fraction: f64| {
+                    let t = fraction.clamp(0.0, 1.0);
+                    t * t * (3.0 - 2.0 * t)
+                };
+                // Let the deck start forming before losing the heaped banks.
+                let coverage_duration = if from == WeatherPreset::Fair {
+                    48.0
+                } else {
+                    60.0
+                };
+                let coverage_blend = ease(elapsed / coverage_duration);
+                // Clear a thinning deck before returning to the fair type.
+                let kind_blend = if to == WeatherPreset::Clear {
+                    ease((elapsed - 50.0) / 10.0)
+                } else {
+                    ease(elapsed / 60.0)
+                };
                 let a = from.parameters();
                 let b = to.parameters();
                 Parameters {
-                    coverage: (b.coverage - a.coverage).mul_add(blend, a.coverage),
-                    kind: (b.kind - a.kind).mul_add(blend, a.kind),
+                    coverage: (b.coverage - a.coverage).mul_add(coverage_blend, a.coverage),
+                    kind: (b.kind - a.kind).mul_add(kind_blend, a.kind),
                     ..initial
                 }
             }
