@@ -197,7 +197,7 @@
     {
       "id": "M3",
       "name": "The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
