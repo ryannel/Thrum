@@ -942,8 +942,8 @@
           "statement": "Under each of the four presets, from 2 m and from 40 m, at noon and at a 15\u00b0 Sun, the sky reads as that sky to the horizon: clear has no cloud; fair has scattered cumulus; broken has connected lumpy banks with irregular gaps and bright gap edges; overcast is a continuous low ceiling with soft relief and the Sun hidden.",
           "inspect": "Capture `fixed` stills for each preset, height and Sun. Judge contact sheets by preset, then native-size crops overhead, in the middle distance and at the horizon.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ".orchestrate/evidence/CLOUDS/M7/final-fixed-opinion.md",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M7/weather-looks-qualification.md",
           "verdict": "",
           "review": ""
         },
@@ -1004,8 +1004,8 @@
           "statement": "In Chrome the four presets at noon pass M7.1's list, and a 60x sequence passes M7.5's.",
           "inspect": "Capture the noon `fixed` stills and one `realtime` 60x sequence in Chrome. Judge them by those lists.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": ".orchestrate/evidence/CLOUDS/M7/lives-and-chrome.md",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M7/weather-looks-qualification.md",
           "verdict": "",
           "review": ""
         },

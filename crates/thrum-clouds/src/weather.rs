@@ -394,6 +394,8 @@ impl WeatherMap {
 }
 
 fn ramp_row_age(previous: RowStamp, next: RowStamp, elapsed: f64) -> f64 {
+    const RAMP_CONTROL_CHANGE: f64 = 0.001;
+
     let change = (next.parameters.coverage - previous.parameters.coverage)
         .abs()
         .max((next.parameters.kind - previous.parameters.kind).abs());
@@ -403,7 +405,6 @@ fn ramp_row_age(previous: RowStamp, next: RowStamp, elapsed: f64) -> f64 {
     // A global ramp can move the optical edge of a deck much faster than
     // local cloud evolution. Refresh the strips faster during that ramp so
     // adjacent rows do not switch wide patches between old and new opacity.
-    const RAMP_CONTROL_CHANGE: f64 = 0.001;
     RAMP_CONTROL_CHANGE * (elapsed / change)
 }
 
