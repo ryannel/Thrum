@@ -112,7 +112,7 @@ if (spriteField || args.scene === 'exit' || spoolRaw) {
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
   manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4
-    ? (args.atmosphere !== 'off' ? 128 : 64) : 24;
+    ? (args.atmosphere !== 'off' || cloudMotion ? 128 : 64) : 24;
   if (spriteField) manifest.admission_policy = 'wait';
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }

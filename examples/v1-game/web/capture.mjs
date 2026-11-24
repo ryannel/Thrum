@@ -17,7 +17,7 @@ const atmosphereMotion = atmosphere === 'scrub' || atmosphere === 'ground-pan';
 const clouds = query.get('clouds') ?? 'off';
 const cloudView = query.has('cloud-view');
 const configuredExportSlots = Number(query.get('export-slots'));
-const allowedExportSlots = atmosphereMotion ? [24, 32, 64, 128] : [24, 32, 64];
+const allowedExportSlots = atmosphereMotion || cloudView ? [24, 32, 64, 128] : [24, 32, 64];
 const exportSlots = (spriteField || scene === 'exit' || heldSetup || clouds !== 'off') && allowedExportSlots.includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
   (spriteField || scene === 'exit' || heldSetup || clouds !== 'off');
