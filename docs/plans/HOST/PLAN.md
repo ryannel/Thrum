@@ -49,3 +49,9 @@ UIKit code stay for `GAME-UI` WP6.
 ## WP5 A failure in the shells can be matched and printed: `thrum-app`'s public functions return typed errors
 
 `CREATOR` owns the creator docs and the kit scenes; change in them only the error a creator's closure returns.
+
+Resume from the typed-error implementation and the WP5.1 and WP5.2 results in the
+[builder handoff](../../../.orchestrate/evidence/HOST/WP5-handoff.md). WP5 needs no baseline refresh. WP5.3 checks
+the reference pins on the candidate. The shared `exact-images` run on main compares fresh Mac and Chrome output
+with the retained references after merge. Wait for [REPO-RULES WP5](../REPO-RULES/PLAN.md#wp5-the-repository-gate-passes-with-migrated-plans)
+to land before merging HOST WP5, so `./dev check` can read the current work-package plans.

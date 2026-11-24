@@ -328,8 +328,8 @@
         },
         {
           "id": "WP5.3",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
+          "statement": "Every registered Mac and Chrome exact baseline's definition, retained references and comparison files match its pin at the candidate commit. Guard: the existing exact-baseline reference check in `./dev check`.",
+          "check": "python3 scripts/exact_baselines.py guard",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
