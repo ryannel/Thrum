@@ -249,7 +249,7 @@
     {
       "id": "M4",
       "name": "A completed Chrome capture survives slow shutdown and leaves no browser or profile",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "The registered Chrome captures retain exact frame identities and decoded digests. A slow shutdown after validation succeeds when cleanup and both denied preflights are confirmed, with the actual termination recorded.",
       "items": [
         {
@@ -258,8 +258,8 @@
           "check": "node --test scripts/test_browser_capture_shutdown.mjs",
           "ask": "Do the tests exercise production teardown and finalization with controlled processes and observe the command status, manifest, receipt, owned processes and profile? In the delayed-receipt case, does the browser stand-in exit with status 2 after requested close without TERM or KILL, and does the test require command exit 0, a complete manifest and recorded browser status 2?",
           "target": "stand_in:chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/repair-shutdown-tests.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },
@@ -270,7 +270,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/repair-ownership.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },
         {
@@ -284,17 +284,13 @@
           "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         }
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "findings": [
         {
-          "name": "Shutdown request write failure strands the owned Chrome group",
-          "item": "M4.2",
-          "repeat": false
-        },
-        {
-          "name": "Manifest write failure masks the original capture error",
+          "name": "Supervisor disconnect marks an early Chrome exit as requested",
           "item": "M4.1",
+          "different": "The previous defect masked a capture error during a failed manifest write. Here manifest publication succeeds and incorrectly certifies a browser exit before the harness requested shutdown.",
           "repeat": false
         }
       ]

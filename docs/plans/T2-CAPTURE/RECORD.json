@@ -170,7 +170,7 @@
         {
           "verdict": "fail",
           "commit": "212c80c313e2de17a8b4b74e42aa351736712665",
-          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review-1.md",
           "items": {
             "M4.1": "fail",
             "M4.2": "fail",
@@ -204,6 +204,40 @@
             "turns": 1
           },
           "at": "2026-11-24T03:30:37Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "13b0f87cbb8a8a4de21a9ef442da24dcd2fa974b",
+          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md",
+          "items": {
+            "M4.1": "fail",
+            "M4.2": "pass",
+            "M4.3": "pass"
+          },
+          "findings": [
+            {
+              "name": "Supervisor disconnect marks an early Chrome exit as requested",
+              "item": "M4.1",
+              "different": "The previous defect masked a capture error during a failed manifest write. Here manifest publication succeeds and incorrectly certifies a browser exit before the harness requested shutdown.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 58649,
+            "cached": 771968,
+            "output": 4324,
+            "turns": 1
+          },
+          "at": "2026-11-24T04:27:43Z"
         }
       ],
       "authorised": {
