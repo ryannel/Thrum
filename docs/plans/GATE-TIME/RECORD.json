@@ -21,7 +21,10 @@
       "output": 1781,
       "turns": 1
     },
-    "at": "2026-11-24T03:17:25Z"
+    "at": "2026-11-24T03:17:25Z",
+    "items_owed": [
+      "M15"
+    ]
   },
   "milestones": {
     "M1": {
@@ -335,12 +338,12 @@
       }
     },
     "M5": {
-      "definitions": "e2c17e12bb44aac9a8c0d8ad2cc2445bd45ee86cb53f224e53704f20e2091851",
+      "definitions": "61ce02b810ff07b120957b854668b5b78ffd3008c6498ff0a13e6f2b40a269b0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Answer the GATE-TIME design review's Must Fix (.orchestrate/evidence/GATE-TIME/design-review.md, eighth round): M5.1 clo",
-        "at": "2026-11-22T14:57:33Z"
+        "task": "GATE-TIME M5 is blocked needs_context: M5.1 measured a median merge Rust check of 404.6 s against the five-minute target",
+        "at": "2026-11-24T04:43:47Z"
       },
       "ends_stretch": true
     },
@@ -1256,6 +1259,15 @@
         "checked": "a864268f5ce228af432525baddb2378c1305d754",
         "at": "2026-11-24T04:26:35Z"
       }
+    },
+    "M15": {
+      "definitions": "855af1f66e2e5e63dc1d1a7c4408e75f7b0c2ea25ba30ba755a6b78f41516625",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "GATE-TIME M5 is blocked needs_context: M5.1 measured a median merge Rust check of 404.6 s against the five-minute target",
+        "at": "2026-11-24T04:43:47Z"
+      }
     }
   },
   "briefs": [
@@ -1306,11 +1318,15 @@
     {
       "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-24T03:15:50Z"
+    },
+    {
+      "task": "GATE-TIME M5 is blocked needs_context: M5.1 measured a median merge Rust check of 404.6 s against the five-minute target (37 of 45 over), and the M5 notes in docs/plans/GATE-TIME/PLAN.md send that back to planning. The handoff is .orchestrate/evidence/GATE-TIME/M5-handoff.md with the record at .orchestrate/evidence/GATE-TIME/M5/record.md; unmerged work is at 674021276bca on build/gate-time. Key finding: test builds take a median 142 s in slow merges against 12.7 s in fast ones, so cold or invalidated build caches dominate, not test run time (nextest median 59 s). Context the record may miss: the lead periodically deletes idle .git/orchestrate/verify/*/target folders to keep disk above ~30 GB, which forces cold merge builds; 10 builders share one 14-core Mac. Revise M5 so the merge Rust check reaches a five-minute median by attacking the build cost with a modern approach (for example a bounded warm shared cache for merge verification, smarter package selection, or build-profile changes), and make the measurement window start after the change lands so the target is reachable. Record owner-unmade choices as assumptions. Done: GATE-TIME design and done-when file carry the revised M5, ./dev check-docs passes, files left for the plan command to commit.",
+      "at": "2026-11-24T04:43:47Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T03:15:50Z"
+    "at": "2026-11-24T04:43:47Z"
   },
   "design_history": [
     {

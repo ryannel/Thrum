@@ -863,12 +863,14 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "M5",
       "name": "The post-rollout record shows a five-minute median for Rust landings",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -883,7 +885,7 @@
           "ask": "Starting at the M15 activation push, trace the first 20 Rust landings to the commands and timed runs that proved their trees. Do the timestamps, checkout keys, and selection lines establish the window in push order, with batch or reused records counted once and cold and fallback runs included? Are all exclusions accounted for? Recompute the median and the count above 300 seconds from the run ledger. Do both pass the design's bounds, with the timing in the guide matching the record and each run over ten minutes explained by its saved output?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M5/record.md",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
@@ -892,22 +894,12 @@
           "statement": "`CONTRIBUTING.md` says what `./dev check` runs, how it selects, that tests run side by side and what that asks of a test, that a test takes about ten seconds or less or is a long test, that a test proves its behaviour on the smallest world that shows it and tests logic without a device, that a package's test files are modules of one test binary and how to add one, what runs on main after the merge (`./dev check-all`, `./dev long-tests` and the main-branch check `cross-target`), how to run one test, one file's tests or one long test by hand, and how to read the times the check prints.",
           "ask": "Does `CONTRIBUTING.md` name the three commands and the `cross-target` check, and say each of those things? Follow its lines for running one file's tests and one long test by hand: does each run what it says?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M5/record.md#m52-the-contributor-guide",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The M5 plan directs a median above five minutes back to planning, so M5.1 needs a revised plan before it can close.",
-        "work": {
-          "commit": "674021276bca399946ab8a5b0fb03393b0fe2df1",
-          "branch": "build/gate-time",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/GATE-TIME/M5-handoff.md"
-      }
+      ]
     }
   ]
 }
