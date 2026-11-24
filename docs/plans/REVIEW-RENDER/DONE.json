@@ -297,8 +297,8 @@
     {
       "id": "M5",
       "name": "A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -311,10 +311,10 @@
           "lock": "gpu",
           "ask": "Over the test's run of timed frames on this Mac, is every frame accounted for as published, refused with a reason or still pending, and does each published timing carry the frame it was recorded in? Does the test feed a stale, a zero and an inverted pair and see each refused? Is the resolve still encoded only after the render's completion, in a later submission? Does the game's frame-allocation test now cover a completed, timed frame? With the timing-demand switch off, is anything gathered?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m51-frame-timing and .orchestrate/evidence/REVIEW-RENDER/M5/rebased-metal.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
         },
         {
           "id": "M5.2",
@@ -325,8 +325,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m52-presenter and .orchestrate/evidence/REVIEW-RENDER/M5/rebased-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
         },
         {
           "id": "M5.3",
@@ -335,8 +335,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m53-paired-valley-frames",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
         },
         {
           "id": "M5.4",
@@ -345,8 +345,20 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Replayed counters can pass validation in a later frame",
+          "item": "M5.1",
+          "repeat": false
+        },
+        {
+          "name": "Submitted capture gathers GPU timestamps with timing demand off",
+          "item": "M5.1",
+          "repeat": false
         }
       ]
     }

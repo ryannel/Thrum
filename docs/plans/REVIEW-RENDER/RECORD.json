@@ -631,7 +631,47 @@
     },
     "M5": {
       "definitions": "d3e62ee2394d4716359d7c1226218b65b9ef0b3cd4eadda63f18324cb3191677",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "d7af8d05b9dfa265216295814e72678fd3b69c57",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md",
+          "items": {
+            "M5.1": "fail",
+            "M5.2": "pass",
+            "M5.3": "pass",
+            "M5.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Replayed counters can pass validation in a later frame",
+              "item": "M5.1",
+              "repeat": false
+            },
+            {
+              "name": "Submitted capture gathers GPU timestamps with timing demand off",
+              "item": "M5.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 130431,
+            "cached": 3213312,
+            "output": 10819,
+            "turns": 1
+          },
+          "at": "2026-11-24T03:31:23Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
