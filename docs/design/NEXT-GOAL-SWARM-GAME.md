@@ -20,5 +20,5 @@ the owner.
 
 ## How it is planned
 After V1's module plan lands, a planner extends the project plan with 2D, multiplayer and the game as modules and
-milestones, in an order that builds up to the game. It reuses V1's contracts, and changes them only with the producing
+work packages, in an order that builds up to the game. It reuses V1's contracts, and changes them only with the producing
 and consuming modules.

@@ -136,7 +136,7 @@ They qualify no Thrum recipe, physical iPhone result or visual acceptance. Re-me
 ## Planning, 10 November
 
 The owner asked for both to be finished and consolidated. [The module list](../../plans/ARCHITECTURE.md) plans them
-as two Thrum modules, `SEA` and `CLOUDS`, finished here and not in Broadsides, and names the milestone that meets
+as two Thrum modules, `SEA` and `CLOUDS`, finished here and not in Broadsides, and names the work package that meets
 each readiness condition above ([table](../../plans/ARCHITECTURE.md#where-the-ports-readiness-conditions-are-met)).
 Their briefs are [SEA-BRIEF](../../plans/SEA/BRIEF.md) and [CLOUDS-BRIEF](../../plans/CLOUDS/BRIEF.md). When builders
 start them is still the owner's decision, and the reference commits in those briefs supersede the two above.

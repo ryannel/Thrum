@@ -18,4 +18,4 @@ candidate for later performance work, not an early response to wgpu allocations.
 experiments at safe commits. Build visible sky, Sun, sunset and twilight next; finish the half-float storage correction.
 
 [Policy](../AI-PERFORMANCE.md#performance-investment-from-the-first-design) owns the method;
-[build plan](../../plans/VISION.md) owns current work. Historic measurements remain evidence, not current admission bars.
+[vision and scope document](../../plans/VISION.md) owns current work. Historic measurements remain evidence, not current admission bars.

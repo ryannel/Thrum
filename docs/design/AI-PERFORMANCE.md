@@ -39,7 +39,7 @@ possible, not physical accuracy. For rendering and visual work, speed and look a
 these tripwires, look against an inspection list at the bar of shipped high-end games. A tolerance against a
 physical or `f64` reference is no longer a delivery requirement there; the reference is a diagnostic. Prefer the
 cheaper mechanism when two reach the same look. A tripwire record passes on its check, and is reviewed by question
-only in a module's last milestone. [ORCHESTRATE.md](../../ORCHESTRATE.md#what-is-proved-and-how-hard) carries the
+only in a module's last work package. [ORCHESTRATE.md](../../ORCHESTRATE.md#what-is-proved-and-how-hard) carries the
 rules.
 
 Specialized internals, generated code, SIMD, incremental work and accelerated recipes remain welcome when justified.
@@ -130,9 +130,9 @@ Functional delivery requires preserved semantics, stability, lifecycle and the l
 evidence, but benchmarks are tripwires during feature construction. Later campaigns use the deeper workflow below.
 
 **Where a timing is taken (15 November 2026).** Builders share one machine, and a lock keeps out only the runs
-that take it, so a timing taken while they work is contended whatever lock it holds. Inside a milestone a
+that take it, so a timing taken while they work is contended whatever lock it holds. Inside a work package a
 timing is therefore a tripwire: it records the load on the machine and fails only on a collapse or a missing
-measurement. That holds in a module's last milestone too (18 November 2026): nobody is paused for a timing,
+measurement. That holds in a module's last work package too (18 November 2026): nobody is paused for a timing,
 and figures for a quiet machine, where they are still wanted, wait for one window batched for every module.
 [ORCHESTRATE.md](../../ORCHESTRATE.md) carries the rule for builders.
 
@@ -334,7 +334,7 @@ whole protocol in every agent's mandatory context. Mechanical rules cannot prove
 
 ## Delivery order and evidence
 
-The [build plan](../plans/VISION.md) owns current sequencing; these stages describe how campaign tooling grows.
+The [vision and scope document](../plans/VISION.md) owns current sequencing; these stages describe how campaign tooling grows.
 
 - **D0:** select first representative workload/device and the cost-versus-quality objective; identify honest budgets.
 - **D1/I1:** specify campaign/result records and trusted evaluation boundary; implement one local CPU/headless path,

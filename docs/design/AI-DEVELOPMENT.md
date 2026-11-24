@@ -60,7 +60,7 @@ copies in that repository; SDK distribution needs equally unambiguous version/pr
 
 ## How work runs
 
-Work follows one proven pattern: a planner writes a high-level design and milestones, a generator builds them, an
+Work follows one proven pattern: a planner writes a high-level design and work packages, a generator builds them, an
 automated oracle answers most questions, and a clean-context evaluator judges what the oracle can't. The skills are
 the generic orchestrate suite (the `orchestration` domain of `ryannel/skills`), configured for Thrum by
 [ORCHESTRATE.md](../../ORCHESTRATE.md), with engine rules in
@@ -69,16 +69,16 @@ the generic orchestrate suite (the `orchestration` domain of `ryannel/skills`), 
 | Level | Skill | Produces | Model and effort |
 | --- | --- | --- | --- |
 | Project and module | `/plan-module` | Module map, gate order, [contracts](CONTRACTS.md); then each module's design, plan and JSON done-when file | Claude Opus 5.5, high |
-| Milestone | `/build-milestone` | The next milestone, verified and pushed | Codex `gpt-6.1-sol` or Claude Opus 5.5, medium |
-| Milestone | `/review-milestone` | A verdict from a clean context | Claude Opus 5.5, medium |
-| Unattended | `/build` | Keeps N builders busy on ready milestones, on Codex, Claude Code or another host | Lead, builders and reviewers at medium |
+| Work package | `orchestrate:builder` | The next work package, verified and pushed | Codex `gpt-6.1-sol` or Claude Opus 5.5, medium |
+| Work package | `orchestrate:reviewer` | A verdict from a clean context | Claude Opus 5.5, medium |
+| Unattended | `/build` | Keeps N builders busy on ready work packages, on Codex, Claude Code or another host | Lead, builders and reviewers at medium |
 
 There are two speeds:
-- **One chat.** The owner drives a single chat in Claude or Codex with `build-milestone`, and can move a stream
-  between them at a milestone boundary. The plan, the done-when file and the plan's log are the whole handover.
+- **One chat.** The owner drives a single chat in Claude or Codex with `orchestrate:builder`, and can move a stream
+  between them at a work package boundary. The plan, the done-when file and the plan's log are the whole handover.
 - **Unattended.** A lead on any host runs `build`, told how many builders on which hosts. Builders, reviewers and
   planners run through the suite's `agent_loop.py`, which names the model and effort on every launch, starts a fresh
-  session per milestone, holds milestones whose `needs` aren't done, and reruns every check before it accepts a claim.
+  session per work package, holds work packages whose `needs` aren't done, and reruns every check before it accepts a claim.
   Reviews run on the other host where two are available. Escalation
   after a failed review is by count: the same session, then a fresh session, then a re-plan, then park.
 
@@ -169,7 +169,7 @@ a checkpoint, and a report never pauses building.
 
 **Owner decision, 17 November 2026: "Ok let's lower the bar."** Thrum is a game engine, and the aim is the most
 plausible result as fast as possible, not physical accuracy. Rendering and visual work passes when it looks as good
-as shipped high-end games, judged against the milestone's inspection list, and runs fast, with performance as
+as shipped high-end games, judged against the work package's inspection list, and runs fast, with performance as
 tripwires. A physical or `f64` reference is a diagnostic for output that looks wrong, never a pass mark. Exact
 image baselines guard against unintended change and do not block a deliberate shader change. Correctness proofs
 stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked
@@ -180,15 +180,15 @@ carries the rules for planners, builders and reviewers.
 | Layer | Who and when | Blocking? |
 | --- | --- | --- |
 | Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Flag NaN, black, clipped, banded and flickering output. Golden captures are regression tripwires against unintended change; a deliberate shader change refreshes them. A comparison with a reference render or a physical model is a diagnostic for output that looks wrong, not a gate. These catch broken output; they don't judge the look. | Yes, for broken output and unintended change |
-| Inspection list | The planner writes each visual milestone's inspection list in its done-when file: observable qualities checked in the running game, with the bar set in words by shipped high-end games of the same kind. There are no target images to match. The generator checks its own captures against the list. | Shapes the milestone |
-| Evaluator | A clean-context `/review-milestone` agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. New rendering work gets the whole list; a fix round is judged on what failed and what the fix touched. | Yes, the milestone closes on its pass |
+| Inspection list | The planner writes each visual work package's inspection list in its done-when file: observable qualities checked in the running game, with the bar set in words by shipped high-end games of the same kind. There are no target images to match. The generator checks its own captures against the list. | Shapes the work package |
+| Evaluator | A clean-context `orchestrate:reviewer` agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. New rendering work gets the whole list; a fix round is judged on what failed and what the fix touched. | Yes, the work package closes on its pass |
 | Owner steer | The daily report carries new inspection lists, verdicts and contact sheets. The owner adjusts a bar or overturns a verdict; an overturned verdict becomes a graded example for the evaluator. | Never |
 
-Every later visual milestone plans evidence through [T2 capture](../plans/T2-CAPTURE/DESIGN.md): exact submitted engine
+Every later visual work package plans evidence through [T2 capture](../plans/T2-CAPTURE/DESIGN.md): exact submitted engine
 images by default, full-resolution source sequences plus review artifacts, and explicit fixed-time versus real-time
 claims. Runtime/live-motion criteria need elapsed-time capture that preserves stalls; a smooth offline movie is
-insufficient. List included/excluded surfaces and required target capability (`T2-CAPTURE:M0` Mac, `M1` Chrome,
-`M2` simulator) in the first milestone that needs it. Existing passed evidence keeps its original scope. Until those
+insufficient. List included/excluded surfaces and required target capability (`T2-CAPTURE:WP0` Mac, `WP1` Chrome,
+`WP2` simulator) in the first work package that needs it. Existing passed evidence keeps its original scope. Until those
 paths land, existing Chrome canvas endpoint captures may still prove fixed-time endpoint image/oracle claims with
 endpoint/no-history provenance; `simctl` screenshots/video may prove simulator function/UI/lifecycle within their
 recorded timing limits. They do not prove exact submitted temporal output or elapsed-time engine motion. For those
@@ -254,7 +254,7 @@ Architecture rationale and game intent remain authored documents; generation can
 maturity ledger for evidence/status and derive build/dependency views from actual metadata, without introducing a
 second competing module registry. Do not assume every responsibility maps to one crate.
 
-For parallel changes, the fan-out lead assigns milestones to streams, each in its own worktree; code is shared, and each
+For parallel changes, the fan-out lead assigns work packages to streams, each in its own worktree; code is shared, and each
 stream rebases on main and passes `./dev check` before pushing. Shared contract changes have one coordinating owner,
 `plan-engine`, and a producer/consumer impact note before dependent implementation diverges. Worker/build outputs are
 task-isolated; shared caches require content keys and concurrency-safe publication. Isolated branches do not
@@ -267,7 +267,7 @@ from a long chat. Failed, skipped or outdated evidence cannot promote maturity a
 
 ## Delivery order and behavioral qualification
 
-The [build plan](../plans/VISION.md) owns current sequencing; G6 delivers the first game-authoring loop. The stages below
+The [vision and scope document](../plans/VISION.md) owns current sequencing; G6 delivers the first game-authoring loop. The stages below
 describe what the tooling needs, not an order of work.
 
 | Stage | Deliver the smallest useful part | Completion boundary |

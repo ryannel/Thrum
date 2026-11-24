@@ -28,15 +28,15 @@ The graph declares every native read/write. Native-written textures are initiali
 discarded; generation ownership retains native resources through completion. Keep the existing acquisition-refusal
 drop contract and reset stateful providers after encoded-but-discarded work. Loss abandons without queue calls;
 iOS background submission stays forbidden. Completion errors join generation-tagged device recovery. Each provider
-has a prepared portable twin. G3t M10's exact stateful storage-writing copy/select witness and prepared WGSL twin qualify ordering, initialization,
-retention and reset before G4 uses MetalFX. M11 qualifies replacement, rejection, errors and timing. Neither a
+has a prepared portable twin. G3t WP10's exact stateful storage-writing copy/select witness and prepared WGSL twin qualify ordering, initialization,
+retention and reset before G4 uses MetalFX. WP11 qualifies replacement, rejection, errors and timing. Neither a
 stand-in pass nor a repository check qualifies MetalFX, a hardware win or displayed cadence.
 
-G3t M3 now exposes a replaceable colour/exposure input before the existing SDR tone stage. It retains the
+G3t WP3 now exposes a replaceable colour/exposure input before the existing SDR tone stage. It retains the
 Rgba8Unorm intermediate and both shaders/quantization semantics. G4 inserts reconstruction there and owns the later
 EDR display branch. Fused tone/present, compact rows, expanded GPU light ranking, scratch sharing and mirrored-range
 consolidation are deferred rather than prerequisites of this boundary. No CPU/GPU floating-point exactness premise
-or removed-intermediate traffic saving is claimed. Fresh independent review of the scoped re-plan is owed; milestone
+or removed-intermediate traffic saving is claimed. Fresh independent review of the scoped re-plan is owed; work package
 states and unpark remain with the loop.
 
 ## Owner decision and later performance candidate

@@ -12,7 +12,7 @@ game. It is a learning and craft project and a showcase of how far AI-driven eng
 and visual quality. Its first outlet is interactive teaching demos with public source on the owner's website, such as
 physically simulated cloud formation or a water sandbox. A game is a later project. Results should not look homemade.
 Use cutting-edge research where it is useful, record techniques by name and leave room for original advances supported
-by evidence. [The build plan](../plans/VISION.md#why) owns the purpose and current exit.
+by evidence. [The vision and scope document](../plans/VISION.md#why) owns the purpose and current exit.
 
 **Goal:** a modern, exceptionally fast engine that makes full use of the hardware each device provides: GPU family
 features, tile and unified memory, reconstruction and ray-tracing hardware, CPU core classes and vector units, display,
@@ -64,7 +64,7 @@ engine to one game, one camera, one art style, a water demo or a browser-only pr
 | E02/E03/E20: modular features, bring a provider, no visible sky with retained light/shadows, multiple physical models | [Composition](COMPOSITION.md), C04/C08/C09, [environment](modules/ENVIRONMENT.md); static selection and qualified replacements, no arbitrary universal renderer/live-swap promise |
 | E04/E05/E10/E14/E21: modern research, visual ambition, full hardware use, selective open-source ideas/reuse, custom host | [Engine research](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decisions](ARCHITECTURE-DECISIONS.md), [programme](DESIGN-PROGRAMME.md); primary papers/production sources and math before construction, explicit novelty/provenance limits |
 | E08/E13: ordinary multiplayer first-class, no initial MMO or pure-2D engine | C13 and [NETWORK-SPEC](NETWORK-SPEC.md); same local/server rules, headless rollback/replay fitness in V1 with transport after V1, semantic-compatible heterogeneous clients, explicit result/reconnect/replica behavior |
-| E22/E23: teaching demos with controls; continuous agent work with asynchronous owner steer | [Build plan](../plans/VISION.md) G3s/G6/G7, U1 UI, [visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering) |
+| E22/E23: teaching demos with controls; continuous agent work with asynchronous owner steer | [Vision and scope document](../plans/VISION.md) G3s/G6/G7, U1 UI, [visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering) |
 | E09/E11: Mac/PC, scalable browser demos, native mobile stores | [Baseline](BASELINE-SPEC.md), [runtime](modules/PLATFORM-RUNTIME.md), [construction](CONSTRUCTION-PACKAGES.md); native authoring first is independent of player-platform support, device/store evidence still required |
 | E12/E15/E19: AI engine and game contribution, clear skills, deterministic checks, active coordination | [AI development](AI-DEVELOPMENT.md), [skill rationale](SKILL-WORKFLOW.md), [programme](DESIGN-PROGRAMME.md), [maturity](MATURITY.md); focused Astra-aligned guidance, scoped checks, public commands and reviewed combined revisions |
 | E16/E19: teachable core, newcomer/veteran, from scratch/custom code/art styles and artists | [Creator guide](ENGINE-EXPERIENCE.md), [first use](FIRST-USE-WALKTHROUGHS.md), [empty-project journeys](FROM-SCRATCH-WALKTHROUGHS.md); project/world/target/run, ordinary files, source admission, restart, import/reimport and recipient export |
@@ -108,7 +108,7 @@ This selects a development strategy, not a measured advantage, specific algorith
 
 The broad 3D camera/platform range and future multiplayer requirement are selected. [The baseline register](BASELINE-SPEC.md)
 now records G01–G10 decisions for source/recovery, world/transforms, shaders/light/media, play/water, networking and
-reference targets. [The build plan](../plans/VISION.md) now orders construction: a single-player showcase scene first, with multiplayer
+reference targets. [The vision and scope document](../plans/VISION.md) now orders construction: a single-player showcase scene first, with multiplayer
 fitness proven headless and transport after V1. Larger worlds, richer fluids/media and additional device families retain their explicit
 extension/qualification obligations; no architecture decision or numerical target is a running support claim.
 
@@ -272,12 +272,12 @@ removal, and quality allocation across views and systems. These are research que
 ## Method and status
 
 Use `/plan-module` at project level (with [engine architecture](../../.agents/skills/thrum-engineering/references/architecture.md)) to maintain this brief and write module briefs; use
-`/plan-module` for a module's research, design and milestones.
+`/plan-module` for a module's research, design and work packages.
 Keep requirements, selection, implementation, evidence and user acceptance separate. Existing research may later supply
 candidates; existing demonstrations do not select the architecture. The author has prior exposure to water research
 and repository rules, so this is a fresh requirements exercise, not a claim of blind technical independence.
 
 Current stage: 3D and desktop/Mac/browser/mobile scope recorded; custom host selected; coordinated research/design
 produced an integrated high-level recommendation and independently challenged contracts. Full hardware use is a
-selected goal (E21). On 5 November the owner redirected V1 to a single-player showcase scene; see [the build plan](../plans/VISION.md). The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
+selected goal (E21). On 5 November the owner redirected V1 to a single-player showcase scene; see [the vision and scope document](../plans/VISION.md). The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
 minimum devices/budgets, implementation, visual acceptance and platform qualification explicitly unfinished.

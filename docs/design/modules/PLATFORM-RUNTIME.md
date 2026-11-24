@@ -69,7 +69,7 @@ The [iOS runtime child](../../plans/PLATFORM-RUNTIME-IOS/DESIGN.md) and [M7 plan
 current-oriented-extent scene sizing to G3b: UIKit publishes full-bounds pixel extent and epoch; the render owner
 coherently prepares scene targets, projection, history reset and presenter for that extent. Rotation and recovery
 use the same policy. This native-resolution correction precedes G4 reconstruction/governor work and preserves
-explicit fixed-render-extent callers. `COOKED-DRAW:M1` needs `PLATFORM-RUNTIME-IOS:M7`; the extent milestone uses
+explicit fixed-render-extent callers. `COOKED-DRAW:WP1` needs `PLATFORM-RUNTIME-IOS:WP7`; the extent work package uses
 the diagnostic scene independently, and cooked visual acceptance stays with G5's unchanged items.
 
 The [Mac qualification plan](../../plans/PLATFORM-RUNTIME-MAC/PLAN.md) uses the existing

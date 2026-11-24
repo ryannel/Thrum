@@ -170,7 +170,7 @@ The exp2 experiment measured valley-to-native at a median of at most 0.07, a 95t
 maximum of at most 2.2. Diagnostic-to-native was at least 9.3, 30 and 107 respectively, the closest being the night
 stop. Under the rule, the thresholds would be 1.0, 1.44 and 6.5.
 
-Pixel parity is a regression tripwire. It is not visual review. Each milestone review still looks at the frames.
+Pixel parity is a regression tripwire. It is not visual review. Each work package review still looks at the frames.
 
 ## Repeatable route and baseline
 

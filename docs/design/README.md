@@ -2,7 +2,7 @@
 
 The design programme for a native-first, production-grade 3D engine on Mac, PC, browser and mobile app stores that makes full use
 of each device's hardware; see the [hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md). Purpose, V1 exit and
-gates live in [the brief](../plans/VISION.md#why) and the build order in [the module list](../plans/ARCHITECTURE.md); where an older design here disagrees, they win. Existing implementations are candidates for later reconciliation, not the target.
+gates live in [the vision and scope document](../plans/VISION.md#why) and the build order in [the module list](../plans/ARCHITECTURE.md); where an older design here disagrees, they win. Existing implementations are candidates for later reconciliation, not the target.
 
 - **Start here: [building a game](ENGINE-EXPERIENCE.md)** — project, world, target and run.
 - [Visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering): inspection lists, the evaluator and asynchronous owner steering.

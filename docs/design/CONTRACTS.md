@@ -4,7 +4,7 @@ Revision C4, 1 November 2026. Reconciled source, iteration and multiplayer basel
 [Decision record](ARCHITECTURE-DECISIONS.md) resolves A01–A05/J01–J04 and integrates the whole-plan review.
 All domain authors read this contract set and the [brief](ARCHITECTURE-BRIEF.md). Propose changes with affected owners;
 do not create a private alternative. The coordinating owner (`/plan-module` at project level, per [ORCHESTRATE.md](../../ORCHESTRATE.md)) reconciles both producer and consumers before accepting a change.
-[The build plan](../plans/VISION.md) sets functional gates and recorded baselines; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
+[The vision and scope document](../plans/VISION.md) sets functional gates and recorded baselines; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
 This document owns cross-module invariants; the five baseline specifications own selected algorithms and adapter
 policies; module designs own responsibility and consumer consequences. These are responsibilities, not
 a demand for separate crates or a universal messaging framework.
@@ -683,20 +683,20 @@ render/temporal path with bounded asynchronous readback under the one executor; 
 endpoint, acquire a surface, submit a rival queue or advance authority. Endpoint still capture keeps its separate
 no-history semantics. Disabled sequence capture adds no copy/readback work.
 The headless output enters the ordinary presenter/SurfaceOutput gate, including paused-world camera updates;
-capture cannot bypass admission or tick paused authority to force images. Mac M2 owns integration/qualification of
+capture cannot bypass admission or tick paused authority to force images. Mac WP2 owns integration/qualification of
 the shared tap on the real window, including output correspondence, lease lifetime and surface-loss cancellation.
 Fixed-time sequences prove appearance/evolution. Real-time motion proof uses actual elapsed host time, preserves
 stalls/gaps in image PTS and identifies sample/history/submission and clock domains. Neither establishes compositor
 swaps, physical cadence, EDR output or photon response. Engine images exclude OS/DOM/native UI unless separately
-captured and declared. All later visual milestones select the appropriate mode and target dependency, retain
+captured and declared. All later visual work packages select the appropriate mode and target dependency, retain
 independent visual review and explicitly mark genuinely attended observations with the reason. Mac qualification
-M2.2 retains its active built-in-panel swap proof; Screen Recording access is not an engine-image prerequisite.
+WP2.2 retains its active built-in-panel swap proof; Screen Recording access is not an engine-image prerequisite.
 Shipping cadence is measured with capture disabled; capture-on swaps remain labelled under capture and paired
 observer arms quantify overhead. Existing Chrome endpoint and simulator OS captures retain their fixed-time and
 function-only scopes until target T2 qualification; they cannot close submitted-temporal/runtime-motion criteria.
-Mac M2 qualifies the current surface path after T2 M0 without waiting on parked APPLE-TILE. Mac M3 explicitly
-needs APPLE-TILE M3 and owns fresh motion/cadence and windowed-tap/tooling revalidation after its surface changes;
-no earlier result qualifies changed output. This later dependency cannot delay current-path M2 tooling.
+Mac WP2 qualifies the current surface path after T2 WP0 without waiting on parked APPLE-TILE. Mac WP3 explicitly
+needs APPLE-TILE WP3 and owns fresh motion/cadence and windowed-tap/tooling revalidation after its surface changes;
+no earlier result qualifies changed output. This later dependency cannot delay current-path WP2 tooling.
 This extension settles producer/consumer ownership for planning; no implementation or device result is implied.
 
 [RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select

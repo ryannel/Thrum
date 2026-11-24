@@ -126,7 +126,7 @@ interior may exclude weather while retaining window light. Mobile may use simple
 and fewer resident assets without changing game authority. Browser demos run the portable recipe at showcase quality
 with explicit download/startup limits and never cap native. A showcase can select advanced providers without making them universal dependencies.
 
-V1 targets the [build plan](../plans/VISION.md#how-it-will-be-judged)'s 120 Hz M3 Max and 60 Hz Chrome rows; other
+V1 targets the [vision and scope document](../plans/VISION.md#how-it-will-be-judged)'s 120 Hz M3 Max and 60 Hz Chrome rows; other
 profiles set targets after V1. The [runtime budget table](modules/PLATFORM-RUNTIME.md#whole-scene-budget-proposal--all-unmeasured)
 is the post-V1 numeric envelope source. It covers the whole scene, not each module independently. For CPU work, the
 critical path and work/parallel-capacity lower bounds both matter. GPU time is bounded below by dependent work and

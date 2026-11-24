@@ -111,7 +111,7 @@
     "RAY_TRACING_M1": {
       "implementation": "Opt-in named ray-query device request and a scene-local structure over arena entities. Mesh structures read the draw buffers and the scene structure is rebuilt from the frame's interpolated draw poses.",
       "functional_validation": "Metal builder checks passed device admission and fallback, geometry membership, moving poses, device replacement, discarded recording and no-demand byte parity.",
-      "experienced_quality": "Structure diagnostics only. Rendered ray effects begin in later milestones.",
+      "experienced_quality": "Structure diagnostics only. Rendered ray effects begin in later work packages.",
       "platform_performance": {
         "mac_apple_tile": "Contended isolated structure timings and incremental residency at 10,000 and 100,513 slots on the 30-core GPU M3 Max. No performance qualification.",
         "browser": "No ray structure run.",
@@ -174,7 +174,7 @@
       "functional_validation": "M13.1 through M13.9 builder CPU and dependency checks passed on mac-metal at 0df0b5f26, including radiative-day, shore-margin, footprint-integral and eroded column-form Sun-path/medium regressions.",
       "experienced_quality": "not_qualified_no_rendered_fog_claim",
       "platform_performance": "not_measured_gpu_and_display_not_qualified",
-      "scope": "Game-supplied surface and fog data, world/air frame factors, cooling and clear-air range in State, exact/footprint query fidelity and f64 optical and medium references. Visibility queries preserve footprint sums; Sun paths and medium coefficients retain column erosion. GPU consumers remain later milestones; exact images use the shared main-branch check.",
+      "scope": "Game-supplied surface and fog data, world/air frame factors, cooling and clear-air range in State, exact/footprint query fidelity and f64 optical and medium references. Visibility queries preserve footprint sums; Sun paths and medium coefficients retain column erosion. GPU consumers remain later work packages; exact images use the shared main-branch check.",
       "evidence": [
         "../../.orchestrate/evidence/CLOUDS/M13.md",
         "../../.orchestrate/evidence/CLOUDS/M13-verification.json",
@@ -186,7 +186,7 @@
       "functional_validation": "Numerical authority and boundary tests on mac-metal; final check and source identities are in CLOUDS LOG.md and M1 evidence.",
       "experienced_quality": "not_qualified_cpu_milestone_no_rendered_cloud_claim",
       "platform_performance": "not_measured_no_gpu_or_display_speed_claim",
-      "scope": "Weather ticks and integrated drift, continuous procedural columns with clear top=base, bounded eroded full/coarse density, placed footprint/volume paths, conformance and point/disc optical references. Ground condensate and GPU consumers remain later milestones.",
+      "scope": "Weather ticks and integrated drift, continuous procedural columns with clear top=base, bounded eroded full/coarse density, placed footprint/volume paths, conformance and point/disc optical references. Ground condensate and GPU consumers remain later work packages.",
       "evidence": [
         "../../.orchestrate/evidence/CLOUDS/M1.md"
       ]
@@ -589,7 +589,7 @@
         "../../.orchestrate/evidence/render/ios-extent/README.md"
       ],
       "scope": "A separate static-library UIKit shell attaches the Winit window to its active UIWindowScene through a synchronous borrowed UIView bridge, and owns only lifecycle, drawable acquisition and presentation. The shared V1 fixed-step host runs the same 10k/1.5k-moving world, clustered scene and two Sun cascades. Hidden/overload time is explicitly excluded or counted. G3b (7 Nov) moved world and rendering off UIKit: UIKit forwards targets, touches and lifecycle; the world lane ticks; a render owner acquires late under an epoch lease with an exact one-present race bound. The fresh-simulator route exercises real background/foreground, surface replacement (plain, stalled, raced), denied drawables and real HID touch through production admission. G3b M5/M6 (8 Nov) added real rotation (full-bounds extent, resizeAspect, counted old-extent presents) and device-loss recovery through the public prepare/publish path with matched generations, triggered by Device::destroy (recovery, not detection). Physical-iPhone loss detection and recovery, cooked hot reload, and sustained device/visual budgets remain open.",
-      "extent_correction": "PLATFORM-RUNTIME-IOS M7 claimed, pending independent milestone review. Shared render owner atomically replaces scene targets and presenter, resets C07 history, rejects stale preparation and refits recovery candidates. Fresh iPhone 18 Pro / iOS 27.2 route passed with actual attachment/drawable/matrix/viewport records, two-reply rotation gaps and zero old-extent presents. Six graph textures per slot occupy 77,922,704 unpadded texel bytes in either orientation. This is builder-verified diagnostic simulator function. COOKED-DRAW M1.9-M1.11 remain gated on M7 acceptance and M1.10 is unchanged. Device performance and cooked visual acceptance remain open."
+      "extent_correction": "PLATFORM-RUNTIME-IOS WP7 claimed, pending independent work package review. Shared render owner atomically replaces scene targets and presenter, resets C07 history, rejects stale preparation and refits recovery candidates. Fresh iPhone 18 Pro / iOS 27.2 route passed with actual attachment/drawable/matrix/viewport records, two-reply rotation gaps and zero old-extent presents. Six graph textures per slot occupy 77,922,704 unpadded texel bytes in either orientation. This is builder-verified diagnostic simulator function. COOKED-DRAW WP1.9-WP1.11 remain gated on WP7 acceptance and WP1.10 is unchanged. Device performance and cooked visual acceptance remain open."
     },
     "V1_local_player_input": {
       "implementation": "partial_one_local_peer_keyboard_axes_through_shared_fixed_tick_input_frame_admission",
@@ -878,7 +878,7 @@
           "functional_validation": "CREATOR M1 and M2 independently passed on hardware Chrome 157. The proofs cover live mesh and texture edits, refusal recovery, a load change after frame 600, timestamp-work counters, row reasons and fresh timing windows. M3 replays the lead-commissioned ziggurat through the documented web command on Apple Metal WebGPU. A real browser pointer event changes its camera orbit slider and the next fixed capture shows the changed view.",
           "experienced_quality": "agent_reviewed M1 journey and M2 default/480px/off profiler screenshots, plus M3's two fixed submitted ziggurat stills and creator page with one camera orbit slider.",
           "device": "Chrome 157 Apple Metal hardware WebGPU on M3 Max, function only; no browser performance budget or physical display claim.",
-          "fresh_independent_exercise": "The same 43-line ziggurat source on e5de7027e70b ran live in Chrome; the fresh Opus agent reports Apple metal-3 with fallback false. Retained page captures show generation 1 drawn and camera orbit changed from 210 to 71 degrees by a slider drag. Function only; no browser timing claim. The earlier milestone review verdict remains unchanged pending the lead's next review."
+          "fresh_independent_exercise": "The same 43-line ziggurat source on e5de7027e70b ran live in Chrome; the fresh Opus agent reports Apple metal-3 with fallback false. Retained page captures show generation 1 drawn and camera orbit changed from 210 to 71 degrees by a slider drag. Function only; no browser timing claim. The earlier work package review verdict remains unchanged pending the lead's next review."
         },
         "other_targets": "No G6 runtime or physical-device qualification claimed for iOS, Android, Windows or Linux. Historical iOS-simulator compilation is compilation only."
       },
@@ -951,7 +951,7 @@
       "M10": {
         "implementation": "generation-owned labelled native copy/select witness and prepared WGSL twin implemented in a builder checkpoint; ordinary scenes disable the witness",
         "functional_validation": "merged source a9ac2a2b passes eight focused native/timing/boundary tests and both recipes' 3856 paired T2 frames, complete half-texel validation and realtime source accounting; the merged simulator encoded-native background refusal/reset passes; the full repository gate and official merge pass",
-        "experienced_quality": "builder inspected full-size merged diagnostic stills, realtime contacts and cut-adjacent frames on both recipes, simulator endpoints and portable OS-window Sun/noon/night matched-state references; complete D10.5 input/resize/recovery and independent milestone review remain open",
+        "experienced_quality": "builder inspected full-size merged diagnostic stills, realtime contacts and cut-adjacent frames on both recipes, simulator endpoints and portable OS-window Sun/noon/night matched-state references; complete D10.5 input/resize/recovery and independent work package review remain open",
         "real_window_function": "D10.5 has partial portable settled OS-window proof on merged a9ac2a2b; interactive capture timed out during interrupted Computer Use; both-recipe input, resize and replacement proof remains open; the latest preflight is unlocked with the existing Screen Recording grant",
         "platform_performance": {
           "mac": "unmeasured; composition and lifecycle proof only, no MetalFX, speed or panel claim",
@@ -963,7 +963,7 @@
       "M11": {
         "implementation": "detached bounded provider extent preparation with ready WGSL twin, generation admission/completion retention, natural surface and rejection resets, generation-tagged native failure recovery and completion-only named Metal segment outcomes",
         "functional_validation": "seven focused actual Metal tests pass; merged d24ded771 implementation gate passes; both recipes pass twenty fixed arms with 9620 verified images and twelve exact 481-frame comparisons; eight realtime arms retain 15415 images with zero ring/writer omissions; complete source archives and reset/event/timing audits are retained. Follow-up actual Metal observer/reply regression proves poll-first and tap-first native loss with the wgpu flag false, generation-8 tap restart/history reset after publication, and rejection remaining a normal prepared-twin frame; proof and source identity are linked from the M11 evidence",
-        "experienced_quality": "builder inspected full-resolution ordinary and labelled diagnostic recovery frames, full-interval host-time sequences and reset-adjacent binary tiles on both recipes; independent milestone review is owed",
+        "experienced_quality": "builder inspected full-resolution ordinary and labelled diagnostic recovery frames, full-interval host-time sequences and reset-adjacent binary tiles on both recipes; independent work package review is owed",
         "platform_performance": {
           "mac": "positive completion-gated native spans and explicit missing/Unmeasured outcomes; shared-load capture-ON diagnostic only, no speed, MetalFX, panel or physical-loss qualification",
           "browser": "no new target qualification; prior scoped Wasm compilation remains scoped to its checkpoint",
@@ -974,7 +974,7 @@
       "M12": {
         "implementation": "integrated recipe cost bench and optional read-only light-list/omission and simulator-video diagnostics; existing renderer mechanisms remain unchanged",
         "functional_validation": "Retained aedbe55ede8d cost, native exact, Chrome exact/light-list/omission and cooked simulator lifecycle proofs pass. The full merged repository gate passes. Fresh 530e5546b actual-window Sun/night/noon matches, E/Q controls, resize/restoration and lease-generation-2/3 recovery pass under both recipes.",
-        "experienced_quality": "Builder inspected Chrome and simulator proof plus full-size OS/T2 window pairs and host-time control/recovery sequences under both native recipes. Independent milestone review remains owed.",
+        "experienced_quality": "Builder inspected Chrome and simulator proof plus full-size OS/T2 window pairs and host-time control/recovery sequences under both native recipes. Independent work package review remains owed.",
         "platform_performance": {
           "mac": "both ten-minute capture-OFF thermal/load windows retained, full scene/present and inclusive CPU costs; descriptive shared-load only; native factory/twin timing limitations explicit; no speed promotion, MetalFX, physical replay traffic or panel cadence qualification",
           "browser": "exact output, realtime sources, supported GPU light path and CPU overflow/tie readbacks; no speed or enlarged GPU capacity claim",
@@ -998,7 +998,7 @@
       },
       "M2": {
         "implementation": "builder_implemented_reactive_forward_targets_opt_in_stored_temporal_inputs_GPU_exposure_texture_submission_order_history_keys_and_game_diagnostic",
-        "functional_validation": "Required milestone checker passes all seven item commands and the repository gate on Mac Metal and hardware Chrome WebGPU; temporal inputs, exposure conversion and submission-order lifecycle assertions pass.",
+        "functional_validation": "Required work package checker passes all seven item commands and the repository gate on Mac Metal and hardware Chrome WebGPU; temporal inputs, exposure conversion and submission-order lifecycle assertions pass.",
         "experienced_quality": "Builder inspected the submitted temporal diagnostic; ordinary colour byte equality and 1,966 current exact-baseline comparisons pass; independent review is owed.",
         "platform_performance": {
           "mac": "not_measured_no_cadence_or_speed_claim",
@@ -1010,7 +1010,7 @@
       },
       "M3": {
         "implementation": "Registry-selected portable TAAU with cubic retained-colour interpolation, graded depth-footprint support, shared submitted colour/depth history, pre-tone integration, independent 32-phase reference and five paired game motion witnesses.",
-        "functional_validation": "At source 4c0fd681, the pinned Mac/Chrome moving route, six Metal still checkpoints, history-disabled negative controls, exact cut/reset equality and suppressed-reset control pass. All 1966 exact native/Chrome baseline comparisons pass with references unchanged. Native strict Clippy, official Web compilation and documentation checks pass. Independent milestone review remains owed.",
+        "functional_validation": "At source 4c0fd681, the pinned Mac/Chrome moving route, six Metal still checkpoints, history-disabled negative controls, exact cut/reset equality and suppressed-reset control pass. All 1966 exact native/Chrome baseline comparisons pass with references unchanged. Native strict Clippy, official Web compilation and documentation checks pass. Independent work package review remains owed.",
         "experienced_quality": "On 18 November the builder judged fresh real-time TAAU on/off pairs for all five witnesses on Mac Metal and hardware Chrome WebGPU. Ordered native crops and original submission timestamps show no persistent ghost, delayed spawn, star shimmer or brightness lag. The record notes Chrome's softer terrain and coarser small props. The evidence covers engine submissions under the ordered-frame method.",
         "platform_performance": {
           "mac": "At 4c0fd681, paired 640x360 route resolve p50/p95 is 0.095167/0.104292 ms over 361 equal-input samples per arm, TAAU then off; capture at the same checkpoints, GPU serialized and host CPU load shared. The nine-times pixel heuristic is 0.856503 ms, a tripwire against the 0.2-0.5 ms estimate, not measured 1080p cost or an acceptance failure. Mac realtime spawn includes a 41.450375 ms startup submission gap before the spawn event; no cadence or hitch-free claim.",
@@ -1030,7 +1030,7 @@
           "ios": "Simulator function only."
         },
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M4/README.md",
-        "scope": "Native backing-size and transition lifecycle. Dynamic render scale and HDR belong to later milestones."
+        "scope": "Native backing-size and transition lifecycle. Dynamic render scale and HDR belong to later work packages."
       },
       "M5": {
         "implementation": "Five prepared Portable TAAU scales use a drawn subrectangle within native-size attachments, with per-view mip bias, retained output-grid colour and previous render-grid depth.",
@@ -1206,7 +1206,7 @@
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
       "current_design_sha256": "d64f831cbaedeb8ebdba6985e9e81c1d65c5bdde29723ba6e29f13961a03c15f",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion. 9 Nov: G3b PLATFORM-RUNTIME-IOS M7 implements coupled oriented scene/internal/surface extent and recovery refit, with a passing fresh-simulator route and builder-inspected images. The claim awaits independent milestone review. COOKED-DRAW M1 depends on M7 acceptance, with its cooked visual and T2 handoff obligations retained.",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion. 9 Nov: G3b PLATFORM-RUNTIME-IOS WP7 implements coupled oriented scene/internal/surface extent and recovery refit, with a passing fresh-simulator route and builder-inspected images. The claim awaits independent work package review. COOKED-DRAW WP1 depends on WP7 acceptance, with its cooked visual and T2 handoff obligations retained.",
       "historical_architecture_findings": [
         "A01"
       ],
@@ -3140,7 +3140,7 @@
         "implementation": "partial",
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_review_owed",
-        "scope": "WATERS M2/M3: one open-sea contribution, shared sky lighting, displaced depth, temporal inputs and a ticking example on Mac and Chrome. Shorelines, other bodies, wakes, foam and full optics remain in later milestones.",
+        "scope": "WATERS WP2/WP3: one open-sea contribution, shared sky lighting, displaced depth, temporal inputs and a ticking example on Mac and Chrome. Shorelines, other bodies, wakes, foam and full optics remain in later work packages.",
         "correctness": "Metal forward cache/LEAN readbacks, submitted depth, CPU-oracle motion, stage and reset probes remain as in M2. Hardware Chrome passes independent f64 long-cache and cascade checks through interpolation, repeated ticks, real tab visibility, a hitch and actual device replacement. M3's resume correction independently checks discarded partial ticks, the held endpoint and the first new full tick against C02. No simulator claim.",
         "visuals": "M2's moment reconstruction retains continuous wave-shaped foreground shading. On merged M3 source, four Chrome noon views match the portable Metal sea with no perceptible step down; builder and fresh opinion pass the specified crest, swell, horizon and repetition cues. A 62-frame Chrome pan passes sampled continuity; its near-half-tick sampling limit is explicit and within-tick field correctness is separately proved. Formal M3 review is owed.",
         "device": "Apple M3 Max native/portable Metal and hardware Chrome WebGPU. M2 capture-off cost remains a concurrent-load tripwire; Chrome callback intervals describe its page clock with capture active. No physical display-cadence or quiet-machine qualification.",
@@ -3174,7 +3174,7 @@
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS M5: capacity-bounded tick query, asynchronous GPU readback, public mailbox and example-owned craft and buoy dynamics. Wake and surf query inputs belong to M6 and M13.",
         "correctness": "Metal wave and chart conformance includes stage edits between dispatch and use, historical chart samples, and new wave support across the shore. The merge gate passed the gale endurance, lake shelter and current tests. Hardware Chrome reconciled individual reply ages and counters across a hitch.",
-        "visuals": "Submitted 1440p Metal motion from the merged build covers side and chase views in trade wind and gale at 0, 5 and 15 m/s. The revised 15 m/s head-sea view keeps the deck above both previously reported crests. Formal milestone review is pending.",
+        "visuals": "Submitted 1440p Metal motion from the merged build covers side and chase views in trade wind and gale at 0, 5 and 15 m/s. The revised 15 m/s head-sea view keeps the deck above both previously reported crests. Formal work package review is pending.",
         "device": "M3 Max Metal and hardware Chrome WebGPU. The capacity of 2,048 points per tick uses 3,694,848 bytes for query buffers. Submitted-output timing was recorded under shared load. The CPU cost of a full-capacity stage change was unmeasured.",
         "evidence": "../../.orchestrate/evidence/WATERS/M5-r2.md"
       },
@@ -3184,7 +3184,7 @@
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS M6 adds the optional, two-level dispersive interaction field. Each wet region is solved at the depths it needs. Submitted wake endpoints feed the surface and the batched body query.",
         "correctness": "Metal covers split source bands, isolated regions, depth damping, current advection, impulses and reaction capacities, the float off the track, transactional clock changes and the public query comparison against submitted GPU state.",
-        "visuals": "The elapsed-time Metal routes inspect wake shape, turn and stop continuity, the moving windows in trade wind, and the lake impact and crossing. Independent milestone review is pending.",
+        "visuals": "The elapsed-time Metal routes inspect wake shape, turn and stop continuity, the moving windows in trade wind, and the lake impact and crossing. Independent work package review is pending.",
         "device": "M3 Max Metal and hardware Chrome WebGPU. The paired 1440p record includes CPU labelling, active regions and depth solves under concurrent load. The open-sea pair uses completion brackets because the timestamp batches were rejected.",
         "evidence": "../../.orchestrate/evidence/WATERS/M6/README.md"
       },
@@ -3194,7 +3194,7 @@
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS M7 adds two-level whitewater, the depth-limited shore source and a shore film that blends colour and reactive coverage over the ground. The water contribution transports four stocks and the example lends the cooked ranked pattern.",
         "correctness": "Metal checks cover chart current, swash, mixed-stock transfer, hitch ageing and endpoint resets. Live beach source parcels obey the point-query dry support, and the dry film preserves ground depth and motion while stranded foam raises reactive coverage. Hardware Chrome reads submitted foam banks during wind and craft removal.",
-        "visuals": "Submitted Metal stills and elapsed-time sequences cover whitecaps in gale, trade wind and calm, the craft at 6 and 12 m/s through stop and fade, and the beach and lake. Independent milestone review is pending.",
+        "visuals": "Submitted Metal stills and elapsed-time sequences cover whitecaps in gale, trade wind and calm, the craft at 6 and 12 m/s through stop and fade, and the beach and lake. Independent work package review is pending.",
         "device": "M3 Max Metal and hardware Chrome WebGPU. Paired 2560×1440 Metal timing under concurrent load recorded a lower shore-film pass cost with the bounded inverse than with the direct inverse. The sea's timestamp fault leaves completion brackets for that scene. Display cadence is unqualified.",
         "evidence": "../../.orchestrate/evidence/WATERS/M7/REVISION.md"
       },
@@ -3688,7 +3688,7 @@
       "deterministic_session": {
         "implementation": "Caller-clocked host and client over the link interface. Baseline restore, post-commit set delivery, redundant timed input and ordered commands, adaptive lead, input results, bounded playout, listen-host admission and authority termination.",
         "correctness": "The SESSION M2 tests cover independent reference-crowd worlds, conditioned delivery, negotiation, commands and result acknowledgement, authority failure and the playout position. Release matches compare all 1,200 digest checkpoints per client for both A0 and the harsh profile.",
-        "visuals": "Headless milestone. Windowed session presentation belongs to SESSION M7.",
+        "visuals": "Headless work package. Windowed session presentation belongs to SESSION WP7.",
         "device": "Native M3 Max Mac with the in-memory link and virtual time.",
         "performance": "Initial Mac release measurements taken under load. The cost record includes per-peer wire traffic, tick and send timing, warmed allocations and tripwires.",
         "evidence": "../../.orchestrate/evidence/SESSION/M2.md"
@@ -5201,7 +5201,7 @@
       "technique": "Forward rest-sheet fields with full LEAN moment pyramids and anisotropic footprint filtering",
       "source": "../plans/WATERS/DESIGN.md#the-surface-and-the-frame-contract",
       "owner": "thrum-sea field products and thrum-water surface",
-      "status": "Native and portable Metal readbacks at 8 and 20 m/s check every cache and mip texel; paired half displacement errors stay below 0.0392 mm height and 0.000244 slope without increasing the texture allocation. Directional covariance retains omitted waves and far fades, and visible facets sample the lent sky above the horizon. Forward cache cost remains a concurrent-load tripwire above the 0.2\u20130.3 ms estimate. No qualified speedup, browser output or physical cadence claim; near-field highlight polish and independent milestone review remain owed.",
+      "status": "Native and portable Metal readbacks at 8 and 20 m/s check every cache and mip texel; paired half displacement errors stay below 0.0392 mm height and 0.000244 slope without increasing the texture allocation. Directional covariance retains omitted waves and far fades, and visible facets sample the lent sky above the horizon. Forward cache cost remains a concurrent-load tripwire above the 0.2\u20130.3 ms estimate. No qualified speedup, browser output or physical cadence claim; near-field highlight polish and independent work package review remain owed.",
       "evidence": "../../.orchestrate/evidence/WATERS/M2-forward.md"
     },
     {

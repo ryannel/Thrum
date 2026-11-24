@@ -5,7 +5,7 @@ match the owner's standard. Add new examples at the top, and keep about ten; dro
 the same lesson.
 
 Each example records:
-- the milestone and item;
+- the work package and item;
 - what the captures showed;
 - the evaluator's verdict;
 - the owner's verdict;
