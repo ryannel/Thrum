@@ -629,7 +629,7 @@
           "id": "M5.11",
           "statement": "An iOS device turn takes one simulator lock or reuses the simulator lock held by an ancestor. A caller under the GPU lock alone is refused before device use. Two operations in one turn share the owned UDID. Two independent cases take separate turns, each ending in verified shutdown before unlock. The worker deadline reserves time for cleanup within the outer timeout. Completion, worker failure, deadline expiry and worker cancellation verify shutdown before unlock. A failed shutdown check fails the run. The next turn recovers the stranded Thrum device and leaves the unrelated device alone. Guard: fast lifecycle tests with simulated device state and time in ./dev check.",
           "check": "PYTHONPATH=scripts python3 -m unittest test_simulator_lifecycle",
-          "ask": "Trace HOST M4.5, APPLE-PRESENTATION D6.7, CULLING M2.2, COOKED-DRAW M1.7–M1.9, PLATFORM-RUNTIME-IOS M7.2 and the published T2 capture command. Does each hold exactly one simulator lock from selection through boot and verified shutdown? Does the outer lock holder wait on the supervisor's PID, including across the attributed launcher handoff? On outer termination, can child termination and fresh shutdown verification finish within the runner's ten-second grace? If verification is interrupted or fails, does the next holder verify the stranded device is shut down before starting new device work?",
+          "ask": "Trace HOST M4.5, APPLE-PRESENTATION D6.7, CULLING M2.2, COOKED-DRAW M1.7\u2013M1.9, PLATFORM-RUNTIME-IOS M7.2 and the published T2 capture command. Does each hold exactly one simulator lock from selection through boot and verified shutdown? Does the outer lock holder wait on the supervisor's PID, including across the attributed launcher handoff? On outer termination, can child termination and fresh shutdown verification finish within the runner's ten-second grace? If verification is interrupted or fails, does the next holder verify the stranded device is shut down before starting new device work?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SESSION/M5/simulator-lifecycle/cpu-circle-query.log",
@@ -672,7 +672,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired."
     },
     {
