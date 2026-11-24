@@ -165,8 +165,11 @@ func supervise(_ arguments: [String], log: FileHandle, control: LauncherControl)
             else if elapsed >= 1 { escalationPhase = "term" }
         }
         if termination.si_pid == 0 {
-            if waitid(P_PID, id_t(pid), &termination, WEXITED | WNOHANG | WNOWAIT) < 0 {
-                if errno == EINTR { continue }
+            var result: Int32
+            repeat {
+                result = waitid(P_PID, id_t(pid), &termination, WEXITED | WNOHANG | WNOWAIT)
+            } while result < 0 && errno == EINTR
+            if result < 0 {
                 throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
             }
             if termination.si_pid != 0 {

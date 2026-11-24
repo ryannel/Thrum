@@ -15,6 +15,8 @@ const fixture = fileURLToPath(import.meta.url);
 const start = (role, output, mode, ...args) => spawn(process.execPath, [fixture, '--fixture', role, output, mode, ...args], { stdio: ['ignore', 'ignore', 'pipe'] });
 const readLauncherReceipt = async output => JSON.parse(await read(path.join(output, 'launcher.json')) ?? 'null');
 const disconnectCases = ['disconnected', 'disconnect-during-validation', 'disconnect-after-close'];
+const respondsToClose = ['ordinary', 'status-2', 'missing-preflight', 'granted', 'missing-receipt',
+  'request-write', 'manifest-write', 'both-writes', 'receipt-write'];
 
 async function read(file) {
   try { return await fs.readFile(file, 'utf8'); }
@@ -36,7 +38,7 @@ async function processFixture(role, output, mode) {
   const close = path.join(output, 'cdp-close');
   if (mode === 'kill' || mode === 'unconfirmed') process.on('SIGTERM', () => {});
   await fs.writeFile(ready, String(process.pid));
-  if (role === 'browser' && ['ordinary', 'status-2', 'missing-preflight', 'granted', 'missing-receipt', 'request-write', 'manifest-write', 'both-writes', 'receipt-write'].includes(mode)) {
+  if (role === 'browser' && respondsToClose.includes(mode)) {
     await until(() => read(close));
     process.exitCode = mode === 'status-2' ? 2 : 0;
   } else if (role === 'browser' && mode === 'early-exit') {
@@ -109,7 +111,7 @@ async function supervisorFixture(output, mode, port, token) {
     if (mode === 'status-2') {
       // Hold the final receipt past the grace period with the wrapper gone.
       // The production finalizer must wait without escalating against dead children.
-      await sleep(450);
+      await sleep(1000);
     }
     if (mode !== 'missing-preflight') report.screen_recording_after = mode === 'granted';
     if (signal) report.chrome_exit_signal = { SIGTERM: 15, SIGKILL: 9 }[signal];
@@ -186,7 +188,8 @@ async function commandFixture(output, mode) {
         await fs.writeFile(path.join(output, 'http-closed'), 'yes');
         if (mode === 'capture-error-and-cleanup-error') throw new Error('injected cleanup failure');
       },
-      graceMs: 300, termMs: 600, killMs: 400, finalMs: 2500,
+      graceMs: mode === 'status-2' ? 600 : respondsToClose.includes(mode) ? 2000 : 300,
+      termMs: mode === 'kill' ? 600 : 1200, killMs: 400, finalMs: 2500,
     });
   } catch (error) {
     if (captureError) assert.equal(error, captureError);
