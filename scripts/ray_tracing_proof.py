@@ -242,7 +242,13 @@ def capture_soft(args):
         "--extent", "1280", "720",
     ]
     if args.route:
-        cmd.extend(["--route", str(ROOT / "examples/v1-game/routes/exit-flythrough.json")])
+        from run_v1_showcase import store_root
+
+        route = json.loads((ROOT / "examples/v1-game/routes/exit-flythrough.json").read_text())
+        route["cooked_root"] = store_root(args.store)
+        route_file = args.output / f"{args.name}.route.json"
+        route_file.write_text(json.dumps(route, indent=2) + "\n")
+        cmd.extend(["--route", str(route_file)])
     if args.verify_only:
         cmd.append("--verify-only")
     subprocess.run(cmd, cwd=ROOT, env=env, check=True)
