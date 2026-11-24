@@ -74,6 +74,13 @@ struct HostLimits {
     binding: Option<u64>,
 }
 
+// The rebuild cases need enough pixels to distinguish generations and compare
+// exact frames. The row write still uses the same multi-slice mesh.
+const REBUILD_LIMITS: HostLimits = HostLimits {
+    extent: [160, 90],
+    binding: None,
+};
+
 impl Default for HostLimits {
     fn default() -> Self {
         Self {
@@ -938,8 +945,7 @@ async fn environment_reference(
     mode: CullMode,
     product: Environment,
 ) -> Vec<u8> {
-    let (mut fresh, stats) =
-        host(cook, device, queue, caps, mode, true, HostLimits::default()).await;
+    let (mut fresh, stats) = host(cook, device, queue, caps, mode, true, REBUILD_LIMITS).await;
     settle(&mut fresh, &stats, generation(cook));
     let mut candidate = prepare_environment(fresh.visual_prepare_inputs(), product).await;
     assert!(fresh.publish_visual(&mut candidate).expect("fresh publish"));
@@ -1037,16 +1043,8 @@ fn visual_rebuild_preserves_rows(mode: CullMode, phase: u8) {
             &cook, &device, &queue, &caps, mode, product,
         ))
         .await;
-        let (mut live, stats) = host(
-            &cook,
-            &device,
-            &queue,
-            &caps,
-            mode,
-            true,
-            HostLimits::default(),
-        )
-        .await;
+        let (mut live, stats) =
+            host(&cook, &device, &queue, &caps, mode, true, REBUILD_LIMITS).await;
         settle(&mut live, &stats, generation(&cook));
         let updates = live.cooked_rows().expect("rows").updates();
         let mut candidate = if phase == 3 {

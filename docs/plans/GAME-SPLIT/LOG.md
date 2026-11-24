@@ -47,3 +47,6 @@
   atmosphere test bank rigs behind `proving`. The scheduled `exact-images` check
   continues to verify the Mac and Chrome baselines on main.
   [WP3 evidence](../../../.orchestrate/evidence/GAME-SPLIT/WP3/README.md)
+- 2026-11-25 Reduced the cooked-row visual rebuild fixture to 160×90 after a Metal test exceeded
+  the merge timeout. All 12 rebuild cases passed on Metal with the same row-write stages and
+  exact frame comparisons. [Metal run](../../../.orchestrate/evidence/GAME-SPLIT/WP3/rebuild-fixture-metal.log)
