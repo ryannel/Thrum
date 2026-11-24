@@ -1242,7 +1242,7 @@
         {
           "id": "M13.11",
           "statement": "In Chrome, submitted engine time advances during the trade-wind surf inspection. The crests, bore, swash and whitewater pass the same visual checks at matching views on Chrome and portable Metal, including the line of surf at 1 km and the handoff across the coarse foam window's edge.",
-          "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind settings and views of M13.4, M13.5 and M13.7, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The matched views pass M13.4's approach checks and M13.5's crest, bore and connected swash checks. 3. Both targets pass points 1–4 of M13.7, including the surf line from 1 km offshore and the separate handoff view across the coarse window's outer edge. Record any visible differences at the matched views.",
+          "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind settings and views of M13.4, M13.5 and M13.7, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The matched views pass M13.4's approach checks and M13.5's crest, bore and connected swash checks. 3. Both targets pass points 1\u20134 of M13.7, including the surf line from 1 km offshore and the separate handoff view across the coarse window's outer edge. Record any visible differences at the matched views.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",

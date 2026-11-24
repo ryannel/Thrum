@@ -1413,12 +1413,12 @@
       }
     },
     "M13": {
-      "definitions": "969f72764e78ba089edcd73256c3cee3338ec879947b159f3a11beb3b90a3ad4",
+      "definitions": "29ee1494a3e935c8b78be35b05d72c3a28977ee7e55ebb2e14e37a4d890eeb94",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS M13 is blocked with needs_context after three failed visual passes on the shoreline. The builder handoff is .orch",
-        "at": "2026-11-24T04:36:45Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
+        "at": "2026-11-24T04:46:50Z"
       }
     },
     "M15": {
@@ -1676,11 +1676,15 @@
     {
       "task": "WATERS M13 is blocked with needs_context after three failed visual passes on the shoreline. The builder handoff is .orchestrate/evidence/WATERS/M13-handoff.md (see its \"Design decision\" section); the unmerged work is at 48f4bd7fe on build/waters. A vertical cut of the f64 long-wave sheet shows dry/wet/dry runs in 30 of 173 rows (a ~1 m dry strip behind ~5.5 m of wet sheet), so tessellation and optical fades cannot close the gap between bore and swash. Decide in the WATERS design and M13 items how to limit the coherent trough or dissipate the bore, keeping the regular-wave draw-back rule and the single CPU/GPU sheet, choosing a modern technique that gives a plausible shipped-game shoreline (owner bar: shipped-game look and speed, not physical accuracy). Adjust M13.4, M13.5, M13.7, M13.8 and M13.11 so the builder can meet them; record any choice the owner has not made as an assumption. Done: the design and done-when file answer the question, ./dev check-docs passes, and the files are left for the plan command to commit.",
       "at": "2026-11-24T04:36:45Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-24T04:46:50Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T04:36:45Z"
+    "at": "2026-11-24T04:46:50Z"
   },
   "design_history": [
     {
