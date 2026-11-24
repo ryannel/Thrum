@@ -249,7 +249,7 @@
     {
       "id": "M4",
       "name": "A completed Chrome capture survives slow shutdown and leaves no browser or profile",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "The registered Chrome captures retain exact frame identities and decoded digests. A slow shutdown after validation succeeds when cleanup and both denied preflights are confirmed, with the actual termination recorded.",
       "items": [
         {
