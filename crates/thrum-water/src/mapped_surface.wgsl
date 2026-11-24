@@ -9,12 +9,18 @@ fn surface_row(cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
     let previous = row.water.x + record.level.z - (record.level.x + record.level.y);
     var swash = 0.0;
     var loss = 0.0;
+    var loss_without_long = 0.0;
     if FOAM_ENABLED {
         let before = row.gains * water.heights;
         swash = min(map.swash.x * length(before), map.origin_spacing_margin.w);
         loss = lost_wave_power(row.gains, gains, water.heights);
+        if SURF_CACHE_ENABLED {
+            loss_without_long = lost_wave_power(vec4(0.0, row.gains.yzw),
+                vec4(0.0, gains.yzw), water.heights);
+        }
     }
-    return SurfaceRow(row.water.x, previous, gains, select(-1e30, cell.bed, cell.inside), owned, swash, loss);
+    return SurfaceRow(row.water.x, previous, gains, select(-1e30, cell.bed, cell.inside),
+        owned, swash, loss, loss_without_long);
 }
 fn tail_gain(row: SurfaceRow) -> f32 { return row.gains.w; }
 
@@ -59,7 +65,10 @@ fn surface_opacity(row: SurfaceRow, world: vec3<f32>, view_y: f32) -> f32 {
     // A still interface has a readable reflection at contact. Moving swash
     // loses visible coverage as the advancing sheet runs out of thickness.
     let agitation = smoothstep(0.0, 0.4, length(water.heights));
-    return opacity * mix(1.0, smoothstep(0.0, 0.12, depth), agitation);
+    // Surf draws a steep forward sheet. Preserve the reflective surface
+    // beneath shallow troughs and confine the ground blend to the thin swash.
+    let edge_depth = select(0.12, 0.055, SURF_CACHE_ENABLED);
+    return opacity * mix(1.0, smoothstep(0.0, edge_depth, depth), agitation);
 }
 
 fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {

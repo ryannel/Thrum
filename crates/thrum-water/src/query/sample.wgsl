@@ -4,6 +4,7 @@ struct QueryPoint {
     slope: vec2<f32>, body: u32, has_bed: u32,
     gains: vec4<f32>,
     dent: vec4<f32>,
+    surf_stage: vec4<f32>,
 }
 struct Settings {
     origin: vec2<f32>, count: u32, components: u32,
@@ -22,7 +23,7 @@ struct Answer {
     current_bed: vec4<f32>,
     body_flags: vec4<u32>,
     cascades: array<CascadeSample, 3>,
-    padding: f32,
+    cut_nodes: u32,
     wake: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> settings: Settings;
@@ -39,11 +40,22 @@ fn cascade_wave(point: QueryPoint, band: u32) -> Wave {
     return cascade_column(point.position / extent, band, lod);
 }
 
-@compute @workgroup_size(64)
-fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
-    let index = invocation.x;
-    if index >= settings.count { return; }
-    let point = points[index];
+struct QueryWave { wave: Wave, cut_nodes: u32, }
+
+const QUERY_WIDTH = 64u;
+
+fn query_gains(point: QueryPoint) -> vec4<f32> {
+    let row = point.level_current_bed;
+    let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
+    return limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);
+}
+
+fn plain_query(point: QueryPoint, gain: f32) -> QueryWave {
+    return QueryWave(long_wave(point.position - settings.origin, point.dt, gain,
+        settings.lengths_chop.w, settings.components), 0u);
+}
+
+fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWave) {
     let row = point.level_current_bed;
     var out: Answer;
     out.body_flags = vec4(point.body, 0u, point.has_bed, 0u);
@@ -65,8 +77,8 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
     }
     if point.body != 0xffffffffu {
         let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
-        let gains = limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);
-        let long = long_wave(point.position - settings.origin, point.dt, gains.x, settings.lengths_chop.w, settings.components);
+        let long = result.wave;
+        out.cut_nodes = result.cut_nodes;
         let long_slope = world_slope(long);
         var rate = long.velocity.y - dot(long_slope, long.velocity.xz);
         var slope = point.slope + long_slope;

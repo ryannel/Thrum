@@ -9,7 +9,8 @@ pub(crate) struct Component {
     pub(super) phase: f32,
     pub(super) omega: f32,
     pub(super) inverse_k: f32,
-    pub(super) padding: [f32; 2],
+    pub(super) shore_sector: u32,
+    pub(super) padding: u32,
 }
 
 pub(crate) const COMPONENT_LIMIT: usize = 192;
@@ -51,7 +52,8 @@ impl Component {
             phase: component.anchored_phase(origin.map(f64::from), seconds) as f32,
             omega: component.frequency() as f32,
             inverse_k: x.hypot(z).recip() as f32,
-            padding: [0.0; 2],
+            shore_sector: thrum_water_model::shore_sector(component.wave_vector),
+            padding: 0,
         }
     }
 }

@@ -3217,6 +3217,16 @@
         "device": "M3 Max Metal and hardware Chrome WebGPU. The paired 1440p record includes CPU labelling, active regions and depth solves under concurrent load. The open-sea pair uses completion brackets because the timestamp batches were rejected.",
         "evidence": "../../.orchestrate/evidence/WATERS/M6/README.md"
       },
+      "waters_gpu_surf": {
+        "implementation": "partial",
+        "functional_validation": "target_guards_passed",
+        "experienced_quality": "qualification_open",
+        "scope": "WATERS M13 draws the forward surf sheet, cuts its highest surface for gameplay, and retains and redistributes depth-limited shore birth in the existing whitewater stocks.",
+        "correctness": "Metal verified the folded float column, submitted depth and motion, and the birth budget across breaking, subcritical, calm, omitted-wave and dry cases. Hardware Chrome verified 14,275 cache nodes with 0.422 mm maximum displacement error and zero faults.",
+        "visuals": "Metal and Chrome submit curved crests, visible fresh film and a distant shore line. Elevated Metal inspection found angular lips that still need work. The visual items remain open.",
+        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 × 1440 gale arm evaluated 51.11 million nodes for 48 stations and took 12.39 s in the query pass under shared load. The figures are a tripwire and the query does not sustain real-time use at that load.",
+        "evidence": "../../.orchestrate/evidence/WATERS/M13-handoff.md"
+      },
       "waters_whitewater": {
         "implementation": "partial",
         "functional_validation": "passed",

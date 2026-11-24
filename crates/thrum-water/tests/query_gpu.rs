@@ -1,79 +1,17 @@
 //! Mac Metal proof of the public query mailbox through the renderer.
 use crate::swash_gpu;
 
+use crate::frame_fixture::{Clock, QUERY_EXTENT, Source, query_host};
 use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
-use swash_gpu::{Clock, Source};
-use thrum_render::{
-    atmosphere::AtmosphereFrame,
-    capabilities::DeviceCapabilities,
-    present::SurfaceProfile,
-    runtime::{FrameConfig, FrameHost, SurfaceOutput},
-    synthetic::{FrameLighting, OUTPUT_FORMAT, SyntheticScene, SyntheticView},
-};
+use thrum_render::runtime::{FrameHost, SurfaceOutput};
 use thrum_sea_model::{Cascade, Forcing, LongWaves, Spectrum};
 use thrum_water::{
     Profile, Water,
     query::{BodyQuery, QueryLimits, QueryPoint},
 };
-
-fn query_host(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    caps: &DeviceCapabilities,
-    clock: Clock,
-    extent: [u32; 2],
-) -> (FrameHost<Clock, Source>, wgpu::TextureView) {
-    let target = device
-        .create_texture(&wgpu::TextureDescriptor {
-            label: Some("query scene output"),
-            size: wgpu::Extent3d {
-                width: extent[0],
-                height: extent[1],
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: OUTPUT_FORMAT,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[],
-        })
-        .create_view(&wgpu::TextureViewDescriptor::default());
-    let scene = SyntheticScene::grid(1).expect("fixture");
-    let view = SyntheticView::perspective(
-        [-8.0, 4.0, 0.0],
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        55_f32.to_radians(),
-        1.5,
-        0.1,
-        500.0,
-    )
-    .expect("camera");
-    let lighting = FrameLighting::Atmosphere(
-        AtmosphereFrame::new([0.3, 0.93, 0.2], 100_000.0, [1.0; 3], 55.0, 1).expect("noon"),
-    );
-    let host = pollster::block_on(FrameHost::new(
-        caps,
-        queue,
-        FrameConfig {
-            render_extent: extent,
-            surface: Some(SurfaceProfile {
-                format: OUTPUT_FORMAT,
-                extent,
-            }),
-        },
-        clock,
-        Source { view, lighting },
-        scene,
-        1.0,
-    ))
-    .expect("frame host");
-    (host, target)
-}
 
 #[test]
 fn mailbox_samples_the_gale_at_its_use_tick() {
@@ -91,7 +29,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     else {
         return;
     };
-    let extent = [96, 64];
+    let extent = QUERY_EXTENT;
     let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(false), extent);
     let surface = SurfaceOutput {
         view: &target,

@@ -219,8 +219,8 @@ pub(super) struct Fixture {
     target: wgpu::TextureView,
     tap: WitnessTap,
     foam: Option<foam::Tap>,
-    pub mailbox: Mailbox,
-    pub query: QueryMailbox,
+    mailbox: Option<Mailbox>,
+    query: Option<QueryMailbox>,
     pub report: Arc<Mutex<WaterReport>>,
     _device_slot: MutexGuard<'static, ()>,
 }
@@ -229,7 +229,7 @@ impl Fixture {
     pub(super) const STEP: Duration = Duration::from_nanos(16_666_667);
 
     pub(super) fn new(map: Map, limits: Limits) -> Option<Self> {
-        Self::with_fields(map, limits, None)
+        Self::with_fields(map, Some(limits), None)
     }
 
     pub(super) fn new_foam(
@@ -237,20 +237,17 @@ impl Fixture {
         wave: Option<thrum_sea_model::Component>,
         wind: [f32; 2],
     ) -> Option<Self> {
-        Self::with_fields(
-            map,
-            Limits {
-                bodies: 0,
-                impulses: 0,
-                solves: 1,
-            },
-            Some((wave, wind)),
-        )
+        let limits = map.surf_profile().is_none().then_some(Limits {
+            bodies: 0,
+            impulses: 0,
+            solves: 1,
+        });
+        Self::with_fields(map, limits, Some((wave, wind)))
     }
 
     fn with_fields(
         map: Map,
-        limits: Limits,
+        limits: Option<Limits>,
         foam: Option<(Option<thrum_sea_model::Component>, [f32; 2])>,
     ) -> Option<Self> {
         let device_slot = INTERACTION_DEVICE
@@ -304,8 +301,8 @@ impl Fixture {
             tail_slope_variance: 0.0,
         };
         let profile = thrum_water::Profile {
-            interaction: Some(limits),
-            query: Some(QueryLimits {
+            interaction: limits,
+            query: limits.map(|_| QueryLimits {
                 points: 16,
                 max_age: 32,
             }),
@@ -325,8 +322,8 @@ impl Fixture {
             water.enable_foam(wind).expect("foam fixture");
             water.tap_foam()
         });
-        let mailbox = water.interaction_mailbox().expect("interaction mailbox");
-        let query = water.query_mailbox().expect("query mailbox");
+        let mailbox = water.interaction_mailbox();
+        let query = water.query_mailbox();
         let tap = water.tap_interaction();
         let report = water.report();
         host.set_scene_contribution(Box::new(water))
@@ -344,6 +341,14 @@ impl Fixture {
             report,
             _device_slot: device_slot,
         })
+    }
+
+    pub(super) fn mailbox(&self) -> &Mailbox {
+        self.mailbox.as_ref().expect("interaction fixture")
+    }
+
+    pub(super) fn query(&self) -> &QueryMailbox {
+        self.query.as_ref().expect("query fixture")
     }
 
     pub(super) fn draw(&mut self, tick: u64) {
@@ -466,6 +471,23 @@ impl Fixture {
         ))
         .to_vec();
         (witness, cells)
+    }
+
+    pub(super) fn foam_parcels(&self) -> (foam::Witness, Vec<[[f32; 4]; 2]>) {
+        let witness = self
+            .foam
+            .as_ref()
+            .expect("foam fixture")
+            .latest()
+            .expect("submitted foam");
+        let parcels = bytemuck::cast_slice(&thrum_test_support::readback::buffer(
+            &self.device,
+            &self.queue,
+            &witness.parcels,
+            ..,
+        ))
+        .to_vec();
+        (witness, parcels)
     }
 
     #[expect(

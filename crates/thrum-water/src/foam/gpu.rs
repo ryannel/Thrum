@@ -1,5 +1,8 @@
 use super::{Hull, Report, Whitewater, Witness};
-use crate::column::{COMPONENT_LIMIT, Component};
+use crate::{
+    column::{COMPONENT_LIMIT, Component},
+    surf::SurfGpu,
+};
 use bytemuck::{Pod, Zeroable};
 use thrum_render::binding;
 use thrum_render::{
@@ -18,6 +21,8 @@ const CELLS: u64 = (SIDE * SIDE) as u64;
 const SPACING: [f32; 2] = [0.25, 2.0];
 const MAX_TICKS: u64 = 8;
 const PASS: &str = "whitewater";
+const SURF_FIRST: u32 = 12;
+const SHORE_BIRTHS: u32 = 17;
 pub(super) const HULL_LIMIT: usize = 16;
 
 #[repr(C)]
@@ -74,8 +79,10 @@ pub(crate) struct Foam {
     stocks: wgpu::Buffer,
     settings: wgpu::Buffer,
     scratch: wgpu::Buffer,
+    shore_births: Option<wgpu::Buffer>,
     group: wgpu::BindGroup,
     pipelines: [wgpu::ComputePipeline; 3],
+    prepare_shore_births: Option<wgpu::ComputePipeline>,
     committed: Option<Frame>,
     recorded: Option<Frame>,
     step: bool,
@@ -97,7 +104,8 @@ impl Foam {
         format!(
             "const FOAM_SIDE: i32 = {SIDE};\nconst FOAM_SPACING = array({fine:?}, {coarse:?});\n\
              const HULL_LIMIT: u32 = {HULL_LIMIT}u;\nconst COMPONENT_LIMIT: u32 = {COMPONENT_LIMIT}u;\n"
-        ) + include_str!("../column.wgsl")
+        ) + include_str!("../column/records.wgsl")
+            + include_str!("../column.wgsl")
             + include_str!("sample.wgsl")
     }
 
@@ -128,6 +136,7 @@ impl Foam {
         field_layout: &[wgpu::BindGroupLayoutEntry],
         field: &[wgpu::BindGroupEntry<'_>],
         wake: bool,
+        surf: Option<&SurfGpu>,
     ) -> Self {
         use wgpu::BufferUsages as Usage;
         use wgpu::ShaderStages as Stages;
@@ -149,6 +158,14 @@ impl Foam {
             2 * CELLS * 32,
             Usage::STORAGE | Usage::COPY_SRC,
         );
+        let shore_births = surf.map(|_| {
+            buffer(
+                device,
+                "shore birth sources",
+                2 * CELLS * 48,
+                Usage::STORAGE,
+            )
+        });
         let mut entries: Vec<_> = field_layout
             .iter()
             .map(|&entry| {
@@ -162,11 +179,15 @@ impl Foam {
             binding::uniform(10, Stages::COMPUTE, 0),
             binding::storage(11, Stages::COMPUTE, false, 0),
         ]);
+        if surf.is_some() {
+            entries.extend(SurfGpu::layout(SURF_FIRST, Stages::COMPUTE));
+            entries.push(binding::storage(SHORE_BIRTHS, Stages::COMPUTE, false, 0));
+        }
         let group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
             entries: &entries,
         });
-        let bindings: Vec<_> = field
+        let mut bindings: Vec<_> = field
             .iter()
             .cloned()
             .chain([
@@ -184,6 +205,13 @@ impl Foam {
                 },
             ])
             .collect();
+        if let Some((surf, births)) = surf.zip(shore_births.as_ref()) {
+            bindings.extend(surf.entries(SURF_FIRST));
+            bindings.push(wgpu::BindGroupEntry {
+                binding: SHORE_BIRTHS,
+                resource: births.as_entire_binding(),
+            });
+        }
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(PASS),
             layout: &group_layout,
@@ -194,6 +222,15 @@ impl Foam {
             bind_group_layouts: &[Some(&group_layout)],
             immediate_size: 0,
         });
+        let shore = if surf.is_some() {
+            SurfGpu::source(0, SURF_FIRST) + include_str!("shore.wgsl")
+        } else {
+            "fn foam_wet(_level: u32, _local: vec2<i32>, plain: bool) -> bool { return plain; }
+             fn shore_rates(_level: u32, _local: vec2<i32>, loss: f32) -> vec2<f32> {
+                 return vec2(loss, 0.22 * loss);
+             }"
+            .to_owned()
+        };
         let source = (include_str!("../field.wgsl").to_owned() + &Self::source())
             .replace("@group(3)", "@group(0)")
             .replace(
@@ -202,12 +239,13 @@ impl Foam {
             )
             + &crate::map_gpu::declarations_at(0)
             + &crate::interaction::Interaction::sample_source(0, 7, 8, wake)
+            + &shore
             + include_str!("step.wgsl");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
         });
-        let pipelines = ["prepare_transport", "step_foam", "measure_held"].map(|entry_point| {
+        let pipeline = |entry_point| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some(entry_point),
                 layout: Some(&pipeline_layout),
@@ -216,14 +254,18 @@ impl Foam {
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 cache: None,
             })
-        });
+        };
+        let pipelines = ["prepare_transport", "step_foam", "measure_held"].map(pipeline);
+        let prepare_shore_births = surf.map(|_| pipeline("prepare_shore_births"));
         Self {
             whitewater,
             stocks,
             settings,
             scratch,
+            shore_births,
             group,
             pipelines,
+            prepare_shore_births,
             committed: None,
             recorded: None,
             step: false,
@@ -268,12 +310,18 @@ impl Foam {
         read
     }
 
-    pub(crate) fn resource_bytes(&self) -> [(String, u64); 3] {
+    pub(crate) fn resource_bytes(&self) -> impl Iterator<Item = (String, u64)> + '_ {
         [
             ("foam endpoints".into(), self.stocks.size()),
             ("foam transport".into(), self.scratch.size()),
             ("foam settings".into(), self.settings.size()),
         ]
+        .into_iter()
+        .chain(
+            self.shore_births
+                .iter()
+                .map(|buffer| ("shore birth sources".into(), buffer.size())),
+        )
     }
 
     #[expect(
@@ -405,6 +453,10 @@ impl Foam {
 
     pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
         pass.set_bind_group(0, &self.group, &[]);
+        if let Some(pipeline) = &self.prepare_shore_births {
+            pass.set_pipeline(pipeline);
+            pass.dispatch_workgroups(SIDE / 8, SIDE / 8, 2);
+        }
         let [prepare, step, held] = &self.pipelines;
         for pipeline in [prepare, step] {
             pass.set_pipeline(pipeline);

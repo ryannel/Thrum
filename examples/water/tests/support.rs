@@ -3,6 +3,8 @@
     reason = "shared public-seam fixture supports several focused GPU tests"
 )]
 pub(crate) mod island;
+pub(crate) mod surf;
+pub(crate) mod surf_frame;
 use std::time::Duration;
 use thrum_app::{
     Game, Gpu,
@@ -224,9 +226,7 @@ impl Fixture {
             .expect("submitted scene");
         self.witness = self.host.submitted_temporal_witness().cloned();
         let sample = thrum_test_support::wait::until("completion", Duration::from_secs(30), || {
-            self.device
-                .poll(wgpu::PollType::wait_indefinitely())
-                .expect("poll");
+            self.device.poll(wgpu::PollType::Poll).expect("poll");
             self.host.poll_completed().expect("completed")
         });
         assert!(

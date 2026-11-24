@@ -1,0 +1,112 @@
+{
+  "commit": "e8ceb60e0d5c9d4559f1ee36ab111c7fde7879f2",
+  "camera": {
+    "fov_degrees": 65.0,
+    "position": [
+      -112.0,
+      2.0,
+      30.0
+    ],
+    "target": [
+      -105.0,
+      -1.0,
+      -7.0
+    ]
+  },
+  "extent": [
+    2560,
+    1440
+  ],
+  "wind": "Gale",
+  "recipe": "native",
+  "source": ".orchestrate/evidence/WATERS/M7/cost.json",
+  "summary": {
+    "foam": {
+      "step": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 78.058542,
+        "completion_upper_ms": 20.617292,
+        "passes_ms": {
+          "V1 surface present": 14.854625,
+          "contribution compute": 0.0059165,
+          "sea cascade columns": 0.217979,
+          "sea cascade evolve": 0.058521000000000004,
+          "sea cascade rows": 0.1870835,
+          "sea cascade unpack": 0.036417,
+          "sea filtered 0 mip 1": 0.0401455,
+          "sea filtered 0 mip 2": 0.0121045,
+          "sea filtered 0 mip 3": 0.00675,
+          "sea filtered 0 mip 4": 0.0059795000000000004,
+          "sea filtered 0 mip 5": 0.0054795,
+          "sea filtered 0 mip 6": 0.005520499999999999,
+          "sea filtered 0 mip 7": 0.0049785,
+          "sea filtered 0 mip 8": 0.004937499999999999,
+          "sea filtered 1 mip 1": 0.032354,
+          "sea filtered 1 mip 2": 0.007208,
+          "sea filtered 1 mip 3": 0.005187499999999999,
+          "sea filtered 1 mip 4": 0.0049375,
+          "sea filtered 1 mip 5": 0.004792,
+          "sea filtered 1 mip 6": 0.008521,
+          "sea filtered 1 mip 7": 0.005020999999999999,
+          "sea filtered pack": 0.1449165,
+          "sea long waves": 0.352708,
+          "shore film": 10.1744375,
+          "synthetic Sun air shadow heights": 1.144313,
+          "synthetic Sun horizon heights": 0.0452915,
+          "synthetic Sun shadow far": 0.4851875,
+          "synthetic Sun shadow near": 0.0507915,
+          "synthetic exposure resolve": 0.48354149999999996,
+          "synthetic forward opaque": 2.359833,
+          "synthetic tone encode": 14.8353125,
+          "temporal exposure texture": 0.295667,
+          "temporal input witness": 14.763291500000001,
+          "water surface": 15.0154165,
+          "whitewater": 2.1340215000000002
+        }
+      },
+      "repeat": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 72.211,
+        "completion_upper_ms": 19.3768125,
+        "passes_ms": {
+          "V1 surface present": 14.539021,
+          "contribution compute": 0.006125,
+          "sea cascade columns": 0.2180625,
+          "sea cascade evolve": 0.0571875,
+          "sea cascade rows": 0.1865,
+          "sea cascade unpack": 0.036833,
+          "sea filtered 0 mip 1": 0.041375,
+          "sea filtered 0 mip 2": 0.014104499999999999,
+          "sea filtered 0 mip 3": 0.0076454999999999995,
+          "sea filtered 0 mip 4": 0.005729,
+          "sea filtered 0 mip 5": 0.0056665,
+          "sea filtered 0 mip 6": 0.0054375,
+          "sea filtered 0 mip 7": 0.004854,
+          "sea filtered 0 mip 8": 0.0048335,
+          "sea filtered 1 mip 1": 0.030125,
+          "sea filtered 1 mip 2": 0.0069375,
+          "sea filtered 1 mip 3": 0.005520499999999999,
+          "sea filtered 1 mip 4": 0.005083,
+          "sea filtered 1 mip 5": 0.004875,
+          "sea filtered 1 mip 6": 0.004791500000000001,
+          "sea filtered 1 mip 7": 0.005062499999999999,
+          "sea filtered pack": 0.1397295,
+          "sea long waves": 0.353,
+          "shore film": 9.979167,
+          "synthetic Sun air shadow heights": 0.2669795,
+          "synthetic Sun horizon heights": 0.0325625,
+          "synthetic Sun shadow far": 0.046333,
+          "synthetic Sun shadow near": 0.058771000000000004,
+          "synthetic exposure resolve": 0.0361245,
+          "synthetic forward opaque": 2.2740625000000003,
+          "synthetic tone encode": 14.512146,
+          "temporal exposure texture": 0.068438,
+          "temporal input witness": 14.438146,
+          "water surface": 14.801458
+        }
+      }
+    }
+  }
+}

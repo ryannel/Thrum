@@ -67,7 +67,7 @@ test-group = 'foam-scene'
 
 [[profile.default.overrides]]
 # One live interaction fixture at a time: a Metal device and several full-grid buffers each.
-filter = 'package(thrum-water) & (binary(=interaction_gpu) | (binary(=it) & test(/^foam_gpu::/)))'
+filter = 'package(thrum-water) & (binary(=interaction_gpu) | (binary(=it) & test(/^(surf_)?foam_gpu::/)))'
 test-group = 'water-interaction'
 
 [[profile.default.overrides]]

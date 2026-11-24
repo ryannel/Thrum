@@ -61,7 +61,7 @@ fn ranked_cover(stocks: vec4<f32>, point: vec2<f32>, footprint: f32) -> f32 {
 fn gaussian_lower_tail(x: f32) -> f32 {
     return 0.5 * (1.0 + sign(x) * sqrt(1.0 - exp(-0.63662 * x * x)));
 }
-fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32) -> vec4<f32> {
+fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32, face: f32) -> vec4<f32> {
     let variance = max(0.001, dot(row.gains * row.gains, foam_settings.jacobian_variance));
     let wind = smoothstep(5.0, 18.0, length(foam_settings.time_wind.zw));
     let caps = wind * gaussian_lower_tail((0.82 - mix(jacobian, 1.0, smoothstep(1.0, 9.0, footprint))) / sqrt(variance));
@@ -74,16 +74,32 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let held = foam_held();
     let placed = min(vec3(1.0), held.xyz * (caps / max(expected, 0.0001)));
     let sea = mix(vec3(0.04, 0.08, 0.10) * caps, placed, held.w);
-    let far = vec4(sea.xy, sea.z + 0.34 * shore, 0.0);
+    var far = vec4(sea.xy, sea.z + 0.34 * shore, 0.0);
+    if SURF_CACHE_ENABLED && row.loss > 0.0 {
+        // Continue the distributed shore source beyond the moving windows.
+        // At equilibrium the film spends 6 s fresh and 13 s aged.
+        let bed = map_cell(point.xz);
+        let birth = select(0.0, row.loss * 0.39, !bed.inside || point.y > bed.bed);
+        let air_birth = 0.22 * birth;
+        let air = air_birth / (air_birth + 1.0 / 2.4);
+        let film = clamp((birth + 0.60 * air / 2.4) / (birth + 1.0 / 19.0), 0.0, 1.0);
+        let shore_stocks = vec3(air, film * (6.0 / 19.0), film * (13.0 / 19.0));
+        far = vec4(sea + (vec3(1.0) - sea) * shore_stocks, 0.0);
+    }
     var stocks = foam_at(point.xz, far);
     // Dense shallow-water foam still leaves gaps between groups of bubbles.
     // Weight the coarse breakup by depth-limited power so offshore caps
     // and the hull's own film keep their contact profile.
-    let shore_mix = smoothstep(0.16, 0.95, row.loss);
+    let shore_mix = select(smoothstep(0.16, 0.95, row.loss),
+        smoothstep(0.015, 0.12, row.loss), SURF_CACHE_ENABLED);
     if shore_mix > 0.0 {
         let holes = foam_noise(point.xz * vec2(0.65, 1.18));
         let porous = mix(0.23, 0.83, smoothstep(0.24, 0.78, holes));
-        let cover = stocks.yz * mix(1.0, porous, shore_mix);
+        let shallow = mix(1.0, porous, shore_mix);
+        // Aged wash opens first. Fresh film at the breaker still bleaches
+        // the face before it spreads into the receding sheet.
+        let cover = stocks.yz * select(vec2(shallow), vec2(mix(1.0, porous, 0.35 * shore_mix),
+            shallow * mix(1.0, 0.72, shore_mix)), SURF_CACHE_ENABLED);
         stocks = vec4(stocks.x, cover, stocks.w);
     }
     // The stern ribbon carries submerged air alongside fresh film. In
@@ -104,7 +120,16 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let clouds = 0.62 * foam_noise(point.xz * vec2(0.47, 0.58) + 31.0)
         + 0.38 * foam_noise(point.xz * vec2(1.31, 1.12) - 17.0);
     let air = stocks.x * smoothstep(0.06, 0.42, stocks.x * mix(0.30, 1.70, clouds));
-    return vec4(air, ranked_cover(stocks, point.xz, footprint), stocks.zw);
+    let lace = ranked_cover(stocks, point.xz, footprint);
+    // The youngest film froths in a continuous front before the holes in
+    // the pattern resolve. The same stock then opens out into the wash.
+    var front = 0.0;
+    if SURF_CACHE_ENABLED && face > 0.0 {
+        let churned_front = 0.65 * foam_noise(point.xz * 1.7) + 0.35 * foam_noise(point.xz * 5.3 + 29.0);
+        front = smoothstep(0.0, 0.70, face) * smoothstep(0.01, 0.14, stocks.y) *
+            mix(0.42, 0.88, smoothstep(0.18, 0.83, churned_front));
+    }
+    return vec4(air, max(lace, front), stocks.zw);
 }
 
 @group(1) @binding(0) var shore_depth: texture_depth_2d;

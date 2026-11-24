@@ -78,6 +78,11 @@ impl Correction {
             let use_tick = answer.point.use_tick;
             let map = map_at(use_tick);
             if map.spatial_revision() != prediction.revision {
+                if map.surf_profile().is_some() {
+                    // A stage edit can change the selected fold. Let the
+                    // caller use the current map's conformance fallback.
+                    return None;
+                }
                 let dt =
                     ready.frame_offset + seconds_between(use_tick, ready.frame_tick, ready.step);
                 let time = use_tick as f64 * ready.step.as_secs_f64();

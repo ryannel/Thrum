@@ -171,16 +171,20 @@ impl ShoreTransform {
             for direction in 0..8 {
                 let angle = f64::from(direction) * FRAC_PI_4;
                 let dir = [angle.cos(), angle.sin()];
-                exposures.push(
-                    (0..bed.heights.len())
-                        .map(|i| {
-                            if !region.open[i] {
-                                return 0.0;
-                            }
-                            exposure(&bed, config, &region, i, angle)
-                        })
-                        .collect(),
-                );
+                let mut values: Vec<_> = (0..bed.heights.len())
+                    .map(|i| {
+                        if !region.open[i] || region.exposure_source[i].is_some_and(|j| j != i) {
+                            return 0.0;
+                        }
+                        exposure(&bed, config, &region, i, angle)
+                    })
+                    .collect();
+                for (i, source) in region.exposure_source.iter().copied().enumerate() {
+                    if let Some(source) = source.filter(|&j| i != j) {
+                        values[i] = values[source];
+                    }
+                }
+                exposures.push(values);
                 for rung in 0..6 {
                     lags.push(solve(
                         &bed,
@@ -205,6 +209,17 @@ impl ShoreTransform {
     /// Declared stage samples, including both endpoints.
     pub fn stages(&self) -> &[f64] {
         &self.stages
+    }
+
+    /// Node values in metres, in stage, sector and wavelength order.
+    /// An unreachable node has infinite lag.
+    pub fn lag_planes(&self) -> impl ExactSizeIterator<Item = &[f64]> {
+        self.lags.iter().map(Lag::values)
+    }
+
+    /// Node values in stage and sector order, each an arriving energy fraction.
+    pub fn exposure_planes(&self) -> impl ExactSizeIterator<Item = &[f64]> {
+        self.exposures.iter().map(Vec::as_slice)
     }
 
     /// Number of lag layers (eight directions times six wavelengths times stages).
@@ -322,6 +337,7 @@ fn validate(c: ShoreConfig) -> Result<(), WaterError> {
 struct Region {
     open: Vec<bool>,
     edge: Vec<bool>,
+    exposure_source: Vec<Option<usize>>,
     level: f64,
 }
 
@@ -373,7 +389,33 @@ impl Region {
         if config.source == Source::Enclosed {
             edge.fill(false);
         }
-        Self { open, edge, level }
+        // A rising sheet takes the incident power from its wet shore. The
+        // dry margin cannot seed waves or make an inland basin sea-connected.
+        let mut exposure_source = vec![None; open.len()];
+        for (i, wet) in edge.iter().copied().enumerate() {
+            if wet {
+                exposure_source[i] = Some(i);
+                q.push_back(i);
+            }
+        }
+        while let Some(i) = q.pop_front() {
+            for j in bed.neighbours(i) {
+                if open[j]
+                    && bed.heights[j] >= level
+                    && bed.heights[j] >= bed.heights[i]
+                    && exposure_source[j].is_none()
+                {
+                    exposure_source[j] = exposure_source[i];
+                    q.push_back(j);
+                }
+            }
+        }
+        Self {
+            open,
+            edge,
+            exposure_source,
+            level,
+        }
     }
 }
 

@@ -55,27 +55,81 @@ struct SurfaceRow {
     owned: bool,
     swash: f32,
     loss: f32,
+    loss_without_long: f32,
 }
 struct VertexOut {
     @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>,
     @location(1) rest:vec2<f32>, @location(2) velocity:vec3<f32>,
     @location(3) current:vec4<f32>, @location(4) previous:vec4<f32>,
     @location(5) @interpolate(flat) body:u32,
+    @location(6) surf_weight:f32,
+    @location(7) surf_normal_variance:vec4<f32>,
+    @location(8) breaking_face_weight:f32,
 }
-@vertex fn water_vertex(@location(0) vertex:vec4<f32>)->VertexOut {
+
+fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
+    // Neighbours stay inside this ring's full grid. Its inner hole skips
+    // indices only, so the cache also holds the nodes either side of the seam.
+    let grid_radius = sea_grid_radius(spacing);
+    let row = 2u*grid_radius+1u;
+    let radius = f32(grid_radius);
+    let left = select(1u, 0u, local.x <= -radius);
+    let right = select(1u, 0u, local.x >= radius);
+    let below = select(1u, 0u, local.y <= -radius);
+    let above = select(1u, 0u, local.y >= radius);
+    let x0 = surf_current(index-left);
+    let x1 = surf_current(index+right);
+    let z0 = surf_current(index-row*below);
+    let z1 = surf_current(index+row*above);
+    if min(min(x0.w, x1.w), min(z0.w, z1.w)) < 0.5 { return vec3(0.0); }
+    let u = x1.xyz-x0.xyz+vec3(spacing*f32(left+right), 0.0, 0.0);
+    let v = z1.xyz-z0.xyz+vec3(0.0, 0.0, spacing*f32(below+above));
+    let normal = cross(v, u);
+    return normal/max(length(normal), 1e-20);
+}
+
+@vertex fn water_vertex(@location(0) vertex:vec4<f32>, @builtin(vertex_index) index:u32)->VertexOut {
     let sea=vertex.w==0.0;
     let body=u32(vertex.w);
     let anchor=select(vec2(0.0),floor(view.camera_xyz_time.xz),sea);
     let rest=anchor+vertex.xy;
     let row=surface_vertex(rest,body);
     var f=field_at(rest,vertex.z,row.gains);
+    var surf_weight = 0.0;
+    var surf_motion = vec3(0.0);
+    var surf_normal = vec3(0.0);
+    var surf_variance = 0.0;
+    let transformed = surf_current(index);
     let local=vertex.xy/vertex.z;
-    if sea && max(abs(local.x),abs(local.y))>=32.0 {
-        let lo=floor(local/2.0)*2.0;let hi=ceil(local/2.0)*2.0;
-        let p=anchor+lo*vertex.z;let q=anchor+hi*vertex.z;
-        let a=field_at(p,vertex.z*2.0,surface_vertex(p,body).gains);
-        let b=field_at(q,vertex.z*2.0,surface_vertex(q,body).gains);
-        f=add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,0.5),b,0.5);
+    if sea && max(abs(local.x),abs(local.y))>=f32(sea_grid_radius(vertex.z)) {
+        let transition = sea_grid_transition(vertex.z);
+        let coarse = local / transition;
+        let spacing = vertex.z * transition;
+        let p = anchor + floor(coarse) * spacing;
+        let q = anchor + ceil(coarse) * spacing;
+        let fraction = fract(coarse);
+        let blend = select(0.5, max(fraction.x, fraction.y), SURF_CACHE_ENABLED);
+        let a=field_at(p,spacing,surface_vertex(p,body).gains);
+        let b=field_at(q,spacing,surface_vertex(q,body).gains);
+        f=add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,1.0-blend),b,blend);
+        if SURF_CACHE_ENABLED && transformed.w > 0.0 {
+            let long_p = long_at(p, spacing);
+            let long_q = long_at(q, spacing);
+            let long = add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),
+                long_p,(1.0-blend)*surface_vertex(p,body).gains.x),
+                long_q,blend*surface_vertex(q,body).gains.x);
+            f = add_field(f,long,-1.0);
+        }
+    } else if SURF_CACHE_ENABLED && transformed.w > 0.0 {
+        f = add_field(f,long_at(rest,vertex.z),-row.gains.x);
+    }
+    if SURF_CACHE_ENABLED && transformed.w > 0.0 {
+        surf_weight = 1.0;
+        f.displacement += vec4(transformed.xyz, 0.0);
+        let previous_sample = surf_previous(index);
+        surf_motion = transformed.xyz - previous_sample.xyz;
+        surf_variance = previous_sample.w;
+        if sea { surf_normal = sea_surf_normal(index, local, vertex.z); }
     }
     let wake=wake_at(rest,0.0);
     f.displacement.y+=wake.x;
@@ -85,8 +139,10 @@ struct VertexOut {
     if sea && max(abs(vertex.x),abs(vertex.y))>=524288.0 {world=vec3(anchor.x+vertex.x*100.0,row.level,anchor.y+vertex.y*100.0);}
     var clip=view.view_proj*vec4(world,1.0);clip.z=max(clip.z,0.0000001);
     let current=view.unjittered_view_proj*vec4(world,1.0);
-    let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-vec3(0.0,row.level-row.previous_level,0.0),1.0);
-    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body);
+    let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-surf_motion-vec3(0.0,row.level-row.previous_level,0.0),1.0);
+    let resolved_face = 1.0 - smoothstep(0.5, 4.0, vertex.z);
+    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body,surf_weight,
+        vec4(surf_normal, surf_variance), resolved_face * max(0.0, transformed.w - 1.0));
 }
 struct Output { @location(0) colour:vec4<f32>,@location(1) motion:vec2<f32>,@location(2) reactive:f32, }
 struct FilteredLayer { slope:vec2<f32>, second:vec3<f32>, differential:vec3<f32>, }
@@ -121,8 +177,11 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let dx=dpdx(input.rest);let dy=dpdy(input.rest);
     let wake_slope=wake_at(input.rest,0.0).yz;
     let wake_dx=dpdx(wake_slope);let wake_dy=dpdy(wake_slope);
-    let row=surface_pixel(input.rest,input.body);
+    var row=surface_pixel(input.rest,input.body);
     if !row.owned { discard; }
+    let surf_normal = input.surf_normal_variance.xyz;
+    let use_sheet_normal = SURF_CACHE_ENABLED && input.surf_weight >= 0.999
+        && dot(surf_normal,surf_normal) > 1e-8;
     // Select a cache only for spatial coverage. Hardware filters each layer
     // over the ellipse; its longest side never selects a level or mip.
     let cache_lod=long_lod(input.rest,1.0);let low_cache=u32(floor(cache_lod));
@@ -136,19 +195,21 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     var differential=vec3(1.0,0.0,1.0);
     let fade=1.0-smoothstep(4000.0,8000.0,length(input.rest-view.camera_xyz_time.xz));
     var long_mean=vec2(0.0);var long_second=vec3(0.0);var long_differential=vec3(0.0);
-    for(var side=0u;side<2u;side++) {
-        let level=min(low_cache+side,7u);let scale=128.0*water.cache[level].z;
-        let uv=(input.rest-water.cache[level].xy)/scale;
-        let m=filtered_layer(long_field,bounded,uv,dx/scale,dy/scale,i32(level*5u));
-        let w=select(1.0-fract(cache_lod),fract(cache_lod),side==1u);
-        long_mean+=w*m.slope;
-        long_second+=w*(m.second+water.long_covariance[level].xyz);
-        long_differential+=w*m.differential;
+    if !use_sheet_normal {
+        for(var side=0u;side<2u;side++) {
+            let level=min(low_cache+side,7u);let scale=128.0*water.cache[level].z;
+            let uv=(input.rest-water.cache[level].xy)/scale;
+            let m=filtered_layer(long_field,bounded,uv,dx/scale,dy/scale,i32(level*5u));
+            let w=select(1.0-fract(cache_lod),fract(cache_lod),side==1u);
+            long_mean+=w*m.slope;
+            long_second+=w*(m.second+water.long_covariance[level].xyz);
+            long_differential+=w*m.differential;
+        }
+        slope=row.gains.x*fade*long_mean;
+        covariance+=row.gains.x*row.gains.x*(long_second-fade*fade*vec3(long_mean.x*long_mean.x,long_mean.x*long_mean.y,long_mean.y*long_mean.y));
+        differential+=row.gains.x*fade*long_differential;
     }
-    slope=row.gains.x*fade*long_mean;
     slope+=wake_slope;
-    covariance+=row.gains.x*row.gains.x*(long_second-fade*fade*vec3(long_mean.x*long_mean.x,long_mean.x*long_mean.y,long_mean.y*long_mean.y));
-    differential+=row.gains.x*fade*long_differential;
     for(var band=0u;band<3u;band++) {
         let scale=water.lengths[band];
         let m=filtered_layer(cascades,periodic,input.rest/scale,dx/scale,dy/scale,i32(band*5u));
@@ -167,9 +228,25 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         a*a*covariance.x+2.0*a*b*covariance.y+b*b*covariance.z,
         a*b*covariance.x+(a*c+b*b)*covariance.y+b*c*covariance.z,
         b*b*covariance.x+2.0*b*c*covariance.y+c*c*covariance.z)/(determinant*determinant);
+    if use_sheet_normal {
+        // Interpolate normals of the displaced rest sheet before adding the
+        // fine ripple slopes. The depth test still selects the nearest branch.
+        let up = select(-surf_normal, surf_normal, surf_normal.y >= 0.0);
+        slope += -up.xz / max(up.y, length(up) * 0.03 + 1e-20);
+    }
     var whitewater=vec4(0.0);
     if FOAM_ENABLED {
-        whitewater=foam_surface(input.world,row,max(length(dx),length(dy)),determinant);
+        if SURF_CACHE_ENABLED && input.surf_weight > 0.0 {
+            // The power input varies smoothly between the mesh nodes, but
+            // limiting it at those nodes smears distant foam onto deep water.
+            // Apply the same cap once here using the fragment's mapped bed.
+            let cap = 0.15 * max(0.0, row.level - row.bed + row.swash);
+            let long_loss = max(0.0, input.surf_normal_variance.w - cap * cap * input.surf_weight);
+            row.loss = mix(row.loss, row.loss_without_long, input.surf_weight)
+                + long_loss;
+        }
+        whitewater=foam_surface(input.world,row,max(length(dx),length(dy)),determinant,
+            input.breaking_face_weight);
         covariance*=1.0-0.65*whitewater.w;
     }
     let variance=max(0.0,covariance.x+covariance.z);

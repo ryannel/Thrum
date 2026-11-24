@@ -57,6 +57,13 @@ impl BedPyramid {
             .sum()
     }
 
+    /// Row-major extrema by level, from the bed lattice to its root.
+    pub fn levels(&self) -> impl ExactSizeIterator<Item = ([usize; 2], &[[f64; 2]])> {
+        self.levels
+            .iter()
+            .map(|level| (level.size, level.bounds.as_slice()))
+    }
+
     /// Conservative height interval in a world-space square. None off the bed.
     pub fn range(&self, point: [f64; 2], radius: f64) -> Option<[f64; 2]> {
         if !radius.is_finite() || radius < 0.0 || point.iter().any(|v| !v.is_finite()) {

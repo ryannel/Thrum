@@ -5,6 +5,20 @@ use crate::{
 use std::f64::consts::{FRAC_PI_4, TAU};
 use thrum_sea_model::Sample;
 
+/// Nearest shore-transform sector for a finite nonzero wave vector.
+/// A vector on a boundary belongs to the sector in the increasing angle direction.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "wrapped angle yields an index in the eight prepared sectors"
+)]
+pub fn shore_sector([x, z]: [f64; 2]) -> u32 {
+    let sectors = z.atan2(x).rem_euclid(TAU) / FRAC_PI_4;
+    // The sea spectrum lies on sector boundaries. The addition covers
+    // rounding in vector construction and atan2 on either target.
+    ((sectors + 0.5 + 1e-12).floor() as u32) % 8
+}
+
 /// Authored surf capability. Omitting it leaves the original model untouched.
 pub struct SurfProfile {
     /// Minimum dispersion depth, metres.
@@ -35,6 +49,21 @@ pub(crate) struct Surf {
 }
 
 impl Map {
+    /// The profile used to prepare the current surf capability.
+    pub fn surf_profile(&self) -> Option<&SurfProfile> {
+        self.surf.as_ref().map(|surf| &surf.profile)
+    }
+
+    /// The immutable shore transform prepared for a still body.
+    pub fn shore_transform(&self, body: usize) -> Option<&ShoreTransform> {
+        self.surf.as_ref()?.transforms.get(body)?.as_ref()
+    }
+
+    /// The immutable depth-bound hierarchy prepared for surf queries.
+    pub fn surf_bed_pyramid(&self) -> Option<&BedPyramid> {
+        self.surf.as_ref().map(|surf| &surf.pyramid)
+    }
+
     /// Forward long-wave sheet for content tools and conformance references.
     /// # Errors
     /// Refuses a disabled capability, unknown body or nonfinite time.
@@ -262,15 +291,13 @@ impl Surf {
         point: [f64; 2],
         direction: usize,
         wavelength: f64,
-    ) -> (f64, f64) {
+    ) -> (f64, [f64; 2], f64) {
         if let Some(transform) = &self.transforms[body] {
             let stage = map.bodies[body].stage.value;
-            return (
-                transform.sample(direction, wavelength, stage, point).0,
-                transform.exposure(direction, stage, point),
-            );
+            let (lag, gradient) = transform.sample(direction, wavelength, stage, point);
+            return (lag, gradient, transform.exposure(direction, stage, point));
         }
-        let mut answer = (0.0, 1.0);
+        let mut answer = (0.0, [0.0; 2], 1.0);
         if let BodyKind::Chart(chart) = &map.bodies[body].kind {
             let mut total = 1.0;
             let own_level = map.own_level(body, point);
@@ -289,7 +316,8 @@ impl Surf {
                 let f = relative / total;
                 answer = (
                     answer.0 * (1.0 - f) + other.0 * f,
-                    answer.1 * (1.0 - f) + other.1 * f,
+                    [0.0; 2],
+                    answer.2 * (1.0 - f) + other.2 * f,
                 );
             }
         }
@@ -330,6 +358,13 @@ impl SurfSheet<'_> {
             .map_or(f64::INFINITY, |h| row.level - h);
         let limited = limit(row, depth, self.field.variances(), self.map.profile);
         let swash = limited.swash_depth;
+        let cap = 0.6 * (depth + swash).max(0.0);
+        if cap == 0.0 || row.gains[0] == 0.0 {
+            return SheetPoint {
+                world: rest,
+                height: 0.0,
+            };
+        }
         let c = 0.6 / (2.0 * 2.0_f64.sqrt());
         let draw = c * swash / (1.0 - c);
         let fade = if swash > 0.0 {
@@ -343,43 +378,56 @@ impl SurfSheet<'_> {
         let mut gy = [0.0; 2];
         let mut displacement = [0.0; 2];
         let mut variance = 0.0;
-        let mut terms = Vec::new();
+        let spacing = self.map.bed.spacing;
+        let step = spacing * 0.01;
+        // Inside one bilinear cell the central difference is its exact
+        // derivative. Keep the probes at cell edges and at body joins.
+        let use_gradient: [bool; 2] = std::array::from_fn(|axis| {
+            self.map.bodies.len() == 1
+                && depth.is_finite()
+                && (0.01..=0.99)
+                    .contains(&((rest[axis] - self.map.bed.origin[axis]) / spacing).fract())
+        });
+        let chop = self.field.layers[0].choppiness();
         for component in self.field.layers[0].components() {
+            if component.amplitude == 0.0 {
+                continue;
+            }
             let k0 = component.wave_vector[0].hypot(component.wave_vector[1]);
             let wavelength = TAU / k0;
-            let angle = component.wave_vector[1]
-                .atan2(component.wave_vector[0])
-                .rem_euclid(TAU);
-            #[expect(
-                clippy::cast_possible_truncation,
-                clippy::cast_sign_loss,
-                reason = "wrapped lattice direction"
-            )]
-            let direction = (angle / FRAC_PI_4).round() as usize % 8;
-            let (lag, exposure) = self
-                .surf
-                .transform(self.map, body, rest, direction, wavelength);
-            let eligible = (20.0..=640.0).contains(&wavelength) && lag.is_finite() && fade > 0.0;
+            let direction = shore_sector(component.wave_vector) as usize;
+            let transform = (20.0..=640.0).contains(&wavelength) && depth.is_finite();
+            let (lag, gradient, exposure) = if transform {
+                self.surf
+                    .transform(self.map, body, rest, direction, wavelength)
+            } else {
+                (0.0, [0.0; 2], 1.0)
+            };
+            let eligible = transform && fade > 0.0 && lag.is_finite();
             let lag = if eligible { lag * fade } else { 0.0 };
             let gain = if eligible {
-                1.0 + (shoaling(k0, depth.max(self.surf.profile.lag_floor)) * exposure.sqrt() - 1.0)
-                    * fade
+                1.0 + (shoaling(k0, depth.max(self.surf.profile.lag_floor)) - 1.0) * fade
             } else {
                 1.0
             };
-            let amplitude = component.amplitude * row.gains[0] * gain;
+            let amplitude = component.amplitude * row.gains[0] * exposure.sqrt() * gain;
             let phase = component.anchored_phase(rest, time) + k0 * lag;
             let (sin, cos) = phase.sin_cos();
             re += amplitude * cos;
             im += amplitude * sin;
             variance += 0.5 * amplitude.powi(2);
-            let step = self.map.bed.spacing * 0.01;
             let vector: [f64; 2] = std::array::from_fn(|axis| {
+                if !eligible {
+                    return component.wave_vector[axis];
+                }
+                if use_gradient[axis] {
+                    return component.wave_vector[axis] + k0 * gradient[axis] * fade;
+                }
                 let mut a = rest;
                 a[axis] -= step;
                 let mut b = rest;
                 b[axis] += step;
-                let delta = if eligible {
+                let delta = {
                     let lag_at = |p| {
                         let owner = if self.map.bodies.len() > 1 {
                             self.map.sample(p).map_or(body, |s| s.body)
@@ -397,8 +445,6 @@ impl SurfSheet<'_> {
                     } else {
                         0.0
                     }
-                } else {
-                    0.0
                 };
                 component.wave_vector[axis] + k0 * delta
             });
@@ -406,27 +452,20 @@ impl SurfSheet<'_> {
             for axis in 0..2 {
                 gx[axis] += amplitude * cos * vector[axis];
                 gy[axis] += amplitude * sin * vector[axis];
+                if norm > 0.0 {
+                    displacement[axis] -= chop * amplitude * sin * vector[axis] / norm;
+                }
             }
-            terms.push((amplitude, sin, vector, norm));
         }
         let envelope = re.hypot(im);
         let index = 2.0 * envelope
             / (self.surf.profile.breaker_ratio * depth.max(self.surf.profile.lag_floor));
-        let cap = 0.6 * (depth + swash).max(0.0);
         let scale = if variance > 0.0 {
             (cap / (4.0 * variance.sqrt())).min(1.0)
         } else {
             1.0
         };
-        for (amplitude, sin, vector, norm) in terms {
-            if norm > 0.0 {
-                for axis in 0..2 {
-                    displacement[axis] -=
-                        self.field.layers[0].choppiness() * amplitude * scale * sin * vector[axis]
-                            / norm;
-                }
-            }
-        }
+        let mut displacement = displacement.map(|value| value * scale);
         let phase = im.atan2(re);
         let section = self.surf.profile.section.sample(phase, index);
         let height = re * scale + (section.height * envelope - re) * scale * fade;

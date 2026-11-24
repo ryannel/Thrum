@@ -18,6 +18,7 @@ const VIEW: (&str, &str) = ("view", "THRUM_WATER_VIEW");
 const STONE: (&str, &str) = ("stone", "THRUM_WATER_STONE");
 const WAKE_BODIES: (&str, &str) = ("wake-bodies", "THRUM_WATER_WAKE_BODIES");
 const ISLAND: (&str, &str) = ("island", "THRUM_WATER_ISLAND");
+const SURF: (&str, &str) = ("surf", "THRUM_WATER_SURF");
 
 /// The scene the settings choose.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -31,6 +32,8 @@ pub enum Settings {
         /// Whitewater on the shore, chosen by `foam` with `location=beach`.
         foam: bool,
     },
+    /// Island beach with refraction of the long waves and the breaker section.
+    Surf(Wind),
     /// The craft and buoys, with or without the wake route.
     Floating(Floating),
 }
@@ -101,6 +104,9 @@ impl Settings {
     }
 
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {
+        if let Some(wind) = get(SURF).as_deref().and_then(Wind::named) {
+            return Self::Surf(wind);
+        }
         let foam = get(FOAM);
         let location = get(LOCATION);
         let beach = location.as_deref() == Some("beach");

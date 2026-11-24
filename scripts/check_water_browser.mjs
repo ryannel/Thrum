@@ -8,7 +8,9 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf');
+const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
+const [width,height] = surfInspection && mode === 'realtime' ? [1280,720] : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -64,9 +66,9 @@ const observer = `
   };
   const create=GPUDevice.prototype.createBuffer;
   GPUDevice.prototype.createBuffer=function(desc){
-    if(['sea parameters','interaction sample settings','foam settings'].includes(desc.label))desc={...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC};
+    if(['sea parameters','interaction sample settings','foam settings','surf field settings'].includes(desc.label))desc={...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC};
     const b=create.call(this,desc);
-    if(desc.label?.startsWith('sea ')||desc.label?.startsWith('interaction ')||desc.label?.startsWith('foam '))__buffers[desc.label]=b;
+    if(desc.label?.startsWith('sea ')||desc.label?.startsWith('interaction ')||desc.label?.startsWith('foam ')||['surf field cache','surf field settings','water surface vertices'].includes(desc.label))__buffers[desc.label]=b;
     return b;
   };
   globalThis.__readFoam=async()=>{
@@ -199,6 +201,13 @@ const islandObserver = `
   wrap(GPUDevice.prototype,'createShaderModule',(shader,d)=>{
     if(d.label==='water surface')__island.source=d.code;
   });
+  __island.surfTextures=[];
+  wrap(GPUDevice.prototype,'createTexture',(_,d)=>{
+    if(['surf lags','surf exposures','breaker section','surf bed pyramid'].includes(d.label))__island.surfTextures.push(d);
+  });
+  wrap(GPUDevice.prototype,'createComputePipeline',(_,d)=>{
+    if(d.label==='surf field cache')__island.surfEntries=__island.pipelines.get(d.layout).flatMap(layout=>__island.layouts.get(layout)??[]);
+  });
   wrap(GPUDevice.prototype,'createBindGroupLayout',(layout,d)=>__island.layouts.set(layout,d.entries));
   wrap(GPUDevice.prototype,'createPipelineLayout',(layout,d)=>__island.pipelines.set(layout,d.bindGroupLayouts));
   wrap(GPUDevice.prototype,'createBindGroup',(group,d)=>{
@@ -297,6 +306,69 @@ async function inspectIsland(evaluate, result) {
   result.map={scattered:4096,points:oracle.points.length,shore_crossings:oracle.shore_crossings,
     classifications:seen,max_absolute_error:err,...{stages:report.stages,limits:report.limits,draws:report.draws}};
 }
+async function inspectSurf(evaluate,result,frame) {
+  const witness=await evaluate(`(async()=>{
+    const device=__devices.at(-1);
+    const names=['surf field settings','water surface vertices','surf field cache'];
+    const encoder=device.createCommandEncoder();
+    const staging=names.map(name=>{
+      const source=__buffers[name];
+      if(!source)throw Error('missing surf product: '+name);
+      const buffer=device.createBuffer({size:source.size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+      encoder.copyBufferToBuffer(source,0,buffer,0,buffer.size);
+      return buffer;
+    });
+    device.queue.submit([encoder.finish()]);
+    const [settings,mesh,cache]=await Promise.all(staging.map(async buffer=>{
+      await buffer.mapAsync(GPUMapMode.READ);
+      const values=new Float32Array(buffer.getMappedRange().slice(0));
+      buffer.unmap();buffer.destroy();return values;
+    }));
+    const nodes=[],samples=[];
+    for(let i=0;i<mesh.length/4;i++){
+      const [x,z,spacing,body]=mesh.subarray(i*4,i*4+4);
+      const halfWidth=spacing<=0.5?64:32;
+      if(cache[i*8+3]===0 || (body===0&&Math.max(Math.abs(x),Math.abs(z))>=halfWidth*spacing))continue;
+      if(i%6!==0)continue;
+      nodes.push(body===0?[x+Math.floor(settings[0]),z+Math.floor(settings[1]),body]:[x,z,body]);
+      samples.push(Array.from(cache.subarray(i*8,i*8+3)));
+    }
+    const entries=__island.surfEntries;
+    const limits={};
+    for(const name of ['maxSampledTexturesPerShaderStage','maxStorageBuffersPerShaderStage',
+      'maxStorageBufferBindingSize','maxTextureArrayLayers','maxTextureDimension2D'])limits[name]=device.limits[name];
+    return {nodes,samples,limits,textures:__island.surfTextures,
+      layout:{sampled:entries.filter(e=>e.texture).length,storage:entries.filter(e=>e.buffer?.type?.includes('storage')).length},
+      storageBytes:__buffers['surf field cache'].size,draws:__island.draws.slice(-3)};
+  })()`);
+  const {limits,layout,textures,storageBytes,nodes,samples,draws}=witness;
+  assert(textures.length===4&&draws.length===3,'surf products or body draws missing');
+  assert(layout.sampled<=limits.maxSampledTexturesPerShaderStage&&layout.storage<=limits.maxStorageBuffersPerShaderStage,'surf bindings exceed portable limits');
+  assert(storageBytes<=limits.maxStorageBufferBindingSize,'surf field cache exceeds storage limit');
+  for(const {size} of textures) {
+    const [width,height,layers]=Array.isArray(size)?size:[size.width,size.height,size.depthOrArrayLayers];
+    assert(Math.max(width,height)<=limits.maxTextureDimension2D&&layers<=limits.maxTextureArrayLayers,'surf texture exceeds portable limits');
+  }
+  const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
+  const time=(frame.tick-1+frame.alpha)/60;
+  const oracle=JSON.parse(execFileSync('rustup',['run','stable','cargo','run','--quiet','--release',
+    '--locked','--offline','-p','water-scene','--example','surf_oracle'],{
+    input:JSON.stringify({time,nodes}),maxBuffer:16<<20,
+    env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}
+  }));
+  let checked=0,maxError=0,worst=null;
+  oracle.answers.forEach((expected,i)=>{
+    if(expected===null)return;
+    checked++;
+    expected.forEach((value,j)=>{
+      const error=Math.abs(samples[i][j]-value);
+      if(error>maxError){maxError=error;worst={node:nodes[i],component:j,actual:samples[i],expected};}
+    });
+  });
+  result.surf={time,checked,maxError,worst,limits,layout,textures,storageBytes,draws};
+  assert(checked>200&&maxError<0.015,`surf field comparison: ${checked} samples, ${maxError} m maximum error`);
+}
+
 const log=await fs.open(path.join(output,'command.log'),'w');
 const command=spawn('./dev',['scene','examples/water','--web'],{env:{...process.env,THRUM_SCENE_OUTPUT:output,THRUM_SCENE_WEB_CAPTURE:'1'},stdio:['ignore',log.fd,log.fd],detached:true});
 let chrome,cdp,sid,failure;
@@ -326,8 +398,9 @@ try {
   };
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='island'?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
-  const route=mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
+  const surfRoute=mode==='surf'||surfInspection;
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=surfRoute?'?surf=trade':mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
@@ -342,8 +415,8 @@ try {
     await evaluate('game.end_capture()');
     const rgba=await pixels('__capturePixels');
     assert(image.identity.includes('presented=true'),'checkpoint was not the submitted surface frame');
-    assert(rgba.length===2560*1440*4,'capture extent differs');
-    const file=name+'.png';await fs.writeFile(path.join(output,file),png(rgba,2560,1440));
+    assert(rgba.length===width*height*4,'capture extent differs');
+    const file=name+'.png';await fs.writeFile(path.join(output,file),png(rgba,width,height));
     const info=frameInfo(image.frame);
     for(const field of ['tick','alpha','submission']){
       assert(submitted[field]===info[field],`${name}: immediate frame report ${field} differs from submitted output`);
@@ -499,6 +572,9 @@ try {
     assert(hitch.unavailable>end.unavailable&&hitch.blockingReads===0,'hitch did not account for the unavailable replies');
     for(const status of [start,end,hitch]) delete status.replies;
     result.bodies={start,ages:[...ages.values()].slice(0,beforeHitch.size),end,hitch,hitchAges};
+  } else if(mode==='surf'){
+    const frame=await capture('surf-trade',500-now);
+    await inspectSurf(evaluate,result,frame);
   } else if(mode==='island'){
     await capture('island',10000-now);
     await inspectIsland(evaluate,result);
@@ -564,6 +640,15 @@ try {
       assert(saturated.submission===after.submission+1,'post-saturation capture was not the next submission');
       result.frame_report_history={before,after};
     }
+  } else if(mode==='fixed' && surfInspection){
+    const views=['sand','beach','offshore','lee','headland','island','seaward'];
+    for(const [index,name] of views.entries()){
+      await evaluate(`game.edit_control('camera.island',${index})`);
+      for(let phase=0;phase<3;phase++){
+        const timestamp=(16+0.9*(3*index+phase))*1000;
+        await capture(`surf-${name}-${phase}`,timestamp-now);
+      }
+    }
   } else if(mode==='fixed'){
     for(const [name,height,bearing]of [['noon-2-along',2,90],['noon-2-across',2,0],['noon-40-along',40,90],['noon-40-across',40,0]]){
       await evaluate(`game.apply_params(${JSON.stringify(JSON.stringify({'camera.height':height,'camera.bearing':bearing,'sun.elevation':60}))})`);
@@ -571,7 +656,16 @@ try {
     }
   } else {
     // Page's own RAF timestamps drive the ordinary scene loop; each image is the frame it submitted.
+    const duration=surfInspection?12000:1000;
+    const spacing=surfInspection?100:0;
+    if(surfInspection){
+      const view=Number(process.env.THRUM_WATER_ISLAND_CAMERA??'0');
+      assert(Number.isInteger(view)&&view>=0&&view<=6,'invalid surf camera');
+      await evaluate(`game.edit_control('camera.island',${view})`);
+      result.surf_camera=view;
+    }
     await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;
+      let lastOpportunity=-Infinity;
       globalThis.__opportunities=0;const presented=()=>Number(/presented=(\\d+)/.exec(game.frame_info())[1]);
       globalThis.__firstPresented=presented();globalThis.__expected=0;
       const collect=()=>{let image;while((image=game.capture())){if(__motion.length>=120)throw Error('motion export reached its 120-image allowance');__motion.push(image);}};
@@ -579,17 +673,20 @@ try {
       const loop=timestamp=>{
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
-        game.edit_control('camera.bearing',90+elapsed*0.012);
-        game.frame(${now}+elapsed);__opportunities++;
+        if(!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
+        if(elapsed-lastOpportunity>=${spacing}){
+          game.frame(${now}+elapsed);__opportunities++;lastOpportunity=elapsed;
+        }
         if(game.capture_omissions())throw Error('submitted motion observer omitted an image');
-        if(elapsed<1000)requestAnimationFrame(loop);else {__expected=presented()-__firstPresented;drain();}
+        if(elapsed<${duration})requestAnimationFrame(loop);else {__expected=presented()-__firstPresented;drain();}
       };game.begin_capture();__manual=false;requestAnimationFrame(loop);`);
     await until(()=>evaluate('__motionDone'),'realtime pan');
     const count=await evaluate('__motion.length');
     for(let i=0;i<count;i++){
       const image=await evaluate(`({identity:__motion[${i}].identity,frame:__motion[${i}].frame})`),rgba=await pixels(`__motion[${i}].rgba`);
       image.elapsed=Number(/observation=([0-9.]+)/.exec(image.frame)[1])-now/1000;
-      const file=`motion-${String(i).padStart(4,'0')}.png`;await fs.writeFile(path.join(output,file),png(rgba,2560,1440));result.frames.push({...image,file,sha256_rgba:hash(rgba)});
+      assert(rgba.length===width*height*4,'motion extent differs');
+      const file=`motion-${String(i).padStart(4,'0')}.png`;await fs.writeFile(path.join(output,file),png(rgba,width,height));result.frames.push({...image,file,sha256_rgba:hash(rgba)});
     }
     const timestamps=await evaluate('__intervals');result.callback_intervals_ms=timestamps.slice(1).map((v,i)=>v-timestamps[i]);
     result.omissions=await evaluate('game.capture_omissions()');await evaluate('game.end_capture()');
@@ -597,7 +694,8 @@ try {
     const ids=result.frames.map(f=>Number(/submission=([0-9]+)/.exec(f.frame)[1]));
     assert(ids.length>1&&ids.every((v,i)=>i===0||v===ids[i-1]+1),'submitted motion IDs are not contiguous');
     assert(result.frames.every(f=>f.identity.includes('presented=true')),'motion contains an unpresented source');
-    result.export_allowance_bytes=120*2560*1440*4;
+    result.export_allowance_bytes=120*width*height*4;
+    result.extent=[width,height];
     result.clock_scope='Page requestAnimationFrame timestamps; observer ON, export after the interval. Neither display swaps nor physical cadence.';
   }
   result.faults=[...cdp.faults,...await evaluate('__faults')];assert(result.faults.length===0,JSON.stringify(result.faults));

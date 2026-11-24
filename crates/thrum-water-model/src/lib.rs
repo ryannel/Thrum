@@ -37,7 +37,7 @@ pub use river::{
 pub use samples::{ChartSamples, FlowSample, Gauge, River, mix_fall};
 pub use section::{BreakerSection, SectionPoint};
 pub use shore::{Lag, ShoreConfig, ShoreTransform, Source, dispersion, shoaling};
-pub use surf::{SurfProfile, SurfSheet};
+pub use surf::{SurfProfile, SurfSheet, shore_sector};
 pub use waves::{Field, Limited, Surface, limit, shelter};
 
 /// Invalid authored water, with the declaration's name and actionable cause.

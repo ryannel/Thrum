@@ -5,6 +5,7 @@ use super::{
     map_gpu::{self, MapGpu},
     query::{self, QueryMailbox, Readback},
     records::Parameters,
+    surf::{SurfGpu, cache::Cache},
 };
 use std::ops::Range;
 use thrum_render::binding;
@@ -14,6 +15,9 @@ use thrum_render::{
     runtime::DeviceSite,
 };
 use wgpu::util::DeviceExt;
+
+pub(crate) const SEA_RING_HALF_WIDTH: i32 = 32;
+pub(crate) const SURF_FINE_RING_HALF_WIDTH: i32 = 64;
 
 pub(super) struct Prepared {
     pub(super) ambient: thrum_sea::Ambient,
@@ -31,6 +35,8 @@ pub(super) struct Prepared {
     pub(super) vertices: u32,
     pub(super) queue: wgpu::Queue,
     pub(super) map: Option<MapGpu>,
+    pub(super) surf: Option<SurfGpu>,
+    pub(super) surf_cache: Option<Cache>,
     pub(super) bodies: Vec<(String, u32)>,
     pub(super) indices: Option<wgpu::Buffer>,
     pub(super) draws: Vec<Range<u32>>,
@@ -95,6 +101,9 @@ impl Prepared {
                 );
                 entries.extend(self.foam.as_ref().expect("foam pattern").sample_entries());
                 entries.push(pattern_entry(&product.view));
+                if let Some(cache) = &self.surf_cache {
+                    entries.push(cache.surface_entry());
+                }
                 (
                     product.serial,
                     pattern
@@ -123,6 +132,10 @@ impl Prepared {
         self.ambient_passes + usize::from(self.interaction.is_some())
     }
 
+    pub(super) fn surf_cache_index(&self) -> usize {
+        self.query_index() + usize::from(self.query.is_some())
+    }
+
     pub(super) fn graph(&self) -> EffectGraph {
         let mut graph = self.ambient.graph();
         let wake = self
@@ -135,6 +148,10 @@ impl Prepared {
         let mut surface = declaration();
         surface.accesses = self.ambient.filtered_accesses();
         surface.accesses.extend(wake);
+        let surf_cache = self
+            .surf_cache
+            .as_ref()
+            .map(|cache| cache.declare(&mut graph));
         if let Some(foam) = &self.foam {
             let read = foam.declare(&mut graph, surface.accesses.clone());
             surface.accesses.push(read);
@@ -145,6 +162,7 @@ impl Prepared {
             film.accesses.clone_from(&surface.accesses);
             graph.after_opaque.push(film);
         }
+        surface.accesses.extend(surf_cache);
         graph.after_opaque.push(surface);
         graph
     }
@@ -165,6 +183,28 @@ pub(super) fn new(
         .map(|map| MapGpu::new(device, surface.queue, map))
         .transpose()
         .map_err(|e| e.to_string())?;
+    let surf = map
+        .surf_profile()
+        .filter(|_| mapped)
+        .map(|profile| SurfGpu::new(device, surface.queue, map, profile))
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    let geometry = surface_mesh(mapped.then_some(map));
+    let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
+    let (mesh, indices) = geometry.upload(device, surf.is_some())?;
+    let surf_cache = surf
+        .as_ref()
+        .map(|surf| {
+            Cache::new(
+                device,
+                map_gpu.as_ref().expect("mapped surf"),
+                surf,
+                &mesh,
+                count,
+            )
+        })
+        .transpose()
+        .map_err(|error| error.to_string())?;
     let ambient =
         thrum_sea::Ambient::new(device, profile.waves).map_err(|error| error.to_string())?;
     let ambient_passes = ambient.graph().passes.len();
@@ -174,12 +214,14 @@ pub(super) fn new(
         query::validate(
             profile.query.expect("enabled query limits"),
             &surface.limits,
+            surf.is_some(),
         )?;
         Some(Readback::new(
             device,
             &ambient,
             mailbox,
             interaction.as_ref(),
+            map_gpu.as_ref().zip(surf.as_ref()),
         ))
     } else {
         None
@@ -219,29 +261,7 @@ pub(super) fn new(
             wgpu::ShaderStages::VERTEX_FRAGMENT,
         ));
     }
-    let sampler = |mode| {
-        device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("water anisotropic field"),
-            address_mode_u: mode,
-            address_mode_v: mode,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::MipmapFilterMode::Linear,
-            anisotropy_clamp: if surface
-                .downlevel
-                .is_some_and(|flags| flags.contains(wgpu::DownlevelFlags::ANISOTROPIC_FILTERING))
-            {
-                16
-            } else {
-                1
-            },
-            ..Default::default()
-        })
-    };
-    let samplers = [
-        sampler(wgpu::AddressMode::Repeat),
-        sampler(wgpu::AddressMode::ClampToEdge),
-    ];
+    let samplers = field_samplers(surface);
     let map_view = map_gpu.as_ref().filter(|_| mapped).map(MapGpu::view);
     let mut bindings = field_entries(
         &parameters,
@@ -258,6 +278,7 @@ pub(super) fn new(
             &entries,
             &bindings,
             interaction.is_some(),
+            surf.as_ref(),
         )
     });
     let fallback = foam.as_ref().map(|_| {
@@ -289,6 +310,10 @@ pub(super) fn new(
         bindings.extend(foam.sample_entries());
         bindings.push(pattern_entry(fallback));
     }
+    if let Some(cache) = &surf_cache {
+        entries.push(cache.surface_binding());
+        bindings.push(cache.surface_entry());
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),
         entries: &entries,
@@ -298,7 +323,8 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let source = shader_source(&environment, mapped, interaction.is_some(), foam.is_some());
+    let source = shader_source(&environment, mapped, interaction.is_some(), foam.is_some())
+        + &Cache::source(surf_cache.is_some());
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(SURFACE_PASS),
         source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -313,9 +339,6 @@ pub(super) fn new(
         bound: None,
         submitted: None,
     });
-    let geometry = surface_mesh(mapped.then_some(map));
-    let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
-    let (mesh, indices) = geometry.upload(device)?;
     Ok(Prepared {
         ambient,
         ambient_passes,
@@ -332,6 +355,8 @@ pub(super) fn new(
         vertices: count,
         queue: surface.queue.clone(),
         map: map_gpu,
+        surf,
+        surf_cache,
         bodies: geometry.bodies,
         draws: geometry.draws,
         indices,
@@ -348,6 +373,33 @@ fn has_shore(map: &thrum_water_model::Map) -> bool {
                     .iter()
                     .any(|bed| *bed >= body.level + body.stage.min - map.profile().margin_height)
         })
+}
+
+fn field_samplers(surface: &SceneSurface<'_>) -> [wgpu::Sampler; 2] {
+    let device = surface.device;
+    let sampler = |mode| {
+        device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("water anisotropic field"),
+            address_mode_u: mode,
+            address_mode_v: mode,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            anisotropy_clamp: if surface
+                .downlevel
+                .is_some_and(|flags| flags.contains(wgpu::DownlevelFlags::ANISOTROPIC_FILTERING))
+            {
+                16
+            } else {
+                1
+            },
+            ..Default::default()
+        })
+    };
+    [
+        sampler(wgpu::AddressMode::Repeat),
+        sampler(wgpu::AddressMode::ClampToEdge),
+    ]
 }
 
 fn field_entries<'a>(
@@ -419,7 +471,7 @@ fn shader_source(
             Foam::source() + include_str!("foam/appearance.wgsl")
         } else {
             "const FOAM_ENABLED: bool = false;
-             fn foam_surface(_p: vec3<f32>, _r: SurfaceRow, _v: f32, _d: f32) -> vec4<f32> { return vec4(0.0); }"
+             fn foam_surface(_p: vec3<f32>, _r: SurfaceRow, _v: f32, _d: f32, _face: f32) -> vec4<f32> { return vec4(0.0); }"
                 .into()
         },
     )
@@ -548,6 +600,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
         };
     };
     let mut geometry = Geometry::default();
+    let surf = map.surf_profile().is_some();
     for body in 0..map_gpu::BODY_LIMIT {
         let Some(declaration) = map.body(body) else {
             break;
@@ -556,12 +609,22 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
         let first_index = geometry.indices.len() as u32;
         if matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
             for level in 0..17 {
+                if surf && level == 2 {
+                    continue;
+                }
+                // Keep the two finest spacings across the near breakers.
+                let half_width = if surf && level <= 1 {
+                    SURF_FINE_RING_HALF_WIDTH
+                } else {
+                    SEA_RING_HALF_WIDTH
+                };
                 geometry.grid(
-                    [-32; 2],
-                    [32; 2],
+                    [-half_width; 2],
+                    [half_width; 2],
                     0.25 * 2.0_f32.powi(level),
                     0.0,
                     level > 0,
+                    surf,
                 );
             }
         } else if let Some([min, max]) = map.surface_bounds(body) {
@@ -571,7 +634,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             let spacing = 0.5_f32.max((span / 1024.0) as f32);
             let start = min.map(|x| (x / f64::from(spacing)).floor() as i32);
             let end = max.map(|x| (x / f64::from(spacing)).ceil() as i32);
-            geometry.grid(start, end, spacing, (body + 1) as f32, false);
+            geometry.grid(start, end, spacing, (body + 1) as f32, false, surf);
         }
         geometry.bodies.push((
             declaration.name.clone(),
@@ -588,6 +651,7 @@ impl Geometry {
     fn upload(
         &self,
         device: &wgpu::Device,
+        surf: bool,
     ) -> Result<(wgpu::Buffer, Option<wgpu::Buffer>), String> {
         let vertices = bytemuck::cast_slice(&self.vertices);
         let indices = bytemuck::cast_slice(&self.indices);
@@ -601,12 +665,12 @@ impl Geometry {
                 usage,
             })
         };
+        let mut vertex_usage = wgpu::BufferUsages::VERTEX;
+        if surf {
+            vertex_usage |= wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC;
+        }
         Ok((
-            buffer(
-                "water surface vertices",
-                vertices,
-                wgpu::BufferUsages::VERTEX,
-            ),
+            buffer("water surface vertices", vertices, vertex_usage),
             (!indices.is_empty()).then(|| {
                 buffer(
                     "water surface triangle indices",
@@ -617,18 +681,34 @@ impl Geometry {
         ))
     }
 
-    fn grid(&mut self, start: [i32; 2], end: [i32; 2], spacing: f32, body: f32, ring: bool) {
+    fn grid(
+        &mut self,
+        start: [i32; 2],
+        end: [i32; 2],
+        spacing: f32,
+        body: f32,
+        ring: bool,
+        surf: bool,
+    ) {
         let base = u32::try_from(self.vertices.len()).expect("bounded mesh");
         let width = u32::try_from(end[0] - start[0] + 1).expect("grid width");
+        let inner_half_width = (end[0] - start[0]) / 4;
         for (row, z) in (0..).zip(start[1]..=end[1]) {
             for (column, x) in (0..).zip(start[0]..=end[0]) {
                 self.vertices
                     .push([x as f32 * spacing, z as f32 * spacing, spacing, body]);
-                let centre = ring && (-16..16).contains(&x) && (-16..16).contains(&z);
+                let inner = -inner_half_width..inner_half_width;
+                let centre = ring && inner.contains(&x) && inner.contains(&z);
                 if x < end[0] && z < end[1] && !centre {
                     let a = base + row * width + column;
-                    self.indices
-                        .extend([a, a + width, a + 1, a + 1, a + width, a + width + 1]);
+                    if surf {
+                        // Match the diagonal used by the highest-surface cut.
+                        let d = a + width + 1;
+                        self.indices.extend([a, a + width, d, a, d, a + 1]);
+                    } else {
+                        self.indices
+                            .extend([a, a + width, a + 1, a + 1, a + width, a + width + 1]);
+                    }
                 }
             }
         }

@@ -233,23 +233,35 @@ fn wave_field(phase: f64) -> LongWaves {
 }
 
 #[test]
-fn ten_minutes_of_gale_stay_bounded_at_all_three_speeds() {
-    for speed in [0.0, 5.0, 15.0] {
-        let field = wave_field(speed * 0.127);
-        let mut craft = Body::new(0, Hull::Craft, [0.0; 2], 0.0, std::f64::consts::PI);
-        craft.velocity = -speed * DVec3::X;
-        craft.propulsion = craft.velocity;
-        run(&field, craft, speed);
-        for id in 1..=8 {
-            let float = Body::new(
-                id,
-                Hull::Float,
-                [f64::from(id) * 2.3, f64::from(id % 4) * 2.4],
-                0.0,
-                0.0,
-            );
-            run(&field, float, 0.0);
-        }
+fn ten_minutes_of_gale_stay_bounded_at_rest() {
+    gale_bounds(0.0);
+}
+
+#[test]
+fn ten_minutes_of_gale_stay_bounded_at_five_metres_per_second() {
+    gale_bounds(5.0);
+}
+
+#[test]
+fn ten_minutes_of_gale_stay_bounded_at_fifteen_metres_per_second() {
+    gale_bounds(15.0);
+}
+
+fn gale_bounds(speed: f64) {
+    let field = wave_field(speed * 0.127);
+    let mut craft = Body::new(0, Hull::Craft, [0.0; 2], 0.0, std::f64::consts::PI);
+    craft.velocity = -speed * DVec3::X;
+    craft.propulsion = craft.velocity;
+    run(&field, craft, speed);
+    for id in 1..=8 {
+        let float = Body::new(
+            id,
+            Hull::Float,
+            [f64::from(id) * 2.3, f64::from(id % 4) * 2.4],
+            0.0,
+            0.0,
+        );
+        run(&field, float, 0.0);
     }
 }
 

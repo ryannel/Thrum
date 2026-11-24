@@ -108,21 +108,19 @@ impl BreakerSection {
     /// # Panics
     /// Only if the built-in table violates its validation invariants.
     pub fn first() -> Self {
-        let indices: Vec<f64> = vec![0.0, 0.7, 1.0, 1.2, 1.4, 2.0, 8.0];
+        let indices: Vec<f64> = vec![
+            0.0, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25, 1.3, 1.35, 1.4, 2.0, 8.0,
+        ];
+        let smooth = |u: f64| {
+            let t = u.clamp(0.0, 1.0);
+            t * t * (3.0 - 2.0 * t)
+        };
         let rows = indices
             .iter()
             .map(|&b| {
                 let m: f64 = b.min(1.0);
-                let skew = 0.95 * m * m * (3.0 - 2.0 * m);
-                let shear = if b <= 0.7 || b >= 1.4 {
-                    0.0
-                } else if b < 1.0 {
-                    6.0 * (b - 0.7) / 0.3
-                } else if b <= 1.2 {
-                    6.0
-                } else {
-                    6.0 * (1.4 - b) / 0.2
-                };
+                let skew = 0.95 * smooth(m);
+                let shear = 6.0 * smooth((b - 0.7) / 0.3) * smooth((1.4 - b) / 0.2);
                 (0..256)
                     .map(|i| {
                         let phase = TAU * f64::from(i) / 256.0;
@@ -163,6 +161,14 @@ impl BreakerSection {
     /// Breaking index past which the profile carries a bore with no throw.
     pub fn bore_index(&self) -> f64 {
         self.bore
+    }
+
+    /// Breaker table rows in increasing index order, with uniform periodic phase samples.
+    pub fn rows(&self) -> impl ExactSizeIterator<Item = (f64, &[SectionPoint])> {
+        self.indices
+            .iter()
+            .copied()
+            .zip(self.rows.iter().map(Vec::as_slice))
     }
 
     /// Global maximum forward throw in units of the envelope.

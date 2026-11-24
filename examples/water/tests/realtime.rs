@@ -29,6 +29,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let floating = super::floating();
     let wake = super::wake_route();
     let whitewater = super::whitewater();
+    let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
     let mut fleet = None;
     let (game, report) = if let Some(floating) = floating {
@@ -61,7 +62,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     for _ in 0..8 {
         runtime.step().expect("warm submit");
         device
-            .poll(wgpu::PollType::wait_indefinitely())
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_secs(30)),
+            })
             .expect("warm poll");
         while runtime.completed().expect("warm completion").is_some() {}
     }
@@ -99,7 +103,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 ))
                 .expect("pan control");
         }
-        if wake || whitewater {
+        if surf && route == "tide" {
+            let stage = if elapsed <= 6.0 {
+                elapsed / 6.0 - 0.5
+            } else {
+                1.5 - elapsed / 6.0
+            };
+            runtime
+                .parameters(&format!(r#"{{"sea.stage":{:.3}}}"#, stage.clamp(-0.5, 0.5)))
+                .expect("tide control");
+        } else if wake || whitewater {
             let change = match (route.as_str(), elapsed) {
                 ("turn", t) if t >= 4.0 => r#"{"craft.turn":65}"#,
                 ("restart", t) if t >= 8.0 => r#"{"craft.speed":6}"#,
@@ -138,9 +151,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         if runtime.pending_frames() == 0 && frames.len() >= submitted {
             return Some(true);
         }
-        device
-            .poll(wgpu::PollType::wait_indefinitely())
-            .expect("final poll");
+        device.poll(wgpu::PollType::Poll).expect("final poll");
         // A rejected frame ends the wait; the writer's outcome is reported below.
         drain(&mut runtime, &writer, &mut frames, &mut completed)
             .is_err()

@@ -100,7 +100,7 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
         if row.has_bed {
             column = foam_column(point, gain, dt_column);
         }
-        if depth + column.displacement.y + wake.x > 0.0 {
+        if foam_wet(level, local, depth + column.displacement.y + wake.x > 0.0) {
             let wave = foam_wave(point, gain, spacing);
             let energy_before = row.row.gains * water.heights;
             let loss = lost_wave_power(row.row.gains, gain, water.heights);
@@ -116,9 +116,9 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
             let hull = hull_births(point, row.row.water.yz, spacing);
             let wake_break = 0.6 * max(0.0, length(wake.yz) - 0.46) *
                 (1.0 - hull.z) * smoothstep(0.08, 0.30, abs(wake.w));
-            let shore = loss * 0.39;
-            let rates = vec4(0.55 * whitecap + wake_break + 0.22 * shore,
-                whitecap + wake_break + shore, 0.0, 0.0) + vec4(hull.xy, 0.0, hull.w);
+            let shore = shore_rates(level, local, loss * 0.39);
+            let rates = vec4(0.55 * whitecap + wake_break + shore.y,
+                whitecap + wake_break + shore.x, 0.0, 0.0) + vec4(hull.xy, 0.0, hull.w);
             stocks = add_births(stocks, rates, dt);
             var drift = row.row.water.yz + 0.027 * wind;
             let swash = min(map.swash.x * length(energy_before), map.origin_spacing_margin.w);
@@ -136,7 +136,7 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
             let max_shift = select(0.999, 2.0, level == 0u && dt > 0.024);
             let shift = clamp(drift * dt / spacing, vec2(-max_shift), vec2(max_shift));
             let diffusion = min(0.24, (0.016 + 0.14 * stocks.x + 0.30 * stocks.y) * dt / (spacing * spacing));
-            movement = vec4(shift, diffusion, shore);
+            movement = vec4(shift, diffusion, shore.x);
         }
     }
     parcels[foam_index(0u, level, local)] = Parcel(stocks, movement);

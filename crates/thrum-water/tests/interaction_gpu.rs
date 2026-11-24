@@ -53,10 +53,10 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
             };
             final_place = place;
             fixture
-                .mailbox
+                .mailbox()
                 .post_bodies(tick, Some(1), vec![pressure(1, place, heading)]);
         }
-        fixture.query.post(
+        fixture.query().post(
             tick - 1,
             vec![BodyQuery {
                 id: 99,
@@ -76,7 +76,7 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
             witness.endpoint.endpoints.map(|endpoint| endpoint.tick),
             [tick - 8, tick]
         );
-        let answers = fixture.query.drain(tick, Fixture::STEP);
+        let answers = fixture.query().drain(tick, Fixture::STEP);
         for (answer, point) in answers[0].points.iter().zip(probes) {
             let actual = answer.surface.sample.height;
             let expected = f64::from(witness.height(point));
@@ -96,7 +96,7 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
 
     // Move more than either entire window on one frame, with no source.
     // Old water must disappear from both levels, and cannot wrap.
-    fixture.mailbox.post_bodies(
+    fixture.mailbox().post_bodies(
         241,
         Some(1),
         vec![BodyPressure {
@@ -131,15 +131,17 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
         return;
     };
     fixture.draw(0);
-    fixture.mailbox.post_impulse(impact(1, 90, -4.0, 64_000.0));
-    fixture.mailbox.post_impulse(impact(1, 10, -4.0, 400.0));
-    fixture.mailbox.post_impulse(impact(1, 20, 6.0, 400.0));
-    fixture.mailbox.post_bodies(
+    fixture
+        .mailbox()
+        .post_impulse(impact(1, 90, -4.0, 64_000.0));
+    fixture.mailbox().post_impulse(impact(1, 10, -4.0, 400.0));
+    fixture.mailbox().post_impulse(impact(1, 20, 6.0, 400.0));
+    fixture.mailbox().post_bodies(
         1,
         Some(1),
         vec![pressure(1, [-4.0, 0.0], 0.0), pressure(2, [6.0, 0.0], 0.0)],
     );
-    fixture.query.post(
+    fixture.query().post(
         0,
         vec![BodyQuery {
             id: 2,
@@ -163,7 +165,7 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
     assert_eq!(report.regions, [2, 2]);
     assert_eq!(report.solves, [3, 2]);
     let witness = fixture.read();
-    let answer = &fixture.query.drain(1, Fixture::STEP)[0].points[0].surface;
+    let answer = &fixture.query().drain(1, Fixture::STEP)[0].points[0].surface;
     assert!(answer.wet, "the refused body must be over water");
     assert_eq!(answer.sample.height.to_bits(), 0);
     eprintln!(
@@ -196,7 +198,7 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
         return;
     };
     fixture.draw(0);
-    fixture.mailbox.post_impulse(impact(1, 10, -4.0, 400.0));
+    fixture.mailbox().post_impulse(impact(1, 10, -4.0, 400.0));
     for tick in (1..=89).step_by(8) {
         fixture.draw(tick);
     }
@@ -226,8 +228,8 @@ fn impact_is_applied_once_at_the_named_tick_and_scales_with_impulse() {
         return;
     };
     fixture.draw(0);
-    fixture.mailbox.post_impulse(impact(2, 8, 0.0, 200.0));
-    fixture.mailbox.post_impulse(impact(2, 8, 0.0, 5_000.0));
+    fixture.mailbox().post_impulse(impact(2, 8, 0.0, 200.0));
+    fixture.mailbox().post_impulse(impact(2, 8, 0.0, 5_000.0));
     fixture.draw(1);
     assert_eq!(fixture.read().height([0.0; 2]).to_bits(), 0);
     fixture.draw(2);
@@ -244,7 +246,7 @@ fn impact_is_applied_once_at_the_named_tick_and_scales_with_impulse() {
     fixture.draw(4);
     assert_eq!(fixture.read().height([0.0; 2]).to_bits(), 0);
     fixture.draw(5);
-    fixture.mailbox.post_impulse(impact(6, 8, 0.0, 400.0));
+    fixture.mailbox().post_impulse(impact(6, 8, 0.0, 400.0));
     fixture.draw(6);
     assert!((fixture.read().height([0.0; 2]) - 2.0 * small.height([0.0; 2])).abs() < 0.000_001);
     fixture.draw(7);
@@ -252,7 +254,7 @@ fn impact_is_applied_once_at_the_named_tick_and_scales_with_impulse() {
 
     // A drop can name a tick caught up between presentations. Its near
     // window follows the drop, even away from the scene's original origin.
-    fixture.mailbox.post_impulse(impact(10, 9, 120.0, 400.0));
+    fixture.mailbox().post_impulse(impact(10, 9, 120.0, 400.0));
     fixture.draw(12);
     let witness = fixture.read();
     assert!(witness.height([120.0, 0.0]) < -0.005);
@@ -266,8 +268,8 @@ fn admitted_impulses_survive_future_pages_and_discard() {
     };
     fixture.draw(0);
     for tick in 1..=33 {
-        fixture.mailbox.post_impulse(impact(tick, 8, 0.0, 400.0));
-        fixture.mailbox.post_bodies(tick, None, Vec::new());
+        fixture.mailbox().post_impulse(impact(tick, 8, 0.0, 400.0));
+        fixture.mailbox().post_bodies(tick, None, Vec::new());
     }
     fixture.discard(1);
     assert_eq!(fixture.read().endpoint.endpoints.map(|e| e.tick), [0, 0]);
@@ -307,7 +309,7 @@ fn endpoint_clock_keeps_discarded_and_capture_frames_out_of_history() {
     let initial = fixture.read();
     assert_eq!(initial.endpoint.endpoints.map(|e| e.tick), [1, 1]);
     assert!(initial.cells.iter().copied().all(on_rest));
-    fixture.mailbox.post_impulse(impact(2, 1, 0.0, 300.0));
+    fixture.mailbox().post_impulse(impact(2, 1, 0.0, 300.0));
     fixture.draw(2);
     let original = fixture.read();
     fixture.discard(4);
@@ -334,7 +336,7 @@ fn endpoint_clock_keeps_discarded_and_capture_frames_out_of_history() {
     fixture.timeline(3);
     fixture.draw(8);
     assert_eq!(fixture.read().endpoint.endpoints.map(|e| e.tick), [8, 8]);
-    fixture.mailbox.post_impulse(impact(9, 7, 0.0, 300.0));
+    fixture.mailbox().post_impulse(impact(9, 7, 0.0, 300.0));
     fixture.draw(9);
     assert!(fixture.read().height([0.0; 2]) < -0.002);
     fixture.replace_device();
@@ -354,7 +356,7 @@ fn a_shared_frequency_is_emitted_by_its_own_level() {
         return;
     };
     fixture.draw(0);
-    fixture.mailbox.post_impulse(impact(1, 4, 0.0, 800.0));
+    fixture.mailbox().post_impulse(impact(1, 4, 0.0, 800.0));
     fixture.draw(1);
     let witness = fixture.read();
     let amplitude = |level, wavelength: f64| {
@@ -384,7 +386,7 @@ fn a_hitch_puts_pressure_along_the_path() {
     };
     fixture.draw(0);
     for tick in 1..=8 {
-        fixture.mailbox.post_bodies(
+        fixture.mailbox().post_bodies(
             tick,
             Some(1),
             vec![pressure(1, [tick as f64 - 4.0, 0.0], 0.0)],
@@ -406,7 +408,7 @@ fn a_uniform_current_advects_the_ring() {
             return;
         };
         fixture.draw(0);
-        fixture.mailbox.post_impulse(impact(1, 0, 0.0, 400.0));
+        fixture.mailbox().post_impulse(impact(1, 0, 0.0, 400.0));
         for tick in (1..=97).step_by(8) {
             fixture.draw(tick);
         }

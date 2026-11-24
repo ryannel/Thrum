@@ -742,3 +742,16 @@
   retune the whitewater WP13.7 has passed, and an inner crest breaks in old foam on a real beach too. If the
   owner asks for the cue back, start a spike from the builder's patch-contrast reading.
   [Patch contrast](../../../.orchestrate/evidence/WATERS/WP13/gale-onset-brightness.log)
+- 2026-11-24 Recovered the M13 surf build onto the current water test fixtures. Kept M17's
+  compact fixtures, M18's trail guard and the current done-when criteria.
+- 2026-11-24 Repeated the portable Metal elevated trade-wind view after the recovery and
+  tried a weaker throw with a wider taper into the bore. A fresh inspection still found
+  angular whitewater on the crest and a fragmented transition into swash. The f64
+  projected sheet retained all 189 coarse three-surface probes at eight times the
+  resolution. The two earlier inspections also found split crests, so M13 reaches the
+  design's three-look stop. The wider taper is retained as an experiment.
+  [Target inspection and diagnostic](../../../.orchestrate/evidence/WATERS/M13/metal-crest-comparison.md).
+  Chrome WebGPU checked 14,275 transformed nodes with 0.422 mm maximum error and no faults.
+  Native Metal returned all 48 gale stations at 1440p. The captured-off query took 12.39 s
+  for 51.11 million cut nodes under shared load. The isolated Metal trail guard passed in
+  6.022 s. [Recovered target records](../../../.orchestrate/evidence/WATERS/M13/recovered-device-checks.md).
