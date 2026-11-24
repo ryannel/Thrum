@@ -388,8 +388,8 @@
     {
       "id": "WP4",
       "name": "Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "EFFECT-GRAPH:WP3",
@@ -404,18 +404,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.3",
           "statement": "With the camera and the scene at rest, no penumbra shows grain, and none crawls from frame to frame.",
           "inspect": "Consecutive `realtime` frames at rest at the route's stops, as native-size crops of the widest penumbrae and as the difference between neighbouring frames.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.4",
@@ -424,8 +424,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/moving-casters/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.5",
@@ -434,18 +434,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.6",
           "statement": "As the Sun sets behind a ridge, the Sun's light on a lit surface dims without a step.",
           "inspect": "A `fixed` time-lapse of the sunset at one stop, as consecutive frames and as the brightness of three lit points plotted against time.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.7",
@@ -454,10 +454,10 @@
           "ask": "Does the test plant a history value that a correct reset, each case that shows the centre ray, the choice between `passed` and `stopped`, and the pass's settling of a texel the soft edge has left must each not return, so that a stale or wrongly chosen read fails?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/history.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.8",
@@ -467,8 +467,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan-items.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.9",
@@ -478,8 +478,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan-cost.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
         },
         {
           "id": "WP4.11",
@@ -488,8 +488,33 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/replan/inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Sunset scrub repeatedly drops soft history",
+          "item": "WP4.6",
+          "repeat": false
+        },
+        {
+          "name": "Soft history reprojects against the motion vector",
+          "item": "WP4.7",
+          "repeat": false
+        },
+        {
+          "name": "Held balloon penumbra shows moving grain",
+          "item": "WP4.3",
+          "repeat": false
+        },
+        {
+          "name": "Depth alignment can start a disc ray on the caster",
+          "repeat": false
+        },
+        {
+          "name": "Maturity ledger labels 720p timing as 1080p",
+          "repeat": false
         }
       ]
     },
