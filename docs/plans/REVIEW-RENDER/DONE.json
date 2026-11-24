@@ -297,7 +297,7 @@
     {
       "id": "M5",
       "name": "A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -313,7 +313,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m51-review-fixes and .orchestrate/evidence/REVIEW-RENDER/M5/review-fix-final-metal.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
         },
         {
@@ -347,18 +347,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Replayed counters can pass validation in a later frame",
-          "item": "M5.1",
-          "repeat": false
-        },
-        {
-          "name": "Submitted capture gathers GPU timestamps with timing demand off",
-          "item": "M5.1",
-          "repeat": false
         }
       ]
     }
