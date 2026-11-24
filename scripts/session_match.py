@@ -61,6 +61,41 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def dependency_closure(package, *features, edges="normal,build"):
+    command = ["cargo", "tree", "--locked", "--offline", "-p", package, "--target", "all",
+               "--no-default-features", "-e", edges, "--prefix", "none"]
+    if features:
+        command += ["--features", ",".join(features)]
+    tree = subprocess.check_output(command, cwd=ROOT, text=True)
+    packages = {(name, version.removeprefix("v")) for name, version, *_ in
+                (line.split() for line in tree.splitlines() if line.strip())}
+    assert any(name == package for name, _ in packages), f"missing root: {package}"
+    return packages
+
+
+def closure():
+    network = {"thrum-network", "thrum-transport"}
+    shipping = {}
+    for package in ("v1-game", "v1-game-ios", "thrum-starter", "thrum-stones", "thrum-lighthouse",
+                    "mirror-scene", "water-scene"):
+        names = {name for name, _ in dependency_closure(package, edges="normal,build,dev")}
+        assert not names & network, f"{package} reaches {sorted(names & network)}"
+        shipping[package] = {"dependency_count_including_root": len(names), "network_crates": []}
+
+    before = {tuple(pair) for pair in
+              json.loads((ROOT / "tests/fixtures/transport/lock-before.json").read_text())}
+    transport = dependency_closure("thrum-transport")
+    adapters = dependency_closure("thrum-transport", "native", "browser") - transport - before
+    assert adapters, "the socket adapters must add crates relative to the pre-TRANSPORT lockfile"
+    memory = dependency_closure(PACKAGE)
+    assert network <= {name for name, _ in memory}, "the rehearsal must use the session and the message link"
+    assert not memory & adapters, f"{PACKAGE} without sockets reaches {sorted(memory & adapters)}"
+    sockets = dependency_closure(PACKAGE, "sockets")
+    assert adapters <= sockets, f"the sockets control is missing {sorted(adapters - sockets)}"
+    return {"shipping": shipping, "rehearsal_package": PACKAGE, "rehearsal_closure": sorted(memory),
+            "socket_only_crates_witnessed_with_sockets": sorted(adapters)}
+
+
 class Runner:
     def __init__(self, target, scratch):
         self.target = target
@@ -384,7 +419,7 @@ def identity(scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["image", "identity", "image-costs", "memory", "sockets"])
+    parser.add_argument("action", choices=["image", "identity", "image-costs", "memory", "sockets", "closure"])
     parser.add_argument("scenario", nargs="?", choices=[
         "steady", "faults", "slow", "listen", "lead", "costs", "prediction", "prediction-costs", *session_faults.SCENARIOS,
     ])
@@ -415,19 +450,24 @@ def main():
     if args.scenario is not None:
         parser.error("only memory takes a scenario")
     provenance = conformance.identity()
-    SCRATCH.mkdir(parents=True, exist_ok=True)
-    scratch_root = None if args.action == "identity" else SCRATCH
-    with tempfile.TemporaryDirectory(prefix=f"thrum-{args.action}-{args.target}-", dir=scratch_root) as directory:
-        scratch = Path(directory)
-        if args.action == "image":
-            record = images(args.target, scratch, provenance["commit"])
-        elif args.action == "image-costs":
-            record = costs(args.target, scratch, provenance)
-        else:
-            if args.target != "mac-metal":
-                parser.error("the identity build controls run on the Mac")
-            assert not scratch.resolve().is_relative_to(ROOT.resolve()), "identity controls require external scratch"
-            record = identity(scratch)
+    if args.action == "closure":
+        if args.target != "mac-metal":
+            parser.error("the dependency closure check runs on the Mac and covers all Cargo targets")
+        record = closure()
+    else:
+        SCRATCH.mkdir(parents=True, exist_ok=True)
+        scratch_root = None if args.action == "identity" else SCRATCH
+        with tempfile.TemporaryDirectory(prefix=f"thrum-{args.action}-{args.target}-", dir=scratch_root) as directory:
+            scratch = Path(directory)
+            if args.action == "image":
+                record = images(args.target, scratch, provenance["commit"])
+            elif args.action == "image-costs":
+                record = costs(args.target, scratch, provenance)
+            else:
+                if args.target != "mac-metal":
+                    parser.error("the identity build controls run on the Mac")
+                assert not scratch.resolve().is_relative_to(ROOT.resolve()), "identity controls require external scratch"
+                record = identity(scratch)
     output = args.output or SCRATCH / f"{args.action}-{args.target}.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps({**provenance, "action": args.action, "target": args.target,

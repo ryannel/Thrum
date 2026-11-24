@@ -837,7 +837,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             };
         } else {
             let mut entropy = [0; 16];
-            if getrandom::getrandom(&mut entropy).is_err() || entropy == [0; 16] {
+            if getrandom::fill(&mut entropy).is_err() || entropy == [0; 16] {
                 peer.close(wire::RESPONSE_CLOSE);
                 return Some(());
             }
