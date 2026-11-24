@@ -31,10 +31,9 @@ of media.
 - Tracked evidence at `1a7ee764`: 9,054 files, 3.71 GiB. 730 files are over 2 MiB and hold 2.32 GiB: 586 PNG
   (1.56 GiB), 90 MP4 (393 MiB), 10 MOV (188 MiB), 35 gz (128 MiB), 1 MKV, 8 JSON. The registered native baseline
   folder is 59 MiB.
-- `scripts/repo_check.py` takes no arguments and runs every check; `./dev check` and `./dev check-docs` both call
-  it. Its link check asks whether the target exists on disk inside the repository, not whether it is tracked. So
-  once a file leaves the tree, a link to it fails in a clean checkout and passes wherever someone restored the
-  file; the check has to ask the manifest, not the disk.
+- `./dev check` and `./dev check-docs` both call `scripts/repo_check.py`. Link targets resolve through Git or
+  the evidence manifest in a checkout. The Markdown walk also finds ignored files. Before WP5, restoring the
+  G7 record reintroduces its broken link to the old vision and scope document.
 - Worktrees of this repository share one Git directory (`git rev-parse --git-common-dir` gives
   `/Users/ryannel/Workspace/thrum/.git` from a builder's worktree and from the loop's clean checkout alike) and
   nothing else: a path relative to a checkout names a different folder in each.
@@ -116,7 +115,7 @@ the game gate uses it on a games repository.
 **4. Bulk files leave the tree and stay reachable.** No history is rewritten. Git history is the durable store
 for evidence that was committed. Since DEAD-TOOLS WP3, the sole live manifest for the link check and all store
 commands is the tracked [`.config/evidence-manifest.json`](../../../.config/evidence-manifest.json).
-`.orchestrate/evidence/BULK.json` and the original paths in WP2's proof describe the historical WP2 landing.
+WP2 committed `docs/evidence/BULK.json` at `7a5d16f30`. The copy under `.orchestrate/evidence/` came later.
 See the [storage rules](../../ASSET-LIFECYCLE.md#bulk-review-evidence) for the current layout.
 
 - A file under `docs/evidence/` over the cap is removed from the tree at HEAD. A **history** entry records its
@@ -126,7 +125,10 @@ See the [storage rules](../../ASSET-LIFECYCLE.md#bulk-review-evidence) for the c
   file. A history entry comes from its blob in a full clone.
 - The link check accepts a link to a path the manifest lists, whether or not a restored copy is on disk, and
   still refuses a link to an evidence path that is neither tracked nor listed. Existing links to the removed
-  records keep their targets through the manifest.
+  records keep their targets through the manifest. WP5 has the link check skip outbound links from untracked
+  Markdown at manifest-listed paths in Git checkouts. A restored record can be read at its original path
+  even if it links to a page that has since moved. Current documents still have their outbound links checked,
+  and links to headings in archived Markdown still resolve against the bytes in the store.
 - Registered exact-baseline references never leave: the registry in `.config/exact-baselines.json` is the
   exemption list, and the verifier still passes.
 - New bulk output stays out of Git. A builder keeps captures in `tmp/<task>/` and the reproduction record
@@ -190,10 +192,11 @@ orphan directories go; feature-gated code is compiled by `./dev check`.
 **7. The migrated plans pass the repository gate.** Since the 3.0 migration, both shape-rule readers use
 `work_packages` in the done-when files. The caller checks read open and Done work packages. The naming
 proof reads pins from open work packages. WP5 restores the readers under the existing rule versions and
-baseline and removes the three legacy records under mechanism 4. The remaining ATMOSPHERE link is an
-owning planner's plan-only correction before WP5's checked merge. A plan-only merge runs independently of
-the repository gate, and the resulting ATMOSPHERE design review applies to its own builders. WP5 is the
-first landing that requires the repaired gate to pass. It has no dependency on WP3 or WP4.
+baseline, archives the three legacy records and keeps restored Markdown out of the outbound link scan under
+mechanism 4. The remaining ATMOSPHERE link is an owning planner's plan-only correction before WP5's checked
+merge. A plan-only merge runs independently of the repository gate, and the resulting ATMOSPHERE design
+review applies to its own builders. WP5 is the first landing that requires the repaired gate to pass. It has
+no dependency on WP3 or WP4.
 
 ## Interfaces
 

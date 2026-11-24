@@ -97,3 +97,7 @@
   proof, which still stands.
 - 2026-11-24 Review suggestion. Mechanism 1 now describes per-file counts and the repository-wide bound.
   The shared track 4 wording remains for a project-wide edit.
+- 2026-11-24 Final design review, Must Fix 1. WP5 skips outbound links from untracked Markdown listed in the
+  evidence manifest. WP5.2 exercises the production link check before and after restoring the original G7 bytes,
+  including a valid heading link and a broken link from a tracked page. WP5 still lands before WP3 and WP4.
+  Mechanism 4 also names the manifest WP2 committed at `7a5d16f30`, as the review suggested.

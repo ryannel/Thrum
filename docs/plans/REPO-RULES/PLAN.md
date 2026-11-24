@@ -63,9 +63,12 @@ from the checkout and record their original bytes as history entries in `.config
 - `docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md`
 
 Keep a working-folder copy of each record, preserving any copy already there. The history entries keep existing
-links and Done proof references recoverable. Removing the G7 record from the checkout stops the link check
-from reading its stale brief link. WP5 lands through the normal `./dev check` gate. The shared
-`exact-images` proof follows the merge.
+links and Done proof references recoverable. The repository guard uses the manifest and tracked paths it already
+reads to skip outbound links from restored Markdown. Extend the existing evidence-store suite in scratch using
+the original G7 bytes. Run the production Markdown walk and link check with the record absent and again after
+`restore`, with a tracked page linking to its `#checks` heading in both runs. Confirm that adding a missing-file
+link to the tracked page still yields a diagnostic after restore. WP5 lands through the normal `./dev check`
+gate. The shared `exact-images` proof follows the merge.
 
 ## WP3 Names describe their jobs and the renderer's layers point one way
 
