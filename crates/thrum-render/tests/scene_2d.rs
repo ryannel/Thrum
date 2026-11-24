@@ -294,6 +294,11 @@ fn rejects_each_3d_request_without_changing_the_sprite_scene() {
         source.clone(),
         sprites.sheets[0].sheet.clone(),
     );
+    assert!(host.quality_knobs().is_empty());
+    assert!(matches!(
+        host.set_quality_knob("Sun penumbra", 1),
+        Err(thrum_render::contribution::QualityError::NoContribution)
+    ));
     let reference = fixture::capture(&mut host, &device, EXTENT, CaptureSource::Sdr).rgba;
     for (label, requests) in [
         (

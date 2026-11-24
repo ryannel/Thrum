@@ -53,8 +53,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .contribution
             .as_ref()
             .map_or_else(Vec::new, |entry| entry.quality_knobs());
-        knobs.extend_from_slice(self.prepared.lamp_quality());
         if let Some(scene) = self.prepared.three_d() {
+            knobs.extend_from_slice(scene.lamp_quality());
             knobs.extend_from_slice(scene.sun_penumbra_quality());
         }
         if self.governor.is_some()
@@ -75,13 +75,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         name: &str,
         value: u32,
     ) -> Result<(), crate::contribution::QualityError> {
-        if let Some(result) = self.prepared.set_lamp_quality(name, value) {
-            return result;
-        }
-        if let Some(result) = self
-            .prepared
-            .three_d_mut()
-            .and_then(|scene| scene.set_sun_penumbra_quality(name, value))
+        if let Some(scene) = self.prepared.three_d_mut()
+            && let Some(result) = scene
+                .set_lamp_quality(name, value)
+                .or_else(|| scene.set_sun_penumbra_quality(name, value))
         {
             return result;
         }
