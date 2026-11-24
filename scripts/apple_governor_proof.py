@@ -49,7 +49,7 @@ def window_arm(output, binary, env, route, name, *, enabled=True, load=0, therma
                   THRUM_GOVERNOR_LOAD=str(load), THRUM_GOVERNOR_ROUTE=str(route_path),
                   THRUM_GOVERNOR_RECORD="thermal" if thermal else "observed",
                   THRUM_MAC_TRANSITION=str(directory), THRUM_MAC_TRANSITION_ARM="baseline",
-                  THRUM_V1_FRAMES="520")
+                  THRUM_V1_FRAMES="720" if enabled and load else "520")
     with (directory / "game.log").open("w") as log:
         result = subprocess.run(["/usr/bin/caffeinate", "-d", "-i", "-u", str(binary)],
                                 cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,

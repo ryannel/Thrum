@@ -272,9 +272,16 @@ impl GovernorHost {
                 _ => 0.0,
             };
             let measured = timing.sum() + sample.gpu_present_ns.unwrap_or_default();
-            // Passes can overlap. Budget their enclosing interval when the
-            // output consumer was timed, including any gaps between passes.
-            let span = timing.timed_pass_span_nanoseconds().unwrap_or(measured);
+            // Passes can overlap. Use the timed output interval when available,
+            // with a floor from passes that can outlast the output consumer.
+            let span = timing
+                .timed_pass_span_nanoseconds()
+                .map_or(measured, |span| {
+                    timing
+                        .passes()
+                        .iter()
+                        .fold(span, |span, pass| span.max(pass.nanoseconds))
+                });
             let scale_work =
                 timing.bucket(TimingCategory::Forward) + timing.bucket(TimingCategory::Effects);
             // Discount the scale-dependent share by the same overlap. Gaps
