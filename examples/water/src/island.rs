@@ -253,7 +253,7 @@ fn island_breaker_section() -> Result<BreakerSection, Box<dyn Error>> {
     const BORE: f64 = 2.0;
     const SAMPLES: u32 = 256;
     let indices = vec![
-        0.0, 0.2, 0.4, 0.65, 0.75, 0.85, 1.0, 1.15, 1.3, 1.5, 1.75, BORE, 8.0,
+        0.0, 0.2, 0.4, 0.65, 0.75, 0.8, 0.85, 1.0, 1.15, 1.3, 1.5, 1.75, BORE, 8.0,
     ];
     let smooth = |u: f64| {
         let t = u.clamp(0.0, 1.0);
@@ -263,8 +263,10 @@ fn island_breaker_section() -> Result<BreakerSection, Box<dyn Error>> {
         .iter()
         .map(|&index| {
             let skew = smooth(index / 0.65);
-            let crest_lift = 0.28 * smooth(index / 0.65) * smooth((1.35 - index) / 0.7);
-            let throw = 6.0 * smooth((index - 0.72) / 0.45) * smooth((BORE - index) / 0.85);
+            // Leave a shared row between the pre-break lift and the throw.
+            // Interpolated pitching rows must have one throw at each height.
+            let crest_lift = 0.28 * smooth(index / 0.48) * smooth((0.8 - index) / 0.22);
+            let throw = 6.0 * smooth((index - 0.8) / 0.4) * smooth((BORE - index) / 0.85);
             (0..SAMPLES)
                 .map(|i| {
                     let phase = std::f64::consts::TAU * f64::from(i) / f64::from(SAMPLES);
