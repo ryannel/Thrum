@@ -91,7 +91,7 @@ def mac_extent(output):
     )
 
 
-def mac_arm(output, binary, env, recipe, name, frames=165, expected_conflict=False, capture=False):
+def run_mac_arm(output, binary, env, recipe, name, frames, capture):
     arm = output / f"{recipe}-{name}"
     arm.mkdir()
     launch = dict(env, THRUM_RECIPE=recipe, THRUM_V1_FRAMES=str(frames),
@@ -102,6 +102,11 @@ def mac_arm(output, binary, env, recipe, name, frames=165, expected_conflict=Fal
         result = subprocess.run(["/usr/bin/caffeinate", "-d", "-i", "-u", str(binary)],
                                 env=launch, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
                                 timeout=120, check=False)
+    return arm, result
+
+
+def mac_arm(output, binary, env, recipe, name, frames=165, expected_conflict=False, capture=False):
+    arm, result = run_mac_arm(output, binary, env, recipe, name, frames, capture)
     if expected_conflict:
         if result.returncode == 0 or "control acquired conflicting drawable extents" not in (
             arm / "game.log"

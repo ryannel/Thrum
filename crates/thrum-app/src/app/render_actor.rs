@@ -507,11 +507,10 @@ impl<G: Game> Actor<G> {
                 "control acquired conflicting drawable extents".into(),
             ));
         }
-        let extent_witness = self.extent_capture.as_ref().and_then(|_| {
-            encoded
-                .frame_extent()
-                .map(|extent| (extent, [frame.texture.width(), frame.texture.height()]))
-        });
+        let frame_extent = (self.extent_capture.is_some() || self.transition_proof.is_some())
+            .then(|| encoded.frame_extent())
+            .flatten();
+        let drawable_extent = [frame.texture.width(), frame.texture.height()];
         let view = frame.texture.create_view(&TextureViewDescriptor::default());
         let output = SurfaceOutput {
             view: &view,
@@ -526,13 +525,13 @@ impl<G: Game> Actor<G> {
             self.gpu.queue.present(frame);
             self.host.governor_present_called();
             if let Some(proof) = &mut self.transition_proof {
-                proof.presented();
+                proof.presented(frame_extent);
             }
             reply.platform.surface_status = SurfaceStatus::Presented;
-            if let Some((extent, drawable)) = extent_witness
+            if let Some(extent) = frame_extent
                 && let Some(capture) = &mut self.extent_capture
             {
-                capture.frame(extent, drawable);
+                capture.frame(extent, drawable_extent);
             }
         } else {
             reply.platform.surface_status = SurfaceStatus::SubmissionSkipped;

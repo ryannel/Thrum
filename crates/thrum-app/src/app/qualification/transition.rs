@@ -10,7 +10,7 @@ use std::{
 };
 use thrum_render::{
     capabilities::{configure_surface_once, drawable_extent},
-    runtime::{ExtentRequest, SurfaceSwitchRecord},
+    runtime::{ExtentRequest, FrameExtent, SurfaceSwitchRecord},
 };
 
 /// Arm of the ordinary window resize proof.
@@ -130,6 +130,7 @@ pub(in crate::app) struct TransitionProof {
     faulted: bool,
     governor: Option<GovernorProof>,
     drawable: Option<([u32; 2], [u32; 2])>,
+    frame_extent: Option<FrameExtent>,
     switch: Option<Value>,
 }
 
@@ -151,6 +152,7 @@ impl TransitionProof {
             faulted: false,
             governor: options.governor,
             drawable: None,
+            frame_extent: None,
             switch: None,
         })
     }
@@ -166,8 +168,9 @@ impl TransitionProof {
         self.stage = (next, now);
     }
 
-    pub(in crate::app) fn presented(&mut self) {
+    pub(in crate::app) fn presented(&mut self, extent: Option<FrameExtent>) {
         self.present_media = Some(CACurrentMediaTime());
+        self.frame_extent = extent;
     }
 
     pub(in crate::app) fn configure(
@@ -326,6 +329,13 @@ impl TransitionProof {
                 "wall_ms": reply.platform.worker_wall.as_secs_f64() * 1000.0,
                 "work": std::mem::take(&mut self.work),
                 "drawable": self.drawable.take(),
+                "frame_extent": self.frame_extent.take().map(|frame| json!({
+                    "submission": frame.submission,
+                    "source": frame.source,
+                    "destination": frame.destination,
+                    "viewport": frame.viewport,
+                    "attachment_extents": frame.attachments,
+                })),
                 "switch": self.switch.take(),
             })
         )?;

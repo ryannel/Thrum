@@ -475,6 +475,7 @@ def main():
     parser.add_argument("--target", choices=TARGETS, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--binary", type=Path)
+    parser.add_argument("--allow-occluded", action="store_true", help="accept observed window geometry on an occluded surface")
     parser.add_argument("--web-root", type=Path, default=ROOT / "target/v1-game-web")
     for name in ("before", "before-load", "base-binary", "binary", "route", "store"):
         parser.add_argument(f"--valley-{name}", type=Path)
@@ -485,11 +486,13 @@ def main():
             parser.error(f"{args.action} is a Metal proof")
         (ROOT / "tmp").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="render2d-window-", dir=ROOT / "tmp") as scratch:
-            record = render2d_crisp.window(Path(scratch), args.binary)
+            record = render2d_crisp.window(Path(scratch), args.binary, allow_occluded=args.allow_occluded)
         if args.output:
             args.output.write_text(json.dumps(record, indent=2) + "\n")
         print(json.dumps(record, separators=(",", ":")))
         return
+    if args.allow_occluded:
+        parser.error("--allow-occluded applies only to the window proof")
     args.binary = args.binary or ROOT / "target/release/v1-game"
     retained = FIXTURES / f"cost-{args.target}.json.gz"
     if args.action in ("field", "costs"):
