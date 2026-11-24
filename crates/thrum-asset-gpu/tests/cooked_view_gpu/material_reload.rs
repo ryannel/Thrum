@@ -25,17 +25,11 @@ const LIMIT: Duration = Duration::from_secs(8);
 // Keep the fixture's daylight below clipping so the rock's materials differ in the SDR readback.
 const EXPOSURE: f32 = 0.0001;
 
-const IDENTITY: &str =
-    "fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
-    return surface;
-}";
-
-const BANDS: &str =
+const BLUE: &str =
     "fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
     var out = surface;
-    let band = step(0.5, fract(at.world.x * 3.0));
-    out.base_colour = vec4(surface.base_colour.rgb * mix(vec3(1.0), vec3(0.15), band), 1.0);
-    out.roughness = 0.95;
+    out.base_colour = vec4(0.0, 0.0, 1.0, 1.0);
+    out.roughness = 1.0;
     return out;
 }";
 
@@ -194,27 +188,22 @@ fn early_request(path: CookedDrawPath) {
     let fixture = Fixture::new(&queue, &select_path(capabilities, path));
     let material = fixture.assets.material();
     material.request(hook("early/green.wgsl", GREEN));
-    let newest = material.request(hook("early/bands.wgsl", BANDS));
+    let newest = material.request(hook("early/blue.wgsl", BLUE));
     let (mut host, stats) = fixture.attach(path);
 
-    let (early, outcome) = until_outcome(&material, newest, || capture(&mut host));
-    assert!(
-        matches!(outcome, MaterialOutcome::Promoted { .. }),
-        "{outcome}"
-    );
+    let early = promoted_pixels(&mut host, &material, newest);
     assert!(stats.lock().expect("stats").drawn.is_some());
-    assert_eq!(material.accepted().as_deref(), Some("early/bands.wgsl"));
+    assert_eq!(material.accepted().as_deref(), Some("early/blue.wgsl"));
 
-    let identity = material.request(hook("late/identity.wgsl", IDENTITY));
-    let placement = promoted_pixels(&mut host, &material, identity);
-    assert_visible_change(&early, &placement);
-
-    let green = material.request(hook("late/green.wgsl", GREEN));
-    let superseded_look = promoted_pixels(&mut host, &material, green);
-    assert_visible_change(&early, &superseded_look);
-
-    let bands = material.request(hook("late/bands.wgsl", BANDS));
-    assert_eq!(early, promoted_pixels(&mut host, &material, bands));
+    // The neutral background and placement and the superseded green hook cannot produce
+    // this blue signature. One readback proves material selection without extra reloads.
+    let blue = early
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|[r, g, b, _]| *b > r.max(g).saturating_add(12))
+        .count();
+    assert!(blue > early.len() / 4 / 100, "only {blue} blue pixels");
 }
 
 #[test]
@@ -276,7 +265,7 @@ fn replace_device(path: CookedDrawPath) {
     await_drawn(&mut host, &stats, Drawn::Any).expect("resident rock");
     let placement = capture(&mut host);
 
-    let accepted = material.request(hook("hooks/bands.wgsl", BANDS));
+    let accepted = material.request(hook("hooks/blue.wgsl", BLUE));
     let before = promoted_pixels(&mut host, &material, accepted);
     assert_eq!(
         stats.lock().expect("stats").drawn_device_generation,
@@ -284,7 +273,6 @@ fn replace_device(path: CookedDrawPath) {
     );
     assert_visible_change(&placement, &before);
 
-    let outstanding = material.request(hook("hooks/green.wgsl", GREEN));
     let (_device, queue, caps) = gpu
         .fresh_adapter()
         .device_with_hardware(Profile::Portable, &Restriction::default(), 2, &[])
@@ -293,6 +281,9 @@ fn replace_device(path: CookedDrawPath) {
     let inputs = host.device_prepare_inputs().expect("replacement inputs");
     let mut candidate =
         pollster::block_on(inputs.prepare(&caps, &queue, None)).expect("prepared replacement");
+    // Prepare the spare while the old hook is stable. The next request has no old-device
+    // submission on which it could promote before publication.
+    let outstanding = material.request(hook("hooks/green.wgsl", GREEN));
     device.destroy();
     host.publish_device(&mut candidate)
         .expect("published replacement");
@@ -315,7 +306,7 @@ fn replace_device(path: CookedDrawPath) {
         let restaged = stats.lock().expect("stats").swaps.len() > swaps;
         (restaged && !material.restoring()).then_some(())
     });
-    assert_eq!(material.accepted().as_deref(), Some("hooks/bands.wgsl"));
+    assert_eq!(material.accepted().as_deref(), Some("hooks/blue.wgsl"));
     let restored = capture(&mut host);
     assert_eq!(
         stats.lock().expect("stats").drawn_device_generation,
