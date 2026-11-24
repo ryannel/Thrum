@@ -64,14 +64,26 @@ fn every_index_is_a_noncrossing_curve_and_the_first_profile_overhangs() {
 
 #[test]
 fn surf_keeps_the_beach_waterline_closed_form() {
-    let f = field(0.5);
+    let mut f = field(0.5);
+    // A resolved short wave can change the supported height, but its
+    // geometry must not move either crossing of the inner swash.
+    let short_amplitude = 0.16_f64;
+    f.layers[1] = thrum_sea_model::LongWaves::new(
+        vec![thrum_sea_model::Component {
+            wave_vector: [TAU / 4.0, 0.0],
+            amplitude: short_amplitude,
+            phase: 0.37,
+        }],
+        0.0,
+    )
+    .unwrap();
     let mut b = body("shore", BodyKind::Sea, 0.0);
     b.gains = [1.0; 4];
     let mut map =
         Map::prepare(grid([101, 5], |x, _| (x - 50.0) * 0.1), vec![b], profile()).unwrap();
     map.enable_surf(SurfProfile::default()).unwrap();
     let c = 0.6 / (2.0 * 2.0_f64.sqrt());
-    let swash = (0.7 * 2.0 * 2.0_f64.sqrt() * 0.5).min(1.5);
+    let swash = (0.7 * 2.0 * 2.0_f64.sqrt() * short_amplitude.hypot(0.5)).min(1.5);
     for sign in [-1.0, 1.0] {
         let expected = sign * c * swash / (1.0 + sign * c);
         let x = 50.0 + expected / 0.1;
