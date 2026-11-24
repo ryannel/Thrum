@@ -192,3 +192,9 @@
   frame's fractional visibility. The design's rim-ray option rechecks those fractions against the current
   disc and restores the centre value where the rays agree. It starts at four rays and preserves disputed
   history values rounded to an endpoint, as WP4.7 requires.
+- 2026-11-24 WP4 builder verification. Metal passed the planted history and no-allocation toggle guards.
+  The realtime fast cube and balloon route show named receiver patches clearing into shadow or full
+  Sun. The three scene-linear sunset probes dimmed over consecutive submissions. Timing recorded both
+  arms of the toggle on the shared Mac. The exact-image check runs on main after integration.
+  [Motion](../../../.orchestrate/evidence/RAY-TRACING/WP4/moving-casters/README.md) ·
+  [Timing](../../../.orchestrate/evidence/RAY-TRACING/WP4/cost-notes.md).

@@ -422,8 +422,8 @@
           "statement": "Along the route at normal speed, a moving caster's shadow stays under it in every frame: its body is never a frame behind. On a still receiver that a soft edge has left for the shadow's body or for full Sun, the edge's old value shows for at most one frame. Inside the edge where it now lies, no remnant of an earlier position shows once the settle length and one more frame have passed. Under a caster whose shadow moves further in a frame than its edge is wide, the edge it left does not read as a second edge or a trail. The evidence names the frames occlusion changed and states the settle length.",
           "inspect": "`realtime` sequences as consecutive native-size frames, each numbered. One is around a moving balloon's shadow and a named still receiver its soft edge crosses, from the frame before occlusion changes there to two past the settle length. One is around a caster the proving ground moves low and fast enough that its shadow moves further in a frame than its edge is wide, with a named still receiver the edge leaves for the body and one it leaves for full Sun, from the frame before to three frames after.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/moving-casters/README.md",
           "verdict": "",
           "review": ""
         },
@@ -466,7 +466,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/metal-current.log",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/final-target-checks.log",
           "verdict": "",
           "review": ""
         },
@@ -486,8 +486,8 @@
           "statement": "No exact baseline moves: with no request, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         },
