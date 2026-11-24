@@ -498,7 +498,9 @@ impl std::error::Error for GameWorldError {
         match self {
             Self::Controls(error) | Self::Admission(error) => Some(error),
             Self::Simulation { source, .. } => Some(source),
-            _ => None,
+            Self::Exhausted(_) => None,
+            #[cfg(feature = "proving")]
+            Self::Reconstruction(_) => None,
         }
     }
 }
