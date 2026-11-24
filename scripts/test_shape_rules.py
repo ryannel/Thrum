@@ -220,11 +220,11 @@ test_role="fixtures"
 
     def test_pins_are_discovered_and_expire(self):
         self.write("scripts/g5_probe.py", "")
-        plan = {"milestones": [{"status": "in_progress", "items": [{"id": "M1.1", "check": "python3 scripts/g5_probe.py"}]}]}
+        plan = {"work_packages": [{"status": "in_progress", "items": [{"id": "WP1.1", "check": "python3 scripts/g5_probe.py"}]}]}
         self.write("docs/plans/OTHER/DONE.json", json.dumps(plan))
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(shapes.check(self.root, "history-names", ["scripts"]), [])
-        plan["milestones"][0]["status"] = "done"
+        plan["work_packages"][0]["status"] = "done"
         self.write("docs/plans/OTHER/DONE.json", json.dumps(plan))
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertTrue(shapes.check(self.root, "history-names", ["scripts"]))
@@ -269,8 +269,11 @@ test_role="fixtures"
         self.assertEqual(self.sites("evidence-path"), [])
 
     def script_plan(self, check, status):
-        plan = {"milestones": [{"id": "M1", "status": status, "items": [{"id": "M1.1", "check": check}]}]}
+        plan = {"work_packages": [{"id": "WP1", "status": status, "items": [{"id": "WP1.1", "check": check}]}]}
         self.write("docs/plans/OTHER/DONE.json", json.dumps(plan))
+
+    def test_done_when_checks_read_checked_in_plan(self):
+        self.assertIn("python3 scripts/test_shape_ratchet.py", shape_matchers.done_when_checks(shapes.ROOT))
 
     def test_script_caller_refuses_a_script_nothing_names(self):
         self.write("scripts/orphan_tool.py", "print('orphan')\n")
@@ -615,7 +618,7 @@ slow-timeout = { period = "10s" }
     UNPLANNED = ".config/unplanned-test-binaries.txt"
 
     def plan_check(self, check, status="not_started"):
-        plan = {"milestones": [{"id": "M1", "status": status, "items": [{"id": "M1.1", "check": check}]}]}
+        plan = {"work_packages": [{"id": "WP1", "status": status, "items": [{"id": "WP1.1", "check": check}]}]}
         self.write("docs/plans/OTHER/DONE.json", json.dumps(plan))
 
     def test_test_binary_holds_targets_no_plan_names(self):

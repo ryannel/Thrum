@@ -469,15 +469,15 @@ def read(root, relative):
 
 
 def done_when_checks(root):
-    """Every done-when item's check, open or Done, so closing a milestone moves no count."""
+    """Every done-when item's check, so closing a work package moves no count."""
     checks = []
     for path in sorted((root / "docs/plans").glob("*/DONE.json")):
         try:
             plan = json.loads(path.read_text())
         except ValueError:
             continue
-        for milestone in plan.get("milestones", []):
-            checks.extend(item["check"] for item in milestone.get("items", []) if item.get("check"))
+        for work_package in plan.get("work_packages", []):
+            checks.extend(item["check"] for item in work_package.get("items", []) if item.get("check"))
     return checks
 
 

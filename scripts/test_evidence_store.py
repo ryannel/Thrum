@@ -119,6 +119,31 @@ class EvidenceStore(unittest.TestCase):
         store.save(self.root, manifest)
         self.assertTrue(store.check(self.root))
 
+    def test_restored_markdown_is_only_a_link_target(self):
+        name = "docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md"
+        original = store.git(store.ROOT, "show", f"77c70eaac:{name}")
+        archived = self.write(name, original)
+        page = self.write("review.md", f"[checks]({name}#checks)\n".encode())
+        command(self.root, "add", "-f", name, page.name)
+        command(self.root, "commit", "-qm", "original review")
+        commit = command(self.root, "rev-parse", "HEAD")
+        entry = {"kind": "history", "path": name, "size": len(original),
+                 "sha256": hashlib.sha256(original).hexdigest(),
+                 "blob": command(self.root, "rev-parse", f"HEAD:{name}"), "commit": commit}
+        command(self.root, "rm", "-q", name)
+        store.save(self.root, {"schema": 1, "entries": [entry]})
+
+        self.assertFalse(archived.exists())
+        self.assertEqual(repo_check.check_links(self.root, repo_check.markdown_files(self.root)), ([], 1))
+        store.restore(self.root, name)
+        self.assertEqual(archived.read_bytes(), original)
+        files = repo_check.markdown_files(self.root)
+        self.assertIn(archived, files)
+        self.assertEqual(repo_check.check_links(self.root, files), ([], 1))
+        page.write_text(page.read_text() + "[missing](missing.md)\n")
+        self.assertEqual(repo_check.check_links(self.root, files),
+                         (["missing/outside local link: review.md: missing.md"], 2))
+
     def test_one_manifest_under_config_keeps_relocated_paths_reserved(self):
         self.assertTrue(store.MANIFEST.startswith(".config/"))
         name = "docs/evidence/example/relocated.json"

@@ -49,6 +49,9 @@ def check_links(root, files):
     tracked = evidence_store.tracked(root) if shape_rules.owns_history(root) else None
     directories = {parent.as_posix() for path in (tracked or []) for parent in Path(path).parents}
     for path in files:
+        source = path.relative_to(root).as_posix()
+        if tracked is not None and source in listed and source not in tracked:
+            continue  # Restored evidence is a link target; its outbound links are historical.
         for match in LINK.finditer(prose(path.read_text(encoding="utf-8"))):
             value = match[1].strip()
             if value.startswith("<"):

@@ -4611,6 +4611,14 @@
     },
     {
       "kind": "history",
+      "path": "docs/evidence/CULLING/M2.md",
+      "size": 8116,
+      "sha256": "9684466f55224be95d9f6bd2434e14197784a0c3ff49dc98fe5391f73dfa2160",
+      "blob": "eb59a7bf5f99f24f2aee35f7a27a67b66757ce53",
+      "commit": "77c70eaacac93c2bcd1792b05ae44b75bed3cb62"
+    },
+    {
+      "kind": "history",
       "path": "docs/evidence/CULLING/M2/simulator-completeness/negative/direct.png",
       "size": 2958545,
       "sha256": "9c9f9663bf79c1e4e4410e9973fe7a840a0ba25b682f37973c538ca9fa7fed1c",
@@ -7679,6 +7687,14 @@
     },
     {
       "kind": "history",
+      "path": "docs/evidence/render/cooked-draw/BASE",
+      "size": 41,
+      "sha256": "01e07e44e61817040149818238c168ed22578dfe837738c13f58bf0bac6dae26",
+      "blob": "0c07ceed810655e7a3d0123bdf4bf4b1c48e14b8",
+      "commit": "77c70eaacac93c2bcd1792b05ae44b75bed3cb62"
+    },
+    {
+      "kind": "history",
       "path": "docs/evidence/render/cooked-draw/direct.png",
       "size": 2128364,
       "sha256": "d83e906335c081f1216cd0554ac5db0b3d768ea523a7f91ba34df703c1411b84",
@@ -8996,6 +9012,14 @@
       "sha256": "cda8801a0218c5fd234005af34b09d68e93198e4aa3cb8ce572cdcd75c78ca8b",
       "blob": "0a969366981825b01f27e5768435a4c75eae3dfb",
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
+    },
+    {
+      "kind": "history",
+      "path": "docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md",
+      "size": 41506,
+      "sha256": "fdc7944a77732dc7673f4cf043a3aafdb672baaf37d9cb69db9fb673d419927d",
+      "blob": "67ec65900a7fdfa87f33b6153b64960838d3947a",
+      "commit": "77c70eaacac93c2bcd1792b05ae44b75bed3cb62"
     },
     {
       "kind": "history",

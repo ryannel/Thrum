@@ -46,10 +46,10 @@ def pinned_names(root, paths):
     """Names pinned by executable checks, xtask and the baseline registry only."""
     sources = []
     for path in sorted((root / "docs/plans").glob("*/DONE.json")):
-        for milestone in json.loads(path.read_text()).get("milestones", []):
-            if milestone.get("status") == "done":
+        for work_package in json.loads(path.read_text()).get("work_packages", []):
+            if work_package.get("status") == "done":
                 continue
-            for item in milestone.get("items", []):
+            for item in work_package.get("items", []):
                 if item.get("check"):
                     sources.append((f"{path.relative_to(root)}:{item['id']}", item["check"]))
     for relative in paths:
