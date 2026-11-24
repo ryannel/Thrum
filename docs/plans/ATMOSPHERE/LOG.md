@@ -23,8 +23,10 @@
   The pre-change baseline, volume recording and timing arms are queued under the shared GPU lock;
   no shader change or numerical, image or device qualification is claimed by this preparation.
 
-- 10 November re-plan from [the module list](../ARCHITECTURE.md). M5 and M6 added and moved onto the loop's done-when
-  file; M1–M4 keep their prose criteria above. M5 is commissioned now because sea and clouds read the sky through it.
+- 10 November re-plan from [the module list](../ARCHITECTURE.md). M5 and M6 moved onto the loop's done-when file.
+  Sea and clouds read the sky through M5. WP1 and WP2 were completed before the done-when file.
+  [Moonless midnight record](../../../.orchestrate/evidence/ATMOSPHERE/WP1-M4-records.md#m1-the-valley-remains-legible-at-moonless-midnight-done) ·
+  [Star emergence record](../../../.orchestrate/evidence/ATMOSPHERE/WP1-M4-records.md#m2-stars-emerge-as-the-observer-turns-and-time-advances-done)
 - 10 November revision after [the design review](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md) at `4bbe44a4` (changes
   requested). Finding 1: the design now carries a numerical acceptance table.
   [Full entry](../../../.orchestrate/evidence/ATMOSPHERE/log-entries.md#entry-1).
@@ -735,3 +737,15 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   Metal frame with both Sun cascades disabled proves the direct ground-field and far-transmittance hazards
   on the same resources forward opaque reads. Contribution lists preserve the indices when they combine
   resources. [Live-producer evidence](../../../.orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/README.md)
+
+- 2026-11-24 The next stretch schedules the archived west-lookout crossing and the finite-disk diagnostic
+  after WP8. WP3 uses the old D1–D3 witnesses and the recorded Neutral Highlights choice. WP4 records a bounded
+  offline trial under the 17 November rendering bar. WP8.2 now covers the far-aerial loss of near scatter
+  correction reproduced in two WP7 reviews. The Apple Tile WP0 link now points to its current heading.
+  [First WP7 far-aerial probe](../../../.orchestrate/evidence/ATMOSPHERE/WP7-review-2.md#suggestion--verified-scheduled-for-m82) ·
+  [Second WP7 far-aerial probe](../../../.orchestrate/evidence/ATMOSPHERE/WP7-review-3.md#follow-up-for-m82)
+
+- 2026-11-24 Completed work package reviews formerly linked from the plan.
+  [WP5](../../../.orchestrate/evidence/ATMOSPHERE/WP5-review.md) ·
+  [WP9](../../../.orchestrate/evidence/ATMOSPHERE/WP9-review.md) ·
+  [WP10](../../../.orchestrate/evidence/ATMOSPHERE/WP10-review.md)

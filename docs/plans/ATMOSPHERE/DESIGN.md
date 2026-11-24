@@ -22,17 +22,16 @@ defect `SHOWCASE` WP5 found on the populated valley. WP10 is built before WP6 an
 the authored valley: `SHOWCASE` WP9 fixes them, and WP6 waits for it.
 
 **The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
-plausible result as fast as possible, not physical accuracy. For the work packages not yet Done (WP10, WP6, WP7 and WP8) the
-look and the speed decide: each is judged against its inspection list at the bar of shipped games, with cost as
-tripwire records. An f64 reference is a diagnostic for a picture that looks wrong, and none is a pass mark.
+plausible result as fast as possible, not physical accuracy. Rendering work is judged against its inspection list at
+the bar of shipped games, with cost as tripwire records. An f64 reference is a diagnostic for a picture that looks wrong.
 [Closing G3s](#closing-g3s) and [How the view volume is proved](#how-the-view-volume-is-proved) apply it; the
 [project settings](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) hold the rule. The numerical acceptance
 tables below record how WP1 to WP5 and WP9 were proved, and their tests stay in the workspace check as regression
 guards.
 
-The sections below through [Frame and cost](#frame-and-cost) are the design WP1–WP4 were built from and are
-unchanged. [Environment identity and products](#environment-identity-and-products) governs WP5 and
-[Closing G3s](#closing-g3s) governs WP6. Both were revised on 10 November after
+The original design for WP1–WP4 is below through [Frame and cost](#frame-and-cost), with the remaining shadow work in
+[Surface Sun visibility](#wp3-surface-sun-visibility). [Environment identity and products](#environment-identity-and-products)
+governs WP5 and [Closing G3s](#closing-g3s) governs WP6. Both were revised on 10 November after
 [the first design review](../../../.orchestrate/evidence/ATMOSPHERE/design-review-1.md): the numerical acceptance is written out
 product by product, environment reflection is a lent and tested operation, and the limits of each lent lookup
 and of the cloud field are stated. They were revised again on 11 November after
@@ -133,6 +132,13 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### WP3 surface Sun visibility
 
+WP3 follows WP8 and addresses the archived in-cascade flash on the authored west-lookout spur. The moving shadow
+edge should stay attached to the terrain through the 17.40–17.80 h crossing and the separate slow ±20° pan, on
+Metal and Chrome. The held 17.4 h route stop and the shipped Ground E lip were judged in WP6 and are controls here.
+Use WP6's Red Dead Redemption 2 shadow bar for a grounded, continuously moving edge with readable terrain texture.
+The archived 1080p pair at frames 226–227 locates the defect on row 665. Use Neutral Highlights for both arms,
+with the existing incident meter and low-light key. [Exposure decision](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#exposure-audit-decision)
+
 WP3 uses the established combination of stable cascades, overlapping
 handoffs and directional percentage-closer soft shadows (PCSS).
 Guerrilla shipped stable cascades, and Godot and Unreal expose split
@@ -150,21 +156,23 @@ the abrupt step. The matched 32-tap screen keeps the eight blocker
 probes, physical Sun radius, receiver-plane comparison and small
 radius exits. Rotation applies only to the unrestricted last call.
 It substantially reduces the coherent flash, but produces visible
-penumbra crosshatching on Metal and Chrome. Keep the stock shader.
+penumbra crosshatching on Metal and Chrome. The stock shader remains the comparison arm.
 [Unity directional PCSS](https://raw.githubusercontent.com/Unity-Technologies/Graphics/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/PCSS.hlsl) ·
 [Matched screen evidence](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 
-The next design under review filters the scalar Sun visibility in
-the current frame before opaque lighting. The production precedents
-are URP's screen-space shadow mask and FidelityFX's spatial,
-receiver-guided denoising. Keep the raw receiver arithmetic and
-test a small spatial footprint against the original penumbra and
-geometry boundaries. The existing Occlusion prepass omits cooked
-geometry and cannot supply the receiver winners. G4 history stays
-downstream. Surface motion does not describe the moving cast edge.
-New graph work needs a costed proof and a review with G3t and G5.
-[Unity URP screen shadows](https://docs.unity.com/en-us/engine/7000.0/manual/lighting-overview/lighting/shadows-in-urp/renderer-feature-screen-space-shadows) ·
-[FidelityFX shadow denoiser](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/denoiser/).
+Use the last-cascade stored depth to resolve the remaining fractional coverage as the filter footprint moves.
+The archived merged-interval screen recovers the limb on all eight saved receivers. Its switch between a contour
+answer and a whole-receiver fallback flashes on the separate extinction trajectory. A candidate must preserve
+fractional coverage through extinction and through any change in filter work. Screen against both trajectories
+and the open-Sun, full-occlusion and represented-caster controls before carrying it into the game. Keep the
+bounded work in the shared surface evaluator for synthetic and cooked surfaces, where it applies to direct
+sunlight. The aerial transport keeps its own visibility evaluation and G4 history stays downstream.
+
+The previous current-frame receiver-guided resolve introduced ribbing on both targets. A new pass also needs
+cooked receiver coverage that the Occlusion prepass does not supply. A graph change goes through design review
+with the graph and cooked-draw owners. Compare capture-off whole-frame and shadow costs with the starting build
+at the same extent and settings, under recorded load. Use the project tripwires. If a registered image moves,
+the [exact baseline ownership rule](../ARCHITECTURE.md#exact-baselines) governs the landing.
 
 Park 16-ray SMRT and contour-area fallback. The first is too
 coarsely quantized for the saved limb, and the second switches
@@ -178,15 +186,18 @@ establish the need for a novel coverage model.
 [Saved-field evidence](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
 [Filterable shadow-map limits](https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-8-summed-area-variance-shadow-maps).
 
-WP4 retains the independent finite-disk reference. Clip terrain and
-detached spans to the same solar chord and union them before integrating
-solid angle. The projected circle-area approximation has a normalized
-solid-angle error below 0.0033 percentage points for the actual Sun.
-Original-triangle rays remain the referee. Frozen original-edge packets
-match the finite samples, while three conservative omission proofs
-leave moving-receiver admission unresolved. Keep those witnesses and
-a predeclared work limit for the bounded follow-up. Exact matching does not
-gate the WP3 visual outcome.
+### WP4 finite-disk shadow diagnostic
+
+WP4 tests one source-side reuse candidate offline against the saved finite-disk reference. Traverse source
+bounds against the bundle of Sun rays swept across a receiver patch and phase interval. Reuse the overlapping
+nodes for each query in that domain, including undecided nodes. At each receiver, refine those candidates to
+the original terrain and detached caster spans, clip to the same solar chord and union them before
+integrating. Compare against the independent original-triangle ray reference. Frozen edge packets agree at the
+saved finite samples, while three conservative omission proofs left moving receivers unresolved. The candidate
+must report unsupported queries as such, with work counted for preparation, receiver queries and detached casters.
+Fix the CPU work limit before the run from the recorded workload. Keep the matched errors, omissions or
+overcoverage and the decision to retain or park the candidate as a diagnostic. The runtime remains on WP3's
+reviewed path. Any later production proposal needs its own review and cost account.
 
 ## Frame and cost
 
@@ -204,7 +215,7 @@ day variant retains today's depth discard where no other consumer needs it.
 Select it only on a profile range where the brightest star is shown to be
 subvisible. Record logical attachment area, named GPU intervals, full-frame cost and motion on Mac and Chrome.
 Physical tile traffic at night and through the transition is queued with
-[Apple tile M0.4](../APPLE-TILE/PLAN.md#wp0-proof-route-counters-and-capture-probe-pending).
+[Apple tile M0.4](../APPLE-TILE/PLAN.md#wp0-a-repeatable-offscreen-valley-proves-the-comparison-path-done).
 Investigate visible hitches
 and comparable regressions over the build plan tripwire.
 
@@ -890,11 +901,10 @@ as history and not called paired. The record is a tripwire and sets no budget
 starting commit, is investigated, and the finding is kept beside the record. WP6.5's check passes the record: it
 fails on an arm, a named pass or the load that is missing, on a run that did not complete, on a record that
 does not say whether a hitch was seen in the scrub, and on a tripped wire with no investigation, and on no
-figure. The reviewer's question on the module's timing is WP8.9's, in the last work package, where the qualified
-numbers are taken.
+figure. WP8.9 records the paired cost of the fog bank. WP3.3 records the separate shadow comparison.
 
-**What is out.** The west-lookout shadow crossing (WP3) stays a parked spike and the exact finite-disk match (WP4)
-stays deferred; both are named in the review as known and are not judged. The exclusion is narrow: it covers the
+**Scope of the WP6 verdict.** WP6 records the west-lookout shadow crossing and finite-disk comparison as open.
+WP3 and WP4 follow WP8 independently of G3s. WP6's visual exclusion covers the
 moving shadow edge on the authored spur between 17.40 and 17.80 h. The held `sunset-clear-sun` stop at 17.4 h is
 judged like every other stop, and the terrain lip recorded on the shipped Ground E pan is a separate finding,
 judged under the brightness-step entry once `SHOWCASE` WP9 has fixed its mesh. Moon, weather and calibrated night
@@ -1058,6 +1068,12 @@ terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind make
 the f64 reference in `atmosphere/gpu/tests/reference/` takes one Mie value per band, and
 [the haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III says which grids band in thick, coloured haze; the builder chooses the grid from the stills.
 
+WP8 extends the cloud-factor function in `crates/thrum-render/src/atmosphere/cloud.rs` and `cloud.wgsl`. Put the
+test medium beside the labelled test cloud field in `examples/v1-game/src/host/scene_source/cloud.rs` until
+`CLOUDS` WP14 replaces it. `CLOUDS` WP3 supplies the far aerial lookup and the [clouds design](../CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud)
+defines the medium coefficients. If the ground band cannot fit a forward pipeline's WebGPU sampled-texture limit,
+record the proposal in the log and end `BLOCKED`.
+
 ### Who owns what
 
 The atmosphere is one medium with two kinds of state, and each has one owner.
@@ -1217,6 +1233,15 @@ baseline is unshadowed and the joint source is not. That is how a shaft shows ag
 the terminal pair is built in WP7 with the air alone. `CLOUDS`' compose already reads the lent transport at its
 cloud's front distance, so it needs no change.
 
+For a sky-ending ray with the far aerial operation, carry that same substitution into each finite-distance
+result past 32 km. If the clear-air continuation gives `(T_clear, S_clear)` at the queried distance, return
+`(R·T_clear, R·S_clear + ΔS)`. The clear path starts from the volume's clear baseline, so the corrected value
+at the boundary is the joint boundary value. At the sky endpoint in-scatter tends to the corrected disk-free
+sky's radiance. If only the near air is shadowed, `R` is 1 and the near
+scatter deficit `ΔS` persists while the same far air adds light to both rays. The clear and ground-ending
+paths keep their existing support. The calculation reuses the terminal pair and the existing far approximation
+with no new producer or texture.
+
 **The ground band.** A provider may register, beside its 2D Sun-path field, a ground band: optical depth toward
 the Sun at heights above the ground, with its mapping and a border width. The band holds the **whole path**:
 at each node, the provider's own march from the node to where the ray leaves the band, plus the 2D field's
@@ -1279,7 +1304,8 @@ its speed.
   volume itself reports for that ray, and the test runs a sky that takes `ΔS` twice and one that takes none
   through the same comparison, where each fails: with a clear sky of 4 and `ΔS` of −0.25, once gives 3.75 and
   twice 3.5, and both are dimmer, so dimming alone would pass either (WP7.13). A sky and a star behind a slab
-  compose once together (WP8.2). A provider's medium is counted once with the air: the transmittance beyond a slab is the
+  compose once together, and the lent far lookup preserves the near correction (WP8.2). A provider's medium
+  is counted once with the air: the transmittance beyond a slab is the
   air's times the slab's, and a volume that applies either twice fails (WP8.1).
 - **The f64 quadrature is a diagnostic.** The reference in `atmosphere/gpu/tests/reference/` and the proof
   scripts stay. A builder whose haze bands, steps or sits too bright compares the volume with them to find the

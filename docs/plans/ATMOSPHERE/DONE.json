@@ -548,6 +548,7 @@
     {
       "id": "WP8",
       "name": "A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome",
+      "depends_on": ["CLOUDS:WP3"],
       "items": [
         {
           "id": "WP8.1",
@@ -563,10 +564,10 @@
         },
         {
           "id": "WP8.2",
-          "statement": "A ray that leaves the volume composes once. Through a slab near the camera a sky pixel is `R\u00b7L + \u0394S`, and a star drawn over it adds `R` times its own light and no second `\u0394S`: a pixel that holds sky and a star equals the reference for their sum, and the Sun's disc dims by `R`. With a provider registered and its coefficients zero, sky pixels hold the same bytes as with none.",
-          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_terminal_gpu",
+          "statement": "A sky-ending ray takes the volume's terminal pair once. Through a slab the sky draws R\u00b7L + \u0394S, the star adds R times its own light, and the Sun's disc dims by R. A zero-coefficient provider gives the sky bytes of an absent provider. Along the same ray at 32, 40, 100 and 200 km, the lent lookup applies the pair to the clear result. With only the near air shadowed it preserves transmission and the same scatter deficit at every distance, within the stored product's decoding tolerance. Guard: compact Metal draws and lent shader reads exercise the actual shader variants and texture decoding.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_sky_gpu",
           "lock": "gpu",
-          "ask": "Does the tested pixel hold both sky and a star with the slab's `\u0394S` at least a tenth of their sum, so that correcting each draw by itself fails? Does the far aerial operation beyond 32 km, if `CLOUDS` has built it, compose the same terminal pair, and does the test say whether it was present?",
+          "ask": "Does the slab pixel contain both sky and a star with \u0394S at least a tenth of their sum? Does the far probe compare the public lookup with the clear result and the independently read terminal pair at each distance? Does it reject both a second correction and the old fade toward uncorrected sky?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -674,6 +675,64 @@
       "diagnoses": 0,
       "status": "not_started",
       "quality_bar": "Fog near the camera as in Red Dead Redemption 2 and The Last of Us Part II: the land, props and movers fade into it by depth with clean edges, the Sun and its shadows weaken inside it, and nothing trails or pops as the camera passes through."
+    },
+    {
+      "id": "WP3",
+      "name": "The west lookout\u2019s shadow crosses the ground without a flash",
+      "status": "not_started",
+      "depends_on": [
+        "T2-CAPTURE:WP1"
+      ],
+      "quality_bar": "Low-Sun terrain shadows as in Red Dead Redemption 2 carry a continuous edge across the ground and leave the surface texture readable. Judge the frozen cooked-valley replay and the ordinary Ground E route with the Neutral Highlights display baseline and the existing incident meter and low-light key.",
+      "items": [
+        {
+          "id": "WP3.1",
+          "statement": "The west-lookout shadow edge crosses the authored spur smoothly during the frozen 17.40\u201317.80 h crossing and the separate slow \u00b120\u00b0 pan. The shipped Ground E route and held sunset stop retain their reviewed look. Record: matched T2 engine captures on Metal and Chrome.",
+          "inspect": "Compare the starting and claimed builds with TAAU on. Use T2 realtime at 1\u00d7 for the crossing and pan and fixed for the six route stops. Check whole views and native-size crops on each target. 1. At the event marked by the archived 1080p frames 226\u2013227, does the row-665 flash disappear? 2. Does the edge stay attached to the ground through the crossing and pan with terrain texture intact and without flecks, ribbing or a detached bright band? 3. Do the ordinary Ground E pan and the six held stops, including the 17.4 h sunset stop, keep their reviewed appearance?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.2",
+          "statement": "The shared surface visibility evaluation preserves open Sun, full occlusion and the existing shadows at the broad edge, close terrain, distant crest, represented compact caster and terrain-caster overlap. A cooked asset swap agrees with a fresh run of that asset. Record: matched visibility and shaded controls, including the saved extinction trajectory.",
+          "inspect": "Use the archived D2 receiver and Sun inputs for matched T2 fixed captures on Metal and Chrome. Inspect native-size visibility and shaded crops across the near, last and far shadow ranges, camera and azimuth sweep, and the cooked asset swap. 1. Are open Sun and full occlusion intact? 2. Do the five controls retain their shadow placement without new light leaks or spurious shade? 3. On the extinction trajectory does visibility fade into full shadow without a new step? 4. Does the swapped asset agree with the fresh run at the same pose and time?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.3",
+          "statement": "Surface Sun visibility stays in the shared synthetic and cooked lighting path. The aerial owner remains separate. After a discarded encode or device replacement, the next submitted frame matches a fresh render of the same state. Record: matched frame-contract witnesses and paired capture-off whole-frame and shadow timings on Metal and Chrome.",
+          "ask": "Does the patch apply the surface correction once, through both draw paths, with bounded work? Do the first submitted frames after the discard and the replacement match the corresponding fresh renders by bytes? Does the timing record pair the starting and final builds at the same extent and settings, identify the load and order, and account for any project tripwire that fired? Does the maturity ledger describe the visual and device evidence at its observed scope?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP4",
+      "name": "A renderer developer can locate finite-disk shadow errors on the saved terrain and caster cases",
+      "status": "not_started",
+      "items": [
+        {
+          "id": "WP4.1",
+          "statement": "One bounded CPU trial reports where the source-side reuse candidate agrees with the original-triangle finite-disk calculation, where it omits or overcovers the blocked disk, and where it exhausts its work limit. The record covers the frozen broad edge, moving distant crest, 64 m close terrain exclusion, 24 cm caster at 160 m, terrain-caster overlap and open Sun, including the four saved row-665 receiver and phase domains. Record: the command, input identities, matched coverage, unsupported cases and preparation, receiver and caster costs.",
+          "ask": "Can you rerun the saved comparison from its identified inputs and reproduce the verdict? Does the report keep the limit fixed from before the run and count rejected work? Do the crest-only, close umbra, compact-only and overlap controls distinguish missing coverage, added coverage and double-counting? Does the decision to keep or park the diagnostic follow from the reported coverage and work?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }
