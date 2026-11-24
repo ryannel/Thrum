@@ -829,4 +829,15 @@
   48 stations at tick 69, evaluating 47.43 million cut nodes in 20.71 s under shared load. The paired
   arm without surf took 0.316 ms. The query still exceeds the real-time budget by a wide margin.
   [Chrome target receipt](../../../.orchestrate/evidence/WATERS/WP13/shelf-chrome-conformance.json) ·
-  [Metal cost and tripwires](../../../.orchestrate/evidence/WATERS/WP13/surf-cost.json).
+  [Metal cost and tripwires](../../../.orchestrate/evidence/WATERS/WP13/shelf-metal-cost-19ed85e67.json).
+
+- 2026-11-25 WP13.4 reached the design's three-look stop on the extended shelf. The sampled sheet gives
+  the two model ridges room to rise and close, while a second ridge is intermittently obscured in the
+  submitted approach. The sampled forward cuts provide no displaced fold for mesh refinement to resolve.
+  Planner decision requested on a revised shared-sheet approach or the live-window fallback. Preserve the
+  shared surface for drawing, foam and highest-surface queries, the regular-wave run-up and draw-back, and
+  the join to ambient swell. [Handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md).
+- 2026-11-25 Set Chrome surf motion capture to the design's 2560 × 1440 extent. The exposed-beach overhead
+  take recorded 116 submitted frames over 11.98 s of advancing engine time on hardware WebGPU, with zero
+  omissions and faults. WP13.11 still depends on passing the matching Metal and Chrome visual inspections.
+  [Chrome receipt](../../../.orchestrate/evidence/WATERS/WP13/required-extent-chrome-overhead-receipt.json).

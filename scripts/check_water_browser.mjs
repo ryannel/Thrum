@@ -10,7 +10,7 @@ import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 const mode = process.argv[process.argv.indexOf('--case') + 1];
 if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf');
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
-const [width,height] = surfInspection && mode === 'realtime' ? [1280,720] : [2560,1440];
+const [width,height] = [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
