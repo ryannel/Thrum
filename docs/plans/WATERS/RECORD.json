@@ -1453,7 +1453,35 @@
     },
     "M17": {
       "definitions": "a504acdfa1540e07b049b1e2f416d8cbaf896c1300381498919cbc6dfeb7356b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "b20e9f6026796ed098a86771e70d6d8b83122b45",
+          "review": ".orchestrate/evidence/WATERS/M17-review.md",
+          "items": {
+            "M17.1": "pass",
+            "M17.2": "pass",
+            "M17.3": "pass",
+            "M17.4": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 79180,
+            "cached": 1061632,
+            "output": 4418,
+            "turns": 1
+          },
+          "at": "2026-11-24T02:38:40Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
@@ -1487,6 +1515,13 @@
           "output": 112848,
           "turns": 5
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "b20e9f6026796ed098a86771e70d6d8b83122b45",
+        "review": ".orchestrate/evidence/WATERS/M17-review.md",
+        "checked": "9dac87be2b8c04331305626871b04d4b19223bc9",
+        "at": "2026-11-24T02:38:40Z"
       }
     },
     "M18": {
