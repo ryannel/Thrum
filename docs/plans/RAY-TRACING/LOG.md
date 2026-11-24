@@ -211,3 +211,9 @@
   measured extent. Held-disc sequences repeat over the history window. The continuous solar sweep
   retains history and weights more recent votes during light motion. The new 481-frame trace,
   held balloon, motion and paired cost are in the [review proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/review-fix/README.md).
+- 2026-11-25 WP4 held penumbra repair. Dense, variance-guided taps pool disc votes across
+  neighbouring receivers and keep the existing depth and settled checks. On Apple M3 Max Metal,
+  the reviewed shelf shoulder's spatial roughness fell from 10.16 to 2.07 red-channel levels
+  and its native crop stayed byte-identical across 32 held submissions. The seven-stop capture,
+  motion and fixed-view controls, and timing investigation are in the
+  [penumbra proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/penumbra-filter/README.md).
