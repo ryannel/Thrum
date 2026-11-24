@@ -845,8 +845,8 @@
       "items": [
         {
           "id": "M15.1",
-          "statement": "The configured test command uses the same bounded, local Cargo cache for clean singleton and batch merge candidates on the Mac. Both run the ordinary selection and check steps for the exact candidate and base. A source edit that introduces a test failure fails with the cache warm, and reverting it passes. Cargo invalidates affected builds when the toolchain, profile or features change. Concurrent use, an interrupted run, a cache over its retention cap and insufficient free space recover through the owned cache lifecycle or the ordinary check path. Ordinary developer and scheduled main-branch checks still use their own build directories.",
-          "ask": "Trace the configured command from a singleton and a batch replay to their candidate, selection and verdict. Do the warm edit, failure and revert and the build-input changes show fresh artifacts? Check the concurrent, interruption, over-cap and low-space cases. Does the exclusive cache owner protect the active checkout and remove only its own artifacts? Does a fallback run the full check with its original inputs and preserve a real check failure?",
+          "statement": "The configured command checks the caller's inputs and returns the ordinary check's verdict. On the Mac, clean singleton and batch candidates share a bounded Cargo cache and keep their candidate and base selection. A committed failing edit fails with the cache warm and its revert passes. Staged and unstaged tracked changes and non-ignored untracked paths send the check to the caller's worktree. On a passing commit, the configured command reports a failing local assertion when the file is edited and passes after the file is restored, with the cache warm throughout. Toolchain, profile and feature changes invalidate affected builds. Concurrent use, interruption, over-cap retention and low free space recover through cache maintenance or the ordinary check. Ordinary developer and scheduled main-branch checks use their own build directories.",
+          "ask": "Do the singleton and batch replays retain their candidate, selection and verdict? Trace the staged, unstaged and untracked admission cases. Do the warm runs show an assertion failure and a passing revert for the committed edit, and an assertion failure in the caller's worktree and a pass after restoration for the uncommitted edit on the same commit? Do the toolchain, profile and feature cases show fresh affected builds? For concurrent use, interruption, over-cap retention and low free space, does the cache owner protect active work and reclaim only its own artifacts, with any fallback preserving the caller's inputs and verdict?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -857,6 +857,16 @@
           "id": "M15.2",
           "statement": "A three-pair Mac trial under ordinary builder contention compares fresh ordinary checks with the warmed configured route on the same distinct candidate transitions. The trial includes package and whole-workspace selection. Selection, build features and executed check coverage agree between arms. The warmed route's median end-to-end time is at most 300 seconds and its median test build time is lower than the fresh arm's. The record gives the raw runs, build and test times, load, peak and retained disk use and the main push that activates the qualified command. The contributor guide explains how the cache is managed and disabled.",
           "ask": "Recompute the paired trial from its raw runs. Were the candidates matched, warmed from a preceding checkout, and measured under comparable builder load with the same executed check coverage? Is the warmed median at most 300 seconds end to end with a lower median test build time, and do the logs establish the tail costs and disk use? Verify the activation push and the documented cache location, pressure policy and bypass.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.3",
+          "statement": "The exact test command configured at rollout runs the ordinary check and returns its passing verdict on a known-good revision before the M15 launcher was introduced, so broken-main diagnosis can use that revision as a passing comparison.",
+          "ask": "Compare the rollout command with the command recorded in the pre-M15 replay. Does the replay identify the old revision and show its ordinary check steps and successful exit under the same invocation that broken-main diagnosis will use?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

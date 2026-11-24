@@ -748,22 +748,32 @@ The lead also removes idle `.git/orchestrate/verify/*/target` directories to pro
 shared by ten builders. The timings mix load, changes and cache states, so M15 measures reuse directly before
 switching on the new route. [Baseline](../../../.orchestrate/evidence/GATE-TIME/M5/record.md).
 
-M15 gives the orchestrate test command an explicit merge-verification mode. On this Mac it runs the existing
-`./dev check` pipeline in one stable, detached checkout and reuses a Cargo target directory owned by that mode
-under the common Git directory, outside `orchestrate/verify`. The same route serves singleton and batch candidate
-trees. Check out the exact candidate and preserve the caller's merge base and selection inputs. Cargo owns
-freshness and invalidation. Keep rustc incremental compilation disabled. Keep the existing test selection,
-workspace features, lints, doc tests, draw-probe, GPU requirement and failure handling. Run guards and selected
-tests for the candidate normally. The persistent files are build artifacts, and orchestrate still owns reuse of
-successful check results. [Cargo build cache](https://doc.rust-lang.org/cargo/reference/build-cache.html).
+M15 configures `THRUM_MERGE_VERIFY=1 ./dev check`. The environment variable opts into the cache on M15-capable
+checkouts. Earlier launchers receive the existing argument list and run their ordinary check. Orchestrate's
+broken-main diagnosis uses the current command on earlier revisions, so replay the configured invocation on a
+known-good revision before the M15 launcher was introduced and verify that its ordinary check passes.
+
+On this Mac the cache runs the existing `./dev check` pipeline in one stable, detached checkout and reuses a
+Cargo target directory owned by that mode under the common Git directory, outside `orchestrate/verify`. The same
+route serves singleton and batch candidate trees. Admit a caller only when its check inputs can be represented by
+its committed revision in the shared checkout, with the caller's merge base and selection inputs preserved. Any
+staged or unstaged tracked change or non-ignored untracked path takes the ordinary check path in the caller's
+worktree. Use that path also when a checkout-local input differs or equivalence cannot be established. A commit
+ID alone cannot represent the local changes included by [mechanism 4](#mechanisms).
+
+Cargo owns freshness and invalidation. Keep rustc incremental compilation disabled. Keep the existing test
+selection, workspace features, lints, doc tests, draw-probe, GPU requirement and failure handling. Run guards
+and selected tests for the candidate normally. The persistent files are build artifacts, and orchestrate still
+owns reuse of successful check results. [Cargo build cache](https://doc.rust-lang.org/cargo/reference/build-cache.html).
 
 One process exclusively owns the checkout and target through the full check, including test execution and
 maintenance. Ordinary developer commands and the scheduled main-branch checks use their existing directories.
-If the cache is disabled, unavailable or busy, the configured command runs the normal check for that candidate
-in the caller's checkout and reports the fallback. Only cache setup or admission can choose the fallback. A
-failure once the check starts returns its verdict. The shared checkout tracks one candidate at a time. Keep
-generated per-run state isolated, and check that changes to source, features, profile and toolchain rebuild what
-they affect. Recovery after interruption starts from the next candidate's clean inputs.
+If the cache is disabled, unavailable or busy, or admission declines the shared checkout, the configured
+command reports the reason and runs the ordinary check in the caller's worktree with its original inputs.
+Only cache setup or admission can choose the fallback. A failure once the check starts returns its verdict.
+The shared checkout tracks one candidate at a time. Keep generated per-run state isolated, and check that
+changes to source, features, profile and toolchain rebuild what they affect. Recovery after interruption starts
+from the next candidate's clean inputs.
 
 Start with an 8 GiB retained build-cache cap and the lead's 30 GB free-space floor. Define a measured headroom
 allowance for transient build growth. Before a run that cannot fit, and after an oversized run, reclaim only
@@ -793,7 +803,7 @@ test command only after it passes this proof. M5 measures the real rollout indep
 | Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
 | The guard rules, from M12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
 | The check's closing lines, from M8 and M12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and M5's record |
-| The orchestrate test command, from M15: an explicit merge-verification mode of `./dev check`, with a bounded local Cargo cache and the same check verdict | Orchestrate singleton and batch verification, `REPO-RULES`, the lead who manages free disk, and M5's record |
+| The orchestrate test command, from M15: `THRUM_MERGE_VERIFY=1 ./dev check`, with a bounded local Cargo cache for equivalent committed inputs and the ordinary check verdict in the caller's worktree otherwise. Pre-M15 launchers run their ordinary `./dev check`. | Orchestrate singleton and batch verification, builder checks, broken-main diagnosis, `REPO-RULES`, the lead who manages free disk, and M5's record |
 | One test binary a package, from M11: a test file under a package's `tests/` folder is a module of the package's `it` target, and runs as `cargo test -p <package> --test it <file>::`. The repository guards fail a file there that no target compiles. A file is a target of its own only while something [mechanism 10](#one-test-binary-a-package) lists holds it | Every module that adds a test file, and every planner who writes a check that runs one |
 
 ## Whose code this is built in
@@ -904,9 +914,12 @@ tests, which a reviewer reads, by scratch changes whose selection the reviewer p
 declared edge, and by the record of what it saves, made before it is switched on. A test made fast is proved by
 the reviewer's comparison of what it asserted with what it asserts, case by case, and by its time in the record.
 A deleted duplicate is proved by the reviewer's list of where each of its assertions still runs. A retired
-reference is proved by the test that replaces it, which the reviewer reads. M15 proves cache reuse and correctness
-with matched cold and warm candidate runs, a changed candidate that fails as expected, and cache-pressure and
-concurrent-use cases. M5 proves the goal from the saved wall times in [the fixed post-rollout window](#the-goal).
+reference is proved by the test that replaces it, which the reviewer reads. M15 uses matched cold and warm
+candidate runs, a committed candidate with a failing test and its passing revert, and cache-pressure and
+concurrent-use cases. With the cache warm, it also runs the configured command on a passing commit with a failing
+assertion edited locally, then restores the file and checks that it passes. A replay of the configured command on
+a known-good pre-M15 revision proves the invocation works across activation. M5 uses the saved wall times in
+[the fixed post-rollout window](#the-goal).
 
 One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by
 the count of test targets; by a check that no open item lost the binary it names; by a scratch test file that the

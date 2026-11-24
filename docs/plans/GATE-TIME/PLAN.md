@@ -80,16 +80,18 @@ revision. Keep the checker cheap so milestone checks can rerun from the records.
 ## M15 Merge verification reuses a bounded local Cargo cache
 
 Build and qualify [the cached check](DESIGN.md#cargo-cache-for-merge-verification) before switching the project
-test command. Exercise both merge entry points with replay candidates without pushing them to main. Coordinate
-the cutover with the lead so new requests load the updated test command. Record the activation push and time,
-along with the paired trials and raw logs, in `.orchestrate/evidence/GATE-TIME/M15/`.
+test command. Replay both merge entry points with scratch candidates. Before activation, exercise the configured
+test command through orchestrate's `check` in a builder worktree with a failing local edit. Replay the same
+invocation on a known-good pre-M15 revision. Coordinate the cutover with the lead so new requests load the updated
+test command. Record the activation push and time, the paired trials and the replay logs in
+`.orchestrate/evidence/GATE-TIME/M15/`.
 
 ## M5 The post-rollout record shows a five-minute median for Rust landings
 
 Start after M15's activation push. Use `.git/orchestrate/checks` and the check-run ledger to assemble the fixed
 window in [the goal](DESIGN.md#the-goal). Keep both earlier samples from `.orchestrate/evidence/GATE-TIME/M5/`
-and reuse `landing_times.py` where it can trace the qualifying runs. Record the number still needed while the
-window fills, and use only ordinary landings. Send a completed sample that misses either bound back to planning
-with its cache, build and run timing breakdown. Update the timing in `CONTRIBUTING.md` to agree with the closing
-record. The test guide and `cross-target` instructions were verified at `039ac3b9f`. Reuse the M5.2 evidence
-and check the guide against M15's command before closing.
+and use the configured command at activation to match the new runs, including if reusing `landing_times.py`.
+Record the number still needed while the window fills, and use only ordinary landings. Send a completed sample
+that misses either bound back to planning with its cache, build and run timing breakdown. Update the timing in
+`CONTRIBUTING.md` to agree with the closing record. The test guide and `cross-target` instructions were verified
+at `039ac3b9f`. Reuse the M5.2 evidence and check the guide against M15's command before closing.
