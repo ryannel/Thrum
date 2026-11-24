@@ -3037,7 +3037,7 @@
       "weather_presets_evidence": {
         "implementation": "On the CLOUDS M7 builder branch, V1 authors four weather presets and a tick-driven weather sequence. Metal and Chrome can capture held-Sun weather motion.",
         "correctness": "Metal proves exact whole-frame equality for clear and clouds absent, as well as CPU/GPU weather and optical depths for cell, deck and placed clouds. Consecutive consumed 120 Hz wind targets advance the correct world distance.",
-        "visuals": "Metal captures show the low-Sun overcast underside with soft relief and an obscured disc. Independent inspection followed three complete cloud lives in both fair and broken weather at 8x and 60x on Metal. The late clearing and visible wind cadence still need qualification. Noon gap-edge lighting is being checked from the sunward side.",
+        "visuals": "Metal captures show the low-Sun overcast underside with soft relief and an obscured disc. Independent inspection followed three complete cloud lives in both fair and broken weather at 8x and 60x on Metal. The late clearing and visible wind cadence still need qualification. Sunward stills confirm visible broken-bank rims and a hidden overcast solar disc at noon on both targets.",
         "device": "Apple M3 Max Metal and Chrome WebGPU engine output. Matched loaded 1440p Metal GPU means were 4.67 ms absent, 73.12 ms fair, 77.27 ms broken and 38.65 ms overcast.",
         "record": "../../.orchestrate/evidence/CLOUDS/M7/README.md"
       },
