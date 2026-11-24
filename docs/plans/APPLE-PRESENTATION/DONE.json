@@ -747,8 +747,17 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
-      "quality_bar": "A frame-rate governor as steady as Unreal's dynamic resolution in a shipped game: under a sudden load the picture gets a little softer within a few frames and the motion stays smooth, quality returns slowly when the load lifts, nothing oscillates, and the simulation never notices."
+      "status": "blocked",
+      "quality_bar": "A frame-rate governor as steady as Unreal's dynamic resolution in a shipped game: under a sudden load the picture gets a little softer within a few frames and the motion stays smooth, quality returns slowly when the load lifts, nothing oscillates, and the simulation never notices.",
+      "blocked": {
+        "reason": "needs_access",
+        "what": "Unlock the Mac console so the two live Metal checks can present frames.",
+        "work": {
+          "commit": "91cc8ecb1d9007d3646fbbd8996ac5c0d6db2156",
+          "branch": "main"
+        },
+        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/M7-handoff.md"
+      }
     },
     {
       "id": "M8",
