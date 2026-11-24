@@ -37,12 +37,12 @@ fn turret_cap(site: vec2<u32>, local: vec2<f32>) -> f32 {
     }
     return cap;
 }
-fn noise(point:vec3<f32>)->f32 {
+fn noise(point:vec3<f32>,anchor:vec3<u32>,stream:u32)->f32 {
     let offset=vec3<i32>(floor(point));let f=vec3<f32>(smooth_unit(fract(point.x)),smooth_unit(fract(point.y)),smooth_unit(fract(point.z)));
     var n=0.0;
     for(var x=0;x<=1;x++){for(var y=0;y<=1;y++){for(var z=0;z<=1;z++){
         let w=select(vec3<f32>(1.0)-f,f,vec3<bool>(x!=0,y!=0,z!=0));
-        n+=w.x*w.y*w.z*random(p.noise.x+u32(offset.x+x),p.noise.y+u32(offset.y+y),p.noise.z+u32(offset.z+z),20u);
+        n+=w.x*w.y*w.z*random(anchor.x+u32(offset.x+x),anchor.y+u32(offset.y+y),anchor.z+u32(offset.z+z),stream);
     }}}return n;
 }
 @compute @workgroup_size(8,8)
@@ -84,8 +84,16 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     }}
     let rem=vec2<f32>(vec2<i32>(p.integers.xy)-vec2<i32>(p.noise.xy)*4);
     let grem=f32(i32(p.integers.z)-i32(p.noise.z)*2);
-    let n=noise(vec3<f32>((coordinate+rem)/4.0,(p.origin.z+grem)/2.0));
-    let deck=p.vertical.x*smooth_unit((n-(1.0-1.3*smooth_unit((p.weather.x-0.45)/0.55)))/0.2);
+    let n=noise(vec3<f32>((coordinate+rem)/4.0,(p.origin.z+grem)/2.0),p.noise.xyz,20u);
+    let filling=smooth_unit((p.weather.x-0.45)/0.55);
+    let share=p.vertical.x;
+    let gaps=6.2*share*share*share*filling*(1.0-filling);
+    var opening=n;
+    if gaps>0.0 {
+        let local=noise(vec3<f32>(coordinate,p.origin.z),p.integers.xyz,21u);
+        opening+=gaps*(local-0.5);
+    }
+    let deck=share*smooth_unit((opening-(1.0-1.3*filling))/0.2);
     coverage=max(coverage,deck);
     depth=max(depth,p.physical.y*pow(deck,0.7)*(0.6+0.4*n));
     let tau=p.physical.w*depth*coverage*(1.0-(p.vertical.y+p.vertical.z)*0.5);
