@@ -750,10 +750,12 @@ async fn record(
         .transpose()?;
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let motion_capture = mode == "realtime" && is_motion_capture(scenario);
-    let elapsed_observation = motion_capture || sprite_motion(scenario);
+    let target_wind = scenario == "clouds-wind";
+    let elapsed_observation = (motion_capture && !target_wind) || sprite_motion(scenario);
     let sprite_scroll_timings = scenario == "sprites-scroll"
         && crate::content::launch_value("THRUM_SPRITE_PASS_TIMING").as_deref() == Ok("1");
-    if elapsed_observation && !sprite_scroll_timings {
+    let measure_passes = !(elapsed_observation || target_wind) || sprite_scroll_timings;
+    if !measure_passes {
         driver.set_timing_requested(false);
     }
     let (preset_requested, preset_accepted) =
@@ -890,7 +892,10 @@ async fn record(
         };
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
-        if (elapsed_observation || sprite_cost) && running && report.overload.is_some() {
+        if (elapsed_observation || target_wind || sprite_cost)
+            && running
+            && report.overload.is_some()
+        {
             trace.observe_overload(&mut driver, origin, returned)?;
         }
         if observer_only && report.submitted {
@@ -958,7 +963,7 @@ async fn record(
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     result["display_phase_counts"] = phase_counts;
-    result["gpu_pass_timing"] = json!(!elapsed_observation || sprite_scroll_timings);
+    result["gpu_pass_timing"] = json!(measure_passes);
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
