@@ -812,10 +812,12 @@ async fn record(
         return Err("governor capture requires the real-time moving route".to_owned());
     }
     let motion_capture = mode == "realtime" && (governed || is_motion_capture(scenario));
-    let elapsed_observation = motion_capture || sprite_motion(scenario);
+    let target_wind = scenario == "clouds-wind";
+    let elapsed_observation = (motion_capture && !target_wind) || sprite_motion(scenario);
     let sprite_scroll_timings = scenario == "sprites-scroll"
         && crate::content::launch_value("THRUM_SPRITE_PASS_TIMING").as_deref() == Ok("1");
-    if elapsed_observation && !sprite_scroll_timings {
+    let measure_passes = !(elapsed_observation || target_wind) || sprite_scroll_timings;
+    if !measure_passes {
         driver.set_timing_requested(false);
     }
     let (preset_requested, preset_accepted) =
@@ -974,7 +976,10 @@ async fn record(
         };
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
-        if (elapsed_observation || sprite_cost) && running && report.overload.is_some() {
+        if (elapsed_observation || target_wind || sprite_cost)
+            && running
+            && report.overload.is_some()
+        {
             trace.observe_overload(&mut driver, origin, returned)?;
         }
         if observer_only && report.submitted {
@@ -1081,7 +1086,7 @@ async fn record(
         });
     }
     result["display_phase_counts"] = phase_counts;
-    result["gpu_pass_timing"] = json!(governed || !elapsed_observation || sprite_scroll_timings);
+    result["gpu_pass_timing"] = json!(governed || measure_passes);
     if governed {
         result["governor"] = json!(quality_trace);
     }
