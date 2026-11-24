@@ -756,6 +756,7 @@ impl TargetPreparation {
                 timing_records,
                 timing_layout,
                 timing_readback: false,
+                timing_counter_floor: 0,
                 render_done: Arc::new(AtomicBool::new(false)),
                 state: SlotState::Free,
             });

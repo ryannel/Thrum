@@ -8,7 +8,7 @@ use crate::{
     capabilities::DeviceCapabilities,
     sprite::graph::validate_sprite_timings,
     synthetic::validate_pass_timings,
-    timing::{GpuTimings, TimingError, TimingFrame, TimingRefusal, TimingStats},
+    timing::{FrameCounters, GpuTimings, TimingError, TimingFrame, TimingRefusal, TimingStats},
 };
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
@@ -31,13 +31,32 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.timing_stats.refuse(TimingRefusal::RetiredDevice);
             }
         }
-        self.last_frame_counter = 0;
+        self.frame_counters.reset();
+    }
+
+    pub(super) fn track_frame_counters(&mut self, slot_index: usize, order: u64) {
+        let mut oldest_floor: Option<u64> = None;
+        let mut pending_capacity = 0;
+        for slot in self.slots.iter().chain(&self.retired_slots) {
+            let Some(frame) = slot.timings.pending_frame() else {
+                continue;
+            };
+            pending_capacity += slot.timings.capacity() as usize;
+            if frame.submission_order != order {
+                oldest_floor = Some(oldest_floor.map_or(slot.timing_counter_floor, |floor| {
+                    floor.min(slot.timing_counter_floor)
+                }));
+            }
+        }
+        self.slots[slot_index].timing_counter_floor =
+            self.frame_counters
+                .submit(order, oldest_floor, pending_capacity);
     }
 
     pub(super) fn collect_frame_timings(&mut self) -> Result<(), FrameError> {
         // The queue submits frames in order. Callback delivery and slot order
-        // can differ. Keep ready readbacks in their slots until prior batches
-        // have established the counter floor for this generation.
+        // can differ. Validate the earlier batch first so that if a pair
+        // appears twice, it is the later submission that refuses it.
         while let Some((_, slot)) = self
             .slots
             .iter_mut()
@@ -58,7 +77,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.generation,
                 &mut sample,
                 &mut self.timing_stats,
-                &mut self.last_frame_counter,
+                &mut self.frame_counters,
             ) {
                 Ok(false) => {
                     slot.state = SlotState::Resolving(sample);
@@ -131,12 +150,15 @@ impl FrameSlot {
         generation: u64,
         sample: &mut FrameSample,
         stats: &mut TimingStats,
-        last_counter: &mut u64,
+        counters: &mut FrameCounters,
     ) -> Result<bool, TimingError> {
         let frame = self.timings.pending_frame();
-        let Some(passes) = self
-            .timings
-            .collect_in_submission_order(generation, last_counter)?
+        let Some(passes) = self.timings.collect_in_submission_order(
+            generation,
+            counters,
+            self.timing_counter_floor,
+            sample.submission_order,
+        )?
         else {
             return Ok(false);
         };

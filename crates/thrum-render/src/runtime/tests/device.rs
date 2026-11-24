@@ -187,6 +187,7 @@ fn timing_replay_across_slots_and_after_a_refusal_never_publishes() {
             // Deliver the later mapping first, with the same real pass layout.
             complete_mapping(&mut host, 1, |index| match (round, index) {
                 (1, 1) | (0, _) => pairs(base, index),
+                (2, _) => pairs(base + 3, index),
                 (3, 0) => [base + 501, base + 500],
                 _ => pairs(base + 500, index),
             });

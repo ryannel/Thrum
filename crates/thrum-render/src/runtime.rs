@@ -23,7 +23,7 @@ use crate::{
         CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic,
         SceneApplyReport, SceneTimingLayout, SyntheticScene, SyntheticView,
     },
-    timing::{GpuTimings, TimingError, TimingFrame, TimingRecords, TimingStats},
+    timing::{FrameCounters, GpuTimings, TimingError, TimingFrame, TimingRecords, TimingStats},
 };
 use preparation::{FrameTarget, PreparedRenderer};
 use thrum_core::sim::{WorldAdvance, WorldPublication};
@@ -610,6 +610,7 @@ struct FrameSlot {
     timing_records: TimingRecords,
     timing_layout: Option<SceneTimingLayout>,
     timing_readback: bool,
+    timing_counter_floor: u64,
     render_done: Arc<AtomicBool>,
     state: SlotState,
 }
@@ -684,7 +685,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     completed: VecDeque<FrameSample>,
     next_submission_order: u64,
     timing_stats: TimingStats,
-    last_frame_counter: u64,
+    frame_counters: FrameCounters,
     submitted_clock: Option<SubmittedFrameClock>,
     timing_requested: bool,
     native_failed_generation: Option<u64>,
@@ -1301,7 +1302,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
             timing_stats: TimingStats::default(),
-            last_frame_counter: 0,
+            frame_counters: FrameCounters::default(),
             submitted_clock: None,
             timing_requested: true,
             native_failed_generation: None,
@@ -2461,6 +2462,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 }
             }
         }
+        if let Some(frame) = slot.timings.pending_frame() {
+            self.track_frame_counters(slot_index, frame.submission_order);
+        }
+        let slot = &mut self.slots[slot_index];
         slot.render_done.store(false, Ordering::Release);
         self.queue.submit(
             segments

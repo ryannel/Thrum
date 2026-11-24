@@ -2,9 +2,12 @@
 //! nothing and still encode the same rendering work. Readback is asynchronous;
 //! the owning host polls its device/event loop and bounds outstanding batches.
 
-use std::sync::{
-    Arc,
-    atomic::{AtomicU8, Ordering},
+use std::{
+    collections::HashMap,
+    sync::{
+        Arc,
+        atomic::{AtomicU8, Ordering},
+    },
 };
 
 use crate::capabilities::DeviceCapabilities;
@@ -330,7 +333,7 @@ pub enum TimingRefusal {
     Sentinel,
     /// A pass ended before it began.
     Inverted,
-    /// A pair overlaps counters already observed in earlier batches.
+    /// A pair replays counters from an earlier batch.
     Repeated,
     /// The batch belonged to a device that was replaced.
     RetiredDevice,
@@ -371,6 +374,63 @@ impl TimingStats {
 
     pub(crate) fn refuse(&mut self, reason: TimingRefusal) {
         self.refused[reason as usize] += 1;
+    }
+}
+
+/// Counters observed on a host's current device. GPU stages from frames in
+/// flight together can overlap, even though frames are submitted in order.
+#[derive(Default)]
+pub(crate) struct FrameCounters {
+    latest: u64,
+    newest_submission: u64,
+    overlapping_pairs: HashMap<[u64; 2], u64>,
+}
+
+impl FrameCounters {
+    pub(crate) fn reset(&mut self) {
+        self.latest = 0;
+        self.newest_submission = 0;
+        self.overlapping_pairs.clear();
+    }
+
+    pub(crate) fn submit(
+        &mut self,
+        order: u64,
+        oldest_pending_floor: Option<u64>,
+        pending_capacity: usize,
+    ) -> u64 {
+        self.newest_submission = order;
+        if let Some(floor) = oldest_pending_floor {
+            self.overlapping_pairs.retain(|[_, end], _| *end > floor);
+            // Reserve before publication, including the new batch's capacity.
+            self.overlapping_pairs.reserve(pending_capacity);
+        } else {
+            self.overlapping_pairs.clear();
+        }
+        self.latest
+    }
+
+    fn observe(&mut self, order: u64, floor: u64, start: u64, end: u64) -> Result<(), TimingError> {
+        validate_pair(start, end, floor)?;
+        let pair = [start, end];
+        if self
+            .overlapping_pairs
+            .get(&pair)
+            .is_some_and(|previous| *previous != order)
+        {
+            return Err(TimingError::InvalidTimestamp {
+                reason: TimingRefusal::Repeated,
+                start,
+                end,
+            });
+        }
+        // Only frames already in flight need exact pairs. A future submission
+        // starts after this readback and can use the scalar floor instead.
+        if order != self.newest_submission {
+            self.overlapping_pairs.insert(pair, order);
+        }
+        self.latest = self.latest.max(end);
+        Ok(())
     }
 }
 
@@ -901,26 +961,38 @@ impl GpuTimings {
     /// Panics only if the bounded query buffer no longer contains the recorded
     /// 64-bit timestamp pairs, which would violate the internal buffer invariant.
     pub fn try_collect(&mut self, generation: u64) -> Result<Option<&[PassTiming]>, TimingError> {
-        self.collect(generation, None)
+        self.check_generation(generation)?;
+        let Some(enabled) = &mut self.enabled else {
+            return Ok(None);
+        };
+        let floor = self.last_counter;
+        Self::collect(enabled, |start, end| {
+            validate_pair(start, end, floor)?;
+            self.last_counter = self.last_counter.max(end);
+            Ok(())
+        })
     }
 
     pub(crate) fn collect_in_submission_order(
         &mut self,
         generation: u64,
-        last_counter: &mut u64,
-    ) -> Result<Option<&[PassTiming]>, TimingError> {
-        self.collect(generation, Some(last_counter))
-    }
-
-    fn collect(
-        &mut self,
-        generation: u64,
-        last_counter: Option<&mut u64>,
+        counters: &mut FrameCounters,
+        floor: u64,
+        order: u64,
     ) -> Result<Option<&[PassTiming]>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
             return Ok(None);
         };
+        Self::collect(enabled, |start, end| {
+            counters.observe(order, floor, start, end)
+        })
+    }
+
+    fn collect(
+        enabled: &mut Enabled,
+        mut observe: impl FnMut(u64, u64) -> Result<(), TimingError>,
+    ) -> Result<Option<&[PassTiming]>, TimingError> {
         let Phase::Mapping = enabled.phase else {
             return Ok(None);
         };
@@ -947,8 +1019,8 @@ impl GpuTimings {
         enabled.timed_pass_span = None;
         let mut first_start = None;
         let mut previous_end = None;
-        let last_counter = last_counter.unwrap_or(&mut self.last_counter);
-        let mut latest = *last_counter;
+        // Even if one pair invalidates the report, observe the other pairs so
+        // a later submission cannot replay them.
         let mut result = Ok(());
         for (index, (name, category)) in enabled.names.iter().enumerate() {
             let base = index * 16;
@@ -959,13 +1031,12 @@ impl GpuTimings {
                     .try_into()
                     .expect("query scalar"),
             );
-            if let Err(error) = validate_pair(start, end, *last_counter) {
+            if let Err(error) = observe(start, end) {
                 if result.is_ok() {
                     result = Err(error);
                 }
                 continue;
             }
-            latest = latest.max(end);
             if result.is_err() {
                 continue;
             }
@@ -993,8 +1064,6 @@ impl GpuTimings {
         drop(values);
         enabled.readback.unmap();
         enabled.names.clear();
-        // Fresh pairs in a refused batch still belong to that submission.
-        *last_counter = latest;
         if let Err(error) = result {
             enabled.results.clear();
             enabled.preceding_gaps.clear();
