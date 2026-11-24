@@ -76,3 +76,9 @@
   the Wasm file in the checkout build cache. The lifecycle runner now keeps both web pages and its cooker
   in the run directory, where the browser can compare the served Wasm with the same file at case completion.
   [Cache-removal regression and target runs](../../../.orchestrate/evidence/HOST/M4/isolated-web/README.md)
+- 2026-11-24 The merged M4.6 check passed the Mac window and overload cases. Chrome's normal case completed
+  all 600 GPU samples before its shutdown watchdog fired, and its retry stayed hidden. The lifecycle runner
+  now wakes the display, waits for the WebGPU document to unload, and verifies that the owned Chrome process
+  group exits. It records the watchdog separately from a graceful exit after a passing scenario. All eleven
+  hardware Chrome cases passed with the original verifier's Wasm and cooker.
+  [Target evidence](../../../.orchestrate/evidence/HOST/M4/chrome-shutdown/README.md)
