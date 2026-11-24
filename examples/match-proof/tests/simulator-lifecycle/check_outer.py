@@ -44,10 +44,14 @@ def declared(module, item):
 def setup(tree):
     subprocess.run(["git", "init", "-q", tree], check=True)
     shutil.copy2(ROOT / "ORCHESTRATE.md", tree)
-    (tree / "scripts").mkdir()
-    for name in ("host_lifecycle", "host_overload", "cooked_draw_fixture", "apple_presentation",
-                 "apple_display_proof", "simulator_lifecycle", "v1_simulator_route"):
-        shutil.copy2(ROOT / f"scripts/{name}.py", tree / "scripts")
+    # Use the checkout's production Python modules so new imports in either
+    # entry point also resolve inside the isolated runner.
+    scripts = subprocess.check_output(
+        ["git", "ls-files", "-z", "--", "scripts/*.py"], cwd=ROOT, text=True)
+    for name in scripts.rstrip("\0").split("\0"):
+        destination = tree / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / name, destination)
     sample_slots = subprocess.check_output(
         ["git", "grep", "-l", "const SAMPLE_" "SLOTS: usize", "--", "crates", "examples"],
         cwd=ROOT, text=True).splitlines()

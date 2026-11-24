@@ -39,11 +39,11 @@ const server = createServer(async (request, response) => {
     }
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-// The isolated proof page represents an active player. Headless background
-// timer throttling can starve WebTransport's timer-driven send queue.
-// The freeze scenario still suspends the renderer explicitly.
+// The isolated proof page represents an active player. Keep both its timer
+// wakeups and renderer scheduling in the foreground class. The freeze
+// scenario still suspends the renderer explicitly.
 const flags = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${directory}`,
-    '--disable-background-timer-throttling', '--no-first-run', 'about:blank'];
+    '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--no-first-run', 'about:blank'];
 const chrome = spawn(chromePath, flags, { detached: true, stdio: ['ignore', 'ignore', 'inherit'] });
 let pageSession;
 let browserSession;
