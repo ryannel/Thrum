@@ -80,3 +80,27 @@ fn disabled_weather_adds_no_entity_or_publication_component() {
     assert_eq!(page.len(), crate::scene::ENTITY_COUNT);
     assert!(page.weather().is_none());
 }
+
+#[test]
+fn clearing_deck_does_not_reintroduce_cumulus() {
+    use crate::clouds::{WeatherPreset, WeatherSequence};
+
+    let parameters = WeatherPreset::Overcast.parameters();
+    let mut state = thrum_cloud_model::State::new(parameters, 5.0, 0).expect("initial deck");
+    let step = 1.0 / 60.0;
+    for tick in 1_u32..=65 * 60 {
+        let seconds = 180.0 + f64::from(tick) * step;
+        state
+            .set_target(WeatherSequence::Presets.target(parameters, seconds))
+            .expect("sequence target");
+        state.step(u64::from(tick), step).expect("weather tick");
+        let weather = state.parameters();
+        if weather.coverage > 0.0 {
+            assert!(weather.kind == 0.0, "keep the layered type as it clears");
+        }
+        if seconds >= 240.0 {
+            assert!(weather.coverage == 0.0, "the sky is clear at four minutes");
+        }
+    }
+    assert!(state.parameters().kind > 0.0);
+}
