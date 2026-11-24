@@ -180,7 +180,7 @@ pub fn shade_config() -> ShadeConfig {
         types: vec![
             Type {
                 base: 1600.0,
-                depth: [520.0, 720.0],
+                depth: [390.0, 680.0],
                 liquid_water: 0.00025,
                 droplet_radius: 0.00001,
                 deck: 1.0,
