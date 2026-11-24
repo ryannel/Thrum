@@ -15,7 +15,7 @@ fn shader_record_matches_rust_offsets() {
             drift,
             heights,
             light_samples,
-            padding,
+            sun_angular_radius,
             render_extent,
             temporal,
             noise,
