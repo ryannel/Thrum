@@ -1,10 +1,10 @@
 {
   "module": "GATE-TIME",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": ".orchestrate/evidence/GATE-TIME/design-review.md",
-    "commit": "c0979f451edf34fd6cf312da4f05846499a47268",
-    "hash": "41fb404bc3aa581f6bfa5a285295f009596779cd5ac76c2a4624f02433cb3edd",
+    "commit": "dab1317eadf7586356b17e23dcfa219cff4152fc",
+    "hash": "035eceebacbb6f18b7c2e05671da405b0a7691d2883b120454eb217f5e9f67de",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 80967,
-      "cached": 764544,
-      "output": 4848,
+      "input": 43755,
+      "cached": 287104,
+      "output": 1781,
       "turns": 1
     },
-    "at": "2026-11-24T03:13:05Z"
+    "at": "2026-11-24T03:17:25Z"
   },
   "milestones": {
     "M1": {
@@ -1470,6 +1470,29 @@
       "items_owed": [
         "M14"
       ]
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/GATE-TIME/design-review-10.md",
+      "commit": "c0979f451edf34fd6cf312da4f05846499a47268",
+      "hash": "41fb404bc3aa581f6bfa5a285295f009596779cd5ac76c2a4624f02433cb3edd",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 80967,
+        "cached": 764544,
+        "output": 4848,
+        "turns": 1
+      },
+      "at": "2026-11-24T03:13:05Z"
     }
   ]
 }
