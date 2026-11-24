@@ -79,3 +79,6 @@
   retain the diagnosis. CPU/inventory evidence was refreshed independently. Retrying the full verifier
   unchanged tests whether the capture pressure is transient; no capacity, comparison or reference changes.
 - 2026-11-20 Planner, for [track 6](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november): M3 now also waits for `GATE-TIME` M5, `DEAD-TOOLS` M4, `DEAD-CODE` M6 and `TEST-SUPPORT` M4, in place of `TEST-SUPPORT` M2. The cleanup deletes and converts code in the files M3 renames and splits, so the one rename lands after it and carries no dead code through. No item changed. M3 was Not Started.
+- 2026-11-24 Added WP5 before WP3 and WP4. The 3.0 migration (`e9a3923fa`) renamed `milestones` to `work_packages`
+  in the done-when files. The stale reader lost script callers and test target names, breaking `workspace-tests`
+  on main. WP5 updates both readers and checks the production reader against a checked-in done-when file.

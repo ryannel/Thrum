@@ -152,6 +152,31 @@
       ]
     },
     {
+      "id": "WP5",
+      "name": "The repository check recognizes migrated done-when files",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "The shape-rule suite catches a mismatch with checked-in done-when files, and the shape rules pass with their existing ratchet.",
+      "items": [
+        {
+          "id": "WP5.1",
+          "statement": "The shape-rule suite guards the production reader in `./dev check` by verifying that it finds a known item check in a checked-in `DONE.json`. With `work_packages` fixtures, `script-caller` recognizes a script named only by an item check in both an open and a Done work package and refuses it when unnamed. `test-binary` recognizes named targets, and history-name pins expire when their work package is Done.",
+          "check": "python3 scripts/test_shape_rules.py Fixture.test_done_when_checks_read_checked_in_plan && python3 scripts/test_shape_rules.py",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP5.2",
+          "statement": "The shape-rule check used by `./dev check-all` passes on the migrated plans with the existing rule versions and baseline.",
+          "check": "python3 scripts/shape_rules.py check",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "WP3",
       "name": "Names say what things do: the scene renderer is called the scene renderer, work package codes are out of file names, and the renderer's layers point one way",
       "status": "not_started",

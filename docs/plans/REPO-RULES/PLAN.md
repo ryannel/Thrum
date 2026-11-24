@@ -45,6 +45,15 @@ about the manifest so that nothing needs editing. `.gitignore` already ignores a
 `.orchestrate/evidence/`. A check must leave the loop's clean checkout unchanged, so tests work in scratch. `docs/ASSET-LIFECYCLE.md` and `CONTRIBUTING.md` gain the rule for
 new captures. Measure the tree before and after.
 
+## WP5 The repository check recognizes migrated done-when files
+
+Build this before WP3 and WP4 to restore the `workspace-tests` main-branch check. The orchestrate 3.0 migration
+(`e9a3923fa`) renamed the top-level key in `docs/plans/*/DONE.json` to `work_packages`. Read it in
+`done_when_checks()` in `scripts/shape_matchers.py` and `pinned_names()` in `scripts/shape_rules.py`, and update
+the fixtures in `scripts/test_shape_rules.py`. `script-caller` and `test-binary` count checks in open and Done
+work packages. History-name pins expire when a work package is Done. Keep the existing rule versions and ratchet
+baseline. Add the regression to the existing suite so it runs through `./dev check`.
+
 ## WP3 Names say what things do: the scene renderer is called the scene renderer, work package codes are out of file names, and the renderer's layers point one way
 
 This lands as one change so other builders rebase once. Take the list of names that open checks use from every
