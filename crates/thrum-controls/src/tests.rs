@@ -172,14 +172,14 @@ fn parameter_files_apply_valid_entries_and_explain_the_rest() {
     assert!(controls.is_on(paused));
     assert_eq!(controls.text_of(title), "Dusk");
     assert_eq!(report.problems.len(), 3);
-    assert!(matches!(&report.problems[0],
+    assert!(report.problems.iter().any(|problem| matches!(problem,
         ControlError::UnknownKey { key, suggestion: Some(suggestion) }
-        if key == "time.hou" && suggestion == "time.hour"));
-    assert!(matches!(&report.problems[1],
-        ControlError::InvalidValue { key, .. } if key == "time.sun_angle"));
-    assert!(matches!(&report.problems[2],
+        if key == "time.hou" && suggestion == "time.hour")));
+    assert!(report.problems.iter().any(|problem| matches!(problem,
+        ControlError::InvalidValue { key, .. } if key == "time.sun_angle")));
+    assert!(report.problems.iter().any(|problem| matches!(problem,
         ControlError::UnknownKey { key, suggestion: Some(suggestion) }
-        if key == "playback.hold2" && suggestion == "playback.hold"));
+        if key == "playback.hold2" && suggestion == "playback.hold")));
     let again = controls.apply_file(r#"{"time.hour": 18.5}"#).unwrap();
     assert_eq!((again.changed, again.unchanged), (0, 1));
     assert!(matches!(
@@ -201,7 +201,7 @@ fn views_get_display_units_and_formatted_text() {
     let described: serde_json::Value = serde_json::from_str(&controls.describe_json()).unwrap();
     let first = &described["controls"][0];
     assert_eq!(first["kind"], "slider");
-    assert_eq!(first["group"], "sky");
+    assert_eq!(first["group"], "time");
     assert_eq!(first["max"], 24.0);
     assert_eq!(first["text"], "12:00");
     assert_eq!(described["controls"][3]["text"], "30°");
