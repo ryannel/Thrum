@@ -82,3 +82,8 @@
   group exits. It records the watchdog separately from a graceful exit after a passing scenario. All eleven
   hardware Chrome cases passed with the original verifier's Wasm and cooker.
   [Target evidence](../../../.orchestrate/evidence/HOST/M4/chrome-shutdown/README.md)
+- 2026-11-24 Restored M4.6's clean Chrome exit requirement after review. The harness retires the game's
+  WebGPU devices before unloading its page and records watchdog diagnostics on failure. Real Chrome
+  completed the recovery-retry scenario in both exit tests. The harness rejected an injected watchdog
+  exit 2 and accepted a clean exit 0. The full Mac and Chrome command passed with eleven clean Chrome
+  exits. [Exit regression and target receipts](../../../.orchestrate/evidence/HOST/M4/strict-shutdown/README.md)

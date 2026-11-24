@@ -280,8 +280,8 @@
           "check": "sh -c './dev check-web && python3 scripts/host_lifecycle.py check --target mac-metal --target chrome-webgpu'",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M4/strict-shutdown/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M4-review.md"
         },
