@@ -2284,6 +2284,9 @@ async function checkShippingBoundary(cdp, origin, timeout, wasm) {
     const proofFiles = await evaluate(`Promise.all(['/capture.html', '/capture.mjs', '/temporal.html', '/moving-v1.json'].map(
       async path => [path, (await fetch(path)).status]))`);
     if (proofFiles.some(([, code]) => code !== 404)) throw new Error(`The normal bundle serves qualification files: ${JSON.stringify(proofFiles)}`);
+    await game.setVisible(false);
+    await cdp.call('Runtime.releaseObject', { objectId: game.objectId }, sessionId);
+    await unloadGamePage(cdp, sessionId, timeout);
     return { case: 'shipping-boundary', status, presented, wasm_sha256: wasmHash, exports, proofFiles };
   } finally {
     await cdp.call('Target.closeTarget', { targetId });
