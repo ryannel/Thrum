@@ -279,7 +279,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "chrome-webgpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,

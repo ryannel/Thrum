@@ -165,12 +165,12 @@
       }
     },
     "M4": {
-      "definitions": "64df948c85ff412e20bcea09aede58571d90dbea5e70145fbd24ac807ca9c8bd",
+      "definitions": "e5d9b1cda05f4882fcf3b925ac9afd468f5e92d9bcf4ab1b31d4e9d37f0deb1a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The main-branch check exact-images (python3 scripts/exact_baselines.py verify --full) failed on 7236c735c9f6 without any",
-        "at": "2026-11-24T01:18:42Z"
+        "task": "The design review of T2-CAPTURE at .orchestrate/evidence/T2-CAPTURE/design-review.md asked for changes, with its 1 Must ",
+        "at": "2026-11-24T01:25:42Z"
       },
       "ends_stretch": true
     }
@@ -183,11 +183,15 @@
     {
       "task": "The main-branch check exact-images (python3 scripts/exact_baselines.py verify --full) failed on 7236c735c9f6 without any image mismatch: every comparison up to chrome-night-sdr passed, then capture_v1_browser.mjs threw from check_v1_browser.mjs:2090 \"Cleanup failed ... Timed out: owned Chrome graceful exit; Chrome did not exit cleanly: code=null signal=SIGTERM\". Machine load was about 280 on 14 cores at the time. Logs: .git/orchestrate/main-checks/exact-images/logs/20261124-020954-7236c735c9f6-86665-279.{stdout,stderr}. Find why owned-Chrome shutdown fails the capture after a good capture, and plan a fix (in the module that owns the browser capture harness) so that a slow graceful exit under load neither fails a capture that succeeded nor leaks the Chrome process or profile.",
       "at": "2026-11-24T01:18:42Z"
+    },
+    {
+      "task": "The design review of T2-CAPTURE at .orchestrate/evidence/T2-CAPTURE/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-24T01:25:42Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T01:18:42Z"
+    "at": "2026-11-24T01:25:42Z"
   },
   "design_history": [
     {
