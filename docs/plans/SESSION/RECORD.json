@@ -626,7 +626,82 @@
     },
     "WP5": {
       "definitions": "750dfcf5cf93e3cf2bc6659cae66b1c956cba66eb176aa2e5115888831fb3cc1",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "76f768e7e98cd8cdc55da55e56d5f4d7f62cea03",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
+          "items": {
+            "WP5.1": "fail",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "fail",
+            "WP5.9": "fail",
+            "WP5.10": "pass",
+            "WP5.11": "pass",
+            "WP5.12": "pass",
+            "WP5.13": "pass",
+            "WP5.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "Mac cost run holds the host at tick zero throughout baseline transfer",
+              "item": "WP5.8",
+              "repeat": false
+            },
+            {
+              "name": "Chrome cost run holds the host at tick zero throughout baseline transfer",
+              "item": "WP5.9",
+              "repeat": false
+            },
+            {
+              "name": "All four socket players author the same unseeded axes",
+              "item": "WP5.1",
+              "repeat": false
+            },
+            {
+              "name": "Mac hero lead compares different interpolation phases",
+              "item": "WP5.8",
+              "repeat": false
+            },
+            {
+              "name": "Chrome hero lead compares different interpolation phases",
+              "item": "WP5.9",
+              "repeat": false
+            },
+            {
+              "name": "Mac bandwidth tripwire divides lifetime bytes by play-only time",
+              "item": "WP5.8",
+              "repeat": false
+            },
+            {
+              "name": "Chrome bandwidth tripwire divides lifetime bytes by play-only time",
+              "item": "WP5.9",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 129908,
+            "cached": 4012672,
+            "output": 13076,
+            "turns": 1
+          },
+          "at": "2026-11-24T19:44:45Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix fi",

@@ -527,10 +527,10 @@
           "check": "python3 scripts/session_match.py sockets steady",
           "ask": "Read the harness. Is each peer a separate process that reaches the others only through thrum-transport's sockets and the relay, with the relay's forwarded and dropped counts in the record? Is each client the session and the reference crowd built for its target, with its platform, target triple and browser or runtime version in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests, and does the harness compare them without supplying any?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP5/M5.1-circle-query/record.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP5.2",
@@ -539,8 +539,8 @@
           "ask": "Does the record hold, for each event, its time, the link identifiers and epochs before and after, the baseline's tick and size, and the reason each surviving end reported? Is the harness's own note of the kill and the cut kept apart from what the sessions reported?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP5/M5.2-circle-query/record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -549,8 +549,8 @@
           "check": "python3 scripts/session_match.py sockets faults --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/SESSION/WP5/M5.3-circle-query/record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -559,8 +559,8 @@
           "check": "python3 scripts/session_match.py sockets faults --target ios-sim",
           "target": "ios-sim",
           "evidence": ".orchestrate/evidence/SESSION/WP5/M5.4-circle-query/record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -570,8 +570,8 @@
           "ask": "Does the host in this run make its sends from its tick, so that a send that waited on the stalled client would show as a late tick? Is the longest gap between two host commits on record, with and without the stalled client?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP5/M5.5-circle-query/record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -580,8 +580,8 @@
           "check": "python3 scripts/session_match.py sockets slow --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/SESSION/WP5/M5.6-circle-query/record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -590,8 +590,8 @@
           "check": "python3 scripts/session_match.py sockets listen",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP5/M5.7-circle-query/record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -600,20 +600,20 @@
           "check": "python3 scripts/session_match.py sockets costs --target mac-metal",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP5/M5.8-circle-query/record.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP5.9",
           "statement": "With a Chrome client, the same rows as the Mac's are on record from two separate runs through the relay under A0's profile, each with BBR and with Cubic on the host, with the browser's version. What Chrome cannot report is marked absent, never zero. The figures are baselines: none decides the result.",
           "check": "python3 scripts/session_match.py sockets costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SESSION/WP5/M5.9-circle-query/record.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP5.10",
@@ -621,8 +621,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -633,8 +633,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SESSION/WP5/simulator-lifecycle/cpu-circle-query.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md"
         },
         {
           "id": "WP5.12",
@@ -645,8 +645,8 @@
           "target": "ios-sim",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SESSION/WP5/simulator-lifecycle/device.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md"
         },
         {
           "id": "WP5.13",
@@ -655,8 +655,8 @@
           "target": "ios-sim",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SESSION/WP5/circle-query-image-ios-audit.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md"
         },
         {
           "id": "WP5.14",
@@ -665,15 +665,52 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SESSION/WP5/simulator-lifecycle/outer.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired."
+      "status": "in_progress",
+      "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired.",
+      "findings": [
+        {
+          "name": "Mac cost run holds the host at tick zero throughout baseline transfer",
+          "item": "WP5.8",
+          "repeat": false
+        },
+        {
+          "name": "Chrome cost run holds the host at tick zero throughout baseline transfer",
+          "item": "WP5.9",
+          "repeat": false
+        },
+        {
+          "name": "All four socket players author the same unseeded axes",
+          "item": "WP5.1",
+          "repeat": false
+        },
+        {
+          "name": "Mac hero lead compares different interpolation phases",
+          "item": "WP5.8",
+          "repeat": false
+        },
+        {
+          "name": "Chrome hero lead compares different interpolation phases",
+          "item": "WP5.9",
+          "repeat": false
+        },
+        {
+          "name": "Mac bandwidth tripwire divides lifetime bytes by play-only time",
+          "item": "WP5.8",
+          "repeat": false
+        },
+        {
+          "name": "Chrome bandwidth tripwire divides lifetime bytes by play-only time",
+          "item": "WP5.9",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP6",
