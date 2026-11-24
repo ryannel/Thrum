@@ -1122,7 +1122,7 @@
     {
       "id": "M13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1280,7 +1280,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The WATERS planner needs to decide how the breaker should dissipate through the bore while preserving the regular-wave draw-back rule.",
+        "work": {
+          "commit": "48f4bd7fe91e7a36fd17b5bc9f64703cecc8d835",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/M13-handoff.md"
+      }
     },
     {
       "id": "M8",
