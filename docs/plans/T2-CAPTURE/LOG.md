@@ -98,3 +98,10 @@
   controlled browser and helper processes after TERM and KILL.
   [Ownership and target evidence](../../../.orchestrate/evidence/T2-CAPTURE/M4/ownership.md).
   The shared exact-images check supplies the registered frame comparisons after merge.
+
+- 2026-11-24 Repaired both M4 review findings. The signed launcher now exchanges live
+  shutdown commands and receipts over an authenticated loopback connection. It finishes
+  owned-process and profile cleanup itself if the connection drops. A failed manifest write
+  reports separately and preserves the original capture error. Seventeen CPU-only cases and
+  three hardware Chrome lifecycle probes passed.
+  [Target evidence](../../../.orchestrate/evidence/T2-CAPTURE/M4/repair-ownership.md).
