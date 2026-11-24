@@ -379,3 +379,9 @@
   Scale fell at tick 236 and recovered to 100% at tick 336. D7.3 changed scale zero times. Chrome passed both
   timestamp paths. T2 proved both scale transitions visually and recorded three isolated pacing gaps away from
   the transitions. [Target records](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/README.md)
+
+- 2026-11-24 M7 qualified D7.8 in a Metal take with all 600 scheduled images verified and no missed
+  opportunities. The largest submit interval from load onset through recovery was 19.17 ms. The same
+  4,600-round pass as D7.2 lowered scale at tick 233 and the governor restored it at tick 332.
+  The independent viewer could not locate either scale step. The latest workspace check passed 1,142 tests.
+  [Motion, timing, and separate capture cost](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/qualified-motion/README.md)
