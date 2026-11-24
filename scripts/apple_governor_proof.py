@@ -146,7 +146,12 @@ def mac_governor(output, *, steady=False, capture=False):
     if not any(row["tick"] >= LOAD[1] and row["quality"]["scale"] >= starting_scale
                for row in recoveries):
         raise ValueError(f"scale did not recover at least to its starting step {starting_scale}")
-    first = max(drop["tick"] + 20, LOAD[0] + 30)
+    # Compare sustained load after the last committed degradation and its
+    # in-flight frames. The common window must still have enough opportunities.
+    last_drop = max(row["tick"] for row in changes
+                    if drop["tick"] <= row["tick"] < LOAD[1]
+                    and row["quality"]["reason"] in ("OverBudget", "Thermal"))
+    first = max(last_drop + 3, LOAD[0] + 30)
     comparison = {name: miss_rate(arm, first, LOAD[1]) for name, arm in arms.items()}
     baseline, governed, disabled = (comparison[name] for name in ("steady", "loaded", "loaded-off"))
     # Two opportunities of measurement tolerance at window boundaries.
@@ -154,7 +159,8 @@ def mac_governor(output, *, steady=False, capture=False):
             or disabled["rate"] <= baseline["rate"] + 2 / disabled["ticks"]
             or disabled["rate"] <= governed["rate"]):
         raise ValueError(f"loaded/off did not falsify a return to baseline proxy rate: {comparison}")
-    return dict(target="mac-metal", comparison=comparison, changes=changes, load=LOAD,
+    return dict(target="mac-metal", comparison=comparison, comparison_ticks=[first, LOAD[1]],
+                changes=changes, load=LOAD,
                 rounds=ROUNDS, proxy=arms["loaded"]["proxy"], display_hz=arms["loaded"]["display_hz"],
                 binary_sha256=digest(binary))
 
