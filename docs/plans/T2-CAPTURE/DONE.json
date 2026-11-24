@@ -249,7 +249,7 @@
     {
       "id": "M4",
       "name": "A completed Chrome capture survives slow shutdown and leaves no browser or profile",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "The registered Chrome captures retain exact frame identities and decoded digests. A slow shutdown after validation succeeds when cleanup and both denied preflights are confirmed, with the actual termination recorded.",
       "items": [
         {
@@ -258,20 +258,20 @@
           "check": "node --test scripts/test_browser_capture_shutdown.mjs",
           "ask": "Do the tests exercise production teardown and finalization with controlled processes and observe the command status, manifest, receipt, owned processes and profile? In the delayed-receipt case, does the browser stand-in exit with status 2 after requested close without TERM or KILL, and does the test require command exit 0, a complete manifest and recorded browser status 2?",
           "target": "stand_in:chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/shutdown-tests.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },
         {
           "id": "M4.2",
           "statement": "On the LaunchServices path, the run owns the browser lifetime from launch through reaping. Only the owned browser and helpers are eligible for escalation. The launcher remains available to record the real termination and denied postflight, and other callers keep their qualification and exit requirements.",
           "ask": "Trace startup before CDP, Browser.close with no reply, TERM and KILL, and final receipt handling. Can a wrapper exit, a stale PID or a CDP disconnect satisfy the process-exit check or cause a signal to another run? Is there a cleanup path that skips owned processes or the profile on a prior capture error? Verify the direct-child checker and the existing launcher consumers still enforce their own verdict rules.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/T2-CAPTURE/M4/ownership.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -280,12 +280,24 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/T2-CAPTURE/M4-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Shutdown request write failure strands the owned Chrome group",
+          "item": "M4.2",
+          "repeat": false
+        },
+        {
+          "name": "Manifest write failure masks the original capture error",
+          "item": "M4.1",
+          "repeat": false
+        }
+      ]
     }
   ]
 }
