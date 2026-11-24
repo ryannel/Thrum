@@ -2003,6 +2003,14 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
     rule puts it for that anisotropy. Early sign: the capability record, and WP3's Chrome stills from 40 m up. The
     designed answer is more taps along the footprint's long side in the shader, counted against the record. The
     wrong fix is lowering the moments' variance, which makes the far sea shimmer.
+31. **The swell's lines do not show before they break**, because a long, low swell is steep enough to see only
+    in its last wavelength, after it has turned and closed up. Early sign: WP13's view from above shows one
+    ridge at a time and the wind sea elsewhere. The remedy is the scene's and not the transform's: a swell
+    short and tall enough to stand above the wind sea while it still bends, on a shelf wide enough to hold
+    three ridges, seen from where their gaps can be compared
+    ([the approach decision](LOG.md#wp13-approach-decision)). The wrong fixes are a live window, which is fed
+    the same swell and draws the same approach, a second train of waves along the shore, and a turn or a
+    height the transform does not give.
 
 ## Proof and builder handoff
 

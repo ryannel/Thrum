@@ -12,6 +12,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: a river's flow is worked out once and stored. Floods, dam breaks and levels that travel downstream are not planned, which sets aside the water decision's rule that all water simulation runs on the GPU.
 - Assumption: "breaking waves" (14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel, and no current from surf.
 - Assumption: after the break, a bounded swash profile driven by the incoming swell at the still-water contour is sufficient for the shipped-game look. The same sheet lowers the bore, limits the coherent trough and preserves the regular-wave run-up and draw-back. The builder tunes the bore decay and handoff width by eye.
+- Assumption: the swell at the island's exposed beach is set for the look, shorter and taller than the 10 s, 1.5 m one tried, so several lines of swell show at once. Its period stays inside the surf cue's 6 s to 14 s.
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever a breaking face is unavailable, including the swash. An eligible crest concentrates part of that birth on its face and under a resolved lip. Distant beaches use the same wet lost-power source for their steady cover.
 - Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
 - Assumption: surf on a lake is proved against the model, not judged by eye: the example's lake raises no long waves.
@@ -61,32 +62,26 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP18 The submitted craft trail is checked through a minute of ageing in the fast suite
 
-Land the [compact Metal trail fixture](DESIGN.md#compact-metal-craft-trail-wp18) ahead of unfinished
-water work. Adapt the trail-test portion of `52345b514` from `build/waters` to the current main
-fixture. Record the default Nextest time on the Mac, excluding compilation, for the exact test alone
-and within the foam binary under normal builder load. Both runs pass on the first attempt under the
-existing ten-second limit. WP13.14 continues to verify the guard when the surf work lands.
+[Review](../../../.orchestrate/evidence/WATERS/WP18-review.md)
 
 ## WP17 Small water checks leave the full sea grids to the long tier
 
-Land the fixture reductions first if a long-tier entry would hold them behind failures in other
-packages. WATERS owns the sea field and cache regressions.
-
-Use the [fixture design](DESIGN.md#water-fixtures-and-full-sea-sweeps-wp17) for the cases in the
-[workspace case list and baseline times](LOG.md#m17-workspace-timing-baseline).
-
-Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
-check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
-focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
+[Review](../../../.orchestrate/evidence/WATERS/WP17-review.md)
 
 ## WP13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
-Before resuming `build/waters`, settle the surf decision in the [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md).
-Use `WP13/` for `M13/` in its evidence links.
-Keep the shared analytic sheet and bounded swash. Tune a repeatable trade-wind set to shoal visibly, then
-resolve the pitching band on the same sheet. Use the [restart decision](LOG.md#wp13-restart-decision) to
-separate model, mesh and framing before the matched Metal and Chrome inspections. Keep the regular-wave
-run-up and draw-back and the highest-surface query.
+Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md). Keep the shared
+analytic sheet and bounded swash: the [approach decision](LOG.md#wp13-approach-decision) says why a live window
+would draw the same approach.
+
+WP13.4 no longer fixes the swell's period. Give the exposed beach a trade swell whose ridges are steep enough to
+see while they still bend and close up, which a shorter and taller swell is; the decision links the figures to
+start from. Its period and height, the shelf and the Sun's place are yours, and the beds the tests make stay as
+they are. Take WP13.5's and WP13.7's looks again with that swell.
+
+This is the one further look at the approach. If a fresh inspection of WP13.4 still fails, end `BLOCKED` with the
+frames. The [restart decision](LOG.md#wp13-restart-decision) still governs the pitching band, the mesh and the
+order of the inspections. Keep the regular-wave run-up and draw-back and the highest-surface query.
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 

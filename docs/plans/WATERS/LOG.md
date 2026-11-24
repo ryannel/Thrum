@@ -654,3 +654,20 @@
   The whitewater design and M13.7 keep that view for distant surf and use a separate view of a breaking front
   crossing the coarse window's outer edge to judge the handoff. M13.11 requires both views at matching
   trade-wind settings on Chrome and portable Metal and retains the submitted-time receipt.
+
+<a id="wp13-approach-decision"></a>
+
+- 2026-11-25 WP13.4 blocked again after three Metal looks could not follow two ridges through both turning and
+  narrowing. Keep the shared sheet. The live window is not selected for this cue: it takes the same swell at
+  its border and draws the same approach, and as a height field it holds no thrown lip.
+  [Reasons and figures](../../../.orchestrate/evidence/WATERS/WP13/approach-decision.md)
+
+- 2026-11-25 The cause is the swell's scale. At 10 s and 1.5 m the two ridges steep enough to see differ by 2°
+  and close by 7 m, and the ridge that turns and closes most is hidden by the wind sea. WP13.4 now takes a
+  period inside the cue's 6 s to 14 s and judges three ridges in one frame. A 6 s to 7 s, 2 m swell is the
+  starting point. This is the last look at the approach: a further miss goes to the lead as a question about
+  the item or the bar.
+
+- 2026-11-25 WP17's and WP18's builder notes left the plan file with their reviews passed. WP17 landed the
+  fixture reductions ahead of the long tier and recorded each case's time; WP18 brought the compact Metal trail
+  fixture forward from `52345b514`. Their designs and the entries above hold the detail.
