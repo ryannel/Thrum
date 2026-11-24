@@ -930,7 +930,7 @@
     {
       "id": "M7",
       "name": "The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1030,7 +1030,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "Resolve the Metal render stalls and verify visibly even cloud and shade travel across a full 20-second 60\u00d7 take.",
+        "work": {
+          "commit": "0e00363be9087bc11b957457124104f386b57210",
+          "branch": "build/clouds",
+          "pushed": true
+        },
+        "handoff": ".orchestrate/evidence/CLOUDS/M7-handoff.md"
+      }
     },
     {
       "id": "M8",
