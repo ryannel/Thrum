@@ -42,7 +42,7 @@ impl WeatherPreset {
         let (coverage, kind) = match self {
             Self::Clear => (0.0, 1.0),
             Self::Fair => (0.50, 1.0),
-            Self::Broken => (0.75, 0.38),
+            Self::Broken => (0.726, 0.42),
             Self::Overcast => (1.0, 0.0),
         };
         Parameters {
