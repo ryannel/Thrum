@@ -70,6 +70,9 @@ impl Wind {
             swell.direction = std::f64::consts::FRAC_PI_4;
             if matches!(self, Self::Trade) {
                 swell.significant_height = 1.5;
+                // A local trade wind over a limited fetch leaves room for the
+                // incoming swell to organize the exposed beach.
+                forcing.fetch = 18_000.0;
             }
         }
         forcing
@@ -260,15 +263,17 @@ fn island_breaker_section() -> Result<BreakerSection, Box<dyn Error>> {
         .iter()
         .map(|&index| {
             let skew = smooth(index / 0.65);
-            let throw = 6.0 * smooth((index - 0.65) / 0.45) * smooth((BORE - index) / 0.85);
+            let crest_lift = 0.28 * smooth(index / 0.65) * smooth((1.35 - index) / 0.7);
+            let throw = 6.0 * smooth((index - 0.72) / 0.45) * smooth((BORE - index) / 0.85);
             (0..SAMPLES)
                 .map(|i| {
                     let phase = std::f64::consts::TAU * f64::from(i) / f64::from(SAMPLES);
                     let angle = phase + 0.65 * skew * phase.sin();
-                    let height = (angle + 0.42 * skew * angle.sin().powi(2)).cos();
+                    let wave = (angle + 0.42 * skew * angle.sin().powi(2)).cos();
+                    let height = wave + crest_lift * wave.max(0.0).powi(2);
                     SectionPoint {
                         height,
-                        throw: throw * (1.0 + height) * 0.5,
+                        throw: throw * (1.0 + wave) * 0.5,
                     }
                 })
                 .collect()
@@ -292,7 +297,7 @@ pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0
 /// Sand, overhead, offshore, lee, headland, whole-island, seaward and foam handoff views.
 pub const SURF_VIEWS: [Camera; 8] = [
     CAMERAS[0],
-    Camera::look_at([-90.0, 40.0, 34.0], [-174.0, 0.0, 1.0], 81.0),
+    Camera::look_at([-94.0, 40.0, 49.0], [-164.0, 0.0, 18.0], 74.0),
     Camera::look_at([-1106.0, 40.0, 8.0], [-106.0, 0.0, 8.0], 10.0),
     Camera::look_at([253.0, 40.0, 171.0], [237.0, 0.0, 154.0], 59.0),
     Camera::look_at([-101.0, 40.0, -94.0], [-127.0, 0.0, -98.0], 79.0),
