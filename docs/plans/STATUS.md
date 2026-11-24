@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-16 of 36 modules done · 18 in progress · 2 to come
+15 of 36 modules done · 19 in progress · 2 to come
 
 ### Needs you now
 
@@ -17,7 +17,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 - PLATFORM-RUNTIME-MAC assumes: the OS-reported presented time of each game drawable is an acceptable witness for built-in ProMotion ([plan](PLATFORM-RUNTIME-MAC/PLAN.md))
 - T2-CAPTURE assumes: the motion arms that fail are not on a fixed clock, as the request assumed. They step on real elapsed time, so waiting for the ring means fewer frames, drawn later, and every frame that is drawn is kept. That is safe here because those arms compare no pixels. The other choice takes the motion arms out of the main-branch check, which also ends the dependence on load but stops running motion on main. ([plan](T2-CAPTURE/PLAN.md))
 - T2-CAPTURE assumes: only the motion arms of the exact-images check wait for the ring. Every other motion capture still drops a frame when the ring is full, because a capture that holds the renderer back cannot show how smoothly the game runs. A module whose capture only needs every frame can choose to wait. ([plan](T2-CAPTURE/PLAN.md))
-- T2-CAPTURE assumes: only the Mac capture gains exit 75. Chrome's captures in the check run on a fixed clock, already wait for each frame, and have not ended incomplete in any recorded run. ([plan](T2-CAPTURE/PLAN.md))
+- T2-CAPTURE assumes: only the Mac capture gains exit 75 for an incomplete runtime record. Chrome's captures in the check run on a fixed clock and already wait for each frame. ([plan](T2-CAPTURE/PLAN.md))
+- T2-CAPTURE assumes: a validated Chrome capture can pass after TERM or KILL during requested shutdown if all owned processes are confirmed gone, cleanup succeeds, and the launcher records both denied permission preflights. ([plan](T2-CAPTURE/PLAN.md))
 - CREATOR assumes: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: the starter gets a Chrome form now. The G6 decision left it as an owner question and recommended deferring it to G7's page; website demos, and the sea and cloud demo scenes, need a creator's scene in Chrome. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: "profiler" in the V1 exit is met by readouts in the demo UI on both targets, fed by the frame host's completed samples and the shells' callback records, not by a separate tool. ([plan](CREATOR/PLAN.md))
@@ -306,6 +307,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
+- T2-CAPTURE's design: Design Ready for Review · [design](T2-CAPTURE/DESIGN.md) · [plan](T2-CAPTURE/PLAN.md)
 - Small hot-reload checks prove which material the device draws (CREATOR M4): Not Started · [plan](CREATOR/PLAN.md)
 - Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6): In Progress · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
@@ -423,7 +425,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Done 14 Nov |
-| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 16 Nov |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Design Ready for Review |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M4 of 4 · Not Started |
