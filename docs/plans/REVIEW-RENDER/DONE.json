@@ -311,8 +311,8 @@
           "lock": "gpu",
           "ask": "Over the test's run of timed frames on this Mac, is every frame accounted for as published, refused with a reason or still pending, and does each published timing carry the frame it was recorded in? Does the test feed a stale, a zero and an inverted pair and see each refused? Is the resolve still encoded only after the render's completion, in a later submission? Does the game's frame-allocation test now cover a completed, timed frame? With the timing-demand switch off, is anything gathered?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m51-review-fixes and .orchestrate/evidence/REVIEW-RENDER/M5/review-fix-final-metal.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M5-review.md"
         },

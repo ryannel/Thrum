@@ -88,3 +88,10 @@
   observed zero allocations across 120 warm timing publications. Resize and rotation compiled no
   standalone surface graph. The paired valley route retains 1,083 samples before and after under shared
   load. Exact images use the shared main-branch run. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M5/README.md).
+- 2026-11-24 Addressed the M5 review. The host validates timestamps in submission order, using a
+  counter floor for completed work and exact pairs for overlapping GPU work. Fresh pairs from a refused
+  batch still prevent a later replay. Untimed SDR and EDR capture skip copy markers, and native Metal
+  completion follows the same demand for timestamp reads. On the M3 Max, all ten focused tests passed,
+  including real two-slot timings, five counted injected refusals and 120 warm allocation-free timing
+  publications.
+  [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M5/README.md#m51-review-fixes).
