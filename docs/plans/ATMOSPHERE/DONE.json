@@ -462,10 +462,10 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_history_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/M7/review-fix/metal-history.log",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M7.6",
@@ -524,7 +524,7 @@
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
           "evidence": "docs/design/maturity.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
           "builder_result": "pass"
         },
@@ -539,29 +539,16 @@
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Haze and light shafts as in Red Dead Redemption 2: distance that fades into the sky's own colour over a range the weather sets, and sunlight that stands in the air as soft shafts lined up with the shadows on the ground, steady as the camera moves.",
       "findings": [
         {
-          "name": "Nightglow epoch changes retain view-volume history",
+          "name": "Sun-path provider epoch change retains old shadow history",
           "item": "M7.5",
-          "repeat": false
-        },
-        {
-          "name": "Metal Sun disc flashes black on the first cut frame with haze enabled",
-          "repeat": false
-        },
-        {
-          "name": "Ledger overstates epoch reseeding coverage",
-          "item": "M7.11",
-          "repeat": false
-        },
-        {
-          "name": "Ledger labels 1080p Metal timings as 720p",
-          "item": "M7.11",
+          "different": "The earlier failure involved a nightglow change in the atmosphere environment epoch. Nightglow now reseeds correctly. This failure changes the registered Sun-path provider\u2019s separate source epoch while the environment epoch stays fixed.",
           "repeat": false
         }
       ]

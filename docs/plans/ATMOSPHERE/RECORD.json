@@ -169,7 +169,7 @@
         {
           "verdict": "fail",
           "commit": "0b8c112bcef34c0cdfcc7f596c966e6be572c6f5",
-          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review-1.md",
           "items": {
             "M7.1": "pass",
             "M7.2": "pass",
@@ -221,6 +221,49 @@
             "turns": 1
           },
           "at": "2026-11-23T23:09:43Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "45a7f07ddf2813efeefa252ae6621096bda698cc",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M7-review.md",
+          "items": {
+            "M7.1": "pass",
+            "M7.2": "pass",
+            "M7.4": "pass",
+            "M7.13": "pass",
+            "M7.5": "fail",
+            "M7.6": "pass",
+            "M7.7": "pass",
+            "M7.8": "pass",
+            "M7.9": "pass",
+            "M7.10": "pass",
+            "M7.11": "pass",
+            "M7.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sun-path provider epoch change retains old shadow history",
+              "item": "M7.5",
+              "different": "The earlier failure involved a nightglow change in the atmosphere environment epoch. Nightglow now reseeds correctly. This failure changes the registered Sun-path provider\u2019s separate source epoch while the environment epoch stays fixed.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 220969,
+            "cached": 25463680,
+            "output": 39199,
+            "turns": 1
+          },
+          "at": "2026-11-24T00:48:25Z"
         }
       ],
       "authorised": {
