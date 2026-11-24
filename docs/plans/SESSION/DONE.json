@@ -528,7 +528,7 @@
           "ask": "Read the harness. Is each peer a separate process that reaches the others only through thrum-transport's sockets and the relay, with the relay's forwarded and dropped counts in the record? Is each client the session and the reference crowd built for its target, with its platform, target triple and browser or runtime version in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests, and does the harness compare them without supplying any?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP5/review-fix/steady/record.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
@@ -601,7 +601,7 @@
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP5/review-fix/costs-mac/record.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
@@ -611,7 +611,7 @@
           "check": "python3 scripts/session_match.py sockets costs --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/SESSION/WP5/review-fix/costs-chrome/record.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP5-review.md",
           "builder_result": "pass"
         },
@@ -672,45 +672,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired.",
-      "findings": [
-        {
-          "name": "Mac cost run holds the host at tick zero throughout baseline transfer",
-          "item": "WP5.8",
-          "repeat": false
-        },
-        {
-          "name": "Chrome cost run holds the host at tick zero throughout baseline transfer",
-          "item": "WP5.9",
-          "repeat": false
-        },
-        {
-          "name": "All four socket players author the same unseeded axes",
-          "item": "WP5.1",
-          "repeat": false
-        },
-        {
-          "name": "Mac hero lead compares different interpolation phases",
-          "item": "WP5.8",
-          "repeat": false
-        },
-        {
-          "name": "Chrome hero lead compares different interpolation phases",
-          "item": "WP5.9",
-          "repeat": false
-        },
-        {
-          "name": "Mac bandwidth tripwire divides lifetime bytes by play-only time",
-          "item": "WP5.8",
-          "repeat": false
-        },
-        {
-          "name": "Chrome bandwidth tripwire divides lifetime bytes by play-only time",
-          "item": "WP5.9",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired."
     },
     {
       "id": "WP6",

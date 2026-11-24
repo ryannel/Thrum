@@ -630,7 +630,7 @@
         {
           "verdict": "fail",
           "commit": "76f768e7e98cd8cdc55da55e56d5f4d7f62cea03",
-          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP5-review-1.md",
           "items": {
             "WP5.1": "fail",
             "WP5.2": "pass",
@@ -700,6 +700,43 @@
             "turns": 1
           },
           "at": "2026-11-24T19:44:45Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "a3f837b7bef2d68b25c15178b43d8bc748d26cf1",
+          "review": ".orchestrate/evidence/SESSION/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass",
+            "WP5.10": "pass",
+            "WP5.11": "pass",
+            "WP5.12": "pass",
+            "WP5.13": "pass",
+            "WP5.14": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 100680,
+            "cached": 2222208,
+            "output": 8826,
+            "turns": 1
+          },
+          "at": "2026-11-24T21:58:01Z"
         }
       ],
       "authorised": {
@@ -735,6 +772,13 @@
           "output": 299334,
           "turns": 5
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "a3f837b7bef2d68b25c15178b43d8bc748d26cf1",
+        "review": ".orchestrate/evidence/SESSION/WP5-review.md",
+        "checked": "abffdf2529572eee59a574a5e22d33f8e85c4656",
+        "at": "2026-11-24T21:58:01Z"
       }
     },
     "WP6": {
