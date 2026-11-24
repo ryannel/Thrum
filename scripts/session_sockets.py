@@ -382,7 +382,11 @@ def seeded_controls(run):
     assert sorted(by_slot) == list(range(len(run.peers)))
 
     commits = {row["tick"]: row for row in run.host.events("commit")}
+    streams = {}
+    for stream in run.host.events("stream"):
+        streams.setdefault((stream["tick"], stream["slot"]), stream)
     checked = [0] * len(by_slot)
+    expiry_overrides = [0] * len(by_slot)
     off_grid = 0
     witness = []
     for row in run.host.events("admitted_axes"):
@@ -394,6 +398,11 @@ def seeded_controls(run):
             if not commits[tick]["admissions"][slot]:
                 continue
             frame = authored[tick]
+            stream = streams[tick, slot]
+            if tick - stream["last_staged"] >= run.config["held_expiry"]:
+                assert row["axes"][slot] == [0.0] * 3, (tick, slot, row, stream)
+                expiry_overrides[slot] += 1
+                continue
             assert row["axes"][slot] == frame["canonical_axes"], (tick, slot, row, frame)
             checked[slot] += 1
             off_grid += frame["axes"] != frame["canonical_axes"]
@@ -403,6 +412,7 @@ def seeded_controls(run):
     assert all(checked) and witness and 2 * off_grid > sum(checked), (checked, off_grid, witness)
     return {"seed": run.config["seed"], "admitted_samples_by_slot": checked,
             "off_grid_admitted_samples": off_grid, "all_slots_distinct_samples": len(witness),
+            "held_expiry_overrides_by_slot": expiry_overrides,
             "examples": witness[:4]}
 
 

@@ -1,4 +1,4 @@
-"""M5.14: qualify the installed runner with production entry points in an isolated repo."""
+"""WP5.14: qualify the installed runner with production entry points in an isolated repo."""
 import importlib.util
 import json
 import os
@@ -37,7 +37,7 @@ def wait_for(check, label):
 
 def declared(module, item):
     data = json.loads((ROOT / f"docs/plans/{module}/DONE.json").read_text())
-    return next(row["check"] for milestone in data["milestones"] for row in milestone["items"]
+    return next(row["check"] for package in data["work_packages"] for row in package["items"]
                 if row["id"] == item)
 
 
@@ -144,7 +144,7 @@ def proof_case(tree, shims, name, command, *, timer=False, control=False):
 
 
 def main():
-    host = declared("HOST", "M4.5")
+    host = declared("HOST", "WP4.5")
     apple = declared("APPLE-PRESENTATION", "D6.7")
     (ROOT / "tmp").mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="outer-simulator-proof-", dir=ROOT / "tmp") as directory:
@@ -154,8 +154,9 @@ def main():
                 proof_case(tree, shims, "presentation-cancel", apple),
                 proof_case(tree, shims, "presentation-deadline", apple, timer=True),
                 proof_case(tree, shims, "early-shell-control", apple, control=True)]
-    output = ROOT / ".orchestrate/evidence/SESSION/M5/simulator-lifecycle/outer.json"
+    output = ROOT / ".orchestrate/evidence/SESSION/WP5/simulator-lifecycle/outer.json"
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(dict(commit=commit, runner=str(SCRIPT), rows=rows), indent=2) + "\n")
     print(output)
 

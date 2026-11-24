@@ -219,7 +219,10 @@ pub fn host(
                 "actual": fault.actual.map(|d| format!("{d:016x}")), "parts": fault.parts})),
             )?;
         }
-        if now >= next_report || tick != prior && trace == Trace::Axes {
+        let trace_commit = tick != prior
+            && (trace == Trace::Axes
+                || trace == Trace::Seeded && tick.is_multiple_of(CONTROL_WITNESS_INTERVAL));
+        if now >= next_report || trace_commit {
             next_report = now + 100_000;
             for link in &links {
                 if let Some(stream) = host.stream(link.id()) {

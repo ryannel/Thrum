@@ -1,4 +1,4 @@
-"""M5.12: query CoreSimulator independently while the outer turn still owns admission."""
+"""WP5.12: query CoreSimulator independently while the outer turn still owns admission."""
 import json
 import os
 from pathlib import Path
@@ -54,6 +54,7 @@ def wait_for(predicate, seconds):
 def proof(output):
     holder, _ = simulator.admission()
     assert holder, "run through the check's outer simulator lock"
+    output.parent.mkdir(parents=True, exist_ok=True)
     attempt = output.with_name(f"device-attempt-{os.getpid()}.json")
     result = dict(commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
                   lock_pid=holder["pid"], cases=[])
@@ -100,4 +101,4 @@ if __name__ == "__main__":
         except subprocess.CalledProcessError as error:
             raise SystemExit(error.returncode) from None
     else:
-        proof(ROOT / ".orchestrate/evidence/SESSION/M5/simulator-lifecycle/device.json")
+        proof(ROOT / ".orchestrate/evidence/SESSION/WP5/simulator-lifecycle/device.json")
