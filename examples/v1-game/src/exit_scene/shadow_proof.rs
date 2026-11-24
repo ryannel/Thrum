@@ -39,7 +39,7 @@ impl SunProofGeometry {
 
     pub(crate) fn drift(self, index: usize, authored: Option<Drift>) -> Option<Drift> {
         if self == Self::Fast && index == FAST_SLOT {
-            Some(Drift([-0.8, 241.4, -5.4], [2.8, 0.0, 0.45], 42, 0))
+            Some(Drift([-0.8, 241.4, -13.4], [2.8, 0.0, 0.45], 42, 0))
         } else {
             authored
         }

@@ -724,6 +724,8 @@ impl SceneContext<'_> {
 mod tests {
     #[test]
     fn shader_validates() {
+        use super::SoftFrame;
+        use std::mem::offset_of;
         use wgpu::naga;
         let source = super::shader_source();
         let module = naga::front::wgsl::parse_str(&source)
@@ -736,8 +738,6 @@ mod tests {
         let naga::TypeInner::Struct { members, span } = frame else {
             panic!("soft Sun frame must be a struct");
         };
-        use super::SoftFrame;
-        use std::mem::offset_of;
         assert_eq!(*span as usize, size_of::<SoftFrame>());
         let expected = [
             offset_of!(SoftFrame, inverse),
