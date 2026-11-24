@@ -15,7 +15,7 @@ use thrum_test_support::readback::{Mip, Readback};
 const PROBE: &str = r"
 const RECEIVERS = array<vec3<f32>, 8>(
     vec3(0.0,0.0,0.0), vec3(0.0,2.0,0.0), vec3(0.0,3.99,0.0), vec3(0.0,4.0,0.0),
-    vec3(1.99,0.0,0.0), vec3(2.00,0.0,0.0), vec3(1.5,0.0,0.0), vec3(-3.0,1.0,0.0));
+    vec3(1.99,2.0,0.0), vec3(2.00,2.0,0.0), vec3(1.5,2.0,0.0), vec3(-3.0,1.0,0.0));
 @vertex fn probe_vertex(@builtin(vertex_index) id: u32) -> @builtin(position) vec4<f32> {
     return vec4(array(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0))[id], 0.0, 1.0);
 }
@@ -179,7 +179,7 @@ fn metal_selects_one_whole_sun_path_at_the_receivers_height() {
     scene.sun_optical_depth = Some(plane(LN_2).with_ground_band(band(LN_2, LN_2 * 2.0, LN_2)));
     let (prepared, target) = gpu.prepare(&scene, light);
     let result = factors(&gpu, &prepared);
-    let expects = [0.5, 0.25, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+    let expects = [0.5, 0.25, 0.5, 0.5, 0.5, 0.5, 0.375, 0.5];
     for (actual, expected) in result.iter().zip(expects) {
         assert!((actual - expected).abs() < 0.002, "factors {result:?}");
     }

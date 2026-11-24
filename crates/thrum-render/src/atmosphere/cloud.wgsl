@@ -8,7 +8,7 @@ struct CloudField {
 
 // One factor for every direct-Sun path. Field values already describe optical
 // depth along the true Sun ray, so no second obliquity correction is applied.
-fn cloud_factor(world_point: vec3<f32>) -> f32 {
+fn cloud_plane_factor(world_point: vec3<f32>) -> f32 {
     let sun=aerial_frame.sun_lux.xyz;
     if cloud_field.validity.x==0.0 || world_point.y>=cloud_field.plane_drift.x
         || sun.y<cloud_field.plane_drift.w { return 1.0; }

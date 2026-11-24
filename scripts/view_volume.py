@@ -29,7 +29,7 @@ SHAFT_EYE = [500, 145, 425]
 EXTENT = [1280, 720]
 AERIAL = 'atmosphere aerial perspective'
 MEDIUM = 'test bank medium coefficients and ground band'
-BANK = 'test-bank' 
+BANK = 'test-bank'
 
 
 def run(*command, cwd=ROOT, env=None, log=None):
@@ -145,13 +145,14 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
     native, cook, web, store = builds
     mode = 'realtime' if motion else 'fixed'
     scenario = 'ground-pan' if motion else 'checkpoint'
+    overlay = 'motion' if motion == 'mover' else 'off'
     if cost:
         scenario = 'cost'
     params = output.with_suffix('.params.json')
     save(params, {'world.paused': True, 'sky.solar_time': round(pose['solar_hours'], 2),
                   'camera.yaw': pose['yaw_degrees'], 'camera.pitch': 0})
     common = ['--mode', mode, '--params', params, '--output', output,
-              '--overlay', 'off', '--reconstruction', 'taau']
+              '--reconstruction', 'taau']
     if target == 'mac-metal':
         env = dict(os.environ)
         if haze:
@@ -167,7 +168,7 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
             env['THRUM_CAPTURE_RENDERER_SIGNATURE'] = '1'
         run(sys.executable, 'scripts/capture_v1_runtime.py', '--binary', native,
             '--store', store, '--case', f'atmosphere-{scenario}' if motion else scenario,
-            '--extent', *map(str, extent), *common, env=env, log=output.with_suffix('.log'))
+            '--extent', *map(str, extent), '--overlay', overlay, *common, env=env, log=output.with_suffix('.log'))
     else:
         extra = []
         if haze:
@@ -182,10 +183,15 @@ def checkpoint(output, target, builds, pose, haze=None, cloud=False, signature=F
             extra += ['--control', 'off']
         if assets_source:
             extra += ['--assets-source', assets_source]
+        if motion == 'mover':
+            mover_route = read(ROOT / 'examples/v1-game/routes/moving-v1.json')
+            mover_route['overlay'] = 'motion'
+            route_file = output.with_suffix('.route.json')
+            save(route_file, mover_route)
         if route_file:
             extra += ['--route-file', route_file]
         run('node', 'scripts/capture_v1_browser.mjs', '--atmosphere', scenario,
-            '--cook', cook, '--web-root', web, *common, *extra, log=output.with_suffix('.log'))
+            '--cook', cook, '--web-root', web, '--overlay', 'route' if motion == 'mover' else 'off', *common, *extra, log=output.with_suffix('.log'))
         warnings = (output / 'chrome.log').read_text()
         if 'GPUDevice:' in warnings:
             raise ValueError(f'Chrome WebGPU reported validation errors: {output / "chrome.log"}')
@@ -415,7 +421,7 @@ def bank_inspection(output, targets, builds, group):
     motions = {
         'bankwalk': ([-60, 242.8, 5], -30),
         'bankpan': ([-13, 244.0, 2], -80),
-        'mover': ([-6, 243.3, 20], -32),
+        'mover': ([9, 243.3, 26], 0),
     }
     for target in targets:
         folder = output / target

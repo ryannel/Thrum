@@ -1,4 +1,5 @@
 //! Terminal composition through the actual scene sky and star draw.
+mod far_terminal;
 #[expect(dead_code, reason = "the shared fixture also reads cumulative cells")]
 mod fixture;
 #[expect(dead_code, reason = "this proof reads the terminal pair directly")]
@@ -82,13 +83,14 @@ fn metal_medium_corrects_sky_and_sun_and_attenuates_added_starlight_once() {
         &gpu,
         &scene,
         night.with_view_volume_medium(2),
-        Some((slab, [0.035, 0.0, 0.000_001])),
+        Some((slab, [0.035, 0.0, 0.127])),
     );
     let pair = fogged.terminal();
     let channel = 1;
     let background = clear_sky.center()[channel];
     let star = clear_with_star.center()[channel] - background;
-    let delta = pair[channel] * SUN_LUX * STORAGE_EXPOSURE / SCATTER_GAIN;
+    let delta = pair[channel] * SUN_LUX * STORAGE_EXPOSURE / SCATTER_GAIN
+        + medium_fixture::centre_layer(&fogged, fogged.grid[2] - 1, false)[3] * STORAGE_EXPOSURE;
     let expected = pair[3] * (background + star) + delta;
     println!(
         "night sky={background}, star={star}, delta={delta}, actual={}, expected={expected}",
@@ -112,7 +114,7 @@ fn metal_medium_corrects_sky_and_sun_and_attenuates_added_starlight_once() {
         "two corrections survived"
     );
     println!(
-        "sky={background} star={star} R={} delta={delta} expected={expected}; far aerial variant is checked separately through the environment library",
+        "sky={background} star={star} R={} delta={delta} expected={expected}",
         pair[3]
     );
 }

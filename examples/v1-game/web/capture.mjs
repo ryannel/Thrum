@@ -242,7 +242,8 @@ async function runCapture() {
     withholdUntil = start + 2000;
     record.actions.push({ kind: 'withhold readback collection', start_ms: start, end_ms: withholdUntil });
   }
-  const duration = atmosphereMotion ? (atmosphere === 'scrub' ? 10000 : 7000) :
+  const bankMover = atmosphereMotion && record.haze_take?.motion === 'mover';
+  const duration = atmosphereMotion ? (bankMover ? 13000 : atmosphere === 'scrub' ? 10000 : 7000) :
     (route.keys.at(-1).tick + 121) * 1000 / 60;
   const fixedExitPhaseMs = scene === 'exit' && mode === 'fixed'
     ? (route.phase[0] / route.phase[1]) * 1000 / 60 : 0;
@@ -293,7 +294,6 @@ async function runCapture() {
       game.set_camera_yaw(yaw * Math.PI / 180);
       record.actions.push({kind:atmosphere,frame_ms:timestamp,solar_hours:game.time_of_day()*24,yaw_degrees:yaw});
     }
-    const bankMover = atmosphereMotion && record.haze_take?.motion === 'mover';
     if ((atmosphere === 'off' || bankMover) && !released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
       // Resume clears the clock fraction. Put the fixed exit route's origin
       // between the last held callback and this sample to restore its phase.

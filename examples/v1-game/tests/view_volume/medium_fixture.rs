@@ -12,6 +12,16 @@ pub(crate) fn render(
     light: AtmosphereFrame,
     coefficient: Option<(&str, [f32; 3])>,
 ) -> Witness {
+    render_and_probe(gpu, scene, light, coefficient, |_| ()).0
+}
+
+pub(crate) fn render_and_probe<T>(
+    gpu: &Gpu,
+    scene: &SyntheticScene,
+    light: AtmosphereFrame,
+    coefficient: Option<(&str, [f32; 3])>,
+    probe: impl FnOnce(&thrum_render::synthetic::PreparedSynthetic) -> T,
+) -> (Witness, T) {
     let (mut prepared, mut target) = gpu.prepare(scene, light);
     if let Some((weight, [sigma, solar, ambient])) = coefficient {
         let medium = prepared
@@ -68,7 +78,8 @@ pub(crate) fn render(
         }
         gpu.queue.submit([encoder.finish()]);
     }
-    crate::fixture::render(gpu, &mut prepared, &mut target, scene, light)
+    let witness = crate::fixture::render(gpu, &mut prepared, &mut target, scene, light);
+    (witness, probe(&prepared))
 }
 
 pub(crate) fn centre_layer(witness: &Witness, layer: u32, scatter: bool) -> [f32; 4] {

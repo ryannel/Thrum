@@ -19,7 +19,7 @@ fn atlas_weight(point:vec2<f32>,region:vec4<f32>)->f32 {
     return smoothstep(0.0,region.z*0.15,min(edge.x,edge.y));
 }
 
-fn cloud_factor(world_point:vec3<f32>)->f32 {
+fn cloud_plane_factor(world_point:vec3<f32>)->f32 {
     if cloud_field.plane_drift.w==0.0 || world_point.y>=cloud_field.plane_drift.x {return 1.0;}
     let direction=cloud_field.path_border.xyz;
     let distance=(cloud_field.plane_drift.x-world_point.y)/direction.y;

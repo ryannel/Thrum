@@ -882,8 +882,11 @@ async fn record(
         native_recovery::Recovery::new(recovery_mode, capabilities.generation(), hardware);
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
+    let bank_mover = haze_take.is_some_and(HazeTake::runs_world);
     let (hard_end, soft_end, world_end) = if governed {
         (12.0, 10.0, f64::INFINITY)
+    } else if bank_mover {
+        (14.0, 13.0, f64::INFINITY)
     } else {
         scenario_bounds(scenario, recovery_mode)
     };
@@ -915,7 +918,6 @@ async fn record(
             break;
         }
         let work = WorkClock::start().map_err(|e| e.to_string())?;
-        let bank_mover = haze_take.is_some_and(HazeTake::runs_world);
         let active_world = world_moves(scenario) || bank_mover;
         if active_world
             && t >= 1.0

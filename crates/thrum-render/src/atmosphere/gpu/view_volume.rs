@@ -136,59 +136,25 @@ pub(crate) fn source(cascades: bool, cloud: CloudVariant, medium: bool, near: u3
              projection: f32, start: f32, end: f32) -> f32 { return 1.0; }"
             .to_owned()
     };
-    let (integration, medium_code) = if medium {
-        (
-            medium_integration(ground),
-            wgsl!("atmosphere/volume_medium.wgsl"),
-        )
+    let medium_code = if medium {
+        wgsl!("atmosphere/volume_medium.wgsl")
     } else {
-        (wgsl!("atmosphere/view_volume.wgsl").to_owned(), "")
+        "fn medium_cell(xy: vec2<i32>, layer: u32, point: vec3<f32>) -> vec3<f32> { return vec3(0.0); }"
+    };
+    let surface = if ground {
+        "fn volume_ground_visibility(point: vec3<f32>, depth: f32) -> f32 {
+            let band = ground_band_sample(point);
+            return mix(1.0, band.y, band.z * volume_cascade_fade(depth));
+        }"
+    } else {
+        "fn volume_ground_visibility(point: vec3<f32>, depth: f32) -> f32 { return 1.0; }"
     };
     format!(
-        "{}\n{}{}\n{cascade}\n{cloud}\n{medium_code}",
-        super::aerosol::aerial_source(&integration),
+        "{}\n{}{}\n{cascade}\n{cloud}\n{surface}\nconst VOLUME_HAS_MEDIUM = {medium};\n{medium_code}",
+        super::aerosol::aerial_source(wgsl!("atmosphere/view_volume.wgsl")),
         wgsl!("atmosphere/volume_history.wgsl"),
         grid_source_with_near(near),
     )
-}
-
-fn medium_integration(ground: bool) -> String {
-    let sun_visibility = if ground {
-        "terrain * mix(1.0, ground_band_sample(world).y, volume_cascade_fade(sample_distance * forward_cos))"
-    } else {
-        "terrain"
-    };
-    wgsl!("atmosphere/view_volume.wgsl")
-        .replace("var baseline = empty_ray();", "var baseline = empty_ray();
-    var joint_medium = empty_ray();
-    var relative = 1.0;
-    var has_medium = false;")
-        .replace("let visibility = volume_terrain_visibility(world, sample_distance * forward_cos)", "let terrain = volume_terrain_visibility(world, sample_distance * forward_cos);
-            let visibility = terrain")
-        .replace("            baseline.lo = extend_ray", &format!(
-            "            let medium = medium_cell(xy, layer, eye + direction * middle);
-            if !has_medium && any(medium != vec3(0.0)) {{
-                has_medium = true;
-                joint_medium.lo = Segment(baseline.lo.radiance + correction.lo.radiance, baseline.lo.transmission);
-                joint_medium.hi = Segment(baseline.hi.radiance + correction.hi.radiance, baseline.hi.transmission);
-            }}
-            if has_medium {{
-                let shadow = {sun_visibility};
-                joint_medium.lo = extend_ray(joint_medium.lo, joint_step(single_lo + multi_lo + source[0] / VOLUME_HISTORY_GAIN, sigma_lo, direct[0], medium, shadow, delta));
-                joint_medium.hi = extend_ray(joint_medium.hi, joint_step(single_hi + multi_hi + source[1] / VOLUME_HISTORY_GAIN, sigma_hi, direct[1], medium, shadow, delta));
-            }}
-            relative *= exp(-medium.x * delta);
-            baseline.lo = extend_ray"))
-        .replace("0.5 * sigma_hi.x * delta", "0.5 * (sigma_hi.x + medium.x) * delta")
-        .replace("let joint = project_spectrum", "var joint = project_spectrum")
-        .replace("        textureStore(scatter_out, xy, i32(layer + 1u)", "        if has_medium { joint = project_spectrum(joint_medium.lo.radiance, joint_medium.hi.radiance); }
-        textureStore(scatter_out, xy, i32(layer + 1u)")
-        .replace("vec4(throughput, night));
-    }", "vec4(throughput * relative, night));
-    }")
-        .replace("let joint_rgb = project_spectrum", "var joint_rgb = project_spectrum")
-        .replace("    let terminal = vec4((joint_rgb - baseline_rgb) * SKY_LUT_GAIN, 1.0);", "    if has_medium { joint_rgb = project_spectrum(joint_medium.lo.radiance, joint_medium.hi.radiance); }
-    let terminal = vec4((joint_rgb - relative * baseline_rgb) * SKY_LUT_GAIN, relative);")
 }
 
 impl ViewVolume {

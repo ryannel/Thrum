@@ -2,7 +2,8 @@ use crate::{binding, records::VolumeHistory, shaders::wgsl};
 
 /// Scene-owned target for a provider's medium coefficients. Its RGBA16F
 /// channels hold grey extinction in inverse metres, the grey solar kernel
-/// and grey ambient source per unit solar illuminance per metre, and padding.
+/// per unit solar illuminance per metre, grey ambient source in luminance per
+/// metre, and padding.
 /// Every frame the provider writes all cells using the leased sample points.
 #[derive(Clone)]
 pub struct ViewVolumeMediumTarget {

@@ -59,7 +59,7 @@ fn coefficients(@builtin(global_invocation_id) cell: vec3<u32>) {
     let beam = phase * exp(-depth);
     let diffuse = 0.033 * exp(-0.28 * depth);
     textureStore(medium_out, vec2<i32>(cell.xy), i32(cell.z),
-        vec4(extinction, extinction * (beam + diffuse), extinction * 0.014, 0.0));
+        vec4(extinction, extinction * (beam + diffuse), extinction * 0.014 * medium_observer.sun_lux.w * smoothstep(-0.15, 0.20, sun.y), 0.0));
 }
 
 @compute @workgroup_size(8, 8)

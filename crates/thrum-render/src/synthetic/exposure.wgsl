@@ -43,7 +43,7 @@ fn resolve() {
         flags = INVALID | NOT_METERED;
         if policy.atmosphere != 0u && finite(directional.direction_to_light.y)
             && valid_rgb(directional.irradiance.rgb) && valid_rgb(environment_light.horizontal_irradiance.rgb) {
-            let incident = environment_light.horizontal_irradiance.rgb + directional.irradiance.rgb * max(directional.direction_to_light.y, 0.0);
+            let incident = environment_light.horizontal_irradiance.rgb + directional.irradiance.rgb * max(directional.direction_to_light.y, 0.0) * incident_sun_factor();
             let measured = dot(incident, REC709_LUMA);
             if finite(measured) && measured >= 0.0 {
                 lux = measured;

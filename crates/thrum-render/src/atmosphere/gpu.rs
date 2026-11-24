@@ -275,7 +275,10 @@ impl AtmospherePrepared {
             &sampler,
             (
                 exposure_samples,
-                frame.view_volume().then_some(&aerial_views[0]),
+                [
+                    frame.view_volume().then_some(&aerial_views[0]),
+                    frame.medium_epoch.is_some().then_some(&aerial_views[1]),
+                ],
             ),
         );
         let (diffuse_pipeline, diffuse_group) =
@@ -892,7 +895,7 @@ fn prepare_sky(
     motion: &wgpu::Buffer,
     views: &Charts<wgpu::TextureView>,
     sampler: &wgpu::Sampler,
-    sky_output: (&[wgpu::Buffer; 2], Option<&wgpu::TextureView>),
+    sky_output: (&[wgpu::Buffer; 2], [Option<&wgpu::TextureView>; 2]),
 ) -> (wgpu::RenderPipeline, [wgpu::BindGroup; 2]) {
     let (exposure_samples, volume) = sky_output;
     let visibility = wgpu::ShaderStages::FRAGMENT;
@@ -914,9 +917,12 @@ fn prepare_sky(
         binding::uniform(4, visibility, size_of::<[f32; 4]>() as u64),
         binding::uniform(5, visibility, SKY_MOTION_BYTES),
     ];
-    if volume.is_some() {
+    for (binding, view) in [6, 7].into_iter().zip(volume) {
+        if view.is_none() {
+            continue;
+        }
         entries.push(binding::texture(
-            6,
+            binding,
             visibility,
             wgpu::TextureSampleType::Float { filterable: true },
             wgpu::TextureViewDimension::D2Array,
@@ -931,7 +937,9 @@ fn prepare_sky(
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let shader = if volume.is_some() {
+    let shader = if volume[1].is_some() {
+        crate::shaders::Shader::AtmosphereMediumSky
+    } else if volume[0].is_some() {
         crate::shaders::Shader::AtmosphereVolumeSky
     } else {
         crate::shaders::Shader::AtmosphereSky
@@ -1007,12 +1015,17 @@ fn prepare_sky(
                 resource: sample.as_entire_binding(),
             },
         ];
-        if let Some(view) = volume {
-            entries.push(wgpu::BindGroupEntry {
-                binding: 6,
-                resource: wgpu::BindingResource::TextureView(view),
-            });
-        }
+        entries.extend(
+            [6, 7]
+                .into_iter()
+                .zip(volume)
+                .filter_map(|(binding, view)| {
+                    Some(wgpu::BindGroupEntry {
+                        binding,
+                        resource: wgpu::BindingResource::TextureView(view?),
+                    })
+                }),
+        );
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("atmosphere sky inputs"),
             layout: &layout,

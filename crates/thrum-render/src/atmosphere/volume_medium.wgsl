@@ -20,9 +20,3 @@ fn medium_cell(xy: vec2<i32>, layer: u32, point: vec3<f32>) -> vec3<f32> {
     textureStore(history_lo_out, xy, i32(VOLUME_INTERVALS + layer), vec4(coefficients, 0.0));
     return coefficients;
 }
-
-fn joint_step(source: vec4<f32>, sigma: vec4<f32>, direct: vec4<f32>,
-              medium: vec3<f32>, sun_visibility: f32, delta: f32) -> Segment {
-    let lit_medium = medium.y * direct * sun_visibility + vec4(medium.z);
-    return integrate_segment(source + lit_medium, sigma + vec4(medium.x), delta);
-}

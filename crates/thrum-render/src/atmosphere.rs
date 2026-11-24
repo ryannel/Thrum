@@ -40,7 +40,10 @@ pub struct ViewVolumeStorage {
 pub const VIEW_VOLUME_SETTLE_FRAMES: u32 = 8;
 
 /// Cloud sampling source shared by the synthetic and cooked draw shader assemblies.
-pub const CLOUD_SHADER_SOURCE: &str = wgsl!("atmosphere/cloud.wgsl");
+pub const CLOUD_SHADER_SOURCE: &str = concat!(
+    wgsl!("atmosphere/cloud.wgsl"),
+    wgsl!("atmosphere/cloud_factor.wgsl")
+);
 
 /// The Earth profile's aerosol at ground level.
 #[derive(Clone, Copy, Debug, PartialEq)]

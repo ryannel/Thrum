@@ -22,9 +22,10 @@
     let screen_uv = input.ndc * vec2(0.5, -0.5) + vec2(0.5);
     let terminal = textureSampleLevel(volume_sky, lut_sampler, screen_uv,
         i32(textureNumLayers(volume_sky)) - 1, 0.0);
+    let diffuse = terminal_diffuse(screen_uv);
     var corrected = radiance;
-    if terminal.a != 1.0 || any(terminal.rgb != vec3(0.0)) {
-        corrected = terminal.a * radiance + terminal.rgb * (solar / SKY_LUT_GAIN);
+    if terminal.a != 1.0 || any(terminal.rgb != vec3(0.0)) || diffuse != 0.0 {
+        corrected = terminal.a * radiance + terminal.rgb * (solar / SKY_LUT_GAIN) + vec3(diffuse);
     }
     let stored=corrected*sky_exposure.x;
     return SkyOutput(vec4(clamp(stored,vec3(0.0),vec3(MAX_FINITE_HALF)),1.0),infinity_motion(direction,disk), sky_motion.extent.z);

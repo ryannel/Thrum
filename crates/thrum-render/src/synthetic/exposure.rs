@@ -18,12 +18,20 @@ use crate::timing::GpuTimings;
 
 pub(super) const SAMPLE_BYTES: u64 = size_of::<crate::records::ExposureSample>() as u64;
 const POLICY_BYTES: u64 = size_of::<crate::records::Policy>() as u64;
+macro_rules! exposure_source {
+    () => {
+        concat!(
+            wgsl!("directional_light.wgsl"),
+            "\n",
+            wgsl!("environment_light.wgsl"),
+            "\n",
+            wgsl!("synthetic/exposure.wgsl"),
+        )
+    };
+}
 pub(crate) const SHADER: &str = concat!(
-    wgsl!("directional_light.wgsl"),
-    "\n",
-    wgsl!("environment_light.wgsl"),
-    "\n",
-    wgsl!("synthetic/exposure.wgsl"),
+    exposure_source!(),
+    "\nfn incident_sun_factor() -> f32 { return 1.0; }"
 );
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -228,15 +236,15 @@ impl ExposureResolve {
             Some((layout, group, cloud.variant()))
         });
         let shader = if let Some((_, _, variant)) = &sun_path {
-            let source = format!("{}\n{}\n{}",
-                SHADER.replace("max(directional.direction_to_light.y, 0.0);",
-                    "max(directional.direction_to_light.y, 0.0) * cloud_factor(aerial_frame.camera_altitude.xyz);"),
+            let source = format!(
+                "{}\n{}\n{}",
+                exposure_source!(),
                 crate::shaders::wgsl!("records/observer.wgsl"),
                 variant.sampling_source(),
             );
             device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("incident camera exposure with ground band"),
-                source: wgpu::ShaderSource::Wgsl(format!("{source}\n@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n@group(1) @binding(4) var aerial_sampler: sampler;").into()),
+                source: wgpu::ShaderSource::Wgsl(format!("{source}\n@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n@group(1) @binding(4) var aerial_sampler: sampler;\nfn incident_sun_factor() -> f32 {{ return cloud_factor(aerial_frame.camera_altitude.xyz); }}").into()),
             })
         } else {
             crate::shaders::Shader::Exposure.compile(device, "incident camera exposure")

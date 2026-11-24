@@ -281,17 +281,14 @@ impl CloudVariant {
         let plane = if self.gpu() {
             wgsl!("atmosphere/cloud_gpu.wgsl")
         } else {
-            crate::atmosphere::CLOUD_SHADER_SOURCE
+            wgsl!("atmosphere/cloud.wgsl")
         };
-        if self.ground() {
-            format!(
-                "{}{}",
-                plane.replace("fn cloud_factor(", "fn cloud_plane_factor("),
-                wgsl!("atmosphere/ground_band.wgsl")
-            )
+        let factor = if self.ground() {
+            wgsl!("atmosphere/ground_band.wgsl")
         } else {
-            plane.to_owned()
-        }
+            wgsl!("atmosphere/cloud_factor.wgsl")
+        };
+        format!("{plane}{factor}")
     }
 }
 
@@ -417,7 +414,15 @@ shader_catalog! {
         wgsl!("atmosphere/storage.wgsl"),
         wgsl!("atmosphere/geometry.wgsl"),
         wgsl!("atmosphere/common.wgsl"),
-        wgsl!("atmosphere/volume_sky.wgsl")
+        wgsl!("atmosphere/volume_sky.wgsl"),
+        "\nfn terminal_diffuse(uv: vec2<f32>) -> f32 { return 0.0; }"
+    );
+    AtmosphereMediumSky => concat!(
+        wgsl!("atmosphere/storage.wgsl"),
+        wgsl!("atmosphere/geometry.wgsl"),
+        wgsl!("atmosphere/common.wgsl"),
+        wgsl!("atmosphere/volume_sky.wgsl"),
+        wgsl!("atmosphere/volume_sky_diffuse.wgsl")
     );
     AtmosphereDiffuse => concat!(
                 concat!(

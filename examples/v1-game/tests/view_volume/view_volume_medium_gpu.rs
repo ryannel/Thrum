@@ -32,7 +32,7 @@ fn metal_joint_medium_counts_air_and_slab_once_at_both_slice_counts() {
                 &gpu,
                 &scene,
                 light.with_view_volume_medium(1),
-                Some((&slab, [sigma, sigma * 0.24, sigma * 0.08])),
+                Some((&slab, [sigma, sigma * 0.24, sigma * 4000.0])),
             );
             let attenuation = (-sigma * (SLAB[1] - SLAB[0])).exp();
             let expected = base * attenuation;
