@@ -93,7 +93,8 @@ def check_web(folder):
         ('material', 'v1-game-web-dev'),
     ]:
         run('node', WEB_CHECK, '--case', case, '--web-root', folder.parent / web_root,
-            '--cook', folder.parent / 'thrum-cook', '--output', folder / case)
+            '--cook', folder.parent / 'thrum-cook', '--output', folder / case,
+            '--verify-owned-shutdown')
 
 
 def check_ios(folder, *, prepared=False):

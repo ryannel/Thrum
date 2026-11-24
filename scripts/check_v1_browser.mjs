@@ -36,6 +36,10 @@ function options(args) {
   const result = { case: 'all', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'timeout-ms': 90000 };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--help') return null;
+    if (args[i] === '--verify-owned-shutdown') {
+      result.verifyOwnedShutdown = true;
+      continue;
+    }
     const key = args[i].slice(2);
     if (!args[i].startsWith('--') || !['case', 'web-root', 'chrome', 'output', 'timeout-ms', 'cook', 'assets-source'].includes(key) || !args[i + 1]) throw new Error(`Unknown or incomplete argument: ${args[i]}`);
     result[key] = args[++i];
@@ -2077,11 +2081,28 @@ async function closeBrowserConnections(socket, server) {
   }
 }
 
-async function cleanup(child, exited, cdp, server, profile, graceMs = 10000, completedCost = false) {
+function chromeGroupExited(pid) {
+  try { process.kill(-pid, 0); return false; }
+  catch (error) {
+    if (error.code !== 'ESRCH') throw error;
+    return true;
+  }
+}
+
+async function cleanup(child, exited, cdp, server, profile, {
+  graceMs = 10000, completedCost = false, ownedShutdown,
+} = {}) {
   const failures = [];
+  let shutdown;
   if (child?.pid && !exited()) {
-    if (!cdp) failures.push('Chrome could not be closed through its own DevTools connection');
-    try { if (cdp) await cdp.call('Browser.close'); else child.kill('SIGTERM'); } catch { /* Browser.close may close its own CDP connection first. */ }
+    const closeRequested = cdp?.socket.readyState === WebSocket.OPEN;
+    if (closeRequested) {
+      // Browser.close can close its own CDP connection without replying.
+      void cdp.call('Browser.close').catch(() => {});
+    } else {
+      failures.push('Chrome could not be closed through its own DevTools connection');
+      child.kill('SIGTERM');
+    }
     try { await waitFor(() => exited(), graceMs, 'owned Chrome graceful exit'); }
     catch (error) {
       if (!completedCost) failures.push(error.message);
@@ -2092,7 +2113,18 @@ async function cleanup(child, exited, cdp, server, profile, graceMs = 10000, com
         try { await waitFor(() => exited(), completedCost ? 60000 : 3000, 'owned Chrome forced exit'); } catch (error) { failures.push(error.message); }
       }
     }
-    if (child.exitCode !== 0 || child.signalCode) {
+    // Chrome can end a requested shutdown with its own watchdog. Keep that
+    // outcome distinct from a graceful exit and require the whole group to exit.
+    if (ownedShutdown) {
+      try {
+        const watchdog = ownedShutdown.complete && closeRequested && !failures.length &&
+          child.exitCode === 2 && child.signalCode === null &&
+          /^Teardown watchdog expired; recording dump and terminating\.$/m.test(await fs.readFile(ownedShutdown.log, 'utf8'));
+        await waitFor(() => chromeGroupExited(child.pid), 5000, 'owned Chrome process group exit');
+        shutdown = { watchdog, owned_processes_gone: true };
+      } catch (error) { failures.push(error.message); }
+    }
+    if ((child.exitCode !== 0 || child.signalCode) && !shutdown?.watchdog) {
       // A completed cost take retains its submitted samples if Chrome has
       // already exited after closing the final target. Retain its exit code.
       if (!completedCost) {
@@ -2106,6 +2138,7 @@ async function cleanup(child, exited, cdp, server, profile, graceMs = 10000, com
     try { await fs.rm(profile, { recursive: true }); } catch (error) { failures.push(`Profile cleanup: ${error.message}`); }
   }
   if (failures.length) throw new Error(`Cleanup failed; profile preserved at ${profile}: ${failures.join('; ')}`);
+  return shutdown;
 }
 
 async function qualifyExtent(cdp, origin, output, timeout, wasm) {
@@ -2211,6 +2244,7 @@ async function main() {
   if (parent !== temp && !parent.startsWith(temp + path.sep)) throw new Error('Output parent escapes repository tmp/');
   await fs.mkdir(output);
   const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
+  const chromeLogPath = path.join(output, 'chrome.log');
   let server, child, cdp, cook, ended = false, failure;
   const results = [];
   try {
@@ -2219,9 +2253,9 @@ async function main() {
     const content = args.case === 'content-edits' ? await loadContentEdits(files, output) : undefined;
     if (args.case === 'clouds-placed') await preparePlacedClouds(files, output, repo);
     const serving = await serve(files, (request, response) => rows?.receive(request, response) || lent?.receive(request, response) || content?.receive?.(request, response)); server = serving.server;
-    const chromeLog = await fs.open(path.join(output, 'chrome.log'), 'a');
+    const chromeLog = await fs.open(chromeLogPath, 'a');
     let startupError;
-    child = spawn(args.chrome, [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'], { stdio: ['ignore', chromeLog.fd, chromeLog.fd] });
+    child = spawn(args.chrome, [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'], { detached: args.verifyOwnedShutdown === true, stdio: ['ignore', chromeLog.fd, chromeLog.fd] });
     child.once('error', error => { startupError = error; ended = true; });
     child.once('exit', () => { ended = true; });
     await chromeLog.close();
@@ -2326,10 +2360,20 @@ async function main() {
     cook?.kill();
     // The reflection referee releases its WebGPU probe resources when its tab closes.
     const drainGpuResources = args.case === 'environment' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
-    try { await cleanup(child, () => ended, cdp, server, profile, drainGpuResources ? 45000 : undefined,
-      args.case === 'sprites-field-cost' && results.length === 1); }
+    const ownedShutdown = args.verifyOwnedShutdown
+      ? { log: chromeLogPath, complete: !failure && results.length > 0 }
+      : undefined;
+    let shutdown;
+    try {
+      shutdown = await cleanup(child, () => ended, cdp, server, profile, {
+        graceMs: drainGpuResources ? 45000 : ownedShutdown?.complete ? 20000 : undefined,
+        completedCost: args.case === 'sprites-field-cost' && results.length === 1,
+        ownedShutdown,
+      });
+      if (shutdown?.watchdog) console.log('Chrome shutdown watchdog fired after the check; owned process group exited');
+    }
     catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
-    await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ chrome_shutdown: { exit_code: child?.exitCode, signal: child?.signalCode }, passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
+    await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ chrome_shutdown: { exit_code: child?.exitCode, signal: child?.signalCode, ...shutdown }, passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
   }
   if (failure) throw failure;
   console.log(`PASS ${results.length} case(s); artifacts: ${output}`);

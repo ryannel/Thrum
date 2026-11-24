@@ -33,6 +33,7 @@ class ChromeInputs(unittest.TestCase):
                     (page / 'v1_game_bg.wasm').write_text('dev' if '--dev' in arguments else 'default')
                 else:
                     self.assertEqual(arguments[0], 'node')
+                    self.assertIn('--verify-owned-shutdown', arguments)
                     case = arguments[arguments.index('--case') + 1]
                     page = arguments[arguments.index('--web-root') + 1]
                     executable = arguments[arguments.index('--cook') + 1]
