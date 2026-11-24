@@ -178,3 +178,7 @@
   fixes the clipped coverage estimate, and the rotated outline witness now runs at all ten named
   scales over a white panel that contains its footprint.
   [Metal edge suite](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/sprite-edges.log)
+- 2026-11-24 M3 keeps the 2× weights separable and narrows the projected transition to preserve the
+  original checker during simultaneous crossings. The 1920×1080 realtime trial on Apple tile and
+  portable Metal kept the checker square and retained the mean through the old flash phases.
+  [Metal screening](../../../.orchestrate/evidence/RENDER-2D/M3/review-fixes/separable-screen/README.md)

@@ -319,8 +319,8 @@ A sheet is **pixel** or **smooth**.
   texels, consider both axes jointly and use a wider footprint within the existing gutter. The
   reconstruction meets the authored sample continuously at alignment and transitions smoothly in scale
   to the surrounding filters. The draw interpolates through each projected edge across a symmetric
-  shoulder. At crossings on both axes, the weights can follow the diagonals of the local four-texel
-  cell. Pairwise transfers between the weights temper brightness changes in high-contrast marks.
+  shoulder. The weights compose in the sprite's two local axes to preserve the checker pattern through
+  crossings on both axes. Pairwise transfers between the weights temper brightness changes in high-contrast marks.
   Reconstruction retains coverage alpha and fades to ordinary coverage colour as its contributing
   texels become transparent. The CPU overdraw estimate and the emitted standalone quad use the same
   pixel-filter support radius. Judge the original stripes and checker through repeated crossings in

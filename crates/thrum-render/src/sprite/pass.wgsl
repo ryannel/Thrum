@@ -169,7 +169,7 @@ fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, foo
     let phase = texel - (vec2<f32>(cell) + vec2(1.0));
     // Blend on either side of the projected edge. The transition ends
     // before the two aligned sample centres at a quarter texel either side.
-    let shoulder = 0.20 * footprint;
+    let shoulder = 0.055 * footprint;
     let weight = smoothstep(-shoulder, shoulder, phase);
     if all(weight == round(weight)) {
         let sample = nearest(sheet, origin + cell + vec2<i32>(weight), page);
@@ -179,16 +179,10 @@ fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, foo
     let b = nearest(sheet, origin + cell + vec2(1, 0), page);
     let c = nearest(sheet, origin + cell + vec2(0, 1), page);
     let d = nearest(sheet, origin + cell + vec2(1, 1), page);
-    let separable = vec4((1.0 - weight.x) * (1.0 - weight.y), weight.x * (1.0 - weight.y),
+    let weights = vec4((1.0 - weight.x) * (1.0 - weight.y), weight.x * (1.0 - weight.y),
         (1.0 - weight.x) * weight.y, weight.x * weight.y);
-    // Triangles preserve a diagonal through a checker corner. They reduce
-    // to the same one-dimensional weights along the edges of the cell.
-    let triangle = vec4(1.0 - max(weight.x, weight.y), max(0.0, weight.x - weight.y),
-        max(0.0, weight.y - weight.x), min(weight.x, weight.y));
     let luminance = vec3(0.2126, 0.7152, 0.0722);
-    let diagonal = dot(a.rgb + d.rgb - b.rgb - c.rgb, luminance);
     let opacity = vec4(a.a, b.a, c.a, d.a);
-    let weights = mix(separable, triangle, smoothstep(0.05, 0.55, abs(diagonal)));
     let masses = weights * opacity;
     let mass = dot(masses, vec4(1.0));
     // Transfer equal weight between each pair, using straight luminance
