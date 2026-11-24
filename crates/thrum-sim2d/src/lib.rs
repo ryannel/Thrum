@@ -193,7 +193,11 @@ impl CircleIndex {
         radius: Number,
         visit: impl FnMut(&Circle),
     ) -> Result<(), QueryError> {
-        self.query(Shape::Circle { centre, radius }, visit)
+        self.query_matching(
+            Shape::Circle { centre, radius },
+            |circle| shape::circle_intersects(centre, radius, circle),
+            visit,
+        )
     }
 
     /// Visit overlaps in oversize-slot then cell-row, column, slot order.
@@ -204,11 +208,22 @@ impl CircleIndex {
     ///
     /// # Panics
     /// If the caller's visitor panics or the body count exceeds i64.
-    pub fn query(&self, shape: Shape, mut visit: impl FnMut(&Circle)) -> Result<(), QueryError> {
+    pub fn query(&self, shape: Shape, visit: impl FnMut(&Circle)) -> Result<(), QueryError> {
+        if let Shape::Circle { centre, radius } = shape {
+            return self.overlap(centre, radius, visit);
+        }
+        self.query_matching(shape, |circle| shape.intersects(circle), visit)
+    }
+
+    fn query_matching(
+        &self,
+        shape: Shape,
+        accepts: impl Fn(&Circle) -> bool,
+        mut visit: impl FnMut(&Circle),
+    ) -> Result<(), QueryError> {
         if !shape.valid() {
             return Err(QueryError::Query);
         }
-        let accepts = |circle: &Circle| shape.intersects(circle);
         for circle in &self.oversize {
             if accepts(circle) {
                 visit(circle);

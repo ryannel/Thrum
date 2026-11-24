@@ -61,6 +61,11 @@ fn within(a: Vector, b: Vector, radius: N) -> bool {
     x * x + y * y <= radius * radius
 }
 
+#[inline]
+pub(super) fn circle_intersects(centre: Vector, radius: N, circle: &Circle) -> bool {
+    within(centre, circle.centre, radius + circle.radius)
+}
+
 impl Shape {
     pub(super) fn valid(self) -> bool {
         match self {
@@ -109,10 +114,7 @@ impl Shape {
     /// supply validated domain values (the index validates before calling).
     pub fn intersects(self, circle: &Circle) -> bool {
         match self {
-            Self::Circle { centre, radius } => {
-                let sum = radius + circle.radius;
-                within(centre, circle.centre, sum)
-            }
+            Self::Circle { centre, radius } => circle_intersects(centre, radius, circle),
             Self::Box { minimum, maximum } => {
                 let closest = Vector {
                     x: circle.centre.x.clamp(minimum.x, maximum.x),
