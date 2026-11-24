@@ -66,6 +66,44 @@ fn row_cadence_bounds_weather_time_through_variable_rates_and_hitches() {
 }
 
 #[test]
+fn coherent_global_ramp_does_not_leave_half_second_old_rows() {
+    use super::{RowStamp, ramp_row_age, update_rows};
+    use thrum_cloud_model::Parameters;
+
+    let mut previous = RowStamp {
+        tick: 0,
+        time: 0.0,
+        parameters: Parameters {
+            coverage: 0.72,
+            kind: 0.0,
+            wind: [10.0, 0.0],
+            time_scale: 1.0,
+        },
+    };
+    let mut rows = vec![previous; 256];
+    let dt = 1.0 / 60.0;
+    for tick in 1..=160 {
+        let mut next = previous;
+        next.tick = tick;
+        next.time += dt;
+        next.parameters.coverage -= 0.02 * dt;
+        let age = 0.5_f64.min(ramp_row_age(previous, next, dt));
+        let (_, count) = update_rows(&mut rows, next, dt, age, false);
+        assert!(count > 9 && count < 256, "refresh a larger strip");
+        assert!(
+            rows.iter()
+                .all(|row| row.parameters.coverage - next.parameters.coverage <= 0.001),
+            "the rotating strips sample close points of the coverage ramp"
+        );
+        previous = next;
+    }
+    assert!(
+        ramp_row_age(previous, previous, dt).is_infinite(),
+        "steady controls retain the profile cadence"
+    );
+}
+
+#[test]
 fn shader_validates_and_uniform_offsets_match_rust() {
     use wgpu::naga;
     let module =
