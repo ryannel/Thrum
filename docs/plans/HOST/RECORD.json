@@ -669,7 +669,46 @@
     },
     "WP5": {
       "definitions": "009a9c4f996c26e6a8268a27f2c1bc2e8bb5e4f54916056bf508343afe3d08a8",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "ee4e281d5d3c7f9bb097c5bbba5e98ccfde63e86",
+          "review": ".orchestrate/evidence/HOST/WP5-review.md",
+          "items": {
+            "WP5.1": "fail",
+            "WP5.2": "fail",
+            "WP5.3": "pass"
+          },
+          "findings": [
+            {
+              "name": "DisplayOverride::from_str returns String",
+              "item": "WP5.1",
+              "repeat": false
+            },
+            {
+              "name": "The public display parse error fails the standard Error bound and is absent from error_types",
+              "item": "WP5.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 97366,
+            "cached": 1549312,
+            "output": 5930,
+            "turns": 1
+          },
+          "at": "2026-11-24T21:17:09Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Unblock HOST WP5. The builder wrote: WP5.3 needs a planner-approved check the runner accepts, and the plan-reader repair",
