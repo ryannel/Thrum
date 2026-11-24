@@ -137,7 +137,7 @@ contract and what one pass hands another are still tested.
 | **W4** Rings on any water: a dropped stone or a hull raises waves that travel at the speed the depth gives and die at the shore | Depths of 0.25 m to deep; rings and wakes, short waves and long, in one window that holds shallows and deep water; a shore and a bar of dry ground | A deep-water solver everywhere, or one transform over land and water alike. Rejected by rings that slow and bunch toward the shallows, with the depth's wave speed as a diagnostic, and by the water beyond a bar of ground, which must stay at rest |
 | **W5** Running water: where the map has a current, ripples, foam and floats travel with it | Currents to 3 m/s; a channel that narrows; a hand-made chart here, a solved one in `RIVERS` | A texture sliding over still water. Rejected by a float that must be carried, by foam born at a post standing in the current, and by tracked surface detail |
 | **W6** One water: the same light, foam, query and controls on every body, and no seam where two meet | A channel leaving a lake and entering the sea; a swell running; the lake's level and the tide moved through their ranges; a mouth shallow enough for the depth to hold the swell; one craft crossing from one body to another | A renderer for each kind, or a blend drawn over two surfaces that do not meet. Rejected by the surface's height either side of the join, after its depth limit, under a swell and after a stage has moved, and by one query answering across it |
-| **W7** Surf: a swell meets a shore as surf. Its lines turn to face the beach, close up and rise; the largest of a set break furthest out; a crest steepens, pitches forward and breaks into a white front that runs in to the swash | Trade wind to gale with a swell of 6 s to 14 s; beaches of 1 in 30 to 1 in 5; swell square on and 60° off the beach; a headland and a lee shore; the tide through its range; from the sand at 2 m, from 40 m up and from 1 km off | A wave train drawn along the shore, apart from the sea's own waves, or a wave that only fades. Rejected by one swell crest followed from deep water to the sand, its spacing and height against wave theory at three depths, and by a float that must rise on the crest the viewer sees break |
+| **W7** Surf: a swell meets a shore as surf. Its lines turn to face the beach, close up and rise; the largest of a set break furthest out; a crest steepens, pitches forward and breaks into a white front that runs into a connected swash | Trade wind to gale with a swell of 6 s to 14 s; beaches of 1 in 30 to 1 in 5; swell square on and 60° off the beach; a headland and a lee shore; the tide through its range; from the sand at 2 m, from 40 m up and from 1 km off | An independent shore wave train, a wave that only fades, or a bore followed by a detached wet ribbon. Follow the incoming ridges into the break zone, then watch a breaking front lose height and feed the advancing waterline. A float must rise on the crest the viewer sees break |
 | **W8** Scenery the camera cannot see: water mirrors what stands round it, the far shore, hills, trees and the craft, each joined to its foot at the waterline and blurring as the water roughens | Calm to a breeze on the lake and the pond, calm to a trade wind on the sea under the island; camera 1 m to 40 m up, looking down so the source is above the frame and panning so it leaves the side; two levels in one view; dawn to night | A trace of what is on screen, or a probe at the camera. Rejected by a view whose reflected hill is wholly off screen, and by a tree's reflection that must meet its trunk at the waterline, which a probe's parallax misses |
 | **W9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel under water whose light falls with the length of water in front of it once and not twice |
 | **W10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by a net that is sharper on a receiver in the shallows than on one in the deep, with the model's contrast as a diagnostic, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
@@ -415,7 +415,7 @@ Neither stops the milestones after it.
 | W7 | The local depth's wavenumber and Snell's turn applied at each point (OloEngine) | Fails: phase is not an integral, so crests drift and tear |
 | W7 | Baked simulations placed along drawn fronts (Horizon Forbidden West) | The look to beat. Not selected: the fronts are authored for each beach, apart from the sea state, the tide and the query, and the bake needs an offline fluid pipeline this project does not have. Its one-section breaker is taken |
 | W7 | A live Boussinesq or shallow-water window fed by the wave field | Does shoal, break and run up. Not selected: a second solver whose state must agree with the analytic field at its border, a time step bound to the cell size through every hitch, no far surf outside its window, and the control problems Crest reports. It remains the route if the selected one cannot meet W7 |
-| W7 | **Each long wave carries a phase lag solved over the bed, and a crest takes a breaker section by its breaking index** | **Selected.** The swell's own crests turn, close up, rise and break; a CPU evaluates it exactly; it costs texture reads in the frame; and the depth limit, the swash and their proofs stand |
+| W7 | **Each long wave carries a phase lag solved over the bed. The crest takes a breaker section by its breaking index and feeds a bounded swash profile** | **Selected.** The swell's own crests turn, close up, rise and break. A localized deformation dissipates the bore and the same incoming swell moves one wet edge. CPU and GPU evaluate the same sheet |
 | W8 | A screen-space trace of the scene (this design's first version) | Fails by construction when the source is off screen. Kept for water that has no mirror view |
 | W8 | A cube probe drawn round the camera, with or without parallax correction | Fails the waterline: a probe is right at one point, so a reflection parts from its foot by the probe's distance from the surface point. Six faces cost more than one mirror |
 | W8 | Ray query against the scene's geometry | Right in principle. Not portable: experimental on Metal in wgpu and absent from WebGPU. A later provider for the Apple recipe, promoted by a measured win |
@@ -638,8 +638,9 @@ that.
   exposure there: the mean, over the sector's directions, of how much of the wave each lets arrive. For water
   that reaches the bed's edge a direction counts 1 if a straight line upwind reaches the bed's edge without
   crossing ground that stands above the body's highest stage, and 0 if not. So a windward beach takes a
-  train whole, a lee beach takes none of it and laps with the short waves alone, and far downwind of an
-  island the shadow closes as the sector opens. For enclosed water a direction counts the open water upwind
+  train whole and a fully sheltered lee beach laps with short waves. The sea's exposure blends back to
+  ambient over the same prepared bed border, so far downwind the swell returns without a line at the edge
+  of the bed. For enclosed water a direction counts the open water upwind
   along it over the body's declared fetch, and at most 1: the share of that fetch the wind has had, since a
   fetch-limited sea's energy grows in proportion to its fetch. So a lake is calm under its upwind shore,
   where the wave leaves the land with nothing in it, and carries the whole energy of its gain where the
@@ -699,18 +700,53 @@ by a drawn curve. The table is the profile's data, and it is held to these rules
   alone and rises with it, so the thrown curve is a shear of the unthrown one: it may overhang, and it cannot
   cross itself. A 1.4 m crest on a 25 m wave with a steepened face overhangs by 0.2 m when thrown 2.8 m and
   by 1.3 m when thrown 4.2 m (part O);
-- past the profile's bore index there is no throw, and the crest and trough stand at the plain wave's
-  heights: what is left is a bore with a steep front;
-- every departure fades to nothing between half a swash depth of still water and the depth the waterline
-  draws back to. In the swash the surface is therefore the limit's remainder as first built, and the swash's
-  closed form holds with surf on: on part L's beach the waterline's highest and lowest reach are the same
-  with the transform as without it (part O).
+- past the profile's bore index the table has no throw and its crest and trough return to the plain heights.
+  The shore profile below acts on the resulting sheet, lowering and broadening the front into the swash.
 
 The first profile's table is made from a closed form, a phase skew for the face and a throw in proportion to
 height, and is tuned against the inspected items of M13.
 
-**Readers.** The transform and the section are one function, in `thrum-water-model` in f64 and in WGSL, read
-by the field cache, the query, the foam's births and the conformance model. On the GPU the lags are one array
+**Bore decay and swash.** M13's failed Metal view exposed a dry strip in 30 of 173 cross-shore cuts of the
+f64 long-wave sheet. A representative cut had about 1 m of bared bed seaward of about 5.5 m of wet swash.
+The summed trough can exceed the regular-wave limit because that limit bounds variance, while the component
+amplitudes add coherently. A finer mesh or a change in opacity leaves the sheet's crossings in place. Use a
+shore-local profile deformation, drawing on [Guerrilla's production breaker](https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Water-Malan.pdf).
+[XBeach's bore and roller models](https://xbeach.readthedocs.io/en/latest/xbeach_manual.html#dissipation)
+motivate letting the bore lose organized wave motion as it runs in. Thrum approximates that loss with a
+bounded profile driven by the existing swell and reuses the existing foam stocks.
+[M13 handoff](../../../.orchestrate/evidence/WATERS/M13-handoff.md)
+
+- On a rising beach, prepare the shore-normal transects with the owning body's bed and sampled stages. Use
+  each transect's still-water contour point at the current stage as the phase reference. Evaluate the same
+  lagged, exposed, depth-limited long-wave sum `Zs` there for the requested time. Use this value across the
+  transect, so phase varies along the shore and in time while one profile advances and retreats. Interpolate
+  the reference through the tide on the same body's connected shore margin. Taper at the edge of eligible
+  terrain or a body join, where the ordinary map and gains apply.
+- Let `d` be signed still-water depth (positive seaward), `s` the row's swash depth and
+  `c = 0.6 / (2√2)`. Set `q` to `cos(arg(Zs))` times `smoothstep(0, c·s, |Zs|)` so weak or sheltered
+  arrivals drive less swash and a regular wave of the held height reaches `q = ±1`. Take `q = 0` when
+  `Zs = 0` or `s = 0`. The inner profile's signed thickness is `d + c·max(d+s, 0)·q`. Evaluate it in
+  world horizontal coordinates inside the existing wave support, with long-wave chop and throw faded out.
+  For constant gains on a rising transect, `|q| ≤ 1` makes thickness strictly increasing with depth. At
+  the two regular-wave extrema, its zero is `c·s/(1−c)` below the level and `c·s/(1+c)` above it, the
+  existing draw-back and run-up (about `0.27·s` and `0.175·s`). With `s = 0` the swash stands still.
+- Start blending back to the ordinary section seaward of the deepest allowed retreat, where the inner profile
+  always stays wet. In the overlap, bound the negative excursion of the combined ambient geometry against
+  the bed at the displaced position, with a smooth knee and positive wet thickness. Fade the floor seaward
+  where the unthrown sheet's excursion bound already keeps it wet. As the bore loses throw, keep the
+  cross-shore mapping ordered in the overlap so horizontal chop cannot put a second crossing inside the swash.
+  Preserve the plunging shape farther out and fade any throw whose reach would intrude on the inner profile.
+  Near the wet edge, taper resolved short-wave geometry so it cannot change the sign of the thickness or
+  move the edge horizontally. Short-wave shading detail and the interaction waves' still-water support
+  follow their existing rules.
+- The section shape, bore decay and overlap width are tuned by eye for the M13 crest, bore and swash views.
+  The regular-wave extrema and the one wet edge on a rising transect are properties of the model and query.
+  Use the plane-beach regular-wave case and the failed trade-wind cut to diagnose the handoff through advance
+  and retreat. M13 judges the look in submitted motion.
+
+**Readers.** The transform, section and swash are one function, in `thrum-water-model` in f64 and in WGSL,
+read by the field cache, the query and the foam's births and carriage. Use the final sheet for wet/dry,
+depth, normals and motion, including in the overlap. On the GPU the lags are one array
 texture and the exposures another. Where a crest overhangs, a column holds more than one surface: the query
 answers the highest, by [a cut of the sheet](#bodies-and-the-query), and the surface is drawn as the
 displaced sheet it is. Inside a chart's join the
@@ -720,7 +756,8 @@ does and the surface still meets across an end.
 **Declared approximations.** Linear ray theory up to the break: no set-up of the mean level, no longshore or
 rip current, no reflection from a steep shore and no diffraction, so energy neither gathers on a headland nor
 leaks into a lee. The first arrival leaves a crease where two fronts meet behind an island, in water the
-exposure has already calmed. A bore travels at the linear speed of the floored depth. The blends misstate the
+exposure has already calmed. The outer bore follows the incoming phase at the floored depth, then gives way
+to the bounded swash profile. This profile is a shoreline displacement approximation. The blends misstate the
 wavenumber by up to 4% in a metre of water or more and 9% between the floor and a metre, and the first-order
 solve adds its own: 6% in a metre of water and 3% in two on a beach of 1 in 10 at 2 m cells, a third of that
 on 1 in 30 (part W). An enclosed lake's waves start at its upwind shore with the plain wave's phase, so the
@@ -1160,8 +1197,10 @@ foam that rides up the sand and strands as lace on the retreat.
 Where the same wave has a resolved wet front face above index 1, use the section's phase and shape to move
 a share of the long-wave birth to that face as fresh film, with a share as submerged air in the wet column
 under an actual thrown lip. A bore with a wet front and no lip takes only the face share. Blend the moved
-share in from zero at index 1 and back to zero as the section fades. Use a bounded local footprint on the
-existing foam grid and weights that sum to one including the share retained at the source. If the face or lip
+share in from zero at index 1 and back to zero as the bore decays into the swash. The final sheet supplies
+wet support and the advancing swash carries the stocks the bore leaves there. The birth budget still
+comes from wet lost power. Use a bounded local footprint on the existing foam grid and weights that sum
+to one including the share retained at the source. If the face or lip
 is unresolved or dry, keep its share at the wet source. Reuse the surf samples and the existing foam step.
 Each wave keeps the area-integrated birth budget M7.5 assigns to its wet lost power before stock saturation
 and ageing. Calm, omitted waves and dry columns contribute zero shore birth. The face width and air split
@@ -1697,8 +1736,10 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   iteration's misses under a lip. Part W: the two blends together against the dispersion relation and against
   the solve itself. Part X: the cut for the highest surface, on a straight section, on crossing trains and on
   a beach, against a cut eight times finer, with the throw reach held to every throw. That the section reads as a
-  breaking wave and not as a marching ridge is unrun; M13 is the first look ([risk 20](#risks)). Surf on a
-  lake is unrun by eye and stays so: the example's lake is too small to raise long waves, so M12 and M13
+  breaking wave is the M13 inspection. The inner swash profile has one zero on a rising transect with
+  constant gains: for `d ≥ −s`, its slope in signed depth is `1+c·q ≥ 1−c > 0`. In the overlap both profiles
+  have positive thickness, so blending keeps the sign. The model cut and motion inspection cover the joined
+  result ([risk 20](#risks)). The example's lake is too small to raise long waves, so M12 and M13
   prove it in the model and on the GPU against the model.
 - **W8.** Part P: the mirror lookup against exact reflected rays in a vertical section. A second draw of the
   scene is what Unreal and GTA V ship for water. `SCENE-VIEWS`' own design owes the proof that Thrum's
@@ -1823,6 +1864,7 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 |---|---|---|---|---|
 | The map | Prepared; read by every water vertex, pixel and query | Level, bed and current on each body's grid: a 1 km square at 1 m cells is about 16 MiB | One more read set in the surface pass | |
 | The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures; for enclosed water the source and the exposure come from rays over the bed at preparation, as the sea's exposure does. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits, and the bed's min-max pyramid about two thirds of the bed's own bytes. Solving them is CPU work at preparation, which M12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; M13 records it | |
+| Bore decay and swash | Field-cache evaluation on frame pages and direct sheet evaluation on query ticks, on supported shores with exposed long waves | Up to one extra long-wave sum at the contour per eligible sample, with reuse where samples share a contour reference at the same time and stage. The overlap adds local arithmetic and a bed lookup if the displaced bed value is unavailable | Use the existing map, surf preparation and field-cache path. Reuse derived samples for surface and foam where their time and footprint coincide. No new solver, per-frame upload or readback. M13.12's paired run covers field-cache and query cost, including any prepared data or sample storage | |
 | Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which M6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks. The swash's drift reads the surface's rate and slope at cells on a shore, where births already read the field | Under 0.2 ms | About 2.2 ms for first deposition |
 | Query | Tick | Up to 2,048 points, 48 B each. A point within reach of a crest that may be thrown costs the cut: the nodes of a 0.25 m lattice within its throw reach, about 1,200 for a 1.4 m wave and 3,500 to 5,500 under a 3.2 m sea, shared by points close together, where a plain point costs a few evaluations | Under 0.1 ms with no point in surf; M12 records the model's cut and M13 a tick with every float in the breakers; 96 KiB back | 0.03 ms |
@@ -1914,12 +1956,12 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
     closer stage samples. The wrong fix is holding the lag at one stage. In a lake the same sign is a crease
     downwind of a point on its upwind shore; the designed remedy is the run of deep water at the source that
     part U measures.
-20. **Surf reads as ridges marching ashore and not as waves breaking.** Early sign: M13's first captures. The
-    mechanism gives the place, the timing and the set; the look is the section's table, tuned against the
-    inspected items, and three failed looks on one cue go to the log. If the table cannot reach it, a section
-    baked from a simulation is the same data, and a live window is the route named under
-    [the candidates](#surf-mirrored-scenery-and-the-lens-decided-against-the-cues). The wrong fix is a second
-    wave system drawn along the shore.
+20. **A steep ridge marches ashore or a dry gap opens behind the bore.** Early sign: the front stays high and
+    the cross-shore cut dries and wets again before the final waterline. M13 keeps the offshore pitch and
+    tapers the bore into the [bounded swash profile](#surf-the-shore-transform-and-the-breaker). Inspect
+    the bed crossing before tuning foam or mesh density. A live window remains the fallback under
+    [the candidates](#surf-mirrored-scenery-and-the-lens-decided-against-the-cues) if the shared profile
+    cannot deliver the cue after visual review.
 21. **A mirror view costs a second scene.** Early sign: M14's record. The designed remedies are its extent,
     a shorter view distance and coarser detail, which are `SCENE-VIEWS`' to offer, and one view in place of
     two. Ray query on the Apple recipe is the later one. The wrong fix is dropping the lake back to the
