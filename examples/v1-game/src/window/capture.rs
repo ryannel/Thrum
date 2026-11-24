@@ -1279,7 +1279,9 @@ fn lighting_edits(
     if scenario == "sun-set" {
         let progress = (scenario_time.as_secs_f64() / 4.0).clamp(0.0, 1.0);
         let solar = 17.45 + 0.65 * progress;
-        driver.parameters(&json!({"sky.solar_time":solar}).to_string())?;
+        driver
+            .parameters(&json!({"sky.solar_time":solar}).to_string())
+            .map_err(|error| error.to_string())?;
         trace.controls.push(
             json!({"kind":"sun-set","scenario_ns":scenario_time.as_nanos(),
             "accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar}),
