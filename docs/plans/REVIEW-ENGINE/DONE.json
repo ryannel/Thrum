@@ -326,7 +326,7 @@
     {
       "id": "M6",
       "name": "Corrected replay stays fast and the 100,000-entity run stays covered",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
         {
@@ -337,8 +337,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M6/README.md; .orchestrate/evidence/REVIEW-ENGINE/M6/compact-isolated.log; .orchestrate/evidence/REVIEW-ENGINE/M6/compact-loaded.log; .orchestrate/evidence/REVIEW-ENGINE/M6/fast-selection.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md"
         },
         {
           "id": "M6.2",
@@ -348,8 +348,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M6/README.md; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests-run.json; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests.stdout.log; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests.stderr.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md"
         }
       ],
       "failed_reviews": 0,

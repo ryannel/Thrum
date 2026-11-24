@@ -493,7 +493,33 @@
     },
     "M6": {
       "definitions": "52ba7bffb3180ec99666ba25b2009ee515eed89ec525d3e437bad3c639c408e1",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "97416b733159cad82b112d24934a32660927c902",
+          "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 64080,
+            "cached": 725504,
+            "output": 3745,
+            "turns": 1
+          },
+          "at": "2026-11-24T03:02:31Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of REVIEW-ENGINE at .orchestrate/evidence/REVIEW-ENGINE/design-review.md asked for changes, with its 2",
@@ -528,6 +554,13 @@
           "output": 68364,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "97416b733159cad82b112d24934a32660927c902",
+        "review": ".orchestrate/evidence/REVIEW-ENGINE/M6-review.md",
+        "checked": "1d8de9d36ce295767f05466bf95b2ebe7a2d496a",
+        "at": "2026-11-24T03:02:31Z"
       }
     }
   },
