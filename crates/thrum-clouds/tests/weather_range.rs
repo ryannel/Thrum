@@ -17,8 +17,8 @@ const TEXEL: f64 = 10.0;
 const STEP: Duration = Duration::from_millis(100);
 
 fn config() -> ShadeConfig {
-    let mut config = placed_fixture::Fixture::new().config.clone();
-    config.model.erosion = 0.25;
+    let mut config = placed_fixture::weather_config();
+    config.model.erosion = 0.08;
     config.types[0].deck = 1.0;
     config.types[0].base = 100.0;
     config.types[0].depth = [130.0, 160.0];
@@ -193,14 +193,14 @@ fn compare_map(
     occupied
 }
 
-pub(super) fn check_trace() {
+pub(super) fn check_procedural_trace() {
     let Some(gpu) = metal("visible weather columns") else {
         return;
     };
     let config = config();
     let field = Field::new(config.seed, config.model, config.types.clone()).expect("field");
     pollster::block_on(async {
-        for (label, preset) in [("cell", PRESETS[1]), ("deck", PRESETS[3])] {
+        for (label, preset) in [("cell", PRESETS[1]), ("deck", [PRESETS[2][0], 0.0])] {
             let mut state = State::new(parameters(preset, [0.0; 2]), 0.8, 0).expect("weather");
             state.step(1, 450.0).expect("established weather");
             let mut core = None;
@@ -208,9 +208,11 @@ pub(super) fn check_trace() {
             for z in -100..100 {
                 for x in -100..100 {
                     let point = [x, z].map(|index| (f64::from(index) + 0.5) * TEXEL);
-                    let here = field.query([point[0], 0.0, point[1]], &state).optical_depth;
-                    if (1.0..2.5).contains(&here) && core.is_none() {
-                        core = Some((point, here));
+                    let here = field.query([point[0], 0.0, point[1]], &state);
+                    if (0.6..5.0).contains(&here.optical_depth)
+                        && core.is_none_or(|(_, _, coverage)| coverage < here.coverage)
+                    {
+                        core = Some((point, here.optical_depth, here.coverage));
                     }
                     if clear.is_none()
                         && (-1..=1).all(|dx| {
@@ -233,19 +235,25 @@ pub(super) fn check_trace() {
                     }
                 }
             }
-            let (point, expected) = core.expect("condensate at a map texel centre");
+            let (point, expected, _) = core.expect("condensate at a map texel centre");
             let state = Arc::new(state);
             let actual = trace(&gpu, &config, &state, point).await;
             compare_column(label, actual, expected, 0.12);
-            if label == "cell" {
-                assert_eq!(
-                    trace(&gpu, &config, &state, clear.expect("clear neighbourhood"))
-                        .await
-                        .to_bits(),
-                    0.0_f64.to_bits()
-                );
-            }
+            assert_eq!(
+                trace(&gpu, &config, &state, clear.expect("clear neighbourhood"))
+                    .await
+                    .to_bits(),
+                0.0_f64.to_bits(),
+            );
         }
+    });
+}
+
+pub(super) fn check_placed_trace() {
+    let Some(gpu) = metal("visible placed columns") else {
+        return;
+    };
+    pollster::block_on(async {
         let fixture = placed_fixture::Fixture::new();
         let field = Field::new(
             fixture.config.seed,
@@ -257,7 +265,7 @@ pub(super) fn check_trace() {
         // and column-only branches with the same physical placed footprint.
         for (range, resident) in [([25.0, 40.0], true), ([0.0, 10.0], false)] {
             let (mut host, input) = fixture
-                .submit(&gpu, range, true, resident, [0.0, 1.0, 0.0])
+                .submit(&gpu, range, true, resident, [0.5, 0.866_025_4, 0.0])
                 .await;
             assert!(fixture.shape.footprint().column([0.0; 2])[0] > 0.0);
             assert!(
@@ -346,9 +354,12 @@ async fn trace(gpu: &Opened, config: &ShadeConfig, state: &Arc<State>, point: [f
         Some(config.sun.ground_size),
         FrameConfig {
             render_extent: extent,
-            surface: None,
+            surface: Some(thrum_render::present::SurfaceProfile {
+                extent,
+                format: wgpu::TextureFormat::Bgra8Unorm,
+            }),
         },
-        [0.0, 1.0, 0.0],
+        [0.5, 0.866_025_4, 0.0],
         state.tick(),
         &vertical_view(point),
     )
@@ -366,7 +377,7 @@ async fn trace(gpu: &Opened, config: &ShadeConfig, state: &Arc<State>, point: [f
     input.publish(Arc::clone(state)).expect("publish");
     host.set_scene_contribution(Box::new(shade))
         .expect("attach");
-    host.capture_pixels().expect("submit vertical trace");
+    placed_fixture::frame(gpu, &mut host, &placed_fixture::output(gpu), Duration::ZERO);
     centre_depth(gpu, &input)
 }
 

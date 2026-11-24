@@ -7,8 +7,14 @@ thrum_test_support::macos_gpu_test! {
 }
 
 thrum_test_support::macos_gpu_test! {
-    fn the_visible_trace_reads_cells_decks_and_placed_columns() {
-        weather_range::check_trace();
+    fn the_visible_trace_reads_cells_and_decks() {
+        weather_range::check_procedural_trace();
+    }
+}
+
+thrum_test_support::macos_gpu_test! {
+    fn the_visible_trace_reads_placed_columns() {
+        weather_range::check_placed_trace();
     }
 }
 
