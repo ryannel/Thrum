@@ -31,7 +31,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 - APPLE-PRESENTATION assumes: the governor drops scale after three frames over budget, recovers at most one step per second, ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: at full window size the frame rate may dip until the governor lands in WP7. Record times for ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: WP10 pins wgpu-hal 30.0.1 for the Metal library loader. WP12 adds the archive to that copy. ([plan](APPLE-PRESENTATION/PLAN.md))
-- ATMOSPHERE assumes: WP4 resumes as a bounded offline diagnostic under the 17 November rendering bar. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: WP3 screens one filter offline. Promotion waits for the authored-spur replay and a separate design review. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: WP4 resumes as a bounded offline diagnostic under the 17 November rendering bar. Its reconstructed cases cover the recorded geometry comparisons. Exact recovery of the original ray inputs remains open. ([plan](ATMOSPHERE/PLAN.md))
 - BASELINE-GUARD assumes: the key-narrowing work of the earlier WP2, nine commits on the branch `build/baseline-guard`, is set aside and not merged. No proof is asked before a merge now, so a proof that survives more rebases saves nothing. The branch is kept as the record. ([plan](BASELINE-GUARD/PLAN.md))
 - BASELINE-GUARD assumes: the run on main may start every 30 minutes, not every hour as the lead's task said. The script waits 55 minutes for a claim's check, a run takes 16, and a claim that arrives just after a start waits for the next one. At one hour about a third of claims would fail as pending. The lead's hourly `main-check --due` is still what starts a run when no claim asks. ([plan](BASELINE-GUARD/PLAN.md))
 - BASELINE-GUARD assumes: the run on main holds `chrome` as well as `gpu` (the task said `gpu`), because it drives Chrome and the settings give Chrome one run at a time. Chrome items can wait up to 16 minutes behind it. ([plan](BASELINE-GUARD/PLAN.md))
@@ -296,7 +297,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- ATMOSPHERE's design: Design Changes Requested · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
+- A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome (ATMOSPHERE WP8): Not Started · [plan](ATMOSPHERE/PLAN.md)
 - Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome (WATERS WP13): Not Started · [plan](WATERS/PLAN.md)
 - The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin (CLOUDS WP7): Not Started · [plan](CLOUDS/PLAN.md)
 - Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D WP3): Not Started · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/WP3-review.md)
@@ -416,7 +417,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 | WP7 of 16 · Blocked: Needs Access |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Design Changes Requested |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | WP8 of 9 · Not Started |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 24 Nov |
