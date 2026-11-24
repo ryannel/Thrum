@@ -23,19 +23,25 @@ fn bilinear(field:texture_2d_array<f32>,coordinate:vec2<f32>,level:i32)->vec4<f3
 }
 fn column_density(point:vec3<f32>)->f32 {
     var sigma=0.0;
-    for(var level=3;level>=0;level--) {
+    var remaining=1.0;
+    // A fully covering fine window replaces every coarser contribution.
+    // Accumulate from that side, as in the visible trace, to avoid fetching
+    // columns that cannot change the slanted optical depth.
+    for(var level=0;level<4;level++) {
         let m=p.weather[level];let uv=(point.xz-m.xy)/m.z;
         let edge=min(uv,vec2<f32>(m.w)-uv);
         let w=smooth_unit(min(edge.x,edge.y)/(m.w*0.15));
         if w==0.0 {continue;}
-        let c=bilinear(columns,uv,level);let o=bilinear(optical,uv,level);
-        let depth=c.y-c.x;var density=0.0;
+        let c=bilinear(columns,uv,level);
+        let depth=c.y-c.x;
         if depth>0.0 && point.y>c.x && point.y<c.y {
+            let o=bilinear(optical,uv,level);
             let h=(point.y-c.x)/depth;
             let vertical=smooth_unit(h/o.z)*(1.0-smooth_unit((h-(1.0-o.w))/o.w));
-            density=p.physical.z*c.z*vertical;
+            sigma+=p.physical.z*c.z*vertical*(remaining*w);
         }
-        sigma=mix(sigma,density,w);
+        if w==1.0 { break; }
+        remaining*=1.0-w;
     }
     return sigma;
 }

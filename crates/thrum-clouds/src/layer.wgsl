@@ -33,9 +33,10 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
         let m=cloud.weather[level];let uv=(point.xz-m.xy)/m.z;
         let edge=min(uv,vec2(m.w)-uv);let w=cloud_smooth(min(edge.x,edge.y)/(m.w*0.15));
         if w==0.0 {continue;}
-        let c=cloud_bilinear(columns,uv,level);let o=cloud_bilinear(optical,uv,level);
+        let c=cloud_bilinear(columns,uv,level);
         let thickness=c.y-c.x;var value=vec4(0.0);
         if thickness>0.0 && point.y>c.x && point.y<c.y {
+            let o=cloud_bilinear(optical,uv,level);
             let h=(point.y-c.x)/thickness;
             let vertical=cloud_smooth(h/o.z)*cloud_smooth((1.0-h)/o.w);
             let integral=1.0-(o.z+o.w)*0.5;
