@@ -87,10 +87,10 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     let deck_time = (p.origin.z + grem) / 2.0;
     let n=noise(vec3<f32>((coordinate+rem)/4.0,deck_time),p.noise.xyz,20u);
     let deck=p.vertical.x*smooth_unit((n-(1.0-1.3*smooth_unit((p.weather.x-0.45)/0.55)))/0.2);
-    coverage=max(coverage,deck);
     if deck > 0.0 {
         let relief = noise(vec3<f32>(coordinate, deck_time), vec3<u32>(p.integers.xy, p.noise.z), 21u);
         let height = 0.34 + 0.66 * (0.30 * n + 0.70 * relief);
+        coverage = max(coverage, deck * (0.58 + 0.42 * relief));
         depth = max(depth, p.physical.y * pow(deck, 0.7) * height);
     }
     let tau=p.physical.w*depth*coverage*(1.0-(p.vertical.y+p.vertical.z)*0.5);
