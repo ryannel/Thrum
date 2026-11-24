@@ -12,7 +12,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use thrum_app::capture_writer::{ImageWriter, SpoolEncoding};
+use thrum_app::capture_writer::{ImageWriter, SpoolEncoding, WriterError};
 use thrum_render::runtime::CaptureLimits;
 
 use super::Host;
@@ -171,7 +171,8 @@ impl Recorder {
                 LIMITS.cpu_buffers,
                 8 * 1024 * 1024 * 1024,
                 encoding,
-            )?;
+            )
+            .map_err(|error| error.to_string())?;
             let started = Instant::now();
             host.enable_submitted_capture_with_limits(self.next, LIMITS)?;
             fs::write(path.join("identity.json"), json!({"session":self.next,"adapter":format!("{:?}",adapter.get_info()),
@@ -306,14 +307,16 @@ impl Recorder {
             let complete=reason.is_none() && error.is_none() && omissions==0 && s.writer_omissions==0 && !s.images.is_empty()
                 && callbacks["lost"]==0 && s.expected==u64::try_from(s.images.len()).unwrap_or(u64::MAX)
                 && writer.as_ref().is_some_and(|w|Some(w.frames)==u64::try_from(s.images.len()).ok());
-            let report=json!({"session":s.id,"complete":complete,"cancel_reason":reason,"writer_error":error,
+            let report=json!({"session":s.id,"complete":complete,"cancel_reason":reason,"writer_error":error.as_ref().map(ToString::to_string),
                 "renderer_omissions":omissions,"writer_omissions":s.writer_omissions,"expected_submissions":s.expected,"pending_at_retirement":pending,
                 "peak":s.peak,"images":s.images,"opportunities":s.opportunities,"callbacks":callbacks,
                 "writer":writer.map(|w|json!({"frames":w.frames,"bytes":w.bytes,"encoded_bytes":w.encoded_bytes,"hashes":w.frame_hashes,
                     "io_ns":w.io_time.as_nanos(),"write_ns":w.write_time.as_nanos(),"flush_ns":w.flush_time.as_nanos(),"encoded_queue_peak":w.encoded_queue_peak}))});
             let result=fs::write(s.path.join("runtime.partial"),report.to_string()).and_then(|()|fs::rename(s.path.join("runtime.partial"),s.path.join("runtime.json")));
             drop(result); // An unfinalized directory is refused by the external validator.
-            if error.as_deref() != Some("raw writer finalization timeout") { finalizing.store(false,Ordering::Release); }
+            if !matches!(error, Some(WriterError::Timeout)) {
+                finalizing.store(false, Ordering::Release);
+            }
         }).map_err(|e|e.to_string())?;
         Ok(())
     }
