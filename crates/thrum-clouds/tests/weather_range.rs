@@ -193,59 +193,57 @@ fn compare_map(
     occupied
 }
 
-pub(super) fn check_procedural_trace() {
+pub(super) fn check_procedural_trace(label: &str, preset: [f64; 2]) {
     let Some(gpu) = metal("visible weather columns") else {
         return;
     };
     let config = config();
     let field = Field::new(config.seed, config.model, config.types.clone()).expect("field");
     pollster::block_on(async {
-        for (label, preset) in [("cell", PRESETS[1]), ("deck", [PRESETS[2][0], 0.0])] {
-            let mut state = State::new(parameters(preset, [0.0; 2]), 0.8, 0).expect("weather");
-            state.step(1, 450.0).expect("established weather");
-            let mut core = None;
-            let mut clear = None;
-            for z in -100..100 {
-                for x in -100..100 {
-                    let point = [x, z].map(|index| (f64::from(index) + 0.5) * TEXEL);
-                    let here = field.query([point[0], 0.0, point[1]], &state);
-                    if (0.6..5.0).contains(&here.optical_depth)
-                        && core.is_none_or(|(_, _, coverage)| coverage < here.coverage)
-                    {
-                        core = Some((point, here.optical_depth, here.coverage));
-                    }
-                    if clear.is_none()
-                        && (-1..=1).all(|dx| {
-                            (-1..=1).all(|dz| {
-                                field
-                                    .query(
-                                        [
-                                            point[0] + f64::from(dx) * TEXEL,
-                                            0.0,
-                                            point[1] + f64::from(dz) * TEXEL,
-                                        ],
-                                        &state,
-                                    )
-                                    .optical_depth
-                                    == 0.0
-                            })
+        let mut state = State::new(parameters(preset, [0.0; 2]), 0.8, 0).expect("weather");
+        state.step(1, 450.0).expect("established weather");
+        let mut core = None;
+        let mut clear = None;
+        for z in -100..100 {
+            for x in -100..100 {
+                let point = [x, z].map(|index| (f64::from(index) + 0.5) * TEXEL);
+                let here = field.query([point[0], 0.0, point[1]], &state);
+                if (0.6..5.0).contains(&here.optical_depth)
+                    && core.is_none_or(|(_, _, coverage)| coverage < here.coverage)
+                {
+                    core = Some((point, here.optical_depth, here.coverage));
+                }
+                if clear.is_none()
+                    && (-1..=1).all(|dx| {
+                        (-1..=1).all(|dz| {
+                            field
+                                .query(
+                                    [
+                                        point[0] + f64::from(dx) * TEXEL,
+                                        0.0,
+                                        point[1] + f64::from(dz) * TEXEL,
+                                    ],
+                                    &state,
+                                )
+                                .optical_depth
+                                == 0.0
                         })
-                    {
-                        clear = Some(point);
-                    }
+                    })
+                {
+                    clear = Some(point);
                 }
             }
-            let (point, expected, _) = core.expect("condensate at a map texel centre");
-            let state = Arc::new(state);
-            let actual = trace(&gpu, &config, &state, point).await;
-            compare_column(label, actual, expected, 0.12);
-            assert_eq!(
-                trace(&gpu, &config, &state, clear.expect("clear neighbourhood"))
-                    .await
-                    .to_bits(),
-                0.0_f64.to_bits(),
-            );
         }
+        let (point, expected, _) = core.expect("condensate at a map texel centre");
+        let state = Arc::new(state);
+        let actual = trace(&gpu, &config, &state, point).await;
+        compare_column(label, actual, expected, 0.12);
+        assert_eq!(
+            trace(&gpu, &config, &state, clear.expect("clear neighbourhood"))
+                .await
+                .to_bits(),
+            0.0_f64.to_bits(),
+        );
     });
 }
 
