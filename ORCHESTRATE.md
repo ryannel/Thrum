@@ -274,7 +274,8 @@ before. The two rules for how a test is written need nothing built: they bind a 
   rules do fail a merge, beside the other counts that only fall. *(owner, 21 Nov 2026: "Yes, plan it")*
   - *The limit on one test.* A test still running at ten seconds is stopped (`GATE-TIME` M13), and the check
     runs it once more, alone, after the others: it fails unless it then passes within ten, and the closing lines
-    name it with its time alone. A test that fails any other way is not run again. *(the owner accepted ten seconds; the second run is the
+    name it with its time alone. Only `./dev check-all` allows 30 seconds for that serial rerun and calls out
+    passes above the ten-second fast-test target. A test that fails any other way is not run again. *(the owner accepted ten seconds; the second run is the
     planner's assumption until the owner answers, because load alone takes a short test past ten)*
   - *The exempt list only shrinks*, from M12. A test is exempt from the limit only by its exact name in
     `.config/nextest.toml`. `GATE-TIME` empties the list, and no landing adds a name or loosens the limit.

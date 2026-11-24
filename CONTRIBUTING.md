@@ -132,7 +132,9 @@ fails the check.
 
 **A test takes about ten seconds or less, or is a long test.** Ten seconds is measured with the test run alone,
 in the build the check uses. The check stops a test still running at ten seconds, runs each stopped test once
-more alone after the others, and fails unless it passes within ten seconds then. A test that can't be made fast
+more alone after the others, and fails unless it passes within ten seconds then. In `./dev check-all`, the
+initial limit is also ten seconds and the serial rerun has thirty seconds. The report calls out serial
+passes above the ten-second fast-test target. A test that can't be made fast
 is a long test: it is marked `#[ignore = "long: …"]`, its binary is listed in `.config/long-tests.txt` with the
 fault it leaves unguarded before a merge written beside it, and only `./dev long-tests` runs it. A new long test
 needs a plan's done-when item that asks for it, and no shortened copy of it stays in the merge tier.
@@ -180,7 +182,7 @@ not side by side as the check runs them.
 - how many tests ran over ten seconds, and each test stopped at ten seconds with its time side by side and alone;
 - the tests' summed time, and the share of it in tests whose binary or name says `gpu` or `metal`.
 
-None of these times fails the check except the ten-second stop. A check's length follows the load other work puts
+The per-attempt limits are the only times that can fail a check. A check's length follows the load other work puts
 on the machine, so compare a step with the same step in other checks rather than reading one total on its own.
 
 ## Review and evidence

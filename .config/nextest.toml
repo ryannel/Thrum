@@ -15,20 +15,23 @@ nextest-version = { required = "0.9.150" }
 dir = "target/nextest"
 
 [profile.default]
-# Every test runs and reports, and a failed test is never run again: a retry would hide a test
-# that fails one time in ten.
+# Every test runs and reports. Nextest itself never retries a failed test.
 fail-fast = false
 retries = 0
 # A test still running at ten seconds, the merge tier's bound for one test, is stopped. Because the
 # check runs beside builders, `./dev check` runs each test it stopped once more, alone, after the
-# others, under the same limit, and the test fails the check unless it then passes (GATE-TIME
-# mechanism 13). The rule `limit-exempt` refuses a default later than ten seconds.
+# others, under the same limit. Only the serial pass of `./dev check-all` uses the longer profile
+# below. The rule `limit-exempt` refuses a default later than ten seconds.
 slow-timeout = { period = "10s", terminate-after = 1 }
 final-status-level = "slow"
 
 [profile.default.junit]
 # `./dev check` reads this report for its ten slowest tests and the tests it stopped.
 path = "junit.xml"
+
+[profile.workspace-rerun]
+# Used only for the exact-case serial pass of `./dev check-all` (GATE-TIME mechanism 15).
+slow-timeout = { period = "30s", terminate-after = 1 }
 
 [test-groups]
 # Each holds the tests of one file that keeps a device mutex for `cargo test`; they take turns

@@ -1,9 +1,9 @@
 //! Reading cargo-nextest's JUnit report for `./dev check`, and running once more, alone, each test
 //! the limit on one test stopped side by side (GATE-TIME mechanism 13).
 
-use std::{error::Error, path::Path};
+use std::{error::Error, path::Path, process::Command};
 
-use crate::{NEXTEST_STORE, TaskResult, cargo};
+use crate::{NEXTEST_STORE, TaskResult};
 
 /// One test's result from cargo-nextest's JUnit report.
 pub(crate) struct TestTime {
@@ -61,9 +61,11 @@ pub(crate) fn junit_times(xml: &str) -> Vec<TestTime> {
             name: format!("{class} {name}"),
             seconds: xml_attribute(&tag, "time")
                 .and_then(|time| time.parse().ok())
-                .unwrap_or(0.0),
+                .unwrap_or(f64::NAN),
             timed_out: body.contains("<failure type=\"test timeout\""),
-            failed: body.contains("<failure") || body.contains("<error"),
+            failed: body.contains("<failure")
+                || body.contains("<error")
+                || body.contains("<skipped"),
             probe: false,
         });
     }
@@ -73,6 +75,30 @@ pub(crate) fn junit_times(xml: &str) -> Vec<TestTime> {
 /// Above this a test is reported as slow; ten seconds is the merge tier's bound for one test, and
 /// `.config/nextest.toml` stops a test that is not exempt at the same time.
 pub(crate) const SLOW_TEST_SECONDS: f64 = 10.0;
+
+/// The serial pass's policy, chosen by the command independently of package selection.
+#[derive(Clone, Copy, Default)]
+pub(crate) enum RerunLimit {
+    #[default]
+    Merge,
+    Workspace,
+}
+
+impl RerunLimit {
+    pub(crate) fn profile(self) -> &'static str {
+        match self {
+            Self::Merge => "default",
+            Self::Workspace => "workspace-rerun",
+        }
+    }
+
+    pub(crate) fn seconds(self) -> f64 {
+        match self {
+            Self::Merge => SLOW_TEST_SECONDS,
+            Self::Workspace => 30.0,
+        }
+    }
+}
 
 /// A test the limit stopped side by side, and its second run alone (GATE-TIME mechanism 13).
 pub(crate) struct Rerun {
@@ -98,7 +124,7 @@ pub(crate) fn rerun_filter(stopped: &[&TestTime]) -> String {
 
 /// Each stopped test's second run, from the second run's report: it passes only when the report
 /// has it passed within the limit.
-pub(crate) fn reruns(stopped: &[&TestTime], alone: &[TestTime]) -> Vec<Rerun> {
+pub(crate) fn reruns(stopped: &[&TestTime], alone: &[TestTime], limit: RerunLimit) -> Vec<Rerun> {
     stopped
         .iter()
         .map(|test| {
@@ -107,8 +133,9 @@ pub(crate) fn reruns(stopped: &[&TestTime], alone: &[TestTime]) -> Vec<Rerun> {
                 name: test.name.clone(),
                 side_by_side: test.seconds,
                 alone: again.map(|again| again.seconds),
-                passed: again
-                    .is_some_and(|again| !again.failed && again.seconds <= SLOW_TEST_SECONDS),
+                passed: again.is_some_and(|again| {
+                    !again.failed && (0.0..=limit.seconds()).contains(&again.seconds)
+                }),
                 probe: test.probe,
             }
         })
@@ -118,9 +145,14 @@ pub(crate) fn reruns(stopped: &[&TestTime], alone: &[TestTime]) -> Vec<Rerun> {
 /// Whether a pass of cargo-nextest that exited with a failure passes after its second runs: only
 /// when every test that failed was stopped by the limit and every one of them passed alone. A test
 /// that fails any other way, or a failure with no failed test such as a build error, still fails.
-pub(crate) fn passes_after_reruns(times: &[TestTime], reruns: &[Rerun]) -> bool {
+pub(crate) fn passes_after_reruns(
+    times: &[TestTime],
+    reruns: &[Rerun],
+    retry_succeeded: bool,
+) -> bool {
     let stopped = times.iter().filter(|test| test.timed_out).count();
-    stopped > 0
+    retry_succeeded
+        && stopped > 0
         && stopped == times.iter().filter(|test| test.failed).count()
         && reruns.len() == stopped
         && reruns.iter().all(|rerun| rerun.passed)
@@ -140,35 +172,54 @@ pub(crate) fn strip_filters<'a>(args: &[&'a str]) -> Vec<&'a str> {
     kept
 }
 
-/// Runs `cargo nextest run` with `args` and reads the JUnit report it writes. The report is None
-/// when the run failed before writing one, such as on a build error; a pass with no report fails.
+/// Runs nextest and reads its profile's JUnit report. Only exit 100 (failed tests) permits
+/// recovery from the report. Build, configuration and runner errors propagate directly.
 pub(crate) fn run_nextest(
-    junit: &Path,
+    store: &Path,
+    profile: RerunLimit,
     args: &[&str],
-) -> Result<(TaskResult, Option<String>), Box<dyn Error>> {
+) -> Result<(TaskResult, String), Box<dyn Error>> {
+    let junit = store.join(profile.profile()).join("junit.xml");
     // A report left by an earlier run must not be read as this one's.
-    match std::fs::remove_file(junit) {
+    match std::fs::remove_file(&junit) {
         Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error.into()),
         _ => {}
     }
-    let mut full = vec!["nextest", "run", "--locked", "--offline"];
+    let mut full = vec![
+        "nextest",
+        "run",
+        "--locked",
+        "--offline",
+        "--profile",
+        profile.profile(),
+        "--retries",
+        "0",
+        "--no-fail-fast",
+    ];
     full.extend_from_slice(args);
-    let ran = cargo(&full);
-    match std::fs::read_to_string(junit) {
-        Ok(xml) => Ok((ran, Some(xml))),
-        Err(_) if ran.is_err() => Ok((ran, None)),
-        Err(error) => Err(format!(
-            "cargo-nextest passed but wrote no JUnit report at {} ({error}); \
+    let status = Command::new(env!("CARGO")).args(&full).status()?;
+    let ran = if status.success() {
+        Ok(())
+    } else {
+        let error = format!("cargo {} failed ({status})", full.join(" "));
+        if status.code() != Some(100) {
+            return Err(error.into());
+        }
+        Err(error.into())
+    };
+    let xml = std::fs::read_to_string(&junit).map_err(|error| {
+        format!(
+            "cargo-nextest wrote no readable JUnit report at {} ({error}); \
              .config/nextest.toml's [store] dir must be {NEXTEST_STORE}",
             junit.display()
         )
-        .into()),
-    }
+    })?;
+    Ok((ran, xml))
 }
 
 /// The closing lines on the tests the limit stopped side by side: each with its time there and its
 /// time alone on its second run. A test that failed any other way was not run again.
-pub(crate) fn rerun_lines(reruns: &[Rerun]) -> Vec<String> {
+pub(crate) fn rerun_lines(reruns: &[Rerun], limit: RerunLimit) -> Vec<String> {
     if reruns.is_empty() {
         return vec![format!(
             "no test was stopped at {SLOW_TEST_SECONDS} s side by side, so none was run again alone"
@@ -176,13 +227,14 @@ pub(crate) fn rerun_lines(reruns: &[Rerun]) -> Vec<String> {
     }
     let mut lines = vec![format!(
         "{} test(s) stopped at {SLOW_TEST_SECONDS} s side by side and run again alone, after the others; \
-         each fails the check unless it passed alone within {SLOW_TEST_SECONDS} s:",
-        reruns.len()
+         each fails the check unless it passed alone within {} s:",
+        reruns.len(),
+        limit.seconds()
     )];
     for rerun in reruns {
         let alone = rerun.alone.map_or_else(
             || "no result".to_owned(),
-            |seconds| format!("{seconds:.1} s"),
+            |seconds| format!("{seconds:.3} s"),
         );
         let verdict = if rerun.passed { "passed" } else { "FAILED" };
         let pass = if rerun.probe {
@@ -191,9 +243,19 @@ pub(crate) fn rerun_lines(reruns: &[Rerun]) -> Vec<String> {
             ""
         };
         lines.push(format!(
-            "  {:>6.1} s side by side, {alone} alone, {verdict}  {}{pass}",
+            "  {:>6.3} s side by side, {alone} alone, {verdict}  {}{pass}",
             rerun.side_by_side, rerun.name
         ));
+        if rerun.passed
+            && rerun
+                .alone
+                .is_some_and(|seconds| seconds > SLOW_TEST_SECONDS)
+        {
+            lines.push(format!(
+                "    recovery above the {SLOW_TEST_SECONDS} s fast-test target: {}{pass}",
+                rerun.name
+            ));
+        }
     }
     lines
 }
