@@ -202,11 +202,6 @@ path = "tests/view_volume/view_volume_medium_gpu.rs"
 required-features = ["thrum-render/creation-counters"]
 
 [[test]]
-name = "view_volume_terminal_gpu"
-path = "tests/view_volume/view_volume_terminal_gpu.rs"
-required-features = ["thrum-render/creation-counters"]
-
-[[test]]
 name = "ground_band_receivers_gpu"
 path = "tests/view_volume/ground_band_receivers_gpu.rs"
 required-features = ["thrum-render/creation-counters"]

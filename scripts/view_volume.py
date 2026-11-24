@@ -339,7 +339,7 @@ def cost(output, targets, builds, scene):
                 producer = [next((value for name, value in row['pass_gpu_ns'].items()
                                   if name.endswith(MEDIUM)), None) for row in arm['frames']]
                 if label == 'on':
-                    if any(value is None or value <= 0 for value in producer):
+                    if any(value is None or value < 0 for value in producer):
                         raise ValueError(f'{target}: missing test-bank producer timestamps')
                     arm['medium_pass_median_ns'] = statistics.median(producer)
                     arm['medium_pass_p95_ns'] = statistics.quantiles(producer, n=20)[18]

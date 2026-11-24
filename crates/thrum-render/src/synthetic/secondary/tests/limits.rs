@@ -47,7 +47,15 @@ fn secondary_shader_layout_is_bounded_by_the_admission_counts() {
                         wgpu::naga::TypeInner::Image { .. }
                     ));
                 }
-                let counts = shader_input_counts(atmosphere, shadows, cloud);
+                let counts = shader_input_counts(
+                    atmosphere,
+                    shadows,
+                    if cloud {
+                        crate::shaders::CloudVariant::Sampled
+                    } else {
+                        crate::shaders::CloudVariant::Absent
+                    },
+                );
                 assert_eq!(
                     uniforms, counts[0],
                     "atmosphere={atmosphere} shadows={shadows} cloud={cloud}"

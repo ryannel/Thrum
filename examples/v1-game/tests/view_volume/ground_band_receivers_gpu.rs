@@ -108,7 +108,9 @@ fn factors(gpu: &fixture::Gpu, prepared: &PreparedSynthetic) -> Vec<f32> {
     let submission = gpu.queue.submit([encoder.finish()]);
     readback
         .wait(device, submission)
-        .chunks_exact(16)
+        .as_chunks::<16>()
+        .0
+        .iter()
         .map(|bytes| f32::from_le_bytes(bytes[..4].try_into().expect("receiver factor")))
         .collect()
 }

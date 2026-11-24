@@ -29,10 +29,14 @@ const RECORD_BYTES: u64 = size_of::<SecondaryViewRecord>() as u64;
 mod lighting;
 mod sun;
 
-fn shader_input_counts(atmosphere: bool, shadows: bool, cloud: bool, ground: bool) -> [u32; 2] {
+fn shader_input_counts(
+    atmosphere: bool,
+    shadows: bool,
+    cloud: crate::shaders::CloudVariant,
+) -> [u32; 2] {
     let atmosphere = u32::from(atmosphere);
     let shadows = u32::from(shadows);
-    let cloud = u32::from(cloud) + u32::from(ground);
+    let cloud = u32::from(cloud.present()) + u32::from(cloud.ground());
     [
         6 + shadows + atmosphere + cloud,
         4 + 5 * atmosphere + shadows * (2 + atmosphere) + cloud,
@@ -181,14 +185,12 @@ impl PreparedSynthetic {
         {
             return Err(SecondaryViewError::RecordLimit);
         }
-        let [uniforms, textures] = shader_input_counts(
-            self.atmosphere.is_some(),
-            self.shadow.is_some(),
-            self.cloud.is_some(),
-            self.cloud
-                .as_ref()
-                .is_some_and(|cloud| cloud.band.is_some()),
+        let cloud = self.cloud.as_ref().map_or(
+            crate::shaders::CloudVariant::Absent,
+            crate::atmosphere::CloudPrepared::variant,
         );
+        let [uniforms, textures] =
+            shader_input_counts(self.atmosphere.is_some(), self.shadow.is_some(), cloud);
         if !slots.is_empty()
             && self
                 .capabilities
