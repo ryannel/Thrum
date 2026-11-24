@@ -86,13 +86,13 @@ fn coherent_global_ramp_does_not_leave_half_second_old_rows() {
         let mut next = previous;
         next.tick = tick;
         next.time += dt;
-        next.parameters.coverage -= 0.02 * dt;
+        next.parameters.coverage -= 0.002 * dt;
         let age = 0.5_f64.min(ramp_row_age(previous, next, dt));
         let (_, count) = update_rows(&mut rows, next, dt, age, false);
         assert!(count > 9 && count < 256, "refresh a larger strip");
         assert!(
             rows.iter()
-                .all(|row| row.parameters.coverage - next.parameters.coverage <= 0.001),
+                .all(|row| row.parameters.coverage - next.parameters.coverage <= 0.00005),
             "the rotating strips sample close points of the coverage ramp"
         );
         previous = next;
