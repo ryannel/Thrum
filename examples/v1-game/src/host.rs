@@ -494,6 +494,7 @@ impl GameSetup {
                     // Trace one member of each 2×2 block and reproject the other
                     // three with the cloud's world-space travel between submissions.
                     sky.refresh_stride = 2;
+                    sky.step = 22.5;
                 }
                 sky
             });

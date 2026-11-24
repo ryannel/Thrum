@@ -196,7 +196,8 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     let relative=(sigma-ahead)/max(sigma,0.08*cloud.physical.x);
     let exposed=smoothstep(-0.18,0.78,relative);
     let beam=exp(-0.28*sun_depth);
-    let shade=0.24+0.72*exposed;
+    let interior=exp(-0.085*sun_depth);
+    let shade=0.29+0.36*interior+0.38*exposed;
     let rim=0.095*beam*exposed*exposed;
     return mix(source,source*shade+solar*rim,bank);
 }
