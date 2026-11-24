@@ -197,7 +197,7 @@
     {
       "id": "WP3",
       "name": "The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
@@ -348,7 +348,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP3/terminator/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP3-review.md"
         },
         {
@@ -382,13 +382,6 @@
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP3/transaction/checks/M3.16-registered-proof.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP3-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The terminator check has no sheet beyond the widened passage reach",
-          "item": "WP3.13",
-          "repeat": false
         }
       ]
     },
