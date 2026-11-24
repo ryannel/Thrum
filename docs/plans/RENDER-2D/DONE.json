@@ -390,7 +390,7 @@
           "ask": "Is the camera centre advanced through successive submissions of the same retained scene at each scale, and does the pixel-based check reject a frozen camera even when the requested centres advance?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/review-fixes/e0aeaf6be8acad28f2c9046e789a33ca26126dc8/checks/sprites-crisp.json",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.7-browser/sprites-crisp.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -420,10 +420,10 @@
           "statement": "In Chrome WebGPU at DPR 1 and 2, the original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed in slow and fast scrolls at 1.5\u00d7 and 2.37\u00d7. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the WP3.8 sprite route in T2 realtime mode at 1.5\u00d7 and 2.37\u00d7, both speeds and both DPRs, holding the backing extent at 1920\u00d71080. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's Chrome takes to locate the offending patches.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/WP3.10-chrome-motion.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.11",

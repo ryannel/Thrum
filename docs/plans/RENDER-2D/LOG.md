@@ -222,3 +222,9 @@
 - Restored target evidence cleared by the plan revision, including the merged separable renderer's
   Metal motion and exact images. Verified new Metal stills at all three backing sizes.
   [Still review](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.9-fixed-stills.md)
+- Fresh Chrome WebGPU captures cover both scales, scroll speeds and device pixel ratios. Each take
+  retains 198 submitted images with the recorded timestamps. The merge command reproduced the migrated-plan
+  repository-guard failure on clean main. Orchestrate 3.0.4 also refuses the WP3.13 command in an item check.
+  [Chrome inspection](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.10-chrome-motion.md) ·
+  [Merge result](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3-window-and-proof-merge.log) ·
+  [Item refusal](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.13-orchestrate-refusal.json)
