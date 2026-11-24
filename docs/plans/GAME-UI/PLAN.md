@@ -29,7 +29,7 @@ written; its code was thrown away on purpose, so build from the design.
 
 ## WP1 Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing
 
-Criteria: WP1.1–WP1.12 in the done-when file.
+See the [WP1 items](DONE.json).
 
 Start by reading what V1 and `RENDER-2D` left: the design was written before either was built. When it was
 planned the tone stage wrote an `Rgba8Unorm` image of encoded values (`crates/thrum-render/src/synthetic/display.rs`,
@@ -45,7 +45,7 @@ is a new `THRUM_SCENE` selection beside `RENDER-2D`'s sprite scene in `examples/
 
 ## WP2 Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game
 
-Criteria: WP2.1–WP2.14 in the done-when file.
+See the [WP2 items](DONE.json).
 
 The font product is built in `thrum-cook`, `thrum-asset` and `thrum-asset-gpu` under ruling 3, on the sheet
 product, the lease and the one switch that `RENDER-2D:WP4` built there; read those first. A font's sheets are
@@ -55,7 +55,7 @@ prepared layout is runs only, since the tree comes in WP3.
 
 ## WP3 A status display of a health bar, a timer and counters stays readable and in place at every window size, density and safe area
 
-Criteria: WP3.1–WP3.14 in the done-when file.
+See the [WP3 items](DONE.json).
 
 The Mac shell reports only an extent to a game today (`crates/thrum-app/src/app.rs`, `game.rs`); density and
 insets are added there and to the page under ruling 4, behind the feature the design names. WP3.14 extends WP2's
@@ -63,7 +63,7 @@ prepared layout from runs to boxes.
 
 ## WP4 A modal choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game
 
-Criteria: WP4.1–WP4.13 in the done-when file.
+See the [WP4 items](DONE.json).
 
 The Mac shell passes a game key codes and nothing else, and the page keeps its own DOM listeners
 (`examples/v1-game/web/index.html`); pointer, touch, text drops and the clipboard are added under ruling 4.
@@ -73,7 +73,7 @@ mouse and touch events. The join screen shows states the scene scripts; it links
 
 ## WP5 The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide
 
-Criteria: WP5.1–WP5.8 in the done-when file.
+See the [WP5 items](DONE.json).
 
 The iOS shell is `examples/v1-game-ios`: its `gesture.rs` turns touches into one steering gesture, which now
 receives only what the interface passes, and `ios/uitest` holds the UI test that makes real touches.
@@ -82,7 +82,7 @@ is `docs/design/ENGINE-EXPERIENCE.md` and the ledger is `docs/design/maturity.js
 
 ## WP6 A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses
 
-Criteria: WP6.1–WP6.8 in the done-when file.
+See the [WP6 items](DONE.json).
 
 The iOS shell is `examples/v1-game-ios` (`src/ios.rs`, `lease.rs`, `gesture.rs`, `world_policy.rs` and the
 `ios/` scripts), owned by `PLATFORM-RUNTIME-IOS` and extended by `COOKED-DRAW`, `RENDER-2D` and this module. It

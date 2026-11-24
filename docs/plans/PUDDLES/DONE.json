@@ -413,16 +413,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP3.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -521,16 +511,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP4.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -596,16 +576,6 @@
           "statement": "With the marker walking through the yard's puddles in rain at 10 mm/h, the paired cost record is taken again at 2560x1440, beside WP4's, with the count of regions and solves in the fine level's step. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene rain-footfall",
           "lock": "gpu",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
-        },
-        {
-          "id": "WP8.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -723,16 +693,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP5.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -797,16 +757,6 @@
           "statement": "With the selection on and the valley soaked, a paired cost record of the valley is taken at the showcase's extent, with the selection off as its pair. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/rain_cost.py check --scene valley",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP6.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -942,16 +892,6 @@
           "id": "WP7.10",
           "statement": "The ledger's `E1.rain` row, the provenance file and the log are current, and the log lists what this module does not build: rain in the air and its splashes, slanted rain, runoff seen running, rain that feeds other water, tracks, and drying that knows shade.",
           "ask": "Does the ledger claim no more than the items proved, with visuals and device apart? Does the log name each thing not built?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP7.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

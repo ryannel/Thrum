@@ -1019,16 +1019,6 @@
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/WP7.8-rebased-metal.txt",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP7.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
         }
       ],
       "blocked": {
@@ -1149,16 +1139,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP8.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -1258,16 +1238,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP9.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -1326,16 +1296,6 @@
           "statement": "With all twelve shapes and the track resident and in view, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same view, with the bytes of each stacked product for R8 and for BC4. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene library",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP10.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1477,16 +1437,6 @@
           "review": ""
         },
         {
-          "id": "WP14.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
           "id": "WP14.13",
           "statement": "Cloud light has one Sun term and one read of the depths it takes. The medium-coefficient pass and the trace call one shader function for the term and one for the depths at a world point, and the solar kernel is that term without the Sun. The boundary weight is the design's function of distance from the camera, 0 to the end of the ramp, so the pass gives the term no view depth. The four fixed orders are gone from the model, its tests and the renderer.",
           "check": "sh -c '! git grep -qw Orders -- crates examples'",
@@ -1613,16 +1563,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP15.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -1739,16 +1679,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP16.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -1824,16 +1754,6 @@
           "statement": "With clouds on, the paired cost record is taken for the sea scene at 2560\u00d71440 against the same scene with clouds absent, with each cloud and sea pass timed by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene sea",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP11.7",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1918,16 +1838,6 @@
           "id": "WP17.4",
           "statement": "What a game reads from the weather holds under the changed form. The tests that hold the GPU weather map, the turret clearing, the shade with visible clouds off and the drawn column to the CPU query (WP2.2's, WP3.8's, WP3.15's and WP7.6's) assert what those work packages left and pass in the project's test command.",
           "ask": "In this work package's changes, did those tests move only in expected values, probe points and a stated tolerance, with every assertion and every wrong version they reject kept?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP17.5",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2040,16 +1950,6 @@
           "id": "WP12.9",
           "statement": "The maturity ledger's `E1.clouds` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device kept apart, what is not built and the device runs owed are listed, and every lifted file is named with its source commit, path and licence.",
           "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance record match the files in the two crates and the two games?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP12.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

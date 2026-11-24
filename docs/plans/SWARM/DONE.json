@@ -236,16 +236,6 @@
           "review": ""
         },
         {
-          "id": "WP2.16",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
           "id": "WP2.17",
           "statement": "Enemies appear only out of sight, by the rules' own figures. On every tick of a run that reaches the cap, with the hero in the open, at a wall and in a corner, every enemy the budget spawns is placed inside the arena and outside the hero's sight square grown by the spawn margin. The spawn rule is given committed state, admitted frames and the rule set's constants, and nothing of any window.",
           "check": "cargo test --locked --offline -p swarm-rules --test spawn",
@@ -441,16 +431,6 @@
           "review": ""
         },
         {
-          "id": "WP3.16",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
           "id": "WP3.17",
           "statement": "A run ends at one tick, won or lost, and the commit that carries the deciding event carries the outcome. It is won at the tick the boss dies, or at the tick the last wave's clock ends with a present hero standing, and no intermission follows the last wave. It is lost at the tick a slot is present and no present hero stands. On a shared tick the boss's death beats the loss, and the loss beats the clock of any wave. Waiting spends no wave's clock: a player alone who waits in an intermission for more than 36,000 ticks and then readies meets the next wave with its whole clock.",
           "check": "cargo test --locked --offline -p swarm-rules --test run_endings",
@@ -616,16 +596,6 @@
           "review": ""
         },
         {
-          "id": "WP4.15",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
           "id": "WP4.16",
           "statement": "With the finished content the spawn margin covers what the design says it must: it is at least half the largest enemy sprite as drawn, the boss included, and a tick's travel of the fastest hero with every speed upgrade taken, added together.",
           "check": "cargo test --locked --offline -p swarm-proof --test spawn_margin",
@@ -732,16 +702,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP5.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -807,16 +767,6 @@
           "statement": "On the simulator's screen, in portrait and in landscape, the game, the stick, the status display and the offer are clear of the Dynamic Island, the rounded corners and the home indicator, the cards are large enough to tap, and text is crisp.",
           "inspect": "Take `simctl` screenshots in both orientations of a wave with the stick held, the offer and the won screen, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the corners, the top and bottom edges and one line of text. Function only.",
           "target": "ios-sim",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP6.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
@@ -939,16 +889,6 @@
           "id": "WP7.10",
           "statement": "Nothing that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`.",
           "ask": "Which of the game's tests and commands open a socket, a browser or the simulator, and is each reachable only through `scripts/swarm.py` or `scripts/swarm_sim.py`?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP7.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1091,16 +1031,6 @@
             "type": "human_feedback",
             "what": "Play one run alone (`./dev swarm`) and one with a second player joined from Chrome. Say whether you accept it as playing well enough to close track 3, or what must change first: the difficulty, how your own hero feels beside the slightly late crowd in co-op, and the menus under the hand. What you ask for is done before the close unless you say it can wait. No sound is built."
           },
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP8.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

@@ -237,9 +237,8 @@ commit, and that commit's module fixes it or the commit is reverted. A mismatch 
 owner; only that owner can refresh retained references under
 [the baseline rules](docs/plans/ARCHITECTURE.md#exact-baselines).
 
-`python3 scripts/exact_baselines.py verify`, without `--full`, draws nothing. It asks whether a passing run
-on main contains the current commit, and is the check of a done-when item in most modules. Don't run it
-before merging: on a branch it answers that the commit isn't on main yet.
+Orchestrate's `main-check exact-images` command reports the run status.
+The scheduled check runs independently of work-package completion.
 
 The [registry](.config/exact-baselines.json) lists references, comparison files and covered paths.
 `./dev check` runs the CPU-only `python3 scripts/exact_baselines.py guard`. It refuses changed references,

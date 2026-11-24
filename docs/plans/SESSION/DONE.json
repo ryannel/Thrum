@@ -748,16 +748,6 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
-        },
-        {
-          "id": "WP6.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
         }
       ],
       "failed_reviews": 0,
@@ -852,16 +842,6 @@
           "statement": "The guide tells a game maker how to drive a world from a session in a windowed game and on a page, the networking design and the maturity ledger say what was proved, and the crowd view built without a match still links neither `thrum-network` nor `thrum-transport`.",
           "check": "python3 scripts/session_match.py closure --windowed",
           "ask": "Could a game maker wire a driver from the guide alone? Does the ledger keep the windowed match's function apart from any claim about speed?",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
-        },
-        {
-          "id": "WP7.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

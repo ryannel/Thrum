@@ -5,7 +5,7 @@ and layout are put right once. [Design](DESIGN.md) · [done-when file](DONE.json
 [log](LOG.md) · [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
 Read [Mechanisms](DESIGN.md#mechanisms) and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before any
-work package. `scripts/` is a covered path, so every landing here needs a verifier proof.
+work package. The scheduled `exact-images` check covers changes to `scripts/` after they land.
 
 ## Open for the human
 

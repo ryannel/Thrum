@@ -63,7 +63,7 @@ command manages its own admission and records the full comparison across eight s
 
 ## WP6 A game maker can put a game in a match from the guide, and a game without multiplayer contains none of it
 
-Criteria: WP6.1–WP6.8 in the done-when file.
+See the [WP6 items](DONE.json).
 
 The owning design is `docs/design/modules/NETWORKING.md`, the contract is C13 in `docs/design/CONTRACTS.md`, the
 decision records are the A0 and A5 files in `docs/design/decisions/`, and the maturity ledger is
@@ -71,7 +71,7 @@ decision records are the A0 and A5 files in `docs/design/decisions/`, and the ma
 
 ## WP7 The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match
 
-Criteria: WP7.1–WP7.9 in the done-when file.
+See the [WP7 items](DONE.json).
 
 The world lane is `crates/thrum-core/src/sim/world_lane.rs` with `clocked_world.rs`, and the frame host reads a
 world through `FrameWorld` in `crates/thrum-render/src/runtime.rs`; the lane's task already owns its clock, so

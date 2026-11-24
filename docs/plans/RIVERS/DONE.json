@@ -474,16 +474,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP4.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -592,16 +582,6 @@
           "statement": "With the flow bands and the river's foam in view the paired cost record is taken again at 2560\u00d71440, beside WP4's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene river-calm",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP5.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -725,16 +705,6 @@
           "statement": "The current ladder stays inside the step's count of solves and changes nothing where one current serves. Where a level's solves would pass the profile's count the step drops carriage currents before it rests a region, and reports what it dropped. On still water and on a uniform current the step's output is what it was, to the bit, and every existing interaction test of `WATERS` passes unchanged.",
           "check": "cargo test --locked --offline -p water-scene --test current_ladder_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP6.9",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -867,16 +837,6 @@
           "id": "WP7.11",
           "statement": "The ledger's `E1.rivers` row, the provenance file and the log are current. The ledger says the fall's look was judged on the island's fall of about 4 m, and that falls of other heights in the declared 0.75 m to 12 m are drawn by the same sheet and are unjudged by eye. The log lists what this module does not build: mist and spray, a rise that travels, rain as a source, standing waves that overturn.",
           "ask": "Does the ledger claim no more than the items proved, with visuals and device apart, and name the fall heights no one has looked at? Does the log name each thing not built?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP7.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

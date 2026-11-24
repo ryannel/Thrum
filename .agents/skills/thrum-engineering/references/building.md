@@ -46,13 +46,10 @@ most of the GPU's time proving again what a rebase had just made stale.
 - **Write no script that rebases, proves and merges in one go.** `merge` already rebases and runs `./dev check`.
   A script of your own that holds a lock across those steps makes every builder wait through all of them, and
   71 of 84 such runs failed.
-- **The exact images are not yours to prove.** An item whose check is `python3 scripts/exact_baselines.py verify`
-  passes from one shared run on main after your merge. Set it `pass` with the evidence `main-branch check
-  exact-images`. On your branch the command answers that the commit isn't on main yet, which is expected. If
-  it later says main fails at a commit that isn't yours, say so in your report and don't work around it. Don't
-  run `verify` before you merge, and never under `lock gpu`: it waits for the main-branch run, and a builder
-  holding a GPU share while it waits takes a share that run needs.
-- **Prove a work package through `merge` and the main-branch checks, not a pipeline of your own.** Chains of jobs
+- **Exact images are checked on main.** The scheduled `exact-images` check compares the registered images
+  after merges. `./dev check` runs the reference guard. For a planned refresh, follow
+  [the baseline rules](../../../../docs/plans/ARCHITECTURE.md#exact-baselines).
+- **Use `merge` for the work package's checks.** Chains of jobs
   that each assert the last one passed (a "qualified landing") rebuild the proof-before-merge this section
   removes, and count every real failure twice.
 - **A merge's `./dev check` runs the tests of the packages your change can reach**, by Cargo's graph, and prints

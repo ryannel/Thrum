@@ -42,7 +42,8 @@ comparison. Reuse the camera-sweep proof on Metal and Chrome, and verify bleed n
 atlas. Retire the exact-box checks and their tracked tolerance fixtures when the replacement proofs are ready.
 For WP3.6, collect the real-window submission and resize record when drawables are available. The unattended
 check can establish shell geometry during reported occlusion. The review still requires a full window witness.
-Close WP3 with the shared `long-tests` result covering the merged work package (WP3.13). [WP3 items](DONE.json)
+WP3.12's focused check proves the generation inventory. The scheduled `long-tests` run covers the
+merged work on main. [WP3 items](DONE.json)
 
 ## WP4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
 
@@ -50,7 +51,7 @@ Start from the lease and content publication delivered by CONTENT-LOOP WP1. Buil
 integration under [seam ruling 2](../ARCHITECTURE.md#seam-rulings-for-render-2d). Prove placement from the original
 frame's pivot through trim and sample the submitted result. Use elapsed-time motion through the live edit on
 both targets to catch a freeze before the atomic switch.
-[WP4.1–WP4.11](DONE.json)
+[WP4 items](DONE.json)
 
 ## WP5 The reference crowd of 10,000 is drawn on the Mac and in Chrome, the sprite scene works on the iPhone simulator, and a game maker can start a 2D scene from the guide
 

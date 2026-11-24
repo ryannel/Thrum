@@ -559,10 +559,10 @@
           "lock": "gpu",
           "ask": "Does the test show both wrong compositions fail, and is the coefficients' sum with the air's taken before integration, not after?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/checks/WP8.1.log",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.2",
@@ -571,10 +571,10 @@
           "lock": "gpu",
           "ask": "Does the slab pixel contain both sky and a star with \u0394S at least a tenth of their sum? Does the far probe compare the public lookup with the clear result and the independently read terminal pair at each distance? Does it reject both a second correction and the old fade toward uncorrected sky?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/checks/WP8.2.log",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.3",
@@ -583,10 +583,10 @@
           "lock": "gpu",
           "ask": "Does the test use a ground band that differs between two heights over one point, so a read at the wrong height fails? Does a factor that adds the 2D field's value to the band's fail the ln 2 case?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/checks/WP8.3.log",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.4",
@@ -594,50 +594,50 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_handover_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/checks/WP8.4.log",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.5",
           "statement": "With the labelled test bank in the valley at noon and at a 10\u00b0 Sun: the land, props and movers fade into the fog with depth along clean edges; a prop's shadow inside the fog weakens with the fog over it; the Sun's disc dims through it; toward the low Sun the fog is bright and away from it grey. There is no tile, slice or banding pattern on the fog or where it meets terrain.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from outside the bank, at its edge and inside it, toward and away from the Sun. Judge each whole and in native-size crops of the fog against a ridge, a prop and the ground.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/README.md#fixed-stills",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.6",
           "statement": "As the camera walks into the bank, pans inside it and walks out, and as a mover passes through its edge, nothing pops at the edge, no trail follows the mover and the exposure does not pump.",
           "inspect": "Capture `realtime` sequences of the walk, the pan and the mover. Judge consecutive frames at 1x, whole and in native-size crops.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/README.md#motion",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.7",
           "statement": "In Chrome the test bank passes WP8.5's and WP8.6's lists.",
           "inspect": "Capture the same stills, the walk, the pan and the mover in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/README.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.8",
           "statement": "The number of sampled textures each forward pipeline and the view volume's passes bind, with a ground band and a medium provider registered, is on record against the capability record and WebGPU's default limits, and every count is within its limit.",
           "ask": "Does this work package's evidence give the count for each pipeline and the limit it was checked against?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/limits.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.9",
@@ -646,30 +646,20 @@
           "lock": "gpu",
           "ask": "Is the record paired, with load and order, on this work package's work, with the Chrome record beside it?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/cost/README.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP8.10",
           "statement": "The maturity ledger's atmosphere rows are current, with the test medium named as a stand-in that `CLOUDS` replaces.",
           "ask": "Do the rows claim only what this work package proved, on the targets it ran on?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP8/README.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
-        },
-        {
-          "id": "WP8.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         }
       ],
       "failed_reviews": 0,

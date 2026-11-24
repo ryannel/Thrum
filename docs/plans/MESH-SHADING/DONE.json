@@ -303,16 +303,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP3.7",
-          "statement": "Every exact baseline holds: the verifier's runs name no hardware feature and ask for no path, and no launch's default has changed.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     }

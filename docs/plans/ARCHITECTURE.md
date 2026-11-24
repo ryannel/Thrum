@@ -735,9 +735,9 @@ sitting on main for about two hours.
 
 - **What changed.** Rules 2 and 3 are written again below. Rule 1 stands. A proof before the merge is no longer
   asked of anyone, and `./dev check` no longer refuses for the lack of one.
-- **Earlier text.** Where a module's design, plan note or log says to run the verifier before `land`, to hold
-  the `gpu` lock for it, or to run it again after a rebase, this ruling replaces that. Each module's text is
-  corrected at its next re-plan. An item whose check is the verifier keeps its text and loses its `lock`.
+- **Earlier text.** The rules below supersede earlier module guidance that assigns a main-branch check to
+  a work-package item, tells the builder to mark an item passed from a shared run, or requires a verifier
+  run before landing outside an approved refresh or a verifier-specific qualification.
 - **The rulings on [a frame that varies under load](#a-frame-that-varies-under-load) and
   [a fixed capture that stalls](#a-fixed-capture-that-stalls).** On main, the script's second attempt stands in
   for the builder's second run: a run that passes on its retry is recorded by the script and needs no record
@@ -765,14 +765,14 @@ silently. A loop builder pushes a covered-path change only through `land` with i
 `chrome` locks. It draws fresh output on the Mac and in Chrome and compares it with every registered baseline,
 byte for byte. One run covers every commit merged since the last one, whoever merged them.
 
-- **When it runs.** When a work package's claim asks for it (rule 3), and when the lead's hourly
-  `main-check --due` finds that main has moved. Two runs start at least 30 minutes apart.
+- **When it runs.** The lead calls `main-check --due` each hour. `exact-images` is due on a changed main tip
+  at the interval registered in `ORCHESTRATE.md`, currently four hours.
 - **When it fails.** The script runs it again once. A failure that holds is traced over main's commits since
   the last pass to the first that fails, and the result names that commit and its module. That module fixes it
   as its next task. If no fix has merged an hour after the commit is named, the lead reverts the commit. Every
   other module keeps merging meanwhile.
-- **What is accepted.** Main can hold an unintended image change for about two hours. Nothing ships from main,
-  and no other builder is stopped by it.
+- **What is accepted.** Main can hold an unintended image change until the next scheduled run detects it.
+  Work-package completion proceeds independently of that run.
 - **Before the merge.** No image run is needed. `./dev check` runs the CPU-only reference guard. Each registry
   entry pins its definition (all fields except `pin` and `refresh`) and the paths and Git object IDs of its
   retained files and `comparison_files`. A changed pin requires a changed refresh naming an existing anchor
@@ -810,17 +810,14 @@ asked before a merge now, so nothing lapses and the narrower key has no use. The
 [the design](BASELINE-GUARD/DESIGN.md#later-work) records it. The covered paths are the listed paths in the
 table below, whole, and they key the verifier's record.
 
-**3. At the claim: the shared run, as a planner-written check.** A builder cannot change an item's `check`, and
-the loop reruns every `check` on a clean copy of main before it records a work package. So each work package that
-edits covered paths carries an item whose `check` is `python3 scripts/exact_baselines.py verify`, with no
-`lock`. Without `--full` the command draws nothing. It asks the main-branch check whether a passing run
-contains the commit, waits for the run under way or starts one, and passes once one does. It fails when main
-fails at or before the commit, naming the first failing commit, and on a branch it says the commit is not on
-main yet. So a builder does not run it before merging: it sets the item `pass` with the evidence `main-branch
-check exact-images`, and the loop's run on the merged tip is the proof. A module that draws nothing drops the
-item at its next re-plan. Every exact or visual proof records the revision, clean-diff hash and binary hash it
-ran on, and that revision is the commit claimed. A reviewer who finds a baseline, the registry, the verifier or
-an exact test changed by a module that does not own it, with no ruling here, records a Must Fix.
+**3. At the claim: work-package proofs.** An item check proves what the work package can show on its
+checkout. Orchestrate refuses `main-check` inside an item check, including through
+`python3 scripts/exact_baselines.py verify`. The reference guard in rule 2 handles registered files at the
+merge, and the scheduled run handles rendered output on main. Keep work-package checks for their own
+behaviour, including planned refreshes and verifier-specific qualifications. Every exact or visual proof
+records the revision, clean-diff hash and binary hash it ran on, and that revision is the commit claimed.
+A reviewer who finds a baseline, the registry, the verifier or an exact test changed by a module that does
+not own it, with no ruling here, records a Must Fix.
 
 | Baseline | Owner | What it pins | Compared by | Covered paths |
 |---|---|---|---|---|
@@ -1082,7 +1079,7 @@ identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan 
   content key, revision and binary or Wasm hashes; each failed image and its matching bytes, lossless; an image
   of where they differ, with the count of differing pixels, their bounds and the largest difference; and the
   passing run's record on the same content key. The module's log gains one line that links it. At the review of
-  a work package that carries the verifier (rule 3), the reviewer reads each record. A run set aside without one,
+  the refresh or disputed result, the reviewer reads each record. A run set aside without one,
   or a difference image that shows anything but those lines, is a Must Fix.
 - **When it ends.** With the landing that puts `CULLING` WP3's coverage output on main. On content that holds
   the output, a failure of this kind is evidence that the correction does not hold on that target: the builder
@@ -1137,8 +1134,8 @@ for `APPLE-TILE` to resolve it.
 - **The record.** In the module's evidence folder, for each run set aside: the failed run's record with its
   content key, revision and Wasm hashes; the failed capture's manifest; the records that differ, with both
   identities; the time of each callback from the capture's `runtime.json`, where the scratch still holds it;
-  and the passing run's record. The module's log gains one line that links it. At the review of a work package
-  that carries the verifier (rule 3), the reviewer reads each record. A run set aside without one is a Must Fix.
+  and the passing run's record. The module's log gains one line that links it. At the review of the refresh or
+  disputed result, the reviewer reads each record. A run set aside without one is a Must Fix.
 - **`REPO-RULES` WP1.** The failed half of its record is on its branch. Its builder rebases, runs the verifier
   unchanged and lands as for any covered change. None of its items changes.
 - **When it ends.** With the landing that makes a fixed capture commit every due tick whatever real time its
@@ -3164,3 +3161,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   entries on writing a test), which WP12 waits for. Seam ruling 14 and two interfaces were added, and the
   project settings gained three rules for the tests a plan adds. The hourly whole run on main keeps no `gpu`
   lock. No other module's dependency or open item changed.
+- 2026-11-24 [Exact baselines](#exact-baselines) no longer assigns the scheduled run to work-package items.
+  Orchestrate refuses `main-check` from an item check. The lead's working assumption is that the scheduled
+  `exact-images` run and the merge-time reference guard suffice for ordinary landings. Planned refreshes
+  and verifier-specific qualifications keep their own proofs.

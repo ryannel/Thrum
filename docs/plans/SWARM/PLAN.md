@@ -68,7 +68,7 @@ of the work, given only the items, the quality bar and `examples/swarm/CONCEPT.m
 
 ## WP5 Four scripted players share one run on a simulated bad connection: every copy of the game stays identical, a player joins mid-run, one drops and returns, and upgrades are chosen together
 
-Criteria: WP5.1–WP5.9 in the done-when file.
+See the [WP5 items](DONE.json).
 
 `SESSION` left the session in `thrum-network`, the scripted players and the match harness in
 `examples/match-proof`, and `scripts/session_match.py`; `TRANSPORT` left the in-memory conditioned link in
@@ -77,7 +77,7 @@ leave it and `thrum-transport` as they are.
 
 ## WP6 The game plays alone on the iPhone simulator by touch, in both orientations, clear of the notch and the home indicator
 
-Criteria: WP6.1–WP6.6 in the done-when file.
+See the [WP6 items](DONE.json).
 
 `GAME-UI` WP6 left the iOS shell in `thrum-app`, generic over a game, with the V1 game's app and the crowd
 view's as its users. `swarm-ios` is the third. A change the shell needs is a proposal in the log, not an edit
@@ -85,7 +85,7 @@ here.
 
 ## WP7 A player hosting on this Mac and a friend who opens a link in Chrome play a run together over a real connection, each hero answering at once
 
-Criteria: WP7.1–WP7.11 in the done-when file.
+See the [WP7 items](DONE.json).
 
 `SESSION` WP7 left the driven world in `thrum-core` and `thrum-app`, and a windowed match of the reference
 crowd that shows a driver fed by a session. `TRANSPORT` left the socket adapters, the relay and
@@ -93,7 +93,7 @@ crowd that shows a driver fed by a session. `TRANSPORT` left the socket adapters
 
 ## WP8 Two to four players on a Mac, in Chrome and on the iPhone simulator play a whole run together through delay and loss, the owner has played and accepted it, and track 3 is closed
 
-Criteria: WP8.1–WP8.13 in the done-when file.
+See the [WP8 items](DONE.json).
 
 The maturity ledger is `docs/design/maturity.json`. Do every other item before stopping for the owner's play,
 with the closing record and the ledger not yet saying track 3 is closed; add that afterwards, quoting the

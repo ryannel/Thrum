@@ -1261,16 +1261,6 @@
           "review": ""
         },
         {
-          "id": "WP13.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
           "id": "WP13.14",
           "statement": "After the craft is removed, its submitted Metal foam stocks keep the trail through at least the aged film's lifetime, with a wider and thinner trail at later readings and a faded final reading. Guard: the existing craft trail test uses a smaller fixture or fewer submitted steps, keeps those assertions, and passes on the default nextest profile with comfortable headroom under the 10 s per-test limit. Record the isolated time.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p water-scene --test foam_scene_gpu -E 'test(=craft_trail_outlives_removed_source_and_spreads)' --test-threads 1 --no-tests=fail",
@@ -1409,16 +1399,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP8.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -1502,16 +1482,6 @@
           "statement": "With the channel in view, the paired cost record is taken again at 2560\u00d71440, beside the island's record. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene channel",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP9.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1621,16 +1591,6 @@
           "statement": "With the lens half under and wholly under, at sea and in the lake, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same places seen from above. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene under",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP15.10",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1775,16 +1735,6 @@
           "statement": "From 3 m under the sea and the lake in a trade wind, and from 2 m above the beach's shallows, the paired cost record is taken again at 2560\u00d71440, beside WP15's record for the same places, with the caustic field's and the shafts' passes by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene under-light",
           "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP16.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1940,16 +1890,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP10.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -2073,16 +2013,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP14.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
         }
       ]
     },
@@ -2200,16 +2130,6 @@
           "id": "WP11.10",
           "statement": "The maturity ledger's `E1.water` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every file copied or translated from Broadsides is named with its source commit and path, with the licence of any material that came into Broadsides from elsewhere.",
           "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance record match the files in the water's packages, and is any listed material GPL or share-alike?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP11.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

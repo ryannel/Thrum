@@ -88,8 +88,9 @@ Spend the time where reviews here have found defects. Of 21 Must Fix findings in
 reading code or from a reviewer's own CPU probe, one from the exact verifier and one from stills. So read the
 code, write a small CPU test for anything you doubt, and look at the captures.
 
-The exact images are verified on main by the main-branch check `exact-images`. An item whose check is
-`python3 scripts/exact_baselines.py verify` passed from that shared run, so don't start a full run for it.
+The scheduled main-branch check `exact-images` verifies the registered images after merges.
+For a planned refresh, read the work package's verifier record under
+[the baseline rules](../../../../docs/plans/ARCHITECTURE.md#exact-baselines).
 
 ## Visual reviews
 

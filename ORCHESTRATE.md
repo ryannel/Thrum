@@ -69,9 +69,11 @@ Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on
 - **The proof of record** is the script's run of `./dev check` and every item's check on the merged tip. Prove a
   thing on your branch once, merge, and don't prove it again after a rebase: rerun only what the script says
   failed. A visual work package takes one capture pass, after its last merge.
-- **Exact images** are verified on main after the merge, by the main-branch check `exact-images`. No proof is
-  needed before a merge. An item whose check is `python3 scripts/exact_baselines.py verify` passes from that
-  shared run: set it `pass` with the evidence `main-branch check exact-images`, and don't run it yourself.
+- **Exact images** are verified after merges by the scheduled main-branch check `exact-images`.
+  `./dev check` runs the reference guard before a merge. Planned refreshes follow
+  [the baseline rules](docs/plans/ARCHITECTURE.md#exact-baselines).
+- **Main-branch checks** guard the merged branch. An item check must prove what the work package can show
+  on its own checkout. Orchestrate refuses item checks that call `main-check`, including through a wrapper.
 - **A lock is about capacity.** A command takes one lock, for the device it loads most, around the part that needs
   it. It never takes a second lock and never runs `merge` inside one. `gpu.alone` is only for a run that needs the
   whole GPU, such as all its memory. It doesn't make a timing trustworthy, because builds elsewhere take no lock.
@@ -297,9 +299,9 @@ before. The two rules for how a test is written need nothing built: they bind a 
   heavy, in the landing that adds it. A failed test is not run again, but for the one second run of a test the
   limit stopped. `./dev check` needs cargo-nextest installed, and says so where it is missing.
 - **A change is tested where it is made.** A builder runs the tests of what it touched while it works, and
-  `./dev check` once, to merge. A work package that changes what a long test or a test behind a feature guards
-  carries an item whose check is `python3 "$ORCHESTRATE_SCRIPT" main-check long-tests`, so it is not Done until
-  those tests pass on main with its commit in.
+  `./dev check` once, to merge. When a work package changes what a long test or a test behind a feature
+  guards, its item runs the affected test or a focused check of that behaviour. The scheduled `long-tests`
+  check runs the full main tier on main.
 - **A diagnostic runs in no tier.** A physical or f64 reference is run by hand, when output looks wrong.
 
 ## Rules

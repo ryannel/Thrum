@@ -141,16 +141,6 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
-        },
-        {
-          "id": "WP1.12",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
         }
       ]
     },
@@ -304,16 +294,6 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
-        },
-        {
-          "id": "WP2.14",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
         }
       ]
     },
@@ -453,16 +433,6 @@
           "check": "python3 scripts/game_ui.py costs --target chrome-webgpu --layout",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
-        },
-        {
-          "id": "WP3.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
           "evidence": "",
           "verdict": "",
           "review": "",
@@ -619,16 +589,6 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
-        },
-        {
-          "id": "WP4.13",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
         }
       ]
     },
@@ -712,16 +672,6 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
-        },
-        {
-          "id": "WP5.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
         }
       ]
     },
@@ -799,16 +749,6 @@
           "id": "WP6.7",
           "statement": "The creator guide tells a game maker how to give a game a window, a page and an iPhone app from the shared shells, and the maturity ledger says what the shared iOS shell proved and that a physical iPhone is owed.",
           "ask": "Could a game maker make the iPhone app of a new game from the guide without reading `examples/v1-game-ios`? Does the ledger keep simulator function apart from any device claim?",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
-        },
-        {
-          "id": "WP6.8",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

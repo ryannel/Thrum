@@ -453,16 +453,6 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
-        },
-        {
-          "id": "WP7.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
-          "verdict": "",
-          "review": ""
         }
       ],
       "failed_reviews": 0,
@@ -586,16 +576,6 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
-        },
-        {
-          "id": "WP8.11",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this work package moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
-          "verdict": "",
-          "review": ""
         },
         {
           "id": "WP8.12",
