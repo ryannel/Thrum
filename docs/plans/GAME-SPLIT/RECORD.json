@@ -193,7 +193,7 @@
         {
           "verdict": "fail",
           "commit": "39fa9fef7dad6041f58482c21dca8c64af9a944e",
-          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review-1.md",
           "items": {
             "WP3.1": "fail",
             "WP3.2": "pass",
@@ -239,6 +239,64 @@
             "turns": 1
           },
           "at": "2026-11-24T23:17:23Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "b43690153d33bf0d058f77b907dc8d807bdd15a1",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "items": {
+            "WP3.1": "fail",
+            "WP3.2": "pass",
+            "WP3.3": "fail",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "HOST lifecycle checks load the shipping browser bundle",
+              "item": "WP3.3",
+              "different": "The old extent and scale hooks were removed. This failure is in a pinned consumer that still supplies the shipping directory for its proving run.",
+              "repeat": false
+            },
+            {
+              "name": "Exact-image verification records the wrong Wasm artifact hashes",
+              "repeat": false
+            },
+            {
+              "name": "The ordinary browser game exports the endpoint image oracle",
+              "item": "WP3.3",
+              "different": "The previous extent global and render-scale method are absent. A separate pair of Wasm methods still drives the GPU readback used by engine oracles.",
+              "repeat": false
+            },
+            {
+              "name": "The game-only native setup selects the reference reconstructor",
+              "item": "WP3.1",
+              "different": "The earlier diagnostic cloud and route overlay selections are gated. The independent reference renderer is selected by a different GameSetup field and launch variable.",
+              "repeat": false
+            },
+            {
+              "name": "The atmosphere cost rig builds with proving disabled",
+              "item": "WP3.1",
+              "different": "The renderer measurement example is an independently buildable executable. The previous findings concerned library selections, test manifest declarations and compilation of the clear-sky test.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 104408,
+            "cached": 3543552,
+            "output": 11513,
+            "turns": 1
+          },
+          "at": "2026-11-24T23:58:57Z"
         }
       ],
       "authorised": {
