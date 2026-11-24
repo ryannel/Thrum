@@ -669,7 +669,32 @@
     },
     "M8": {
       "definitions": "f22a03e97bb4613a2dc6784c0b4029e6afb856eb7078022ed10fad545b7c01ad",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "4a1ab70e79f009132fb43a05354361e828164e48",
+          "review": ".orchestrate/evidence/SESSION/M8-review.md",
+          "items": {
+            "M8.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 51183,
+            "cached": 414720,
+            "output": 2268,
+            "turns": 1
+          },
+          "at": "2026-11-24T00:17:53Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The hourly workspace-tests check on main (`./dev check-all`, with a 10 s per-test limit and one rerun alone) keeps faili",
@@ -703,6 +728,13 @@
           "output": 24794,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "4a1ab70e79f009132fb43a05354361e828164e48",
+        "review": ".orchestrate/evidence/SESSION/M8-review.md",
+        "checked": "ac00513a21d8b96ca6f47b9cb17c0ca16cc912b7",
+        "at": "2026-11-24T00:17:53Z"
       }
     }
   },
