@@ -346,8 +346,8 @@
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Does the covering log show the original full-size replay test running and passing in the long tier on a main commit that includes this repair?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-ENGINE/M6/README.md; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests-run.json; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests.stdout.log; .orchestrate/evidence/REVIEW-ENGINE/M6/long-tests.stderr.log",
           "verdict": "",
           "review": ""
         }

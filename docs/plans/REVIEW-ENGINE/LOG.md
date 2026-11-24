@@ -3,7 +3,8 @@
 - 2026-11-24 M6 uses a 4,097-mover test in the merge tier and preserves the original 100,000-entity case
   in the long tier. The mac-metal default workspace build passed the compact case in 0.068 s alone and
   0.075 s on the first attempt under builder load. Nextest skipped the original in the default tier.
-  The shared long-tests proof needs a main commit containing the repair.
+  The shared long-tests check passed on main at `d13125a25275`, which contains the repair. The original
+  replay ran once in release with overflow checks and passed in 1.48 s.
   [M6 evidence](../../../.orchestrate/evidence/REVIEW-ENGINE/M6/README.md).
 
 - 2026-11-18 M5 shares the deferred tick's undo, prepares each cook source once and packs six sea transforms per band.
