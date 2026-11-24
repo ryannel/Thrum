@@ -954,7 +954,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.2-resumed.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.2-current.txt",
           "verdict": "",
           "review": ""
         },
@@ -995,7 +995,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.6-resumed.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.6-current.txt",
           "verdict": "",
           "review": ""
         },
@@ -1016,7 +1016,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.8-resumed.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/M7.8-current.txt",
           "verdict": "",
           "review": ""
         },
