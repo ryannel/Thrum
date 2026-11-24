@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/RIVERS/design-review.md",
-    "commit": "8366452380db1ec9c3ba722ad6a8fcf40acf913c",
-    "hash": "f5c8ab1d2cebd21f41868bb98bc6768c63be527f786f0b3f0c9dbd05d2c29a50",
+    "commit": "dbfa0a6c05eb9deb8173ce2f41039647e23555e2",
+    "hash": "d5522527c2df01dcc88ab0866598f4117d22665724432f933d58b0d5698be441",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,15 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 75223,
-      "cached": 731136,
-      "output": 3973,
+      "input": 119137,
+      "cached": 514432,
+      "output": 3059,
       "turns": 1
     },
-    "at": "2026-11-23T12:31:50Z",
-    "items_owed": [
-      "M9"
-    ]
+    "at": "2026-11-24T01:16:23Z"
   },
   "milestones": {
     "M1": {
@@ -765,6 +762,32 @@
       "at": "2026-11-18T05:23:05Z",
       "items_owed": [
         "M8"
+      ]
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/RIVERS/design-review-7.md",
+      "commit": "8366452380db1ec9c3ba722ad6a8fcf40acf913c",
+      "hash": "f5c8ab1d2cebd21f41868bb98bc6768c63be527f786f0b3f0c9dbd05d2c29a50",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 75223,
+        "cached": 731136,
+        "output": 3973,
+        "turns": 1
+      },
+      "at": "2026-11-23T12:31:50Z",
+      "items_owed": [
+        "M9"
       ]
     }
   ]
