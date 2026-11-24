@@ -406,6 +406,13 @@
       ],
       "scope": "GPU pass label reuse and callback lifecycle only. Whole-frame profiler, clustered forward, CSM, exposure, sustained allocation and device frame budgets remain open."
     },
+    "review_render_m5": {
+      "implementation": "Frame slots stamp submission identity before submit and publish from reusable records after a separate resolve. The host graph owns presentation.",
+      "functional_validation": "Metal frame accounting, counter refusal causes, timing demand, and surface rotation checks passed. The Mac V1 test observed zero allocations in warm completion publication.",
+      "experienced_quality": "Exact image verification is assigned to the shared Metal and Chrome run on main.",
+      "platform_performance": "Paired portable 1080p valley route pass sums on Apple M3 Max under shared load. The before and after records retain all timings and process load.",
+      "evidence": "../../.orchestrate/evidence/REVIEW-RENDER/M5/README.md"
+    },
     "M2_hdr_display": {
       "implementation": "partial_two_pass_synthetic_scene_and_fixed_sdr_display",
       "functional_validation": "independent_f64_oracle_graph_closure_scoped_tests_and_real_metal_gpu_test",

@@ -83,3 +83,8 @@
   Bucket storage and dispatch limits and sprite row admission have distinct diagnostics. Verified the callback,
   capacity and recovery cases on the M3 Max and checked the iOS simulator target and Wasm builds.
   [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M4/review-fix-audit.md).
+- 2026-11-24 Built M5. GPU pass timings carry the recorded frame's device generation and submission order.
+  The Metal checks accounted for twelve published batches, a discard and a retirement. The V1 allocator
+  observed zero allocations across 120 warm timing publications. Resize and rotation compiled no
+  standalone surface graph. The paired valley route retains 1,083 samples before and after under shared
+  load. Exact images use the shared main-branch run. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M5/README.md).

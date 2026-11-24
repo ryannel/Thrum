@@ -297,7 +297,7 @@
     {
       "id": "M5",
       "name": "A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -311,8 +311,8 @@
           "lock": "gpu",
           "ask": "Over the test's run of timed frames on this Mac, is every frame accounted for as published, refused with a reason or still pending, and does each published timing carry the frame it was recorded in? Does the test feed a stale, a zero and an inverted pair and see each refused? Is the resolve still encoded only after the render's completion, in a later submission? Does the game's frame-allocation test now cover a completed, timed frame? With the timing-demand switch off, is anything gathered?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m51-frame-timing and .orchestrate/evidence/REVIEW-RENDER/M5/rebased-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -323,8 +323,8 @@
           "lock": "gpu",
           "ask": "Is there any public presenter entry point that no production caller uses?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m52-presenter and .orchestrate/evidence/REVIEW-RENDER/M5/rebased-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -333,8 +333,8 @@
           "statement": "Paired frame records before and after are on file for the valley on the Mac, with the load. No figure in them decides this item.",
           "ask": "Are both rows from the same route and build settings at named commits?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M5/README.md#m53-paired-valley-frames",
           "verdict": "",
           "review": ""
         },
@@ -343,8 +343,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
