@@ -201,10 +201,15 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let phase=cloud_phases(ray,atmosphere.sun_lux.xyz);
     let light_angles=cloud_light_angles(-ray);
     let sun_alignment=dot(ray,mapping.path_border.xyz);
+    // The sky behind the layer includes the high radiance of the solar disc.
+    // Within its filtered footprint use the full transmission range of RGBA16F.
+    let solar_margin = cloud.sun_angular_radius + 4.0 / f32(size.y);
+    let covers_disc = dot(ray, atmosphere.sun_lux.xyz) >= cos(solar_margin);
+    let transmission_floor = select(0.001, 1e-8, covers_disc);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=begin;var samples=0u;
-    for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>0.001;i++) {
+    for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>transmission_floor;i++) {
         samples+=1u;
         let step=min(end-distance,max(cloud.heights.z,distance*0.002));
         let at=distance+step*0.5;let point=air_camera+ray*at;

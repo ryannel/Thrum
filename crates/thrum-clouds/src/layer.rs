@@ -70,7 +70,7 @@ struct Uniform {
     drift: [f32; 4],
     heights: [f32; 4],
     light_samples: u32,
-    padding: u32,
+    sun_angular_radius: f32,
     render_extent: [u32; 2],
     temporal: [u32; 4],
     noise: [f32; 4],
@@ -345,7 +345,7 @@ impl Layer {
                 200_000.0,
             ],
             light_samples: self.profile.light_samples,
-            padding: 0,
+            sun_angular_radius: environment.true_sun.angular_radius_radians,
             render_extent: frame.render_extent,
             temporal: [
                 u32::from(!reset && !frame.time.capture),
