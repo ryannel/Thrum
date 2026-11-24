@@ -23,7 +23,7 @@ impl std::fmt::Display for Stopped {
 impl std::error::Error for Stopped {}
 
 pub(super) fn is_stopped(error: &io::Error) -> bool {
-    error.get_ref().is_some_and(|cause| cause.is::<Stopped>())
+    matches!(error.get_ref(), Some(cause) if cause.is::<Stopped>())
 }
 
 const CHUNK: usize = 4 * 1024 * 1024;
