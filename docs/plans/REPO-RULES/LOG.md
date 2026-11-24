@@ -101,3 +101,9 @@
   evidence manifest. WP5.2 exercises the production link check before and after restoring the original G7 bytes,
   including a valid heading link and a broken link from a tracked page. WP5 still lands before WP3 and WP4.
   Mechanism 4 also names the manifest WP2 committed at `7a5d16f30`, as the review suggested.
+- 2026-11-24 WP5 restored the two done-when readers and archived the last three tracked evidence records.
+  The shape-rule suite and history recovery passed on the Mac. The G7 fixture resolves `#checks` before and
+  after restore and still reports broken links from tracked Markdown. The existing working-folder G7 copy
+  was preserved, with the original bytes saved beside [the WP5 proof](../../../.orchestrate/evidence/REPO-RULES/WP5/).
+  `./dev check-docs` passed after rebasing onto the ATMOSPHERE planner's anchor correction in `6f77f8151`.
+  The shared `exact-images` check supplies the post-merge image proof.
