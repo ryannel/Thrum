@@ -95,9 +95,11 @@ impl WeatherSequence {
                     60.0
                 };
                 let coverage_blend = ease(elapsed / coverage_duration);
-                // Clear a thinning deck before returning to the fair type.
+                // Return to the fair type only after the layer has cleared.
+                // Bringing up its cumulus sooner can grow new clouds in the
+                // last thin patches of the dissolving deck.
                 let kind_blend = if to == WeatherPreset::Clear {
-                    ease((elapsed - 50.0) / 10.0)
+                    ease((elapsed - 60.0) / 10.0)
                 } else {
                     ease(elapsed / 60.0)
                 };
