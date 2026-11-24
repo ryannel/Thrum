@@ -440,10 +440,10 @@
           "statement": "The shared main-branch check long-tests passes on a commit containing the completed M3 changes, including the feature-gated generation inventory repaired in M3.12.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M3/M3-long-tests-receipt.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
