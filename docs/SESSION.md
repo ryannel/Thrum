@@ -172,11 +172,24 @@ The socket program uses these arguments, in order.
 | `socket-client` | `TICKET BODIES CONTROLLER CONTROL_FILE TOKEN_FILE TRACE` |
 
 For `sockets game`, the controller is `bbr`, listen is `false` and the trace is `default`. Start the authority
-clock when the runner writes `run` to the host control file. Flush each event as one line of JSON. The host
-reports `host` with its ticket, PID, rule-set identity and digest interval, then `image`, `start`, `commit`,
-`digest` and `finish` events. A client reports `client` with its PID, `baseline` with its restored image and
-rule-set identity, its `digest` events and an `Ended` state at the final tick. Follow the reference fields
-and timing. [Host and native client](../examples/match-proof/src/sockets/native.rs), [client events](../examples/match-proof/src/sockets.rs)
+clock when the runner writes `run` to the host control file. Flush each event as one JSON object per line,
+with an `event` key and the fields below. Use the same digest encoding on both endpoints.
+
+| Endpoint | Event | Fields |
+| --- | --- | --- |
+| Host | `host` | `ticket` as text, `pid`, `rule_set`, `digest_interval` |
+| Host | `image` | Baseline `tick`, `digest`, `bytes` |
+| Host | `start` | `clock_us` on the host's monotonic clock |
+| Host | `commit` | `tick`, `clock_us`, per-slot `admissions` booleans and cumulative `held` counts |
+| Host | `finish` | Final `tick` |
+| Native client | `client` | `pid` |
+| Client | `baseline` | Restored `tick`, `digest`, `bytes`, `rule_set` |
+| Both | `digest` | `tick`, `digest` at every positive multiple of the interval |
+| Client | `state` | Committed `tick` and `state`, formatted as `Ended(...)` at the final tick |
+
+The runner starts after each client has restored the lobby at tick zero. Continue advancing after the last
+commit so the host can deliver the end of the match. [Reference host and native client](../examples/match-proof/src/sockets/native.rs),
+[reference client events](../examples/match-proof/src/sockets.rs)
 
 For Chrome, put your `socket_player.js` beside the `match_proof.js` and `match_proof_bg.wasm` generated from
 your game by `wasm-bindgen --target web --out-name match_proof`. The runner serves the directory's three

@@ -19,12 +19,12 @@ class GameSelection(unittest.TestCase):
             directory = Path(scratch)
             program = directory / "game-match"
             output = directory / "proof.json"
-            program.write_text(f"""#!{sys.executable}
+            program.write_text("""#!/usr/bin/env python3
 import json
 import sys
 assert sys.argv[1:] == ["memory", "harsh", "2"]
-world = {{"tick": 2, "rule_set": "fe" * 32, "digests": [[1, "first"], [2, "second"]]}}
-print(json.dumps({{"digest_interval": 1, "host": world, "players": [world]}}))
+world = {"tick": 2, "rule_set": "fe" * 32, "digests": [[1, "first"], [2, "second"]]}
+print(json.dumps({"digest_interval": 1, "host": world, "players": [world]}))
 """)
             program.chmod(0o700)
             command = [sys.executable, SCRIPT, "memory", "game", "--program", program,
