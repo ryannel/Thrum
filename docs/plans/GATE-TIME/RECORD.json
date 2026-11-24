@@ -1193,6 +1193,35 @@
         "by": "plan",
         "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 1 Must Fi",
         "at": "2026-11-24T03:15:50Z"
+      },
+      "ready_for_review": {
+        "commit": "21c9296e55121464560b2b720ad4d7f594214080",
+        "checked": "a864268f5ce228af432525baddb2378c1305d754",
+        "at": "2026-11-24T04:23:05Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 266457,
+          "cached": 31692672,
+          "output": 72681,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 266457,
+          "cached": 31692672,
+          "output": 72681,
+          "turns": 1
+        }
       }
     }
   },

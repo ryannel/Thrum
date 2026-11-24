@@ -808,7 +808,7 @@
     {
       "id": "M14",
       "name": "The full workspace check passes when a fast test needs more time on a busy Mac",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "The fast-test guard holds at ten seconds on every merge. On the busy Mac, the workspace check accepts a slow but successful rerun within its bounded window and reports the time it cost.",
       "items": [
         {
