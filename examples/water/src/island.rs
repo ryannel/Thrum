@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, MeshPlacement, SkyGame};
-use thrum_sea_model::{Component, Forcing, SeaError, Spectrum};
+use thrum_sea_model::{Forcing, Spectrum};
 use thrum_water::Water;
 use thrum_water_model::{
     Bed, Body, BodyKind, BreakerSection, Map, Profile, SectionPoint, Stage, SurfProfile,
@@ -112,41 +112,8 @@ pub fn map(wind: Wind) -> Result<Map, Box<dyn Error>> {
 pub fn surf_inputs(wind: Wind) -> Result<(Map, Spectrum), Box<dyn Error>> {
     let forcing = wind.surf_forcing();
     let map = island_map(&forcing, Some(true))?;
-    let spectrum = surf_spectrum(&forcing).map_err(|e| format!("{e:?}"))?;
+    let spectrum = Spectrum::build(&forcing).map_err(|e| format!("{e:?}"))?;
     Ok((map, spectrum))
-}
-
-// The inspection scene needs a distinct 10 s swell that can be followed
-// through the wind sea. Keep the ordinary wind spectrum and use one narrow
-// train with two sidebands for its varying crest heights.
-fn surf_spectrum(forcing: &Forcing) -> Result<Spectrum, SeaError> {
-    let Some(swell) = forcing.swells.first() else {
-        return Spectrum::build(forcing);
-    };
-    let mut wind = forcing.clone();
-    wind.swells.clear();
-    let mut spectrum = Spectrum::build(&wind)?;
-    let (z, x) = swell.direction.sin_cos();
-    let amplitude = swell.significant_height / (2.0 * 2.0_f64.sqrt());
-    let weight = [0.33_f64, 0.88, 0.33];
-    let norm = weight.iter().map(|a| a * a).sum::<f64>().sqrt();
-    // These are the longest lattice cells. The wind contributes zero
-    // energy at their frequencies, leaving their slots for the swell.
-    for (i, ((period_ratio, weight), phase)) in
-        [(0.88_f64, weight[0]), (1.0, weight[1]), (1.13, weight[2])]
-            .into_iter()
-            .zip([0.45, 0.0, -0.6])
-            .enumerate()
-    {
-        let k = std::f64::consts::TAU / (swell.wavelength * period_ratio.powi(2));
-        debug_assert!(spectrum.long[i].amplitude.abs() < 1e-14);
-        spectrum.long[i] = Component {
-            wave_vector: [k * x, k * z],
-            amplitude: amplitude * weight / norm,
-            phase,
-        };
-    }
-    Ok(spectrum)
 }
 
 /// The island's shared draw and query parameters for its surf forcing.
@@ -364,12 +331,7 @@ fn build_island(
         wind.forcing()
     };
     let map = island_map(&forcing, surf)?;
-    let spectrum = if surf_route {
-        surf_spectrum(&forcing)
-    } else {
-        Spectrum::build(&forcing)
-    }
-    .map_err(|e| format!("{e:?}"))?;
+    let spectrum = Spectrum::build(&forcing).map_err(|e| format!("{e:?}"))?;
     let map = Arc::new(Mutex::new(map));
     let mut profile = if surf_route {
         surf_water_profile(&spectrum)

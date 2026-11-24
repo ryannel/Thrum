@@ -783,3 +783,23 @@
   alternative lee view still showed a raised wave. Kept these cameras as
   experiments. [Chrome timing](../../../.orchestrate/evidence/WATERS/M13/continuous-chrome-clock-receipt.json) ·
   [Metal overview stills](../../../.orchestrate/evidence/WATERS/M13/overview-fixed-receipt.json).
+
+- 2026-11-24 Implemented the revised bounded swash with references on the prepared
+  still-water contours. The CPU model and GPU share the shoreward phase, the
+  wet floor under the displaced bore and the clearance taper for short geometry.
+  The plane beach retains both regular-wave extrema with a resolved short wave.
+  The Chrome fixed clock submits at the requested checkpoints. At 2.000 s
+  hardware Chrome compared 15,983 cache nodes with 0.759 mm maximum error and
+  zero faults. Native Metal recorded 48 gale stations and 51,108,744 cut nodes
+  in the paired 1440p cost run, with 19.02 s in the query pass under concurrent
+  load. [Target receipts and scope](../../../.orchestrate/evidence/WATERS/M13/bounded-swash-iteration.md).
+
+- 2026-11-24 Three fresh reads of submitted 40 m Metal motion could follow
+  one breaking front into the wash. None could follow two adjacent ridges
+  turning and packing together across the approach. The first take still
+  exposed a sand-colored patch. The second reduced the patch and left a
+  local facet. An authored narrow swell made the entrance more coherent
+  in the third take, where an isolated sand patch and a doubled lip returned.
+  Retained the second take. Review the visible scale of the crest and the
+  combined displacement at the bore before tuning again.
+  [Three takes and the measured positions](../../../.orchestrate/evidence/WATERS/M13/bounded-swash-iteration.md).
