@@ -603,10 +603,10 @@
           "lock": "gpu",
           "ask": "Does engine capture read the float target the surface was given in this mode, without changing what it records in the 8-bit mode?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/drawable-capture/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D6.7",

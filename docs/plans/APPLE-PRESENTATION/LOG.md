@@ -355,3 +355,9 @@
   extents on both display paths and bounds staging and writer leases across promotion. All seven target checks
   and the Mac visual inspection passed. Chrome hardware WebGPU matched all 481 retained fixed-day SDR frames.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/after-m15/README.md).
+
+- 2026-11-24 M6 capture review fixes. Float capture follows the configured drawable and preserves the full
+  letterboxed image before and after resize. The tap now reuses the session's copy-timing objects during
+  promotion and resize. Metal verified the shared byte and slot limits, capture recovery and zero timed-copy
+  allocations of pipelines, bind groups or query sets on the Mac render owner.
+  [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/M6/drawable-capture/README.md).
