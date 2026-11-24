@@ -158,10 +158,11 @@ pub(super) fn reserve(
     generation: u64,
     extent: [u32; 2],
     source: CaptureSource,
+    timing_requested: bool,
 ) -> Option<(usize, &mut PixelReadback)> {
     tap.as_mut()
         .filter(|tap| tap.source != CaptureSource::Edr)
-        .and_then(|tap| tap.reserve(generation, extent, source))
+        .and_then(|tap| tap.reserve(generation, extent, source, timing_requested))
 }
 
 pub(super) fn copy_drawable(
@@ -170,6 +171,7 @@ pub(super) fn copy_drawable(
     surface: Option<&super::SurfaceOutput<'_>>,
     scene: Option<&crate::synthetic::PreparedSynthetic>,
     encoder: &mut wgpu::CommandEncoder,
+    timing_requested: bool,
 ) -> Result<Option<usize>, FrameError> {
     let (Some(tap), Some(surface), Some(scene)) = (tap, surface, scene) else {
         return Ok(None);
@@ -179,8 +181,12 @@ pub(super) fn copy_drawable(
         tap.omitted += 1;
         return Ok(None);
     }
-    let Some((index, readback)) = tap.reserve(generation, surface.extent, CaptureSource::Edr)
-    else {
+    let Some((index, readback)) = tap.reserve(
+        generation,
+        surface.extent,
+        CaptureSource::Edr,
+        timing_requested,
+    ) else {
         return Ok(None);
     };
     if let Err(error) =
@@ -348,6 +354,7 @@ impl Tap {
         generation: u64,
         extent: [u32; 2],
         source: CaptureSource,
+        timing_requested: bool,
     ) -> Option<(usize, &mut PixelReadback)> {
         if !self.accepting {
             return None;
@@ -365,6 +372,7 @@ impl Tap {
             slot.reserved = true;
             slot.timing_collected = false;
             slot.copy_ns = None;
+            slot.readback.set_copy_timing_requested(timing_requested);
             Some((index, &mut slot.readback))
         } else {
             self.omitted = self.omitted.saturating_add(1);

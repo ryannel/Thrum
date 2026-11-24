@@ -133,6 +133,106 @@ fn timing_demand_switches_with_both_slots_in_flight_and_survives_replacement() {
     });
 }
 
+#[test]
+fn timing_replay_across_slots_and_after_a_refusal_never_publishes() {
+    use crate::{runtime::SlotState, timing::TimingRefusal};
+
+    fn complete_mapping(host: &mut Host, index: usize, pair: impl Fn(usize) -> [u64; 2]) {
+        let slot = &mut host.slots[index];
+        let state = std::mem::replace(&mut slot.state, SlotState::Free);
+        let SlotState::Rendering(sample) = state else {
+            panic!("the frame must have submitted");
+        };
+        host.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_secs(5)),
+            })
+            .unwrap();
+        let resolve = crate::timing::tests::inject_readback(
+            &mut slot.timings,
+            &host.device,
+            &host.queue,
+            pair,
+        );
+        slot.state = SlotState::Resolving(sample);
+        host.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(resolve),
+                timeout: Some(Duration::from_secs(5)),
+            })
+            .unwrap();
+    }
+
+    let Some(test_gpu) =
+        thrum_test_support::gpu("cross-slot timestamp replay", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    pollster::block_on(async {
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
+        let mut host = host(&capabilities, &queue, Policy::default()).await;
+        let pairs = |base, index| [base + index as u64 * 10, base + index as u64 * 10 + 5];
+        for (round, expected) in [
+            [None, Some(TimingRefusal::Repeated)],
+            [Some(TimingRefusal::Zero), Some(TimingRefusal::Repeated)],
+            [None, None],
+            [Some(TimingRefusal::Sentinel), Some(TimingRefusal::Inverted)],
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            pending_slots(&mut host);
+            let base = (round as u64 + 1) * 1000;
+            // Deliver the later mapping first, with the same real pass layout.
+            complete_mapping(&mut host, 1, |index| match (round, index) {
+                (1, 1) | (0, _) => pairs(base, index),
+                (3, 0) => [base + 501, base + 500],
+                _ => pairs(base + 500, index),
+            });
+            host.collect_frame_timings().unwrap();
+            assert!(host.completed.is_empty());
+            assert_eq!(host.timing_stats().pending, 2);
+            let before = host.timing_stats();
+            complete_mapping(&mut host, 0, |index| match (round, index) {
+                (1, 0) => [0, base],
+                (3, 0) => [u64::MAX, base],
+                _ => pairs(base, index),
+            });
+            host.collect_frame_timings().unwrap();
+            let mut observed = before;
+            for (index, reason) in expected.into_iter().enumerate() {
+                let sample = host.poll_completed().unwrap().unwrap();
+                assert_eq!(sample.submission_order, (round * 2 + index) as u64);
+                if let Some(reason) = reason {
+                    observed.refuse(reason);
+                    assert!(sample.timing_fault);
+                    assert!(sample.gpu_pass_ns.is_none());
+                    assert!(sample.gpu_present_ns.is_none());
+                    assert!(sample.gpu_contribution_ns.is_none());
+                } else {
+                    observed.published += 1;
+                    assert!(!sample.timing_fault);
+                    assert_eq!(
+                        sample
+                            .gpu_pass_ns
+                            .unwrap()
+                            .frame()
+                            .unwrap()
+                            .submission_order,
+                        sample.submission_order
+                    );
+                }
+            }
+            observed.pending = 0;
+            assert_eq!(host.timing_stats(), observed);
+        }
+        let stats = host.timing_stats();
+        assert_eq!(stats.gathered, stats.published + stats.total_refused());
+        println!("{stats:?}");
+    });
+}
+
 pub(super) async fn gpu(
     test_gpu: &thrum_test_support::Gpu,
     generation: u64,

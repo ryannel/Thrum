@@ -3,6 +3,27 @@ use super::{
 };
 use std::sync::Arc;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn inject_readback(
+    timings: &mut super::GpuTimings,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    pair: impl Fn(usize) -> [u64; 2],
+) -> wgpu::SubmissionIndex {
+    let enabled = timings.enabled.as_mut().unwrap();
+    assert!(matches!(enabled.phase, super::Phase::Rendering));
+    assert!(enabled.names.len() > 1);
+    assert_eq!(enabled.completion.ready(), Ok(true));
+    let bytes: Vec<_> = (0..enabled.names.len())
+        .flat_map(pair)
+        .flat_map(u64::to_le_bytes)
+        .collect();
+    queue.write_buffer(&enabled.readback, 0, &bytes);
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    enabled.map_readback(&mut encoder, bytes.len() as u64);
+    queue.submit([encoder.finish()])
+}
+
 #[test]
 fn completion_reports_failed_and_dropped_callbacks_and_reuses_the_owner() {
     let completion = Completion::new();

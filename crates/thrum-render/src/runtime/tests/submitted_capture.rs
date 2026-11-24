@@ -22,7 +22,8 @@ fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass(
                     &mut disabled,
                     1,
                     [65, 37],
-                    CaptureSource::Sdr
+                    CaptureSource::Sdr,
+                    true
                 )
                 .is_none()
             );
@@ -144,6 +145,56 @@ fn image(host: &mut FrameHost<StaticWorld, StaticScene>) -> super::super::Submit
         drop(host.poll_completed().unwrap());
         None
     })
+}
+
+#[test]
+fn submitted_copy_timing_follows_each_frames_demand_in_sdr_and_edr() {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("submitted copy timing demand", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    pollster::block_on(async {
+        for (format, source) in [
+            (wgpu::TextureFormat::Bgra8Unorm, CaptureSource::Sdr),
+            (wgpu::TextureFormat::Rgba16Float, CaptureSource::Edr),
+        ] {
+            let (mut host, output) = Box::pin(host_and_output(&test_gpu, format)).await;
+            host.set_timing_requested(false);
+            host.enable_submitted_capture(1).unwrap();
+            let view = output.create_view(&wgpu::TextureViewDescriptor::default());
+            let surface = SurfaceOutput {
+                view: &view,
+                extent: [output.width(), output.height()],
+            };
+            let mut expected_pixels = None;
+            for (order, requested) in [true, false, true].into_iter().enumerate() {
+                host.set_timing_requested(requested);
+                let before = host.timing_stats().gathered;
+                assert!(
+                    host.drive(Duration::ZERO, Some(&surface))
+                        .unwrap()
+                        .submitted
+                );
+                host.set_timing_requested(!requested);
+                let captured = image(&mut host);
+                assert_eq!(captured.sample.submission_order, order as u64);
+                assert_eq!(captured.sample.timing_requested, requested);
+                assert_eq!(captured.pixel_source, source);
+                if requested {
+                    assert!(captured.copy_gpu_ns.is_some_and(|time| time > 0.0));
+                    expected_pixels.get_or_insert_with(|| captured.rgba.clone());
+                } else {
+                    assert_eq!(captured.copy_gpu_ns, None);
+                    assert_eq!(Some(&captured.rgba), expected_pixels.as_ref());
+                }
+                assert_eq!(host.timing_stats().gathered, before + u64::from(requested));
+                host.recycle_submitted_image(captured);
+            }
+            assert_eq!(host.submitted_capture_omissions(), 0);
+            println!("{source:?}: timed, untimed and timed captures delivered");
+        }
+    });
 }
 
 #[test]

@@ -330,7 +330,7 @@ pub enum TimingRefusal {
     Sentinel,
     /// A pass ended before it began.
     Inverted,
-    /// A counter predates the last valid batch from this query set.
+    /// A pair overlaps counters already observed in earlier batches.
     Repeated,
     /// The batch belonged to a device that was replaced.
     RetiredDevice,
@@ -428,12 +428,24 @@ struct Enabled {
     capacity: u32,
     names: PassNames,
     frame: Option<TimingFrame>,
-    last_counter: u64,
     results: Vec<PassTiming>,
     preceding_gaps: Vec<Option<f64>>,
     timed_pass_span: Option<f64>,
     completion: Completion,
     phase: Phase,
+}
+
+impl Enabled {
+    fn map_readback(&mut self, encoder: &mut wgpu::CommandEncoder, bytes: u64) {
+        let mut ticket = self.completion.arm();
+        self.phase = Phase::Mapping;
+        encoder.map_buffer_on_submit(
+            &self.readback,
+            wgpu::MapMode::Read,
+            0..bytes,
+            move |result| ticket.complete(result.is_ok()),
+        );
+    }
 }
 
 enum Phase {
@@ -543,6 +555,7 @@ impl PassNames {
 pub struct GpuTimings {
     generation: u64,
     enabled: Option<Enabled>,
+    last_counter: u64,
 }
 impl GpuTimings {
     /// The passes one batch can time; zero for a disabled batch.
@@ -595,6 +608,7 @@ impl GpuTimings {
             return Ok(Self {
                 generation: capabilities.generation(),
                 enabled: None,
+                last_counter: 0,
             });
         }
         let device = capabilities.device();
@@ -626,6 +640,7 @@ impl GpuTimings {
         });
         Ok(Self {
             generation: capabilities.generation(),
+            last_counter: 0,
             enabled: Some(Enabled {
                 query,
                 resolve,
@@ -634,7 +649,6 @@ impl GpuTimings {
                 capacity: max_passes,
                 names: PassNames::with_capacity(max_passes as usize),
                 frame: None,
-                last_counter: 0,
                 results: Vec::with_capacity(max_passes as usize),
                 preceding_gaps: Vec::with_capacity(max_passes as usize),
                 timed_pass_span: None,
@@ -870,16 +884,7 @@ impl GpuTimings {
         let bytes = u64::from(count) * u64::from(wgpu::QUERY_SIZE);
         encoder.resolve_query_set(&enabled.query, 0..count, &enabled.resolve, 0);
         encoder.copy_buffer_to_buffer(&enabled.resolve, 0, &enabled.readback, 0, bytes);
-        let mut ticket = enabled.completion.arm();
-        enabled.phase = Phase::Mapping;
-        encoder.map_buffer_on_submit(
-            &enabled.readback,
-            wgpu::MapMode::Read,
-            0..bytes,
-            move |result| {
-                ticket.complete(result.is_ok());
-            },
-        );
+        enabled.map_readback(encoder, bytes);
         Ok(true)
     }
     /// Nonblocking collection. `None` means unsupported, no batch, or not ready;
@@ -896,6 +901,22 @@ impl GpuTimings {
     /// Panics only if the bounded query buffer no longer contains the recorded
     /// 64-bit timestamp pairs, which would violate the internal buffer invariant.
     pub fn try_collect(&mut self, generation: u64) -> Result<Option<&[PassTiming]>, TimingError> {
+        self.collect(generation, None)
+    }
+
+    pub(crate) fn collect_in_submission_order(
+        &mut self,
+        generation: u64,
+        last_counter: &mut u64,
+    ) -> Result<Option<&[PassTiming]>, TimingError> {
+        self.collect(generation, Some(last_counter))
+    }
+
+    fn collect(
+        &mut self,
+        generation: u64,
+        last_counter: Option<&mut u64>,
+    ) -> Result<Option<&[PassTiming]>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
             return Ok(None);
@@ -926,7 +947,8 @@ impl GpuTimings {
         enabled.timed_pass_span = None;
         let mut first_start = None;
         let mut previous_end = None;
-        let mut latest = enabled.last_counter;
+        let last_counter = last_counter.unwrap_or(&mut self.last_counter);
+        let mut latest = *last_counter;
         let mut result = Ok(());
         for (index, (name, category)) in enabled.names.iter().enumerate() {
             let base = index * 16;
@@ -937,11 +959,16 @@ impl GpuTimings {
                     .try_into()
                     .expect("query scalar"),
             );
-            if let Err(error) = validate_pair(start, end, enabled.last_counter) {
-                result = Err(error);
-                break;
+            if let Err(error) = validate_pair(start, end, *last_counter) {
+                if result.is_ok() {
+                    result = Err(error);
+                }
+                continue;
             }
             latest = latest.max(end);
+            if result.is_err() {
+                continue;
+            }
             first_start.get_or_insert(start);
             if category == TimingCategory::Surface {
                 enabled.timed_pass_span = first_start
@@ -966,13 +993,14 @@ impl GpuTimings {
         drop(values);
         enabled.readback.unmap();
         enabled.names.clear();
+        // Fresh pairs in a refused batch still belong to that submission.
+        *last_counter = latest;
         if let Err(error) = result {
             enabled.results.clear();
             enabled.preceding_gaps.clear();
             enabled.timed_pass_span = None;
             return Err(error);
         }
-        enabled.last_counter = latest;
         Ok(Some(&enabled.results))
     }
 
@@ -1031,4 +1059,4 @@ pub(crate) fn validate_pair(start: u64, end: u64, last_counter: u64) -> Result<(
 }
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

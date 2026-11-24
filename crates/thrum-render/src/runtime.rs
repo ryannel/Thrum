@@ -684,6 +684,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     completed: VecDeque<FrameSample>,
     next_submission_order: u64,
     timing_stats: TimingStats,
+    last_frame_counter: u64,
     submitted_clock: Option<SubmittedFrameClock>,
     timing_requested: bool,
     native_failed_generation: Option<u64>,
@@ -1300,6 +1301,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
             timing_stats: TimingStats::default(),
+            last_frame_counter: 0,
             submitted_clock: None,
             timing_requested: true,
             native_failed_generation: None,
@@ -2253,14 +2255,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let FrameTarget::ThreeD(target) = &mut slot.target {
             target.arm_culling_stats();
         }
+        let timing_requested = prepared.sample.timing_requested;
         let capture = submitted_capture::reserve(
             &mut self.submitted_capture,
             self.generation,
             self.render_extent,
             slot.target.capture_source(),
+            timing_requested,
         );
         let capture_slot = capture.as_ref().map(|(index, _)| *index);
-        let timings = self.timing_requested.then_some(&mut slot.timings);
+        let timings = timing_requested.then_some(&mut slot.timings);
         let readback = capture.map(|(_, readback)| readback);
         let contribution = self.contribution.as_deref_mut();
         let encoded = match (&self.prepared, &slot.target) {
@@ -2409,6 +2413,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 surface.filter(|_| surface_presented),
                 self.prepared.three_d(),
                 &mut encoder,
+                sample.timing_requested,
             ) {
                 Ok(index) => capture_slot = index,
                 Err(error) => {
@@ -2830,6 +2835,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // Inspect every completed native segment before resolving any slot's
         // queries: a later failed slot must also forbid earlier readback work.
         self.check_native_completion()?;
+        self.collect_frame_timings()?;
         for slot in self.slots.iter_mut().chain(&mut self.retired_slots) {
             let state = std::mem::replace(&mut slot.state, SlotState::Free);
             match state {
@@ -2864,26 +2870,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         }
                     }
                 }
-                SlotState::Resolving(mut sample) => {
-                    sample.camera_culling = sample
-                        .camera_culling
-                        .or_else(|| slot.target.take_culling_counts_if_3d());
-                    match slot.collect_timing(self.generation, &mut sample, &mut self.timing_stats)
-                    {
-                        Ok(false) => {
-                            slot.state = SlotState::Resolving(sample);
-                            continue;
-                        }
-                        Ok(true) => {}
-                        Err(error) => {
-                            slot.refuse_timing(&mut sample, &mut self.timing_stats, error);
-                            if !matches!(error, TimingError::InvalidTimestamp { .. }) {
-                                slot.recover_timings(self.prepared.capabilities(), &self.queue)?;
-                            }
-                        }
-                    }
-                    retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
-                }
+                SlotState::Resolving(_) => slot.state = state,
             }
         }
         self.retired_slots

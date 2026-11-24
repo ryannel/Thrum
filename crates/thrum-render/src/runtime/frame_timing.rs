@@ -1,6 +1,9 @@
 //! Frame-slot ownership and publication of delayed GPU timestamp batches.
 
-use super::{FrameError, FrameHost, FrameSample, FrameSlot, FrameTarget, FrameWorld, SceneSource};
+use super::{
+    FrameError, FrameHost, FrameSample, FrameSlot, FrameTarget, FrameWorld, SceneSource, SlotState,
+    retain_sample,
+};
 use crate::{
     capabilities::DeviceCapabilities,
     sprite::graph::validate_sprite_timings,
@@ -28,6 +31,50 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.timing_stats.refuse(TimingRefusal::RetiredDevice);
             }
         }
+        self.last_frame_counter = 0;
+    }
+
+    pub(super) fn collect_frame_timings(&mut self) -> Result<(), FrameError> {
+        // The queue submits frames in order. Callback delivery and slot order
+        // can differ. Keep ready readbacks in their slots until prior batches
+        // have established the counter floor for this generation.
+        while let Some((_, slot)) = self
+            .slots
+            .iter_mut()
+            .chain(&mut self.retired_slots)
+            .filter_map(|slot| Some((slot.timings.pending_frame()?.submission_order, slot)))
+            .min_by_key(|(order, _)| *order)
+        {
+            let state = std::mem::replace(&mut slot.state, SlotState::Free);
+            let SlotState::Resolving(mut sample) = state else {
+                // An older frame is still waiting for render completion.
+                slot.state = state;
+                break;
+            };
+            sample.camera_culling = sample
+                .camera_culling
+                .or_else(|| slot.target.take_culling_counts_if_3d());
+            match slot.collect_timing(
+                self.generation,
+                &mut sample,
+                &mut self.timing_stats,
+                &mut self.last_frame_counter,
+            ) {
+                Ok(false) => {
+                    slot.state = SlotState::Resolving(sample);
+                    break;
+                }
+                Ok(true) => {}
+                Err(error) => {
+                    slot.refuse_timing(&mut sample, &mut self.timing_stats, error);
+                    if !matches!(error, TimingError::InvalidTimestamp { .. }) {
+                        slot.recover_timings(self.prepared.capabilities(), &self.queue)?;
+                    }
+                }
+            }
+            retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
+        }
+        Ok(())
     }
 }
 
@@ -84,9 +131,13 @@ impl FrameSlot {
         generation: u64,
         sample: &mut FrameSample,
         stats: &mut TimingStats,
+        last_counter: &mut u64,
     ) -> Result<bool, TimingError> {
         let frame = self.timings.pending_frame();
-        let Some(passes) = self.timings.try_collect(generation)? else {
+        let Some(passes) = self
+            .timings
+            .collect_in_submission_order(generation, last_counter)?
+        else {
             return Ok(false);
         };
         let presented = sample.surface_presented;

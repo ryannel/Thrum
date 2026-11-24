@@ -44,12 +44,17 @@ pub struct PixelReadback {
     pub(super) extent: [u32; 2],
     pub(super) row_bytes: u32,
     pub(crate) copy_timing: Option<CopyTiming>,
+    copy_timing_requested: bool,
     pub(super) resolving_copy_timing: bool,
     pub(super) pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
 }
 impl PixelReadback {
     pub(crate) fn exposure_gpu_words(&self) -> Option<[u32; 8]> {
         self.exposure_words
+    }
+
+    pub(crate) fn set_copy_timing_requested(&mut self, requested: bool) {
+        self.copy_timing_requested = requested;
     }
 
     pub(crate) fn cancel_unsubmitted(&mut self) {
@@ -109,7 +114,11 @@ impl PixelReadback {
         texture: &wgpu::Texture,
         exposure: Option<&wgpu::Buffer>,
     ) -> Result<(), RenderError> {
-        if let Some(timer) = &mut self.copy_timing {
+        let mut timer = self
+            .copy_timing
+            .as_mut()
+            .filter(|_| self.copy_timing_requested);
+        if let Some(timer) = &mut timer {
             timer.marker(self.generation, encoder, &self.buffer, false)?;
         }
         encoder.copy_texture_to_buffer(
@@ -150,7 +159,7 @@ impl PixelReadback {
                 Some(super::exposure::SAMPLE_BYTES),
             );
         }
-        if let Some(timer) = &mut self.copy_timing {
+        if let Some(timer) = timer {
             timer.marker(self.generation, encoder, &self.buffer, true)?;
         }
         let (send, receive) = mpsc::channel();
@@ -193,6 +202,7 @@ impl PixelReadback {
             row_bytes,
             pending: None,
             copy_timing: None,
+            copy_timing_requested: false,
             resolving_copy_timing: false,
         }
     }
@@ -200,14 +210,17 @@ impl PixelReadback {
         &mut self,
         encoder: &wgpu::CommandEncoder,
     ) -> Result<(), RenderError> {
-        if let Some(timer) = &mut self.copy_timing {
+        if self.copy_timing_requested
+            && let Some(timer) = &mut self.copy_timing
+        {
             timer.timings.finish_render(self.generation, encoder)?;
         }
         self.resolving_copy_timing = false;
         Ok(())
     }
     pub(crate) fn copy_timing_ready_to_resolve(&self) -> bool {
-        !self.resolving_copy_timing
+        self.copy_timing_requested
+            && !self.resolving_copy_timing
             && self
                 .copy_timing
                 .as_ref()
@@ -228,7 +241,11 @@ impl PixelReadback {
         Ok(())
     }
     pub(crate) fn copy_duration(&mut self) -> Result<std::task::Poll<Option<f64>>, RenderError> {
-        let Some(timer) = &mut self.copy_timing else {
+        let Some(timer) = self
+            .copy_timing
+            .as_mut()
+            .filter(|_| self.copy_timing_requested)
+        else {
             return Ok(std::task::Poll::Ready(None));
         };
         Ok(timer.collect(self.generation)?.map(Some))
