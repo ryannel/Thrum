@@ -186,12 +186,12 @@
       }
     },
     "WP3": {
-      "definitions": "682e81594959f1b1629c61928329c1152c31dd8fa132d097b02e3e761c5f3f59",
+      "definitions": "ff95c82c0028e67a0388c8c939c19aed235a9eb9fc9bb08bd56da4f036878d15",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:46Z"
+        "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with 4 Must Fix ",
+        "at": "2026-11-24T19:33:00Z"
       }
     },
     "WP4": {
@@ -212,12 +212,12 @@
       "ends_stretch": true
     },
     "WP5": {
-      "definitions": "a12d6ce76541a709ff917a4b59df060431baaebec6caaf6ace9494677f919dbd",
+      "definitions": "ba9b3751dfa100894a5b297d1f98d70ac2ffb1ba3060d42bd99af60cb50a3735",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The main-branch check workspace-tests (./dev check-all) fails on main since the orchestrate 3.0 migration. Diagnosis fro",
-        "at": "2026-11-24T16:06:29Z"
+        "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with 4 Must Fix ",
+        "at": "2026-11-24T19:33:00Z"
       }
     }
   },
@@ -245,11 +245,15 @@
     {
       "task": "The main-branch check workspace-tests (./dev check-all) fails on main since the orchestrate 3.0 migration. Diagnosis from the lead: scripts/repo_check.py reports script-caller for about 30 scripts (scripts/test_apple_presentation.py, scripts/session_match.py, scripts/view_volume.py and others) because done_when_checks() in scripts/shape_matchers.py reads plan.get(\"milestones\") from each docs/plans/<MODULE>/DONE.json, and migrate renamed that key to \"work_packages\". scripts/shape_rules.py and scripts/test_shape_rules.py also read the old key. Plan the smallest fix in the module that owns the repository rules, as its next work package, so a builder can land it quickly: read the new key, keep the rule otherwise unchanged, and add a check that would have caught the rename. Nothing else should start on main until this lands, so keep it small.",
       "at": "2026-11-24T16:06:29Z"
+    },
+    {
+      "task": "The design review of REPO-RULES at .orchestrate/evidence/REPO-RULES/design-review.md asked for changes, with 4 Must Fix findings.\n\nMust Fix 1 is now mostly settled outside this module: orchestrate 3.0.4 migrate (commit 77c70eaac on main) repaired the 56 renamed-heading anchors and the BRIEF.md links. scripts/repo_check.py now reports only two link faults besides the shape-rule errors: (a) docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md links ../../plans/BRIEF.md; it is one of three legacy files still tracked under docs/evidence/, which the merge refuses to change but allows to remove, so the lead suggests WP5 untracks those legacy files (moving them to the working folder .orchestrate/evidence/) rather than editing them, which also matches the storage rules; (b) docs/plans/ATMOSPHERE/DESIGN.md links ../APPLE-TILE/PLAN.md#wp0-proof-route-counters-and-capture-probe-pending, stale since before the rename because that heading now ends in done; repoint it as a planner edit to ATMOSPHERE, accepting that ATMOSPHERE owes a design review. These are the lead's suggestions; choose otherwise if the design says so.\n\nMain fails ./dev check until the DONE.json key reader fix lands, so every builder merge is held. Make WP5 the smallest landing that turns main green on its own, ahead of and independent of WP3, if the design allows it, and resolve Must Fix 2 to 4 against WP3 and the manifest interface without holding WP5 back.",
+      "at": "2026-11-24T19:33:00Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-24T16:06:29Z"
+    "at": "2026-11-24T19:33:00Z"
   },
   "design_history": [
     {

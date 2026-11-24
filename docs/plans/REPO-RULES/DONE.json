@@ -164,7 +164,9 @@
           "check": "python3 scripts/test_shape_rules.py Fixture.test_done_when_checks_read_checked_in_plan && python3 scripts/test_shape_rules.py",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP5.2",
@@ -172,7 +174,9 @@
           "check": "./dev check-docs",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP5.3",
@@ -180,7 +184,9 @@
           "check": "PYTHONPATH=scripts python3 -c 'from evidence_store import ROOT, content, entries, git, tracked; paths = (\"docs/evidence/CULLING/M2.md\", \"docs/evidence/render/cooked-draw/BASE\", \"docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md\"); manifest = {entry[\"path\"]: entry for entry in entries(ROOT)}; assert not any(path.startswith(\"docs/evidence/\") for path in tracked(ROOT)); assert all(manifest[path][\"kind\"] == \"history\" and content(ROOT, manifest[path]) == git(ROOT, \"show\", \"77c70eaac:\" + path) for path in paths)'",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP5.4",
@@ -188,7 +194,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
