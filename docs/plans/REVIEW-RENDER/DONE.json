@@ -297,7 +297,7 @@
     {
       "id": "M5",
       "name": "A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
