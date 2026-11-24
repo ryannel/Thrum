@@ -166,3 +166,9 @@
   passed ray selection, ray membership, the cooked lifecycle and the Attachment, Device and Visual
   cooked fallback cases. The milestone command passed all 14 checks.
   [M3.16 proof](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.16-registered-proof.md).
+- 2026-11-24 Widened the positive terminator gap allowance by 21 on the traced Sun path. The
+  fixed Metal route shows the noon rock's lit shoulder with its narrow crease preserved. The
+  sheet guards pass. The CPU guard uses the production publication step, including stale-epoch
+  refusal. Dropping the prepared contribution there now fails both publication tests.
+  [Sun inspection](../../../.orchestrate/evidence/RAY-TRACING/M3/reopened/sun-stills.md) ·
+  [Publication proof](../../../.orchestrate/evidence/RAY-TRACING/M3/reopened/publication.md).

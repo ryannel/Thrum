@@ -224,8 +224,8 @@
           "statement": "In the populated valley, traced Sun shadows show no acne on a lit surface, no dark facets where a rounded body turns from the Sun, no gap and no leak where a prop or a balloon's basket meets what it stands on, and no shadow missing or out of place: at noon, at a low Sun and at dusk, near the camera and at the far ridge.",
           "inspect": "`fixed` stills at the route's stops at those three times with the method `Traced`, whole and as native-size crops of contact points, grazing slopes, balloons where they turn from the Sun and the far ridge, with the same stops under `Maps` beside them to show what differs.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/reopened/sun-stills.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -324,7 +324,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.11-coverage.log",
+          "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -347,7 +347,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.13.log",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/reopened/metal-final-reach.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -357,8 +357,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-render --lib -E 'test(contribution_preparation)'",
           "ask": "Trace every 3D operation that attempts traced preparation into the CPU-tested boundary, including FrameHost::new, attachment, same-device visual publication, device replacement and extent changes that rebuild traced resources. Does first-host fallback cover the slots and presenter binding? Does a coupled resize with secondary views stage the rebuild with the new targets and presenter, so a double failure or stale epoch keeps the prior grid and list? Check that graph, target, presenter and GPU error-scope results precede installation and that cooked residency, loader and upload progress, materials, leases, rows and list routing stay with their accepted owners until commit.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/reopened/publication.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
