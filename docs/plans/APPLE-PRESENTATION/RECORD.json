@@ -774,7 +774,7 @@
         {
           "verdict": "fail",
           "commit": "f5ac353d4d9f05ebacd013068d38f7ddd7c8f63d",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review-3.md",
           "items": {
             "D6.1": "pass",
             "D6.2": "pass",
@@ -811,6 +811,49 @@
             "turns": 1
           },
           "at": "2026-11-23T20:54:36Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "268f467ffe16885d975d81a0156f1825875e25aa",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
+          "items": {
+            "D6.1": "pass",
+            "D6.2": "pass",
+            "D6.3": "pass",
+            "D6.4": "pass",
+            "D6.5": "pass",
+            "D6.6": "fail",
+            "D6.7": "pass",
+            "D6.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "EDR capture loses frames when the configured drawable differs from the render grid",
+              "item": "D6.6",
+              "different": "The earlier promotion defect returned SDR pixels on an EDR surface. This case starts in EDR and presents the resized float drawable, but capture returns no pixels.",
+              "repeat": false
+            },
+            {
+              "name": "Display promotion with capture active creates pipelines and bind groups on the render thread",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 156215,
+            "cached": 6344192,
+            "output": 14145,
+            "turns": 1
+          },
+          "at": "2026-11-24T00:08:29Z"
         }
       ],
       "authorised": {
