@@ -354,7 +354,16 @@ def main():
         return
 
     before = os.getloadavg()
+    if args.scene == 'decks':
+        deck_revision = run(['git', 'rev-parse', 'HEAD'])
+        deck_changes = run(['git', 'diff', '--binary', 'HEAD'])
+        deck_status = run(['git', 'status', '--porcelain'])
     rows = measure(args.scene, args.command == 'record')
+    if args.scene == 'decks' and (
+            deck_revision != run(['git', 'rev-parse', 'HEAD'])
+            or deck_changes != run(['git', 'diff', '--binary', 'HEAD'])
+            or deck_status != run(['git', 'status', '--porcelain'])):
+        raise ValueError('checkout changed during the paired deck measurement')
     if args.command == 'record':
         record = {'commit': run(['git', 'rev-parse', 'HEAD']),
                   'dirty': bool(run(['git', 'status', '--porcelain'])),
@@ -380,8 +389,8 @@ def main():
         if args.scene == 'decks':
             tripwires = deck_tripwires(rows)
             fresh = {
-                'commit': run(['git', 'rev-parse', 'HEAD']),
-                'dirty': bool(run(['git', 'status', '--porcelain'])),
+                'commit': deck_revision,
+                'dirty': bool(deck_status),
                 'load': {'before': before, 'after': os.getloadavg()},
                 'machine': platform.platform(),
                 'build': 'release, capture off, named GPU passes',
