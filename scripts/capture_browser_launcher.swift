@@ -54,14 +54,89 @@ func launchInGroup(_ arguments: [String], log: FileHandle) throws -> pid_t {
     return pid
 }
 
-func supervise(_ arguments: [String], log: FileHandle, control: URL) throws -> Int32 {
-    let request = control.appendingPathComponent("request")
-    func phase() -> String? { try? String(contentsOf: request, encoding: .utf8) }
-    if phase() != nil {
-        // A startup timeout can precede LaunchServices delivering the launch.
-        report["owned_processes_gone"] = true
-        throw POSIXError(.ECANCELED)
+// Small newline-delimited messages travel on loopback even if the capture
+// volume is full. Chrome cannot inherit the supervisor's socket.
+final class LauncherControl {
+    private var fd: Int32 = -1
+    private var input = Data()
+    var connected: Bool { fd >= 0 }
+
+    init(port: UInt16, token: String) throws {
+        fd = socket(AF_INET, SOCK_STREAM, 0)
+        guard connected else { throw POSIXError(.EIO) }
+        do {
+            guard fcntl(fd, F_SETFD, FD_CLOEXEC) == 0 else { throw POSIXError(.EIO) }
+            var enabled: Int32 = 1
+            guard setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &enabled, socklen_t(MemoryLayout<Int32>.size)) == 0 else {
+                throw POSIXError(.EIO)
+            }
+            var address = sockaddr_in()
+            address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+            address.sin_family = sa_family_t(AF_INET)
+            address.sin_port = port.bigEndian
+            address.sin_addr.s_addr = inet_addr("127.0.0.1")
+            let result = withUnsafePointer(to: &address) {
+                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                    connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+                }
+            }
+            guard result == 0 else { throw POSIXError(.ECONNREFUSED) }
+            sendLine(Data(token.utf8))
+            let deadline = ProcessInfo.processInfo.systemUptime + 5
+            repeat {
+                if command() == "start", connected { return }
+                Thread.sleep(forTimeInterval: 0.05)
+            } while connected && ProcessInfo.processInfo.systemUptime < deadline
+            throw POSIXError(.ECANCELED)
+        } catch {
+            disconnect()
+            throw error
+        }
     }
+
+    deinit { disconnect() }
+
+    private func disconnect() {
+        if connected { close(fd); fd = -1 }
+    }
+
+    func sendLine(_ data: Data) {
+        guard connected else { return }
+        var line = data
+        line.append(10)
+        let count = line.withUnsafeBytes { send(fd, $0.baseAddress, $0.count, MSG_DONTWAIT) }
+        // A truncated message cannot be acknowledged. Disconnect and let
+        // the supervisor finish locally, with the on-disk receipt as backup.
+        if count != line.count { disconnect() }
+    }
+
+    func command() -> String? {
+        if let newline = input.firstIndex(of: 10) {
+            let line = String(decoding: input[..<newline], as: UTF8.self)
+            input.removeSubrange(input.startIndex...newline)
+            return line
+        }
+        guard connected else { return nil }
+        var bytes = [UInt8](repeating: 0, count: 128)
+        let count = recv(fd, &bytes, bytes.count, MSG_DONTWAIT)
+        if count > 0 {
+            input.append(contentsOf: bytes.prefix(count))
+            if input.contains(10) { return command() }
+            if input.count > 128 { disconnect() }
+        } else if count == 0 || (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+            disconnect()
+        }
+        return nil
+    }
+
+    func publish() {
+        if let data = try? JSONSerialization.data(withJSONObject: report) { sendLine(data) }
+        try? save()
+    }
+}
+
+func supervise(_ arguments: [String], log: FileHandle, control: LauncherControl) throws -> Int32 {
+    if control.command() != nil || !control.connected { throw POSIXError(.ECANCELED) }
     let pid = try launchInGroup(arguments, log: log)
     var reaped = false
     defer {
@@ -71,12 +146,22 @@ func supervise(_ arguments: [String], log: FileHandle, control: URL) throws -> I
         }
     }
     report["chrome_pid"] = pid
-    try save()
+    control.publish()
+    var disconnectedAt: TimeInterval?
     var requested = false
     var escalation = [String]()
     var termination = siginfo_t()
     while true {
-        let command = phase()
+        var command = control.command()
+        if !control.connected {
+            // The owner may have crashed or run out of disk. Give Chrome a
+            // short close window, then finish using the supervisor's clock.
+            let now = ProcessInfo.processInfo.systemUptime
+            if disconnectedAt == nil { disconnectedAt = now }
+            let elapsed = now - (disconnectedAt ?? now)
+            if elapsed >= 4 { command = "kill" }
+            else if elapsed >= 1 { command = "term" }
+        }
         if termination.si_pid == 0 {
             if waitid(P_PID, id_t(pid), &termination, WEXITED | WNOHANG | WNOWAIT) < 0 {
                 if errno == EINTR { continue }
@@ -84,7 +169,7 @@ func supervise(_ arguments: [String], log: FileHandle, control: URL) throws -> I
             }
             if termination.si_pid != 0 {
                 report["chrome_exited"] = true
-                try save()
+                control.publish()
             }
         }
         if try termination.si_pid != 0 && !groupHasHelpers(pid) { break }
@@ -92,13 +177,13 @@ func supervise(_ arguments: [String], log: FileHandle, control: URL) throws -> I
             if !requested && termination.si_pid == 0 {
                 requested = true
                 report["shutdown_requested"] = true
-                try save()
+                control.publish()
             }
             if command == "term" || command == "kill", !escalation.contains(command) {
                 if kill(-pid, command == "term" ? SIGTERM : SIGKILL) == 0 {
                     escalation.append(command)
                     report["shutdown_escalation"] = escalation
-                    try save()
+                    control.publish()
                 } else if errno != ESRCH {
                     throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
                 }
@@ -116,28 +201,61 @@ func supervise(_ arguments: [String], log: FileHandle, control: URL) throws -> I
     } else {
         report["chrome_exit_signal"] = termination.si_status
     }
-    try save()
     return termination.si_status
 }
 
-let owned = CommandLine.arguments[2] == "--owned"
-do {
-    try save()
+func openLog() throws -> FileHandle {
+    let logURL = output.appendingPathComponent("chrome.log")
+    _ = FileManager.default.createFile(atPath: logURL.path, contents: nil)
+    return try FileHandle(forWritingTo: logURL)
+}
+
+func requireDeniedPreflight() throws {
     guard report["screen_recording_before"] as? Bool == false else {
         throw NSError(domain: "ThrumCapture", code: 1, userInfo: [NSLocalizedDescriptionKey: "launcher has Screen Recording access"])
     }
-    let logURL = output.appendingPathComponent("chrome.log")
-    _ = FileManager.default.createFile(atPath: logURL.path, contents: nil)
-    let log = try FileHandle(forWritingTo: logURL)
-    if owned {
-        let control = URL(fileURLWithPath: CommandLine.arguments[3])
-        let status = try supervise(Array(CommandLine.arguments.dropFirst(4)), log: log, control: control)
+}
+
+func runOwned(_ args: [String]) throws -> Int32 {
+    guard let port = UInt16(args[3]) else { throw POSIXError(.EINVAL) }
+    let control = try LauncherControl(port: port, token: args[4])
+    let profile = URL(fileURLWithPath: args[5])
+    var status: Int32 = 1
+    do {
+        try requireDeniedPreflight()
+        let log = try openLog()
+        status = try supervise(Array(args.dropFirst(6)), log: log, control: control)
         try log.close()
-        report["screen_recording_after"] = CGPreflightScreenCaptureAccess()
-        report["chrome_final"] = true
-        try save()
-        exit(status)
+    } catch {
+        report["error"] = String(describing: error)
+        if report["chrome_pid"] == nil { report["owned_processes_gone"] = true }
     }
+    if report["owned_processes_gone"] as? Bool == true {
+        do {
+            try FileManager.default.removeItem(at: profile)
+            report["profile_removed"] = true
+        } catch {
+            report["profile_error"] = String(describing: error)
+        }
+    }
+    control.publish()
+    report["screen_recording_after"] = CGPreflightScreenCaptureAccess()
+    report["chrome_final"] = true
+    control.publish()
+    return status
+}
+
+if CommandLine.arguments[2] == "--owned" {
+    // Without admission the Node owner still owns the profile, and no
+    // browser has started. Do not write a receipt for a cancelled launch.
+    do { exit(try runOwned(CommandLine.arguments)) }
+    catch { exit(1) }
+}
+
+do {
+    try save()
+    try requireDeniedPreflight()
+    let log = try openLog()
     let chrome = Process()
     chrome.executableURL = URL(fileURLWithPath: CommandLine.arguments[2])
     chrome.arguments = Array(CommandLine.arguments.dropFirst(3))
@@ -154,10 +272,6 @@ do {
     exit(chrome.terminationStatus)
 } catch {
     report["error"] = String(describing: error)
-    if owned {
-        if report["chrome_pid"] == nil { report["owned_processes_gone"] = true }
-        report["chrome_final"] = true
-    }
     try? save()
     exit(1)
 }

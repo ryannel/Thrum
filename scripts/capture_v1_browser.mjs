@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
 import { captureReceiver } from './browser_capture_receiver.mjs';
-import { finalizeBrowserCapture, readLauncherReceipt } from './browser_capture_shutdown.mjs';
+import { finalizeBrowserCapture, openLauncherControl } from './browser_capture_shutdown.mjs';
 import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
 const decompress = promisify(gunzip);
 const compress = promisify(gzip);
@@ -146,17 +146,18 @@ try {
   profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
   manifest.flags = [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-crashpad-for-testing', '--disable-component-update', '--window-size=1280,1100', 'about:blank'];
   if (spriteField) manifest.flags.splice(-1, 0, '--disable-renderer-backgrounding', '--disable-background-timer-throttling');
-  const requestDirectory = await fs.mkdtemp(path.join(output, 'chrome-shutdown-'));
-  const wrapper = spawn('/usr/bin/open', ['-n', '-W', bundle, '--args', output, '--owned', requestDirectory, args.chrome, ...manifest.flags], { stdio: 'ignore' });
-  control = requestDirectory;
+  control = await openLauncherControl();
+  const wrapper = spawn('/usr/bin/open', ['-n', '-W', bundle, '--args', output, '--owned',
+    String(control.port), control.token, profile, args.chrome, ...manifest.flags], { stdio: 'ignore' });
   wrapper.once('error', error => { launchError = error; });
   wrapper.unref();
   const browserReady = async () => {
     if (launchError) throw launchError;
-    const receipt = await readLauncherReceipt(output);
+    const receipt = control.receipt;
     if (receipt?.error || receipt?.chrome_exited || receipt?.chrome_final) {
       throw new Error(receipt.error ?? 'Chrome exited before DevTools was ready');
     }
+    if (control.admitted && !control.connected) throw new Error('Chrome launcher control disconnected');
     return receipt?.chrome_pid ? receipt : undefined;
   };
   const endpoint = await waitFor(async () => {
@@ -323,7 +324,7 @@ finally {
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: extent[0] * 4, extent };
   manifest.spool_encoding = spriteField ? 'browser File download, raw RGBA8' : retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
   await finalizeBrowserCapture({
-    output, control, launchError, cdp, profile, manifest,
+    output, control, cdp, profile, manifest,
     graceMs: drainLargeCapture ? 45000 : undefined,
     closeConnections: async () => {
       try { await closeBrowserConnections(socket, server); }

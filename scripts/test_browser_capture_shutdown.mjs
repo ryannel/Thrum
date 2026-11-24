@@ -3,14 +3,17 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import fs from 'node:fs/promises';
 import http from 'node:http';
+import { createConnection } from 'node:net';
+import { createInterface } from 'node:readline';
 import path from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
-import { finalizeBrowserCapture, readLauncherReceipt } from './browser_capture_shutdown.mjs';
+import { finalizeBrowserCapture, openLauncherControl } from './browser_capture_shutdown.mjs';
 
 const fixture = fileURLToPath(import.meta.url);
-const start = (role, output, mode) => spawn(process.execPath, [fixture, '--fixture', role, output, mode], { stdio: 'ignore' });
+const start = (role, output, mode, ...args) => spawn(process.execPath, [fixture, '--fixture', role, output, mode, ...args], { stdio: ['ignore', 'ignore', 'pipe'] });
+const readLauncherReceipt = async output => JSON.parse(await read(path.join(output, 'launcher.json')) ?? 'null');
 
 async function read(file) {
   try { return await fs.readFile(file, 'utf8'); }
@@ -32,7 +35,7 @@ async function processFixture(role, output, mode) {
   const close = path.join(output, 'cdp-close');
   if (mode === 'kill' || mode === 'unconfirmed') process.on('SIGTERM', () => {});
   await fs.writeFile(ready, String(process.pid));
-  if (role === 'browser' && ['ordinary', 'status-2', 'missing-preflight', 'granted', 'missing-receipt'].includes(mode)) {
+  if (role === 'browser' && ['ordinary', 'status-2', 'missing-preflight', 'granted', 'missing-receipt', 'request-write', 'manifest-write', 'both-writes', 'receipt-write'].includes(mode)) {
     await until(() => read(close));
     process.exitCode = mode === 'status-2' ? 2 : 0;
   } else if (role === 'browser' && mode === 'early-exit') {
@@ -43,17 +46,27 @@ async function processFixture(role, output, mode) {
   }
 }
 
-async function supervisorFixture(output, mode) {
-  const control = path.join(output, 'control', 'request');
+async function supervisorFixture(output, mode, port, token) {
+  const socket = createConnection({host: '127.0.0.1', port: Number(port)});
+  socket.on('error', () => socket.destroy());
+  const lines = createInterface({ input: socket });
+  const phases = [];
+  lines.on('line', phase => phases.push(phase));
+  socket.write(token + '\n');
+  await until(() => phases.shift() === 'start');
   const browser = start('browser', output, mode);
   const helper = start('helper', output, mode);
   const browserExit = once(browser, 'exit');
   const helperExit = once(helper, 'exit');
   const report = { chrome_pid: browser.pid, screen_recording_before: false };
   const save = async () => {
-    const next = path.join(output, 'launcher.next');
-    await fs.writeFile(next, JSON.stringify(report));
-    await fs.rename(next, path.join(output, 'launcher.json'));
+    const data = JSON.stringify(report);
+    if (mode !== 'receipt-write') {
+      const next = path.join(output, 'launcher.next');
+      await fs.writeFile(next, data);
+      await fs.rename(next, path.join(output, 'launcher.json'));
+    }
+    if (!socket.destroyed) socket.write(data + '\n');
   };
   let exited = false;
   void browserExit.then(() => { exited = true; });
@@ -64,7 +77,7 @@ async function supervisorFixture(output, mode) {
     await save();
     const escalation = [];
     while (!exited) {
-      const phase = await read(control);
+      const phase = socket.destroyed && mode === 'disconnected' ? 'term' : phases.shift();
       if (phase) {
         report.shutdown_requested = true;
         if (['term', 'kill'].includes(phase) && !escalation.includes(phase)) {
@@ -87,6 +100,8 @@ async function supervisorFixture(output, mode) {
     await helperExit;
     report.chrome_exited = true;
     report.owned_processes_gone = true;
+    await fs.rm(path.join(output, 'profile'), { recursive: true });
+    report.profile_removed = true;
     await save();
     if (mode === 'missing-receipt') return;
     if (mode === 'status-2') {
@@ -99,7 +114,9 @@ async function supervisorFixture(output, mode) {
     else report.chrome_exit_code = code;
     report.chrome_final = true;
     await save();
+    await fs.writeFile(path.join(output, 'control-phases'), JSON.stringify(phases));
   } finally {
+    socket.end();
     browser.kill('SIGKILL');
     helper.kill('SIGKILL');
     await Promise.all([browserExit, helperExit]);
@@ -110,25 +127,27 @@ async function supervisorFixture(output, mode) {
 async function commandFixture(output, mode) {
   const { closeBrowserConnections } = await import('./check_v1_browser.mjs');
   const profile = path.join(output, 'profile');
-  const control = path.join(output, 'control');
   await fs.mkdir(profile);
-  await fs.mkdir(control);
+  const control = await openLauncherControl();
   const wrapper = spawn(process.execPath, ['-e', 'process.exit(0)']);
-  const supervisor = start('supervisor', output, mode);
+  const supervisor = start('supervisor', output, mode, String(control.port), control.token);
+  supervisor.stderr.unref();
   supervisor.unref();
   assert.deepEqual(await once(wrapper, 'exit'), [0, null]);
   await fs.writeFile(path.join(output, 'wrapper-exited'), 'yes');
-  await until(() => readLauncherReceipt(output));
+  await until(() => control.receipt?.chrome_pid);
   const server = http.createServer();
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   // This is the production finalization boundary, after capture validation and sync.
-  const captureError = ['before-devtools', 'capture-error-and-cleanup-error'].includes(mode)
-    ? new Error('capture broke before DevTools') : undefined;
+  const beforeDevtools = ['before-devtools', 'capture-error-and-cleanup-error'].includes(mode);
+  const captureError = beforeDevtools ? new Error('capture broke before DevTools')
+    : ['request-write', 'manifest-write', 'both-writes', 'disconnected'].includes(mode)
+      ? new Error('capture sink failed during frame validation') : undefined;
   const frame = await fs.open(path.join(output, 'validated-frame'), 'wx');
   try { await frame.writeFile('validated bytes'); await frame.sync(); }
   finally { await frame.close(); }
-  const cdp = captureError ? undefined : {
+  const cdp = beforeDevtools ? undefined : {
     call(method) {
       assert.equal(method, 'Browser.close');
       void fs.writeFile(path.join(output, 'cdp-close'), 'yes');
@@ -136,23 +155,40 @@ async function commandFixture(output, mode) {
       return new Promise(() => {});
     },
   };
-  await finalizeBrowserCapture({
-    output, control, cdp, profile, manifest: { complete: !captureError },
-    captureError: () => captureError,
-    closeConnections: async () => {
-      await closeBrowserConnections(undefined, server);
-      await fs.writeFile(path.join(output, 'http-closed'), 'yes');
-      if (mode === 'capture-error-and-cleanup-error') throw new Error('injected cleanup failure');
-    },
-    graceMs: 300, termMs: 400, killMs: 400, finalMs: 2500,
-  });
+  const writeFile = fs.writeFile;
+  fs.writeFile = async (file, ...args) => {
+    if ((['request-write', 'both-writes'].includes(mode) && path.basename(file) === 'request.next') ||
+        (['manifest-write', 'both-writes'].includes(mode) && path.basename(file) === 'manifest.json')) {
+      throw Object.assign(new Error('ENOSPC writing ' + path.basename(file)), { code: 'ENOSPC' });
+    }
+    return writeFile(file, ...args);
+  };
+  if (mode === 'disconnected') control.close();
+  try {
+    await finalizeBrowserCapture({
+      output, control, cdp, profile, manifest: { complete: !captureError },
+      captureError: () => captureError,
+      closeConnections: async () => {
+        await closeBrowserConnections(undefined, server);
+        await fs.writeFile(path.join(output, 'http-closed'), 'yes');
+        if (mode === 'capture-error-and-cleanup-error') throw new Error('injected cleanup failure');
+      },
+      graceMs: 300, termMs: 600, killMs: 400, finalMs: 2500,
+    });
+  } catch (error) {
+    if (captureError) assert.equal(error, captureError);
+    throw error;
+  } finally {
+    fs.writeFile = writeFile;
+    control.close();
+  }
 }
 
-const [, , flag, role, output, mode] = process.argv;
+const [, , flag, role, output, mode, ...args] = process.argv;
 if (flag === '--fixture') {
   try {
     if (role === 'command') await commandFixture(output, mode);
-    else if (role === 'supervisor') await supervisorFixture(output, mode);
+    else if (role === 'supervisor') await supervisorFixture(output, mode, ...args);
     else await processFixture(role, output, mode);
   } catch (error) {
     await fs.writeFile(path.join(output, role + '-error'), String(error));
@@ -171,7 +207,31 @@ if (flag === '--fixture') {
     { mode: 'unconfirmed', error: /exit and final launcher receipt could not be confirmed/ },
     { mode: 'before-devtools', signal: 15, error: /capture broke before DevTools/ },
     { mode: 'capture-error-and-cleanup-error', signal: 15, error: /capture broke before DevTools/ },
+    { mode: 'request-write', code: 0, error: /capture sink failed during frame validation/ },
+    { mode: 'manifest-write', code: 0, error: /capture sink failed during frame validation/, noManifest: true },
+    { mode: 'both-writes', code: 0, error: /capture sink failed during frame validation/, noManifest: true },
+    { mode: 'receipt-write', code: 0, escalation: [] },
+    { mode: 'disconnected', signal: 15, error: /capture sink failed during frame validation/ },
   ];
+  test('cancels admission and removes the profile when the launcher never connects', async t => {
+    await fs.mkdir('tmp', { recursive: true });
+    const output = await fs.mkdtemp('tmp/capture-shutdown-test-');
+    t.after(() => fs.rm(output, { recursive: true }));
+    const profile = path.join(output, 'profile');
+    await fs.mkdir(profile);
+    const control = await openLauncherControl();
+    t.after(() => control.close());
+    const error = new Error('startup timed out');
+    await assert.rejects(finalizeBrowserCapture({
+      output, control, profile, manifest: { complete: false },
+      captureError: () => error, closeConnections: () => {},
+    }), actual => actual === error);
+    await assert.rejects(fs.stat(profile), { code: 'ENOENT' });
+    const late = createConnection({ host: '127.0.0.1', port: control.port });
+    await assert.rejects(once(late, 'connect'), { code: 'ECONNREFUSED' });
+    assert.equal(control.admitted, false);
+  });
+
   for (const expected of cases) {
     test(expected.mode, { timeout: 9000 }, async t => {
       await fs.mkdir('tmp', { recursive: true });
@@ -182,17 +242,24 @@ if (flag === '--fixture') {
         await fs.rm(output, { recursive: true });
       });
       const command = start('command', output, expected.mode);
-      const [status, signal] = await once(command, 'exit');
-      const manifest = JSON.parse(await fs.readFile(path.join(output, 'manifest.json'), 'utf8'));
-      const receipt = await readLauncherReceipt(output);
+      let stderr = '';
+      command.stderr.on('data', bytes => { stderr += bytes; });
+      const [status, signal] = await once(command, 'close');
+      const manifest = JSON.parse(await read(path.join(output, 'manifest.json')) ?? 'null');
+      const durableReceipt = await readLauncherReceipt(output);
+      if (expected.mode === 'receipt-write') assert.equal(durableReceipt, null);
+      const receipt = durableReceipt ?? manifest?.permission_preflight;
       assert.equal(await read(path.join(output, 'http-closed')), 'yes');
       assert.equal(signal, null);
       assert.equal(status, expected.error ? 1 : 0);
-      assert.equal(manifest.complete, !expected.error);
+      assert.equal(Boolean(manifest), !expected.noManifest);
+      if (manifest) assert.equal(manifest.complete, !expected.error);
       assert.equal(await read(path.join(output, 'validated-frame')), 'validated bytes');
       if (expected.error) {
-        assert.match(manifest.error, expected.error);
-        assert.equal(await read(path.join(output, 'command-error')), manifest.error);
+        const primary = await read(path.join(output, 'command-error'));
+        assert.match(primary, expected.error);
+        if (manifest) assert.equal(primary, manifest.error);
+        if (expected.noManifest) assert.match(stderr, /Could not write capture manifest: Error: ENOSPC writing manifest.json/);
       } else {
         assert.equal(receipt.chrome_final, true);
         assert.equal(receipt.screen_recording_before, false);
@@ -203,15 +270,21 @@ if (flag === '--fixture') {
       }
       if (expected.code !== undefined) {
         assert.equal(receipt.chrome_exit_code, expected.code);
-        assert.equal(manifest.chrome_shutdown.exit_code, expected.code);
+        if (manifest) assert.equal(manifest.chrome_shutdown.exit_code, expected.code);
       }
       if (expected.signal !== undefined) {
         assert.equal(receipt.chrome_exit_signal, expected.signal);
         assert.equal(manifest.chrome_shutdown.signal, expected.signal);
       }
       const gone = expected.mode !== 'unconfirmed';
-      assert.equal(manifest.chrome_shutdown.owned_processes_gone, gone);
-      assert.equal(manifest.chrome_shutdown.profile_removed, gone);
+      if (manifest) {
+        assert.equal(manifest.chrome_shutdown.owned_processes_gone, gone);
+        assert.equal(manifest.chrome_shutdown.profile_removed, gone);
+      }
+      if (expected.noManifest) {
+        assert.equal(receipt.owned_processes_gone, true);
+        assert.equal(receipt.profile_removed, true);
+      }
       const profile = fs.stat(path.join(output, 'profile'));
       if (gone) await assert.rejects(profile, { code: 'ENOENT' });
       else assert((await profile).isDirectory());
@@ -225,7 +298,8 @@ if (flag === '--fixture') {
         assert.equal(await read(path.join(output, 'wrapper-exited')), 'yes');
         assert.equal(await read(path.join(output, 'cdp-close')), 'yes');
         assert.equal(receipt.shutdown_escalation, undefined);
-        assert.equal(await read(path.join(output, 'control', 'request')), 'close');
+        await until(() => read(path.join(output, 'supervisor-exited')));
+        assert.deepEqual(JSON.parse(await read(path.join(output, 'control-phases'))), []);
       }
       if (expected.mode === 'early-exit' || expected.mode.startsWith('capture-error') || expected.mode === 'before-devtools') {
         assert.equal(await read(path.join(output, 'cdp-close')), undefined);
