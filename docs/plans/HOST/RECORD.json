@@ -675,7 +675,38 @@
         "task": "Unblock HOST WP5. The builder wrote: WP5.3 needs a planner-approved check the runner accepts, and the plan-reader repair",
         "at": "2026-11-24T20:11:40Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "998e91699fa77caef15db84230be224c3b8ff5ed",
+        "checked": "998e91699fa77caef15db84230be224c3b8ff5ed",
+        "at": "2026-11-24T20:55:45Z",
+        "reused": [
+          "WP5.1",
+          "WP5.2",
+          "WP5.3"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 307195,
+          "cached": 39542016,
+          "output": 42807,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 307195,
+          "cached": 39542016,
+          "output": 42807,
+          "turns": 3
+        }
+      }
     }
   },
   "tasks": [
