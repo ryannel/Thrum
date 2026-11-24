@@ -40,12 +40,18 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     pub(super) fn install_prepared_for_display(&mut self, prepared: PreparedRenderer) {
+        prepared.initialize_display(&self.queue, self.display_headroom);
+        self.prepared = prepared;
+    }
+}
+
+impl PreparedRenderer {
+    pub(super) fn initialize_display(&self, queue: &wgpu::Queue, headroom: f32) {
         // The platform record can change while a replacement is preparing.
         // Initialize its new uniform from the render owner's latest value.
-        if let Some(scene) = prepared.three_d() {
-            scene.write_display_headroom(&self.queue, self.display_headroom);
+        if let Some(scene) = self.three_d() {
+            scene.write_display_headroom(queue, headroom);
         }
-        self.prepared = prepared;
     }
 }
 // Validate binding and timing before opening the drawable pass. The portable

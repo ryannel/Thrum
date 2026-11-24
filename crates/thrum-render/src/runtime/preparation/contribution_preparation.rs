@@ -237,17 +237,18 @@ fn assert_routing(list: &SceneContributions, routed: bool) {
 fn scene_and_list_commit_only_after_the_complete_attempt() {
     use RayStructureSelection::{Enabled, PreparationFailed};
 
-    for (leaf, final_validation, fail_maps) in [
-        (Some(1), false, false),
-        (Some(2), false, false),
-        (Some(3), false, false),
-        (None, true, false),
-        (None, true, true),
-        (None, false, false),
+    for (leaf, final_validation, fail_maps, current) in [
+        (Some(1), false, false, true),
+        (Some(2), false, false, true),
+        (Some(3), false, false, true),
+        (None, true, false, true),
+        (None, true, true, true),
+        (None, false, false, false),
+        (None, false, false, true),
     ] {
         let events = Events::default();
         let mut list = three_members(&events);
-        let mut accepted_scene = 9;
+        let (mut prepared, mut slots, mut view) = (9, 19, 29);
         assert!(supports_candidates(Some(&list)));
         let result = pollster::block_on(prepare_3d_transition(Enabled, async |attempt| {
             events
@@ -270,9 +271,20 @@ fn scene_and_list_commit_only_after_the_complete_attempt() {
                 .graph
                 .validate()
                 .map_err(FrameError::EffectGraph)?;
-            Ok((attempt, candidate))
+            Ok((
+                attempt,
+                SceneTransition {
+                    scene: PreparedScene {
+                        prepared: 10,
+                        slots: 20,
+                    },
+                    view: 30,
+                    contribution: Some(candidate),
+                    inherit_rows: true,
+                },
+            ))
         }));
-        assert_eq!(accepted_scene, 9);
+        assert_eq!((prepared, slots, view), (9, 19, 29));
         assert_routing(&list, false);
         assert!(
             !events
@@ -305,6 +317,8 @@ fn scene_and_list_commit_only_after_the_complete_attempt() {
         }
         if fail_maps {
             assert!(result.is_err());
+            assert_eq!((prepared, slots, view), (9, 19, 29));
+            assert_routing(&list, false);
             // A later successful attempt still observes the original member values.
             events.lock().expect("test record").clear();
             drop(mock_prepare(&list, None).expect("all leaves can prepare"));
@@ -317,17 +331,48 @@ fn scene_and_list_commit_only_after_the_complete_attempt() {
                 ]
             );
         } else {
-            let (attempt, candidate) = result.expect("successful scene attempt");
+            let (attempt, staged) = result.expect("successful scene attempt");
             assert_eq!(attempt, if retry { PreparationFailed } else { Enabled });
-            accepted_scene = 10;
-            candidate.commit(&mut list);
-            let events = events.lock().expect("test record");
-            assert_eq!(
-                &events[events.len() - 3..],
-                [Event::Commit(1), Event::Commit(2), Event::Commit(3),]
+            let published = staged.commit(
+                ScenePublicationTarget {
+                    prepared: &mut prepared,
+                    slots: &mut slots,
+                    view: &mut view,
+                    contribution: Some(&mut list),
+                },
+                || current,
+                |previous, next, inherit_rows| {
+                    assert!(
+                        current,
+                        "stale publication must not transfer renderer state"
+                    );
+                    assert_eq!((*previous, *next), (9, 10));
+                    assert!(inherit_rows);
+                },
             );
-            assert_eq!(accepted_scene, 10);
-            assert_routing(&list, true);
+            assert_eq!(published, current);
+            let events = events.lock().expect("test record");
+            if current {
+                assert_eq!(
+                    &events[events.len() - 3..],
+                    [Event::Commit(1), Event::Commit(2), Event::Commit(3)]
+                );
+                assert_eq!(
+                    events
+                        .iter()
+                        .filter(|event| matches!(event, Event::Commit(_)))
+                        .count(),
+                    3
+                );
+                assert_eq!((prepared, slots, view), (10, 20, 30));
+            } else {
+                assert!(!events.iter().any(|event| matches!(event, Event::Commit(_))));
+                for id in 1..=3 {
+                    assert!(events.contains(&Event::Abort(id)));
+                }
+                assert_eq!((prepared, slots, view), (9, 19, 29));
+            }
+            assert_routing(&list, current);
         }
     }
 }
@@ -344,7 +389,29 @@ fn empty_list_and_standalone_member_admit_and_prepare() {
         ))
         .expect("owner can prepare");
         assert_eq!(selection, RayStructureSelection::Enabled);
-        candidate.commit(owner.as_mut());
+        let (mut prepared, mut slots, mut view) = (false, false, false);
+        assert!(
+            SceneTransition {
+                scene: PreparedScene {
+                    prepared: true,
+                    slots: true
+                },
+                view: true,
+                contribution: Some(candidate),
+                inherit_rows: false,
+            }
+            .commit(
+                ScenePublicationTarget {
+                    prepared: &mut prepared,
+                    slots: &mut slots,
+                    view: &mut view,
+                    contribution: Some(owner.as_mut()),
+                },
+                || true,
+                |_, _, _| {},
+            )
+        );
+        assert!(prepared && slots && view);
     }
     assert_eq!(
         *events.lock().expect("test record"),

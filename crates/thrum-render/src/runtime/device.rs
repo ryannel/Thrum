@@ -274,9 +274,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
-        let (mut scene, view, contribution_prepared) = if let Some(previous) =
-            self.prepared.three_d()
-        {
+        let mut publication = if let Some(previous) = self.prepared.three_d() {
             if !scene.prepared.has_current_mesh_rows(previous) {
                 return Err(FrameError::InvalidState(
                     "stale mesh rows in device replacement",
@@ -288,7 +286,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 let selection = scene.prepared.ray_structure_selection();
                 if preparation::is_candidate_transition(selection) {
                     let exposure = scene.prepared.fallback_exposure();
-                    self.stage_attached_3d_transition(
+                    Some(self.stage_attached_3d_transition(
                         selection,
                         candidate.scene.take(),
                         preparation::TransitionInputs {
@@ -299,37 +297,34 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                             frame: &frame,
                             exposure,
                         },
-                        || true,
-                    )?
+                    )?)
                 } else {
                     None
                 }
             };
             #[cfg(not(target_arch = "wasm32"))]
-            if let Some((scene, view)) = staged {
-                (scene, Some(view), true)
+            if let Some(staged) = staged {
+                preparation::ScenePublication::Candidate(staged)
             } else {
                 let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
                     "device replacement already published",
                 ))?;
                 let view = self.refresh_replacement(scene, &candidate.queue, &frame)?.0;
-                (
+                preparation::ScenePublication::Legacy(
                     candidate.scene.take().ok_or(FrameError::InvalidState(
                         "device replacement already published",
                     ))?,
                     Some(view),
-                    false,
                 )
             }
             #[cfg(target_arch = "wasm32")]
             {
                 let view = self.refresh_replacement(scene, &candidate.queue, &frame)?.0;
-                (
+                preparation::ScenePublication::Legacy(
                     candidate.scene.take().ok_or(FrameError::InvalidState(
                         "device replacement already published",
                     ))?,
                     Some(view),
-                    false,
                 )
             }
         } else {
@@ -342,12 +337,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .view
                 .clip_scale(candidate.render_extent)
                 .map_err(FrameError::Render)?;
-            (
+            preparation::ScenePublication::Legacy(
                 candidate.scene.take().ok_or(FrameError::InvalidState(
                     "device replacement already published",
                 ))?,
                 None,
-                false,
             )
         };
         self.retire_device_timings();
@@ -362,20 +356,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.submitted_clock = None;
         self.native_failed_generation = None;
         self.render_extent = candidate.render_extent;
-        if let (PreparedRenderer::TwoD(current), PreparedRenderer::TwoD(next)) =
-            (&mut self.prepared, &mut scene.prepared)
+        if let (preparation::ScenePublication::Legacy(scene, _), PreparedRenderer::TwoD(current)) =
+            (&mut publication, &mut self.prepared)
+            && let PreparedRenderer::TwoD(next) = &mut scene.prepared
         {
             next.inherit_world(current);
         }
-        self.install_prepared_for_display(scene.prepared);
-        self.slots = scene.slots;
+        let contribution_prepared = self.install_scene_publication(publication);
         self.retired_slots.clear();
         self.invalidate_submitted_capture();
         self.presenter = candidate.presenter.take();
         self.presenter_generation += 1;
-        if let Some(view) = view {
-            self.scene.view = view;
-        }
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
         if !contribution_prepared {

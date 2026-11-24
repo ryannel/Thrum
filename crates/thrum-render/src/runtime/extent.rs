@@ -326,7 +326,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             let capabilities = self.prepared.capabilities().clone();
             let queue = self.queue.clone();
             let frame = self.replacement_frame(extent, self.visual_lighting)?;
-            let Some((scene, view)) = self.stage_attached_3d_transition(
+            let staged = self.stage_attached_3d_transition(
                 crate::capabilities::RayStructureSelection::Enabled,
                 None,
                 preparation::TransitionInputs {
@@ -337,17 +337,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     frame: &frame,
                     exposure: self.prepared.fallback_exposure(),
                 },
-                current,
-            )?
-            else {
+            )?;
+            if !self.commit_3d_transition(staged, current) {
                 return Ok(false);
-            };
-            self.install_prepared_for_display(scene.prepared);
-            self.slots = scene.slots;
+            }
             self.presenter = Some(presenter);
             self.render_extent = extent;
             self.resize_drawable_capture();
-            self.scene.view = view;
             self.presenter_generation += 1;
             self.visual_owner = Arc::new(());
             self.reset_replacement_history();

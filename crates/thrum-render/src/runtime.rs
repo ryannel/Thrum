@@ -879,13 +879,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     staged.scene.slots = slots;
                 }
             }
-            let (scene, view) = staged.commit(&mut self.prepared, Some(contribution.as_mut()));
-            self.install_prepared_for_display(scene.prepared);
-            self.slots = scene.slots;
-            self.scene.view = view;
+            self.contribution = Some(contribution);
+            self.commit_3d_transition(staged, || true);
             self.visual_owner = Arc::new(());
             self.reset_replacement_history();
-            self.contribution = Some(contribution);
             self.contribution_error = None;
             return Ok(());
         }
@@ -1407,55 +1404,47 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .as_ref()
             .map_or(self.render_extent, |(extent, _)| *extent);
         let frame = self.replacement_frame(extent, Some(candidate.lighting))?;
-        let (scene, view, contribution_prepared) =
-            if preparation::is_candidate_transition(selection) {
-                let detached = candidate.scene.take().ok_or(FrameError::InvalidState(
+        let publication = if preparation::is_candidate_transition(selection) {
+            let detached = candidate.scene.take().ok_or(FrameError::InvalidState(
+                "visual candidate already published",
+            ))?;
+            let capabilities = detached.prepared.capabilities().clone();
+            let exposure = detached.prepared.fallback_exposure();
+            let presenter = self.presenter.take();
+            let replacement = candidate.extent.as_ref().map(|(_, presenter)| presenter);
+            let staged = self.stage_attached_3d_transition(
+                selection,
+                Some(detached),
+                preparation::TransitionInputs {
+                    capabilities: &capabilities,
+                    queue: &queue,
+                    extent,
+                    presenter: replacement.or(presenter.as_ref()),
+                    frame: &frame,
+                    exposure,
+                },
+            );
+            self.presenter = presenter;
+            preparation::ScenePublication::Candidate(staged?)
+        } else {
+            let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
+                "visual candidate already published",
+            ))?;
+            if candidate.extent.is_none() {
+                scene.bind_presenter(self.presenter.as_ref())?;
+            }
+            let (view, inherit_rows) = self.refresh_replacement(scene, &queue, &frame)?;
+            if inherit_rows {
+                scene.prepared.commit_mesh_rows(&mut self.prepared);
+            }
+            preparation::ScenePublication::Legacy(
+                candidate.scene.take().ok_or(FrameError::InvalidState(
                     "visual candidate already published",
-                ))?;
-                let capabilities = detached.prepared.capabilities().clone();
-                let exposure = detached.prepared.fallback_exposure();
-                let presenter = self.presenter.take();
-                let replacement = candidate.extent.as_ref().map(|(_, presenter)| presenter);
-                let staged = self.stage_attached_3d_transition(
-                    selection,
-                    Some(detached),
-                    preparation::TransitionInputs {
-                        capabilities: &capabilities,
-                        queue: &queue,
-                        extent,
-                        presenter: replacement.or(presenter.as_ref()),
-                        frame: &frame,
-                        exposure,
-                    },
-                    || true,
-                );
-                self.presenter = presenter;
-                let (scene, view) = staged?.ok_or(FrameError::InvalidState(
-                    "visual candidate was not installed",
-                ))?;
-                (scene, view, true)
-            } else {
-                let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
-                    "visual candidate already published",
-                ))?;
-                if candidate.extent.is_none() {
-                    scene.bind_presenter(self.presenter.as_ref())?;
-                }
-                let (view, inherit_rows) = self.refresh_replacement(scene, &queue, &frame)?;
-                if inherit_rows {
-                    scene.prepared.commit_mesh_rows(&mut self.prepared);
-                }
-                (
-                    candidate.scene.take().ok_or(FrameError::InvalidState(
-                        "visual candidate already published",
-                    ))?,
-                    view,
-                    false,
-                )
-            };
-        self.install_prepared_for_display(scene.prepared);
-        self.slots = scene.slots;
-        self.scene.view = view;
+                ))?,
+                Some(view),
+            )
+        };
+        let contribution_prepared = self.install_scene_publication(publication);
         self.visual_lighting = Some(candidate.lighting);
         self.visual_revision = candidate.revision;
         if let Some((extent, presenter)) = candidate.extent.take() {

@@ -20,9 +20,9 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-pub(super) struct PreparedScene {
-    pub(super) prepared: PreparedRenderer,
-    pub(super) slots: Vec<FrameSlot>,
+pub(super) struct PreparedScene<R = PreparedRenderer, S = Vec<FrameSlot>> {
+    pub(super) prepared: R,
+    pub(super) slots: S,
 }
 
 /// Rebuild the contribution against the supplied scene and its exact layouts.
@@ -406,27 +406,68 @@ pub(super) async fn validate_attempt<T>(
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub(super) struct SceneTransition {
-    pub(super) scene: PreparedScene,
-    pub(super) view: crate::synthetic::SyntheticView,
+pub(super) struct SceneTransition<
+    R = PreparedRenderer,
+    S = Vec<FrameSlot>,
+    V = crate::synthetic::SyntheticView,
+> {
+    pub(super) scene: PreparedScene<R, S>,
+    view: V,
     pub(super) contribution: Option<ContributionCandidate>,
     inherit_rows: bool,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl SceneTransition {
-    pub(super) fn commit(
+struct ScenePublicationTarget<'a, R, S, V> {
+    prepared: &'a mut R,
+    slots: &'a mut S,
+    view: &'a mut V,
+    contribution: Option<&'a mut dyn SceneContribution>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<R, S, V> SceneTransition<R, S, V> {
+    fn commit(
         mut self,
-        previous: &mut PreparedRenderer,
-        contribution: Option<&mut dyn SceneContribution>,
-    ) -> (PreparedScene, crate::synthetic::SyntheticView) {
-        if let Some(member) = self.contribution.take() {
-            member.commit(contribution.expect("prepared contribution owner"));
+        target: ScenePublicationTarget<'_, R, S, V>,
+        current: impl FnOnce() -> bool,
+        prepare_install: impl FnOnce(&mut R, &mut R, bool),
+    ) -> bool {
+        if !current() {
+            return false;
         }
-        if self.inherit_rows {
-            self.scene.prepared.commit_mesh_rows(previous);
+        if let Some(member) = self.contribution {
+            member.commit(target.contribution.expect("prepared contribution owner"));
         }
-        (self.scene, self.view)
+        prepare_install(target.prepared, &mut self.scene.prepared, self.inherit_rows);
+        *target.prepared = self.scene.prepared;
+        *target.slots = self.scene.slots;
+        *target.view = self.view;
+        true
+    }
+}
+
+pub(super) enum ScenePublication {
+    Legacy(PreparedScene, Option<crate::synthetic::SyntheticView>),
+    #[cfg(not(target_arch = "wasm32"))]
+    Candidate(SceneTransition),
+}
+
+impl<W: super::FrameWorld, V: super::SceneSource<W::Page>> super::FrameHost<W, V> {
+    /// Install a validated replacement. Returns whether its contribution was already prepared.
+    pub(super) fn install_scene_publication(&mut self, publication: ScenePublication) -> bool {
+        match publication {
+            ScenePublication::Legacy(scene, view) => {
+                self.install_prepared_for_display(scene.prepared);
+                self.slots = scene.slots;
+                if let Some(view) = view {
+                    self.scene.view = view;
+                }
+                false
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            ScenePublication::Candidate(staged) => self.commit_3d_transition(staged, || true),
+        }
     }
 }
 
@@ -448,16 +489,33 @@ impl<W: super::FrameWorld, V: super::SceneSource<W::Page>> super::FrameHost<W, V
         selection: RayStructureSelection,
         detached: Option<PreparedScene>,
         inputs: TransitionInputs<'_>,
-        current: impl FnOnce() -> bool,
-    ) -> Result<Option<(PreparedScene, crate::synthetic::SyntheticView)>, FrameError> {
-        let mut contribution = self.contribution.take();
-        let result = self
-            .stage_3d_transition(selection, detached, inputs, contribution.as_deref())
-            .map(|staged| {
-                current().then(|| staged.commit(&mut self.prepared, contribution.as_deref_mut()))
-            });
+    ) -> Result<SceneTransition, FrameError> {
+        let contribution = self.contribution.take();
+        let result = self.stage_3d_transition(selection, detached, inputs, contribution.as_deref());
         self.contribution = contribution;
         result
+    }
+
+    pub(super) fn commit_3d_transition(
+        &mut self,
+        staged: SceneTransition,
+        current: impl FnOnce() -> bool,
+    ) -> bool {
+        staged.commit(
+            ScenePublicationTarget {
+                prepared: &mut self.prepared,
+                slots: &mut self.slots,
+                view: &mut self.scene.view,
+                contribution: self.contribution.as_deref_mut(),
+            },
+            current,
+            |previous, prepared, inherit_rows| {
+                if inherit_rows {
+                    prepared.commit_mesh_rows(previous);
+                }
+                prepared.initialize_display(&self.queue, self.display_headroom);
+            },
+        )
     }
 
     pub(super) fn stage_3d_transition(
