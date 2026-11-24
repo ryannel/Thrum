@@ -983,8 +983,8 @@
           "statement": "At 8x and at 60x, a cloud followed through its life is born, rises and thins away. Nothing reappears where it stood on a beat, a deck's gaps do not open and close in step, and nothing pops.",
           "inspect": "Capture `realtime` sequences at 8x and at 60x under the fair and the broken presets, from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/lives-and-chrome.md",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/life-qualification.md",
           "verdict": "",
           "review": ""
         },
