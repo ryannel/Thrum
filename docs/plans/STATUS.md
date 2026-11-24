@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-17 of 36 modules done · 17 in progress · 2 to come
+18 of 36 modules done · 16 in progress · 2 to come
 
 ### Needs you now
 
@@ -310,7 +310,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A completed Chrome capture survives slow shutdown and leaves no browser or profile (T2-CAPTURE WP4): Ready for Review · [plan](T2-CAPTURE/PLAN.md) · [latest review](../../.orchestrate/evidence/T2-CAPTURE/WP4-review.md)
 - Small hot-reload checks prove which material the device draws (CREATOR WP4): Not Started · [plan](CREATOR/PLAN.md)
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE WP7): Ready for Review · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/WP7-review.md)
 - WATERS WP13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome: Blocked: Needs Context: The WATERS planner needs to choose how to make two approaching ridges visibly turn, tighten and rise while keeping the pitching crest intact. The lead finds the missing fact, or asks you for it
@@ -323,6 +322,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A completed Chrome capture survives slow shutdown and leaves no browser or profile (T2-CAPTURE WP4), 24 Nov · [review](../../.orchestrate/evidence/T2-CAPTURE/WP4-review.md)
 - A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph (REVIEW-RENDER WP5), 24 Nov · [review](../../.orchestrate/evidence/REVIEW-RENDER/WP5-review.md)
 - The full workspace check passes when a fast test needs more time on a busy Mac (GATE-TIME WP14), 24 Nov · [review](../../.orchestrate/evidence/GATE-TIME/WP14-review.md)
 - A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS WP6), 24 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP6-review.md)
@@ -420,7 +420,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE WP0, APPLE-TILE WP3 | Done 14 Nov |
-| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | WP4 of 5 · Ready for Review |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 24 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | WP4 of 4 · Not Started |
