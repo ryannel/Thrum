@@ -67,6 +67,8 @@ wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
 [dev-dependencies]
+# The view-volume witnesses need counters when Cargo runs their named test targets.
+thrum-render = { path = "../../crates/thrum-render", features = ["creation-counters"] }
 bytemuck = "=1.25.2"
 half = { version = "=2.7.1", default-features = false }
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
