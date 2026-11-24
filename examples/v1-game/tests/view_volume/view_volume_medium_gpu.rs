@@ -6,7 +6,9 @@
 mod fixture;
 mod medium_fixture;
 
-use medium_fixture::{SLAB, centre_layer, render};
+use medium_fixture::{centre_layer, render};
+
+const SLAB: [f32; 2] = [25.3125, 45.0];
 
 #[test]
 fn metal_joint_medium_counts_air_and_slab_once_at_both_slice_counts() {

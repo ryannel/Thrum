@@ -1,10 +1,6 @@
 //! The medium ends at the handover and ordered clear transport carries on.
 #[expect(dead_code, reason = "the shared fixture includes sky-pixel readers")]
 mod fixture;
-#[expect(
-    dead_code,
-    reason = "this proof uses a ramp rather than the shared slab"
-)]
 mod medium_fixture;
 
 use medium_fixture::{centre_layer, render};

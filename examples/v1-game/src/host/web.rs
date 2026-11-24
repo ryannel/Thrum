@@ -24,7 +24,7 @@ pub(crate) type Shell = thrum_app::web::WebShell<GameWorld, GameScene>;
 pub(crate) const DEVICE_GENERATION: u64 = thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 
 pub(crate) fn test_bank(shell: &Shell) -> bool {
-    shell.host().source().test_bank
+    shell.host().source().medium_epoch.is_some()
 }
 
 pub(crate) fn cloud_input(shell: &Shell) -> Option<&thrum_clouds::WeatherInput> {

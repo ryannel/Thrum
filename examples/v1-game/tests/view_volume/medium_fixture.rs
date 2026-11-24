@@ -4,8 +4,6 @@ use thrum_render::{
     synthetic::SyntheticScene,
 };
 
-pub(crate) const SLAB: [f32; 2] = [25.3125, 45.0];
-
 pub(crate) fn render(
     gpu: &Gpu,
     scene: &SyntheticScene,

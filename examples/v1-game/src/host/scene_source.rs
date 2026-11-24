@@ -28,7 +28,7 @@ fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
     haze: Option<Aerosol>,
-    test_bank: bool,
+    medium_epoch: Option<u64>,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
@@ -44,11 +44,9 @@ fn atmosphere_lighting(
     let frame = haze.map_or(frame, |aerosol| {
         frame.with_aerosol(aerosol).with_view_volume()
     });
-    FrameLighting::Atmosphere(if test_bank {
-        frame.with_view_volume_medium(1)
-    } else {
-        frame
-    })
+    FrameLighting::Atmosphere(
+        medium_epoch.map_or(frame, |epoch| frame.with_view_volume_medium(epoch)),
+    )
 }
 
 /// `(tick + 1 + φ)·P` in milliseconds at the game's 60 Hz clock.
@@ -361,7 +359,7 @@ pub struct GameScene {
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
     haze: Option<Aerosol>,
-    pub(super) test_bank: bool,
+    pub(super) medium_epoch: Option<u64>,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
@@ -487,7 +485,7 @@ impl GameScene {
             cloud_sky: None,
             cloud_shapes: None,
             haze: setup.haze,
-            test_bank: setup.test_bank,
+            medium_epoch: setup.test_bank.then_some(1),
             cooked_rows: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
@@ -779,7 +777,7 @@ impl SceneSource<PublishedPage> for GameScene {
             sun
         };
         let lighting = lighting.unwrap_or_else(|| {
-            atmosphere_lighting(sun, camera_altitude_m, self.haze, self.test_bank)
+            atmosphere_lighting(sun, camera_altitude_m, self.haze, self.medium_epoch)
         });
         let view = if self.valley_stars
             && self.camera.is_some()
@@ -1040,7 +1038,7 @@ mod tests {
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
             haze: None,
-            test_bank: false,
+            medium_epoch: None,
             sprite_scale: None,
             sprite_probe: None,
             sprite_rows: None,

@@ -655,7 +655,7 @@ impl GameHost for Runtime {
             source.cloud_sky,
             source.cloud_shapes.as_ref(),
         )?;
-        let contribution = if source.test_bank {
+        let contribution = if source.medium_epoch.is_some() {
             scene_source::test_bank::alongside(contribution)
         } else {
             contribution
