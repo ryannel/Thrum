@@ -92,23 +92,8 @@ def check_web(folder):
     for case, web_root in [(case, 'v1-game-web') for case in WEB_CASES] + [
         ('material', 'v1-game-web-dev'),
     ]:
-        for suffix in ('', '-retry', '-retry-2'):
-            output = folder / (case + suffix)
-            try:
-                run('node', WEB_CHECK, '--case', case, '--web-root', folder.parent / web_root,
-                    '--cook', folder.parent / 'thrum-cook', '--output', output)
-            except subprocess.CalledProcessError:
-                receipt = output / 'run.json'
-                if suffix == '-retry-2' or not receipt.is_file():
-                    raise
-                record = json.loads(receipt.read_text())
-                # A finished game can race Chrome's teardown watchdog. Keep the failed
-                # witness and require a fresh profile to pass the whole case and cleanup.
-                if not record.get('results') or not record.get('error', '').startswith('Error: Cleanup failed;'):
-                    raise
-                print(f'{case}: retrying the completed scenario after Chrome teardown failed', flush=True)
-            else:
-                break
+        run('node', WEB_CHECK, '--case', case, '--web-root', folder.parent / web_root,
+            '--cook', folder.parent / 'thrum-cook', '--output', folder / case)
 
 
 def check_ios(folder, *, prepared=False):
@@ -121,12 +106,6 @@ def check_ios(folder, *, prepared=False):
         v1_simulator_route.worker(turn, None, env)
         turn.run([sys.executable, ROOT / 'scripts/host_overload.py', folder,
                   ROOT / 'target/v1-game-ios-sim/ThrumV1.app'], env=turn.worker_env(env))
-
-
-def check_locked(lock, target, output):
-    script = simulator.orchestration_script()
-    run(sys.executable, script, 'lock', lock, '--', sys.executable, __file__, 'run-target',
-        '--target', target, '--output', output)
 
 
 def main():
@@ -185,7 +164,10 @@ def main():
                 keep_awake.terminate()
                 keep_awake.wait()
         if 'chrome-webgpu' in args.target:
-            check_locked('chrome', 'chrome-webgpu', output / 'chrome')
+            # Wake the display as well as holding it awake so Chrome can drive visible RAF.
+            run(sys.executable, simulator.orchestration_script(), 'lock', 'chrome', '--',
+                'caffeinate', '-d', '-i', '-u', sys.executable, __file__, 'run-target',
+                '--target', 'chrome-webgpu', '--output', output / 'chrome')
         if 'ios-sim' in args.target:
             holder, _ = simulator.admission()
             if holder:

@@ -1218,6 +1218,21 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
   evidence.scope = 'One continuous built BrowserGame: nine paused held sky/scene phases and 24 range-driven camera/Sun samples, three present calls after every edit; healthy generation 1 and fixed authoritative tick. Canvas PNGs are compositor captures, not physical display cadence, GPU timing or transport-accuracy qualification.';
 }
 
+async function unloadGamePage(cdp, sessionId, timeout) {
+  const { errorText } = await cdp.call('Page.navigate', { url: 'about:blank' }, sessionId);
+  if (errorText) throw new Error(`Could not unload the WebGPU page: ${errorText}`);
+  await waitFor(async () => {
+    const { result } = await cdp.call('Runtime.evaluate', {
+      expression: "location.href === 'about:blank' && document.readyState === 'complete'",
+      returnByValue: true,
+    }, sessionId).catch(error => {
+      if (/execution context was destroyed|cannot find context/i.test(error.message)) return {};
+      throw error;
+    });
+    return result?.value === true;
+  }, timeout, 'WebGPU page unloaded');
+}
+
 async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource, files) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   let sessionId, state, response, input, game, pausedAt, pause, controls, params, tabs, otherTarget;
@@ -1344,17 +1359,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         // Unload the recovered WebGPU document before closing its target and the browser.
         // Target.closeTarget only accepts a close request and can overlap renderer teardown.
         await cdp.call('Runtime.releaseObject', { objectId: game.objectId }, sessionId);
-        await cdp.call('Page.navigate', { url: 'about:blank' }, sessionId);
-        await waitFor(async () => {
-          const { result } = await cdp.call('Runtime.evaluate', {
-            expression: "location.href === 'about:blank' && document.readyState === 'complete'",
-            returnByValue: true,
-          }, sessionId).catch(error => {
-            if (/execution context was destroyed|cannot find context/i.test(error.message)) return {};
-            throw error;
-          });
-          return result?.value === true;
-        }, timeout, 'cloud lifecycle document unloaded');
+        await unloadGamePage(cdp, sessionId, timeout);
         log('Recovered WebGPU page unloaded');
       }
       return record;
@@ -1571,6 +1576,9 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
     const scope = route?.scope ?? material?.scope ?? sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : tabCase ? 'Actual Chrome tab activation, document visibility, input release and manual pause; no display cadence claim' : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
+    // Wait for document unload before Target.closeTarget can race Browser.close.
+    await unloadGamePage(cdp, sessionId, timeout);
+    log('WebGPU page unloaded');
     const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, route, exit, timeline, scope: oracle?.scope ?? scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
