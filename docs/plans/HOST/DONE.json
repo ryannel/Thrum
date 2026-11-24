@@ -300,7 +300,7 @@
     {
       "id": "WP5",
       "name": "A failure in the shells can be matched and printed: `thrum-app`'s public functions return typed errors",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -314,7 +314,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/WP5/review-fix/WP5.1-audit.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/WP5-review.md"
         },
         {
@@ -325,7 +325,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/WP5/review-fix/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/WP5-review.md"
         },
         {
@@ -337,18 +337,6 @@
           "evidence": ".orchestrate/evidence/HOST/WP5/WP5.3-reference-guard.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/WP5-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "DisplayOverride::from_str returns String",
-          "item": "WP5.1",
-          "repeat": false
-        },
-        {
-          "name": "The public display parse error fails the standard Error bound and is absent from error_types",
-          "item": "WP5.2",
-          "repeat": false
         }
       ]
     }
