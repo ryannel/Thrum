@@ -224,6 +224,48 @@ or the verifier: [BASELINE-GUARD](../BASELINE-GUARD/DESIGN.md) forbids one, and 
 run. Taking the motion arms out of the check would also remove the dependence on load, at the price of no longer
 running motion on main; [the plan](PLAN.md#open-for-the-human) holds that choice for the human.
 
+## Owned Chrome shutdown after capture
+
+On 24 November 2026, `exact-images` on `7236c735c9f6` passed both native matrices and both Chrome day
+comparisons. The night SDR page reported complete with 481 images, and the host validated and synced all 481.
+A read-only comparison of the retained frames also matched every registered identity and decoded RGBA8 digest.
+The verifier stopped before invoking the night comparator because the capture command exited 1. The capture
+recorded a one-minute load average of about 245 at the end of the route on the 14-core Mac. The commit itself
+changed only the status page.
+
+`capture_v1_browser.mjs` starts `/usr/bin/open -n -W` for the LaunchServices permission identity.
+`open` waits for the Swift app, which starts and waits for Chrome. The shared `cleanup` in
+`check_v1_browser.mjs` assumes its child is Chrome. On the ordinary fixed route it sends `Browser.close`,
+waits 10 seconds for the child, then records a failure and sends `SIGTERM` to `open`. It reports that wrapper
+signal as Chrome's exit and skips profile removal because the error list is already nonempty. The capture
+then reads the launcher's still-startup-only receipt and clears `manifest.complete`. The retained launcher
+receipt eventually recorded Chrome exit status 2 and a denied postflight, and Chrome logged a teardown
+watchdog expiry. The receipt available to the verifier at finalization did not contain those results.
+
+Use the actual browser lifetime for shutdown. On the LaunchServices path, the Swift launcher is Chrome's
+supervisor and stays alive to reap it and atomically record the final receipt, with the actual termination
+reason and the same app's denied Screen Recording postflight. Establish ownership of the browser and its
+helpers at launch, including the interval before DevTools is available. The harness requests escalation
+from the live supervisor through a run-specific channel so the supervisor signals only the browser and
+helpers it owns. The wrapper's exit, a CDP disconnect, and a PID read from an old receipt cannot establish
+that the owned processes are gone. Keep the direct-child path for other callers of the shared helper and
+preserve their current qualification and exit requirements.
+
+Start teardown with `Browser.close` when CDP is available. Give the owned browser a bounded grace period, then
+use bounded TERM and KILL escalation targeted at the owned browser and helpers still running. Keep the actual
+supervisor available to reap the browser and publish its receipt even during escalation. Account for the CDP
+request and delayed receipt within finite shutdown deadlines. Close the owned CDP and HTTP resources on success
+and failure. Remove the run's profile once its browser and helpers are confirmed gone, including after
+escalation or when the capture itself failed.
+
+After all existing capture validation and sync have succeeded, a grace timeout and the actual termination
+status during requested shutdown are diagnostics if the owned processes are gone, the profile is removed
+and both attributed preflights are denied. Keep the shutdown outcome, escalation and actual exit status or
+signal in the manifest. An unexpected browser exit before shutdown, capture or validation failure, missing,
+failed or granted preflight, unconfirmed process exit, or failed cleanup still fails the command. Preserve
+the original capture error when teardown also fails and record the cleanup error separately. The verifier
+continues to compare the completed candidate against the same retained bytes and identities.
+
 ## Research and reconciliation
 
 Research consulted 9 November 2026; official sources were inspected for the following mechanisms and limits:

@@ -80,3 +80,9 @@
   keep Chrome transport and live compression out of the presentation callback. The native exit
   runner records overload recovery through the existing world-lane barriers and refuses affected
   takes as continuous evidence. [Motion diagnostics](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.md)
+
+- 2026-11-24 Planner. The failed `exact-images` run on `7236c735c9f6` retained 481 night SDR frames.
+  A read-only diagnostic matched their identities and decoded digests against the registered reference.
+  The shutdown deadline signalled `open`, left the profile, and read the launcher receipt before Chrome's
+  exit and the postflight were recorded. [M4](PLAN.md#m4-a-completed-chrome-capture-survives-slow-shutdown-and-leaves-no-browser-or-profile)
+  plans bounded cleanup of the actual owned browser after the completed capture.
