@@ -336,12 +336,14 @@ macro_rules! shader_catalog {
             Scene(SceneVariant),
             SecondaryScene(SceneVariant),
             ViewVolume(bool, CloudVariant, bool, u32),
+            GroundBandExposure(CloudVariant),
         }
 
         impl Shader {
             pub(crate) fn source(self) -> Cow<'static, str> {
                 match self {
                     $(Self::$name => ($source).into(),)*
+                    Self::GroundBandExposure(variant) => crate::synthetic::exposure::ground_band_source(variant).into(),
                     Self::Scene(variant) => crate::synthetic::scene_source::main_source(variant).into(),
                     Self::ViewVolume(cascades, cloud, medium, near) => crate::atmosphere::gpu::view_volume::source(cascades, cloud, medium, near).into(),
                     Self::SecondaryScene(variant) => crate::synthetic::secondary::composed_source(variant).into(),
@@ -546,6 +548,12 @@ fn secondary_visibility_source() -> String {
 #[doc(hidden)]
 pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
     let mut sources: Vec<_> = fixed_sources().collect();
+    for variant in [CloudVariant::SampledGround, CloudVariant::GpuGround] {
+        sources.push((
+            "GroundBandExposure",
+            Shader::GroundBandExposure(variant).source(),
+        ));
+    }
     for cascades in [false, true] {
         for cloud in [
             CloudVariant::Absent,

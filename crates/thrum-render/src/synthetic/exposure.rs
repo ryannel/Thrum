@@ -34,6 +34,18 @@ pub(crate) const SHADER: &str = concat!(
     "\nfn incident_sun_factor() -> f32 { return 1.0; }"
 );
 
+pub(crate) fn ground_band_source(variant: crate::shaders::CloudVariant) -> String {
+    let source = format!(
+        "{}\n{}\n{}",
+        exposure_source!(),
+        wgsl!("records/observer.wgsl"),
+        variant.sampling_source(),
+    );
+    format!(
+        "{source}\n@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n@group(1) @binding(4) var aerial_sampler: sampler;\nfn incident_sun_factor() -> f32 {{ return cloud_factor(aerial_frame.camera_altitude.xyz); }}"
+    )
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) enum ExposurePolicy {
     Fixed {
@@ -236,19 +248,11 @@ impl ExposureResolve {
             Some((layout, group, cloud.variant()))
         });
         let shader = if let Some((_, _, variant)) = &sun_path {
-            let source = format!(
-                "{}\n{}\n{}",
-                exposure_source!(),
-                crate::shaders::wgsl!("records/observer.wgsl"),
-                variant.sampling_source(),
-            );
-            device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("incident camera exposure with ground band"),
-                source: wgpu::ShaderSource::Wgsl(format!("{source}\n@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n@group(1) @binding(4) var aerial_sampler: sampler;\nfn incident_sun_factor() -> f32 {{ return cloud_factor(aerial_frame.camera_altitude.xyz); }}").into()),
-            })
+            crate::shaders::Shader::GroundBandExposure(*variant)
         } else {
-            crate::shaders::Shader::Exposure.compile(device, "incident camera exposure")
-        };
+            crate::shaders::Shader::Exposure
+        }
+        .compile(device, "incident camera exposure");
         let layouts = [Some(&layout), sun_path.as_ref().map(|(layout, ..)| layout)];
         let layouts = &layouts[..=usize::from(sun_path.is_some())];
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

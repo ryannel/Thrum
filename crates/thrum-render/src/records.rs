@@ -257,6 +257,7 @@ pub fn layouts() -> Vec<RecordLayout> {
         layout!(crate::light::EnvironmentLight, "EnvironmentLight", horizontal_irradiance, sky_diffuse),
         layout!(crate::contribution::SecondaryViewRecord, "SecondaryViewRecord", view_proj, inverse_view_proj, unjittered_view_proj, inverse_unjittered_view_proj, camera, extent, clip_plane, options),
         layout!(crate::atmosphere::GpuSunMapping, "GpuSunMapping", region, plane_drift, path_border, far, near, middle),
+        layout!(crate::atmosphere::GroundBandMapping, "GroundBandMapping", region, top_m, border_m, padding),
     ]);
     layouts
 }
