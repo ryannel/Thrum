@@ -604,7 +604,7 @@
           "ask": "Does engine capture read the float target the surface was given in this mode, without changing what it records in the 8-bit mode?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M6/drawable-capture/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/M6-review.md",
           "builder_result": "pass"
         },
@@ -634,20 +634,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that.",
-      "findings": [
-        {
-          "name": "EDR capture loses frames when the configured drawable differs from the render grid",
-          "item": "D6.6",
-          "different": "The earlier promotion defect returned SDR pixels on an EDR surface. This case starts in EDR and presents the resized float drawable, but capture returns no pixels.",
-          "repeat": false
-        },
-        {
-          "name": "Display promotion with capture active creates pipelines and bind groups on the render thread",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that."
     },
     {
       "id": "M7",
