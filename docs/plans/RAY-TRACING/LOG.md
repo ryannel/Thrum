@@ -162,3 +162,7 @@
   APPLE-PRESENTATION M14 refresh included. The verifier matched both Metal matrices and all four
   Chrome sets. [M3.11 coverage](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.11-coverage.log) ·
   [Verifier record](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/exact-images-main-verifier.json).
+- 2026-11-24 The registered `long-tests` run passed on main at `d10ed33175dd`. Apple M3 Max Metal
+  passed ray selection, ray membership, the cooked lifecycle and the Attachment, Device and Visual
+  cooked fallback cases. The milestone command passed all 14 checks.
+  [M3.16 proof](../../../.orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.16-registered-proof.md).

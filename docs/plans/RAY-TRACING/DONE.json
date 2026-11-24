@@ -324,7 +324,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.11-coverage.log",
           "verdict": "",
           "review": ""
         },
@@ -378,8 +378,8 @@
           "statement": "The registered main-branch check `long-tests` passes on main with the M3 commit included. It covers the feature-gated fallback tests for ray selection and cooked contributions.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/transaction/checks/M3.16-registered-proof.md",
           "verdict": "",
           "review": ""
         }
