@@ -581,6 +581,35 @@
         "by": "plan",
         "task": "The main-branch check workspace-tests fails on 299376222cb1 at normal machine load. Three tests hit nextest's 10 s limit",
         "at": "2026-11-24T01:13:58Z"
+      },
+      "ready_for_review": {
+        "commit": "65ebd23f1386e03c66ec04d892dc99132643187c",
+        "checked": "65ebd23f1386e03c66ec04d892dc99132643187c",
+        "at": "2026-11-24T02:08:22Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 130126,
+          "cached": 8625664,
+          "output": 19695,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 130126,
+          "cached": 8625664,
+          "output": 19695,
+          "turns": 1
+        }
       }
     }
   },

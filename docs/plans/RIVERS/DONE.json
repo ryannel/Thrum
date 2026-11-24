@@ -337,7 +337,7 @@
     {
       "id": "M9",
       "name": "Chart gauges and solver determinism run within the fast-suite limit",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Preserve the chart-source and byte-determinism proofs on compact CPU fixtures in the default Nextest tier.",
       "items": [
         {
