@@ -7,8 +7,16 @@ thrum_test_support::macos_gpu_test! {
 }
 
 thrum_test_support::macos_gpu_test! {
-    fn the_visible_trace_reads_cells_and_decks() {
-        weather_range::check_procedural_trace();
+    fn the_visible_trace_reads_cells() {
+        weather_range::check_procedural_trace("cell", [0.5, 1.0]);
+    }
+}
+
+thrum_test_support::macos_gpu_test! {
+    fn the_visible_trace_reads_the_deck() {
+        // Keep both a thick column and a clear neighbourhood in this small,
+        // deck-only fixture. The map test crosses the authored preset coordinates.
+        weather_range::check_procedural_trace("deck", [0.7, 0.0]);
     }
 }
 
