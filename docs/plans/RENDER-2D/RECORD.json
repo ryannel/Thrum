@@ -385,7 +385,7 @@
         {
           "verdict": "fail",
           "commit": "8d77229f4b4a8bf571ac9fa13bdecf1ec2ff20ad",
-          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -439,6 +439,66 @@
             "turns": 1
           },
           "at": "2026-11-23T15:30:42Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "1bdd2e3a25433c139e0e3776dc1feeff36620afe",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "items": {
+            "M3.12": "pass",
+            "M3.1": "fail",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "fail",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "fail",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "Metal 2\u00d7 checker flashes dark at texel-edge crossings",
+              "item": "M3.8",
+              "different": "The earlier 1.5\u00d7 exact-box washout is resolved. The new 2\u00d7 reconstruction briefly darkens the whole checker at its narrow crossing shoulder.",
+              "repeat": false
+            },
+            {
+              "name": "2\u00d7 reconstruction jumps beside a transparent texel",
+              "item": "M3.1",
+              "repeat": false
+            },
+            {
+              "name": "Shaded pixel counts use the old standalone quad margin",
+              "item": "M3.1",
+              "repeat": false
+            },
+            {
+              "name": "Rotated outline skips the declared edge-suite scales",
+              "item": "M3.4",
+              "different": "The uploaded cyan frame now has four neighbours. The rotated white outline is independently drawn at 0.75 times each declared scale.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 147619,
+            "cached": 7751040,
+            "output": 23649,
+            "turns": 1
+          },
+          "at": "2026-11-24T04:23:52Z"
         }
       ],
       "authorised": {

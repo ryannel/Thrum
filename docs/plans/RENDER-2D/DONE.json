@@ -312,18 +312,18 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/M3.12-generation-inventory.log",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md"
         },
         {
           "id": "M3.1",
           "statement": "On both Metal recipes and Chrome WebGPU, the existing sprite draw at the output extent applies the widened pixel filter near 1.5\u00d7 and a frame-local spatial reconstruction through the off-grid 2\u00d7 edge crossings. At aligned 2\u00d7 it selects the authored texels. Record the before-and-after sprite-pass timings for the 1920\u00d71080 1.5\u00d7 scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
           "ask": "At 1.5\u00d7 does the shader combine premultiplied scene-linear RGBA with normalized, nonnegative weights within mechanism 6's support? At 2\u00d7 does it use continuous projected texel coordinates through single-axis and two-axis texel-edge crossings and converge to the authored sample at alignment? Do the standalone quad margin and transparent gutter cover the chosen footprint, and do tiles use their own extruded edges with unchanged shared-edge ownership?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/M3.1-filter-review.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -333,8 +333,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/final-filter-metal-screening.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -344,8 +344,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/final-filter-metal-screening.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -355,10 +355,10 @@
           "ask": "From the actual uploaded frame placements, do contrasting frames face all four sides of the bleed witness on the same atlas page with only the intended gutter and padding between them, at each of the three uploaded mip levels? Does the submitted pixel test check the whole witness at the tested scales and reject the third colour at the shared tile edge?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/final-atlas-fixtures.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
@@ -367,8 +367,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/final-filter-metal-screening.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -379,8 +379,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/metal/window-review.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -391,8 +391,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/chrome/canvas/sprites-crisp.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -400,10 +400,10 @@
           "statement": "On Metal through a slow diagonal pan and a fast scroll at 1.5\u00d7, 2\u00d7 and 2.37\u00d7, the test card's original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the existing 1920\u00d71080 card, ground and rotating field with T2 engine capture in realtime mode, at 0.05 and 3 output pixels per simulation tick in X with the 0.53 diagonal Y component at each scale. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's 1.5\u00d7 take to locate the offending patches.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/metal/motion-review.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.9",
@@ -411,8 +411,8 @@
           "inspect": "Capture fixed stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234. Inspect the existing pixel sprites at 1\u00d7, 1.5\u00d7, 2.37\u00d7, 4\u00d7 and 6\u00d7, the original stripe and checker patches at 1.5\u00d7, and smooth sprites at 0.25\u00d7, 0.5\u00d7, 1\u00d7 and 2\u00d7 over light and dark backgrounds. Judge full frames and native-size crops. Check that (1) pixel art keeps distinct one-texel marks, square structure and clean outlines, and (2) smooth art has no fringe, halo, bleed or visible aliasing at quarter size.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/metal/fixed-review.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -421,8 +421,8 @@
           "inspect": "Capture the M3.8 sprite route in T2 realtime mode at 1.5\u00d7 and 2.37\u00d7, both speeds and both DPRs, holding the backing extent at 1920\u00d71080. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's Chrome takes to locate the offending patches.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/revision-9dac87be2b8c04331305626871b04d4b19223bc9/chrome/motion-review.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -431,8 +431,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -441,17 +441,41 @@
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M3/M3-long-tests-receipt.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M3-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Pixel stability as in Celeste. At normal viewing size and recorded speed, fine lines and checks stay distinct and their contrast holds during the pan. Edges as clean as in Hades and Hollow Knight, with no fringe, halo, neighbouring sheet colour or gap between ground tiles. Judge the running output by eye.",
-      "diagnosed_for_planner_finding": true
+      "diagnosed_for_planner_finding": true,
+      "findings": [
+        {
+          "name": "Metal 2\u00d7 checker flashes dark at texel-edge crossings",
+          "item": "M3.8",
+          "different": "The earlier 1.5\u00d7 exact-box washout is resolved. The new 2\u00d7 reconstruction briefly darkens the whole checker at its narrow crossing shoulder.",
+          "repeat": false
+        },
+        {
+          "name": "2\u00d7 reconstruction jumps beside a transparent texel",
+          "item": "M3.1",
+          "repeat": false
+        },
+        {
+          "name": "Shaded pixel counts use the old standalone quad margin",
+          "item": "M3.1",
+          "repeat": false
+        },
+        {
+          "name": "Rotated outline skips the declared edge-suite scales",
+          "item": "M3.4",
+          "different": "The uploaded cyan frame now has four neighbours. The rotated white outline is independently drawn at 0.75 times each declared scale.",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M4",
