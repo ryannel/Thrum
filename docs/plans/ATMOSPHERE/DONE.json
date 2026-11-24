@@ -542,7 +542,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Haze and light shafts as in Red Dead Redemption 2: distance that fades into the sky's own colour over a range the weather sets, and sunlight that stands in the air as soft shafts lined up with the shadows on the ground, steady as the camera moves.",
       "findings": [
         {
