@@ -1046,7 +1046,7 @@
     {
       "id": "M18",
       "name": "The submitted craft trail is checked through a minute of ageing in the fast suite",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Keep the full elapsed-time trail witness and its original bounds in the default Nextest tier on Metal.",
       "items": [
         {
