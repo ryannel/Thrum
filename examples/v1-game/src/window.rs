@@ -362,6 +362,7 @@ impl RuntimeSetup for WindowGame {
                     },
                 )
                 .await?;
+            crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
             #[cfg(feature = "draw-probe")]
             {
                 scene.content = crate::content::attach_cooked_scene_with_probe(
