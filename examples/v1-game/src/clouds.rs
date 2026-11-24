@@ -11,6 +11,92 @@ pub(crate) use library::PlacementDemo;
 
 pub(crate) const GROUND_SIZE: u32 = 1024;
 
+/// The four weather presets authored for this game.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WeatherPreset {
+    /// No procedural cloud.
+    Clear,
+    /// Scattered heaped cloud.
+    Fair,
+    /// A broken deck with heaped banks.
+    Broken,
+    /// A closed layered deck.
+    Overcast,
+}
+
+impl WeatherPreset {
+    pub(crate) fn named(name: &str) -> Option<Self> {
+        match name {
+            "clear" => Some(Self::Clear),
+            "fair" => Some(Self::Fair),
+            "broken" => Some(Self::Broken),
+            "overcast" => Some(Self::Overcast),
+            _ => None,
+        }
+    }
+
+    /// Initial controls for this sky, with the game's usual wind and time scale.
+    pub fn parameters(self) -> Parameters {
+        let (coverage, kind) = match self {
+            Self::Clear => (0.0, 1.0),
+            Self::Fair => (0.50, 1.0),
+            Self::Broken => (0.70, 0.42),
+            Self::Overcast => (1.0, 0.0),
+        };
+        Parameters {
+            coverage,
+            kind,
+            wind: [10.0, 0.0],
+            time_scale: 1.0,
+        }
+    }
+}
+
+/// An optional, deterministic weather sequence in the V1 scene.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum WeatherSequence {
+    /// Keep the selected initial parameters.
+    #[default]
+    Held,
+    /// Ease through clear, fair, broken, overcast and clear over four minutes.
+    Presets,
+    /// Turn the selected wind 90 degrees after ten seconds.
+    WindTurn,
+}
+
+impl WeatherSequence {
+    pub(crate) fn target(self, initial: Parameters, seconds: f64) -> Parameters {
+        match self {
+            Self::Held => initial,
+            Self::WindTurn => Parameters {
+                wind: if seconds < 10.0 {
+                    initial.wind
+                } else {
+                    [-initial.wind[1], initial.wind[0]]
+                },
+                ..initial
+            },
+            Self::Presets => {
+                let (from, to, start) = match seconds {
+                    t if t < 60.0 => (WeatherPreset::Clear, WeatherPreset::Fair, 0.0),
+                    t if t < 120.0 => (WeatherPreset::Fair, WeatherPreset::Broken, 60.0),
+                    t if t < 180.0 => (WeatherPreset::Broken, WeatherPreset::Overcast, 120.0),
+                    _ => (WeatherPreset::Overcast, WeatherPreset::Clear, 180.0),
+                };
+                let t = ((seconds - start) / 60.0).clamp(0.0, 1.0);
+                let blend = t * t * (3.0 - 2.0 * t);
+                let a = from.parameters();
+                let b = to.parameters();
+                Parameters {
+                    coverage: (b.coverage - a.coverage).mul_add(blend, a.coverage),
+                    kind: (b.kind - a.kind).mul_add(blend, a.kind),
+                    ..initial
+                }
+            }
+        }
+    }
+}
+
 /// Cloud capabilities selected by the V1 game.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum CloudSelection {
@@ -131,15 +217,6 @@ pub fn shade_config() -> ShadeConfig {
 /// # Panics
 /// Only if the game's static defaults violate the model's invariants.
 pub fn initial_state() -> State {
-    State::new(
-        Parameters {
-            coverage: 0.50,
-            kind: 1.0,
-            wind: [10.0, 0.0],
-            time_scale: 1.0,
-        },
-        5.0,
-        0,
-    )
-    .expect("the game's weather defaults are finite and in range")
+    State::new(WeatherPreset::Fair.parameters(), 5.0, 0)
+        .expect("the game's weather defaults are finite and in range")
 }

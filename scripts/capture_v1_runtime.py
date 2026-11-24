@@ -23,6 +23,7 @@ from capture_spool import decoded_frames
 from capture_result import CaptureUnjudged
 
 ROOT = Path(__file__).resolve().parents[1]
+LONG_WEATHER_CASES = ('clouds-cycle', 'clouds-life')
 
 
 def console_observation():
@@ -295,7 +296,8 @@ def run(args):
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
         "observer_only": observer_only,
-        "record_limit": 4096 if args.case in ('clouds-drift','clouds-placed','clouds-route','exit-route','exit-drift','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
+        "record_limit": 16_384 if args.case in LONG_WEATHER_CASES else
+        4096 if args.case in ('clouds-drift','clouds-wind','clouds-life-fast','clouds-placed','clouds-route','exit-route','exit-drift','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
@@ -371,7 +373,7 @@ def run(args):
             # Inherit the uncached file description directly. A pipe added
             # another ~1 GB/s transfer with frequent kernel-buffer waits.
             process = subprocess.Popen([str(binary)], env=environment, stdout=spool, stderr=errors)
-            deadline = time.monotonic() + 90
+            deadline = time.monotonic() + (300 if args.case in LONG_WEATHER_CASES else 90)
             while True:
                 if args.profile and sampler is None and (output / "measurement-ready.txt").exists():
                     sampler = subprocess.Popen(["/usr/bin/sample", str(process.pid), "8", "1", "-mayDie", "-file", str(output / "cpu-sample.txt")], stdout=errors, stderr=errors)
@@ -465,7 +467,7 @@ if __name__ == "__main__":
     parser.add_argument('--reconstruction', choices=['off','taau'])
     parser.add_argument('--overlay', choices=['off','proof','motion','reconstruction'])
     parser.add_argument('--recipe', choices=['portable','apple-tile'])
-    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub", "atmosphere-scrub", "atmosphere-ground-pan", "clouds-drift", "clouds-placed", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route", "exit-route", "exit-drift", "exit-stop", "sprites-field", "sprites-field-cost", "sprites-scroll"], default="pan")
+    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub", "atmosphere-scrub", "atmosphere-ground-pan", "clouds-drift", "clouds-wind", "clouds-life-fast", *LONG_WEATHER_CASES, "clouds-placed", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route", "exit-route", "exit-drift", "exit-stop", "sprites-field", "sprites-field-cost", "sprites-scroll"], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")

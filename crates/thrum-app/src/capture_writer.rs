@@ -11,6 +11,8 @@ use thrum_render::runtime::SubmittedImage;
 mod io_worker;
 mod spool;
 
+const MAX_SESSION_RECORDS: u64 = 16_384;
+
 /// Live spool representation; both preserve the complete original byte stream.
 #[derive(Clone, Copy, Debug)]
 pub enum SpoolEncoding {
@@ -114,7 +116,7 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
     /// Start a longer bounded session without changing its pixel or encoded queues.
     /// Only the retained per-frame hashes grow with the admitted record count.
     /// # Errors
-    /// Rejects capacities outside 1..=256, record limits outside 1..=4096, or a thread failure.
+    /// Rejects capacities outside 1..=256, record limits outside 1..=16,384, or a thread failure.
     pub fn start_with_frame_limit(
         output: impl Write + Send + 'static,
         capacity: usize,
@@ -133,8 +135,10 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
         encoding: SpoolEncoding,
         frame_limit: u64,
     ) -> Result<Self, String> {
-        if !(1..=4096).contains(&frame_limit) {
-            return Err("writer frame limit must be in 1..=4096".to_owned());
+        if !(1..=MAX_SESSION_RECORDS).contains(&frame_limit) {
+            return Err(format!(
+                "writer frame limit must be in 1..={MAX_SESSION_RECORDS}"
+            ));
         }
         if !(1..=256).contains(&capacity) {
             return Err("writer capacity must be in 1..=256".to_owned());

@@ -360,6 +360,7 @@ pub struct GameScene {
     exit_entities: crate::ExitEntities,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
+    pub(super) capture_solar_tick: Option<u64>,
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
     pub(super) display_overlay: DisplayOverlay,
@@ -456,10 +457,12 @@ impl GameScene {
     }
 
     pub(super) fn held_solar_tick(&self) -> Option<u64> {
-        self.route
-            .as_ref()
-            .filter(|route| route.hold_solar)
-            .map(|route| route.origin_tick)
+        self.capture_solar_tick.or_else(|| {
+            self.route
+                .as_ref()
+                .filter(|route| route.hold_solar)
+                .map(|route| route.origin_tick)
+        })
     }
 
     pub(super) fn new(setup: GameSetup) -> Self {
@@ -481,6 +484,7 @@ impl GameScene {
             exit_entities: setup.exit_entities,
             valley_stars: setup.content != GameContent::Field && setup.valley_stars,
             day_phase_offset: 0.0,
+            capture_solar_tick: None,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
             display_overlay: setup.display_overlay,
@@ -1030,6 +1034,7 @@ mod tests {
             exit_entities: crate::ExitEntities::Draw,
             valley_stars: true,
             day_phase_offset: 0.1,
+            capture_solar_tick: None,
             camera_pitch,
             camera_yaw,
             display_overlay: DisplayOverlay::Off,

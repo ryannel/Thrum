@@ -117,9 +117,19 @@ valley, `THRUM_CAMERA_HEIGHT` selects the camera's absolute height in metres.
 `--case clouds-still --mode fixed` retains one held submitted checkpoint;
 `--case clouds-drift --mode realtime` holds the view, runs the ordinary world
 from one to 21 seconds, then pauses for a final hold. Its explicit 4,096-record
-writer/decoder limit admits twenty seconds at 120 opportunities/s. Other cases
-retain their 1,024-record limit. Pixel and encoded queues keep their existing
-bounds; only the finite per-record hash list grows.
+writer/decoder limit admits twenty seconds at 120 opportunities/s.
+
+`THRUM_CLOUD_PRESET` selects `clear`, `fair`, `broken` or `overcast` when clouds
+are enabled. The weather captures hold the initial Sun and camera through a
+running world. Use `clouds-wind` at 120 opportunities/s for a 20-second drift
+take. `THRUM_CLOUD_SEQUENCE=wind-turn` turns the wind 90° after ten world
+seconds. Use `clouds-cycle` with `THRUM_CLOUD_SEQUENCE=presets` for the full
+four-minute sequence. `clouds-life` at 8× and `clouds-life-fast` at 60× show a
+full procedural cloud lifetime in a held view. The four-minute takes admit
+16,384 records at 60 opportunities/s. Pixel queues, encoded queues and the
+output-byte bound stay the same. Use a small extent for these longer takes.
+For Chrome, a cloud view can supply `preset`, `weather_rate` and `wind`, plus
+`duration_seconds` between 1 and 60 for an elapsed-time take.
 
 `--case clouds-route --route PATH --mode realtime` records a cloud inspection
 route in the same versioned route format. It admits at most 1,800 simulation

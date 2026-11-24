@@ -42,3 +42,7 @@ path = "tests/placed_shadow_only_gpu.rs"
 [[test]]
 name = "placed_shade_gpu"
 path = "tests/placed_shade_gpu.rs"
+
+[[test]]
+name = "weather_range_gpu"
+path = "tests/weather_range_gpu.rs"

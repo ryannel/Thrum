@@ -44,6 +44,11 @@ pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), St
     set_scene_camera(shell, camera.at(eye)?)
 }
 
+pub(crate) fn hold_capture_sun(shell: &mut Shell) {
+    let tick = shell.host().world().tick();
+    shell.continuous_source_mut().capture_solar_tick = Some(tick);
+}
+
 pub(crate) fn set_haze_eye(shell: &mut Shell, eye: [f32; 3], cut: bool) -> Result<(), String> {
     if shell
         .host()

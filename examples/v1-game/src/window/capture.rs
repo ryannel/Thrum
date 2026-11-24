@@ -67,6 +67,10 @@ pub(super) fn run(
             | "atmosphere-scrub"
             | "atmosphere-ground-pan"
             | "clouds-drift"
+            | "clouds-wind"
+            | "clouds-cycle"
+            | "clouds-life"
+            | "clouds-life-fast"
             | "clouds-placed"
             | "clouds-dusk"
             | "clouds-still"
@@ -439,9 +443,13 @@ fn start_writer(
         96,
         8 * 1024 * 1024 * 1024,
         encoding,
-        if matches!(
+        if matches!(scenario, "clouds-cycle" | "clouds-life") {
+            16_384
+        } else if matches!(
             scenario,
             "clouds-drift"
+                | "clouds-wind"
+                | "clouds-life-fast"
                 | "clouds-placed"
                 | "clouds-route"
                 | "exit-route"
@@ -569,6 +577,7 @@ fn is_route(scenario: &str) -> bool {
 
 fn world_moves(scenario: &str) -> bool {
     is_route(scenario)
+        || weather_motion(scenario)
         || matches!(
             scenario,
             "running"
@@ -609,7 +618,9 @@ fn requested_yaw(scenario: &str, time: f64, recovery: super::NativeRecovery) -> 
 }
 
 fn capture_hz(scenario: &str, motion_capture: bool) -> u32 {
-    if motion_capture || matches!(scenario, "clouds-dusk" | "clouds-placed") {
+    if (motion_capture && scenario != "clouds-wind")
+        || matches!(scenario, "clouds-dusk" | "clouds-placed")
+    {
         60
     } else {
         120
@@ -643,6 +654,9 @@ fn prepare_parameters(
         crate::host::set_haze_eye(host, pose.eye, true)?;
         crate::host::scrub_haze_sun(host, pose.solar_hours / 24.0)?;
         host.set_camera_yaw(pose.yaw_degrees.to_radians())?;
+    }
+    if weather_motion(scenario) {
+        crate::host::hold_capture_sun(driver.host_mut());
     }
     let preset_accepted = Instant::now();
     warmup_checkpoint(driver, parity_checkpoint)?;
@@ -959,13 +973,21 @@ async fn record(
 }
 
 fn is_motion_capture(scenario: &str) -> bool {
+    weather_motion(scenario)
+        || matches!(
+            scenario,
+            "exit-route"
+                | "exit-drift"
+                | "content-edits"
+                | "atmosphere-scrub"
+                | "atmosphere-ground-pan"
+        )
+}
+
+fn weather_motion(scenario: &str) -> bool {
     matches!(
         scenario,
-        "exit-route"
-            | "exit-drift"
-            | "content-edits"
-            | "atmosphere-scrub"
-            | "atmosphere-ground-pan"
+        "clouds-wind" | "clouds-cycle" | "clouds-life" | "clouds-life-fast"
     )
 }
 
@@ -1213,6 +1235,9 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         "sprites-field-cost" => (11.5, 10.0, 10.0),
         "sprites-scroll" => (5.5, 4.75, 4.25),
         "clouds-drift" => (22.5, 22.0, 21.0),
+        "clouds-wind" => (22.5, 22.0, 22.0),
+        "clouds-cycle" | "clouds-life" => (244.0, 243.0, 243.0),
+        "clouds-life-fast" => (48.0, 47.0, 47.0),
         "clouds-placed" => (31.1, 31.0, 31.0),
         "clouds-dusk" => (14.5, 14.0, f64::INFINITY),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
@@ -1252,26 +1277,27 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
         return Err(format!("a {scenario} capture uses fixed mode"));
     }
     if mode != "realtime"
-        && matches!(
-            scenario,
-            "running"
-                | "writer-slow"
-                | "render-stall"
-                | "input-stall"
-                | "content-edits"
-                | "route"
-                | "clouds-route"
-                | "clouds-placed"
-                | "clouds-drift"
-                | "clouds-dusk"
-                | "exit-route"
-                | "exit-drift"
-                | "sprites-field"
-                | "sprites-field-cost"
-                | "atmosphere-scrub"
-                | "atmosphere-ground-pan"
-                | "sprites-scroll"
-        )
+        && (weather_motion(scenario)
+            || matches!(
+                scenario,
+                "running"
+                    | "writer-slow"
+                    | "render-stall"
+                    | "input-stall"
+                    | "content-edits"
+                    | "route"
+                    | "clouds-route"
+                    | "clouds-placed"
+                    | "clouds-drift"
+                    | "clouds-dusk"
+                    | "exit-route"
+                    | "exit-drift"
+                    | "sprites-field"
+                    | "sprites-field-cost"
+                    | "atmosphere-scrub"
+                    | "atmosphere-ground-pan"
+                    | "sprites-scroll"
+            ))
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());
     }

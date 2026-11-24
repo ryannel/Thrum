@@ -190,3 +190,7 @@ path = "tests/placed/clouds_directed_gpu.rs"
 [[test]]
 name = "clouds_placed_lease_gpu"
 path = "tests/placed/clouds_placed_lease_gpu.rs"
+
+[[test]]
+name = "clouds_clear_gpu"
+path = "tests/clouds_clear_gpu.rs"

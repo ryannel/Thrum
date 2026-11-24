@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # check and refuse compare with the committed records; record writes to the working folder unless --output
 # names a fixture to promote.
-FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed')}
+FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed', 'decks')}
 WORKING = ROOT / '.orchestrate/evidence/CLOUDS'
 SCRATCH = ROOT / 'tmp/clouds-m2/cost'
 SKY_PASSES = (
@@ -35,6 +35,7 @@ FIRST_FRAME_ESTIMATES = (
     'CLOUDS DESIGN: weather <0.1 ms, Sun 0.1–0.2 ms, ground <0.05 ms, '
     'resolve 0.1–0.2 ms, compose 0.2–0.4 ms, total 47 MiB. Trace is measured.'
 )
+DECK_PRESETS = ('fair', 'broken', 'overcast')
 
 
 def run(command, **kwargs):
@@ -46,7 +47,11 @@ def run(command, **kwargs):
 
 
 def measure(scene='shade', alternatives=True):
-    scratch = {'low-sun': ROOT / 'tmp/clouds-m5/cost', 'placed': ROOT / 'tmp/clouds-m6/cost'}.get(scene, SCRATCH)
+    scratch = {
+        'low-sun': ROOT / 'tmp/clouds-m5/cost',
+        'placed': ROOT / 'tmp/clouds-m6/cost',
+        'decks': ROOT / 'tmp/clouds-m7/cost',
+    }.get(scene, SCRATCH)
     scratch.mkdir(parents=True, exist_ok=True)
     run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
          '--example', 'cloud_cost'], timeout=1200)
@@ -64,18 +69,28 @@ def measure(scene='shade', alternatives=True):
         arms=[('off',1,None,None),('sky',1,None,None)]
         if alternatives and scene != 'placed':
             arms += [('sky',1,2,3),('sky',1,4,3),('sky',1,1,1),('sky',1,1,0)]
+    if scene == 'decks':
+        arms = [('off', 1, None, None)] + [('sky', 1, None, None) for _ in DECK_PRESETS]
     recipes = ('portable', 'native') if scene == 'placed' else ('portable',)
-    for recipe, (selection, scale, stride, samples) in ((recipe, arm) for recipe in recipes for arm in arms):
+    for recipe, (index, (selection, scale, stride, samples)) in (
+        (recipe, arm) for recipe in recipes for arm in enumerate(arms)
+    ):
         environment = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(store),
                            THRUM_CLOUDS=selection, THRUM_CLOUD_TIME_SCALE=str(scale),
                            THRUM_CLOUD_WIND='40', THRUM_RECIPE='portable')
-        if scene in ('first-frame', 'low-sun', 'placed'):
+        environment.pop('THRUM_CLOUD_PRESET', None)
+        environment.pop('THRUM_CLOUD_SEQUENCE', None)
+        if scene in ('first-frame', 'low-sun', 'placed', 'decks'):
             environment.pop('THRUM_CLOUD_REFRESH_STRIDE', None)
             environment.pop('THRUM_CLOUD_LIGHT_SAMPLES', None)
             environment.update(THRUM_CAMERA_HEIGHT='260.4846459239257',THRUM_CAMERA_Z='80')
         if stride is not None:
             environment.update(THRUM_CLOUD_REFRESH_STRIDE=str(stride),THRUM_CLOUD_LIGHT_SAMPLES=str(samples))
         command = ['target/release/examples/cloud_cost']
+        if scene == 'decks':
+            command += ['--device-profile', 'portable', '--noon']
+            if selection == 'sky':
+                environment['THRUM_CLOUD_PRESET'] = DECK_PRESETS[index - 1]
         if scene in ('low-sun', 'placed'):
             command.append('--low-sun')
         if scene == 'placed':
@@ -84,6 +99,8 @@ def measure(scene='shade', alternatives=True):
                 command += ['--placed-store', str(placed_store)]
         row = json.loads(run(command, env=environment, timeout=180))
         row.update(selection=selection, weather_speed=scale)
+        if scene == 'decks':
+            row.update(preset=environment.get('THRUM_CLOUD_PRESET'))
         if scene == 'placed':
             row.update(recipe=recipe)
         if selection == 'sky':
@@ -100,6 +117,17 @@ def validate(record,scene='shade'):
             raise ValueError(f'cost record lacks {key}')
     if scene == 'placed':
         validate_placed(record)
+        return
+    if scene == 'decks':
+        validate_first_frame(record)
+        if [row.get('preset') for row in record['runs']] != [None, *DECK_PRESETS]:
+            raise ValueError('expected absent, fair, broken and overcast paired arms')
+        if any(row.get('view_angles') != record['runs'][0].get('view_angles')
+               or (row.get('view_angles') or {}).get('start_solar_hours') != 12
+               for row in record['runs']):
+            raise ValueError('expected the same noon view in every arm')
+        if record.get('deck_tripwires') != deck_tripwires(record['runs']):
+            raise ValueError('deck tripwires lack their paired pass and work investigation')
         return
     if scene in ('first-frame', 'low-sun'):
         validate_first_frame(record)
@@ -237,10 +265,37 @@ def validate_placed(record):
             if row['whole_frame_gpu_ns'] > 1e9 / 120 and not record['investigation'].strip():
                 raise ValueError(f'{recipe} placed cloud exceeded refresh without an investigation')
 
+
+def deck_tripwires(rows):
+    fair = rows[1]
+    findings = {}
+    for row in rows[1:]:
+        passes = row['pass_gpu_ns']
+        previous = fair['pass_gpu_ns']
+        cloud = {name: value for name, value in passes.items() if name.rsplit(': ', 1)[-1].startswith('cloud ')}
+        work = row['ray_statistics']['mean_samples'] * row['ray_statistics']['rays_traced']
+        fair_work = fair['ray_statistics']['mean_samples'] * fair['ray_statistics']['rays_traced']
+        trace = next((value for name, value in cloud.items() if name.endswith('cloud trace')), 0)
+        fair_trace = next((value for name, value in previous.items() if name.endswith('cloud trace')), 0)
+        findings[row['preset']] = {
+            'refresh_excess': max(row['whole_frame_gpu_ns'], row['first_submission']['whole_frame_gpu_ns']) > 1e9 / 120,
+            'largest_cloud_passes': sorted(cloud.items(), key=lambda item: -item[1])[:3],
+            'passes_at_least_25_percent_over_fair': {
+                name: [previous[name], value] for name, value in cloud.items()
+                if name in previous and value >= 1.25 * previous[name]
+            },
+            'trace_work_ratio_to_fair': work / fair_work,
+            'trace_time_ratio_to_fair': trace / fair_trace,
+            'trace_cost_outgrows_work': trace / fair_trace >= 1.25 * work / fair_work,
+            'resource_bytes': sum(size for _, size in row['resources']),
+        }
+    return json.loads(json.dumps(findings))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse'])
-    parser.add_argument('--scene', choices=['shade','first-frame','low-sun','placed'], required=True)
+    parser.add_argument('--scene', choices=FIXTURES, required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     args = parser.parse_args()
@@ -277,6 +332,8 @@ def main():
                   'estimates': 'CLOUDS DESIGN cost account: weather <0.1 ms, Sun 0.1–0.2 ms, ground <0.05 ms; profiles and resource bytes recorded separately.'}
         if args.scene in ('first-frame', 'low-sun', 'placed'):
             record['estimates'] = FIRST_FRAME_ESTIMATES
+        if args.scene == 'decks':
+            record['deck_tripwires'] = deck_tripwires(rows)
         previous = args.previous or (FIXTURES['low-sun'] if args.scene == 'placed' else None)
         if previous:
             record['previous'] = json.loads(previous.read_text())
@@ -287,6 +344,13 @@ def main():
     else:
         record = json.loads(destination.read_text())
         validate(record, args.scene)
+        if args.scene == 'decks':
+            fresh = dict(record, runs=rows, deck_tripwires=deck_tripwires(rows),
+                         commit=run(['git', 'rev-parse', 'HEAD']),
+                         load={'before': before, 'after': os.getloadavg()})
+            validate(fresh, args.scene)
+            print(json.dumps(fresh))
+            return
         if args.scene in ('first-frame', 'low-sun', 'placed'):
             validate(dict(record, runs=rows), args.scene)
         if args.scene in ('low-sun', 'placed'):

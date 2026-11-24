@@ -97,7 +97,7 @@ async function runCapture() {
   }
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
   if (clouds !== 'off') record.clouds = clouds;
-  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined);
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined, view ? JSON.stringify({preset: view.preset, rate: view.weather_rate, wind: view.wind}) : undefined);
   if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
@@ -446,6 +446,7 @@ async function captureCloudView(view, extent) {
   game.set_cloud_capture_eye(...view.eye);
   const edits = JSON.parse(game.apply_parameters(JSON.stringify(view.params), 0));
   if (edits.problems.length || game.committed_tick() !== 0 || !game.paused()) fail(`invalid held cloud view: ${JSON.stringify(edits)}`);
+  if (mode === 'realtime') game.hold_cloud_capture_sun();
   const warmupEnd = performance.now() + 3000;
   const warmupStart = game.presented();
   while (performance.now() < warmupEnd) {
@@ -459,15 +460,39 @@ async function captureCloudView(view, extent) {
   record.initial_report = JSON.parse(game.route_report(0));
   record.culling = game.report();
   record.start_before_ms = performance.now();
-  game.begin_fixed_submission(1);
+  if (mode === 'fixed') game.begin_fixed_submission(1);
+  else game.begin_submitted_capture(1);
   record.start_after_ms = performance.now();
   record.mode = mode;
   record.pixel_source = source;
   record.extent = extent;
   record.base_world_ms = 0;
-  record.scheduling = 'one held T2 submission at tick zero';
-  game.frame(0);
-  record.opportunities.push({ordinal: 0, frame_ms: 0, tick: game.committed_tick()});
+  if (mode === 'fixed') {
+    record.scheduling = 'one held T2 submission at tick zero';
+    game.frame(0);
+    record.opportunities.push({ordinal: 0, frame_ms: 0, tick: game.committed_tick()});
+  } else {
+    record.scheduling = 'browser animation-frame callbacks at elapsed time, held camera';
+    const duration = view.duration_seconds;
+    if (!Number.isFinite(duration) || duration < 1 || duration > 60) fail('Cloud view duration must be 1 to 60 seconds');
+    const start = performance.now();
+    record.elapsed_origin_ms = start;
+    game.set_paused(false, 0);
+    let timestamp = 0;
+    let ordinal = 0;
+    while (timestamp < duration * 1000) {
+      const rafMs = await new Promise(requestAnimationFrame);
+      if (hidden) fail('cloud view became hidden during the recording');
+      const requested = performance.now();
+      timestamp = requested - start;
+      game.frame(timestamp);
+      const opportunity = { ordinal: ordinal++, requested_ms: requested, frame_ms: timestamp,
+        returned_ms: performance.now(), tick: game.committed_tick(), raf_ms: rafMs };
+      record.opportunities.push(opportunity);
+      drain();
+      opportunity.drain_finished_ms = performance.now();
+    }
+  }
   await ready(() => {
     drain();
     return game.submitted_capture_pending() === 0;
@@ -476,7 +501,10 @@ async function captureCloudView(view, extent) {
   record.renderer_omissions = game.submitted_capture_omissions();
   record.end_ms = performance.now();
   record.final_report = JSON.parse(game.route_report(0));
-  if (record.images.length !== 1 || record.renderer_omissions || record.export_omissions || exportError) fail(`incomplete cloud view: ${exportError ?? JSON.stringify(record.images)}`);
+  if ((mode === 'fixed' ? record.images.length !== 1 : record.images.length < 2)
+      || record.renderer_omissions || record.export_omissions || exportError) {
+    fail(`incomplete cloud view: ${record.images.length} images, renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
+  }
   record.complete = true;
 }
 
