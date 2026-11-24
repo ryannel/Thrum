@@ -404,7 +404,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Replay stops copying undo it never uses, the cooker decodes each texture once, and the sea transforms its cascades in half the passes its design allows for (REVIEW-ENGINE WP5), 18 Nov · [review](../../.orchestrate/evidence/REVIEW-ENGINE/WP5-review.md)
 - A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum (REVIEW-ENGINE WP4), 18 Nov · [review](../../.orchestrate/evidence/REVIEW-ENGINE/WP4-review.md)
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR WP3), 17 Nov · [review](../../.orchestrate/evidence/CREATOR/WP3-review.md)
-- A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged (SCENE-VIEWS WP1), 17 Nov · [review](../../.orchestrate/evidence/SCENE-VIEWS/WP1-review.md)
 
 ## All modules
 
