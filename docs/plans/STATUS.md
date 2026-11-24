@@ -309,7 +309,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - A completed Chrome capture survives slow shutdown and leaves no browser or profile (T2-CAPTURE M4): Not Started · [plan](T2-CAPTURE/PLAN.md)
 - Small hot-reload checks prove which material the device draws (CREATOR M4): Not Started · [plan](CREATOR/PLAN.md)
-- Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
+- The governor holds the display rate under forced load, then recovers step by step (APPLE-PRESENTATION M7): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome (ATMOSPHERE M7): In Progress · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/M7-review.md)
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS M6): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M6-review.md)
@@ -324,6 +324,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Highlights go brighter than SDR white on the built-in XDR display (APPLE-PRESENTATION M6), 24 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/M6-review.md)
 - The world lane’s resume origin is proved without real-time pacing (EFFECT-GRAPH M5), 24 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M5-review.md)
 - A small in-memory match catches reliable-lane recovery regressions (SESSION M8), 24 Nov · [review](../../.orchestrate/evidence/SESSION/M8-review.md)
 - A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer (REVIEW-RENDER M4), 23 Nov · [review](../../.orchestrate/evidence/REVIEW-RENDER/M4-review.md)
@@ -429,7 +430,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M4 of 4 · Not Started |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M6 of 16 · Ready for Review |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M7 of 16 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | M7 of 11 · In Progress |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
@@ -446,7 +447,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M3 of 5 · Not Started |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M5 of 8 · Not Started |
-| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
+| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, GAME-SPLIT:M3, GATE-TIME:M5 |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | M6 of 6 · Blocked: Needs Dependency |
