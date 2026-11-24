@@ -68,7 +68,8 @@ reads to skip outbound links from restored Markdown. Extend the existing evidenc
 the original G7 bytes. Run the production Markdown walk and link check with the record absent and again after
 `restore`, with a tracked page linking to its `#checks` heading in both runs. Confirm that adding a missing-file
 link to the tracked page still yields a diagnostic after restore. WP5 lands through the normal `./dev check`
-gate. The shared `exact-images` proof follows the merge.
+gate, which checks the registered exact-baseline references. The scheduled `exact-images` check compares
+rendered images on main after merges.
 
 ## WP3 Names describe their jobs and the renderer's layers point one way
 

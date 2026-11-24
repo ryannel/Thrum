@@ -187,16 +187,6 @@
           "evidence": ".orchestrate/evidence/REPO-RULES/WP5/WP5.3.log",
           "verdict": "",
           "review": ""
-        },
-        {
-          "id": "WP5.4",
-          "statement": "The shared exact-images run covers the WP5 landing with every registered Mac and Chrome baseline passing.",
-          "check": "python3 scripts/exact_baselines.py verify",
-          "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
         }
       ],
       "failed_reviews": 0,

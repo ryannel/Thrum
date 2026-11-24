@@ -107,3 +107,5 @@
   was preserved, with the original bytes saved beside [the WP5 proof](../../../.orchestrate/evidence/REPO-RULES/WP5/).
   `./dev check-docs` passed after rebasing onto the ATMOSPHERE planner's anchor correction in `6f77f8151`.
   The shared `exact-images` check supplies the post-merge image proof.
+- 2026-11-24 Removed WP5.4 because Orchestrate refuses main-branch checks as work-package items. WP5.1–WP5.3
+  cover the reader and evidence changes, and the checked merge passed the exact-baseline reference guard.
