@@ -466,7 +466,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/metal-verify.log",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP4/metal-current.log",
           "verdict": "",
           "review": ""
         },

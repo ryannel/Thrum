@@ -618,6 +618,7 @@ fn world_moves(scenario: &str) -> bool {
                 | "clouds-drift"
                 | "clouds-placed"
                 | "exit-drift"
+                | "sun-motion"
                 | "sprites-field"
                 | "sprites-field-cost"
                 | "sprites-scroll"

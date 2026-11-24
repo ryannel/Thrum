@@ -109,29 +109,34 @@ fn trace_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     textureStore(rays_out, pixel, vec4(visible, 1u, select(0u, 1u, cosine < 0.0) | select(0u, 4u, align)));
 }
 
-// Each tile preserves the union of light and shadow samples for each channel.
-var<workgroup> tile_rays: array<u32, SOFT_SUN_TILE * SOFT_SUN_TILE>;
+// Horizontal ranges are exact for each pixel. The vertical reduction below
+// combines 17 rows, so consensus follows the edge independently of tile origin.
+const NEIGHBOUR_RADIUS: u32 = 8u;
+const ROW_PITCH: u32 = SOFT_SUN_TILE + 2u * NEIGHBOUR_RADIUS;
+var<workgroup> row_rays: array<u32, ROW_PITCH * SOFT_SUN_TILE>;
+
+fn ray_votes(pixel: vec2<i32>) -> u32 {
+    if !soft_within(pixel, frame.extent) { return 0u; }
+    let ray = textureLoad(rays, pixel, 0);
+    return select(0u, (1u << ray.x) | (4u << ray.y), ray.z != 0u);
+}
+
 @compute @workgroup_size(SOFT_SUN_TILE, SOFT_SUN_TILE)
 fn reduce_sun(@builtin(global_invocation_id) id: vec3<u32>,
-    @builtin(local_invocation_index) index: u32, @builtin(workgroup_id) tile: vec3<u32>) {
-    var bits = 0u;
-    if all(id.xy < frame.extent) {
-        let ray = textureLoad(rays, vec2<i32>(id.xy), 0);
-        if ray.z != 0u {
-            bits = (1u << ray.x) | (4u << ray.y);
-        }
-    }
-    tile_rays[index] = bits;
+    @builtin(local_invocation_id) local: vec3<u32>) {
+    let pixel = vec2<i32>(id.xy);
+    let halo = vec2<i32>(i32(NEIGHBOUR_RADIUS), 0);
+    let start = local.y * ROW_PITCH + local.x;
+    row_rays[start] = ray_votes(pixel - halo);
+    row_rays[start + NEIGHBOUR_RADIUS] = ray_votes(pixel);
+    row_rays[start + 2u * NEIGHBOUR_RADIUS] = ray_votes(pixel + halo);
     workgroupBarrier();
-    for (var stride = SOFT_SUN_TILE * SOFT_SUN_TILE / 2u; stride > 0u; stride >>= 1u) {
-        if index < stride {
-            tile_rays[index] |= tile_rays[index + stride];
-        }
-        workgroupBarrier();
+    if any(id.xy >= frame.extent) { return; }
+    var votes = 0u;
+    for (var tap = 0u; tap <= 2u * NEIGHBOUR_RADIUS; tap++) {
+        votes |= row_rays[start + tap];
     }
-    if index == 0u {
-        textureStore(tiles_out, vec2<i32>(tile.xy), vec4(tile_rays[0], 0u, 0u, 0u));
-    }
+    textureStore(tiles_out, pixel, vec4(votes, 0u, 0u, 0u));
 }
 
 @compute @workgroup_size(SOFT_SUN_TILE, SOFT_SUN_TILE)
@@ -161,13 +166,9 @@ fn accumulate_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     }
 
     var neighbourhood = 0u;
-    let tile = pixel / i32(SOFT_SUN_TILE);
-    let tile_extent = (frame.extent + SOFT_SUN_TILE - 1u) / SOFT_SUN_TILE;
-    for (var y = -1; y <= 1; y++) {
-        for (var x = -1; x <= 1; x++) {
-            let at = tile + vec2(x, y);
-            if soft_within(at, tile_extent) { neighbourhood |= textureLoad(tiles, at, 0).x; }
-        }
+    for (var y = -i32(NEIGHBOUR_RADIUS); y <= i32(NEIGHBOUR_RADIUS); y++) {
+        let at = pixel + vec2(0, y);
+        if soft_within(at, frame.extent) { neighbourhood |= textureLoad(tiles, at, 0).x; }
     }
 
     // The retained samples are binary, so their second moment equals their
@@ -183,6 +184,11 @@ fn accumulate_sun(@builtin(global_invocation_id) id: vec3<u32>) {
             settled |= 1u << channel;
             bits[channel] = select(0u, mask, ray[channel] != 0u);
             counts[channel] = frame.settle;
+        } else if (prior.w & (1024u << channel)) != 0u && (prior[channel] & 1u) != ray[channel] {
+            // Re-entering an edge discards the previous settled value when
+            // this sample contradicts it. Synthetic consensus never trails.
+            bits[channel] = ray[channel];
+            counts[channel] = 1u;
         }
     }
     let flags = counts.x | (counts.y << 5u) | (settled << 10u);
@@ -214,7 +220,8 @@ fn filter_sun(@builtin(global_invocation_id) id: vec3<u32>) {
         plane_tangent(pixel, vec2(1, 0), z, point)));
     let pixel_world = length(world_at(pixel + vec2(1, 0), z) - point);
     let variance = centre * (vec2(1.0) - centre);
-    let step_size = select(1, 2, max(variance.x, variance.y) > 0.12);
+    let fresh = min(own.w & 31u, (own.w >> 5u) & 31u) < 6u;
+    let step_size = select(1, 2, fresh || max(variance.x, variance.y) > 0.12);
     var total = centre * 4.0;
     var weight = 4.0;
     for (var y = -2; y <= 2; y++) {

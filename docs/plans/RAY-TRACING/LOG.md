@@ -183,3 +183,8 @@
   short local alignment query before the original lift. The larger-lift diagnostic removed the same patches but
   also altered the close geometry, so the implementation retains the shared shadow lift.
   [History guards](../../../.orchestrate/evidence/RAY-TRACING/WP4/history.md).
+- 2026-11-24 WP4 refinement. Moved consensus from tile-aligned ranges to a sliding 17 by 17 neighbourhood
+  after the fast caster revealed stepped edges. A new sample that contradicts settled history starts a fresh
+  accumulation in the mixed region. The open-rim fixture exposed an excessive far-face reach at grazing
+  angles. The soft forward operation also bounds that reach by the scale implied by the difference between
+  adjacent shading normals. The hard penumbra-off operation retains its original reach.

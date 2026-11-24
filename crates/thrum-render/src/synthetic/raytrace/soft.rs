@@ -552,10 +552,7 @@ impl SyntheticTargetInputs {
             return Ok(None);
         }
         let structure = structure.ok_or(RenderError::GraphPassMismatch)?;
-        let tiles = graph.resource(
-            descriptor(extent.map(|axis| axis.div_ceil(TILE)), RAY_FORMAT),
-            ResourceScope::Transient,
-        )?;
+        let tiles = graph.resource(descriptor(extent, RAY_FORMAT), ResourceScope::Transient)?;
         let rays = graph.resource(descriptor(extent, RAY_FORMAT), ResourceScope::Transient)?;
         let history = |graph: &mut FrameGraph, owner, format| {
             graph.resource(
@@ -731,6 +728,37 @@ mod tests {
         let source = super::shader_source();
         let module = naga::front::wgsl::parse_str(&source)
             .unwrap_or_else(|error| panic!("{}", error.emit_to_string(&source)));
+        let frame = module
+            .types
+            .iter()
+            .find_map(|(_, ty)| (ty.name.as_deref() == Some("SoftSunFrame")).then_some(&ty.inner))
+            .expect("soft Sun frame record");
+        let naga::TypeInner::Struct { members, span } = frame else {
+            panic!("soft Sun frame must be a struct");
+        };
+        use super::SoftFrame;
+        use std::mem::offset_of;
+        assert_eq!(*span as usize, size_of::<SoftFrame>());
+        let expected = [
+            offset_of!(SoftFrame, inverse),
+            offset_of!(SoftFrame, previous),
+            offset_of!(SoftFrame, camera),
+            offset_of!(SoftFrame, extent),
+            offset_of!(SoftFrame, jitter_delta),
+            offset_of!(SoftFrame, enabled),
+            offset_of!(SoftFrame, valid),
+            offset_of!(SoftFrame, phase),
+            offset_of!(SoftFrame, settle),
+            offset_of!(SoftFrame, dive_cosine),
+            offset_of!(SoftFrame, radius),
+            offset_of!(SoftFrame, padding),
+        ];
+        assert!(
+            members
+                .iter()
+                .map(|field| field.offset as usize)
+                .eq(expected)
+        );
         naga::valid::Validator::new(
             naga::valid::ValidationFlags::all(),
             naga::valid::Capabilities::all(),

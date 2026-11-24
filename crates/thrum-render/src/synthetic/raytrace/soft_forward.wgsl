@@ -6,11 +6,18 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     if soft_frame.enabled == 0u { return hard_sun_visibility(input, receiver); }
     let direction = light.direction_to_light.xyz;
     let cosine = dot(receiver.normal, direction);
+    // Bound the local body passage by the scale implied by the change in
+    // shading normal. This keeps a nearly tangent ray from excusing a remote
+    // sheet joined to the receiving mesh while preserving the gap test.
+    let normal_change = max(length(dpdx(receiver.normal)), length(dpdy(receiver.normal)));
+    let footprint = max(length(receiver.dx), length(receiver.dy));
+    let passage_limit = 4.0 * footprint / max(normal_change, 1e-8);
     if cosine <= 0.0 { return 1.0; }
 
     let plane = cross(receiver.dx, receiver.dy);
     let outward = select(-plane, plane, dot(plane, receiver.normal) >= 0.0);
-    let band = dot(outward, direction) <= sin(soft_frame.radius) * length(plane);
+    let plane_cosine = dot(outward, direction) / max(length(plane), 1e-12);
+    let band = plane_cosine <= sin(soft_frame.radius);
     let origin = shadow_ray_origin(receiver.position, receiver.normal);
     var centre = 1.0;
     var granted = false;
@@ -21,7 +28,10 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
         let crossing = closest_shadow_hit(inside, direction, 1e30);
         if crossing.kind != RAY_QUERY_INTERSECTION_NONE {
             let lift = dot(receiver.position - inside, receiver.normal);
-            if gap > 0.0 && crossing.t * cosine <= 21.0 * gap + lift {
+            // A vanishing shading cosine cannot make the reach unbounded while
+            // the ray still descends through this face's plane.
+            let reach_cosine = max(cosine, -plane_cosine);
+            if gap > 0.0 && crossing.t <= passage_limit && crossing.t * reach_cosine <= 21.0 * gap + lift {
                 granted = shadow_same_receiver(origin, inside, receiver.normal, crossing);
             }
             centre = select(0.0, 1.0, granted &&
