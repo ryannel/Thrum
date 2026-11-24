@@ -366,6 +366,7 @@ async fn trace(gpu: &Opened, config: &ShadeConfig, state: &Arc<State>, point: [f
         [0.5, 0.866_025_4, 0.0],
         state.tick(),
         &vertical_view(point),
+        false,
     )
     .await;
     let shade = Shade::new(config.clone())

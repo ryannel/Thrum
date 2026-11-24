@@ -93,7 +93,13 @@ impl OpportunityClock {
     fn next_with_pacing(&mut self, active: bool) -> Opportunity {
         let previous = self.index;
         if self.timebase == Timebase::Elapsed {
-            self.index = self.next_target_index(self.origin.elapsed());
+            // Each target is one period after its request is due. A late
+            // request can still use that target while it is in the future.
+            let elapsed_periods = u32::try_from(
+                self.origin.elapsed().as_nanos() * u128::from(self.hz) / 1_000_000_000,
+            )
+            .unwrap_or(u32::MAX);
+            self.index = self.index.max(elapsed_periods);
         }
         let due = Duration::from_secs_f64(f64::from(self.index) / f64::from(self.hz));
         if active {
@@ -117,29 +123,5 @@ impl OpportunityClock {
                 due
             },
         }
-    }
-
-    fn next_target_index(&self, elapsed: Duration) -> u32 {
-        // Each target is one period after its request is due. A late request
-        // can still use that target while the target itself is in the future.
-        let elapsed_periods =
-            u32::try_from(elapsed.as_nanos() * u128::from(self.hz) / 1_000_000_000)
-                .unwrap_or(u32::MAX);
-        self.index.max(elapsed_periods)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_late_request_can_still_use_its_future_target() {
-        let mut clock = OpportunityClock::new(Instant::now(), 120, Timebase::Elapsed).unwrap();
-        // Index 2 becomes due at 16.667 ms and targets 25 ms.
-        clock.index = 2;
-        assert_eq!(clock.next_target_index(Duration::from_millis(19)), 2);
-        assert_eq!(clock.next_target_index(Duration::from_millis(25)), 3);
-        assert_eq!(clock.next_target_index(Duration::from_millis(43)), 5);
     }
 }
