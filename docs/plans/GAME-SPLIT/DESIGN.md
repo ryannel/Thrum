@@ -163,8 +163,8 @@ against the engine commit it is recording. An engine module's builder never edit
 ## How the V1 gate is verified once the game lives outside
 
 `SHOWCASE` builds and closes the V1 exit before the move, unchanged. WP4 then shows the exit's function from
-outside. The gate passes a game's own arguments through, so each command line that `SHOWCASE` WP5.5 and M7.2 to
-M7.8 pinned on `scripts/run_v1_showcase.py` runs as `python3 scripts/game_gate.py v1-game` with the same
+outside. The gate passes a game's own arguments through, so each command line that `SHOWCASE` WP5.5 and WP7.2 to
+WP7.8 pinned on `scripts/run_v1_showcase.py` runs as `python3 scripts/game_gate.py v1-game` with the same
 arguments, on the game in the games repository and the engine at the commit under test, with the thresholds and
 baselines as `SHOWCASE` left them. `exit` with no further argument runs them all:
 
@@ -175,7 +175,7 @@ baselines as `SHOWCASE` left them. `exit` with no further argument runs them all
   the ground texture appears without a restart, and the profiler's rows are current. The edit is made to the
   game's own asset, in the tree the gate built from, so a watcher still pointed at Thrum's frozen copy fails.
 
-What the move does not re-judge is the frame evidence: `SHOWCASE` WP7.9 and M7.10's whole-frame records, M8's
+What the move does not re-judge is the frame evidence: `SHOWCASE` WP7.9 and WP7.10's whole-frame records, M8's
 visual reviews and its attended cadence. Those were accepted at the commit `SHOWCASE` claimed and stay valid
 history in `.orchestrate/evidence/SHOWCASE/`. The game's `frames` command still runs through the gate, as a record and
 never a verdict. So after the move the gate claims function and image agreement at an engine commit, and nothing
@@ -187,7 +187,7 @@ function is re-verified at any engine commit by one command: `python3 scripts/ga
 
 ## Why the move waits for the exit
 
-Moving sooner means building `SHOWCASE` WP5 to M8 across two repositories, on a gate that does not exist yet, on
+Moving sooner means building `SHOWCASE` WP5 to WP8 across two repositories, on a gate that does not exist yet, on
 the path every V1 module's closing proof runs through; it also needs `SHOWCASE` re-planned and re-reviewed. The
 boundary is what the owner asked for, and it is real from WP3: rules at zero, the host in the engine, the game
 buildable alone. The move itself is then a copy.

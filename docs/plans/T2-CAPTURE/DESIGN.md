@@ -81,7 +81,7 @@ metadata, accepting locked, unlocked and changed state, with unavailable observa
 Open no-desktop-capture proofs require denied read-only Screen Recording preflights before and after under the
 identified launcher/harness permission identity. Missing, failed or granted preflights cannot establish that claim.
 No permission is requested or changed. Neither console observation values nor manual locking gate a run or pass.
-Accepted WP0/M1 definitions and their recorded lock witnesses retain their historical meaning.
+Accepted WP0/WP1 definitions and their recorded lock witnesses retain their historical meaning.
 
 Per opportunity/submission retain monotonic host request/accept/submit times, committed endpoint pair/timeline,
 interpolation alpha, view/history/cut and content/device/surface generations, submission ID, copy/map completion and
@@ -328,7 +328,7 @@ it read `tmp/platform-runtime-mac-m2/console-probe.txt` at 01:59 CET (`IOConsole
 `CGSSessionScreenIsLocked = Yes`) and the successful 02:00 CET [offscreen parity record](../../../.orchestrate/evidence/render/mac-m2-pan/parity-20261109.json).
 The second review locates probe scratch in the separate platform-runtime-mac worktree; the parity JSON alone
 does not record lock state. This is historical feasibility evidence, not a fresh T2 run or runtime-motion
-qualification. Accepted WP0/M1 subsequently retained locked-run witnesses with their own proof.
+qualification. Accepted WP0/WP1 subsequently retained locked-run witnesses with their own proof.
 The owner's console-witness correction applies to open work and later consumers. Record state during the actual
 run without arranging or waiting for a locked console. Capture independence rests on the denied, attributed
 permission preflights and the actual engine-output path. Never lock an active user's session to arrange a test
@@ -369,7 +369,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 
 T2 owns this child work of TOOLS-DELIVERY; no new crate. Build sequentially. Existing committed pages/world lane,
 FrameHost, cooked content, platform loss/lease and scene/controls are available now. WP0 must preserve
-`PLATFORM-RUNTIME-MAC:WP1` (done). WP1/M2 here follow WP0; no dependency on G3t/G4 or Mac qualification WP2.
+`PLATFORM-RUNTIME-MAC:WP1` (done). WP1/WP2 here follow WP0; no dependency on G3t/G4 or Mac qualification WP2.
 Mac qualification WP2 needs only `T2-CAPTURE:WP0`; Mac WP3 separately needs `APPLE-TILE:WP3` for post-change requalification.
 Later visual work packages use WP0 on Mac,
 WP1 on Chrome and WP2 on the simulator at the first proof requiring this tooling. Existing completed evidence is not

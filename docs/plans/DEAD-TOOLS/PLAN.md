@@ -50,7 +50,7 @@ Git repositories and `test_sim2d_conformance.py` runs a conformance pass; each t
 planner ran them, and `test_mac_m2_presented` failed. Deleting a counted script lowers `script-caller`, so
 tighten the baseline in the same landing. Deleting `reconstruction_motion.py` removes the only caller of
 `capture_mac_m2_ungranted.py`, `mac_m2_capture_launcher.swift` and `review_v1_playback.mjs`, so they go too;
-`PLATFORM-RUNTIME-MAC`'s design names the first, and stays as it is. `GATE-TIME` WP1, WP6 and M7 edit other arms of the same `main.rs`, and WP5
+`PLATFORM-RUNTIME-MAC`'s design names the first, and stays as it is. `GATE-TIME` WP1, WP6 and WP7 edit other arms of the same `main.rs`, and WP5
 its test step after this module's WP2.
 
 ## WP2 Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran

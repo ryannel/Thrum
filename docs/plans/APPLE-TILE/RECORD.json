@@ -149,7 +149,7 @@
       }
     },
     "WP2": {
-      "definitions": "f4927ffac311eb453cfdd51b20daaec6390fd105e2da8c266b4e88a1f899e4bf",
+      "definitions": "bf4f92e32e009e7f4fa0f2e0cb84420ba92c621ee0b2d012239c7eab2a558013",
       "reviews": [
         {
           "verdict": "fail",
@@ -390,7 +390,7 @@
       }
     },
     "WP10": {
-      "definitions": "30dbfea3ba6e7b9ed375f00cb0ed02f71d6f2b1a0199a13a2e53042b718ffc41",
+      "definitions": "a3ebd2097d54d06cf4646ceecc1fa12778f160271ef99ccc4c30080e10dc711f",
       "reviews": [
         {
           "verdict": "pass",
@@ -570,7 +570,7 @@
       }
     },
     "WP12": {
-      "definitions": "1eb49dffa6a55479186d42460faa84da0b992c04660d7f9d58d0d99093649902",
+      "definitions": "49a186da27b9664c4c9b3f5bd581af5c052832cfa110983a36f77aacc1a7f507",
       "reviews": [
         {
           "verdict": "pass",

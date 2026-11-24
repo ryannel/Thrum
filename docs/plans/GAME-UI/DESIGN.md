@@ -36,7 +36,7 @@ This design reconciles the code on main at `8f038dec`; it is not a blind study. 
 [a planning probe](../../../.orchestrate/evidence/GAME-UI/planning-probe.md) run for it.
 
 **This module is planned before the code it builds on exists.** `RENDER-2D` is not built, and neither are
-`APPLE-TILE` WP10 to M12, `APPLE-PRESENTATION` WP3 to M11 or `CONTENT-LOOP` WP1 to WP3. So this design names the
+`APPLE-TILE` WP10 to WP12, `APPLE-PRESENTATION` WP3 to WP11 or `CONTENT-LOOP` WP1 to WP3. So this design names the
 behaviour it needs from them and never one of their APIs, and the builder of each work package first reads what was
 actually built ([handoff](#proof-and-builder-handoff)).
 

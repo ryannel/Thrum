@@ -157,7 +157,7 @@ between different meshlet-visibility partitions; diagnostic controls are evidenc
 The reference and negative controls must be opt-in probe facilities, absent from ordinary selection and per-frame
 work. Do not patch production WGSL between arms or leave an override enabled for WP1.4–WP1.6. Review the probe's command
 witness and independence from D. The production direct path still allocates no indirect/cull/readback resources.
-WP1.4/M1.5 still compare **production I before versus after**, byte for byte; WP1.6 still audits its unchanged commands,
+WP1.4/WP1.5 still compare **production I before versus after**, byte for byte; WP1.6 still audits its unchanged commands,
 resources and writes. The reference cannot satisfy any of those items or substitute for simulator qualification.
 
 **Cause investigation and shader decision.** Identifying the exact derivative, scheduling or ordering cause is not
@@ -167,7 +167,7 @@ is correct or that every edge difference is harmless. Investigate further if the
 inspection fails or cannot classify a discrepancy, or if validation indicates undefined shader behaviour.
 
 A partition-invariant shared shader change is **not commissioned or worthwhile for WP1**. It would broaden work into
-material/derivative semantics, may change filtering, quality and cost, and would threaten WP1.4/M1.5's unchanged indirect
+material/derivative semantics, may change filtering, quality and cost, and would threaten WP1.4/WP1.5's unchanged indirect
 pixels. A direct-only shader would break the shared-pipeline requirement in WP1.2. Reconsider only for a demonstrated
 visible defect or a separately commissioned need for partition invariance, with cause isolation and quality/cost proof;
 any change to the preserved indirect output or selection requires a separate scope decision.
@@ -202,7 +202,7 @@ console, only the rotation row is recorded with that reason.
 
 Console state is recorded before and after every simulator mode as witness metadata. Locked, unlocked and changed
 states are accepted, and unavailable observations retain their reason. No manual-lock wait or lock state refusal
-belongs in these checks. WP1.7/M1.8 prove independence from desktop capture with denied read-only Screen Recording
+belongs in these checks. WP1.7/WP1.8 prove independence from desktop capture with denied read-only Screen Recording
 preflights before and after under the identified launcher/harness permission identity. Missing, failed or granted
 preflights leave that proof incomplete. The route continues to use engine state and simulator output; no grant is
 requested. The builder replaces the lock admission in `scripts/cooked_draw_ios_sim.py` and updates the obsolete

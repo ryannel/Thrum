@@ -24,7 +24,7 @@ that put this module on the loop says, word for word: "The owner wants work line
 exit in docs/BUILD-PLAN.md, so builders always have a next work package". The task for this revision says, word for
 word: "Revise APPLE-PRESENTATION's design and plan as .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asks".
 The task for the 14 November revision says, word for word: "APPLE-PRESENTATION WP4 to WP11 have no done-when
-entries, so no builder can be given them, and SHOWCASE WP7-M8 (the V1 exit) sit behind them [...]. Write their
+entries, so no builder can be given them, and SHOWCASE WP7-WP8 (the V1 exit) sit behind them [...]. Write their
 done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION WP3,
 which a builder holds."
 [The module list](../ARCHITECTURE.md) places this module and settles seams 1–9 below; every work package is in
@@ -306,7 +306,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Generation transitions (resize, backing-scale change, device loss).**
 - A new extent needs new targets and a new MetalFX scaler, so it cannot be free.
 - The frame host keeps presenting the old generation. The present pass scales its output into the resized drawable
-  with linear filtering implemented and qualified by G4; the surface binding is execute-time (G3t WP2/M3).
+  with linear filtering implemented and qualified by G4; the surface binding is execute-time (G3t WP2/WP3).
   G3t itself retains nearest-source SDR mapping and its intermediate.
 - Meanwhile a preparation thread builds the new generation: targets, bind groups, providers with synchronous
   initialization, and the history keys. wgpu's `Device` is `Send + Sync`.
@@ -943,7 +943,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | G4 work package | Can start when | Runs in parallel with |
 |---|---|---|
 | WP1 jitter, matrices, motion | G3t M0, atmosphere checkpoint, seams 2 and 4 | G3t WP1–WP3 |
-| WP2 temporal inputs, history protocol | WP1, G3t WP1 (eligibility report), G3t WP2 (shares `runtime.rs`), seams 1 and 3 | G3t WP3/M10–WP11 (sequential integration for shared files) |
+| WP2 temporal inputs, history protocol | WP1, G3t WP1 (eligibility report), G3t WP2 (shares `runtime.rs`), seams 1 and 3 | G3t WP3/WP10–WP11 (sequential integration for shared files) |
 | WP3 TAAU at native scale | WP2, **G3t WP3** (TAAU output feeds the retained pre-tone input) | G3t WP10–WP11 |
 | WP4 surface extent and transitions | WP3, **G3t WP3**, seam 5 | G3t WP10–WP11 |
 | WP5 dynamic scale | WP4 | WP6 |
@@ -961,7 +961,7 @@ the outside waits for WP8 and WP11 on `APPLE-TILE:WP11` and `APPLE-TILE:WP12`, r
 **Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*
 - *G3t WP1 → WP2.*
-- *G3t WP3 → WP3/M4/M6.* One replaceable pre-tone scene-linear input carries matching exposure, extent and
+- *G3t WP3 → WP3/WP4/WP6.* One replaceable pre-tone scene-linear input carries matching exposure, extent and
   sample/generation identity. The existing SDR tone-to-Rgba8Unorm-to-present path and nearest mapping remain.
   G4 inserts TAAU/MetalFX there and owns the qualified EDR branch, headroom transform and transition filtering.
   The surface is bound at execute time; no fused-shader feasibility or traffic saving is inherited from G3t.

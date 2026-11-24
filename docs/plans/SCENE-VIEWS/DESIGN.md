@@ -584,7 +584,7 @@ the lead batches for every module. No work package waits for that window.
    path and WP3's first Chrome run. Limits are read from the capability record and refused at preparation.
 5. **Shadows in a view read coarse or swim**, because one cascade spans the view's whole reach. Early sign:
    WP2.5. The remedies are the second cascade and a shorter reach.
-6. **Another builder is in the same files.** `ATMOSPHERE` WP6 and M7, `CULLING` and `APPLE-PRESENTATION` edit
+6. **Another builder is in the same files.** `ATMOSPHERE` WP6 and WP7, `CULLING` and `APPLE-PRESENTATION` edit
    files this module edits. Whichever lands second integrates on top, and the exact baselines catch a slip.
 7. **A reflection's haze thins just above the water's horizon**, at sea level most. It is `ATMOSPHERE`'s
    product [as it stands](#what-a-views-air-is-held-to), and the main view has it too. Early sign: WP2.5's

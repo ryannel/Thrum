@@ -6,7 +6,7 @@ where there is none. [Design](DESIGN.md) · [done-when file](DONE.json), which o
 
 Read [Mechanisms](DESIGN.md#mechanisms), [the files each work package touches](DESIGN.md#files-each-work-package-touches)
 and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before any work package. The work packages are in build order:
-M5 and WP6 were added after WP3 and WP4 and are built before them.
+WP5 and WP6 were added after WP3 and WP4 and are built before them.
 
 ## Open for the human
 

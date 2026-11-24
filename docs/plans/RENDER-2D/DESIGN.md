@@ -35,8 +35,8 @@ This design reconciles the code on main at `54ab55bb`; it is not a blind study. 
 the designs of `APPLE-TILE`, `EFFECT-GRAPH`, `CONTENT-LOOP` and `SIM-2D`; and
 [a planning probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md) run for it.
 
-**This module is planned before the code it builds on is finished.** `APPLE-TILE` WP10 to M12,
-`APPLE-PRESENTATION` WP3 to M11, `CONTENT-LOOP` WP1 to WP3 and `EFFECT-GRAPH` WP3 are still to be built. So this design
+**This module is planned before the code it builds on is finished.** `APPLE-TILE` WP10 to WP12,
+`APPLE-PRESENTATION` WP3 to WP11, `CONTENT-LOOP` WP1 to WP3 and `EFFECT-GRAPH` WP3 are still to be built. So this design
 names the behaviour it needs from them and never one of their APIs, and the builder of each work package first reads
 what was actually built ([handoff](#proof-and-builder-handoff)).
 
@@ -45,7 +45,7 @@ and decouple them. But we don't want to start working on the swarm game till v1 
 longer waits for the V1 exit. A work package waits only for what it uses: WP1 for `EFFECT-GRAPH:WP3`, whose
 after-opaque stage it refuses in a 2D scene, and `APPLE-PRESENTATION:WP3`, whose reconstruction a 2D scene
 declares none of; WP4 for `CONTENT-LOOP:WP1`, whose lease and publication a sheet uses; WP5 for `SIM-2D:WP1`, whose
-crowd it draws. `APPLE-TILE` WP10 to M12, `APPLE-PRESENTATION` WP4 to M12 and `CONTENT-LOOP` WP2 and WP3 are built
+crowd it draws. `APPLE-TILE` WP10 to WP12, `APPLE-PRESENTATION` WP4 to WP12 and `CONTENT-LOOP` WP2 and WP3 are built
 in the same files at the same time. Whichever lands second builds on the first and keeps its tests passing; in
 particular a governor or a reconstructor that lands after WP1 gives a 2D scene no scale, no jitter and no
 history, as [C07's no-reconstruction form](#2-the-view-and-the-output-pixel) says.

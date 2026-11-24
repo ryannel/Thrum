@@ -64,8 +64,8 @@
           "statement": "The design, plan, G3b work list, iOS maturity entry and selected evidence agree on extent correctness and its limits; COOKED-DRAW WP1 remains gated on WP7 acceptance with M1.10 unchanged, and scratch is retained or retired under the storage rules.",
           "check": "./dev check-docs",
           "target": "ios-sim",
-          "ask": "Does the evidence README include commands, build identity, the item-by-item inspection and actual extent/resource/rotation records? Are implementation, correctness, visuals and device measurements separate, with no cooked visual acceptance inferred from diagnostic-scene WP7 proof? Are the unchanged COOKED-DRAW WP1.9-M1.11 reruns and T2 M2 handoff explicit, and is owned tmp/ios-extent scratch closed out?",
-          "evidence": "ios-sim: ./dev check-docs passed. Selected evidence includes source/binary/model identity, commands, inspection, actual resource/rotation records and retention recipes. Plan, G3b work list and iOS maturity updated; COOKED-DRAW WP1.9-M1.11 and M1.10 requirements retained, T2 handoff explicit. .orchestrate/evidence/render/ios-extent/README.md.",
+          "ask": "Does the evidence README include commands, build identity, the item-by-item inspection and actual extent/resource/rotation records? Are implementation, correctness, visuals and device measurements separate, with no cooked visual acceptance inferred from diagnostic-scene WP7 proof? Are the unchanged COOKED-DRAW WP1.9-WP1.11 reruns and T2 M2 handoff explicit, and is owned tmp/ios-extent scratch closed out?",
+          "evidence": "ios-sim: ./dev check-docs passed. Selected evidence includes source/binary/model identity, commands, inspection, actual resource/rotation records and retention recipes. Plan, G3b work list and iOS maturity updated; COOKED-DRAW WP1.9-WP1.11 and WP1.10 requirements retained, T2 handoff explicit. .orchestrate/evidence/render/ios-extent/README.md.",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/WP7-review.md",
           "builder_result": "pass"

@@ -14,7 +14,7 @@ sweep and exit, and yaw-consistent settled endpoints. Inspect full-resolution im
 at 1× for cuts, snaps, reversals, repeats and local holds. The Ground E view identifies scene and framing. The
 work package's worded inspection list and shipped high-end game quality bar govern visual acceptance.
 
-WP0/M1 retain their accepted plan/recovery evidence. WP2 qualifies the current surface path through elapsed-time
+WP0/WP1 retain their accepted plan/recovery evidence. WP2 qualifies the current surface path through elapsed-time
 engine motion, real-window tap correspondence and OS-reported presented times for the game's drawables on the
 built-in panel. WP3 repeats the
 complete qualification after APPLE-TILE WP3 changes the surface/present path. Each result identifies its actual

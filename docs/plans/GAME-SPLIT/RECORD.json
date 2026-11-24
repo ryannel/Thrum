@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/GAME-SPLIT/design-review.md",
     "commit": "50d57a11fcdae9e5fa2e0b51976d0656d803ab93",
-    "hash": "98f0bea8290b0ef1cf16ff69d308f2ffbb249e62bf7b67e17375120df7688b80",
+    "hash": "e960c6136f3be4bee16a3c2a9f023d835a84080a4cdd0fb173338bedbd2e19a0",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -204,7 +204,7 @@
       ]
     },
     "WP4": {
-      "definitions": "56d5445c827b9cdbcb856197aaf6eb1d1b76a05718a0536cccefd6464e6eb428",
+      "definitions": "92a40ee332fbe5626aacedeb8e2aa91eded94dd25ab336100d7d157b1899a183",
       "reviews": [],
       "authorised": {
         "by": "plan",

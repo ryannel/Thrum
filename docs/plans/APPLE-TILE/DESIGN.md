@@ -40,7 +40,7 @@ and slot duplication; M6 scratch sharing; M7 compact rows; M8 expanded GPU light
 consolidation. Existing queue-ordered uploads, 192-byte admitted rows, CPU overflow selection and V2 raster/order
 semantics stay in use. These are named later performance candidates, with no completion or gain claimed here.
 The complete Metal recorder, Metal 4 queue, tile shaders, Android recipe and quantization also remain later work.
-Retain work package IDs WP0–WP3/M10–WP12 so consumer references stay stable; M4–M9 definitions are removed, not accepted.
+Retain work package IDs WP0–WP3/WP10–WP12 so consumer references stay stable; M4–M9 definitions are removed, not accepted.
 
 ## Research and selection
 
@@ -90,7 +90,7 @@ already-done `PLATFORM-RUNTIME-MAC:WP1` loss boundary. Simulator rows before WP1
 WP12 alone needs `COOKED-DRAW:WP1` for cooked simulator function. No row requires `T2-CAPTURE:WP2`.
 
 Mac WP2 qualifies the current surface path after T2 WP0, independently of this module. Mac WP3 waits for Mac WP2
-(module order) and `APPLE-TILE:WP3`: T2 WP0/M1 → G3t WP0–WP3, including the attended real-window rows at WP2/M3 and
+(module order) and `APPLE-TILE:WP3`: T2 WP0/WP1 → G3t WP0–WP3, including the attended real-window rows at WP2/WP3 and
 simulator diagnostic lifecycle checks. Chrome capture is delivered; simulator cooked draw/capture is absent from
 this chain. Mac WP3 reruns its complete runtime-motion/capture-OFF panel-cadence and windowed-tap/tooling protocols
 on the changed build; earlier results qualify only their recorded build. There is no reverse Mac dependency.
@@ -274,13 +274,13 @@ same-build recipes; shared regressions cannot disappear by comparing two changed
 own recorded WebGPU baseline, not expected to be bit-identical to a different backend. Baseline artifacts and the
 comparator are retained under the storage rules; a new baseline cannot silently replace an earlier one.
 
-The comparison contract requires exact same-target scene-linear and submitted SDR bytes for WP1/M2/M3 and ordinary
-WP10/M11/M12 runs, against recipe pairs and the retained pre-change portable baseline. Membership/IDs and draw order
+The comparison contract requires exact same-target scene-linear and submitted SDR bytes for WP1/WP2/WP3 and ordinary
+WP10/WP11/WP12 runs, against recipe pairs and the retained pre-change portable baseline. Membership/IDs and draw order
 are exact. This compares unchanged shader arithmetic and quantization on the same backend/compiler/profile; it makes
 no CPU-vs-GPU f32 or cross-backend promise. T2 `still`/`fixed` checkpoints use matched sample, exposure, format, extent,
 headroom H=1 and history/reset identity. T2 `realtime` records prove elapsed-time continuity, not byte equality across
 different scheduling. Compare recorded exact sample identities where available; use matched deterministic fixed
-routes for checkpoint equality, never equate movie frame indices with world samples. The WP10/M11 diagnostic is
+routes for checkpoint equality, never equate movie frame indices with world samples. The WP10/WP11 diagnostic is
 exact against its own copy/select twin and declared state history; compare ordinary pre-provider inputs separately.
 There is no 1-ULP or global perceptual allowance in this scope.
 
@@ -335,7 +335,7 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
 - Native initialization/lifetimes differ from wgpu assumptions: same-submit stateful twin, discard/reset, held slot,
   extent replacement and generation loss witnesses precede MetalFX.
 - Quiet timings, physical traffic and real display cadence may be unavailable. Keep their evidence limits explicit;
-  none is supplied by docs checks. Functional real-window runs at WP2/M3 cannot be replaced by offscreen output;
+  none is supplied by docs checks. Functional real-window runs at WP2/WP3 cannot be replaced by offscreen output;
   without an unlocked active-display slot those items stay open. WP12 records cadence/physical-device rows still owed,
   and Mac WP3 must qualify the post-G3t-M3 surface path rather than inherit old results.
 
@@ -350,10 +350,10 @@ through the shared tap. WP2 also names delivered `PLATFORM-RUNTIME-MAC:WP1`. Bef
 Mac and Chrome same-target portable baselines using their qualified target taps and pinned source/cooked inputs.
 
 Mac WP2 qualifies the current path after T2 WP0 independently. Mac WP3 needs Mac WP2 by module order and
-`APPLE-TILE:WP3`: T2 WP0/M1, then G3t WP0–WP3, including attended D2.5/D3.5 and simulator diagnostic
+`APPLE-TILE:WP3`: T2 WP0/WP1, then G3t WP0–WP3, including attended D2.5/D3.5 and simulator diagnostic
 function checks. **Neither COOKED-DRAW WP1 nor T2 simulator WP2 is on that chain.** Mac WP3 reruns its complete
 runtime-motion and capture-OFF built-in-panel cadence protocols plus real-window tap/tooling preflight on the changed
-build. G3t never waits back on Mac WP2/M3; old results qualify only their recorded builds.
+build. G3t never waits back on Mac WP2/WP3; old results qualify only their recorded builds.
 
 G4 receives WP0 proof tools, WP1 eligibility, WP3 pre-tone linear input/exposure binding and WP11 native
 provider lifetime/reset/timing. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR

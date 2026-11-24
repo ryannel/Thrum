@@ -5,7 +5,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/T2-CAPTURE/design-review.md",
     "commit": "018954f3d38a53f1ce3a8397465e1c4e5c8ced90",
-    "hash": "5b90826da165c8d265978f5acec6507d86e330fa2cafd8248684354eb7b282b6",
+    "hash": "a579545c7f76fa9e4ca4c856be9cd583a6ac3b2ae25fd48731dc899d2719e74c",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",

@@ -4,7 +4,7 @@
     "verdict": "ok",
     "review": ".orchestrate/evidence/TEST-SUPPORT/design-review.md",
     "commit": "3a6744e9573fa2bacfb6349fa1cd482f1304637a",
-    "hash": "acb546c007011c54d3f734a94848b636ae1edcfae85e21d879ca079bfbed36a3",
+    "hash": "e99f7eacb3c74d751b3d3e17e78aeb700cb176349e6ed7542e234dc12dd20be5",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
