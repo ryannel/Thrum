@@ -416,8 +416,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Cloud shade crosses the valley in step with the weather, with no cloud drawn (CLOUDS M2), 17 Nov · [review](../../.orchestrate/evidence/CLOUDS/M2-review.md)
 - An integrated record states qualified wins and remaining targets (APPLE-TILE M12), 17 Nov · [review](../../.orchestrate/evidence/APPLE-TILE/M12-review.md)
 - A cooked mesh reaches the GPU straight from its mapped file, and the cooker's edit-to-visible test measures the engine's own loader (REVIEW-ENGINE M3), 17 Nov · [review](../../.orchestrate/evidence/REVIEW-ENGINE/M3-review.md)
-- From any engine checkout, one command builds and tests a game in a games repository against that checkout (GAME-SPLIT M1), 17 Nov · [review](../../.orchestrate/evidence/GAME-SPLIT/M1-review.md)
-- A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search (SIM-2D M2), 17 Nov · [review](../../.orchestrate/evidence/SIM-2D/M2-review.md)
 
 ## All modules
 
