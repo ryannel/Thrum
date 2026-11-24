@@ -749,3 +749,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   [WP5](../../../.orchestrate/evidence/ATMOSPHERE/WP5-review.md) ·
   [WP9](../../../.orchestrate/evidence/ATMOSPHERE/WP9-review.md) ·
   [WP10](../../../.orchestrate/evidence/ATMOSPHERE/WP10-review.md)
+
+- 2026-11-24 WP8 integrates the test-bank coefficients once with the air and gives the forward receivers and
+  incident meter the ground band's whole Sun path. Metal probes check slab convergence, ramp handover and
+  terminal correction through 200 km. Fixed and realtime T2 captures show the bank on Metal and Chrome
+  WebGPU. The paired capture-off record measures the medium producer under shared load.
+  [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP8/README.md)

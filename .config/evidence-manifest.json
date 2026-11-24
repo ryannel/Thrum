@@ -3970,6 +3970,22 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/WP8-chrome-submitted-motion.tar",
+      "size": 1743272960,
+      "sha256": "b6313b768578de1ea2e1b8c12f6bf3a45b73d8f99867f5e96521dc9186fbd750",
+      "date": "2026-11-24T20:43:19.609481+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/ATMOSPHERE/WP8/lossless-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/WP8-metal-submitted-motion.tar",
+      "size": 727021056,
+      "sha256": "d20af5eaafa14ff8f1f0f9ddd8d592a8659f8f7ba3fbd3def30719391f16f820",
+      "date": "2026-11-24T20:42:38.780139+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/ATMOSPHERE/WP8/lossless-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-off-realtime-09-1.25.png",
       "size": 3010188,

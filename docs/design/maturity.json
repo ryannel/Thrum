@@ -337,10 +337,10 @@
         ]
       },
       "view_volume": {
-        "implementation": "The opt-in frustum volume integrates air, cascade shadows and the registered Sun-path optical depth. The forward decoder reads the joint transport. The background and stars take the terminal pair, and history advances on submission.",
-        "correctness": "Metal probes exercise the independent solar, transmittance and night terms and terminal correction exactly once. A GPU-written Sun-path field shadows the air across the geometric horizon. A CPU-fed field remains clear below its own minimum Sun elevation. With Sun cascades disabled, the compiled Metal graph orders the live Sun-path texture and mapping writes before the volume reads them. First submitted scatter, transmission and image bytes match a cold frame after a camera cut, numeric profile change, nightglow enable and disable, a Sun-path source epoch change, and device replacement. Same-epoch Sun-path advection retains history.",
-        "visuals": "Native crops on Metal and Chrome WebGPU show soft shafts aligned with the lit ground under the diagnostic cloud gaps and through the diagnostic ridge opening. Submitted-frame inspection covers the pan, 40 m walk and sunset scrub on both targets. The low-Sun cut shows a whole shaft and a continuous solar rim in the first new submission.",
-        "device": "Held valley GPU timestamps and nominal resource bytes are recorded with and without the 160 \u00d7 90 \u00d7 80 view volume under shared load. Apple M3 Max Metal renders at 1920 \u00d7 1080 and hardware Chrome WebGPU renders at 1280 \u00d7 720.",
+        "implementation": "The opt-in frustum volume integrates air with a provider’s near medium coefficients and shades it through Sun cascades and Sun-path optical depth. A ground band gives the whole Sun path to each direct receiver and the incident meter. The sky and lent far transport take the terminal pair and stars take its transmittance. The selected analytic test bank is a stand-in that CLOUDS WP14 replaces.",
+        "correctness": "Metal probes exercise the independent solar, transmittance and night terms and terminal correction exactly once. A GPU-written Sun-path field shadows the air across the geometric horizon. A CPU-fed field remains clear below its own minimum Sun elevation. With Sun cascades disabled, the compiled Metal graph orders the live Sun-path texture and mapping writes before the volume reads them. First submitted scatter, transmission and image bytes match a cold frame after a camera cut, numeric profile change, nightglow enable and disable, a Sun-path source epoch change, and device replacement. Same-epoch Sun-path advection retains history. Metal also verifies joint slab integration at 80 and 160 slices, clear continuation after the ramp, the height-resolved ground band and the terminal correction through the lent lookup to 200 km.",
+        "visuals": "Native crops on Metal and Chrome WebGPU show soft shafts aligned with the lit ground under the diagnostic cloud gaps and through the diagnostic ridge opening. Submitted-frame inspection covers the pan, 40 m walk and sunset scrub on both targets. The low-Sun cut shows a whole shaft and a continuous solar rim in the first new submission. Builder inspection on both targets covers the noon and low-Sun test bank, the walk through both edges, the inside pan and a world-driven mover crossing the bank.",
+        "device": "Held valley GPU timestamps and nominal resource bytes are recorded with and without the 160 \u00d7 90 \u00d7 80 view volume under shared load. Apple M3 Max Metal renders at 1920 \u00d7 1080 and hardware Chrome WebGPU renders at 1280 \u00d7 720. A paired capture-off cost record measures the same devices with the test bank and records the medium producer separately.",
         "unqualified": "The joint volume against an independent all-orders reference and local lights in the air are outside the qualification.",
         "evidence": [
           "../../.orchestrate/evidence/ATMOSPHERE/M7/README.md",
@@ -348,7 +348,8 @@
           "../../.orchestrate/evidence/ATMOSPHERE/M7/review-fix/README.md",
           "../../.orchestrate/evidence/ATMOSPHERE/M7/provider-reset/README.md",
           "../../.orchestrate/evidence/ATMOSPHERE/M7/provider-horizon/README.md",
-          "../../.orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/README.md"
+          "../../.orchestrate/evidence/ATMOSPHERE/M7/sun-path-graph/README.md",
+          "../../.orchestrate/evidence/ATMOSPHERE/WP8/README.md"
         ]
       },
       "evidence": [
