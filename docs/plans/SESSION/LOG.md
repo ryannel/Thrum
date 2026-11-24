@@ -257,3 +257,9 @@
   replicas matched 1,200 digests each. The headless socket match repeated the same digest count on
   two Mac clients, Chrome and the iPhone simulator over A0-conditioned loopback. The simulator
   verified shutdown. [Builder evidence](../../../.orchestrate/evidence/SESSION/WP6/README.md)
+
+- 2026-11-25 WP6 review fixes. The guide now drains frame and command results after every client advance
+  and documents game-owned proof programs for both carriers. On the Mac, the timed-only control reproduced
+  the 8,192-frame stall. Draining results kept the client Playing through tick 9,500. The CLI ran the
+  integer rules over memory and Mac sockets with matching digests, and successfully launched supplied
+  Mac, Chrome and simulator reference programs. [Review evidence](../../../.orchestrate/evidence/SESSION/WP6/review-fix/README.md)

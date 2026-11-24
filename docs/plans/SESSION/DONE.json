@@ -684,10 +684,10 @@
           "statement": "A guide linked from the networking design tells a game maker how to put a game in a match: declaring the rule set, the action wire, which actions are commands and a predicted controller; handling roster events; starting a host and joining with a ticket; reading connection state; rehearsing on the in-memory link; and running the match command on the three targets.",
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it say that a late timed action is lost and a command is not, that a hero the crowd pushes is corrected every tick, that the crowd is drawn behind the hero, that a peer too slow for the match is dropped, that the match ends with its host, that a rule set must step for every set it admits because a refused step on the host ends the match, that a difference the rules overwrite before a digest tick is not reported, and that anyone with the ticket can join?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/review-fix/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.2",
@@ -744,10 +744,10 @@
           "statement": "The engine crates hold no game types, and the tests' second rule set uses every part of the session the reference crowd does not: actions, commands and roster events.",
           "ask": "Does thrum-network or thrum-core name a type, constant or rule of the reference crowd or of the tests' second rule set? Could SWARM put its own rules in a match through the public interface and the match command, without editing either?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/review-fix/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 1,
