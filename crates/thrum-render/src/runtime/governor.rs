@@ -271,11 +271,22 @@ impl GovernorHost {
                 Some(NativeOutcome::Pending | NativeOutcome::Failed) => return None,
                 _ => 0.0,
             };
+            let measured = timing.sum() + sample.gpu_present_ns.unwrap_or_default();
+            // Passes can overlap. Budget their enclosing interval when the
+            // output consumer was timed, including any gaps between passes.
+            let span = timing.timed_pass_span_nanoseconds().unwrap_or(measured);
+            let scale_work =
+                timing.bucket(TimingCategory::Forward) + timing.bucket(TimingCategory::Effects);
+            // Discount the scale-dependent share by the same overlap. Gaps
+            // and the separately timed native segment stay fixed on recovery.
+            let scale_work = if span < measured {
+                scale_work * (span / measured)
+            } else {
+                scale_work
+            };
             let ns = |value| Duration::try_from_secs_f64(value * 1e-9).ok();
-            let elapsed = ns(timing.sum() + sample.gpu_present_ns.unwrap_or_default() + segment)?;
-            let scale_dependent = ns(
-                timing.bucket(TimingCategory::Forward) + timing.bucket(TimingCategory::Effects)
-            )?;
+            let elapsed = ns(span + segment)?;
+            let scale_dependent = ns(scale_work)?;
             Some(FrameCost {
                 elapsed,
                 scale_dependent,

@@ -202,7 +202,7 @@ impl Governor {
             )
         } else {
             let mut projected = cost.elapsed;
-            if self.tier == 0 && self.scale > 0 {
+            if self.tier <= self.display.thermal.minimum_tier() && self.scale > 0 {
                 // Only passes sized to the subrectangle can spend its additional pixels.
                 let current = f64::from(RenderScale::STEPS[self.scale].percent());
                 let next = f64::from(RenderScale::STEPS[self.scale - 1].percent());
