@@ -256,6 +256,7 @@ impl Field {
         );
         let deck =
             t.deck * smooth((n - (1.0 - 1.3 * smooth((parameters.coverage - 0.45) / 0.55))) / 0.2);
+        coverage = coverage.max(deck);
         if deck > 0.0 {
             // Gaps close on the broad field. Finer thickness variation still
             // gives a closed deck structure without perforating its coverage.
@@ -268,7 +269,6 @@ impl Field {
                 21,
             );
             let height = 0.34 + 0.66 * (0.30 * n + 0.70 * relief);
-            coverage = coverage.max(deck * (0.58 + 0.42 * relief));
             depth = depth.max(t.depth[0] * deck.powf(0.7) * height);
         }
         if coverage == 0.0 || depth == 0.0 {
