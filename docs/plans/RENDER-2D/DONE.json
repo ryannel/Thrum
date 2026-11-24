@@ -449,7 +449,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Pixel stability as in Celeste. At normal viewing size and recorded speed, fine lines and checks stay distinct and their contrast holds during the pan. Edges as clean as in Hades and Hollow Knight, with no fringe, halo, neighbouring sheet colour or gap between ground tiles. Judge the running output by eye.",
       "diagnosed_for_planner_finding": true,
       "findings": [
