@@ -547,6 +547,11 @@ impl SceneContribution for SceneContributions {
             entry.draw(pass);
         }
     }
+    fn draw_ambient_receivers(&self, pass: &mut wgpu::RenderPass<'_>) {
+        for entry in &self.entries {
+            entry.draw_ambient_receivers(pass);
+        }
+    }
     fn shadow_bounds(&self) -> Option<ShadowBounds> {
         self.entries
             .iter()

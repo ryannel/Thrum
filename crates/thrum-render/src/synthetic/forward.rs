@@ -11,6 +11,13 @@ use super::{
 };
 pub(super) use light::{AerialBindings, LightBindings};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum CameraDraw {
+    Forward,
+    Depth,
+    AmbientReceiver,
+}
+
 pub(super) fn mesh_stage_visibility(features: wgpu::Features) -> wgpu::ShaderStages {
     if features.contains(wgpu::Features::EXPERIMENTAL_MESH_SHADER) {
         wgpu::ShaderStages::TASK | wgpu::ShaderStages::MESH
@@ -95,9 +102,9 @@ impl PreparedSynthetic {
             target,
             &target.view_bind_group,
             exposure_side,
-            false,
+            CameraDraw::Forward,
         )?;
-        self.draw_camera(&mut pass, target)?;
+        self.draw_camera(&mut pass, target, CameraDraw::Forward)?;
         if let Some(contribution) = contribution {
             contribution.draw(&mut pass);
         }
@@ -135,61 +142,35 @@ impl PreparedSynthetic {
         let depth = Some(GraphDepthAttachment {
             resource: &target.ids.depth,
             range: 0..1,
-            view: target
-                .day_depth
-                .as_ref()
-                .filter(|_| !target.draw_stars)
-                .map_or(&target.depth, |(_, view)| view),
+            view: target.forward_depth(),
             clear: 0.0,
         });
-        let ambient = target
-            .ids
-            .ambient_receiver
-            .as_ref()
-            .zip(target.ambient_receiver_view.as_ref());
-        let generation = self.key.device_generation;
-        let pass = if let Some((resource, view)) = ambient {
-            let [scene, motion, reactive] = colour;
-            let receiver = Some(GraphColorAttachment {
-                resource,
-                view,
-                range: 0..1,
-                clear: wgpu::Color::TRANSPARENT,
-            });
-            compiled.begin_render(
-                encoder,
-                [scene, motion, reactive, receiver],
-                depth,
-                generation,
-                timings,
-            )?
-        } else {
-            compiled.begin_render(encoder, colour, depth, generation, timings)?
-        };
+        let pass =
+            compiled.begin_render(encoder, colour, depth, self.key.device_generation, timings)?;
         pass.ok_or(RenderError::GraphPassMismatch)
     }
 
-    /// The opaque pipeline, or with `depth_only` its depth-only twin (same
-    /// vertex entry and primitive state), chosen by the same two-sided
-    /// count; its bind groups with `view_group`; and indices.
+    /// Bind the selected camera pipeline and its view, geometry and scene groups.
     pub(super) fn bind_forward(
         &self,
         pass: &mut wgpu::RenderPass<'_>,
         target: &OffscreenTarget,
         view_group: &wgpu::BindGroup,
         exposure_side: usize,
-        depth_only: bool,
+        draw: CameraDraw,
     ) -> Result<(), RenderError> {
         let two_sided = usize::from(self.instance_upload.two_sided_count() != 0);
-        let pipeline = if depth_only {
-            &self
+        let pipeline = match draw {
+            CameraDraw::Depth => &self
                 .depth_prepass
                 .as_ref()
-                .ok_or(RenderError::GraphPassMismatch)?[two_sided]
-        } else if two_sided == 0 {
-            &self.pipeline
-        } else {
-            &self.pipeline_two_sided
+                .ok_or(RenderError::GraphPassMismatch)?[two_sided],
+            CameraDraw::AmbientReceiver => &self
+                .ambient_receiver_pipelines
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?[two_sided],
+            CameraDraw::Forward if two_sided == 0 => &self.pipeline,
+            CameraDraw::Forward => &self.pipeline_two_sided,
         };
         pass.set_pipeline(pipeline);
         let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
@@ -197,7 +178,7 @@ impl PreparedSynthetic {
         let offsets = [view_offset, 0];
         let bound = if self.bucket_route.is_some() { 2 } else { 1 };
         pass.set_bind_group(0, view_group, &offsets[..bound]);
-        if !depth_only && (self.uses_shadow_rays() || self.ambient.is_some()) {
+        if draw != CameraDraw::Depth && (self.uses_shadow_rays() || self.ambient.is_some()) {
             pass.set_bind_group(1, &self.ray_light_group(exposure_side, target)?, &[]);
         } else {
             pass.set_bind_group(1, &self.light[exposure_side], &[]);
@@ -226,5 +207,14 @@ impl PreparedSynthetic {
             wgpu::IndexFormat::Uint32,
         );
         Ok(())
+    }
+}
+
+impl OffscreenTarget {
+    pub(super) fn forward_depth(&self) -> &wgpu::TextureView {
+        self.day_depth
+            .as_ref()
+            .filter(|_| !self.draw_stars)
+            .map_or(&self.depth, |(_, view)| view)
     }
 }

@@ -550,6 +550,7 @@ pub struct PreparedSynthetic {
     /// Occlusion only: the depth-only twins of `pipeline` and
     /// `pipeline_two_sided`, for the depth prepass.
     depth_prepass: Option<[wgpu::RenderPipeline; 2]>,
+    ambient_receiver_pipelines: Option<[wgpu::RenderPipeline; 2]>,
     /// Camera and Sun caster passes pull vertices and indices from the arena;
     /// it holds the cube (row 0) and its orthographic winding (row 1) over
     /// shared vertices.

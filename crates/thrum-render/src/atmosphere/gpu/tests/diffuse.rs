@@ -650,7 +650,7 @@ fn shipping_sky_projection_separates_sampling_from_sh_truncation() {
             frame(45, 0),
             &SyntheticView::default(),
             &light,
-            (&super::sky_samples(&gpu.device), None),
+            &super::sky_samples(&gpu.device),
         );
         for (degrees, azimuth) in [
             (90, 0),

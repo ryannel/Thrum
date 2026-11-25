@@ -16,6 +16,7 @@
 use super::buckets::{
     BucketError, BucketKey, BucketLimits, Buckets, PipelineClass, SEGMENT_ALIGN, Segment,
 };
+use super::forward::CameraDraw;
 use super::mesh_arena::{ArenaLimits, MeshArena, MeshId};
 use super::shadow::CasterDraw;
 use super::upload::InstanceUpload;
@@ -183,6 +184,7 @@ pub(super) struct BucketRoute {
     /// Forward pipelines by class, then unflipped and flipped.
     forward: [[wgpu::RenderPipeline; 2]; 3],
     depth: Option<[[wgpu::RenderPipeline; 2]; 3]>,
+    ambient_receiver: Option<[[wgpu::RenderPipeline; 2]; 3]>,
     /// Each segment's checked index range and base vertex, from the arena's
     /// fixed rows: checked once at preparation.
     ranges: Vec<(std::ops::Range<u32>, i32)>,
@@ -240,8 +242,8 @@ impl BucketRoute {
         arena: &MeshArena,
         upload: &InstanceUpload,
         instances: &[InstanceRecord],
-        forward: impl Fn(wgpu::PrimitiveState, bool) -> wgpu::RenderPipeline,
-        occlusion: bool,
+        pipeline: impl Fn(wgpu::PrimitiveState, CameraDraw) -> wgpu::RenderPipeline,
+        (occlusion, ambient): (bool, bool),
     ) -> Result<Self, RenderError> {
         if selection.slots.len() != instances.len()
             || selection
@@ -301,19 +303,19 @@ impl BucketRoute {
                 Ok((row.first_index..end, base))
             })
             .collect::<Result<Vec<_>, RenderError>>()?;
+        let pipelines = |draw| {
+            CLASSES
+                .map(|class| [false, true].map(|flipped| pipeline(class.primitive(flipped), draw)))
+        };
         let mut route = Self {
             buckets,
             slot_meshes: selection.slots.clone(),
             members,
             table,
             segment_bytes,
-            forward: CLASSES
-                .map(|class| [false, true].map(|flipped| forward(class.primitive(flipped), false))),
-            depth: occlusion.then(|| {
-                CLASSES.map(|class| {
-                    [false, true].map(|flipped| forward(class.primitive(flipped), true))
-                })
-            }),
+            forward: pipelines(CameraDraw::Forward),
+            depth: occlusion.then(|| pipelines(CameraDraw::Depth)),
+            ambient_receiver: ambient.then(|| pipelines(CameraDraw::AmbientReceiver)),
             ranges,
             caster_draws: Vec::new(),
             aloft: selection.aloft.clone(),
@@ -480,8 +482,14 @@ impl BucketRoute {
         arena: &MeshArena,
         orthographic: bool,
         indirect: Option<&wgpu::Buffer>,
-        depth_only: bool,
+        draw: CameraDraw,
     ) -> Result<(), RenderError> {
+        let pipelines = match draw {
+            CameraDraw::Forward => Some(&self.forward),
+            CameraDraw::Depth => self.depth.as_ref(),
+            CameraDraw::AmbientReceiver => self.ambient_receiver.as_ref(),
+        }
+        .ok_or(RenderError::GraphPassMismatch)?;
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
         pass.set_index_buffer(buffers.indices.slice(..), wgpu::IndexFormat::Uint32);
         for ((bucket, segment), (indices, base)) in (0_u64..).zip(self.segments()).zip(&self.ranges)
@@ -489,11 +497,6 @@ impl BucketRoute {
             if indirect.is_none() && segment.len == 0 {
                 continue;
             }
-            let pipelines = if depth_only {
-                self.depth.as_ref().ok_or(RenderError::GraphPassMismatch)?
-            } else {
-                &self.forward
-            };
             let pipelines = &pipelines[segment.key.class.index()];
             pass.set_pipeline(&pipelines[usize::from(orthographic)]);
             pass.set_bind_group(0, view_group, &[view_offset, segment.start * 4]);

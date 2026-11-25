@@ -187,6 +187,8 @@ pub(crate) enum PipelineRole {
     /// One stage of traced Sun visibility.
     SoftSun(u32),
     Ambient(u32),
+    /// Raster positions used by the ambient trace.
+    AmbientReceiver,
     /// The surface present blit.
     Surface,
     /// The scene contribution's compute pass.
@@ -238,6 +240,7 @@ impl PipelineRole {
             Self::Taau => 0x5450,
             Self::SoftSun(stage) => 0x5355 + stage,
             Self::Ambient(stage) => 0x414f + stage,
+            Self::AmbientReceiver => 0x4152,
             Self::Surface => 0x5052,
             Self::CasterCull => 0x5343,
             Self::CameraVisibility => 0x5649,
@@ -336,6 +339,7 @@ pub(crate) enum PassKey {
     /// One stage of traced Sun visibility.
     SoftSun(crate::synthetic::SoftSunStage),
     CombinedVisibility,
+    AmbientReceiver,
     Ambient(crate::synthetic::AmbientStage),
     /// The scene contribution's upload stage.
     ContributionUpload,
@@ -410,6 +414,7 @@ impl PassKey {
             Self::SoftSun(stage) => stage.name(),
             Self::CombinedVisibility => crate::synthetic::COMBINED_TRACE,
             Self::Ambient(stage) => stage.name(),
+            Self::AmbientReceiver => "ambient receiver raster",
             Self::ContributionUpload => "contribution upload",
             Self::ContributionCompute => "contribution compute",
             Self::AfterOpaqueCopy => "effect refraction copy",
@@ -458,6 +463,7 @@ impl PassKey {
             | Self::AfterOpaque(_)
             | Self::SoftSun(_)
             | Self::Ambient(_)
+            | Self::AmbientReceiver
             | Self::CombinedVisibility => TimingCategory::Effects,
             Self::Secondary { .. } => TimingCategory::SecondaryViews,
             Self::Sprites => TimingCategory::Sprites,
@@ -499,6 +505,7 @@ impl PassKey {
             Self::SoftSun(stage) => PipelineRole::SoftSun(stage as u32),
             Self::CombinedVisibility => PipelineRole::SoftSun(0),
             Self::Ambient(stage) => PipelineRole::Ambient(stage as u32),
+            Self::AmbientReceiver => PipelineRole::AmbientReceiver,
             Self::ContributionCompute => PipelineRole::ContributionCompute,
             Self::Effect(index) => PipelineRole::Effect(index),
             Self::AfterOpaque(index) => PipelineRole::AfterOpaque(index),

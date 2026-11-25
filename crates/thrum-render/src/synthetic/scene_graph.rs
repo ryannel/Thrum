@@ -11,7 +11,7 @@ use crate::graph::{
     ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::graph_record::{ExecutableGraph, RecordBinding};
-use crate::pass_key::PassKey;
+use crate::pass_key::{PassKey, PipelineRole};
 use crate::visibility::VisibilityPrepared;
 use std::collections::BTreeSet;
 
@@ -364,6 +364,7 @@ impl super::SyntheticTargetInputs {
             &mesh,
             &route,
         );
+        let geometry_end = accesses.len();
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let FrameEnvironment {
             light,
@@ -412,27 +413,47 @@ impl super::SyntheticTargetInputs {
         }
         let [depth, scene, motion, reactive] =
             self.forward_attachments(&mut graph, &mut accesses, [width, height], capture_source)?;
+        let camera_start = accesses.len();
+        let camera = self.append_camera_visibility(
+            &mut graph,
+            (view.clone(), &instance, &mesh, &route),
+            [width, height],
+            &mut accesses,
+            &mut prepared_keys,
+        )?;
         let ambient_receiver = self
             .ambient
             .as_ref()
             .map(|_| {
-                Self::view_attachment(
-                    (width, height, &mut graph, &mut accesses),
+                let mut receiver_accesses = accesses[..geometry_end].to_vec();
+                receiver_accesses.extend(contribution_reads.iter().cloned());
+                receiver_accesses.extend(accesses[camera_start..].iter().cloned());
+                receiver_accesses.extend([
+                    Access::new(view, 0..VIEW_BYTES as u64, AccessKind::UniformRead),
+                    Access::new(depth.clone(), 0..1, AccessKind::DepthAttachmentRead),
+                ]);
+                let receiver = Self::view_attachment(
+                    (width, height, &mut graph, &mut receiver_accesses),
                     super::raytrace::ambient::RECEIVER_FORMAT,
                     AttachmentUse::AmbientReceiver,
                     false,
                     capture_source,
                     false,
-                )
+                )?;
+                let key = PipelineRole::AmbientReceiver.key(self.key);
+                prepared_keys.insert(key);
+                let pass = graph.declare(
+                    PassKey::AmbientReceiver,
+                    PassBody {
+                        scope: PassScope::View(1),
+                        pipeline: Some(key),
+                        accesses: receiver_accesses,
+                        external_side_effect: false,
+                    },
+                );
+                Ok::<_, RenderError>((receiver, pass))
             })
             .transpose()?;
-        let camera = self.append_camera_visibility(
-            &mut graph,
-            (view, &instance, &mesh, &route),
-            [width, height],
-            &mut accesses,
-            &mut prepared_keys,
-        )?;
         let mut incident_sun = Vec::new();
         if let (Some(cloud), Some((_, observer))) = (&self.cloud, &atmosphere_inputs)
             && cloud.band.is_some()
@@ -471,7 +492,7 @@ impl super::SyntheticTargetInputs {
         )?;
         let mut ambient = ambient_receiver
             .as_ref()
-            .map(|receiver| {
+            .map(|(receiver, _)| {
                 self.append_ambient_visibility(
                     &mut graph,
                     &mut prepared_keys,
@@ -504,6 +525,9 @@ impl super::SyntheticTargetInputs {
                 external_side_effect: true,
             },
         );
+        if let Some((_, receiver)) = &ambient_receiver {
+            graph.dependency(forward, *receiver)?;
+        }
         self.append_forward_epilogues(
             &mut graph,
             &mut prepared_keys,
@@ -661,7 +685,7 @@ impl super::SyntheticTargetInputs {
                 scene,
                 motion,
                 reactive,
-                ambient_receiver,
+                ambient_receiver: ambient_receiver.map(|(id, _)| id),
                 output,
                 shadow,
                 air_shadow,
@@ -1467,6 +1491,9 @@ impl super::SyntheticTargetInputs {
                 })
             }
             PassKey::RayStructureBuild => super::raytrace::binding(id),
+            PassKey::AmbientReceiver => B::new(id, PassKind::Render, |frame, pass| {
+                frame.ambient_receiver(pass)
+            }),
             PassKey::Ambient(stage) => B::new(id, PassKind::Compute, move |frame, pass| {
                 frame.ambient_visibility(stage, pass)
             }),

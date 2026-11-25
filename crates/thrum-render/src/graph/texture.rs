@@ -94,7 +94,7 @@ pub(super) fn validate_access(
     }
     let attachment = matches!(
         access.kind,
-        AccessKind::AttachmentClear | AccessKind::AttachmentLoad
+        AccessKind::AttachmentClear | AccessKind::AttachmentLoad | AccessKind::DepthAttachmentRead
     );
     if attachment && matches!(dimension, TextureKind::D3 { .. }) {
         return Err(GraphError::VolumeAttachment { pass });

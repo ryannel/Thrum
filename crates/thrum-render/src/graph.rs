@@ -125,7 +125,7 @@ impl ResourceDescriptor {
                 AccessKind::AccelerationInput => usage.contains(wgpu::BufferUsages::BLAS_INPUT),
                 _ => false,
             },
-            Self::Texture { usage, .. } => match kind {
+            Self::Texture { usage, format, .. } => match kind {
                 AccessKind::CopyRead => usage.contains(wgpu::TextureUsages::COPY_SRC),
                 AccessKind::CopyWrite => usage.contains(wgpu::TextureUsages::COPY_DST),
                 AccessKind::SampledRead => usage.contains(wgpu::TextureUsages::TEXTURE_BINDING),
@@ -136,6 +136,10 @@ impl ResourceDescriptor {
                 }
                 AccessKind::AttachmentClear | AccessKind::AttachmentLoad => {
                     usage.contains(wgpu::TextureUsages::RENDER_ATTACHMENT)
+                }
+                AccessKind::DepthAttachmentRead => {
+                    format.has_depth_aspect()
+                        && usage.contains(wgpu::TextureUsages::RENDER_ATTACHMENT)
                 }
                 _ => false,
             },
@@ -207,6 +211,8 @@ pub enum AccessKind {
     AttachmentClear,
     /// Attachment load followed by writes.
     AttachmentLoad,
+    /// Depth testing against an attachment without writing it.
+    DepthAttachmentRead,
 }
 impl AccessKind {
     fn writes(self) -> bool {
@@ -325,7 +331,9 @@ fn pass_kind(pass: &Pass) -> Option<PassKind> {
     let attachment = pass.accesses.iter().any(|access| {
         matches!(
             access.kind,
-            AccessKind::AttachmentClear | AccessKind::AttachmentLoad
+            AccessKind::AttachmentClear
+                | AccessKind::AttachmentLoad
+                | AccessKind::DepthAttachmentRead
         )
     });
     let copy = pass
@@ -703,6 +711,7 @@ struct CompiledAttachment {
     range: Range<u64>,
     load: bool,
     store: bool,
+    depth_read_only: bool,
 }
 
 pub(crate) struct GraphColorAttachment<'a> {
@@ -761,7 +770,11 @@ impl CompiledPass {
     ) -> Option<wgpu::Operations<T>> {
         self.attachments
             .iter()
-            .find(|attachment| attachment.resource == *resource && attachment.range == range)
+            .find(|attachment| {
+                !attachment.depth_read_only
+                    && attachment.resource == *resource
+                    && attachment.range == range
+            })
             .map(|attachment| wgpu::Operations {
                 load: if attachment.load {
                     wgpu::LoadOp::Load
@@ -817,14 +830,26 @@ impl CompiledPass {
         }
         let depth = match depth {
             Some(attachment) => {
-                let Some(ops) =
-                    self.attachment_ops(attachment.resource, attachment.range, attachment.clear)
-                else {
-                    return Ok(None);
+                let read_only = self.attachments.iter().any(|entry| {
+                    entry.depth_read_only
+                        && entry.resource == *attachment.resource
+                        && entry.range == attachment.range
+                });
+                let depth_ops = if read_only {
+                    None
+                } else {
+                    let Some(ops) = self.attachment_ops(
+                        attachment.resource,
+                        attachment.range,
+                        attachment.clear,
+                    ) else {
+                        return Ok(None);
+                    };
+                    Some(ops)
                 };
                 Some(wgpu::RenderPassDepthStencilAttachment {
                     view: attachment.view,
-                    depth_ops: Some(ops),
+                    depth_ops,
                     stencil_ops: None,
                 })
             }
@@ -1823,7 +1848,9 @@ impl FrameGraph {
                         .filter(|access| {
                             matches!(
                                 access.kind,
-                                AccessKind::AttachmentClear | AccessKind::AttachmentLoad
+                                AccessKind::AttachmentClear
+                                    | AccessKind::AttachmentLoad
+                                    | AccessKind::DepthAttachmentRead
                             )
                         })
                         .map(|access| CompiledAttachment {
@@ -1831,6 +1858,7 @@ impl FrameGraph {
                             range: access.range.clone(),
                             load: access.kind == AccessKind::AttachmentLoad,
                             store: self.attachment_store(&order, position, access),
+                            depth_read_only: access.kind == AccessKind::DepthAttachmentRead,
                         })
                         .collect(),
                 })

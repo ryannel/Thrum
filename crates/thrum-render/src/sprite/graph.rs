@@ -690,6 +690,7 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
                 | PassKey::NativeReset
                 | PassKey::SoftSun(_)
                 | PassKey::CombinedVisibility
+                | PassKey::AmbientReceiver
                 | PassKey::Ambient(_)
                 | PassKey::NativeWitness => return Err(RenderError::GraphPassMismatch),
             };

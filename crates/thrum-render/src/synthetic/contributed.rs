@@ -179,10 +179,13 @@ impl PreparedSynthetic {
             material_layout: &self.surface.material_layout,
             fragment_entry: self.surface.fragment_entry,
             color_formats: [SCENE_FORMAT, MOTION_FORMAT, super::REACTIVE_FORMAT],
-            ambient_receiver_format: self
-                .ambient
-                .as_ref()
-                .map(|_| super::raytrace::ambient::RECEIVER_FORMAT),
+            ambient_receiver: self.ambient.as_ref().map(|_| {
+                crate::contribution::AmbientReceiverSurface {
+                    fragment_entry: super::raytrace::ambient::RECEIVER_ENTRY,
+                    color_format: super::raytrace::ambient::RECEIVER_FORMAT,
+                    depth_format: DEPTH_FORMAT,
+                }
+            }),
             depth_format: DEPTH_FORMAT,
             shadow: self
                 .shadow

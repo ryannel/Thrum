@@ -346,11 +346,14 @@ impl super::SyntheticTargetInputs {
     }
 }
 
+use super::forward::CameraDraw;
+
 impl PreparedSynthetic {
     pub(super) fn draw_camera(
         &self,
         pass: &mut wgpu::RenderPass<'_>,
         target: &OffscreenTarget,
+        draw: CameraDraw,
     ) -> Result<(), RenderError> {
         if let Some(route) = &self.bucket_route {
             let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
@@ -367,7 +370,7 @@ impl PreparedSynthetic {
                 &self.mesh_arena,
                 orthographic,
                 indirect,
-                false,
+                draw,
             );
         }
         match &target.visibility {
@@ -457,7 +460,7 @@ impl PreparedSynthetic {
             target,
             &prepass.view_bind_group,
             exposure_side,
-            true,
+            CameraDraw::Depth,
         )?;
         if let Some(route) = &self.bucket_route {
             let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
@@ -468,7 +471,7 @@ impl PreparedSynthetic {
                 &self.mesh_arena,
                 matches!(view.projection(), super::Projection::OrthographicFixture),
                 Some(prepass.target.prepass().args()),
-                true,
+                CameraDraw::Depth,
             )?;
         } else {
             pass.draw_indexed_indirect(prepass.target.prepass().args(), 0);

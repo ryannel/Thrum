@@ -1520,6 +1520,20 @@ impl SceneContribution for CookedAssets {
         }
     }
 
+    fn draw_ambient_receivers(&self, pass: &mut wgpu::RenderPass<'_>) {
+        if let Some(live) = &self.live
+            && let Some(bound) = live.drawn()
+        {
+            let view_offset = live.tentative.map_or(0, |record| record.view_offset);
+            live.draw_pipelines().draw_ambient_receivers(
+                bound,
+                pass,
+                live.mesh_override(),
+                view_offset,
+            );
+        }
+    }
+
     fn shadow_bounds(&self) -> Option<ShadowBounds> {
         self.live.as_ref()?.drawn()?.shadow_bounds
     }

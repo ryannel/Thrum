@@ -244,6 +244,7 @@ pub(crate) struct Target {
     pub(crate) scene_source: Arc<str>,
     pub(crate) secondary_source: Option<Arc<str>>,
     pub(crate) main: MeshSurface,
+    pub(crate) receiver: Option<MeshSurface>,
     pub(crate) secondary: Vec<MeshSurface>,
     pub(crate) stages: Option<crate::mesh_stages::Layout>,
 }
@@ -254,14 +255,19 @@ pub(crate) struct MeshSurface {
     pub(crate) fragment_entry: &'static str,
     pub(crate) color_formats: Vec<Option<wgpu::ColorTargetState>>,
     pub(crate) depth_format: wgpu::TextureFormat,
+    receiver: bool,
 }
 
 impl MeshSurface {
     pub(crate) fn depth(&self) -> wgpu::DepthStencilState {
         wgpu::DepthStencilState {
             format: self.depth_format,
-            depth_write_enabled: Some(true),
-            depth_compare: Some(wgpu::CompareFunction::Greater),
+            depth_write_enabled: Some(!self.receiver),
+            depth_compare: Some(if self.receiver {
+                wgpu::CompareFunction::Equal
+            } else {
+                wgpu::CompareFunction::Greater
+            }),
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
         }
@@ -287,14 +293,13 @@ impl MeshSurface {
                 })
                 .collect(),
             depth_format,
+            receiver: false,
         }
     }
 }
 
 impl Target {
     pub(crate) fn new(surface: &SceneSurface<'_>, epoch: u64) -> Self {
-        let mut colour_formats = Vec::from(surface.color_formats);
-        colour_formats.extend(surface.ambient_receiver_format);
         Self {
             generation: surface.generation,
             epoch,
@@ -308,9 +313,19 @@ impl Target {
             main: MeshSurface::new(
                 surface.pipeline_layout.clone(),
                 surface.fragment_entry,
-                &colour_formats,
+                &surface.color_formats,
                 surface.depth_format,
             ),
+            receiver: surface.ambient_receiver.map(|receiver| {
+                let mut target = MeshSurface::new(
+                    surface.pipeline_layout.clone(),
+                    receiver.fragment_entry,
+                    &[receiver.color_format],
+                    receiver.depth_format,
+                );
+                target.receiver = true;
+                target
+            }),
             secondary: surface
                 .secondary_surfaces
                 .iter()
@@ -347,6 +362,8 @@ impl Target {
 #[derive(Clone)]
 pub(crate) struct MeshPipelines {
     pub(crate) main: wgpu::RenderPipeline,
+    pub(crate) receiver: Option<wgpu::RenderPipeline>,
+    pub(crate) receiver_stages: Option<wgpu::RenderPipeline>,
     pub(crate) secondary: Vec<wgpu::RenderPipeline>,
     pub(crate) stages: Option<wgpu::RenderPipeline>,
 }
@@ -371,6 +388,11 @@ impl Target {
         });
         MeshPipelines {
             main: mesh_pipeline(&self.device, &self.main, main),
+            receiver: self
+                .receiver
+                .as_ref()
+                .map(|target| mesh_pipeline(&self.device, target, main)),
+            receiver_stages: None,
             secondary,
             stages: None,
         }
@@ -553,9 +575,17 @@ impl Candidate {
                     &module,
                     secondary.as_ref().map(|source| source.text.as_str()),
                 );
-                pipelines.stages = target.stages.as_ref().map(|stages| {
-                    stages.compile(&target.device, &target.main, &combined.text, "cooked_mesh")
-                });
+                if let Some(stages) = &target.stages {
+                    pipelines.stages = Some(stages.compile(
+                        &target.device,
+                        &target.main,
+                        &combined.text,
+                        "cooked_mesh",
+                    ));
+                    pipelines.receiver_stages = target.receiver.as_ref().map(|receiver| {
+                        stages.compile(&target.device, receiver, &combined.text, "cooked_mesh")
+                    });
+                }
                 candidate.pipeline = Some(pipelines);
                 candidate.info = Resolving::Pending(Box::pin(module.get_compilation_info()));
                 candidate.scope = Resolving::Pending(Box::pin(scope.pop()));

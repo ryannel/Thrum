@@ -277,6 +277,11 @@ impl Pipelines {
         if config.draw_path == CookedDrawPath::MeshStages && fallback.is_none() {
             match crate::mesh_stages::prepare(surface, &target.main, &source, config) {
                 Ok(prepared) => {
+                    mesh.receiver_stages = target.receiver.as_ref().map(|receiver| {
+                        prepared
+                            .layout
+                            .compile(device, receiver, &source, "cooked_mesh")
+                    });
                     target.stages = Some(prepared.layout);
                     mesh.stages = Some(prepared.forward);
                     stage_shadow = prepared.shadow;
@@ -316,9 +321,6 @@ impl Pipelines {
             .as_mut()
             .expect("scene colour target")
             .blend = Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING);
-        if let Some(Some(receiver)) = volume_targets.get_mut(3) {
-            receiver.write_mask = wgpu::ColorWrites::empty();
-        }
         let volume = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("cooked volume"),
             layout: Some(&volume_pipeline_layout),
@@ -917,11 +919,51 @@ impl Pipelines {
         view_offset: u32,
     ) {
         let pipelines = mesh.unwrap_or(&self.mesh);
+        Self::draw_meshes(
+            bound,
+            pass,
+            &pipelines.main,
+            pipelines.stages.as_ref(),
+            view_offset,
+        );
+        if let Some((group, _)) = &bound.volume {
+            pass.set_pipeline(&self.volume);
+            pass.set_bind_group(2, group, &[]);
+            pass.draw(0..36, 0..1);
+        }
+    }
+
+    pub(crate) fn draw_ambient_receivers(
+        &self,
+        bound: &Bound,
+        pass: &mut wgpu::RenderPass<'_>,
+        mesh: Option<&MeshPipelines>,
+        view_offset: u32,
+    ) {
+        let pipelines = mesh.unwrap_or(&self.mesh);
+        if let Some(receiver) = &pipelines.receiver {
+            Self::draw_meshes(
+                bound,
+                pass,
+                receiver,
+                pipelines.receiver_stages.as_ref(),
+                view_offset,
+            );
+        }
+    }
+
+    fn draw_meshes(
+        bound: &Bound,
+        pass: &mut wgpu::RenderPass<'_>,
+        pipeline: &wgpu::RenderPipeline,
+        stage_pipeline: Option<&wgpu::RenderPipeline>,
+        view_offset: u32,
+    ) {
         let mut stages = None;
         for mesh in &bound.meshes {
-            let stage = mesh.stage.as_ref().zip(pipelines.stages.as_ref());
+            let stage = mesh.stage.as_ref().zip(stage_pipeline);
             if stages != Some(stage.is_some()) {
-                pass.set_pipeline(stage.map_or(&pipelines.main, |(_, pipeline)| pipeline));
+                pass.set_pipeline(stage.map_or(pipeline, |(_, pipeline)| pipeline));
                 stages = Some(stage.is_some());
             }
             if let Some((group, _)) = stage {
@@ -936,11 +978,6 @@ impl Pipelines {
                 continue;
             }
             mesh.draw(pass, mesh.indirect.as_ref());
-        }
-        if let Some((group, _)) = &bound.volume {
-            pass.set_pipeline(&self.volume);
-            pass.set_bind_group(2, group, &[]);
-            pass.draw(0..36, 0..1);
         }
     }
 }

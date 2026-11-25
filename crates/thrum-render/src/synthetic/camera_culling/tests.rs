@@ -269,7 +269,17 @@ fn list_depth(
             ..Default::default()
         });
         prepared
-            .bind_forward(&mut pass, target, &prepass.view_bind_group, 0, depth_only)
+            .bind_forward(
+                &mut pass,
+                target,
+                &prepass.view_bind_group,
+                0,
+                if depth_only {
+                    super::CameraDraw::Depth
+                } else {
+                    super::CameraDraw::Forward
+                },
+            )
             .expect("bind");
         pass.draw_indexed_indirect(prepass.target.prepass().args(), 0);
     }

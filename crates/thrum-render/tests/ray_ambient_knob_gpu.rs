@@ -57,6 +57,7 @@ fn ambient_extent_is_live_and_off_restores_the_prior_frame() {
         assert_eq!(named("traced Sun visibility trace"), 0);
         assert_eq!(named("traced ambient visibility"), 0);
         assert_eq!(named("traced ambient visibility filter"), usize::from(extent > 0));
+        assert_eq!(named("ambient receiver raster"), usize::from(extent > 0));
         if extent == 0 {
             assert_eq!(bytes, expected, "off must restore the previous renderer's frame");
         } else {
@@ -304,5 +305,126 @@ fn distant_thin_receiver_keeps_its_front_face_and_rejects_rear_sheets() {
         assert_eq!(votes, Some((0, depth)), "rear geometry must leave the visible receiver's votes and depth alone");
         println!("At a 6 mm radius, rear sheets present = {}: zero blocked votes at the same depth", extra.len());
     }
+}
+}
+
+#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+mod support;
+
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
+fn ambient_keeps_the_existing_forward_contributor_targets() {
+    use ray_support::support as metal;
+    use thrum_render::{
+        contribution::{ContributionCandidate, ContributionFrame, ContributionPasses, SceneContribution, SceneSurface},
+        runtime::{FrameConfig, FrameError, FrameHost},
+        synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
+    };
+
+    #[derive(Default)]
+    struct ForwardOnly(Option<wgpu::RenderPipeline>);
+
+    impl SceneContribution for ForwardOnly {
+        fn passes(&self) -> ContributionPasses {
+            ContributionPasses::default()
+        }
+
+        fn supports_candidate_preparation(&self) -> bool {
+            true
+        }
+
+        fn prepare_candidate(&self, surface: &SceneSurface<'_>) -> Result<ContributionCandidate, FrameError> {
+            let mut next = Self::default();
+            next.rebuild(surface)?;
+            Ok(ContributionCandidate::new(self.passes(), self.effect_graph(), move |live| *live = next))
+        }
+
+        fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+            assert!(surface.ambient_receiver.is_some(), "the candidate must admit ambient");
+            assert_eq!(surface.color_formats, [
+                wgpu::TextureFormat::Rgba16Float,
+                wgpu::TextureFormat::Rg16Float,
+                wgpu::TextureFormat::R8Unorm,
+            ]);
+            let module = surface.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("three-target forward contribution"),
+                source: wgpu::ShaderSource::Wgsl(r"
+                    @vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
+                        let points = array(vec2f(-0.5, -0.5), vec2f(0.5, -0.5), vec2f(0.0, 0.5));
+                        return vec4f(points[index], 0.99, 1.0);
+                    }
+                    struct Outputs {
+                        @location(0) colour: vec4f,
+                        @location(1) motion: vec2f,
+                        @location(2) reactive: f32,
+                    }
+                    @fragment fn fragment() -> Outputs {
+                        return Outputs(vec4f(0.0, 2.0, 0.0, 1.0), vec2f(0.0), 1.0);
+                    }
+                ".into()),
+            });
+            let targets = surface.color_formats.map(|format| Some(wgpu::ColorTargetState {
+                format, blend: None, write_mask: wgpu::ColorWrites::ALL,
+            }));
+            self.0 = Some(surface.device.render(&wgpu::RenderPipelineDescriptor {
+                label: Some("three-target forward contribution"),
+                layout: None,
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("vertex"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                primitive: Default::default(),
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: surface.depth_format,
+                    depth_write_enabled: Some(true),
+                    depth_compare: Some(wgpu::CompareFunction::Greater),
+                    stencil: Default::default(),
+                    bias: Default::default(),
+                }),
+                multisample: Default::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &module,
+                    entry_point: Some("fragment"),
+                    compilation_options: Default::default(),
+                    targets: &targets,
+                }),
+                multiview_mask: None,
+                cache: None,
+            }));
+            Ok(())
+        }
+
+        fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
+
+        fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
+            pass.set_pipeline(self.0.as_ref().expect("prepared"));
+            pass.draw(0..3, 0..1);
+        }
+    }
+
+    let Some(gpu) = metal::gate("three-target forward contribution with ambient") else { return };
+    let (device, queue, caps) = metal::device(&gpu, "ray-query", 1);
+    let mut scene = SyntheticScene::grid(1).expect("grid");
+    scene.ambient_occlusion_radius = Some(0.7);
+    let mut host = pollster::block_on(FrameHost::new(
+        &caps, &queue, FrameConfig { render_extent: [64, 64], surface: None },
+        support::World, support::Source {
+            instances: vec![([0.0, 0.0, 0.5], 0)],
+            lights: vec![],
+            view: scene.view,
+            lighting: FrameLighting::Diagnostic(SyntheticLight::default()),
+        }, scene, 1.0,
+    )).expect("ambient host");
+    let baseline = host.capture_pixels().expect("control");
+    host.set_scene_contribution(Box::new(ForwardOnly::default())).expect("candidate installed");
+    let frame = host.capture_pixels().expect("contributed frame");
+    metal::wait(&device);
+    assert!(host.contribution_error().is_none());
+    let center = (32 * 64 + 32) * 4;
+    assert_ne!(&frame[center..center + 4], &baseline[center..center + 4]);
+    assert!(frame[center + 1] > frame[center] && frame[center + 1] > frame[center + 2]);
+    println!("A candidate-capable forward-only pipeline drew through all three original attachments with ambient admitted");
 }
 }

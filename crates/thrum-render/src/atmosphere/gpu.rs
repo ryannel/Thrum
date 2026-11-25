@@ -153,7 +153,7 @@ impl AtmospherePrepared {
         frame: AtmosphereFrame,
         view: &SyntheticView,
         environment_light: &wgpu::Buffer,
-        (exposure_samples, ambient_receiver): (&[wgpu::Buffer; 2], Option<wgpu::TextureFormat>),
+        exposure_samples: &[wgpu::Buffer; 2],
     ) -> Self {
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("atmosphere frame"),
@@ -281,7 +281,6 @@ impl AtmospherePrepared {
                     frame.view_volume().then_some(&aerial_views[0]),
                     frame.medium_epoch.is_some().then_some(&aerial_views[1]),
                 ],
-                ambient_receiver,
             ),
         );
         let (diffuse_pipeline, diffuse_group) =
@@ -906,13 +905,9 @@ fn prepare_sky(
     motion: &wgpu::Buffer,
     views: &Charts<wgpu::TextureView>,
     sampler: &wgpu::Sampler,
-    sky_output: (
-        &[wgpu::Buffer; 2],
-        [Option<&wgpu::TextureView>; 2],
-        Option<wgpu::TextureFormat>,
-    ),
+    sky_output: (&[wgpu::Buffer; 2], [Option<&wgpu::TextureView>; 2]),
 ) -> (wgpu::RenderPipeline, [wgpu::BindGroup; 2]) {
-    let (exposure_samples, volume, ambient_receiver) = sky_output;
+    let (exposure_samples, volume) = sky_output;
     let visibility = wgpu::ShaderStages::FRAGMENT;
     let mut entries = vec![
         binding::uniform(0, visibility, UNIFORM_BYTES),
@@ -960,30 +955,6 @@ fn prepare_sky(
         crate::shaders::Shader::AtmosphereSky
     }
     .compile(device, "atmosphere sky");
-    let mut targets = vec![
-        Some(wgpu::ColorTargetState {
-            format: wgpu::TextureFormat::Rgba16Float,
-            blend: None,
-            write_mask: wgpu::ColorWrites::ALL,
-        }),
-        Some(wgpu::ColorTargetState {
-            format: wgpu::TextureFormat::Rg16Float,
-            blend: None,
-            write_mask: wgpu::ColorWrites::ALL,
-        }),
-        Some(wgpu::ColorTargetState {
-            format: wgpu::TextureFormat::R8Unorm,
-            blend: None,
-            write_mask: wgpu::ColorWrites::ALL,
-        }),
-    ];
-    targets.extend(ambient_receiver.map(|format| {
-        Some(wgpu::ColorTargetState {
-            format,
-            blend: None,
-            write_mask: wgpu::ColorWrites::empty(),
-        })
-    }));
     let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("atmosphere background in forward pass"),
         layout: Some(&pipeline_layout),
@@ -1006,7 +977,23 @@ fn prepare_sky(
             module: &shader,
             entry_point: Some("fragment"),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            targets: &targets,
+            targets: &[
+                Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba16Float,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                }),
+                Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rg16Float,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                }),
+                Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::R8Unorm,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                }),
+            ],
         }),
         multiview_mask: None,
         cache: None,

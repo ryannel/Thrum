@@ -419,10 +419,7 @@ impl PreparedSynthetic {
                 frame,
                 &scene.view,
                 &environment_light,
-                (
-                    &exposure_samples,
-                    ambient.as_ref().map(|_| raytrace::ambient::RECEIVER_FORMAT),
-                ),
+                &exposure_samples,
             )),
             _ => None,
         };
@@ -704,7 +701,8 @@ impl PreparedSynthetic {
             fail_traced_pipeline,
         );
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
-        let mut opaque_targets = vec![
+        use super::forward::CameraDraw;
+        let opaque_targets = [
             Some(wgpu::ColorTargetState {
                 format: SCENE_FORMAT,
                 blend: None,
@@ -721,17 +719,16 @@ impl PreparedSynthetic {
                 write_mask: wgpu::ColorWrites::ALL,
             }),
         ];
-        if ambient.is_some() {
-            opaque_targets.push(Some(wgpu::ColorTargetState {
-                format: raytrace::ambient::RECEIVER_FORMAT,
-                blend: None,
-                write_mask: wgpu::ColorWrites::ALL,
-            }));
-        }
-        let create_route_pipeline = |vertex_entry, primitive, depth_only: bool| {
+        let receiver_targets = [Some(wgpu::ColorTargetState {
+            format: raytrace::ambient::RECEIVER_FORMAT,
+            blend: None,
+            write_mask: wgpu::ColorWrites::ALL,
+        })];
+        let create_route_pipeline = |vertex_entry, primitive, draw| {
+            let receiver = draw == CameraDraw::AmbientReceiver;
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
-                layout: Some(if depth_only {
+                layout: Some(if draw == CameraDraw::Depth {
                     depth_layout.as_ref().unwrap_or(&layout)
                 } else {
                     &layout
@@ -745,30 +742,42 @@ impl PreparedSynthetic {
                 primitive,
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: DEPTH_FORMAT,
-                    depth_write_enabled: Some(true),
-                    depth_compare: Some(wgpu::CompareFunction::Greater),
+                    depth_write_enabled: Some(!receiver),
+                    depth_compare: Some(if receiver {
+                        wgpu::CompareFunction::Equal
+                    } else {
+                        wgpu::CompareFunction::Greater
+                    }),
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
                 }),
                 multisample: wgpu::MultisampleState::default(),
                 // The depth prepass shares the module, vertex entry, primitive
                 // and depth state, so it rasterizes the same depth.
-                fragment: (!depth_only).then_some(wgpu::FragmentState {
+                fragment: (draw != CameraDraw::Depth).then_some(wgpu::FragmentState {
                     module: &shader,
-                    entry_point: Some(fragment_entry),
+                    entry_point: Some(if receiver {
+                        raytrace::ambient::RECEIVER_ENTRY
+                    } else {
+                        fragment_entry
+                    }),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    targets: &opaque_targets,
+                    targets: if receiver {
+                        &receiver_targets
+                    } else {
+                        &opaque_targets
+                    },
                 }),
                 multiview_mask: None,
                 cache: None,
             })
         };
-        let create_pipeline = |cull_mode, depth_only| {
+        let create_pipeline = |cull_mode, draw| {
             let primitive = wgpu::PrimitiveState {
                 cull_mode,
                 ..Default::default()
             };
-            create_route_pipeline(vertex_entry, primitive, depth_only)
+            create_route_pipeline(vertex_entry, primitive, draw)
         };
         let bucket_route = meshes
             .map(|selection| {
@@ -779,10 +788,8 @@ impl PreparedSynthetic {
                     &mesh_arena,
                     &instance_upload,
                     &scene.instances,
-                    |primitive, depth_only| {
-                        create_route_pipeline("compacted_vertex", primitive, depth_only)
-                    },
-                    camera_mode == CullMode::Occlusion,
+                    |primitive, draw| create_route_pipeline("compacted_vertex", primitive, draw),
+                    (camera_mode == CullMode::Occlusion, ambient.is_some()),
                 )
             })
             .transpose()?;
@@ -795,12 +802,18 @@ impl PreparedSynthetic {
             bucket_route.as_ref(),
             &mesh_arena,
         )?;
-        let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
-        let pipeline_two_sided = create_pipeline(None, false);
+        let pipeline = create_pipeline(Some(wgpu::Face::Back), CameraDraw::Forward);
+        let pipeline_two_sided = create_pipeline(None, CameraDraw::Forward);
         let depth_prepass = (camera_mode == CullMode::Occlusion).then(|| {
             [
-                create_pipeline(Some(wgpu::Face::Back), true),
-                create_pipeline(None, true),
+                create_pipeline(Some(wgpu::Face::Back), CameraDraw::Depth),
+                create_pipeline(None, CameraDraw::Depth),
+            ]
+        });
+        let ambient_receiver_pipelines = ambient.as_ref().map(|_| {
+            [
+                create_pipeline(Some(wgpu::Face::Back), CameraDraw::AmbientReceiver),
+                create_pipeline(None, CameraDraw::AmbientReceiver),
             ]
         });
         let shadow_members = shadow
@@ -936,6 +949,7 @@ impl PreparedSynthetic {
             pipeline,
             pipeline_two_sided,
             depth_prepass,
+            ambient_receiver_pipelines,
             row_updates: scene
                 .meshes
                 .as_ref()

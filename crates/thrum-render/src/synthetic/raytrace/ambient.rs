@@ -28,6 +28,7 @@ const TILE: u32 = 8;
 const SAMPLES: wgpu::TextureFormat = wgpu::TextureFormat::Rgba32Uint;
 pub(in crate::synthetic) const RECEIVER_FORMAT: wgpu::TextureFormat =
     wgpu::TextureFormat::Rgba32Float;
+pub(in crate::synthetic) const RECEIVER_ENTRY: &str = "ambient_receiver";
 const VALUES: wgpu::TextureFormat = wgpu::TextureFormat::Rg32Float;
 const COMPUTE: wgpu::ShaderStages = wgpu::ShaderStages::COMPUTE;
 const FRAGMENT: wgpu::ShaderStages = wgpu::ShaderStages::FRAGMENT;
@@ -593,6 +594,63 @@ impl PreparedSynthetic {
 }
 
 impl SceneContext<'_> {
+    pub(in crate::synthetic) fn ambient_receiver(
+        &mut self,
+        compiled: &CompiledPass,
+    ) -> Result<(), RenderError> {
+        use super::super::forward::CameraDraw;
+        use crate::graph::{GraphColorAttachment, GraphDepthAttachment};
+
+        let ambient = self
+            .prepared
+            .ambient
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        if ambient.stride().is_none() {
+            return Ok(());
+        }
+        let target = self.target;
+        let (resource, view) = target
+            .ids
+            .ambient_receiver
+            .as_ref()
+            .zip(target.ambient_receiver_view.as_ref())
+            .ok_or(RenderError::GraphPassMismatch)?;
+        let mut pass = compiled
+            .begin_render(
+                self.encoder,
+                [Some(GraphColorAttachment {
+                    resource,
+                    range: 0..1,
+                    view,
+                    clear: wgpu::Color::TRANSPARENT,
+                })],
+                Some(GraphDepthAttachment {
+                    resource: &target.ids.depth,
+                    range: 0..1,
+                    view: target.forward_depth(),
+                    clear: 0.0,
+                }),
+                self.generation,
+                self.timings.as_deref_mut(),
+            )?
+            .ok_or(RenderError::GraphPassMismatch)?;
+        target.set_drawn_viewport(&mut pass);
+        self.prepared.bind_forward(
+            &mut pass,
+            target,
+            &target.view_bind_group,
+            self.exposure_side,
+            CameraDraw::AmbientReceiver,
+        )?;
+        self.prepared
+            .draw_camera(&mut pass, target, CameraDraw::AmbientReceiver)?;
+        if let Some(contribution) = self.contribution.as_deref() {
+            contribution.draw_ambient_receivers(&mut pass);
+        }
+        Ok(())
+    }
+
     pub(in crate::synthetic) fn ambient_visibility(
         &mut self,
         stage: Stage,

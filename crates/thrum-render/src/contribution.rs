@@ -282,9 +282,8 @@ pub struct SceneSurface<'a> {
     pub fragment_entry: &'static str,
     /// Colour attachments of the forward pass: scene radiance, motion and reactive.
     pub color_formats: [wgpu::TextureFormat; 3],
-    /// Optional fourth opaque target, with the depth-tested world position in XYZ
-    /// and validity in W. Draws that do not write depth leave this target alone.
-    pub ambient_receiver_format: Option<wgpu::TextureFormat>,
+    /// Optional separate ambient receiver pass for opaque geometry.
+    pub ambient_receiver: Option<AmbientReceiverSurface>,
     /// Reverse-Z depth attachment (compare `Greater`, cleared to zero).
     pub depth_format: wgpu::TextureFormat,
     /// The existing Sun depth pass, when shadows are enabled for the scene.
@@ -329,6 +328,17 @@ impl SceneSurface<'_> {
             )
         })
     }
+}
+
+/// The receiver pass replays opaque geometry against final forward depth.
+#[derive(Clone, Copy)]
+pub struct AmbientReceiverSurface {
+    /// Fragment entry in the same shader source as the forward pass.
+    pub fragment_entry: &'static str,
+    /// Its only colour target stores a world position and validity.
+    pub color_format: wgpu::TextureFormat,
+    /// The forward depth format. Use Equal and disable depth writes.
+    pub depth_format: wgpu::TextureFormat,
 }
 
 /// Pipeline inputs for the scene's depth-only Sun cascades.
@@ -715,6 +725,10 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     /// Draw at the end of the forward pass. Groups 0, 1 and 3 are the scene's. The default
     /// draws nothing.
     fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
+
+    /// Replay the same opaque draws in the optional ambient receiver pass.
+    /// Forward-only or translucent contributions may leave this empty.
+    fn draw_ambient_receivers(&self, _pass: &mut wgpu::RenderPass<'_>) {}
 
     /// Bounds of the opaque casters selected by this frame's upload recording.
     /// The selection must stay fixed through both cascade draws and forward.
