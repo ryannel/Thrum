@@ -26,7 +26,7 @@ the 3D forward pass, and left four choices to this planner. They are settled her
 |---|---|---|
 | How order is resolved: sorted rows or depth | Sorted rows, on the CPU, in an order kept from tick to tick: two rows near each other exchange places only when one has passed the other by more than a band | [Mechanism 4](#4-order) |
 | Frame reconstruction for sprites | None. A 2D scene is drawn at the surface's own pixel size, with no jitter and no history, as C07's no-reconstruction form | [Mechanism 2](#2-the-view-and-the-output-pixel) |
-| Whether bright effects use EDR | The frame keeps values above white and hands them to the output half. The 8-bit display mode clips them at white, and the float mode keeps them up to the display's headroom. How they look on an EDR panel is not judged here | [Mechanism 7](#7-colour) |
+| Whether bright effects use EDR | The frame keeps values above white and hands them to the output half. The 8-bit display mode clips them at white, and the float mode keeps them up to the display's headroom, for a game that declares itself eligible for the EDR surface. How they look on an EDR panel is not judged here | [Mechanism 7](#7-colour) |
 | How text shares the sprite path with `GAME-UI` | A glyph is a frame on a sheet and a line of text is a list of rows. `GAME-UI` runs the same pass at its own stage | [Interfaces](#interfaces) |
 
 This design reconciles the code on main at `54ab55bb`; it is not a blind study. Read for it: `thrum-render`'s
@@ -380,28 +380,57 @@ surface landed after WP1 and gave a 2D scene only the 8-bit form's codes, decode
 | | The 8-bit mode | The float mode |
 |---|---|---|
 | **Where** | Chrome, the simulator, a Mac with no EDR display, and a Mac with SDR forced | A Mac whose surface is the `Rgba16Float` EDR surface |
-| **The transfer writes** | sRGB codes into the `Rgba8Unorm` display image, each channel clipped at white. Present copies the image to the surface | The sprite target's linear values into the float target, in the present pass, with 1.0 at SDR white. The target is the drawable, or the texture that stands for it in a test or a capture. A value from 0 to 1 is written as it is. A value above 1 is kept up to the display's current headroom H and clipped at H, channel by channel. There is no tone curve and no dither |
+| **The transfer writes** | sRGB codes into the `Rgba8Unorm` display image, each channel clipped at white. Present copies the image to the surface | The sprite target's linear values into the float target, in the present pass, with 1.0 at SDR white. The target is the drawable, or the texture that stands for it in a test or a capture. A value from 0 to 1 is written as it is. A value above 1 is kept up to the stored ceiling of the display's current headroom H and clipped there, channel by channel. There is no tone curve and no dither |
 | **An opaque texel leaves as** | Its authored 8-bit code | The linear value that the sRGB curve rounds back to that code |
-| **Capture reads** | The display image | The float target the surface was given, through engine capture's tap as for a 3D host, with its encoding in the capture's record |
+| **Capture reads** | The display image | By default, the float target the surface was given, through engine capture's tap as for a 3D host, with its encoding in the capture's record. A capture that names the 8-bit stage reads [that stage](#an-8-bit-capture-of-a-float-mode-host) |
+
+**The stored ceiling.** H is the frame host's display headroom. The platform publishes it as a float, and it
+takes any value from 1 up, not only whole ones. The float target stores half-floats, so the clip is at the
+**stored ceiling**: the greatest half-float that is not above H. Clipping at H itself would not do, because the
+write then rounds H to the nearest half-float, which can be above it. At H = 1.7 the nearest half-float is
+1.7001953125 and the stored ceiling is 1.69921875. At 1, 2 and 8 the stored ceiling is H. So no submitted value
+is above H, whatever H is. The EDR present pass already receives the stored ceiling beside H for a 3D host, and
+the float form uses that one value.
 
 At H = 1 the float mode clips at white as the 8-bit mode does, so its frame, encoded to 8 bits, is the 8-bit
-mode's to within one code at every pixel. H is the frame host's display headroom, which the platform publishes.
-A change of H reaches the next frame and creates nothing, and no submitted value is above H.
+mode's to within one code at every pixel. A change of H reaches the next frame and creates nothing.
 
 The float form reads the sprite target itself. A float-mode generation therefore holds no 8-bit display image
-and runs no 8-bit transfer: the mode costs one full-screen pass, not two. Both forms' pipelines are made when the
+and runs no 8-bit transfer, unless [a capture asks for the 8-bit stage](#an-8-bit-capture-of-a-float-mode-host):
+the mode costs one full-screen pass, not two. Both forms' pipelines are made when the
 host is prepared, wherever the float mode can be selected, so a generation build that changes the mode compiles
 nothing. A 2D host changes mode through the generation transition a 3D host uses, in each direction the output
 half offers.
 
-A capture that asks by name for the 8-bit stage on a float-mode host is either served by building that stage
-for the capture, through the existing capture-stage change, or refused by name; which is the builder's. It is
-never answered with another stage's pixels.
+<a id="an-8-bit-capture-of-a-float-mode-host"></a>
 
-Clipping at H, not a highlight curve, is this design's choice: it is what the 8-bit mode does at white, it keeps
-every value below H exact, and at H = 1 the two modes agree. It shifts the hue of a saturated highlight brighter
-than the display can show. How the float frame looks on the panel is the output half's, and no item here judges
-it.
+**An 8-bit capture of a float-mode host.** A capture that asks by name for the 8-bit stage on a float-mode 2D
+host is served, as it is on a float-mode 3D host. It is never refused for the mode and never answered with
+another stage's pixels. The existing capture-stage change builds the 8-bit display image for it, and while that
+capture is enabled a frame also runs the 8-bit form of the transfer into that image, which the capture reads.
+The frame it reads is the one the 8-bit mode submits for the same scene state, to within one code. The surface
+is still given the float frame, with the values it has when nothing is captured, and the display mode does not
+change. The capture can be disabled and enabled again, as a recorder does after it replaces a surface or a
+device. The Mac window's qualification observer records this way: its recording is 8-bit, and it asks for the
+8-bit stage by name when it starts and each time it restarts. So a 2D game on the float surface runs the same
+with the observer recording as without it. A host that nobody has asked for the 8-bit stage holds no 8-bit
+display image and runs no 8-bit transfer, as above.
+
+**Which games get the float surface.** The shell chooses the surface when it creates the window, before the
+scene is prepared, so it cannot read the scene kind and asks the game. The game contract has one EDR
+declaration, which `APPLE-PRESENTATION:WP6` added for a 3D game and which is off unless a game makes it. A 2D
+game makes the same declaration, and nothing else about the game changes with it: every 2D host can draw both
+forms of the transfer. A game that makes it and prepares a 2D scene is given the float surface wherever the
+shell gives a 3D game one, and a game that does not make it keeps the 8-bit surface on every display. The
+declaration's own documentation covers both scene kinds, and the 2D creator guide says what it does. The Crowd view, which
+the guide has a game maker copy, makes the declaration, so a copied game gets the float surface on an EDR
+display without its author learning of the declaration first. The V1 game makes it for its sprite selection.
+The Crowd view's retained proofs run without a window and a display record, so they stay in the 8-bit mode.
+
+Clipping at the stored ceiling, not a highlight curve, is this design's choice: it is what the 8-bit mode does
+at white, it keeps every value below the ceiling exact, and at H = 1 the two modes agree. It shifts the hue of
+a saturated highlight brighter than the display can show. How the float frame looks on the panel is the
+output half's, and no item here judges it.
 
 ### 8. Sheets
 
@@ -477,7 +506,7 @@ product exists. An embedded sheet is rebuilt from its retained bytes after devic
 |---|---|
 | The 2D scene: its pass, view record, rows, the kept order, frame tables on the GPU, sheet slots | This module (`thrum-render`) |
 | Scene-kind selection in the frame host and the split graph; the display-referred transfer's 8-bit form | `APPLE-TILE`'s frame runtime, extended under [ruling 1](#interfaces) |
-| The transfer's float form in the EDR present pass, a 2D host's change of display mode, and engine capture's tap on a 2D host's float frame | `APPLE-PRESENTATION`, with `T2-CAPTURE` for the tap, extended under ruling 1 in WP6 |
+| The transfer's float form in the EDR present pass, a 2D host's change of display mode, engine capture's tap on a 2D host's float frame and its 8-bit stage on a float-mode 2D host, and the wording of the game contract's EDR declaration | `APPLE-PRESENTATION`, with `T2-CAPTURE` for the tap, extended under ruling 1 in WP6 |
 | Render extent, reconstruction, the governor, and the refusal of a provider asked for a 2D scene | `APPLE-PRESENTATION`, extended under ruling 1 so a scene can declare none |
 | The sheet product, its cooker and runtime view; pages as a lease; residency in a 2D scene | `CONTENT-LOOP` (`thrum-cook`, `thrum-asset`, `thrum-asset-gpu`), extended under ruling 2 |
 | The contribution list and the tentative-frame protocol | `EFFECT-GRAPH`, extended under ruling 2 |
@@ -498,7 +527,8 @@ them. Save a changed PNG: the watcher cooks that sheet, residency uploads its pa
 sprite shows the new art. Add a frame: handles to the other names still show the same pictures.
 
 **A game's journey.** Declare a 2D scene with its sheets and capacities. Map components to rows in the scene
-source. Return a view each frame. Nothing else in the game names a renderer type.
+source. Return a view each frame. Make the game contract's EDR declaration if colours above white should go
+brighter than white on an EDR display. Nothing else in the game names a renderer type.
 
 ## Interfaces
 
@@ -517,7 +547,9 @@ on what the owning module has landed by then, with the behaviour defined here, a
 
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): scene-kind selection, the display-referred
    transfer, and a scene that declares no reconstruction. Built in WP1. The transfer's
-   [float form](#7-colour), a 2D host's change of display mode and its capture are built in WP6.
+   [float form](#7-colour), a 2D host's change of display mode and its capture, by default and at the 8-bit
+   stage, are built in WP6. WP6 also words the game contract's EDR declaration for either scene kind; what
+   the shell does with the declaration does not change.
 2. **Content** (`CONTENT-LOOP`, `EFFECT-GRAPH`): the sheet product, pages as a lease, and residency and the
    contribution list in a 2D scene. WP4 extends the texture cooker in `thrum-cook` and runtime views in
    `thrum-asset`. The game connects `thrum-asset-gpu` residency to the sprite scene, so `thrum-render` can
@@ -552,7 +584,7 @@ No budget is set (brief, decision 3). Estimates, to be replaced by measurements:
 | Upload a tick | Changed rows only. A crowd where everything moves uploads all of them, about 38 MB a second at 60 Hz, and a 40 KB order list |
 | Order a tick | 121 µs at 10,000 natively for the kept order in the probe's crowd, where an exact sort is 76 µs; Chrome not measured. The worst case is a tick that gives every row with history a new value: about 25 million exchanges and 10 ms at 10,000. Rows without history are sorted, not exchanged in, so a rewind or a wave of spawns does not pay it |
 | Draw | One call; four vertices a row |
-| Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. The float mode holds no intermediate, and its drawable is half-float. A crowd three deep shades about three times its own area |
+| Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. The float mode holds no intermediate, and its drawable is half-float; while an 8-bit capture of it is enabled it holds the intermediate and runs both output passes. A crowd three deep shades about three times its own area |
 | Pixel filter | The widened 1.5× footprint meets at most four source texels per axis. Pair adjacent positive weights for up to four hardware bilinear samples per affected fragment. The aligned and base box paths can use one sample. The off-grid 2× cost depends on the chosen neighbourhood and scales with shaded pixels and overdraw. Reuse level zero, the sampler and the sheet bindings, and derive scale-dependent terms once per quad where possible |
 | A sheet | 16 MiB a 2048² page uncompressed, a third more with mips |
 | 3D work | None |
@@ -604,8 +636,8 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 - **Generation inventory.** WP3.12 lands first. Its one-frame sheet has a 12×12 atlas with gutters and one
   32-byte frame record. Keep the existing 64×48 Metal witness and 3D control. The device run observes live
   allocations, actual pipeline creation and submitted pass timings at the point this test guards.
-  The checkpoint uses the focused inventory check. WP3.13 uses the shared `long-tests` result on main
-  covering the completed work package, including the test-only checkpoint.
+  The checkpoint uses the focused inventory check. The scheduled `long-tests` run on main covers the merged
+  work.
 - **Exact sprite checks.** The aligned image, resize, tile and mip witnesses use expectations taken from
   the source texels and this design's rules. No sprite image is registered as an exact baseline. These tests
   are this module's under [rule 1 of exact baselines](../ARCHITECTURE.md#exact-baselines).
@@ -623,10 +655,21 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
   `runtime/presentation.rs`, `runtime/submitted_capture.rs` and `runtime/extent.rs` first. The 3D host's EDR present, its late copy of the
   drawable and its change of display mode are the route to reuse, and each stops at a 3D host today. Build no
   second present path and no second tap. In a GPU test a float texture given to the frame host as its surface
-  stands for the EDR drawable, as `APPLE-PRESENTATION`'s capture tests do it, and the V1 game's proof forces the
-  display record as that module's arms do, so nothing needs the panel awake. New tests go in the sprite and 2D
-  scene test binaries that exist. No item of `APPLE-PRESENTATION` or `T2-CAPTURE` changes, and a 3D host compiles
-  the same passes and draws the same bytes in both modes.
+  stands for the EDR drawable, as `APPLE-PRESENTATION`'s capture tests do it, and the V1 game's and the Crowd
+  view's proofs force the display record as that module's arms do, so nothing needs the panel awake. New tests
+  go in the sprite and 2D scene test binaries that exist. No item of `APPLE-PRESENTATION` or `T2-CAPTURE`
+  changes, and a 3D host compiles the same passes and draws the same bytes in both modes.
+  - *The stored ceiling.* `write_headroom` in `synthetic/display/edr.rs` already writes it beside H. Clip with
+    it, and compute no second one.
+  - *The declaration.* It is `Game::supports_edr` in `crates/thrum-app/src/game.rs`, which the shell reads in
+    `app.rs` before it attaches the display record. Its documentation speaks of a 3D scene only: reword that
+    sentence, and change nothing the shell does. The Crowd view overrides it in `examples/crowd-2d-view`, and
+    the V1 game's window setup stops excluding its sprite selection. The 2D creator guide is
+    `docs/SPRITE-SCENES.md`.
+  - *The observer.* `crates/thrum-app/src/app/qualification.rs` asks the frame host for the 8-bit stage at
+    start and in its restart after a replaced surface or device, and its writer takes 8-bit frames. It stays as
+    it is: the frame host serves the request. The window entry points that take a display override and an
+    observer are public in `thrum-app`, and the V1 game already reads both from its launch settings.
 - **Capture.** Inspected items use T2 engine capture and name their mode. Motion is judged from `realtime`
   captures at 1920×1080 as consecutive frames at 1x; the display's full 3456×2234 is captured as `fixed` stills
   and timed in the cost records, because twenty seconds of it would not fit capture's output bound.

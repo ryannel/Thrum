@@ -722,7 +722,7 @@
       "items": [
         {
           "id": "WP6.1",
-          "statement": "On the Mac, on both native recipes, a 2D host whose surface is the float surface submits the sprite target's linear values. Read as stored half-floats through engine capture's tap, with a float value put through the sRGB curve where a code is compared: an opaque texel of each of the 256 grey codes and of a set of saturated colours rounds back to its authored code; a half-transparent texel over a known background is within one code of the linear-light blend; and at H of 2 and of 8, a channel the scene draws above 1 leaves as the scene-linear value where that is at most H and as H where it is more, with no submitted value above H.",
+          "statement": "On the Mac, on both native recipes, a 2D host whose surface is the float surface submits the sprite target's linear values. Read as stored half-floats through engine capture's tap, with a float value put through the sRGB curve where a code is compared: an opaque texel of each of the 256 grey codes and of a set of saturated colours rounds back to its authored code; a half-transparent texel over a known background is within one code of the linear-light blend; and at H of 1.7, of 2 and of 8, a channel the scene draws above 1 leaves as the sprite target's value where that is at most the stored ceiling of H, and as the stored ceiling where it is more, so no stored value is above H. The stored ceiling is the greatest half-float not above H: 1.69921875 at 1.7, and H itself at 2 and at 8.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test sprite_colour -E 'test(~float_mode)' --no-tests=fail",
           "ask": "Read the test. Is each expected value built on the CPU from the source texels and the design's rule, without any of the renderer's shaders? Is the frame read from the float target the surface was given, as stored half-floats, and not from the scene-linear checkpoint or a converted copy?",
           "lock": "gpu",
@@ -743,7 +743,7 @@
         },
         {
           "id": "WP6.3",
-          "statement": "A float-mode 2D host draws exactly what a fresh float-mode host draws after each of a resize to another extent, a discarded frame, a refused surface, a capture frame and a replaced device. A generation build that changes the display mode, in each direction the output half offers a 3D host, is accepted for a 2D host and creates no pipeline, and the host then draws what a fresh host in the new mode draws. A change of H reaches the next submitted frame and creates nothing.",
+          "statement": "A float-mode 2D host draws exactly what a fresh float-mode host draws after each of a resize to another extent, a discarded frame, a refused surface, a capture frame and a replaced device. A generation build that changes the display mode, in each direction the output half offers a 3D host, is accepted for a 2D host and creates no pipeline, and the host then draws what a fresh host in the new mode draws. A change of H from 2 to 1.7 creates nothing, and in the first frame submitted after it a channel the scene draws above 2 is stored as 1.69921875, the greatest half-float not above 1.7, and not as 1.7001953125, the half-float nearest to 1.7.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d_lifecycle -E 'test(~float_mode)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
@@ -752,7 +752,7 @@
         },
         {
           "id": "WP6.4",
-          "statement": "A float-mode 2D host with no contribution holds the sprite target and no 8-bit display image, and a frame of it with no capture runs the sprite pass, the present pass and no other full-screen pass. A 2D host in the 8-bit mode and the inventory test's 3D control keep the pass order, attachment storage and transient slots that test held before this work package. The only creations a 2D host gains at preparation are the float transfer's, and a 3D host gains none.",
+          "statement": "A float-mode 2D host with no contribution, which no capture has asked for the 8-bit stage, holds the sprite target and no 8-bit display image, and a frame of it with no capture runs the sprite pass, the present pass and no other full-screen pass. A 2D host in the 8-bit mode and the inventory test's 3D control keep the pass order, attachment storage and transient slots that test held before this work package. The only creations a 2D host gains at preparation are the float transfer's, and a 3D host gains none.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d -E 'test(~float_mode)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
@@ -763,6 +763,36 @@
           "id": "WP6.5",
           "statement": "In the V1 game on the Mac, with the display record forced to a potential headroom above 1, the sprite scene gets the float surface. At H of 2, engine capture's default tap records the float frame with its encoding in the capture's record: a sprite tinted above white is above 1.0 in it and no value is above 2. With SDR forced, the same scene state is recorded as the 8-bit frame, in which that sprite is clipped at white and every other pixel is within one code of the float frame's.",
           "check": "python3 scripts/render2d.py edr --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "WP6.6",
+          "statement": "A capture enabled by name at the 8-bit stage on a float-mode 2D host is accepted. Each frame it records is within one code, at every pixel, of the frame an 8-bit-mode host submits for the same scene state, with a channel the scene draws above 1 at white. In those frames the float target the surface is given holds the values it holds with no capture enabled, above 1 where the scene draws above 1. Disabling that capture and enabling it again is accepted and records the same in each of three cases: with nothing else changed, after a replaced surface, and after a replaced device.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d_lifecycle -E 'test(~float_mode)' --no-tests=fail",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "WP6.7",
+          "statement": "The Crowd view, the game the creator guide has a game maker copy, makes the game contract's EDR declaration in its own package. Started through `thrum-app`'s public window entry point on the Mac with the display record forced to a potential headroom above 1, it is given the float surface and its 2D host is in the float mode. With SDR forced it is given the 8-bit surface. The creator guide and the declaration's own documentation each say that a 2D game gets the float surface by making this declaration.",
+          "check": "python3 scripts/render2d.py edr-crowd --target mac-metal",
+          "ask": "Read `docs/SPRITE-SCENES.md` and the documentation of the EDR declaration in `thrum-app`'s game contract. Does each tell the maker of a 2D game that making this declaration is what gets the float surface? Is the declaration made in `examples/crowd-2d-view`'s library, so that the copy the guide describes carries it?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.8",
+          "statement": "In the V1 game on the Mac, with the display record forced to a potential headroom above 1 and H at 2, the sprite scene runs under the window qualification observer with its recording on. The run starts and ends with no capture request refused, and the surface is the float surface throughout. The recording holds 8-bit frames of submissions from before and from after the surface replacement the observer performs, and in each the sprite tinted above white is clipped at white.",
+          "check": "python3 scripts/render2d.py edr-observed --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",

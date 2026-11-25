@@ -19,6 +19,9 @@ Before building, read the [module interfaces](DESIGN.md#interfaces),
 - Assumption: On an EDR display a 2D colour above white is shown as it is up to the display's headroom and
   clipped there, channel by channel, as SDR clips at white. A very bright saturated sprite can shift hue at
   the clip. The other choice is a highlight curve like the 3D scene's, which changes colours below the clip.
+- Assumption: A 2D game gets the EDR surface only when it says so, with the one declaration a 3D game makes. The
+  guide's example game says so, so a game copied from it gets the surface. A game that says nothing stays 8-bit
+  on every display.
 - Assumption: Stable overlap matters more than exact height order for sprites within the sort band.
 - Assumption: The lead treats a visible pulse in fine patterns during ordinary scrolling as a shipped-game
   defect. WP3 judges the original patterns at normal viewing size and speed. The owner has yet to rule on this
@@ -70,7 +73,10 @@ Update the creator guide, including frame-row placement and layer guidance, and 
 the 2D graph, the capture tap and the change of display mode stop at a 3D host. Build
 [the float form](DESIGN.md#7-colour) under [seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-render-2d), starting
 from [the design's reading list](DESIGN.md#proof-and-builder-handoff). The checks select tests whose names contain
-`float_mode` in three test binaries that exist. The bright sprite WP6.5 needs is drawn only when that check
-asks for it, because the Chrome case and the simulator proof compare the sprite scene's card as it is. Say in
-the creator guide what a colour above white does in each mode, and record the float mode in the 2D rows of the
-maturity ledger, with its look on the panel not judged. [WP6 items](DONE.json)
+`float_mode` in three test binaries that exist, and three actions of `scripts/render2d.py`: `edr`,
+`edr-crowd` and `edr-observed`. The bright sprite WP6.5 and WP6.8 need is drawn only when those checks ask
+for it, because the Chrome case and the simulator proof compare the sprite scene's card as it is. WP6.7 gives
+the Crowd view a window launch that forces the display record; its other proofs stay offscreen. Say in
+[the 2D creator guide](../../SPRITE-SCENES.md) how a 2D game declares itself eligible for the EDR surface and
+what a colour above white does in each mode, and record the float mode in the 2D rows of the maturity ledger,
+with its look on the panel not judged. [WP6 items](DONE.json)

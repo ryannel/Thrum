@@ -343,3 +343,8 @@
   has no highlight curve (an assumption in the plan). A float-mode generation holds no 8-bit display image.
   The checks select tests by `float_mode` in existing binaries; each failed for want of a test when written.
   The changed design needs a design review.
+- 2026-11-25 Planner: the design review of WP6 asked for three changes, all settled in mechanism 7 and WP6's
+  items. A 2D game makes the game contract's EDR declaration (WP6.7). A named 8-bit capture of a float-mode host
+  is served (WP6.6, WP6.8). The clip is at the greatest half-float not above the headroom (WP6.1, WP6.3).
+  [Review](../../../.orchestrate/evidence/RENDER-2D/design-review.md) ·
+  [What changed](../../../.orchestrate/evidence/RENDER-2D/design-revision-2026-11-25.md)

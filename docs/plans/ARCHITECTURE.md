@@ -1741,7 +1741,10 @@ work package there, and ruling 2 replaces that for the sheet product.
    a 3D host only. `RENDER-2D:WP6` extends the three to a 2D host: the transfer's
    [float form](RENDER-2D/DESIGN.md#7-colour) is drawn in the EDR present pass, a 2D host changes display mode
    through the same generation transition, and engine capture's tap reads its float frame as seam 6 has it read
-   a 3D host's. A 3D host compiles the same passes and draws the same bytes in both modes.
+   a 3D host's. A 2D game asks for the EDR surface with the declaration seam 6 put in `thrum-app`'s game
+   contract for a 3D game: `RENDER-2D:WP6` rewords that declaration's documentation for either scene kind and
+   changes nothing the shell does with it. A 3D host compiles the same passes and draws the same bytes in both
+   modes.
 2. **Content, in `RENDER-2D:WP4`** (`CONTENT-LOOP` and `EFFECT-GRAPH`; `thrum-cook`, `thrum-asset`,
    `thrum-asset-gpu` and the contribution list). The [sheet product](RENDER-2D/DESIGN.md#8-sheets) is a new
    product kind; its pages are lent as an array texture under the lease's rules, and they switch with its frame
