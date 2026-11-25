@@ -1454,9 +1454,9 @@
     {
       "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "status": "in_progress",
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "Water optics as in the sea of Sea of Thieves and the skies of Red Dead Redemption 2 over it: a glitter path under the Sun, sky colour in the swell, a hull seen green through the water at its waterline, shade that takes the sparkle and leaves the sky's light. On the lake, the still water of Red Dead Redemption 2: the far shore and hills mirrored at dawn, stones on the bed seen through the shallows, deepening to the water's own colour.",
@@ -1506,8 +1506,8 @@
           "statement": "On the calm lake the far shore, the hills and a tree on the bank reflect in the water wherever they are on screen, each joined to its foot at the waterline. Until the mirror view of WP14, where a reflection's source is off the screen or hidden, or the water is too rough to mirror, the water shows the sky with no hole, streak or stretched edge, and a breeze blurs the reflection away smoothly.",
           "inspect": "`fixed` stills of the lake at dawn and noon in a calm from 2 m and 10 m, a `realtime` pan and tilt that takes the far shore off the screen, and a `realtime` sequence as the wind rises from calm to a breeze.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/bank-visibility/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1552,8 +1552,8 @@
           "statement": "In Chrome the sea passes WP8.1's and WP8.2's lists at noon, low Sun and night, and the lake passes WP8.3's and WP8.5's at noon.",
           "inspect": "`fixed` stills in Chrome at noon, low Sun and night at those items' views, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/bank-visibility/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1571,16 +1571,16 @@
       ],
       "findings": [
         {
-          "name": "Hidden lake-bank sources borrow neighbouring terrain colour",
+          "name": "Sky-coloured holes break the reflected bank beneath the trees",
           "item": "WP8.5",
-          "different": "The earlier crown-width holes have closed. The new bank fill takes radiance from another point when the reflected source is hidden.",
-          "repeat": false
+          "different": "The last review found neighbouring terrain colour at hidden crossings. That lookup is gone. The hard crown-width sky cutouts from the first review are visible again at dawn and noon.",
+          "repeat": true
         },
         {
-          "name": "Chrome reflects neighbouring terrain where the noon bank is hidden",
+          "name": "Chrome leaves sky-coloured holes in the noon reflected bank",
           "item": "WP8.9",
-          "different": "The earlier noon bank holes and clipped glint are gone. The new fill samples neighbouring ground behind an occluding pine in the Chrome lake view.",
-          "repeat": false
+          "different": "Chrome now rejects the neighbouring terrain sample identified in the last review. The original blue cutouts have returned across the reflected bank in the noon lake scene.",
+          "repeat": true
         }
       ]
     },

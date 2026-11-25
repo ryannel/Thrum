@@ -1362,7 +1362,7 @@
         {
           "verdict": "fail",
           "commit": "e65673ff18a563bcf5457c775c7803370ac13a8f",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-2.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1405,6 +1405,53 @@
             "turns": 1
           },
           "at": "2026-11-25T20:48:02Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "25a5fe3cf9ec383935dc30671f6cd00e36e04529",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.12": "pass",
+            "WP8.9": "fail",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sky-coloured holes break the reflected bank beneath the trees",
+              "item": "WP8.5",
+              "different": "The last review found neighbouring terrain colour at hidden crossings. That lookup is gone. The hard crown-width sky cutouts from the first review are visible again at dawn and noon.",
+              "repeat": true
+            },
+            {
+              "name": "Chrome leaves sky-coloured holes in the noon reflected bank",
+              "item": "WP8.9",
+              "different": "Chrome now rejects the neighbouring terrain sample identified in the last review. The original blue cutouts have returned across the reflected bank in the noon lake scene.",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 107656,
+            "cached": 3847424,
+            "output": 11333,
+            "turns": 1
+          },
+          "at": "2026-11-25T21:46:01Z"
         }
       ],
       "authorised": {
