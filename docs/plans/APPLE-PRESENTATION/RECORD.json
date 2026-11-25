@@ -935,7 +935,7 @@
         {
           "verdict": "fail",
           "commit": "b066852195c38d500abd477eb9fa5c82905fc5c4",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review-1.md",
           "items": {
             "D7.1": "pass",
             "D7.2": "fail",
@@ -994,6 +994,45 @@
             "turns": 1
           },
           "at": "2026-11-25T05:43:18Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "01392accdf9720d493be36d5d5a01fa22e2989d4",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
+          "items": {
+            "D7.1": "pass",
+            "D7.2": "pass",
+            "D7.3": "pass",
+            "D7.4": "pass",
+            "D7.5": "pass",
+            "D7.6": "pass",
+            "D7.7": "pass",
+            "D7.8": "fail",
+            "D7.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "The realtime route misses render opportunities through load and recovery",
+              "item": "D7.8",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 120482,
+            "cached": 5720576,
+            "output": 12438,
+            "turns": 1
+          },
+          "at": "2026-11-25T08:06:24Z"
         }
       ],
       "authorised": {
