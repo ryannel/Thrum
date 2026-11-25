@@ -297,7 +297,7 @@ pub const CAMERAS: [Camera; 6] = [
 pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0, 0.0, 12.0], 65.0);
 
 /// Sand, overhead, offshore, lee, whole-island and specialised surf inspection views.
-pub const SURF_VIEWS: [Camera; 9] = [
+pub const SURF_VIEWS: [Camera; 10] = [
     CAMERAS[0],
     Camera::look_at([-126.0, 40.0, -17.0], [-142.0, 0.0, -54.0], 66.0),
     Camera::look_at([-1126.0, 180.0, -54.0], [-126.0, 0.0, -54.0], 3.8),
@@ -309,6 +309,8 @@ pub const SURF_VIEWS: [Camera; 9] = [
     Camera::look_at([-165.0, 90.0, 200.0], [-128.0, 0.0, -56.0], 20.0),
     // Look along the beach so perspective preserves the relative cross-shore gaps.
     Camera::look_at([-188.0, 105.0, 93.0], [-188.0, 0.0, -8.0], 60.0),
+    // Look across the gale set so cross-shore distance and crest relief are visible together.
+    Camera::look_at([-175.0, 8.0, -135.0], [-175.0, 0.0, -54.0], 48.0),
 ];
 
 /// Build the island with its cooked ground and the mapped water contribution.
@@ -408,14 +410,14 @@ fn build_island(
         .slider(
             "camera.island",
             if surf_route {
-                "Sand/Beach/Sea/Lee/Point/Map/Out/Foam/Approach"
+                "Sand/Beach/Sea/Lee/Point/Map/Out/Foam/Approach/Set"
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
                 "Beach / Lake / Pond / Hill / Map / Sill"
             },
             0.0..=if surf_route {
-                8.0
+                9.0
             } else if foam {
                 6.0
             } else {

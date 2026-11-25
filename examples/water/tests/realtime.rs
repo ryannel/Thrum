@@ -43,6 +43,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let (extent, interval, opportunities, max_submissions) = if surf && island_view == "2" {
         // A complete set of unequal breaks takes longer than a nearshore take.
         ([2560, 1440], 22.0, 5.0, MAX_SUBMISSIONS)
+    } else if surf && island_view == "9" {
+        ([2560, 1440], 18.0, 6.5, MAX_SUBMISSIONS)
     } else if surf {
         ([2560, 1440], 12.0, 10.0, MAX_SUBMISSIONS)
     } else if whitewater && route == "stop" {
