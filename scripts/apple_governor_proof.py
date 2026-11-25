@@ -14,7 +14,7 @@ from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
 
 LOAD = (230, 320)
 ROUNDS = 4600
-WINDOW_LOAD_ROUNDS = (1200, 1800, 2600)
+WINDOW_LOAD_ROUNDS = (1000, 1200, 1800, 2600)
 PRELOAD_TICKS = (200, LOAD[0])
 THERMAL_EXTENT = (960, 540)
 LIVE_EXTENT = (1920, 1080)
@@ -276,7 +276,8 @@ def mac_governor_capture(output, binary, env, route):
             "--store", env["THRUM_ASSET_STORE"], "--route", str(route_path),
             "--case", "route", "--mode", "realtime", "--extent", str(width), str(height),
             "--reconstruction", "taau", "--recipe", "portable", "--output", str(directory),
-            *flags, env=dict(env, THRUM_GOVERNOR="on", THRUM_GOVERNOR_LOAD=str(rounds)), timeout=180)
+            *flags, env=dict(env, THRUM_GOVERNOR="on", THRUM_GOVERNOR_LOAD=str(rounds),
+                             THRUM_CAPTURE_ENCODING="raw"), timeout=180)
         runtime = json.loads((directory / "runtime.json").read_text())
         manifest = json.loads((directory / "manifest.json").read_text())
         if (runtime["backend"] != "Metal" or manifest["timebase"] != "realtime"
@@ -286,13 +287,22 @@ def mac_governor_capture(output, binary, env, route):
             raise ValueError(f"incomplete realtime capture in {directory}")
         quality = runtime["governor"]
         loaded = [row for row in quality if LOAD[0] <= row["tick"] < LOAD[1]]
-        if not loaded or min(row["scale"] for row in loaded) >= quality[0]["scale"]:
+        initial = next(row["scale"] for row in reversed(quality) if row["tick"] < LOAD[0])
+        if not loaded or min(row["scale"] for row in loaded) >= initial:
             raise ValueError(f"real-time governor did not lower under load in {directory}")
-        if quality[-1]["scale"] <= min(row["scale"] for row in loaded):
+        restored = next((row for row in quality if row["tick"] >= LOAD[1]
+                         and row["scale"] >= initial), None)
+        if restored is None:
             raise ValueError(f"real-time governor did not recover in {directory}")
+        motion_end = restored["tick"] + 60
+        motion = [row for row in runtime["opportunities"] if LOAD[0] <= row["tick"] < motion_end]
+        if (runtime["opportunities"][-1]["tick"] < motion_end
+                or any(not row["submitted"] or row["skipped_before"] for row in motion)):
+            raise ValueError(f"missing render opportunities through load and recovery in {directory}")
         timings = [row for row in runtime["opportunities"] if 330 <= row["tick"] < 420]
         arms[name] = dict(
             directory=str(directory), submitted=len(quality), captured=len(manifest["records"]),
+            motion_ticks=[LOAD[0], motion_end], motion_opportunities=len(motion),
             step_thread_median_ms=median(row["step_thread_cpu_ns"] for row in timings) / 1e6,
             step_wall_median_ms=median(row["step_wall_ns"] for row in timings) / 1e6,
             drain_wall_median_ms=median(row["drain_wall_ns"] for row in timings) / 1e6,
