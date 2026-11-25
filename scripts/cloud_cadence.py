@@ -153,9 +153,12 @@ def analyze_arm(arm, wind):
             while position + 1 < len(targets) and abs(targets[position + 1] - timestamp) < abs(
                     targets[position] - timestamp):
                 position += 1
-            target = targets[position]
-            if abs(target - timestamp) >= PERIOD / 2:
+            # ProMotion can shift the callback grid by half a period between
+            # presented frames. Match in order and use each opportunity once.
+            if position == len(targets) or abs(targets[position] - timestamp) >= PERIOD:
                 raise InvalidMeasurement(f'{arm.name}: missing refresh-account row for {timestamp} ns')
+            target = targets[position]
+            position += 1
             while drawable + 1 < len(drawables) and presented[drawable + 1] < timestamp:
                 drawable += 1
             row = rows[target]
