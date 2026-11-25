@@ -132,6 +132,13 @@ export async function checkSheetSwitch(output, record, frames, initial, final, r
   assert.notDeepEqual(frames[index - 2].sprite_view_centre, frames[index + 2].sprite_view_centre);
   assert.equal(initial.generation, 1);
   assert.equal(final.generation, 2);
+  const fetchedProducts = await checkSheetRequests(output, initial, final, requests);
+  return { ...fetchedProducts, save_ms: save,
+    fetch_settled_ms: fetched.at_ms - record.start_after_ms, submission: switched.submission_id,
+    tick: switched.tick, switch_ms: switched.submit_ms, preceding_gap_ms: switched.submit_ms - before.submit_ms };
+}
+
+export async function checkSheetRequests(output, initial, final, requests) {
   const oldProducts = await products(output, initial);
   const newProducts = await products(output, final);
   assert.deepEqual(Object.keys(newProducts).sort(), ['field', 'unrelated']);
@@ -140,7 +147,5 @@ export async function checkSheetSwitch(output, record, frames, initial, final, r
   assert.deepEqual(requests.map(row => row.hash).sort(),
     [initial.root, final.root, oldProducts.field, oldProducts.unrelated, newProducts.field].sort(),
     'Chrome fetched each initial product once and only the changed sheet after the save');
-  return { initial, final, oldProducts, newProducts, requests, save_ms: save,
-    fetch_settled_ms: fetched.at_ms - record.start_after_ms, submission: switched.submission_id,
-    tick: switched.tick, switch_ms: switched.submit_ms, preceding_gap_ms: switched.submit_ms - before.submit_ms };
+  return { initial, final, oldProducts, newProducts, requests };
 }

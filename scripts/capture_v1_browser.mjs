@@ -7,7 +7,7 @@ import { spawn, execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
-import { checkPublicSheetPage, checkSheetFrame, checkSheetSwitch } from './check_sprite_sheets_browser.mjs';
+import { checkPublicSheetPage, checkSheetFrame, checkSheetRequests, checkSheetSwitch } from './check_sprite_sheets_browser.mjs';
 import { captureReceiver } from './browser_capture_receiver.mjs';
 import { finalizeBrowserCapture, openLauncherControl } from './browser_capture_shutdown.mjs';
 import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice, existingGame, releaseGameGraphics, unloadGamePage } from './check_v1_browser.mjs';
@@ -340,8 +340,9 @@ try {
       }
       if (spriteSheets) {
         await sheetEdit;
+        const recoloured = await cookedHead(output);
         manifest.sprite_sheets = await checkSheetSwitch(output, record, manifest.records,
-          manifest.cooked, await cookedHead(output), requests);
+          manifest.cooked, recoloured, requests.splice(0));
         await unloadGamePage(cdp, sessionId, 30000);
         const publicUrl = `${manifest.origin}/?scene=sprites&rows=500&assets=${encodeURIComponent(cookedOrigin)}`;
         const call = (method, params) => cdp.call(method, params, sessionId);
@@ -358,6 +359,7 @@ try {
         };
         try {
           const proof = await checkPublicSheetPage(call, publicUrl, gameOnPage, waitFor, restoreArt);
+          proof.fetches = await checkSheetRequests(output, recoloured, await cookedHead(output), requests.splice(0));
           await fs.writeFile(path.join(output, 'public-sheet-page.json'), JSON.stringify(proof, null, 2) + '\n');
         } finally {
           if (publicGame) await releaseGameGraphics(cdp, sessionId, publicGame);
