@@ -13,9 +13,10 @@ from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
 
 LOAD = (230, 320)
 ROUNDS = 4600
-WINDOW_LOAD_ROUNDS = (ROUNDS, 6200)
+WINDOW_LOAD_ROUNDS = (1200, 1800, 2600)
 PRELOAD_TICKS = (200, LOAD[0])
-WINDOW_EXTENT = (960, 540)
+THERMAL_EXTENT = (960, 540)
+LIVE_EXTENT = (1920, 1080)
 MISSED_OPPORTUNITY_TOLERANCE = 2
 CADENCE = "atmosphere.aerial cadence"
 
@@ -62,7 +63,7 @@ def window_arm(output, binary, env, route, name, *, enabled=True, load=0, therma
     directory = output / name
     directory.mkdir()
     route_path = output / "window-route.json"
-    route_path.write_text(json.dumps(dict(route, render_extent=WINDOW_EXTENT)))
+    route_path.write_text(json.dumps(dict(route, render_extent=LIVE_EXTENT)))
     launch = dict(env, THRUM_GOVERNOR="on" if enabled else "off",
                   THRUM_GOVERNOR_LOAD=str(load), THRUM_GOVERNOR_ROUTE=str(route_path),
                   THRUM_GOVERNOR_RECORD="thermal" if thermal else "observed",
@@ -75,12 +76,15 @@ def window_arm(output, binary, env, route, name, *, enabled=True, load=0, therma
     if result.returncode:
         raise ValueError(f"Mac window could not finish {name}: {(directory / 'game.log').read_text()}")
     game = (directory / "game.log").read_text()
-    if "adapter=Apple M3 Max" not in game or "x".join(map(str, WINDOW_EXTENT)) not in game:
+    if "adapter=Apple M3 Max" not in game or "x".join(map(str, LIVE_EXTENT)) not in game:
         raise ValueError(f"wrong running Metal target in {directory}")
     rows = read_rows(directory / "frames.jsonl")
     display = read_rows(directory / "display.jsonl")
     if not rows or not display or rows[-1]["world_tick"] < LOAD[1] + 180:
         raise ValueError(f"Metal window did not complete the route in {directory}")
+    if any(tuple(row["surface"]) != LIVE_EXTENT for row in rows):
+        raise InvalidDisplayEnvironment(
+            f"{directory}: drawable extent changed during the ordinary window route")
     samples = [sample for row in rows for sample in row["governor"]["samples"]]
     if not samples or any((sample["quality"] is not None) != enabled for sample in samples):
         raise ValueError(f"governor enabled state or sample coverage is wrong in {directory}")
@@ -125,7 +129,11 @@ def steady_miss_rate(arm, first, until):
     return measured
 
 
-def matched_preload(arm, reference):
+def matched_preload(arm, steady_arm, reference):
+    if abs(arm["display_hz"] - steady_arm["display_hz"]) > steady_arm["display_hz"] * 0.03:
+        raise InvalidDisplayEnvironment(
+            f"{arm['directory']}: display interval differs from the unloaded run "
+            f"({arm['display_hz']} Hz versus {steady_arm['display_hz']} Hz)")
     measured = miss_rate(arm, *PRELOAD_TICKS)
     if exceeds_baseline(measured, reference) or exceeds_baseline(reference, measured):
         raise InvalidDisplayEnvironment(
@@ -172,7 +180,7 @@ def measure_window(output, binary, env, route, *, steady):
                     for a, b in zip(changes, changes[1:]))
         if count > 2:
             raise ValueError(f"steady route changed scale {count} times in {arm['directory']}")
-        return dict(target="mac-metal", scale_changes=count, display_hz=arm["display_hz"],
+        return dict(target="mac-metal", extent=LIVE_EXTENT, scale_changes=count, display_hz=arm["display_hz"],
                     changes=changes, binary_sha256=digest(binary))
 
     interrupted = []
@@ -200,7 +208,7 @@ def compare_live_load(output, binary, env, route):
     for rounds in WINDOW_LOAD_ROUNDS:
         off_arm = window_arm(output, binary, env, route, f"loaded-off-{rounds}",
                              enabled=False, load=rounds)
-        preload["loaded-off"] = matched_preload(off_arm, preload["steady"])
+        preload["loaded-off"] = matched_preload(off_arm, steady_arm, preload["steady"])
         controls[rounds] = miss_rate(off_arm, first, LOAD[1])
         if exceeds_baseline(controls[rounds], baseline):
             break
@@ -212,7 +220,7 @@ def compare_live_load(output, binary, env, route):
         "loaded": window_arm(output, binary, env, route, "loaded", load=rounds),
         "loaded-off": off_arm,
     }
-    preload["loaded"] = matched_preload(arms["loaded"], preload["steady"])
+    preload["loaded"] = matched_preload(arms["loaded"], steady_arm, preload["steady"])
     changes = arms["loaded"]["changes"]
     if not changes:
         raise ValueError("missing governed frame samples")
@@ -236,18 +244,21 @@ def compare_live_load(output, binary, env, route):
             or not exceeds_baseline(disabled, baseline)
             or disabled["rate"] <= governed["rate"]):
         raise ValueError(f"loaded/off did not falsify a return to baseline proxy rate: {comparison}")
-    return dict(target="mac-metal", comparison=comparison, comparison_ticks=[first, LOAD[1]],
+    return dict(target="mac-metal", extent=LIVE_EXTENT, comparison=comparison,
+                comparison_ticks=[first, LOAD[1]],
                 changes=changes, load=LOAD,
                 rounds=rounds, control_trials=controls, preload=preload, preload_ticks=PRELOAD_TICKS,
                 proxy=arms["loaded"]["proxy"],
                 display_hz=arms["loaded"]["display_hz"],
+                arm_display_hz={name: arm["display_hz"] for name, arm in arms.items()},
                 binary_sha256=digest(binary))
 
 
 def mac_governor_capture(output, binary, env, route):
-    width, height = WINDOW_EXTENT
+    width, height = LIVE_EXTENT
+    rounds = WINDOW_LOAD_ROUNDS[0]
     route_path = output / "capture-route.json"
-    route_path.write_text(json.dumps(dict(route, render_extent=WINDOW_EXTENT)))
+    route_path.write_text(json.dumps(dict(route, render_extent=LIVE_EXTENT)))
     arms = {}
     for name in ("tap-off", "tap-on"):
         directory = output / name
@@ -256,10 +267,11 @@ def mac_governor_capture(output, binary, env, route):
             "--store", env["THRUM_ASSET_STORE"], "--route", str(route_path),
             "--case", "route", "--mode", "realtime", "--extent", str(width), str(height),
             "--reconstruction", "taau", "--recipe", "portable", "--output", str(directory),
-            *flags, env=dict(env, THRUM_GOVERNOR="on", THRUM_GOVERNOR_LOAD=str(ROUNDS)), timeout=180)
+            *flags, env=dict(env, THRUM_GOVERNOR="on", THRUM_GOVERNOR_LOAD=str(rounds)), timeout=180)
         runtime = json.loads((directory / "runtime.json").read_text())
         manifest = json.loads((directory / "manifest.json").read_text())
-        if runtime["backend"] != "Metal" or manifest["timebase"] != "realtime":
+        if (runtime["backend"] != "Metal" or manifest["timebase"] != "realtime"
+                or tuple(runtime["extent"]) != LIVE_EXTENT or runtime["requested_hz"] != 120):
             raise ValueError("wrong capture target or timebase")
         if not manifest["complete"]:
             raise ValueError(f"incomplete realtime capture in {directory}")
@@ -278,7 +290,8 @@ def mac_governor_capture(output, binary, env, route):
             idle_poll_thread_median_ms=median(
                 (row.get("idle_gpu_progress") or {}).get("cpu_ns", 0) for row in timings) / 1e6,
         )
-    return dict(target="mac-metal", capture_mode="realtime", binary_sha256=digest(binary), arms=arms)
+    return dict(target="mac-metal", capture_mode="realtime", extent=LIVE_EXTENT,
+                requested_hz=120, rounds=rounds, binary_sha256=digest(binary), arms=arms)
 
 
 def mac_governor_identity(output):
@@ -306,7 +319,7 @@ def mac_governor_thermal(output):
     binary, env, route = environment(output)
     directory = output / "thermal"
     route_path = output / "thermal-route.json"
-    route_path.write_text(json.dumps(dict(route, render_extent=WINDOW_EXTENT)))
+    route_path.write_text(json.dumps(dict(route, render_extent=THERMAL_EXTENT)))
     launch = dict(env, THRUM_CAPTURE_SCENE=str(directory), THRUM_CAPTURE_ROUTE=str(route_path),
                   THRUM_GOVERNOR_RECORD="thermal")
     run(str(binary), env=launch, timeout=300)

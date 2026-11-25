@@ -163,5 +163,50 @@ fn external_knobs_commit_by_tier_and_invalidate_only_their_owned_history() {
     assert_eq!(cadenced_history.lock().expect("cadenced effect").age_marks, 2);
     assert_eq!(host.creation_report().pipelines, pipelines);
     assert_eq!(host.creation_report().violations, 0);
+
+    for name in ["atmosphere.aerial cadence", "interval"] {
+        host.set_quality_knob(name, 2).expect("stage manual value");
+        assert_eq!(host.quality_knobs().into_iter().find(|knob| knob.name == name).expect("registered").value, 4);
+    }
+    let edited = frame(&mut host, &output, Duration::from_millis(56));
+    let edited = edited.governor.expect("edited frame state");
+    for name in ["atmosphere.aerial cadence", "interval"] {
+        assert_eq!(host.quality_knobs().into_iter().find(|knob| knob.name == name).expect("registered").value, 2);
+        assert_eq!(edited.knobs.iter().find(|knob| knob.name == name).expect("recorded").value, 2);
+    }
+}
+
+fn deferred_aerial_update_keeps_the_latest_sun_until_submit() {
+    let Some(thrum_test_support::Opened { gpu, device, queue, .. }) =
+        thrum_test_support::open("governed aerial update", Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable, &thrum_test_support::Restriction::default())
+    else { return; };
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    let mut scene = SyntheticScene::grid(1).expect("small scene");
+    scene.view = scene.view.with_reconstruction(true);
+    let sky = |sun_x| FrameLighting::Atmosphere(
+        AtmosphereFrame::new([sun_x, 0.7, 0.0], 100_000.0, [1.0; 3], 1.0, 1).expect("air"));
+    let mut host = pollster::block_on(support::host_with_config(&caps, &queue, scene, sky(0.7),
+        FrameConfig { render_extent: EXTENT, surface: Some(SurfaceProfile { format: FORMAT, extent: EXTENT }) }));
+    let output = support::drawable(&device, FORMAT, EXTENT);
+    assert!(host.enable_governor(DisplayRecord {
+        interval: Duration::from_secs(1),
+        thermal: ThermalState::Serious,
+    }));
+    frame(&mut host, &output, Duration::ZERO);
+    for (index, expected_age) in [1, 2, 3, 0, 1].into_iter().enumerate() {
+        let index = u64::try_from(index).unwrap();
+        if index < 2 {
+            host.continuous_source_mut().lighting = sky(if index == 0 { -0.5 } else { -0.7 });
+        }
+        let sample = frame(&mut host, &output, Duration::from_millis((index + 1) * 16));
+        let quality = sample.governor.expect("quality frame");
+        assert_eq!(quality.aerial_age, Some(expected_age), "frame {index}");
+        assert!(quality.knobs.iter().any(|knob|
+            knob.name == "atmosphere.aerial cadence" && knob.value == 4));
+        let timings = sample.gpu_pass_ns.expect("Metal pass timestamps");
+        let aerial_ran = timings.passes().iter().any(|pass| pass.name.contains("aerial"));
+        assert_eq!(aerial_ran, expected_age == 0, "frame {index}");
+    }
 }
 }

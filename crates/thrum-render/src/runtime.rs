@@ -2113,6 +2113,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }) {
             self.history_reset_pending = true;
         }
+        self.record_committed_governor_knobs();
         self.history_reset_pending |= self
             .prepared
             .record_mesh_rows(&self.queue)

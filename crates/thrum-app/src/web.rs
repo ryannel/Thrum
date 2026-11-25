@@ -168,9 +168,7 @@ pub struct WebShell<W: InlineWorld, V: SceneSource<W::Page>> {
 
 #[derive(Default)]
 struct BrowserCadence {
-    previous: Option<Duration>,
-    interval: Option<Duration>,
-    warmup: u8,
+    callbacks: crate::web_cadence::FrameCadence,
     previous_present: Option<Duration>,
 }
 
@@ -423,26 +421,18 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             resize = false;
         }
         if let Some(cadence) = &mut self.governor {
-            let measured = cadence
-                .previous
-                .replace(now)
-                .map(|then| now.saturating_sub(then));
-            if let Some(measured) = measured.filter(|value| !value.is_zero()) {
-                // Establish cadence from the initial unloaded animation frames.
-                if cadence.warmup < 20 {
-                    cadence.interval =
-                        Some(cadence.interval.map_or(measured, |old| old.min(measured)));
-                    cadence.warmup += 1;
+            let before = cadence.callbacks.interval();
+            if let Some(interval) = cadence.callbacks.observe(now) {
+                if Some(interval) != before {
+                    cadence.previous_present = None;
                 }
-                if let Some(interval) = cadence.interval.filter(|_| cadence.warmup >= 20) {
-                    self.host.governor_display(
-                        DisplayRecord {
-                            interval,
-                            thermal: ThermalState::Nominal,
-                        },
-                        resize || self.needs_reconfigure || self.recovery.is_pending(),
-                    );
-                }
+                self.host.governor_display(
+                    DisplayRecord {
+                        interval,
+                        thermal: ThermalState::Nominal,
+                    },
+                    resize || self.needs_reconfigure || self.recovery.is_pending(),
+                );
             }
         }
         let advanced = self.host.advance(now).map_err(WebHostError::Frame)?;
@@ -550,7 +540,7 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Returns a timestamp, retained-update or clock restart failure.
     pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), WebHostError> {
         if let Some(cadence) = &mut self.governor {
-            cadence.previous = None;
+            cadence.callbacks.suspend();
             cadence.previous_present = None;
         }
         let now = self

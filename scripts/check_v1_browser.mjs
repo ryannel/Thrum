@@ -105,6 +105,7 @@ async function assets(directory) {
 
 async function qualifyGovernor(cdp, origin, output, wasm) {
   const arms = [];
+  let refresh;
   const deadlineMs = 24000;
   const readIntervalMs = 2000;
   for (const timestamps of [true, false]) {
@@ -180,16 +181,63 @@ async function qualifyGovernor(cdp, origin, output, wasm) {
         throw new Error(`Governor did not lower and recover on ${source} (before: ${prior?.scale}, loaded: ${minimum}, final: ${trace.rows.at(-1)?.scale}), see ${output}`);
       }
       arms.push({ source, rounds, drop, recovery, settled: trace.rows.at(-1), presented: trace.presented });
+      if (!timestamps) refresh = await qualifyGovernorRefresh(cdp, sessionId, output);
     } finally {
       await cdp.call('Target.closeTarget', { targetId });
     }
   }
   const record = {
-    case: 'governor', target: 'chrome-webgpu', arms, wasm: wasm.sha256,
+    case: 'governor', target: 'chrome-webgpu', arms, refresh, wasm: wasm.sha256,
     commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
   };
   await fs.writeFile(path.join(output, 'governor.json'), JSON.stringify(record, null, 2));
   return record;
+}
+
+async function qualifyGovernorRefresh(cdp, sessionId, output) {
+  const rates = [120, 60, 120];
+  const reply = await cdp.call('Runtime.evaluate', {
+    expression: `(async () => {
+      const wasm = await import('/v1_game.js');
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 360;
+      document.querySelector('canvas').replaceWith(canvas);
+      const game = await wasm.create_governor_game(canvas, false, 0);
+      const phases = [];
+      let time = 0;
+      try {
+        // Real WebGPU work with a controlled callback clock and no debug load.
+        for (const hz of ${JSON.stringify(rates)}) {
+          const rows = [];
+          // The shell waits for one simulated second before enabling quality control.
+          for (let frame = 0; frame < (phases.length === 0 ? 240 : 120); frame++) {
+            await new Promise(requestAnimationFrame);
+            time += 1000 / hz;
+            game.frame(time);
+            rows.push(...JSON.parse(game.take_trace()).rows);
+          }
+          phases.push({ hz, rows });
+        }
+        return phases;
+      } finally {
+        game.free();
+      }
+    })()`,
+    awaitPromise: true, returnByValue: true,
+  }, sessionId, 20000);
+  if (reply.exceptionDetails) throw new Error(JSON.stringify(reply.exceptionDetails));
+  const phases = reply.result.value;
+  await fs.writeFile(path.join(output, 'governor-refresh.json'), JSON.stringify(phases));
+  return phases.map(({ hz, rows }) => {
+    const last = rows.at(-1);
+    if (rows.length < 60 || last?.source !== 'AnimationFrame' ||
+        Math.abs(last.budget_ms - 850 / hz) > 0.05 ||
+        rows.some(row => row.scale !== 100 || row.tier !== 0)) {
+      throw new Error(`Governor changed unloaded quality or kept a stale budget at ${hz} Hz, see ${output}`);
+    }
+    return { hz, frames: rows.length, last };
+  });
 }
 
 async function serve(files, receive) {

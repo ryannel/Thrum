@@ -644,9 +644,6 @@ impl<G: WindowGame + 'static> App<G> {
             self.window.as_ref().ok_or("window missing")?,
             wake.clone(),
             self.display.is_some(),
-            self.transition_proof
-                .as_ref()
-                .and_then(|proof| proof.governor.map(|_| 60.0)),
         )?);
         self.adapter_name.clone_from(&gpu.adapter_name);
         self.surface_format = Some(gpu.config.format);

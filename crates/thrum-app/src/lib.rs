@@ -40,6 +40,8 @@ pub mod surface;
 #[cfg(target_arch = "wasm32")]
 pub mod web;
 #[cfg(any(target_arch = "wasm32", test))]
+mod web_cadence;
+#[cfg(any(target_arch = "wasm32", test))]
 mod web_clock;
 
 #[cfg(target_os = "macos")]

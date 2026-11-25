@@ -174,8 +174,12 @@ impl Governor {
     /// Update platform facts and the generation boundary before accepting observations.
     /// The first frame after a switch is marked held by the host.
     pub fn boundary(&mut self, now: Duration, display: DisplayRecord, held: bool) {
+        let interval = self.display.interval;
+        // Ignore display timestamp quantization. A new refresh invalidates
+        // conclusions drawn against the previous budget.
+        let refresh_changed = display.interval.abs_diff(interval) > interval.mul_f64(0.01);
         self.display = display;
-        if self.held != held {
+        if self.held != held || refresh_changed {
             self.held = held;
             self.clear_window(now);
         }

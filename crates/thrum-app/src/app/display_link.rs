@@ -146,7 +146,6 @@ impl ViewDisplayLink {
         window: &Window,
         wake: EventLoopProxy<UserEvent>,
         observes_display: bool,
-        preferred_refresh: Option<f32>,
     ) -> Result<Self, String> {
         let mtm = MainThreadMarker::new().ok_or("display link must start on AppKit main thread")?;
         let handle = window
@@ -168,8 +167,8 @@ impl ViewDisplayLink {
         };
         link.setPreferredFrameRateRange(CAFrameRateRange {
             minimum: 60.0,
-            maximum: preferred_refresh.unwrap_or(120.0),
-            preferred: preferred_refresh.unwrap_or(120.0),
+            maximum: 120.0,
+            preferred: 120.0,
         });
         // SAFETY: creation and removal both occur on AppKit's main thread.
         unsafe { link.addToRunLoop_forMode(&NSRunLoop::mainRunLoop(), NSRunLoopCommonModes) };

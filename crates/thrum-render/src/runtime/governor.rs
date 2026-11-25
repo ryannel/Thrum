@@ -36,6 +36,7 @@ pub(super) struct GovernorHost {
     first_frame: bool,
     knobs: Arc<[QualityKnob]>,
     refresh_knobs: bool,
+    knob_snapshot_dirty: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -71,6 +72,18 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Refuses an absent contribution, unknown name or out-of-range value.
     pub fn set_quality_knob(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Result<(), crate::contribution::QualityError> {
+        self.stage_quality_knob(name, value)?;
+        if let Some(governor) = &mut self.governor {
+            governor.knob_snapshot_dirty = true;
+        }
+        Ok(())
+    }
+
+    fn stage_quality_knob(
         &mut self,
         name: &str,
         value: u32,
@@ -111,6 +124,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             first_frame: false,
             knobs: Arc::from([]),
             refresh_knobs: true,
+            knob_snapshot_dirty: true,
         });
         true
     }
@@ -201,7 +215,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if governor.frame_transition != generation {
             governor.frame_transition = generation;
             governor.first_frame = true;
-            governor.refresh_knobs = true;
+            governor.refresh();
         }
         governor.policy.boundary(
             now,
@@ -226,9 +240,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         {
             return Ok(());
         }
-        let mut knobs = self.quality_knobs();
-        knobs.retain(|knob| knob.governor_steps.is_some());
-        for knob in &mut knobs {
+        for knob in self.quality_knobs() {
             let Some(steps) = knob.governor_steps else {
                 continue;
             };
@@ -236,14 +248,28 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             if value != knob.value {
                 self.set_quality_knob(&knob.name, value)
                     .map_err(|error| super::FrameError::Scene(error.to_string()))?;
-                knob.value = value;
             }
         }
         if let Some(governor) = &mut self.governor {
-            governor.knobs = knobs.into();
             governor.refresh_knobs = false;
         }
         Ok(())
+    }
+
+    pub(super) fn record_committed_governor_knobs(&mut self) {
+        if !self
+            .governor
+            .as_ref()
+            .is_some_and(|governor| governor.knob_snapshot_dirty)
+        {
+            return;
+        }
+        let mut knobs = self.quality_knobs();
+        knobs.retain(|knob| knob.governor_steps.is_some());
+        if let Some(governor) = &mut self.governor {
+            governor.knobs = knobs.into();
+            governor.knob_snapshot_dirty = false;
+        }
     }
 
     /// Current governor values, also attached to encoded frames.
@@ -272,6 +298,7 @@ impl GovernorHost {
 
     pub(super) fn refresh(&mut self) {
         self.refresh_knobs = true;
+        self.knob_snapshot_dirty = true;
     }
 
     pub(super) fn observe(&mut self, sample: &FrameSample) {

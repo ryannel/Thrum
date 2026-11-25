@@ -88,6 +88,8 @@ pub(crate) struct AtmospherePrepared {
     sky_dependencies: [u32; 4],
     diffuse_dependencies: [u32; 4],
     aerial_dependencies: [[u32; 4]; 5],
+    pending_aerial_dependencies: [[u32; 4]; 5],
+    aerial_sky_dirty: bool,
     aerial_quality: crate::contribution::QualitySettings,
     aerial_age: u32,
     pending_aerial_age: u32,
@@ -328,6 +330,8 @@ impl AtmospherePrepared {
             sky_dependencies: [0; 4],
             diffuse_dependencies: [0; 4],
             aerial_dependencies: [[0; 4]; 5],
+            pending_aerial_dependencies: [[0; 4]; 5],
+            aerial_sky_dirty: false,
             aerial_quality: crate::contribution::QualitySettings::new(vec![
                 crate::contribution::QualityKnob {
                     name: "atmosphere.aerial cadence".into(),
@@ -381,6 +385,7 @@ impl AtmospherePrepared {
             && frame.aerosol.unwrap_or_default() != self.frame.aerosol.unwrap_or_default()
         {
             self.validity &= DFG_VALID;
+            self.aerial_sky_dirty = true;
             aerosol::write(queue, aerosol, frame.aerosol.unwrap_or_default());
         }
         self.frame = frame;
@@ -437,16 +442,17 @@ impl AtmospherePrepared {
         self.pending_sky = Some((*view, frame.toward_sun));
         let record = AtmosphereUniform::new(frame, view, frame.camera_altitude_m);
         let [a, b, c, d] = record.inverse_view_projection;
-        let aerial_dependencies =
+        self.pending_aerial_dependencies =
             [a, b, c, d, record.camera_altitude].map(|lane| lane.map(f32::to_bits));
+        self.aerial_sky_dirty |=
+            self.validity & (SKY_VALID | DIFFUSE_VALID) != (SKY_VALID | DIFFUSE_VALID);
         let dirty =
-            self.validity & SKY_VALID == 0 || aerial_dependencies != self.aerial_dependencies;
+            self.aerial_sky_dirty || self.pending_aerial_dependencies != self.aerial_dependencies;
         let age = self.aerial_age.saturating_add(1);
         let cadence = self.aerial_quality.knobs()[0].value;
         if self.validity & AERIAL_VALID == 0 || (dirty && (age >= cadence || view.history_reset()))
         {
             self.validity &= !AERIAL_VALID;
-            self.aerial_dependencies = aerial_dependencies;
             self.pending_aerial_age = 0;
         } else {
             self.pending_aerial_age = age;
@@ -466,6 +472,10 @@ impl AtmospherePrepared {
             volume.submitted();
         }
         self.submitted_sky = self.pending_sky.take();
+        if self.validity & AERIAL_VALID == 0 {
+            self.aerial_dependencies = self.pending_aerial_dependencies;
+            self.aerial_sky_dirty = false;
+        }
         self.aerial_age = self.pending_aerial_age;
         self.validity = TRANSPORT_VALID
             | SKY_VALID

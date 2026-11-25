@@ -49,14 +49,18 @@ fn refresh_changes_the_budget_without_committing_quality() {
         observe(&mut policy, order, 12);
         assert!(!policy.commit(ms(order * 20)));
     }
+    observe(&mut policy, 13, 18);
+    observe(&mut policy, 14, 18);
+    let old_budget_mark = policy.mark();
     let before = policy.state();
     assert_eq!(policy.budget(), ms(17));
     policy.boundary(ms(260), display(10), false);
     assert_eq!(policy.budget(), Duration::from_micros(8500));
     assert_eq!(policy.state(), before);
-    for order in 13..16 {
+    policy.observe(15, old_budget_mark, cost(18, TimingSource::Gpu));
+    for order in 16..19 {
         observe(&mut policy, order, 12);
-        assert_eq!(policy.commit(ms(260 + (order - 12) * 10)), order == 15);
+        assert_eq!(policy.commit(ms(260 + (order - 15) * 10)), order == 18);
     }
     assert_eq!(policy.state().scale, RenderScale::Percent85);
 }

@@ -199,16 +199,7 @@ pub fn run_window(
         render_thread: "thrum-v1-render",
         panel_title: "Thrum demo",
         #[cfg(feature = "proving")]
-        window_size: if transition
-            .as_ref()
-            .is_some_and(|proof| proof.governor.is_some())
-        {
-            governor
-                .route
-                .as_deref()
-                .and_then(|route| crate::CameraRoute::declared(route).ok())
-                .map_or([960, 540], |(extent, _)| extent)
-        } else if display
+        window_size: if display
             .as_ref()
             .is_some_and(|options| options.output.is_some())
         {
