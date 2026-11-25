@@ -439,7 +439,7 @@
     {
       "id": "WP6",
       "name": "A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A query path as in Unity's Crest ocean queries and Unreal's GPU readbacks: asked by the simulation's step, answered a step or two later without a stall, and no later when the renderer drops a frame. A wrong declaration is refused when the scene is prepared, with a named error, and never becomes a wrong answer.",
       "items": [
         {
