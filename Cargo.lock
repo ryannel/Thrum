@@ -595,6 +595,7 @@ name = "crowd-2d-view"
 version = "0.1.0"
 dependencies = [
  "crowd-2d",
+ "js-sys",
  "pollster",
  "serde_json",
  "thrum-app",

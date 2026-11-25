@@ -144,6 +144,42 @@ def verify(record, *, target, count, extent, ticks, costs, expected):
     record.update(reused=reused, skipped_interpolation=skipped, checkpoints=matched)
 
 
+def encode_source_frames(frames, images, files, extent):
+    # Decode and verify each submitted source before the native PNG encoder
+    # writes temporary, exact frames for the elapsed-time preview.
+    width, height = extent
+    pattern = files / "ordinal-%06d.png"
+    command = ["ffmpeg", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgba",
+               "-s", f"{width}x{height}", "-i", "-", "-c:v", "png",
+               "-compression_level", "1", "-threads", "4", "-start_number", "0", str(pattern)]
+    with subprocess.Popen(command, stdin=subprocess.PIPE) as encoder:
+        try:
+            for raw in frames:
+                encoder.stdin.write(raw)
+        finally:
+            encoder.stdin.close()
+        if encoder.wait():
+            raise RuntimeError("PNG encoder failed")
+    for ordinal, image in enumerate(images):
+        (files / f"ordinal-{ordinal:06}.png").rename(files / f'{image["submission"]:06}.png')
+
+
+def review_crops(images, files, out, extent):
+    width, height = extent
+    size = (448, 256)
+    crop = f"crop={size[0]}:{size[1]}:{(width-size[0])//2}:{(height-size[1])//2}"
+    for tick in (160, 350, 950):
+        first = next(index for index, image in enumerate(images) if image["tick"] >= tick)
+        sequence = images[first:first + 12]
+        folder = out / f"overlap-{tick}"
+        folder.mkdir()
+        for index, row in enumerate(sequence):
+            invoke(["ffmpeg", "-v", "error", "-i", files / f'{row["submission"]:06}.png',
+                    "-vf", crop, "-frames:v", 1, folder / f"{index:02}.png"], timeout=30)
+        (folder / "frames.json").write_text(json.dumps(sequence, indent=2))
+        invoke(["ffmpeg", "-v", "error", "-start_number", "0", "-i", folder / "%02d.png",
+                "-vf", "tile=4x3", "-frames:v", 1, folder / "sheet.png"], timeout=30)
+
 def capture_output(record, source, out, mode):
     if record["mode"] != mode:
         raise ValueError("wrong T2 capture mode")
@@ -172,8 +208,8 @@ def capture_output(record, source, out, mode):
             raise ValueError("less than twenty seconds of actual Crowd replay")
         files = out / "png"
         files.mkdir()
-        for row, frame in zip(images, frames, strict=True):
-            package(frame, files / f'{row["submission"]:06}.png', width, height)
+        encode_source_frames(frames, images, files, (width, height))
+        review_crops(images, files, out, (width, height))
         records = [{"submission_id": row["submission"], "submit_ns": row["submit_ns"] - start}
                    for row in images]
         movie = {"timebase": "realtime"}

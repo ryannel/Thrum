@@ -1,6 +1,5 @@
 // Render the retained Crowd replay on a real Chrome WebGPU canvas.
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -10,26 +9,14 @@ const [web, folder, encoded] = process.argv.slice(2);
 const request = JSON.parse(encoded);
 const profile = path.join(folder, 'chrome-profile');
 const images = path.join(folder, 'frames.rgba');
-if (request.action === 'realtime') await fs.writeFile(images, '');
-const hashes = [];
+const workerSource = new URL('../examples/v1-game/web/capture_upload.mjs', import.meta.url);
 const server = createServer(async (req, res) => {
   try {
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-    if (req.method === 'POST' && req.url === '/image' && request.action === 'realtime') {
-      const chunks = [];
-      const limit = request.extent[0] * request.extent[1] * 4;
-      let length = 0;
-      for await (const chunk of req) {
-        length += chunk.length;
-        if (length > limit) throw new Error('image exceeds the backing extent');
-        chunks.push(chunk);
-      }
-      if (length !== limit || hashes.length >= 1600) throw new Error('image length or record limit');
-      const image = Buffer.concat(chunks);
-      await fs.appendFile(images, image);
-      hashes.push(createHash('sha256').update(image).digest('hex'));
-      res.end();
+    if (req.url === '/capture_upload.mjs') {
+      res.setHeader('Content-Type', 'text/javascript');
+      res.end(await fs.readFile(workerSource));
       return;
     }
     if (req.url === '/') {
@@ -97,13 +84,29 @@ try {
   const ready = new Promise(resolve => { loaded = resolve; });
   await send('Page.navigate', { url: origin });
   await ready;
+  if (request.action === 'realtime') {
+    await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: path.resolve(folder) });
+  }
   const response = await send('Runtime.evaluate', {
-    expression: `(${run.toString()})(${JSON.stringify(request)})`,
+    expression: `(() => { const captureMotion = ${captureMotion.toString()}; return (${run.toString()})(${JSON.stringify(request)}); })()`,
     awaitPromise: true, returnByValue: true, timeout: 1_500_000,
   });
   if (response.exceptionDetails) throw new Error(response.result.description);
+  if (request.action === 'realtime') {
+    const wanted = response.result.value.expected * request.extent[0] * request.extent[1] * 4;
+    const deadline = performance.now() + 60_000;
+    while (performance.now() < deadline) {
+      try {
+        if ((await fs.stat(images)).size === wanted) break;
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+      await delay(100);
+    }
+    if ((await fs.stat(images)).size !== wanted) throw new Error('downloaded spool length differs from submitted images');
+  }
   await fs.writeFile(path.join(folder, 'replay.json'), JSON.stringify({
-    ...response.result.value, hashes, launch_options: launchOptions, target: 'chrome-webgpu', workload: 'retained Crowd',
+    ...response.result.value, launch_options: launchOptions, target: 'chrome-webgpu', workload: 'retained Crowd',
     count: request.count, extent: request.extent,
   }));
 } finally {
@@ -139,35 +142,13 @@ async function run({ action, count, extent, ticks, close, run_id }) {
   const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
   try {
     if (realtime) {
-      crowd.begin_capture();
-      const start = await nextFrame();
-      async function image() {
-        const capture = crowd.capture();
-        if (!capture) return false;
-        try {
-          const result = await fetch('/image', { method: 'POST', body: capture.pixels() });
-          if (!result.ok) throw new Error(await result.text());
-          samples.push(JSON.parse(capture.metadata()));
-        } finally {
-          capture.free();
-        }
-        return true;
+      const { startCaptureUploadWorker } = await import('/capture_upload.mjs');
+      const worker = await startCaptureUploadWorker({ spool: true });
+      try {
+        return await captureMotion(crowd, worker, yieldToBrowser, samples, opportunities, identity, extent);
+      } finally {
+        worker.close();
       }
-      let elapsed, expected = 0;
-      do {
-        const now = await nextFrame();
-        elapsed = now - start;
-        const submitted = crowd.step(now);
-        expected += Number(submitted);
-        opportunities.push({ request_ns: Math.round(elapsed * 1e6), submitted });
-        while (await image()) {}
-      } while (elapsed < 22_000);
-      const deadline = performance.now() + 15_000;
-      while (samples.length < expected && performance.now() < deadline) {
-        if (!await image()) await yieldToBrowser();
-      }
-      if (samples.length !== expected || expected < 2) throw new Error('some submitted images were not retained');
-      return { ...identity, mode: 'realtime', encoding: 'Raw', images: samples, opportunities, expected };
     }
     for (let tick = 1; tick <= ticks; tick++) {
       const now = action === 'crowd-costs' ? await nextFrame() : performance.now();
@@ -191,4 +172,78 @@ async function run({ action, count, extent, ticks, close, run_id }) {
     canvas.getContext('webgpu').unconfigure();
     crowd.free();
   }
+}
+
+async function captureMotion(crowd, worker, yieldToBrowser, samples, opportunities, identity, extent) {
+  const slots = 32;
+  const byteLength = extent[0] * extent[1] * 4;
+  const free = Array.from({ length: slots }, () => new Uint8Array(byteLength));
+  const inflight = new Set();
+  const hashes = [];
+  let exportError;
+  function drain() {
+    if (exportError) throw exportError;
+    while (free.length) {
+      const pixels = free.pop();
+      const image = crowd.capture(pixels);
+      if (!image) {
+        free.push(pixels);
+        return;
+      }
+      const job = { metadata: image.metadata(), pixels: image.pixels() };
+      image.free();
+      const ordinal = samples.length;
+      samples.push(JSON.parse(job.metadata));
+      const task = worker.upload(ordinal, job).then(result => {
+        free.push(result.pixels);
+        if (result.error) throw new Error(result.error);
+        hashes[ordinal] = result.rgba_sha256;
+      }).catch(error => { exportError = error; }).finally(() => inflight.delete(task));
+      inflight.add(task);
+    }
+  }
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  crowd.begin_capture();
+  const start = performance.now();
+  const period = 1000 / 45;
+  let next = 0, expected = 0;
+  while (performance.now() - start < 22_500) {
+    if (document.hidden) throw new Error('capture page is hidden');
+    drain();
+    const elapsed = performance.now() - start;
+    if (elapsed < next) {
+      await wait(Math.min(3, next - elapsed));
+      continue;
+    }
+    const ordinal = Math.floor(elapsed / period);
+    next = (ordinal + 1) * period;
+    if (free.length < 4) {
+      opportunities.push({ request_ns: Math.round(elapsed * 1e6), submitted: false, export_backpressure: true });
+    } else {
+      const submitted = crowd.step(elapsed);
+      expected += Number(submitted);
+      opportunities.push({ request_ns: Math.round(elapsed * 1e6), submitted });
+    }
+    await wait(0);
+  }
+  const deadline = performance.now() + 15_000;
+  while (samples.length < expected && performance.now() < deadline) {
+    drain();
+    if (samples.length < expected) await yieldToBrowser();
+  }
+  await Promise.all(inflight);
+  if (exportError) throw exportError;
+  if (samples.length !== expected || hashes.length !== expected || expected < 2) {
+    throw new Error('some submitted images were not retained');
+  }
+  const written = await worker.seal();
+  const directory = await navigator.storage.getDirectory();
+  const entry = await directory.getFileHandle('sprite-capture.rgba');
+  const file = await entry.getFile();
+  if (file.size !== written || file.size !== expected * byteLength) throw new Error('invalid sealed browser spool');
+  const download = document.createElement('a');
+  download.href = URL.createObjectURL(file);
+  download.download = 'frames.rgba';
+  download.click();
+  return { ...identity, mode: 'realtime', encoding: 'Raw', images: samples, opportunities, hashes, expected };
 }

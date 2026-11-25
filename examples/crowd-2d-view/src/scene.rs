@@ -49,8 +49,9 @@ fn sprite_pixel(frame: u32, x: u32, y: u32) -> [u8; 4] {
         2 if y < 1.0 => [153, 68, 113, 255],
         3 if y < 1.0 => [184, 99, 83, 255],
         1..=3 => [80, 36, 57, 255],
-        _ if radius <= 2.2 => [255, 242, 166, 255],
-        _ if radius < 7.0 => [255, 128, 27, ((7.0 - radius) * 22.0) as u8],
+        _ if radius <= 2.4 => [225, 235, 255, 255],
+        _ if (x.abs().min(y.abs()) <= 0.5) && radius < 5.5 => [155, 166, 255, 255],
+        _ if radius < 7.0 => [117, 92, 255, ((7.0 - radius) * 32.0) as u8],
         _ => [0; 4],
     }
 }
@@ -126,7 +127,7 @@ pub(crate) fn row(body: &Body, identity: u128) -> SpriteRow {
             0,
             0.0,
         ),
-        _ => (4, 1.1, 1, 0.75),
+        _ => (4, 1.85, 1, 0.56),
     };
     SpriteRow {
         scale: [scale; 2],
@@ -179,9 +180,9 @@ impl SceneSource<Arc<PublicationPage>> for CrowdScene {
             let mut current = row(body, identity.0);
             if body.kind == 2 {
                 projectiles.insert(handle.slot, (handle.generation, *body));
-            } else {
+            } else if body.kind == 1 {
                 let [x, y] = position(body);
-                if flashes.iter().any(|([a, b], _)| (x - a).hypot(y - b) < 2.2) {
+                if flashes.iter().any(|([a, b], _)| (x - a).hypot(y - b) < 1.6) {
                     current.flash = [1.0, 0.67, 0.23, 0.88];
                 }
             }

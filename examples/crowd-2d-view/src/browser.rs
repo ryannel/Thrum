@@ -97,13 +97,21 @@ impl BrowserCrowd {
     }
 
     /// Poll a captured frame and pass its pixels to the caller.
-    pub fn capture(&mut self) -> Result<Option<BrowserImage>, JsValue> {
+    pub fn capture(
+        &mut self,
+        reusable_pixels: Option<js_sys::Uint8Array>,
+    ) -> Result<Option<BrowserImage>, JsValue> {
         let Some(image) = self.shell.next_submitted_image().map_err(js_error)? else {
             return Ok(None);
         };
+        let length = u32::try_from(image.rgba.len()).map_err(js_error)?;
+        let pixels = reusable_pixels
+            .filter(|pixels| pixels.length() == length)
+            .unwrap_or_else(|| js_sys::Uint8Array::new_with_length(length));
+        pixels.copy_from(&image.rgba);
         let result = BrowserImage {
             metadata: proof::image_sample(&image).to_string(),
-            rgba: image.rgba.clone(),
+            rgba: pixels,
         };
         self.shell.recycle_submitted_image(image);
         Ok(Some(result))
@@ -114,7 +122,7 @@ impl BrowserCrowd {
 #[wasm_bindgen]
 pub struct BrowserImage {
     metadata: String,
-    rgba: Vec<u8>,
+    rgba: js_sys::Uint8Array,
 }
 
 #[wasm_bindgen]
@@ -125,7 +133,7 @@ impl BrowserImage {
     }
 
     /// Copy the original tightly packed SDR output into the page.
-    pub fn pixels(&self) -> Vec<u8> {
+    pub fn pixels(&self) -> js_sys::Uint8Array {
         self.rgba.clone()
     }
 }
