@@ -142,6 +142,9 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
             let shift = clamp(drift * dt / spacing, vec2(-max_shift), vec2(max_shift));
             let diffusion = min(0.24, (0.016 + 0.14 * stocks.x + 0.30 * stocks.y) * dt / (spacing * spacing));
             movement = vec4(shift, diffusion, shore.x);
+        } else if level == 0u && stranded_shore(local) {
+            // Air and film collapse as the stranded bubbles drain on exposed sand.
+            stocks = vec4(stocks.xyz * exp(-dt / 1.8), stocks.w);
         }
     }
     parcels[foam_index(0u, level, local)] = Parcel(stocks, movement);

@@ -109,6 +109,10 @@ fn foam_wet(level: u32, local: vec2<i32>, plain: bool) -> bool {
     return select(wet == 2u, plain, wet == 0u);
 }
 
+fn stranded_shore(local: vec2<i32>) -> bool {
+    return shore_births[foam_index(0u, 0u, local)].wet == 1u;
+}
+
 fn shore_uprush(level: u32, local: vec2<i32>, plain: vec2<f32>) -> vec2<f32> {
     let sample = shore_births[foam_index(0u, level, local)];
     return select(sample.uprush, plain, sample.wet == 0u);
