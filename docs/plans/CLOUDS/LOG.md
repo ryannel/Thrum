@@ -753,3 +753,14 @@
   travels about twice as far across a double display interval as across adjacent single intervals. The
   three WP7 item commands passed on Metal. The previously inspected appearance, transitions and lifetimes
   retain their Metal and Chrome evidence. [Builder evidence](../../../.orchestrate/evidence/CLOUDS/WP7/display-time/README.md)
+
+## WP19 refresh accounting checkpoint
+
+- The Mac window accounts for present calls against display-link refresh intervals. Its ordinary exit report
+  has whole-run counts, and an opt-in measurement retains rows. Nine refresh-account tests and the five
+  scripted hold cases pass. [CPU evidence](../../../.orchestrate/evidence/CLOUDS/WP19/refresh-account-tests.log)
+- The scoped Instruments recorder and the platform witness covered 20 seconds in each of the first five
+  1920×1080 wind-series runs on the built-in panel. The console locked before the sixth run. The first two
+  paired cloud runs showed excess loss under shared load. The required diagnostics and the later series remain
+  open. [Partial series](../../../.orchestrate/evidence/CLOUDS/WP19/pre-repair-scoped/series.json) ·
+  [Resume record](../../../.orchestrate/evidence/CLOUDS/WP19-handoff.md)
