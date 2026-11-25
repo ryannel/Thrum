@@ -1944,12 +1944,12 @@
       }
     },
     "WP21": {
-      "definitions": "ce58e3aa4d7020fa0872d6b195378cc30a92c3ab6a004fd44c354819d3dd3c7a",
+      "definitions": "ab8ba881dd8aa4b556207455d962243f72a1a53ec240008159f8aa31c005fd1b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 6 Must Fix find",
-        "at": "2026-11-25T16:35:40Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its Must Fix findin",
+        "at": "2026-11-25T17:17:51Z"
       }
     },
     "WP22": {
@@ -2149,11 +2149,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 6 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-25T16:35:40Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its Must Fix findings.",
+      "at": "2026-11-25T17:17:51Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T16:35:40Z"
+    "at": "2026-11-25T17:17:51Z"
   },
   "design_history": [
     {

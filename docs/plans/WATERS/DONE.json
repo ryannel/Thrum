@@ -1294,7 +1294,7 @@
     {
       "id": "WP21",
       "name": "With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer",
-      "status": "in_progress",
+      "status": "not_started",
       "depends_on": [],
       "quality_bar": "Water in a shipped game such as Sea of Thieves is a small part of its frame and never holds a float's answer up. Here, with the breakers in view from the sand: of the stations a float in open water posts, nine in ten get their answer within two ticks and none drops to the conformance model, which delivery decides and no time for a view does; the surf drawn is the surf WP13 passed, at the mesh's nodes and in the white front seen from offshore; and a float rides a hitch on the last answer it had, once a tick, and drops to the conformance model only past the declared maximum age or when the device that made the answer is gone. The reference for WP21.6's inspection is the draw as it was before the pass changed: stills from the revision this work package starts from, at WP13.7's 1 km view and its handoff view, on portable Metal and in Chrome.",
       "items": [
@@ -1305,8 +1305,8 @@
           "ask": "After the turn, do the compared nodes include nodes that were outside the view in the frame before? Do they include 32 or more ring-edge nodes that lie between two coarser nodes, each compared with the blend of the model's sheet at those two and none skipped? Would the tests fail if a node that came into view kept the sample it was last given, if the previous presentation's sheet were made at this frame's stage after the stage moved, and if a changed spectrum reached the sum one frame late? Is each expected value taken from `thrum-water-model` and not from the pass?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP21/metal-cache-guards.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
@@ -1315,8 +1315,8 @@
           "statement": "A float keeps the answer it has through a tick that brings no newer one, once a tick, and only while that answer is its own water's, and a repeated drain of a tick hands an undelivered result where one waits and nothing where none does. On the CPU, through the query mailbox with a maximum age of 8 ticks and results the test publishes for one body whose ID and generation stay live, in eight cases. 1. The first drain of a tick with no undelivered result hands the game the newest result already delivered for the body, marked as held, each height carried from its use tick to the drained tick by its rate of change and wet or dry decided from the carried height. 2. With no undelivered result the body can use in the mailbox, a second drain of a tick hands nothing for the body and changes no count, whether the first handed a new result or a held one. 3. With an undelivered result the body can use in the mailbox, a second drain of a tick hands it as a first delivery at its own age and its count rises, in two arrangements: the result was published after the first drain; and two results were published before the first drain, which handed one and left the other. A third drain of that tick then hands nothing and changes no count. 4. First drains of three ticks in a row with no new result each carry from the result's own use tick, so the third is not the second carried again. 5. A result published meanwhile is handed at the next tick's first drain in the held one's place, and the counts of answers aged one, two and older rise only at a result's first delivery, with held uses counted apart. 6. At the first drain where the held result's post is more than 8 ticks behind, the drain hands nothing for the body and changes no count. 7. A drain on another timeline, or after the body's generation has changed, hands the held result to no one. 8. After the readback reset that the water's rebuild makes for a replaced device, with the timeline, the body's generation and the held result's age all still passing, the first drain hands nothing for the body, and so does every drain until a result published after the reset is handed over, at its own age. Guards: a CPU test of the mailbox in the fast tier, and the two Metal mailbox tests that drain a tick twice. WP5.1's, which drains tick 5 twice and then tick 10, passes with its drains and counts as they are. WP19.6's passes with its second drain of tick 4 still taking the result published after the first, and with its last drain, at tick 8, handing the restored timeline's tick-7 answer again as held, on the new endpoint with a calm wake, and neither result of the old timeline.",
           "check": "cargo nextest run --locked --offline -p thrum-water -E 'test(/held_answer/)' --no-tests=fail && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-water --test it -E 'test(/^query_gpu::mailbox_samples_the_gale_at_its_use_tick/) | test(/^query_gpu::tick_stage_world/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP21/mailbox-guards.log",
+          "builder_result": "open",
+          "evidence": "",
           "lock": "gpu",
           "verdict": "",
           "review": ""
@@ -1327,8 +1327,8 @@
           "check": "python3 scripts/water_cost.py running --scene surf --arm open-water",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP21/surf-running-open-water.json",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
@@ -1338,8 +1338,8 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP21/surf-cost.json",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
@@ -1349,8 +1349,8 @@
           "check": "node scripts/check_water_browser.mjs --case surf",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP21/chrome-surf.json",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
@@ -1359,8 +1359,8 @@
           "statement": "The white front seen from offshore is drawn as it was before the pass changed. In a trade wind, at WP13.7's two distant views, the island's 1 km offshore view and the handoff view across the coarse foam window's outer edge, `fixed` stills at three engine times spread over one swell period are taken on portable Metal and in Chrome, from the revision this work package starts from and from its result, with the same camera, settings and engine times: 12 pairs. In every pair the result shows the breaking front where the earlier draw shows it, as bright and as wide, and none where the earlier draw shows none. Record: the 24 stills, in pairs.",
           "inspect": "Put each of the 12 pairs side by side, with the earlier draw as the reference. The receipts show the same camera, wind and engine time for both stills of a pair. 1. From 1 km, the result shows a line of surf along the exposed beach beyond the foam windows wherever the reference does, with no stretch of that beach dark where the reference is white. 2. At each engine time the front lies at the same place along the beach and the same distance off it as in the reference, and across the three times it has moved as the reference's has. 3. The front is as bright and as wide as the reference's. A difference in the grain of the foam is not a failure; a front that is missing, dimmer, narrower or broken into pieces is. 4. In the handoff view the front runs across the recorded outer edge of the coarse window as it does in the reference, with no seam or change in cover at the edge that the reference lacks. 5. Where the reference shows no front, on the lee beach or open water in frame, the result shows none. 6. Points 1 to 5 hold for the Chrome pairs as for the Metal pairs.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP21/stills/inspection.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         }
