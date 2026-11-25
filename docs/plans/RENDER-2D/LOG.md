@@ -256,3 +256,10 @@
   to report occlusion. Device loss, configuration errors, timeouts and any other acquire result still
   fail the check. The unattended run passed all three sizes and resize on Metal.
   [Window evidence](../../../.orchestrate/evidence/RENDER-2D/WP3/WP3.6-unattended/README.md)
+- 2026-11-25 WP3.8 staggers the narrow near-2× colour transition along each sprite edge and
+  redistributes weight between diagonals where the two shoulders overlap. The slow Metal checker
+  held red-channel contrast between 107.7 and 111.5 versus a low of 56.3 in the review take.
+  Both Metal recipes passed the submitted continuity and exact alignment checks. All seven
+  automated item checks passed, including the three presented Mac windows and first resize.
+  [Motion](../../../.orchestrate/evidence/RENDER-2D/WP3/metal-contrast/motion.md) ·
+  [Item checks](../../../.orchestrate/evidence/RENDER-2D/WP3/metal-contrast/automated-checks.json)
