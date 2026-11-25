@@ -213,7 +213,7 @@ macro_rules! wgsl {
         )
     };
     ("synthetic/exposure.wgsl") => {
-        $crate::shaders::wgsl!(@exposure_body "                ev = clamp(raw_ev, parameters.z, parameters.w);\n")
+        $crate::shaders::wgsl!(@exposure_body "                ev = clamp(raw_ev, parameters.z, parameters.w);\n                inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(ev);\n                flags = 0u;\n")
     };
     (@exposure_body $resolve:literal) => {
         concat!(

@@ -393,7 +393,7 @@ impl WeatherMap {
     }
 }
 
-fn ramp_row_age(previous: RowStamp, next: RowStamp, elapsed: f64) -> f64 {
+pub(crate) fn ramp_row_age(previous: RowStamp, next: RowStamp, elapsed: f64) -> f64 {
     const RAMP_CONTROL_CHANGE: f64 = 0.00005;
 
     let change = (next.parameters.coverage - previous.parameters.coverage)

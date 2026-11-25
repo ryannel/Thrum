@@ -1,5 +1,3 @@
-                inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(ev);
-                flags = 0u;
                 if raw_ev < parameters.z { flags |= FLOOR | CLAMP; }
                 if raw_ev > parameters.w { flags |= CLAMP; }
             }

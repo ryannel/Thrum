@@ -91,8 +91,8 @@ pub struct SunPath {
     ranges: [(u32, u32); 3],
     stamps: [Vec<RowStamp>; 3],
     pending_stamps: [Vec<RowStamp>; 3],
-    last_weather_time: f64,
-    pending_time: f64,
+    last_stamp: Option<RowStamp>,
+    pending_stamp: Option<RowStamp>,
 }
 
 impl SunPath {
@@ -265,8 +265,8 @@ impl SunPath {
             ranges: [(0, 0); 3],
             stamps: std::array::from_fn(|_| Vec::with_capacity(size)),
             pending_stamps: std::array::from_fn(|_| Vec::with_capacity(size)),
-            last_weather_time: 0.0,
-            pending_time: 0.0,
+            last_stamp: None,
+            pending_stamp: None,
         })
     }
 
@@ -418,7 +418,13 @@ impl SunPath {
                 time: state.time(),
                 parameters: state.parameters(),
             };
-            self.pending_time = state.time();
+            let previous = self.last_stamp.unwrap_or(stamp);
+            let elapsed = (stamp.time - previous.time).max(0.0);
+            // Keep the shadow windows current with the weather map during a
+            // coverage or type ramp. Older optical-depth strips can expose
+            // straight shadow edges as the deck goes from thin to opaque.
+            let ramp_age = super::weather::ramp_row_age(previous, stamp, elapsed);
+            self.pending_stamp = Some(stamp);
             for (i, moved) in moved.into_iter().enumerate() {
                 let origin = self.pending_origins[i];
                 let rows = &mut self.pending_stamps[i];
@@ -428,8 +434,8 @@ impl SunPath {
                 let (start, count) = super::weather::update_rows(
                     rows,
                     stamp,
-                    (state.time() - self.last_weather_time).max(0.0),
-                    self.profile.levels[i].maximum_age,
+                    elapsed,
+                    self.profile.levels[i].maximum_age.min(ramp_age),
                     reset,
                 );
                 self.ranges[i] = (start, count);
@@ -613,7 +619,7 @@ impl SunPath {
             self.origins = self.pending_origins;
             self.direction = self.pending_direction;
             std::mem::swap(&mut self.stamps, &mut self.pending_stamps);
-            self.last_weather_time = self.pending_time;
+            self.last_stamp = self.pending_stamp.take();
             self.ground_needs_refresh = false;
         }
         self.runs = false;
