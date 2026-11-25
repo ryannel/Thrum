@@ -16,7 +16,7 @@ SDR_FORMATS = {"Bgra8Unorm", "Bgra8UnormSrgb", "Rgba8Unorm", "Rgba8UnormSrgb"}
 
 def pixel_card(environment):
     return dict(environment, THRUM_SCENE="sprites", THRUM_SPRITE_SCALE="1",
-                THRUM_SPRITE_EDR_CARD="1")
+                THRUM_SPRITE_PROBE="edr-card")
 
 
 def bright_indices(extent):

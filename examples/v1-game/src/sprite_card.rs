@@ -7,7 +7,7 @@ use thrum_render::{
 
 pub(crate) const SIZE: [u32; 2] = [256, 128];
 const ROWS: [SpriteRow; 1] = [SpriteRow::new(0, [-128.0, 64.0])];
-const EDR_ROWS: [SpriteRow; 2] = [
+pub(crate) const EDR_ROWS: [SpriteRow; 2] = [
     ROWS[0],
     SpriteRow {
         scale: [16.0; 2],
@@ -16,17 +16,10 @@ const EDR_ROWS: [SpriteRow; 2] = [
     },
 ];
 
-fn edr_probe() -> bool {
-    #[cfg(target_os = "macos")]
-    {
-        static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-        *ENABLED.get_or_init(|| std::env::var_os("THRUM_SPRITE_EDR_CARD").is_some_and(|v| v == "1"))
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        false
-    }
-}
+const CARD: SpriteRect = SpriteRect {
+    origin: [0, 0],
+    size: SIZE,
+};
 
 pub(crate) fn scene(scale: u16) -> Result<SpriteScene, FrameError> {
     if !(1..=6).contains(&scale) {
@@ -34,27 +27,28 @@ pub(crate) fn scene(scale: u16) -> Result<SpriteScene, FrameError> {
             "sprite card scale must be an integer from 1 to 6",
         ));
     }
-    let mut frames = vec![SpriteRect {
-        origin: [0, 0],
-        size: SIZE,
-    }];
-    if edr_probe() {
-        // The cream texel is boosted well above H=2 in every RGB channel.
-        frames.push(SpriteRect {
-            origin: [33, 13],
-            size: [1, 1],
-        });
-    }
-    let capacity = if edr_probe() { 2 } else { 1 };
-    Ok(SpriteScene::new(
+    Ok(card([CARD].into(), 1))
+}
+
+pub(crate) fn edr_scene() -> SpriteScene {
+    // The cream texel is boosted well above H=2 in every RGB channel.
+    let bright = SpriteRect {
+        origin: [33, 13],
+        size: [1, 1],
+    };
+    card([CARD, bright].into(), 2)
+}
+
+fn card(frames: std::sync::Arc<[SpriteRect]>, capacity: u32) -> SpriteScene {
+    SpriteScene::new(
         EmbeddedSheet {
             extent: SIZE,
             rgba: texels().into(),
-            frames: frames.into(),
+            frames,
             texels_per_unit: 1.0,
         },
         capacity,
-    ))
+    )
 }
 
 pub(crate) fn frame(scale: u16, extent: [u32; 2]) -> SpriteFrame<'static> {
@@ -68,7 +62,7 @@ pub(crate) fn frame(scale: u16, extent: [u32; 2]) -> SpriteFrame<'static> {
             ],
             pixels_per_unit: scale,
         },
-        rows: if edr_probe() { &EDR_ROWS } else { &ROWS },
+        rows: &ROWS,
     }
 }
 

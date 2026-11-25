@@ -22,6 +22,8 @@ pub enum SpriteProbe {
     },
     /// Comparison of pixel and smooth sprites over light and dark panels.
     Stills,
+    /// Registration card with a sprite above SDR white.
+    EdrCard,
 }
 
 pub(crate) struct Scene {
@@ -39,6 +41,7 @@ impl Scene {
             }],
             SpriteProbe::Scroll { .. } => scroll_rows(),
             SpriteProbe::Stills => still_rows(),
+            SpriteProbe::EdrCard => crate::sprite_card::EDR_ROWS.to_vec(),
         };
         Self {
             probe,
@@ -47,7 +50,12 @@ impl Scene {
         }
     }
 
-    pub(crate) fn frame(&self, source: SourceTick, alpha: f32) -> SpriteFrame<'_> {
+    pub(crate) fn frame(
+        &self,
+        source: SourceTick,
+        alpha: f32,
+        extent: [u32; 2],
+    ) -> SpriteFrame<'_> {
         let (centre, pixels_per_unit) = match self.probe {
             SpriteProbe::Sweep(_) => {
                 let offset = f64::from(self.sweep_step) / 256.0;
@@ -59,6 +67,12 @@ impl Scene {
                 ([travelled, travelled * 0.53], scale)
             }
             SpriteProbe::Stills => ([0.0; 2], 1.0),
+            SpriteProbe::EdrCard => {
+                return SpriteFrame {
+                    view: crate::sprite_card::frame(1, extent).view,
+                    rows: &self.rows,
+                };
+            }
         };
         SpriteFrame {
             view: SpriteView {
@@ -101,6 +115,9 @@ impl Scene {
 }
 
 pub(crate) fn assets(probe: SpriteProbe) -> SpriteScene {
+    if probe == SpriteProbe::EdrCard {
+        return crate::sprite_card::edr_scene();
+    }
     if matches!(probe, SpriteProbe::Sweep(_)) {
         let art = EmbeddedSheet {
             extent: [1; 2],
@@ -298,6 +315,9 @@ pub(crate) fn parse(selection: &str) -> Result<SpriteProbe, String> {
             .then_some(number)
             .ok_or_else(|| format!("invalid sprite proof value {text}"))
     };
+    if selection == "edr-card" {
+        return Ok(SpriteProbe::EdrCard);
+    }
     if selection == "stills" {
         return Ok(SpriteProbe::Stills);
     }

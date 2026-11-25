@@ -731,7 +731,7 @@ impl SceneSource<PublishedPage> for GameScene {
     ) -> Result<thrum_render::sprite::SpriteFrame<'_>, FrameError> {
         let scale = self.sprite_scale.ok_or(RenderError::MissingSpriteSource)?;
         Ok(if let Some(probe) = &self.sprite_probe {
-            probe.frame(source, alpha)
+            probe.frame(source, alpha, extent)
         } else if self.sprite_rows.is_some() {
             #[cfg(target_os = "ios")]
             {
