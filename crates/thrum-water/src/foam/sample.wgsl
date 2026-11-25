@@ -13,7 +13,11 @@ struct FoamSettings {
     hulls: array<FoamHull, HULL_LIMIT>,
     components: array<Component, COMPONENT_LIMIT>,
 }
-@group(3) @binding(9) var<storage, read> foam_stocks: array<vec4<f32>>;
+struct FoamEndpoints {
+    stocks: array<vec4<f32>, FOAM_STOCK_RECORDS>,
+    coarse_deficit: array<f32, FOAM_HANDOFF_CELLS>,
+}
+@group(3) @binding(9) var<storage, read> foam_stocks: FoamEndpoints;
 @group(3) @binding(10) var<uniform> foam_settings: FoamSettings;
 
 fn column_component(index: u32) -> Component { return foam_settings.components[index]; }
@@ -44,7 +48,7 @@ fn foam_index(bank: u32, level: u32, at: vec2<i32>) -> u32 {
 }
 fn foam_load(bank: u32, level: u32, at: vec2<i32>) -> vec4<f32> {
     if !foam_inside(at) { return vec4(0.0); }
-    return foam_stocks[foam_index(bank, level, at)];
+    return foam_stocks.stocks[foam_index(bank, level, at)];
 }
 fn foam_level(point: vec2<f32>, endpoint: u32, level: u32) -> vec4<f32> {
     let coordinate = point / FOAM_SPACING[level] - vec2<f32>(foam_settings.origins[2u * endpoint + level].xy);
@@ -57,12 +61,36 @@ fn foam_level(point: vec2<f32>, endpoint: u32, level: u32) -> vec4<f32> {
         mix(foam_load(bank, level, at + vec2(0, 1)), foam_load(bank, level, at + vec2(1, 1)), f.x),
         f.y);
 }
-fn foam_edge(point: vec2<f32>, endpoint: u32, level: u32) -> f32 {
-    let p = point / FOAM_SPACING[level] - vec2<f32>(foam_settings.origins[2u * endpoint + level].xy);
+fn foam_edge(p: vec2<f32>, level: u32) -> f32 {
     let edge = min(p, vec2(f32(FOAM_SIDE)) - p);
     // The coarse level hands over to the far estimator over 80 m, which
     // spans many rows even from high above the sea.
     return smoothstep(1.0, select(14.0, 40.0, level == 1u), min(edge.x, edge.y));
+}
+
+fn foam_edge_at(point: vec2<f32>, endpoint: u32, level: u32) -> f32 {
+    return foam_edge(point / FOAM_SPACING[level] -
+        vec2<f32>(foam_settings.origins[2u * endpoint + level].xy), level);
+}
+
+fn coarse_deficit_index(bank: u32, at: vec2<i32>) -> u32 {
+    return bank * u32(FOAM_SIDE * FOAM_SIDE) + u32(at.y * FOAM_SIDE + at.x);
+}
+fn coarse_deficit(bank: u32, at: vec2<i32>) -> f32 {
+    if !foam_inside(at) { return 1.0; }
+    return foam_stocks.coarse_deficit[coarse_deficit_index(bank, at)];
+}
+fn coarse_support(point: vec2<f32>, endpoint: u32) -> f32 {
+    let edge = foam_edge_at(point, endpoint, 1u);
+    if !FOAM_HANDOFF || edge == 0.0 { return edge; }
+    let centre = point / FOAM_SPACING[1] - vec2<f32>(foam_settings.origins[2u * endpoint + 1u].xy) - 0.5;
+    let at = vec2<i32>(floor(centre));
+    let f = fract(centre);
+    let bank = foam_settings.banks[endpoint];
+    let deficit = mix(
+        mix(coarse_deficit(bank, at), coarse_deficit(bank, at + vec2(1, 0)), f.x),
+        mix(coarse_deficit(bank, at + vec2(0, 1)), coarse_deficit(bank, at + vec2(1, 1)), f.x), f.y);
+    return min(edge, 1.0 - deficit);
 }
 // The mean open-sea stocks the coarse level held at each endpoint, with a
 // weight of one once measured. They follow the two banks of cells.
@@ -70,17 +98,17 @@ fn foam_held_index(bank: u32) -> u32 {
     return 4u * u32(FOAM_SIDE * FOAM_SIDE) + bank;
 }
 fn foam_held() -> vec4<f32> {
-    return mix(foam_stocks[foam_held_index(foam_settings.banks.x)],
-        foam_stocks[foam_held_index(foam_settings.banks.y)], foam_settings.time_wind.y);
+    return mix(foam_stocks.stocks[foam_held_index(foam_settings.banks.x)],
+        foam_stocks.stocks[foam_held_index(foam_settings.banks.y)], foam_settings.time_wind.y);
 }
 struct FoamSample {
     stocks: vec4<f32>,
     distant_weight: f32,
 }
 fn foam_endpoint(point: vec2<f32>, endpoint: u32, far: vec4<f32>) -> FoamSample {
-    let fine_weight = foam_edge(point, endpoint, 0u);
+    let fine_weight = foam_edge_at(point, endpoint, 0u);
     if fine_weight >= 1.0 { return FoamSample(foam_level(point, endpoint, 0u), 0.0); }
-    let coarse_weight = foam_edge(point, endpoint, 1u);
+    let coarse_weight = coarse_support(point, endpoint);
     var coarse = far;
     if coarse_weight > 0.0 {
         coarse = mix(far, foam_level(point, endpoint, 1u), coarse_weight);

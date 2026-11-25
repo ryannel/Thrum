@@ -329,8 +329,13 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let source = shader_source(&environment, mapped, interaction.is_some(), foam.is_some())
-        + &Cache::source(surf_cache.as_ref());
+    let source = shader_source(
+        &environment,
+        mapped,
+        interaction.is_some(),
+        foam.is_some(),
+        surf_cache.is_some(),
+    ) + &Cache::source(surf_cache.as_ref());
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(SURFACE_PASS),
         source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -459,6 +464,7 @@ fn shader_source(
     mapped: bool,
     wake: bool,
     foam: bool,
+    surf: bool,
 ) -> String {
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
@@ -474,7 +480,7 @@ fn shader_source(
             include_str!("open_surface.wgsl").to_owned()
         },
         if foam {
-            Foam::source() + include_str!("foam/appearance.wgsl")
+            Foam::source(surf) + include_str!("foam/appearance.wgsl")
         } else {
             "const FOAM_ENABLED: bool = false;
              fn foam_surface(_p: vec3<f32>, _r: SurfaceRow, _v: f32, _d: f32, _face: f32) -> vec4<f32> { return vec4(0.0); }"

@@ -10,6 +10,7 @@ import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 const mode = process.argv[process.argv.indexOf('--case') + 1];
 if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf');
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
+const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
 const [width,height] = [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
@@ -401,7 +402,7 @@ try {
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=surfRoute?'?surf=trade':mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
+  const route=surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
@@ -678,6 +679,7 @@ try {
     const spacing=offshore?200:surfInspection?100:0;
     if(surfInspection){
       assert(Number.isInteger(view)&&view>=0&&view<=8,'invalid surf camera');
+      if(handoffCut)assert(view===7,'start at the foam handoff camera');
       await evaluate(`game.edit_control('camera.island',${view})`);
       result.surf_camera=view;
       await until(async()=>{
@@ -690,7 +692,7 @@ try {
       }
       await until(()=>evaluate('game.frame_ready()'),'surf warm-up completion');
     }
-    await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;
+    await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;globalThis.__cameraCut=null;
       let lastOpportunity=-Infinity;
       globalThis.__opportunities=0;const presented=()=>Number(/presented=(\\d+)/.exec(game.frame_info())[1]);
       globalThis.__firstPresented=presented();globalThis.__expected=0;
@@ -700,6 +702,10 @@ try {
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
         if(!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
+        if(${handoffCut}&&elapsed>=5000&&__cameraCut===null){
+          game.edit_control('camera.island',8);
+          __cameraCut={from:7,to:8,driver_elapsed:elapsed/1000,next_capture_index:presented()-__firstPresented};
+        }
         if(elapsed-lastOpportunity>=${spacing}){
           game.frame(${surfInspection?'timestamp':`${now}+elapsed`});__opportunities++;lastOpportunity=elapsed;
         }
@@ -707,6 +713,10 @@ try {
         if(elapsed<${duration})requestAnimationFrame(loop);else {__expected=presented()-__firstPresented;drain();}
       };game.begin_capture();__manual=false;requestAnimationFrame(loop);`);
     await until(()=>evaluate('__motionDone'),'realtime pan');
+    if(handoffCut){
+      result.camera_cut=await evaluate('__cameraCut');
+      assert(result.camera_cut!==null,'capture did not reach the camera change');
+    }
     const count=await evaluate('__motion.length');
     for(let i=0;i<count;i++){
       const image=await evaluate(`({identity:__motion[${i}].identity,frame:__motion[${i}].frame})`),rgba=await pixels(`__motion[${i}].rgba`);

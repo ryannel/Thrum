@@ -20,6 +20,7 @@ const SIDE: u32 = 256;
 const CELLS: u64 = (SIDE * SIDE) as u64;
 const SPACING: [f32; 2] = [0.25, 2.0];
 const MAX_TICKS: u64 = 8;
+const STOCK_RECORDS: u64 = 4 * CELLS + 2;
 const PASS: &str = "whitewater";
 const SURF_FIRST: u32 = 12;
 const SHORE_BIRTHS: u32 = 17;
@@ -99,10 +100,13 @@ fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages
 }
 
 impl Foam {
-    pub(crate) fn source() -> String {
+    pub(crate) fn source(surf: bool) -> String {
         let [fine, coarse] = SPACING;
+        let handoff_cells = if surf { 2 * CELLS } else { 1 };
         format!(
             "const FOAM_SIDE: i32 = {SIDE};\nconst FOAM_SPACING = array({fine:?}, {coarse:?});\n\
+             const FOAM_STOCK_RECORDS: u32 = {STOCK_RECORDS}u;\n\
+             const FOAM_HANDOFF_CELLS: u32 = {handoff_cells}u;\nconst FOAM_HANDOFF: bool = {surf};\n\
              const HULL_LIMIT: u32 = {HULL_LIMIT}u;\nconst COMPONENT_LIMIT: u32 = {COMPONENT_LIMIT}u;\n"
         ) + include_str!("../column/records.wgsl")
             + include_str!("../column.wgsl")
@@ -143,7 +147,7 @@ impl Foam {
         let stocks = buffer(
             device,
             "foam endpoints",
-            4 * CELLS * 16 + 2 * 16,
+            STOCK_RECORDS * 16 + if surf.is_some() { 2 * CELLS * 4 } else { 16 },
             Usage::STORAGE | Usage::COPY_SRC | Usage::COPY_DST,
         );
         let settings = buffer(
@@ -233,7 +237,7 @@ impl Foam {
              }"
             .to_owned()
         };
-        let source = (include_str!("../field.wgsl").to_owned() + &Self::source())
+        let source = (include_str!("../field.wgsl").to_owned() + &Self::source(surf.is_some()))
             .replace("@group(3)", "@group(0)")
             .replace(
                 "var<storage, read> foam_stocks",

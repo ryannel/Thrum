@@ -156,6 +156,18 @@ fn kernel(distance: f32, diffusion: f32) -> f32 {
         + diffusion * (tent(distance - 1.0) + tent(distance + 1.0));
 }
 
+fn carry_coarse_handoff(local: vec2<i32>, relative: vec2<i32>) {
+    // Keep the previous window's feather as it moves into the interior.
+    // New cells start at the distant estimate. Their contribution grows as
+    // the existing shore births and transport build up the local stocks.
+    var deficit = coarse_deficit(foam_settings.banks.x, relative);
+    if any(relative != local) {
+        deficit = max(deficit, 1.0 - foam_edge(vec2<f32>(relative) + 0.5, 1u));
+    }
+    let fill = foam_settings.time_wind.x / 8.0;
+    foam_stocks.coarse_deficit[coarse_deficit_index(foam_settings.banks.y, local)] = max(0.0, deficit - fill);
+}
+
 @compute @workgroup_size(8, 8)
 fn step_foam(@builtin(global_invocation_id) id: vec3<u32>) {
     let local = vec2<i32>(id.xy);
@@ -174,7 +186,10 @@ fn step_foam(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
     let film = sum.yz / max(1.0, sum.y + sum.z);
-    foam_stocks[foam_index(foam_settings.banks.y, level, local)] = clamp(vec4(sum.x, film, sum.w), vec4(0.0), vec4(1.0));
+    foam_stocks.stocks[foam_index(foam_settings.banks.y, level, local)] = clamp(vec4(sum.x, film, sum.w), vec4(0.0), vec4(1.0));
+    if FOAM_HANDOFF && level == 1u {
+        carry_coarse_handoff(local, relative);
+    }
 }
 
 // Beyond the coarse level the surface continues the cover the level holds.
@@ -207,6 +222,6 @@ fn measure_held(@builtin(local_invocation_index) lane: u32) {
     if lane == 0u {
         let total = held_sums[0];
         let held = select(vec4(0.0), vec4(total.xyz / max(total.w, 1.0), 1.0), total.w >= 64.0);
-        foam_stocks[foam_held_index(foam_settings.banks.y)] = held;
+        foam_stocks.stocks[foam_held_index(foam_settings.banks.y)] = held;
     }
 }
