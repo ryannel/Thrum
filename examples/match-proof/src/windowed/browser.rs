@@ -65,7 +65,7 @@ impl WindowedMatch {
     }
 
     /// Transfer one T2 frame to a reusable JavaScript buffer.
-    pub fn capture(&mut self, pixels: js_sys::Uint8Array) -> Result<Option<String>, JsError> {
+    pub fn capture(&mut self, pixels: &js_sys::Uint8Array) -> Result<Option<String>, JsError> {
         let Some(image) = self.shell.next_submitted_image().map_err(js_error)? else {
             return Ok(None);
         };

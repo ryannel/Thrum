@@ -129,7 +129,11 @@ the session and keep the original `Duration` for the render sample. The interval
 For tick zero or when playout is unavailable, use a held sample with fraction one and rate zero.
 
 ```rust
-let fraction = (playout.position - tick.saturating_sub(1) as f64).clamp(0.0, 1.0);
+let fraction = if tick == 0 {
+    1.0
+} else {
+    (playout.position - (tick - 1) as f64).clamp(0.0, 1.0)
+};
 let ticks_per_second = playout.rate * 1_000_000.0 / f64::from(tick_us);
 let presentation = ClockSample::driven(now, fraction, ticks_per_second)
     .ok_or(DriverError::InvalidPlayoutSample)?;

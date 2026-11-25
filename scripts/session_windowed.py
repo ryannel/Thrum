@@ -234,7 +234,7 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
                     assert distance <= limit + 0.002, (previous, row, limit, distance)
             previous, jump = row, False
     assert frames >= minimum_frames, f"insufficient actual surface submissions in {log.path}: {frames}"
-    return {"frames": frames, "highest_unskipped_rate": worst_ratio,
+    return {"frames": frames, "highest_unskipped_rate": worst_ratio if bounded_rate else None,
             "stalls": log.events("stall"), "skips": log.events("skip")}
 
 
