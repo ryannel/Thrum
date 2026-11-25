@@ -19,19 +19,19 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: a scene with no visible sky that wants the shade of cooked shapes keeps their volumes loaded (27 MiB).
 - Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this.
 - Assumption: cloud light takes its first-order phase from the droplets, so the sky will differ from Broadsides' accepted stills near the Sun.
-- Assumption: for light scattered many times the design keeps its flux solution as a starting point, because it brightens a cloud with nothing tuned. Nothing holds it to photon transport, and a builder may tune it by eye.
+- Assumption: for light scattered many times the design keeps its flux solution as a starting point. Nothing holds it to photon transport, and a builder may tune it by eye.
 - Assumption: the lowered bar keeps tests where a game reads the weather (the GPU's map against the CPU query) and on the frame contract, and drops every test of how light was computed.
 - Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the cloud library included; Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
 - Assumption: "bring that across when it makes sense" (13 November) means work packages start when their dependencies are Done, which can be before G7.
 - Assumption: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged.
 - Assumption: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog.
 - Assumption: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km.
-- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 (the lead's task of 25 November): by the OS-reported presented times, the weather sky loses at most one refresh in 20 seconds beyond the same game without clouds.
+- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20: by the OS-reported presented times, the weather sky loses at most one refresh in 20 seconds beyond the same game without clouds, and stalls at most one refresh longer. Only a run's longest stall is compared, not how many it has.
 - Assumption: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase.
 - Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP7.8, WP12.5, WP12.6), and the rest is the performance phase's.
 - Assumption: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes; every sky until then shows those flaws.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8.
-- Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, as WP7's reviews ran it. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs.
+- Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs.
 
 ## WP1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
 [review](../../../.orchestrate/evidence/CLOUDS/WP1-review.md)

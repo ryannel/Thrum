@@ -41,7 +41,10 @@ account, protocol and work packages. No mechanism of the sky and no interface ch
 after [the review of that revision](../../../.orchestrate/evidence/CLOUDS/design-review.md) (five findings):
 a lost refresh is counted from the OS-reported presented times and the window's account only places it; a
 loss is attributed by the whole frame against the clouds-absent runs beside it; what those runs lose stops
-nothing; the account's memory is bounded; and a frame's step is judged by its display time.
+nothing; the account's memory is bounded; and a frame's step is judged by its display time. Revised again
+that day after [the second review](../../../.orchestrate/evidence/CLOUDS/design-review.md) (one finding): a
+cloud run holds by how many refreshes it loses and by how long it stalls at once, so equal totals cannot pass
+a freeze at the wind turn or give it to the window.
 
 ## The request
 
@@ -1319,6 +1322,14 @@ and takes no GPU timestamp for any of this. GPU pass timing names the pass that 
 (334 of 492 opportunities with it, 492 of 492 without), so it is taken in a second run, labelled a
 diagnostic, that is never evidence that a refresh was shown or lost.
 
+**What the witness needs** is its own, and is not the account's rows. It joins the game's submission and
+request records to the recording by drawable, and it covers a measured interval only with a joined presented
+frame at or before the start marker and another at or after the end marker. `PLATFORM-RUNTIME-MAC`'s retained
+capture-off trace qualifies with its 841 joined drawables and fails coverage when given only the 488
+submissions whose targets fall inside the markers. So a launch the witness records writes those records from
+the frame before the start marker through the frame after the end marker. They are bounded by the interval
+the launch asked for, as the rows are, and the account's rows still stop at the interval's ends.
+
 **One count.** WP7 added to the window the longest run of consecutive targets, from a status sampled before
 encoding. It is removed. It overstated: a frame that entered submission 42.57 ms after its target stayed in
 the run. It understated: a still-air run presented 5,400 frames in 5,414 callbacks and reported 0.125 s,
@@ -1338,13 +1349,27 @@ account and its presented times. A series is one whole. No run is taken again by
 several: on one binary WP7's display receipts served between 46% and 99.7% of their opportunities, and in
 both ordered series on record the early runs served theirs and the late ones did not, whatever their wind.
 
-**A cloud run holds** when it loses at most one refresh more than the worse of the two clouds-absent runs
-beside it. That is the sky's requirement. A cloud run that does not meet it is the only result of a series
-that rejects the sky.
+**A cloud run holds** by one rule with two parts. Each part is taken from the witness's presented times over
+the run's 20 seconds and set against the two clouds-absent runs beside it.
+
+- **How many.** It loses at most one refresh more than the worse of the two.
+- **How long at once.** A **stall** is a run of consecutive lost refreshes, and its length is their number:
+  one presented interval of n + 1 refresh periods is a stall of n. A run's longest stall is 0 when it lost
+  nothing. A stall of a cloud run **stands out** when it is more than one refresh longer than the longest
+  stall in either of the two. No stall of a cloud run that holds stands out.
+
+The count cannot see a hitch, and the stall is what the player sees as one. Three 20-second runs at 120 Hz
+that each lose 30 refreshes are equal by count. If the clouds-absent runs lose theirs one at a time, their
+longest interval between new frames is 16.67 ms. If the cloud run loses its 30 together at the wind's turn,
+the picture stands still for 258.33 ms: a stall of 30 beside stalls of 1, and the run does not hold.
+
+That is the sky's requirement. A cloud run that does not meet both parts is the only result of a series that
+rejects the sky. The record gives, for every run, the refreshes it lost, its longest stall and when in the
+measured interval that stall began.
 
 **What a clouds-absent run loses** is the game's without clouds: the window's, the frame's or the machine's.
 It fails no check and stops nothing in this module. It qualifies what the series establishes, and the record
-gives each cloud run's result beside what its two neighbours lost. "No more than the game without clouds,
+gives each cloud run's result beside what its two neighbours lost and their longest stalls. "No more than the game without clouds,
 which lost 0 and 1" is a held refresh. "No more than the game without clouds, which lost 40 and 55" says only
 that the clouds added nothing to a game that was already losing refreshes. Each refresh a clouds-absent run
 lost is listed with its place and written to `PLATFORM-RUNTIME-MAC`'s log as a tripwire, for that module or
@@ -1357,33 +1382,50 @@ recorded as that; the setup is fixed and the whole series is taken again.
 **Where it is taken.** Both work packages take the series on the unlocked, awake built-in display, which
 [the project settings](../../../ORCHESTRATE.md#targets) call attended setup. The display is woken for each run
 and not held awake between them. WP19 takes the series beside other work, under the `gpu` lock, as a record:
-it fails on a series that is not a measurement or on a lost refresh with no place, and no count decides it.
+it fails on a series that is not a measurement or on a lost refresh with no place, and no count or stall
+decides it.
 WP20 takes it once with no other agent working, and there the rule decides. WP20 is the sitting this design
 asks for by name under [the project settings' rule for timing](../../../ORCHESTRATE.md#targets), because
 smoothness at 1× is judged in it: its done-when entry is `"alone": true` and its check holds `gpu.alone`. The
 exclusive GPU lock alone is not enough. Under it, the 40 m/s run and the turn left 267 and 349 of 2,412
 opportunities unserved. A review has no quiet window, so a reviewer reads the series the script took in the
-sitting. A cloud run that does not hold ends the sitting: the builder ends `BLOCKED` with the series and the
-places of that run's losses, and the repair is planned as work beside other builders, as WP19's is.
+sitting. A cloud run that does not hold ends the sitting: the builder ends `BLOCKED` with the series, the
+places of that run's losses and each stall that stands out, and the repair is planned as work beside other
+builders, as WP19's is.
+
+**The rule is fixed before the sitting.** WP19 builds the command that applies it, and proves it there on
+scripted presented times with known answers (WP19.4), the three runs above among them, so the one attended
+sitting is not spent finding that the command counted wrongly.
 
 **Whose loss it is.** The clouds-absent runs beside a cloud run are the same game on the same binary with one
 thing changed. So attribution asks one question of the whole frame: what does the cloud run lose that its
-neighbours do not?
+neighbours do not? The rule's two parts give two answers. Every lost refresh of a cloud run is under one of
+them: a refresh in a stall that stands out belongs to that stall, and every other is counted at its place.
 
+- **A stall that stands out is the clouds'**, whatever the counts. Thirty refreshes lost together at the turn
+  are not the window's because the neighbours lost thirty, one at a time, at the same place. The stall is
+  listed by itself: its length, when in the measured interval it began, what the wind was doing then, and
+  the places of its refreshes. It is never given to the game or the window.
 - **More than its neighbours, at any place, is the clouds'**, whatever the cloud passes take by themselves.
   A frame with 7 ms of GPU work on its critical path makes an 8.33 ms refresh. With a 2 ms cloud pass added
   it takes 9 ms and does not. The cloud passes are well inside the refresh interval and the loss is still the
   clouds', because the same frame made the refresh without them. Cloud passes that fit the interval by
   themselves clear nothing.
-- **No more than its neighbours is the game's own.** The loss is there without clouds. `PLATFORM-RUNTIME-MAC`
+- **No more than its neighbours is the game's own**, once the refreshes of stalls that stand out are counted
+  apart. The loss is there without clouds. `PLATFORM-RUNTIME-MAC`
   owns the Mac's present and cadence path: the builder writes the loss as a proposal in that module's log, with
   the record's rows, changes nothing in how the window paces, and goes on with this module's work.
-- **An excess gets a cause when it is seen again.** Beside other work, one run can lose refreshes to another
-  builder's burst. So an excess is the clouds' to fix once a diagnostic run or a second series shows it again.
-  A diagnostic run times the passes, which changes cadence, so it may not show the loss again, or may show it
-  without telling its cause apart. The record then says **not reproduced** or **not distinguished**, with what
-  was run. Nothing is repaired or proposed for such an excess, it ends no work package `BLOCKED`, and WP20's
-  series decides whether the sky holds.
+- **An excess gets a cause when it is seen again.** An excess is either of the first two: a stall that stands
+  out, or more lost at a place. Beside other work, one run can lose refreshes to another builder's burst. So an
+  excess is the clouds' to fix once a diagnostic run or a second series shows it again. A stall is shown again
+  when the same cloud run of a second series has a stall that stands out beginning within a second of the same
+  time in its measured interval, or when a diagnostic run finds cloud work taking frames past their refresh at
+  that time. The time is what tells a stall the turn causes, which comes back at the turn, from a burst, which
+  does not. A diagnostic run times the passes, which changes cadence, so it may not show the loss again, or may
+  show it without telling its cause apart. The record then says **not reproduced** or **not distinguished**,
+  with what was run. Nothing is repaired or proposed for such an excess, it ends no work package `BLOCKED`,
+  and WP20's series decides whether the sky holds. That keeps the uncertainty and clears nothing: a stall that
+  stands out in WP20's series stops the sky holding whether or not its cause was ever told apart.
 
 The clouds' remedies move when work is done: a product's refresh spread over more frames, a burst bounded, a
 pass left out when its inputs did not change. The cost records give one place to look first: the largest
@@ -1761,7 +1803,8 @@ step that does not match its frame's display time, is judged in the `realtime` i
 The ambition is the display's full refresh, and whole-frame tuning is the later performance phase. **No timing
 figure decides whether an item passes, whether a work package is Done or whether the next one starts**, with
 one exception: WP20 holds the weather sky to the display's refresh in the game as a player runs it, by the
-refreshes it loses beyond the same game without clouds, counted from the OS-reported presented times
+refreshes it loses and the longest it stalls beyond the same game without clouds, both from the OS-reported
+presented times
 ([below](#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20)). What the game loses without clouds
 decides nothing there, and pass times stay tripwires there too.
 `cloud_cost.py check` measures the scene again and fails only on a missing measurement or a missing

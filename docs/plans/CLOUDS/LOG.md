@@ -728,3 +728,20 @@
   of `thrum-app`, a new test target being against the one-binary rule.
 - WP19 and WP20 are renamed to what they now claim, and PLAN.md has WP19 build the `hold` command so the
   sitting only runs it.
+
+## Second design review of 25 November
+
+- 2026-11-25 Planner, after [the design review at `93fbf8f49`](../../../.orchestrate/evidence/CLOUDS/design-review.md):
+  one Must Fix, on the proof of held refresh. No mechanism of the sky and no interface changed. This was the
+  second review in a row to ask for changes, so no reviewer reads this revision before building.
+- Must Fix 1, equal loss totals could pass a freeze at the wind turn and give it to the window. A cloud run
+  now holds by its count and by its longest stall of consecutive lost refreshes, and a stall that stands out
+  is never the game's own. WP20.1, WP19.2 and WP19.3 are written again
+  ([detail](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-25-stalls.md)).
+- New item WP19.4: the `hold` command gives the known answer on five scripted cases, the reviewer's among
+  them, so the rule is proved before WP20's one attended sitting. It is deleted with the command in WP12.10.
+- Suggestion taken: the design says the witness needs its joined submission and request
+  records across both markers (841 joined drawables qualify, the 488 inside the markers fail coverage), apart
+  from the account's rows, which stay bounded by the measured interval.
+- Assumption extended (WP20's line in PLAN.md): the stall limit, and only a run's longest stall is compared,
+  not how many it has. WP19.4 and the witness's records are in the design, not in WP19's note.
