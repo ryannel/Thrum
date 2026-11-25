@@ -712,9 +712,9 @@ def main():
     parser.add_argument("--steady", action="store_true", help="qualify the unloaded governor arm")
     parser.add_argument("--realtime-capture", action="store_true", help="retain the T2 governor tap")
     args = parser.parse_args()
+    scratch = ROOT / "tmp"
+    scratch.mkdir(exist_ok=True)
     if args.output is None:
-        scratch = ROOT / "tmp"
-        scratch.mkdir(exist_ok=True)
         output = Path(tempfile.mkdtemp(prefix="presentation-extent-", dir=scratch))
     else:
         output = args.output.resolve()
