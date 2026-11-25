@@ -446,3 +446,8 @@
   and 120 Hz. D7.2 recorded 0/119 settled misses unloaded, 0/119 governed and 54/119 governor-off under
   the same load. D7.3 recorded zero scale changes. The lead can adopt the lock-only plan change after
   the active builder releases the module. [Target records and lock change](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/README.md)
+
+- 2026-11-25 The merged CLOUDS window change made GPU timing opt-in. The governor-off control still
+  presented under load but carried zero GPU timestamps. The live proof now explicitly requests GPU
+  timing in every arm so it can verify the same debug-load pass across the governed and disabled runs.
+  [Merged replay evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/README.md)

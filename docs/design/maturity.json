@@ -1103,11 +1103,11 @@
         "functional_validation": "Metal verified virtual-time policy, external knobs with isolated history effects, failed and cancelled builds, identical route authority, and thermal tier and cadence recovery with zero added pipelines. Hardware Chrome WebGPU lowered and recovered scale with each timing source.",
         "experienced_quality": "The isolated real-time Metal T2 take verified all 600 scheduled images without missed opportunities or capture omissions. Native-size crops showed no flash, pop or oscillation, and a blind viewer could not identify either scale change.",
         "platform_performance": {
-          "mac": "Real 60 Hz Metal window: scale fell to 85% six route ticks after the debug load began and returned to 100% after it ended. The governed arm missed 0 of 58 display-link opportunities after settling, the unloaded arm missed 1 of 59 and the governor-off arm missed 16 of 59 under the same load. The independent unloaded route changed scale zero times. T2 capture cost is paired separately.",
+          "mac": "Ordinary 1920×1080 Metal window at 120 Hz, with the repository GPU lock held exclusively. In the settled interval the unloaded and governed arms each missed 0 of 119 render-side opportunities, while the governor-off arm missed 54 of 119 under the same 1,000-round load. Scale first dropped at tick 234 and recovered to 100% in single steps by tick 507. The independent unloaded route changed scale zero times. T2 capture cost is measured separately.",
           "browser": "Hardware Chrome passed with GPU timestamps and with timestamp queries removed from the device recipe. Each arm reports the timing source it consumed."
         },
-        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/README.md",
-        "scope": "Portable TAAU governor on Mac Metal and Chrome WebGPU, with a 60 Hz live window and separate real-time capture of the forced-load route."
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/README.md",
+        "scope": "Portable TAAU governor on Mac Metal and Chrome WebGPU, with a 120 Hz live Metal window and separate 60 Hz real-time capture of the forced-load route."
       }
     }
   },
