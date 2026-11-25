@@ -1114,9 +1114,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         scene: SyntheticScene,
         exposure: f32,
     ) -> Result<Self, FrameError> {
-        let mut host =
-            Self::new_preparing(capabilities, queue, config, world, source, scene, exposure)
-                .await?;
+        let mut host = Box::pin(Self::new_preparing(
+            capabilities,
+            queue,
+            config,
+            world,
+            source,
+            scene,
+            exposure,
+        ))
+        .await?;
         host.finish_preparation();
         Ok(host)
     }
@@ -1240,7 +1247,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         sprites: crate::sprite::SpriteScene,
         requests: SpriteSceneRequests,
     ) -> Result<Self, FrameError> {
-        let mut host = Self::new_2d_preparing(
+        let mut host = Box::pin(Self::new_2d_preparing(
             capabilities,
             queue,
             config,
@@ -1248,7 +1255,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             source,
             sprites,
             requests,
-        )
+        ))
         .await?;
         host.finish_preparation();
         Ok(host)
