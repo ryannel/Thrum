@@ -66,7 +66,9 @@ def prepare_instrument():
 
 def console_unlocked():
     raw = subprocess.check_output(['/usr/sbin/ioreg', '-n', 'Root', '-d1'], text=True, timeout=3)
-    return '"IOConsoleLocked" = No' in raw and '"CGSSessionScreenIsLocked"=Yes' not in raw
+    return '"IOConsoleLocked" = No' in raw and not re.search(
+        r'"CGSSessionScreenIsLocked"\s*=\s*Yes', raw
+    )
 
 
 def export(trace, output, arguments):
@@ -168,7 +170,7 @@ def collect(arm, store, wind, *, diagnostic=False):
     # Wake before the panel preflight and release the display assertion when
     # the game exits. Export and Instruments finalization need no active panel.
     recorder = game if diagnostic else arm / 'recorder.log'
-    power = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-i', '-u'])
+    power = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-i', '-u', '-t', '40'])
     load = None
     began = time.time()
     recorder_pid = None

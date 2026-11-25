@@ -126,9 +126,11 @@ def panel_witness(output):
             last_panel_observation = time.monotonic()
             raw = subprocess.check_output(['/usr/sbin/ioreg', '-n', 'Root', '-d1'], text=True, timeout=2)
             locked = re.search(r'^\s*"IOConsoleLocked"\s*=\s*(Yes|No)\s*$', raw, re.MULTILINE)
+            screen_locked = re.search(r'"CGSSessionScreenIsLocked"\s*=\s*Yes', raw)
+            console_locked = True if screen_locked else (locked[1] == 'Yes' if locked else None)
             display = panel.CGMainDisplayID()
             state = {'unix_ns': time.time_ns(), 'display_id': display,
-                     'console_locked': locked[1] == 'Yes' if locked else None,
+                     'console_locked': console_locked,
                      'builtin': bool(panel.CGDisplayIsBuiltin(display)),
                      'active': bool(panel.CGDisplayIsActive(display)),
                      'asleep': bool(panel.CGDisplayIsAsleep(display))}
