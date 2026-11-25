@@ -340,7 +340,14 @@ impl PreparedScene {
         )?;
         self.bind_presenter(presenter)?;
         if !candidate.initialization.is_empty() {
-            queue.submit(std::mem::take(&mut candidate.initialization));
+            let submission = queue.submit(std::mem::take(&mut candidate.initialization));
+            surface
+                .device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: Some(submission),
+                    timeout: Some(super::GPU_WAIT),
+                })
+                .map_err(|error| FrameError::gpu("3D contribution initialization", error))?;
         }
         Ok(candidate)
     }
