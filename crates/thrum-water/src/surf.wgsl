@@ -6,6 +6,7 @@ struct ShoreBody {
 struct SurfRecord {
     controls: vec4<f32>, // lag floor, ratio, cut cell, column tolerance
     bounds: vec4<f32>, // max throw, first throw index, minimum body level, first contour plane
+    coarse: vec4<f32>, // fine cells per coarse cell, margin floor, bend factor
     bodies: array<ShoreBody, BODY_LIMIT>,
 }
 @group(SURF_GROUP) @binding(SURF_FIRST) var<uniform> surf: SurfRecord;

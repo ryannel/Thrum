@@ -1,3 +1,4 @@
+mod coarse;
 mod correction;
 
 use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seconds_between};
@@ -8,6 +9,7 @@ use crate::{
     surf::SurfGpu,
 };
 use bytemuck::{Pod, Zeroable};
+use coarse::CoarsePlan;
 use correction::{CascadeSample, MapPrediction};
 pub(super) use correction::{Correction, ReadyBody};
 use std::sync::{
@@ -28,6 +30,8 @@ const SLOT_COUNT: usize = 4;
 const GROUP_WIDTH: u32 = 64;
 const SURF_GROUP: u32 = 1;
 const SURF_BINDING: u32 = 7;
+const COARSE_GROUP: u32 = 2;
+const COARSE_RECORD_BYTES: u64 = 16;
 const PLAIN_QUERY: &str = "
 @compute @workgroup_size(QUERY_WIDTH)
 fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
@@ -53,6 +57,8 @@ struct Point {
     gains: [f32; 4],
     dent: [f32; 4],
     surf_stage: [f32; 4],
+    fine_bounds: [i32; 4],
+    coarse_grid: [i32; 4],
 }
 
 #[repr(C)]
@@ -64,6 +70,7 @@ struct Settings {
     lengths_chop: [f32; 4],
     heights: [f32; 4],
     swash_margin: [f32; 4],
+    coarse_jobs: [u32; 4],
 }
 
 #[repr(C)]
@@ -75,7 +82,9 @@ struct Answer {
     current_bed: [f32; 4],
     body_flags: [u32; 4],
     cascades: [CascadeSample; 3],
-    cut_nodes: u32,
+    cut_fine_nodes: u32,
+    cut_coarse_nodes: u32,
+    padding: [u32; 3],
     wake: [f32; 4],
 }
 
@@ -87,6 +96,38 @@ struct Slot {
     answers: wgpu::Buffer,
     buffer: wgpu::Buffer,
     busy: Arc<AtomicBool>,
+    coarse: Option<CoarseScratch>,
+}
+
+struct CoarseScratch {
+    buffer: wgpu::Buffer,
+    group: wgpu::BindGroup,
+}
+
+struct CoarseGpu {
+    device: wgpu::Device,
+    layout: wgpu::BindGroupLayout,
+    pipeline: wgpu::ComputePipeline,
+}
+
+impl CoarseScratch {
+    fn new(device: &wgpu::Device, layout: &wgpu::BindGroupLayout, size: u64) -> Self {
+        let buffer = buffer(
+            device,
+            "water query coarse lattice",
+            size,
+            wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        );
+        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("water query coarse lattice"),
+            layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: buffer.as_entire_binding(),
+            }],
+        });
+        Self { buffer, group }
+    }
 }
 
 struct Batch {
@@ -98,12 +139,14 @@ struct Batch {
     count: u32,
     bodies: Vec<BodyQuery>,
     map_revisions: Vec<u64>,
+    coarse_groups: u32,
 }
 
 pub(crate) struct Readback {
     mailbox: QueryMailbox,
     pipeline: wgpu::ComputePipeline,
     surf: Option<wgpu::BindGroup>,
+    coarse: Option<CoarseGpu>,
     slots: [Slot; SLOT_COUNT],
     pending: Vec<Batch>,
     submitted: Option<(u128, u64, u64)>,
@@ -187,8 +230,15 @@ impl Readback {
                 entries: &entries,
             })
         });
+        let coarse_layout = surf.map(|_| {
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("water query coarse lattice"),
+                entries: &[binding::storage(0, visibility, false, COARSE_RECORD_BYTES)],
+            })
+        });
         let mut groups = vec![Some(&layout)];
         groups.extend(surf_layout.as_ref().map(Some));
+        groups.extend(coarse_layout.as_ref().map(Some));
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("water query pipeline layout"),
             bind_group_layouts: &groups,
@@ -211,6 +261,18 @@ impl Readback {
             entry_point: Some("sample_query"),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
+        });
+        let coarse = coarse_layout.map(|layout| CoarseGpu {
+            device: (**device).clone(),
+            layout,
+            pipeline: device.compute(&wgpu::ComputePipelineDescriptor {
+                label: Some("water query coarse lattice"),
+                layout: Some(&pipeline_layout),
+                module: &module,
+                entry_point: Some("sample_coarse"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                cache: None,
+            }),
         });
         let slots = std::array::from_fn(|_| {
             let settings = buffer(
@@ -281,6 +343,9 @@ impl Readback {
                 answers,
                 buffer: staging,
                 busy: Arc::default(),
+                coarse: coarse
+                    .as_ref()
+                    .map(|gpu| CoarseScratch::new(&gpu.device, &gpu.layout, COARSE_RECORD_BYTES)),
             }
         });
         mailbox.reset_readback();
@@ -288,6 +353,7 @@ impl Readback {
             mailbox,
             pipeline,
             surf,
+            coarse,
             slots,
             pending: Vec::with_capacity(SLOT_COUNT),
             submitted: None,
@@ -375,6 +441,7 @@ impl Readback {
                 .map_or(chop, thrum_sea_model::Cascade::length) as f32
         });
         let profile = map.profile();
+        let reach = map.surf_throw_reach(&spectrum.long, chop);
         for (slot, tick, bodies) in work {
             let origin = bodies[0].points[0].position;
             let components: Vec<_> = spectrum
@@ -382,7 +449,7 @@ impl Readback {
                 .iter()
                 .map(|component| Component::at(component, origin, seconds))
                 .collect();
-            let (points, map_revisions): (Vec<_>, Vec<_>) = bodies
+            let (mut points, map_revisions): (Vec<_>, Vec<_>) = bodies
                 .iter()
                 .flat_map(|body| body.points.iter().map(move |point| (body.id, point)))
                 .map(|(id, point)| {
@@ -404,12 +471,46 @@ impl Readback {
                 })
                 .unzip();
             let count = u32::try_from(points.len()).expect("points admitted by query capacity");
+            let buffers = &mut self.slots[slot];
+            let coarse_groups = if let Some((gpu, (reach, profile))) = self
+                .coarse
+                .as_ref()
+                .zip(reach.as_ref().zip(map.surf_profile()))
+            {
+                let limits = gpu.device.limits();
+                let max_bytes = limits
+                    .max_storage_buffer_binding_size
+                    .min(limits.max_buffer_size);
+                let plan = CoarsePlan::new(
+                    &mut points,
+                    reach,
+                    profile.cut,
+                    max_bytes / COARSE_RECORD_BYTES,
+                    limits.max_compute_workgroups_per_dimension,
+                );
+                let scratch = buffers.coarse.as_mut().expect("surf scratch");
+                let bytes = plan.records * COARSE_RECORD_BYTES;
+                if scratch.buffer.size() < bytes {
+                    *scratch = CoarseScratch::new(
+                        &gpu.device,
+                        &gpu.layout,
+                        bytes.next_power_of_two().min(max_bytes),
+                    );
+                }
+                if !plan.jobs.is_empty() {
+                    queue.write_buffer(&scratch.buffer, 0, bytemuck::cast_slice(&plan.jobs));
+                }
+                u32::try_from(plan.jobs.len()).expect("bounded coarse job count")
+            } else {
+                0
+            };
             let settings = Settings {
                 origin,
                 count,
                 components: u32::try_from(components.len()).expect("bounded component count"),
                 lengths_chop,
                 heights,
+                coarse_jobs: [coarse_groups, 0, 0, 0],
                 swash_margin: [
                     profile.swash_ratio as f32,
                     profile.margin_height as f32,
@@ -417,7 +518,6 @@ impl Readback {
                     0.0,
                 ],
             };
-            let buffers = &self.slots[slot];
             queue.write_buffer(&buffers.settings, 0, bytemuck::bytes_of(&settings));
             queue.write_buffer(&buffers.points, 0, bytemuck::cast_slice(&points));
             if !components.is_empty() {
@@ -432,6 +532,7 @@ impl Readback {
                 count,
                 bodies,
                 map_revisions,
+                coarse_groups,
             });
         }
     }
@@ -441,7 +542,7 @@ impl Readback {
     }
 
     pub(crate) fn resource_bytes(&self) -> Vec<(String, u64)> {
-        vec![
+        let mut bytes = vec![
             (
                 "water query inputs".into(),
                 self.slots
@@ -457,18 +558,39 @@ impl Readback {
                 "water query readback".into(),
                 self.slots.iter().map(|slot| slot.buffer.size()).sum(),
             ),
-        ]
+        ];
+        if self.coarse.is_some() {
+            bytes.push((
+                "water query coarse lattice".into(),
+                self.slots
+                    .iter()
+                    .filter_map(|slot| slot.coarse.as_ref())
+                    .map(|scratch| scratch.buffer.size())
+                    .sum(),
+            ));
+        }
+        bytes
     }
 
     pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
-        if self.pending() {
-            pass.set_pipeline(&self.pipeline);
+        for batch in &self.pending {
+            let slot = &self.slots[batch.slot];
+            pass.set_bind_group(0, &slot.group, &[]);
             if let Some(surf) = &self.surf {
                 pass.set_bind_group(SURF_GROUP, surf, &[]);
+                pass.set_bind_group(
+                    COARSE_GROUP,
+                    &slot.coarse.as_ref().expect("surf scratch").group,
+                    &[],
+                );
+                if batch.coarse_groups != 0 {
+                    pass.set_pipeline(
+                        &self.coarse.as_ref().expect("surf coarse pipeline").pipeline,
+                    );
+                    pass.dispatch_workgroups(batch.coarse_groups, 1, 1);
+                }
             }
-        }
-        for batch in &self.pending {
-            pass.set_bind_group(0, &self.slots[batch.slot].group, &[]);
+            pass.set_pipeline(&self.pipeline);
             let groups = if self.surf.is_some() {
                 batch.count
             } else {
@@ -573,10 +695,13 @@ impl Batch {
         if state.epoch != self.epoch {
             return;
         }
-        state.stats.cut_nodes += values
-            .iter()
-            .map(|answer| u64::from(answer.cut_nodes))
-            .sum::<u64>();
+        for answer in values {
+            let coarse = u64::from(answer.cut_coarse_nodes);
+            let fine = u64::from(answer.cut_fine_nodes);
+            state.stats.cut_coarse_nodes += coarse;
+            state.stats.cut_fine_nodes += fine;
+            state.stats.cut_nodes += coarse + fine;
+        }
         let mut values = values.iter().zip(self.map_revisions);
         for body in self.bodies {
             let mut fields = (&mut values).take(body.points.len());
@@ -584,12 +709,15 @@ impl Batch {
                 fields.nth(body.points.len() - 1);
                 continue;
             }
+            let mut cut_nodes = [0; 2];
             let (points, predictions) = body
                 .points
                 .into_iter()
                 .zip(fields)
                 .enumerate()
                 .map(|(index, (point, (raw, revision)))| {
+                    cut_nodes[0] += u64::from(raw.cut_coarse_nodes);
+                    cut_nodes[1] += u64::from(raw.cut_fine_nodes);
                     let mut sources = [None; 5];
                     for (layer, source) in sources[..4].iter_mut().enumerate() {
                         if raw.body_flags[3] & (1 << layer) != 0 {
@@ -619,6 +747,7 @@ impl Batch {
                         id: body.id,
                         generation: body.generation,
                         posted: self.tick,
+                        cut_nodes,
                         points,
                     },
                     predictions,

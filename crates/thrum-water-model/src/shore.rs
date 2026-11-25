@@ -187,7 +187,7 @@ impl ShoreTransform {
                 region.level,
                 config.margin,
             ));
-            for direction in 0..8 {
+            let prepare = |direction: u32| {
                 let angle = f64::from(direction) * FRAC_PI_4;
                 let dir = [angle.cos(), angle.sin()];
                 let mut values: Vec<_> = (0..bed.heights.len())
@@ -203,17 +203,35 @@ impl ShoreTransform {
                         values[i] = values[source];
                     }
                 }
-                exposures.push(values);
-                for rung in 0..6 {
-                    lags.push(solve(
+                let planes = std::array::from_fn::<_, 6, _>(|rung| {
+                    solve(
                         &bed,
                         config,
                         &region,
-                        20.0 * 2.0_f64.powi(rung),
+                        20.0 * f64::from(1_u32 << rung),
                         dir,
                         stage,
-                    ));
-                }
+                    )
+                });
+                (values, planes)
+            };
+            let sectors = if !cfg!(target_family = "wasm")
+                && bed.heights.len() >= 16_384
+                && std::thread::available_parallelism().is_ok_and(|n| n.get() >= 8)
+            {
+                std::thread::scope(|scope| {
+                    let jobs = std::array::from_fn::<_, 8, _>(|i| {
+                        let i = u32::try_from(i).expect("eight sectors");
+                        scope.spawn(move || prepare(i))
+                    });
+                    jobs.map(|job| job.join().expect("shore sector"))
+                })
+            } else {
+                std::array::from_fn(|i| prepare(u32::try_from(i).expect("eight sectors")))
+            };
+            for (values, planes) in sectors {
+                exposures.push(values);
+                lags.extend(planes);
             }
         }
         Ok(Self {

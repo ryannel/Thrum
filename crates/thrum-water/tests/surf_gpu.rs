@@ -364,3 +364,188 @@ fn control_heights(
     let scale = (0.6 * (row.depth + limit.swash_depth) / (4.0 * variance.sqrt())).min(1.0);
     Some([section.height * envelope * scale, transformed * scale])
 }
+
+#[test]
+fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() {
+    use thrum_fixtures::surf as fixture;
+    use thrum_water_model::{CutConfig, WholeCut};
+
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities,
+        ..
+    }) = thrum_test_support::open(
+        "many-component highest surface cut",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
+    else {
+        return;
+    };
+    let bed = Bed::new(
+        fixture::ORIGIN,
+        fixture::SPACING,
+        fixture::SIZE.map(|n| n as usize),
+        (0..fixture::SIZE[1])
+            .flat_map(|_| (0..fixture::SIZE[0]).map(fixture::bed))
+            .collect(),
+    )
+    .expect("beach");
+    let mut map = Map::prepare(
+        bed,
+        vec![Body {
+            name: "Sea".into(),
+            kind: BodyKind::Sea,
+            level: 0.0,
+            stage: Stage {
+                min: 0.0,
+                max: 0.0,
+                value: 0.0,
+            },
+            fetch: 1e6,
+            gains: [1.0, 0.0, 0.0, 0.0],
+        }],
+        thrum_water_model::Profile {
+            margin_height: 1.5,
+            swash_ratio: 0.7,
+        },
+    )
+    .expect("sea on beach");
+    map.enable_surf(SurfProfile::default()).expect("surf");
+    let spectrum = Spectrum {
+        long: (0..fixture::COMPONENTS)
+            .map(|i| {
+                let (wave_vector, amplitude, phase) = fixture::component(i);
+                Component {
+                    wave_vector,
+                    amplitude,
+                    phase,
+                }
+            })
+            .collect(),
+        cascades: [160.0, 37.0, 9.0].map(|length| Cascade::new(length, &[]).expect("calm")),
+        tail_slope_variance: 0.0,
+    };
+    let field = Field {
+        layers: std::array::from_fn(|layer| {
+            LongWaves::new(
+                if layer == 0 {
+                    spectrum.long.clone()
+                } else {
+                    vec![]
+                },
+                fixture::CHOP,
+            )
+            .expect("valid waves")
+        }),
+    };
+    let step = Duration::from_secs_f64(1.0 / 60.0);
+    let use_tick = u64::from(fixture::USE_TICK);
+    let time = (step * fixture::USE_TICK).as_secs_f64();
+    let sheet = map.surf_sheet(&field, 0, time).expect("model sheet");
+    let mut columns = fixture::fold_columns(|p| sheet.forward(p).world, 32);
+    assert_eq!(columns.len(), 32);
+    columns.extend((0..16).map(|i| [-75.0 + f64::from(i) * 4.0, 0.125]));
+    let whole = WholeCut::new(&sheet, &columns, CutConfig::default()).expect("whole reach");
+    let triple = columns
+        .iter()
+        .filter(|&&p| whole.column(p).expect("whole refined cut").hits >= 3)
+        .count();
+    assert!(triple >= 20, "{triple} columns under folds");
+    let expected: Vec<_> = columns
+        .iter()
+        .map(|&p| {
+            map.surface(&field, p, time)
+                .expect("model query")
+                .sample
+                .height
+        })
+        .collect();
+    let mut profile = Profile {
+        query: Some(QueryLimits {
+            points: 48,
+            max_age: 3,
+        }),
+        ..Profile::default()
+    };
+    profile.waves.choppiness = fixture::CHOP;
+    let water = Water::mapped(Arc::new(Mutex::new(map)), spectrum, profile).expect("water");
+    let mailbox = water.query_mailbox().expect("query");
+    let (mut host, target) = query_host(
+        &device,
+        &queue,
+        &capabilities,
+        Clock::new(true),
+        QUERY_EXTENT,
+    );
+    host.set_scene_contribution(Box::new(water))
+        .expect("contribution");
+    let output = SurfaceOutput {
+        view: &target,
+        extent: QUERY_EXTENT,
+    };
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "shared coordinates are exactly representable"
+    )]
+    let points: Vec<_> = columns
+        .iter()
+        .map(|p| QueryPoint {
+            position: p.map(|v| v as f32),
+            radius: 0.0,
+            use_tick,
+        })
+        .collect();
+    let mut grouped = Vec::new();
+    let mut maximum_error = 0.0_f64;
+    for (tick, stride) in [(1_u32, 6), (2, 1)] {
+        let bodies = points
+            .chunks(stride)
+            .enumerate()
+            .map(|(id, points)| BodyQuery {
+                id: u32::try_from(id).expect("small fixture"),
+                generation: 1,
+                points: points.to_vec(),
+            })
+            .collect();
+        mailbox.post(u64::from(tick), bodies);
+        let frame = host
+            .drive(step * tick + step / 4, Some(&output))
+            .expect("Metal submission");
+        assert!(
+            frame.submitted,
+            "{frame:?}: {:?}",
+            host.contribution_error()
+        );
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("fixture completion");
+        while host.poll_completed().expect("frame completion").is_some() {}
+        let drain = mailbox.drain(use_tick + u64::from(tick == 2), step);
+        assert_eq!(drain.len(), 48 / stride);
+        assert!(drain.iter().map(|reply| reply.cut_nodes[0]).sum::<u64>() > 0);
+        assert!(drain.iter().map(|reply| reply.cut_nodes[1]).sum::<u64>() > 0);
+        for (i, answer) in drain.into_iter().flat_map(|body| body.points).enumerate() {
+            // The second batch was drained one tick after its use tick. Its long-layer
+            // height is the raw dispatch value at the requested tick in both batches.
+            let height = f64::from(answer.wave_heights[0]);
+            let error = (height - expected[i]).abs();
+            maximum_error = maximum_error.max(error);
+            assert!(
+                error < HEIGHT_TOLERANCE,
+                "{i} {:?}: {height} vs {}",
+                columns[i],
+                expected[i]
+            );
+            if stride == 6 {
+                grouped.push(height);
+            } else {
+                assert!((height - grouped[i]).abs() < HEIGHT_TOLERANCE);
+            }
+        }
+    }
+    assert_eq!(mailbox.stats().dispatches, 2);
+    eprintln!("Metal: 48 stations, {triple} folded columns, maximum error {maximum_error:.6} m");
+}

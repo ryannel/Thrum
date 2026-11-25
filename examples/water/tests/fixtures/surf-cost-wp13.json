@@ -1,0 +1,328 @@
+{
+  "commit": "5331de238ad74a435aeecc79988056e699309654",
+  "camera": {
+    "fov_degrees": 65.0,
+    "position": [
+      -112.0,
+      2.0,
+      30.0
+    ],
+    "target": [
+      -105.0,
+      -1.0,
+      -7.0
+    ]
+  },
+  "extent": [
+    2560,
+    1440
+  ],
+  "wind": "Gale",
+  "host": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "load": "9:18  up 5 days, 10:30, 3 users, load averages: 10.09 11.60 13.73",
+  "recipe": "native",
+  "summary": {
+    "surf": {
+      "step": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 298.4442285,
+        "completion_upper_ms": 122.66024999999999,
+        "passes_ms": {
+          "V1 surface present": 10.098937,
+          "contribution compute": 0.007646,
+          "sea cascade columns": 0.2159165,
+          "sea cascade evolve": 0.0660415,
+          "sea cascade rows": 0.18714550000000002,
+          "sea cascade unpack": 0.0379165,
+          "sea filtered 0 mip 1": 20.5170205,
+          "sea filtered 0 mip 2": 4.6495005,
+          "sea filtered 0 mip 3": 0.0118955,
+          "sea filtered 0 mip 4": 0.006125,
+          "sea filtered 0 mip 5": 0.005062499999999999,
+          "sea filtered 0 mip 6": 0.0050620000000000005,
+          "sea filtered 0 mip 7": 0.00475,
+          "sea filtered 0 mip 8": 0.0047085,
+          "sea filtered 1 mip 1": 0.051166500000000004,
+          "sea filtered 1 mip 2": 0.018917,
+          "sea filtered 1 mip 3": 0.007167,
+          "sea filtered 1 mip 4": 0.0050205,
+          "sea filtered 1 mip 5": 0.004625,
+          "sea filtered 1 mip 6": 0.004583,
+          "sea filtered 1 mip 7": 0.004667,
+          "sea filtered pack": 51.7633335,
+          "sea long waves": 0.35579099999999997,
+          "shore film": 5.1735,
+          "surf field cache": 96.743917,
+          "synthetic Sun air shadow heights": 8.7734165,
+          "synthetic Sun horizon heights": 1.5978754999999998,
+          "synthetic Sun shadow far": 2.5657085,
+          "synthetic Sun shadow near": 12.804729499999999,
+          "synthetic exposure resolve": 5.044229,
+          "synthetic forward opaque": 2.763396,
+          "synthetic tone encode": 10.0706035,
+          "temporal exposure texture": 7.1142495,
+          "temporal input witness": 9.994625,
+          "water body query": 10718.858292,
+          "water surface": 11.438854,
+          "whitewater": 11.805583500000001
+        }
+      },
+      "repeat": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 307.3339795,
+        "completion_upper_ms": 115.4340625,
+        "passes_ms": {
+          "V1 surface present": 9.4913535,
+          "contribution compute": 0.0078125,
+          "sea cascade columns": 0.2159375,
+          "sea cascade evolve": 0.06393750000000001,
+          "sea cascade rows": 0.187209,
+          "sea cascade unpack": 0.037979,
+          "sea filtered 0 mip 1": 13.560437499999999,
+          "sea filtered 0 mip 2": 0.3403745,
+          "sea filtered 0 mip 3": 0.0103955,
+          "sea filtered 0 mip 4": 0.005604,
+          "sea filtered 0 mip 5": 0.0051665,
+          "sea filtered 0 mip 6": 0.0049785,
+          "sea filtered 0 mip 7": 0.004709,
+          "sea filtered 0 mip 8": 0.004708,
+          "sea filtered 1 mip 1": 0.050375,
+          "sea filtered 1 mip 2": 0.018478500000000002,
+          "sea filtered 1 mip 3": 0.0070415,
+          "sea filtered 1 mip 4": 0.005,
+          "sea filtered 1 mip 5": 0.004625,
+          "sea filtered 1 mip 6": 0.0045205,
+          "sea filtered 1 mip 7": 0.004562500000000001,
+          "sea filtered pack": 70.6405415,
+          "sea long waves": 0.3573545,
+          "shore film": 5.321396,
+          "surf field cache": 98.142708,
+          "synthetic Sun air shadow heights": 0.8549374999999999,
+          "synthetic Sun horizon heights": 3.1691455,
+          "synthetic Sun shadow far": 4.961542,
+          "synthetic Sun shadow near": 25.0820205,
+          "synthetic exposure resolve": 0.060312500000000005,
+          "synthetic forward opaque": 2.778917,
+          "synthetic tone encode": 9.462250000000001,
+          "temporal exposure texture": 0.0523335,
+          "temporal input witness": 9.383792,
+          "water surface": 10.784792
+        }
+      }
+    },
+    "surf-disabled": {
+      "step": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 63.986917,
+        "completion_upper_ms": 18.5623745,
+        "passes_ms": {
+          "V1 surface present": 12.255832999999999,
+          "contribution compute": 0.007353999999999999,
+          "sea cascade columns": 0.21720850000000003,
+          "sea cascade evolve": 0.058979000000000004,
+          "sea cascade rows": 0.1875205,
+          "sea cascade unpack": 0.036125,
+          "sea filtered 0 mip 1": 0.0403545,
+          "sea filtered 0 mip 2": 0.0126255,
+          "sea filtered 0 mip 3": 0.006583,
+          "sea filtered 0 mip 4": 0.0055005,
+          "sea filtered 0 mip 5": 0.0053124999999999995,
+          "sea filtered 0 mip 6": 0.005229,
+          "sea filtered 0 mip 7": 0.0048125,
+          "sea filtered 0 mip 8": 0.00475,
+          "sea filtered 1 mip 1": 0.027729,
+          "sea filtered 1 mip 2": 0.006708,
+          "sea filtered 1 mip 3": 0.005271,
+          "sea filtered 1 mip 4": 0.0048544999999999994,
+          "sea filtered 1 mip 5": 0.0046665000000000005,
+          "sea filtered 1 mip 6": 0.0045625,
+          "sea filtered 1 mip 7": 0.004459,
+          "sea filtered pack": 0.14658349999999998,
+          "sea long waves": 0.355063,
+          "shore film": 6.6694795,
+          "synthetic Sun air shadow heights": 0.8654375,
+          "synthetic Sun horizon heights": 0.041854,
+          "synthetic Sun shadow far": 0.37877099999999997,
+          "synthetic Sun shadow near": 0.079292,
+          "synthetic exposure resolve": 0.678396,
+          "synthetic forward opaque": 2.3138959999999997,
+          "synthetic tone encode": 12.2302705,
+          "temporal exposure texture": 0.6607295,
+          "temporal input witness": 12.1615835,
+          "water body query": 0.213458,
+          "water surface": 12.559125,
+          "whitewater": 1.696104
+        }
+      },
+      "repeat": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 59.331960499999994,
+        "completion_upper_ms": 18.5447295,
+        "passes_ms": {
+          "V1 surface present": 12.143625,
+          "contribution compute": 0.007437,
+          "sea cascade columns": 0.217125,
+          "sea cascade evolve": 0.060458,
+          "sea cascade rows": 0.1883335,
+          "sea cascade unpack": 0.036583,
+          "sea filtered 0 mip 1": 0.0416045,
+          "sea filtered 0 mip 2": 0.0141255,
+          "sea filtered 0 mip 3": 0.007042,
+          "sea filtered 0 mip 4": 0.0056665,
+          "sea filtered 0 mip 5": 0.005417,
+          "sea filtered 0 mip 6": 0.0052499999999999995,
+          "sea filtered 0 mip 7": 0.0050205,
+          "sea filtered 0 mip 8": 0.00475,
+          "sea filtered 1 mip 1": 0.026854,
+          "sea filtered 1 mip 2": 0.00675,
+          "sea filtered 1 mip 3": 0.00525,
+          "sea filtered 1 mip 4": 0.0047915,
+          "sea filtered 1 mip 5": 0.004583,
+          "sea filtered 1 mip 6": 0.004437,
+          "sea filtered 1 mip 7": 0.0045205,
+          "sea filtered pack": 0.14529150000000002,
+          "sea long waves": 0.35516650000000005,
+          "shore film": 6.584500500000001,
+          "synthetic Sun air shadow heights": 0.272,
+          "synthetic Sun horizon heights": 0.0327705,
+          "synthetic Sun shadow far": 0.048521,
+          "synthetic Sun shadow near": 0.0614585,
+          "synthetic exposure resolve": 0.128354,
+          "synthetic forward opaque": 2.2449165,
+          "synthetic tone encode": 12.1146665,
+          "temporal exposure texture": 0.027437,
+          "temporal input witness": 12.039396,
+          "water surface": 12.4897505
+        }
+      }
+    },
+    "water-absent": {
+      "step": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 8.794207499999999,
+        "completion_upper_ms": 5.4941245,
+        "passes_ms": {
+          "V1 surface present": 2.130167,
+          "contribution compute": 0.005834,
+          "synthetic Sun air shadow heights": 0.276521,
+          "synthetic Sun horizon heights": 0.0333125,
+          "synthetic Sun shadow far": 0.0498955,
+          "synthetic Sun shadow near": 0.039896,
+          "synthetic exposure resolve": 0.0055625,
+          "synthetic forward opaque": 2.0267285,
+          "synthetic tone encode": 2.103979,
+          "temporal exposure texture": 0.038333,
+          "temporal input witness": 2.0277915
+        }
+      },
+      "repeat": {
+        "samples": 12,
+        "timestamped_samples": 12,
+        "gpu_ms": 8.875000499999999,
+        "completion_upper_ms": 5.4965005,
+        "passes_ms": {
+          "V1 surface present": 2.149604,
+          "contribution compute": 0.005749499999999999,
+          "synthetic Sun air shadow heights": 0.2854795,
+          "synthetic Sun horizon heights": 0.0331665,
+          "synthetic Sun shadow far": 0.050021,
+          "synthetic Sun shadow near": 0.0397505,
+          "synthetic exposure resolve": 0.0055625,
+          "synthetic forward opaque": 2.045896,
+          "synthetic tone encode": 2.123396,
+          "temporal exposure texture": 0.0249375,
+          "temporal input witness": 2.047229
+        }
+      }
+    }
+  },
+  "query": {
+    "surf": {
+      "columns": [
+        [
+          -164.52688598632812,
+          49.97291946411133
+        ],
+        [
+          -162.7535858154297,
+          50.05440139770508
+        ],
+        [
+          -158.67605590820312,
+          3.934689998626709
+        ],
+        [
+          -156.0870361328125,
+          4.043379783630371
+        ],
+        [
+          -153.81015014648438,
+          4.416077613830566
+        ],
+        [
+          -151.84681701660156,
+          4.867152214050293
+        ],
+        [
+          -150.3377685546875,
+          5.174317836761475
+        ],
+        [
+          -149.98594665527344,
+          8.6803617477417
+        ]
+      ],
+      "cut_nodes": 25916798,
+      "floats": 8,
+      "stations": 48,
+      "use_tick": 69,
+      "gpu_ms": 10718.858292
+    },
+    "surf-disabled": {
+      "columns": [
+        [
+          -164.52688598632812,
+          49.97291946411133
+        ],
+        [
+          -162.7535858154297,
+          50.05440139770508
+        ],
+        [
+          -158.67605590820312,
+          3.934689998626709
+        ],
+        [
+          -156.0870361328125,
+          4.043379783630371
+        ],
+        [
+          -153.81015014648438,
+          4.416077613830566
+        ],
+        [
+          -151.84681701660156,
+          4.867152214050293
+        ],
+        [
+          -150.3377685546875,
+          5.174317836761475
+        ],
+        [
+          -149.98594665527344,
+          8.6803617477417
+        ]
+      ],
+      "cut_nodes": 0,
+      "floats": 8,
+      "stations": 48,
+      "use_tick": 69,
+      "gpu_ms": 0.213458
+    }
+  }
+}

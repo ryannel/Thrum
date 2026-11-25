@@ -14,6 +14,7 @@ thrum-sea-model = { path = "../thrum-sea-model" }
 workspace = true
 
 [dev-dependencies]
+thrum-fixtures = { path = "../thrum-fixtures" }
 divan = "=0.1.21"
 
 [[bench]]

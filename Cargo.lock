@@ -3394,6 +3394,7 @@ dependencies = [
  "pollster",
  "thrum-asset-gpu",
  "thrum-core",
+ "thrum-fixtures",
  "thrum-render",
  "thrum-sea",
  "thrum-sea-model",
@@ -3408,6 +3409,7 @@ name = "thrum-water-model"
 version = "0.1.0"
 dependencies = [
  "divan",
+ "thrum-fixtures",
  "thrum-sea-model",
 ]
 

@@ -22,6 +22,12 @@ pub trait Sheet {
 pub struct CutConfig {
     /// World-fixed rest lattice spacing, metres.
     pub cell: f64,
+    /// Number of fine cells across a coarse cell.
+    pub coarse_cells: u32,
+    /// Minimum expansion of a coarse cell's projected bounds, metres.
+    pub margin_floor: f64,
+    /// Scale of corner displacement spread added to the margin.
+    pub bend_factor: f64,
     /// Maximum plan residual after Newton refinement, metres.
     pub tolerance: f64,
 }
@@ -30,6 +36,9 @@ impl Default for CutConfig {
     fn default() -> Self {
         Self {
             cell: 0.25,
+            coarse_cells: 8,
+            margin_floor: 0.5,
+            bend_factor: 1.0,
             tolerance: 0.001,
         }
     }
@@ -57,105 +66,359 @@ pub struct Column {
 /// # Errors
 /// Refuses invalid controls, nonfinite sheet nodes/reach or an uncovered column.
 pub fn cut(sheet: &impl Sheet, point: [f64; 2], config: CutConfig) -> Result<Column, WaterError> {
-    let r = sheet.reach(point);
-    if point.iter().any(|v| !v.is_finite())
-        || !r.is_finite()
-        || r < 0.0
-        || !config.cell.is_finite()
-        || config.cell <= 0.0
-        || !config.tolerance.is_finite()
-        || config.tolerance <= 0.0
-    {
-        return Err(WaterError::new(
-            "surface cut",
-            "invalid cut controls or reach",
-        ));
-    }
-    let cell = config.cell;
-    let origin = point.map(|p| ((p - r) / cell).floor() * cell);
-    let end = point.map(|p| ((p + r) / cell).ceil() * cell + cell);
-    let extent = std::array::from_fn::<_, 2, _>(|a| ((end[a] - origin[a]) / cell).round() + 1.0);
-    if extent
-        .iter()
-        .any(|v| !v.is_finite() || !(2.0..=16_000_000.0).contains(v))
-    {
-        return Err(WaterError::new(
-            "surface cut",
-            "cut exceeds model node capacity",
-        ));
-    }
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "positive lattice dimensions, bounded below before allocation"
-    )]
-    let size = extent.map(|v| v as usize);
-    let count = size[0]
-        .checked_mul(size[1])
-        .filter(|&n| n <= 16_000_000)
-        .ok_or_else(|| WaterError::new("surface cut", "cut exceeds model node capacity"))?;
-    let mut nodes = Vec::with_capacity(count);
-    for z in 0..size[1] {
-        for x in 0..size[0] {
-            let p = sheet.forward([origin[0] + x as f64 * cell, origin[1] + z as f64 * cell]);
-            if p.world
-                .iter()
-                .chain([p.height].iter())
-                .any(|v| !v.is_finite())
-            {
-                return Err(WaterError::new("surface cut", "nonfinite forward sheet"));
-            }
-            nodes.push(p);
-        }
-    }
+    let fine = Bounds::for_column(sheet, point, config)?;
+    let step = i32::try_from(config.coarse_cells)
+        .map_err(|_| WaterError::new("surface cut", "invalid coarse cell"))?;
+    let coarse = Bounds {
+        lo: fine.lo.map(|v| v.div_euclid(step)),
+        hi: fine.hi.map(|v| -(-v).div_euclid(step)),
+    };
+    let coarse_cell = config.cell * f64::from(step);
+    let grid = Lattice::new(coarse, coarse_cell, |rest| sheet.forward(rest))?;
     let mut best = None;
     let mut hits = 0;
-    for z in 0..size[1] - 1 {
-        for x in 0..size[0] - 1 {
-            let i = z * size[0] + x;
-            let rest0 = [origin[0] + x as f64 * cell, origin[1] + z as f64 * cell];
-            for ids in [
-                [i, i + 1, i + size[0] + 1],
-                [i, i + size[0] + 1, i + size[0]],
-            ] {
-                let triangle = ids.map(|j| nodes[j]);
-                if let Some(weights) = barycentric(triangle.map(|p| p.world), point) {
-                    hits += 1;
-                    let height = (0..3).map(|j| weights[j] * triangle[j].height).sum::<f64>();
-                    let rest = std::array::from_fn(|a| {
-                        (0..3)
-                            .map(|j| {
-                                let node = ids[j];
-                                let s = if a == 0 {
-                                    node % size[0]
-                                } else {
-                                    node / size[0]
-                                };
-                                weights[j] * (origin[a] + s as f64 * cell)
-                            })
-                            .sum()
-                    });
-                    if best.as_ref().is_none_or(|(h, _, _)| height > *h) {
-                        best = Some((height, rest, rest0));
+    let mut nodes = grid.nodes.len();
+    for z in coarse.lo[1]..coarse.hi[1] {
+        for x in coarse.lo[0]..coarse.hi[0] {
+            let corners = grid.corners([x, z]);
+            if !keeps_column(corners, point, coarse_cell, config) {
+                continue;
+            }
+            let bounds = Bounds {
+                lo: [x, z].map(|v| v * step),
+                hi: [x, z].map(|v| (v + 1) * step),
+            }
+            .intersection(fine);
+            let grid = Lattice::new(bounds, config.cell, |rest| sheet.forward(rest))?;
+            nodes += grid.nodes.len();
+            grid.scan(bounds, point, &mut best, &mut hits);
+        }
+    }
+    finish(sheet, point, config, best, hits, nodes)
+}
+
+impl CutConfig {
+    pub(crate) fn valid(self) -> bool {
+        self.cell.is_finite()
+            && self.cell > 0.0
+            && (1..=32).contains(&self.coarse_cells)
+            && self.margin_floor.is_finite()
+            && self.margin_floor >= 0.0
+            && self.bend_factor.is_finite()
+            && self.bend_factor >= 0.0
+            && self.tolerance.is_finite()
+            && self.tolerance > 0.0
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Bounds {
+    lo: [i32; 2],
+    hi: [i32; 2],
+}
+
+impl Bounds {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "integer lattice coordinates are range checked before conversion"
+    )]
+    fn for_column(
+        sheet: &impl Sheet,
+        point: [f64; 2],
+        config: CutConfig,
+    ) -> Result<Self, WaterError> {
+        let reach = sheet.reach(point);
+        if !config.valid() || !reach.is_finite() || reach < 0.0 {
+            return Err(WaterError::new(
+                "surface cut",
+                "invalid cut controls or reach",
+            ));
+        }
+        let lo = point.map(|p| ((p - reach) / config.cell).floor());
+        let hi = point.map(|p| ((p + reach) / config.cell).ceil() + 1.0);
+        if lo.into_iter().chain(hi).any(|v| !(-1e9..=1e9).contains(&v)) {
+            return Err(WaterError::new("surface cut", "invalid lattice bounds"));
+        }
+        Ok(Self {
+            lo: lo.map(|v| v as i32),
+            hi: hi.map(|v| v as i32),
+        })
+    }
+
+    fn intersection(self, other: Self) -> Self {
+        Self {
+            lo: std::array::from_fn(|a| self.lo[a].max(other.lo[a])),
+            hi: std::array::from_fn(|a| self.hi[a].min(other.hi[a])),
+        }
+    }
+}
+
+struct Lattice {
+    bounds: Bounds,
+    cell: f64,
+    width: usize,
+    nodes: Vec<SheetPoint>,
+}
+
+impl Lattice {
+    fn new(
+        bounds: Bounds,
+        cell: f64,
+        forward: impl Fn([f64; 2]) -> SheetPoint,
+    ) -> Result<Self, WaterError> {
+        let mut grid = Self::allocate(bounds, cell)?;
+        let rows = grid.rows();
+        rows.fill(0, &mut grid.nodes, forward);
+        grid.validate()?;
+        Ok(grid)
+    }
+
+    fn allocate(bounds: Bounds, cell: f64) -> Result<Self, WaterError> {
+        let width = usize::try_from(bounds.hi[0] - bounds.lo[0] + 1).expect("ordered bounds");
+        let height = usize::try_from(bounds.hi[1] - bounds.lo[1] + 1).expect("ordered bounds");
+        let count = width
+            .checked_mul(height)
+            .filter(|n| *n <= 16_000_000)
+            .ok_or_else(|| WaterError::new("surface cut", "cut exceeds model node capacity"))?;
+        let nodes = vec![
+            SheetPoint {
+                world: [0.0; 2],
+                height: 0.0
+            };
+            count
+        ];
+        Ok(Self {
+            bounds,
+            cell,
+            width,
+            nodes,
+        })
+    }
+
+    fn rows(&self) -> LatticeRows {
+        LatticeRows {
+            bounds: self.bounds,
+            cell: self.cell,
+            width: self.width,
+        }
+    }
+
+    fn validate(&self) -> Result<(), WaterError> {
+        if self
+            .nodes
+            .iter()
+            .any(|p| !p.height.is_finite() || p.world.iter().any(|v| !v.is_finite()))
+        {
+            return Err(WaterError::new("surface cut", "nonfinite forward sheet"));
+        }
+        Ok(())
+    }
+
+    fn corners(&self, [x, z]: [i32; 2]) -> [SheetPoint; 4] {
+        let x = usize::try_from(x - self.bounds.lo[0]).expect("lattice x");
+        let z = usize::try_from(z - self.bounds.lo[1]).expect("lattice z");
+        let i = z * self.width + x;
+        [
+            self.nodes[i],
+            self.nodes[i + 1],
+            self.nodes[i + self.width + 1],
+            self.nodes[i + self.width],
+        ]
+    }
+
+    fn scan(&self, bounds: Bounds, point: [f64; 2], best: &mut Option<Hit>, hits: &mut usize) {
+        for z in bounds.lo[1]..bounds.hi[1] {
+            for x in bounds.lo[0]..bounds.hi[0] {
+                let corners = self.corners([x, z]);
+                if !in_landing_box(corners, point, 1e-9) {
+                    continue;
+                }
+                let origin = [x, z].map(|v| f64::from(v) * self.cell);
+                let offsets = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+                for (face, ids) in [[0, 1, 2], [0, 2, 3]].into_iter().enumerate() {
+                    let triangle = ids.map(|j| corners[j]);
+                    if let Some(weights) = barycentric(triangle.map(|p| p.world), point) {
+                        *hits += 1;
+                        let height = (0..3).map(|j| weights[j] * triangle[j].height).sum::<f64>();
+                        let order = (z, x, face);
+                        if best.is_none_or(|h| {
+                            height > h.height
+                                || (height
+                                    .partial_cmp(&h.height)
+                                    .is_some_and(std::cmp::Ordering::is_eq)
+                                    && order < h.order)
+                        }) {
+                            let rest = std::array::from_fn(|a| {
+                                (0..3)
+                                    .map(|j| {
+                                        weights[j] * (origin[a] + self.cell * offsets[ids[j]][a])
+                                    })
+                                    .sum()
+                            });
+                            *best = Some(Hit {
+                                height,
+                                rest,
+                                origin,
+                                order,
+                            });
+                        }
                     }
                 }
             }
         }
     }
-    let (height, rest, rest0) =
-        best.ok_or_else(|| WaterError::new("surface cut", "no triangle covers column"))?;
-    let refined = refine(sheet, point, rest, rest0, config);
+}
+
+#[derive(Clone, Copy)]
+struct LatticeRows {
+    bounds: Bounds,
+    cell: f64,
+    width: usize,
+}
+
+impl LatticeRows {
+    fn fill(
+        self,
+        first_row: usize,
+        rows: &mut [SheetPoint],
+        forward: impl Fn([f64; 2]) -> SheetPoint,
+    ) {
+        for (index, p) in rows.iter_mut().enumerate() {
+            *p = forward([
+                (f64::from(self.bounds.lo[0]) + (index % self.width) as f64) * self.cell,
+                (f64::from(self.bounds.lo[1]) + (first_row + index / self.width) as f64)
+                    * self.cell,
+            ]);
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Hit {
+    height: f64,
+    rest: [f64; 2],
+    origin: [f64; 2],
+    order: (i32, i32, usize),
+}
+
+fn in_landing_box(corners: [SheetPoint; 4], point: [f64; 2], margin: f64) -> bool {
+    (0..2).all(|a| {
+        let coords = corners.map(|p| p.world[a]);
+        point[a] >= coords.into_iter().fold(f64::INFINITY, f64::min) - margin
+            && point[a] <= coords.into_iter().fold(f64::NEG_INFINITY, f64::max) + margin
+    })
+}
+
+fn keeps_column(corners: [SheetPoint; 4], point: [f64; 2], cell: f64, config: CutConfig) -> bool {
+    let offsets = [[0.0, 0.0], [cell, 0.0], [cell, cell], [0.0, cell]];
+    let displacement: [[f64; 2]; 4] =
+        std::array::from_fn(|i| std::array::from_fn(|a| corners[i].world[a] - offsets[i][a]));
+    let mut spread_squared = 0.0_f64;
+    for (i, a) in displacement.iter().enumerate() {
+        for b in &displacement[..i] {
+            spread_squared = spread_squared.max((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2));
+        }
+    }
+    in_landing_box(
+        corners,
+        point,
+        config
+            .bend_factor
+            .mul_add(spread_squared.sqrt(), config.margin_floor),
+    )
+}
+
+fn finish(
+    sheet: &impl Sheet,
+    point: [f64; 2],
+    config: CutConfig,
+    best: Option<Hit>,
+    hits: usize,
+    nodes: usize,
+) -> Result<Column, WaterError> {
+    let hit = best.ok_or_else(|| WaterError::new("surface cut", "no triangle covers column"))?;
+    let refined = refine(sheet, point, hit.rest, hit.origin, config);
     let p = sheet.forward(refined);
     let residual = (p.world[0] - point[0]).hypot(p.world[1] - point[1]);
     let converged = residual <= config.tolerance;
     Ok(Column {
-        height: if converged { p.height } else { height },
+        height: if converged { p.height } else { hit.height },
         rest: refined,
         residual,
         converged,
-        nodes: count,
+        nodes,
         hits,
     })
+}
+
+/// Diagnostic whole cut on one fine lattice covering every supplied column's reach.
+/// Shares forward evaluations across the columns; it does no coarse filtering.
+pub struct WholeCut<'a, S> {
+    sheet: &'a S,
+    grid: Lattice,
+    config: CutConfig,
+}
+
+impl<'a, S: Sheet + Sync> WholeCut<'a, S> {
+    /// Sample the union bounds of all requested columns.
+    /// # Errors
+    /// Refuses empty, invalid or oversized lattices.
+    pub fn new(sheet: &'a S, points: &[[f64; 2]], config: CutConfig) -> Result<Self, WaterError> {
+        let (first, rest) = points
+            .split_first()
+            .ok_or_else(|| WaterError::new("whole surface cut", "no columns supplied"))?;
+        let mut bounds = Bounds::for_column(sheet, *first, config)?;
+        for &p in rest {
+            let next = Bounds::for_column(sheet, p, config)?;
+            bounds.lo = std::array::from_fn(|a| bounds.lo[a].min(next.lo[a]));
+            bounds.hi = std::array::from_fn(|a| bounds.hi[a].max(next.hi[a]));
+        }
+        let mut grid = Lattice::allocate(bounds, config.cell)?;
+        let rows = grid.rows();
+        let forward = |rest| sheet.forward(rest);
+        let workers = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
+        if !cfg!(target_family = "wasm") && workers > 1 && grid.nodes.len() >= 100_000 {
+            let chunk_rows = (grid.nodes.len() / rows.width).div_ceil(workers.min(12));
+            std::thread::scope(|scope| {
+                for (index, chunk) in grid.nodes.chunks_mut(chunk_rows * rows.width).enumerate() {
+                    scope.spawn(move || rows.fill(index * chunk_rows, chunk, forward));
+                }
+            });
+        } else {
+            rows.fill(0, &mut grid.nodes, forward);
+        }
+        grid.validate()?;
+        Ok(Self {
+            sheet,
+            grid,
+            config,
+        })
+    }
+
+    /// Find and refine the highest triangle across this column's whole reach.
+    /// # Errors
+    /// Refuses a column outside the prepared bounds or with no triangle hit.
+    pub fn column(&self, point: [f64; 2]) -> Result<Column, WaterError> {
+        let bounds = Bounds::for_column(self.sheet, point, self.config)?;
+        let covered = bounds.intersection(self.grid.bounds);
+        if covered.lo != bounds.lo || covered.hi != bounds.hi {
+            return Err(WaterError::new(
+                "whole surface cut",
+                "column outside prepared lattice",
+            ));
+        }
+        let mut best = None;
+        let mut hits = 0;
+        self.grid.scan(bounds, point, &mut best, &mut hits);
+        finish(
+            self.sheet,
+            point,
+            self.config,
+            best,
+            hits,
+            self.grid.nodes.len(),
+        )
+    }
 }
 
 fn barycentric(t: [[f64; 2]; 3], p: [f64; 2]) -> Option<[f64; 3]> {

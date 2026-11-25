@@ -28,6 +28,7 @@ web-time = "=1.1.0"
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [dev-dependencies]
+thrum-fixtures = { path = "../thrum-fixtures" }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 pollster = "=1.0.1"
 thrum-core = { path = "../thrum-core" }

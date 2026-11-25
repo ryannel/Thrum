@@ -5,10 +5,13 @@ struct QueryPoint {
     gains: vec4<f32>,
     dent: vec4<f32>,
     surf_stage: vec4<f32>,
+    fine_bounds: vec4<i32>,
+    coarse_grid: vec4<i32>,
 }
 struct Settings {
     origin: vec2<f32>, count: u32, components: u32,
     lengths_chop: vec4<f32>, heights: vec4<f32>, swash_margin: vec4<f32>,
+    coarse_jobs: vec4<u32>,
 }
 struct CascadeSample {
     height: f32,
@@ -23,7 +26,9 @@ struct Answer {
     current_bed: vec4<f32>,
     body_flags: vec4<u32>,
     cascades: array<CascadeSample, 3>,
-    cut_nodes: u32,
+    cut_fine_nodes: u32,
+    cut_coarse_nodes: u32,
+    padding: array<u32, 3>,
     wake: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> settings: Settings;
@@ -40,7 +45,7 @@ fn cascade_wave(point: QueryPoint, band: u32) -> Wave {
     return cascade_column(point.position / extent, band, lod);
 }
 
-struct QueryWave { wave: Wave, cut_nodes: u32, }
+struct QueryWave { wave: Wave, cut_fine_nodes: u32, cut_coarse_nodes: u32, }
 
 const QUERY_WIDTH = 64u;
 
@@ -52,7 +57,7 @@ fn query_gains(point: QueryPoint) -> vec4<f32> {
 
 fn plain_query(point: QueryPoint, gain: f32) -> QueryWave {
     return QueryWave(long_wave(point.position - settings.origin, point.dt, gain,
-        settings.lengths_chop.w, settings.components), 0u);
+        settings.lengths_chop.w, settings.components), 0u, 0u);
 }
 
 fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWave) {
@@ -78,7 +83,8 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
     if point.body != 0xffffffffu {
         let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
         let long = result.wave;
-        out.cut_nodes = result.cut_nodes;
+        out.cut_fine_nodes = result.cut_fine_nodes;
+        out.cut_coarse_nodes = result.cut_coarse_nodes;
         let long_slope = world_slope(long);
         var rate = long.velocity.y - dot(long_slope, long.velocity.xz);
         var slope = point.slope + long_slope;

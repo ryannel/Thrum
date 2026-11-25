@@ -73,11 +73,11 @@ allowed_workspace_dependencies = ["thrum-cloud-model", "thrum-render", "thrum-te
 [packages.thrum-water-model]
 manifest = "crates/thrum-water-model/Cargo.toml"
 # CPU water map, wave composition and query oracle; no graphics dependencies.
-allowed_workspace_dependencies = ["thrum-sea-model"]
+allowed_workspace_dependencies = ["thrum-sea-model", "thrum-fixtures"]
 
 [packages.thrum-water]
 manifest = "crates/thrum-water/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-asset-gpu", "thrum-render", "thrum-sea", "thrum-sea-model", "thrum-water-model", "thrum-test-support", "thrum-core"]
+allowed_workspace_dependencies = ["thrum-asset-gpu", "thrum-render", "thrum-sea", "thrum-sea-model", "thrum-water-model", "thrum-test-support", "thrum-core", "thrum-fixtures"]
 
 [packages.water-scene]
 manifest = "examples/water/Cargo.toml"

@@ -31,6 +31,7 @@ struct ShoreBody {
 struct SurfRecord {
     controls: [f32; 4],
     bounds: [f32; 4],
+    coarse: [f32; 4],
     bodies: [ShoreBody; BODY_LIMIT],
 }
 
@@ -185,6 +186,12 @@ impl SurfGpu {
                 (onset as f32).next_down(),
                 (minimum_level as f32).next_down(),
                 (stages * EXPOSURE_LAYERS) as f32,
+            ],
+            coarse: [
+                profile.cut.coarse_cells as f32,
+                profile.cut.margin_floor as f32,
+                profile.cut.bend_factor as f32,
+                0.0,
             ],
             bodies,
         };

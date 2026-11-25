@@ -99,10 +99,7 @@ impl Map {
             || profile.lag_floor <= 0.0
             || !profile.breaker_ratio.is_finite()
             || profile.breaker_ratio <= 0.0
-            || !profile.cut.cell.is_finite()
-            || profile.cut.cell <= 0.0
-            || !profile.cut.tolerance.is_finite()
-            || profile.cut.tolerance <= 0.0
+            || !profile.cut.valid()
         {
             return Err(WaterError::new("surf", "invalid surf profile"));
         }
@@ -453,9 +450,22 @@ impl SurfSheet<'_> {
         let step = spacing * 0.01;
         // Inside one bilinear cell the central difference is its exact
         // derivative. Keep the probes at cell edges and at body joins.
+        let probes: [[([f64; 2], usize); 2]; 2] = std::array::from_fn(|axis| {
+            [-step, step].map(|offset| {
+                let mut p = rest;
+                p[axis] += offset;
+                let owner = if self.map.bodies.len() > 1 {
+                    self.map.sample(p).map_or(body, |s| s.body)
+                } else {
+                    body
+                };
+                (p, owner)
+            })
+        });
         let use_gradient: [bool; 2] = std::array::from_fn(|axis| {
-            self.map.bodies.len() == 1
-                && depth.is_finite()
+            depth.is_finite()
+                && self.surf.transforms[body].is_some()
+                && probes[axis].iter().all(|&(_, id)| id == body)
                 && (0.01..=0.99)
                     .contains(&((rest[axis] - self.map.bed.origin[axis]) / spacing).fract())
         });
@@ -496,28 +506,15 @@ impl SurfSheet<'_> {
                 if use_gradient[axis] {
                     return component.wave_vector[axis] + k0 * gradient[axis];
                 }
-                let mut a = rest;
-                a[axis] -= step;
-                let mut b = rest;
-                b[axis] += step;
-                let delta = {
-                    let lag_at = |p| {
-                        let owner = if self.map.bodies.len() > 1 {
-                            self.map.sample(p).map_or(body, |s| s.body)
-                        } else {
-                            body
-                        };
-                        self.surf
-                            .transform(self.map, owner, p, direction, wavelength)
-                            .0
-                    };
-                    let lo = lag_at(a);
-                    let hi = lag_at(b);
-                    if lo.is_finite() && hi.is_finite() {
-                        (hi - lo) / (2.0 * step)
-                    } else {
-                        0.0
-                    }
+                let [lo, hi] = probes[axis].map(|(p, owner)| {
+                    self.surf
+                        .transform(self.map, owner, p, direction, wavelength)
+                        .0
+                });
+                let delta = if lo.is_finite() && hi.is_finite() {
+                    (hi - lo) / (2.0 * step)
+                } else {
+                    0.0
                 };
                 component.wave_vector[axis] + k0 * delta
             });
@@ -656,24 +653,53 @@ impl Sheet for SurfSheet<'_> {
     }
 
     fn reach(&self, point: [f64; 2]) -> f64 {
-        let mut reach = self.ceiling(self.surf.profile.lag_floor).0;
-        for _ in 0..2 {
-            if let Some(range) = self.surf.pyramid.range(point, reach) {
-                let level = self.minimum_level();
-                reach = self
-                    .ceiling((level - range[1]).max(self.surf.profile.lag_floor))
-                    .0
-                    .min(reach);
-            }
-        }
-        reach
+        self.throw_reach().at(point).0
     }
 }
 
 impl SurfSheet<'_> {
-    fn minimum_level(&self) -> f64 {
+    fn throw_reach(&self) -> ThrowReach<'_> {
+        let waves = &self.field.layers[0];
         self.map
-            .bodies
+            .surf_throw_reach(waves.components(), waves.choppiness())
+            .expect("prepared surf sheet")
+    }
+
+    fn can_throw(&self, point: [f64; 2]) -> bool {
+        self.throw_reach().at(point).1
+    }
+}
+
+/// Bounds the horizontal displacement of a surf sheet for the current wave field.
+pub struct ThrowReach<'a> {
+    surf: &'a Surf,
+    components: &'a [thrum_sea_model::Component],
+    chop: f64,
+    minimum_level: f64,
+    first: f64,
+}
+
+impl Map {
+    /// Prepare the reach calculation shared by the model and body-query dispatch.
+    pub fn surf_throw_reach<'a>(
+        &'a self,
+        components: &'a [thrum_sea_model::Component],
+        chop: f64,
+    ) -> Option<ThrowReach<'a>> {
+        let surf = self.surf.as_deref()?;
+        let mut reach = ThrowReach {
+            surf,
+            components,
+            chop,
+            minimum_level: self.minimum_level(),
+            first: 0.0,
+        };
+        reach.first = reach.ceiling(surf.profile.lag_floor).0;
+        Some(reach)
+    }
+
+    fn minimum_level(&self) -> f64 {
+        self.bodies
             .iter()
             .map(|b| {
                 let base = if let BodyKind::Chart(c) = &b.kind {
@@ -685,10 +711,12 @@ impl SurfSheet<'_> {
             })
             .fold(f64::INFINITY, f64::min)
     }
+}
 
+impl ThrowReach<'_> {
     fn ceiling(&self, depth: f64) -> (f64, bool) {
-        let amplitude: f64 = self.field.layers[0]
-            .components()
+        let amplitude: f64 = self
+            .components
             .iter()
             .map(|c| {
                 let k0 = c.wave_vector[0].hypot(c.wave_vector[1]);
@@ -706,19 +734,24 @@ impl SurfSheet<'_> {
                     self.surf.profile.section.maximum_throw()
                 } else {
                     0.0
-                } + self.field.layers[0].choppiness()),
+                } + self.chop),
             throws,
         )
     }
 
-    fn can_throw(&self, point: [f64; 2]) -> bool {
-        let depth = self
-            .surf
-            .pyramid
-            .range(point, self.reach(point))
-            .map_or(self.surf.profile.lag_floor, |range| {
-                (self.minimum_level() - range[1]).max(self.surf.profile.lag_floor)
-            });
-        self.ceiling(depth).1
+    /// Return the reach in metres and whether any crest can be thrown into the column.
+    pub fn at(&self, point: [f64; 2]) -> (f64, bool) {
+        let floor = self.surf.profile.lag_floor;
+        let depth = |reach| {
+            self.surf
+                .pyramid
+                .range(point, reach)
+                .map_or(floor, |range| (self.minimum_level - range[1]).max(floor))
+        };
+        let mut reach = self.first;
+        for _ in 0..2 {
+            reach = self.ceiling(depth(reach)).0.min(reach);
+        }
+        (reach, self.ceiling(depth(reach)).1)
     }
 }

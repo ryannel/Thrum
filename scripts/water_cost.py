@@ -16,13 +16,14 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'island': ROOT / 'tests/fixtures/waters/island-cost.json',
            'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json',
-           'surf': ROOT / '.orchestrate/evidence/WATERS/WP13/surf-cost.json'}
+           'surf': ROOT / '.orchestrate/evidence/WATERS/WP19/surf-cost.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
 # which ends in this name.
 FIRST_FRAME_FORMER = '/WATERS/M2-cost.json'
 WAKE_HISTORY = ROOT / 'examples/water/tests/fixtures/wake-cost-prior.json'
 SURF_HISTORY = ROOT / 'examples/water/tests/fixtures/surf-cost-prior.json'
+WP13_SURF = ROOT / 'examples/water/tests/fixtures/surf-cost-wp13.json'
 WAKE_ROUTE = {'wind': 'trade', 'view': 'overhead', 'speed_mps': 6}
 WAKE_ARMS = {'with-wake': (True, True), 'without-wake': (True, False),
              'water-absent': (False, False)}
@@ -333,29 +334,101 @@ def measure_foam():
     print(f'PASS paired 1440p Metal whitewater records: {path.relative_to(ROOT)}')
 
 
-def measure_surf():
-    scratch = ROOT / 'tmp/waters-M13'
+def measure_surf_arm(mode):
+    scratch = ROOT / 'tmp/waters-WP19'
     scratch.mkdir(parents=True, exist_ok=True)
     revision = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
-    with tempfile.TemporaryDirectory(dir=scratch, prefix='cost-') as directory:
+    load_before = run(['uptime'], capture_output=True, text=True).stdout.strip()
+    with tempfile.TemporaryDirectory(dir=scratch, prefix=mode + '-') as directory:
         output = Path(directory)
         store = output / 'store'
         run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
              'cook', 'examples/water/assets', str(store)])
-        env = dict(os.environ, THRUM_WATER_PROOF='surf-cost', THRUM_ASSET_STORE=str(store),
+        env = dict(os.environ, THRUM_WATER_PROOF=mode, THRUM_ASSET_STORE=str(store),
                    THRUM_WATER_OUTPUT=str(output), THRUM_REQUIRE_GPU='1')
         run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
              '--test', 'proof_gpu', '--', '--nocapture'], env=env)
-        record = json.loads((output / 'surf-cost.json').read_text())
+        record = json.loads((output / (mode + '.json')).read_text())
+    record.update(commit=revision, host=platform.platform(), load_before=load_before,
+                  load=run(['uptime'], capture_output=True, text=True).stdout.strip(),
+                  recipe='portable' if env.get('THRUM_WATER_RECIPE') == 'portable' else 'native')
+    return record
+
+
+def save_surf_record(record, path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=path.parent, prefix='surf-record-') as directory:
+        staged = Path(directory) / path.name
+        staged.write_text(json.dumps(record, indent=2) + '\n')
+        staged.replace(path)
+
+
+def measure_surf_running():
+    record = measure_surf_arm('surf-running')
+    assert record['target'] == 'mac-metal'
+    assert record['step_hz'] == 60 and 0 < record['maximum_age'] <= 8
+    problems = []
+    for name in ('open_water', 'breakers'):
+        arm = record[name]
+        ticks = arm['ticks']
+        assert ticks >= 600 and arm['extent'] == record['extent']
+        assert arm['wall_seconds'] >= ticks / record['step_hz']
+        assert arm['frames_completed'] > 0
+        assert len(arm['age']) == record['maximum_age'] + 1 and arm['age'][0] == 0
+        expected = 48 * ticks
+        arm['delivery_share'] = {
+            'one': arm['age'][1] / expected, 'two': arm['age'][2] / expected,
+            'older': sum(arm['age'][3:]) / expected, 'not_drained': (expected - sum(arm['age'])) / expected,
+        }
+        if arm['delivery_share']['one'] + arm['delivery_share']['two'] < 0.90:
+            problems.append(f"{name} missed the 90% window: {arm['delivery_share']}")
+        for key in ('fallback', 'unavailable', 'blocking_reads', 'refused'):
+            if arm[key]:
+                problems.append(f"{name} reported {arm[key]} {key}")
+        nodes = arm['nodes']
+        if len(nodes) != ticks or any((coarse > 0 and fine > 0) != (name == 'breakers')
+                                      for coarse, fine in nodes):
+            problems.append(f"{name} did not show its expected cuts on every measured tick")
+        arm['node_summary'] = {
+            phase: {'min': min(column), 'mean': statistics.mean(column), 'max': max(column)}
+            for phase, column in zip(('coarse', 'fine'), zip(*nodes), strict=True)
+        }
+    for witness in record['witness']:
+        if len(witness['stations']) != 48 or witness['max_error_m'] > record['tolerance_m']:
+            problems.append(f"model agreement failed at measured post {witness['post_index']}: "
+                            f"{len(witness['stations'])} stations, {witness['max_error_m']} m error")
+    assert len(record['witness']) == 3
+    control, surf = (record[name] for name in ('open_water', 'breakers'))
+    control_late, surf_late = (arm['delivery_share']['older'] + arm['delivery_share']['not_drained']
+                              for arm in (control, surf))
+    record['investigations'] = []
+    if surf_late > control_late:
+        record['investigations'].append({
+            'wire': 'breakers later than open water',
+            'open_water': {key: control[key] for key in ('delivery_share', 'node_summary', 'busy', 'dropped_views')},
+            'breakers': {key: surf[key] for key in ('delivery_share', 'node_summary', 'busy', 'dropped_views')},
+            'disposition': 'Both arms draw the same island view. The breakers add the coarse and fine cut; '
+                           'frame skips and occupied readback slots distinguish visible backpressure from '
+                           'the GPU and OS scheduling variation that also affects the control.',
+        })
+    record['problems'] = problems
+    path = WORKING / 'WP19/surf-running.json'
+    save_surf_record(record, path)
+    assert not problems, '; '.join(problems) + f" ({path.relative_to(ROOT)})"
+    print(f'PASS paired wall-clock Metal surf query: {path.relative_to(ROOT)}')
+
+
+def measure_surf():
+    record = measure_surf_arm('surf-cost')
     prior = json.loads(SURF_HISTORY.read_text())
+    wp13 = json.loads(WP13_SURF.read_text())
     assert record['target'] == 'mac-metal' and record['extent'] == prior['extent'] == [2560, 1440]
     assert record['capture'] is False and record['camera'] == prior['camera']
     assert record['wind'] == prior['wind'] == 'Gale'
-    recipe = 'portable' if env.get('THRUM_WATER_RECIPE') == 'portable' else 'native'
-    record.update(commit=revision, recipe=recipe,
-                  host=platform.platform(), load=run(['uptime'], capture_output=True, text=True).stdout.strip(),
-                  prior=prior,
-                  comparison='The current arms share forcing, recipe and camera. The M7 record shares the camera and gale preset, with the earlier swell forcing.')
+    assert record['camera'] == wp13['camera'] and record['extent'] == wp13['extent']
+    record.update(prior=prior, wp13=wp13,
+                  comparison='The current arms and WP13 share the camera, gale forcing and extent. '
+                             'The M7 reference used the earlier swell forcing.')
     arms = dict(zip(('surf', 'surf-disabled', 'water-absent'), record['arms'], strict=True))
     control = arms['surf-disabled']['frames']
     phases = [(f['tick'], f['alpha']) for f in control]
@@ -375,7 +448,9 @@ def measure_surf():
             if 'fleet_query' in frame:
                 assert name not in query_frames and frame['tick_frame']
                 assert frame['fleet_query']['floats'] == 8 and frame['fleet_query']['stations'] == 48
-                assert (frame['fleet_query']['cut_nodes'] > 0) == surf
+                counts = frame['fleet_query']
+                assert counts['cut_nodes'] == counts['coarse_nodes'] + counts['fine_nodes']
+                assert (counts['coarse_nodes'] > 0) == (counts['fine_nodes'] > 0) == surf
                 query_frames[name] = frame['fleet_query']
                 elapsed = next((value for label, value in labels.items()
                                 if label.endswith('water body query')), None)
@@ -389,6 +464,7 @@ def measure_surf():
         treatment = table['surf'][phase]
         paired = table['surf-disabled'][phase]
         old = prior['summary']['foam'][phase]
+        previous = wp13['summary']['surf'][phase]
         if max(treatment['completion_upper_ms'], treatment['gpu_ms'] or 0) > 1000 / 120:
             investigations.append({
                 'wire': '120 Hz interval', 'phase': phase,
@@ -406,7 +482,7 @@ def measure_surf():
                 'disposition': 'The affected passes have no imputed duration. Completion is reported separately.',
             })
         for label, elapsed in treatment['passes_ms'].items():
-            for baseline, row in (('surf-disabled', paired), ('M7', old)):
+            for baseline, row in (('surf-disabled', paired), ('M7', old), ('WP13', previous)):
                 before = row['passes_ms'].get(label, 0)
                 if before > 0 and elapsed >= 1.25 * before:
                     investigations.append({
@@ -416,24 +492,25 @@ def measure_surf():
                     })
     if query_frames['surf']['gpu_ms'] > 0.1:
         investigations.append({
-            'wire': 'body query time', 'arms': query_frames,
+            'wire': 'body query time', 'arms': query_frames, 'wp13_query': wp13['query'],
             'disposition': 'The query target is 0.1 ms outside surf. Both arms queried the same stations and only the surf arm evaluates the highest-surface cut.',
         })
     record['investigations'] = investigations
     path = RECORDS['surf']
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=path.parent, prefix='surf-cost-') as directory:
-        staged = Path(directory) / path.name
-        staged.write_text(json.dumps(record, indent=2) + '\n')
-        staged.replace(path)
+    save_surf_record(record, path)
     print(f'PASS paired 1440p Metal surf record: {path.relative_to(ROOT)}')
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['record', 'check'])
+    parser.add_argument('action', choices=['record', 'check', 'running'])
     parser.add_argument('--scene', choices=list(RECORDS), required=True)
     args = parser.parse_args()
+    if args.action == 'running':
+        if args.scene != 'surf':
+            parser.error('running is only available for surf')
+        measure_surf_running()
+        return
     if args.scene == 'wake':
         measure_wake()
         return

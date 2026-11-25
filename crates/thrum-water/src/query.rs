@@ -71,6 +71,8 @@ pub struct BodyAnswers {
     pub generation: u32,
     /// Game tick at which this batch was posted.
     pub posted: u64,
+    /// Coarse and fine node evaluations charged to this body.
+    pub cut_nodes: [u64; 2],
     /// Answers, including dry points.
     pub points: Vec<QueryAnswer>,
 }
@@ -82,6 +84,10 @@ pub struct QueryStats {
     pub dispatches: u64,
     /// Lattice nodes evaluated by completed surf column cuts, excluding refinement.
     pub cut_nodes: u64,
+    /// Coarse lattice nodes evaluated, counting shared nodes once.
+    pub cut_coarse_nodes: u64,
+    /// Fine lattice nodes evaluated, excluding refinement.
+    pub cut_fine_nodes: u64,
     /// Body requests refused for capacity or invalid point data.
     pub refused: u64,
     /// Recordings skipped because all staging buffers were occupied.

@@ -11,3 +11,5 @@ mod inland_floating_gpu;
 mod level_gpu;
 mod scene_gpu;
 mod wake_scene_gpu;
+
+mod surf_cut;

@@ -35,6 +35,8 @@ fn query_records_match_the_shader_layout() {
                 gains,
                 dent,
                 surf_stage,
+                fine_bounds,
+                coarse_grid,
             ),
             record!(
                 Component,
@@ -54,6 +56,7 @@ fn query_records_match_the_shader_layout() {
                 lengths_chop,
                 heights,
                 swash_margin,
+                coarse_jobs,
             ),
             record!(CascadeSample, height, slope, differential, velocity),
             record!(
@@ -64,9 +67,23 @@ fn query_records_match_the_shader_layout() {
                 current_bed,
                 body_flags,
                 cascades,
-                cut_nodes,
+                cut_fine_nodes,
+                cut_coarse_nodes,
+                padding,
                 wake,
             ),
         ],
     );
+}
+
+#[test]
+fn surf_query_passes_parse_with_all_shared_bindings() {
+    let source = Interaction::sample_source(0, 5, 6, true)
+        + include_str!("../../column/records.wgsl")
+        + include_str!("../../column.wgsl")
+        + include_str!("../sample.wgsl")
+        + &crate::map_gpu::declarations_at(super::SURF_GROUP)
+        + &crate::surf::SurfGpu::source(super::SURF_GROUP, super::SURF_BINDING)
+        + include_str!("../../surf/cut.wgsl");
+    records::named("surf body query passes", &source, &[]);
 }

@@ -13,22 +13,11 @@ use super::{sample_json, support::Fixture};
 const QUERY_TICK: u32 = 67;
 const STEP: Duration = Duration::from_nanos(16_666_667);
 
-fn breaker_fleet(wind: Wind) -> (Vec<BodyQuery>, usize) {
-    let (map, spectrum) = surf_inputs(wind).expect("gale surf inputs");
-    let choppiness = surf_water_profile(&spectrum).waves.choppiness;
-    let field = thrum_water_model::Field {
-        layers: std::array::from_fn(|i| {
-            thrum_sea_model::LongWaves::new(
-                if i == 0 {
-                    spectrum.long.clone()
-                } else {
-                    Vec::new()
-                },
-                choppiness,
-            )
-            .expect("wave field")
-        }),
-    };
+pub(super) fn breaker_fleet() -> (Vec<Body>, usize) {
+    let (map, spectrum) = surf_inputs(Wind::Gale).expect("gale surf inputs");
+    let field =
+        water_scene::floating::fallback(&spectrum, surf_water_profile(&spectrum).waves.choppiness)
+            .expect("wave field");
     let time = (STEP * (QUERY_TICK + 2)).as_secs_f64();
     let sheet = map.surf_sheet(&field, 0, time).expect("windward sea");
     let mut columns: Vec<[f64; 2]> = Vec::new();
@@ -73,7 +62,7 @@ fn breaker_fleet(wind: Wind) -> (Vec<BodyQuery>, usize) {
             let station = body.station(0);
             body.position.x = x - station.x;
             body.position.z = z - station.z;
-            body.request(u64::from(QUERY_TICK), STEP)
+            body
         })
         .collect();
     let eligible = spectrum
@@ -93,7 +82,11 @@ fn breaker_fleet(wind: Wind) -> (Vec<BodyQuery>, usize) {
 )]
 pub(super) fn run(gpu: &Gpu) -> Value {
     let wind = Wind::Gale;
-    let (fleet, eligible) = breaker_fleet(wind);
+    let (fleet, eligible) = breaker_fleet();
+    let fleet: Vec<BodyQuery> = fleet
+        .iter()
+        .map(|body| body.request(u64::from(QUERY_TICK), STEP))
+        .collect();
     let mut arms = Vec::new();
     for (water, surf) in [(true, true), (true, false), (false, false)] {
         let (game, report, _, probes) = build_surf_paired(wind, water, surf).expect("gale arm");
@@ -124,6 +117,7 @@ pub(super) fn run(gpu: &Gpu) -> Value {
                 frame["fleet_query"] = json!({
                     "floats": replies.len(), "stations": 6 * replies.len(),
                     "use_tick": QUERY_TICK + 2, "cut_nodes": stats.cut_nodes,
+                    "coarse_nodes": stats.cut_coarse_nodes, "fine_nodes": stats.cut_fine_nodes,
                     "columns": fleet.iter().map(|body| body.points[0].position).collect::<Vec<_>>(),
                 });
             }

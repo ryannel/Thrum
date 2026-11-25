@@ -5,6 +5,7 @@ mod realtime;
 mod support;
 #[cfg(target_os = "macos")]
 mod surf_cost;
+mod surf_running;
 use serde_json::json;
 use std::{path::PathBuf, time::Duration};
 use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource, SubmittedImage};
@@ -140,10 +141,14 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("record");
         return;
     }
-    if mode == "surf-cost" {
-        let result = surf_cost::run(gpu);
+    if mode == "surf-cost" || mode == "surf-running" {
+        let (file, result) = if mode == "surf-cost" {
+            ("surf-cost.json", surf_cost::run(gpu))
+        } else {
+            ("surf-running.json", surf_running::run(gpu))
+        };
         std::fs::write(
-            directory.join("surf-cost.json"),
+            directory.join(file),
             serde_json::to_vec_pretty(&result).expect("json"),
         )
         .expect("record");

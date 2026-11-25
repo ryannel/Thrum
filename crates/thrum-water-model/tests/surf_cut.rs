@@ -1,7 +1,7 @@
 //! Independently cut a forward sheet eight times finer, without the model's reach.
 use crate::support;
 use support::{sheets::Trains, surf_map};
-use thrum_water_model::{CutConfig, Sheet, SheetPoint, cut};
+use thrum_water_model::{CutConfig, Sheet, SheetPoint, WholeCut, cut};
 
 #[test]
 fn impossible_cut_resolution_is_refused_before_allocating() {
@@ -12,7 +12,7 @@ fn impossible_cut_resolution_is_refused_before_allocating() {
             [0.0; 2],
             CutConfig {
                 cell: 1e-300,
-                tolerance: 0.001
+                ..CutConfig::default()
             }
         )
         .is_err()
@@ -267,11 +267,22 @@ fn production_sheet_cut(case: usize) {
     let side = 9;
     // Cover the local deformation without consulting the production reach.
     let (fine, hits) = reference(&sheet, origin, side, 0.125, 8.0);
+    let columns: Vec<_> = (2..side - 2)
+        .flat_map(|z| {
+            (2..side - 2).map(move |x| [origin[0] + x as f64 * 0.125, origin[1] + z as f64 * 0.125])
+        })
+        .collect();
+    let whole = WholeCut::new(&sheet, &columns, CutConfig::default()).expect("whole reach");
     let mut triples = 0;
     for z in 2..side - 2 {
         for x in 2..side - 2 {
             let p = [origin[0] + x as f64 * 0.125, origin[1] + z as f64 * 0.125];
             let column = cut(&sheet, p, CutConfig::default()).expect("cut the production sheet");
+            let expected = whole.column(p).expect("whole refined cut");
+            assert!(
+                (column.height - expected.height).abs() < 0.01,
+                "{case} {p:?}: {column:?} vs {expected:?}"
+            );
             let (mut lo, mut hi) = (f64::INFINITY, f64::NEG_INFINITY);
             for dz in z - 2..=z + 2 {
                 for dx in x - 2..=x + 2 {
@@ -332,4 +343,93 @@ fn old_scan(sheet: &Trains, p: [f64; 2]) -> f64 {
     } else {
         sheet.forward(p).height
     }
+}
+
+#[test]
+fn many_component_coarse_to_fine_matches_the_whole_cut() {
+    use thrum_fixtures::surf as fixture;
+
+    let (map, field) = many_component_fixture();
+    let time = f64::from(fixture::USE_TICK) / 60.0;
+    let sheet = map.surf_sheet(&field, 0, time).expect("beach sheet");
+    let folds = fixture::fold_columns(|p| sheet.forward(p).world, 32);
+    assert_eq!(folds.len(), 32);
+    let mut columns = folds;
+    columns.extend((0..32).map(|i| [-80.0 + f64::from(i) * 2.6, 0.123]));
+    let whole = WholeCut::new(&sheet, &columns, CutConfig::default()).expect("whole reach");
+    let mut triples = 0;
+    let mut displacement = 0.0_f64;
+    for p in columns {
+        let expected = whole.column(p).expect("whole refined cut");
+        let actual = map.surface(&field, p, time).expect("public cut");
+        assert!(
+            (actual.sample.height - expected.height).abs() < 0.01,
+            "{p:?}: {} vs {expected:?}",
+            actual.sample.height
+        );
+        triples += usize::from(expected.hits >= 3);
+        displacement = displacement.max((p[0] - expected.rest[0]).hypot(p[1] - expected.rest[1]));
+    }
+    assert!(
+        triples >= 20,
+        "{triples} columns hold at least three surfaces"
+    );
+    assert!(
+        displacement > 5.0,
+        "highest surface thrown {displacement} m"
+    );
+}
+
+fn many_component_fixture() -> (thrum_water_model::Map, thrum_water_model::Field) {
+    use thrum_fixtures::surf as fixture;
+    use thrum_sea_model::{Component, LongWaves};
+    use thrum_water_model::{Bed, Body, BodyKind, Field, Map, Profile, Stage, SurfProfile};
+    let bed = Bed::new(
+        fixture::ORIGIN,
+        fixture::SPACING,
+        fixture::SIZE.map(|n| n as usize),
+        (0..fixture::SIZE[1])
+            .flat_map(|_| (0..fixture::SIZE[0]).map(fixture::bed))
+            .collect(),
+    )
+    .expect("beach");
+    let mut map = Map::prepare(
+        bed,
+        vec![Body {
+            name: "Sea".into(),
+            kind: BodyKind::Sea,
+            level: 0.0,
+            stage: Stage {
+                min: 0.0,
+                max: 0.0,
+                value: 0.0,
+            },
+            fetch: 1e6,
+            gains: [1.0, 0.0, 0.0, 0.0],
+        }],
+        Profile {
+            margin_height: 1.5,
+            swash_ratio: 0.7,
+        },
+    )
+    .expect("sea on beach");
+    map.enable_surf(SurfProfile::default()).expect("surf");
+    let components = (0..fixture::COMPONENTS)
+        .map(|i| {
+            let (wave_vector, amplitude, phase) = fixture::component(i);
+            Component {
+                wave_vector,
+                amplitude,
+                phase,
+            }
+        })
+        .collect();
+    let [a, b, c] = std::array::from_fn(|_| LongWaves::new(vec![], 0.0).expect("empty"));
+    let long = LongWaves::new(components, fixture::CHOP).expect("contractive waves");
+    (
+        map,
+        Field {
+            layers: [long, a, b, c],
+        },
+    )
 }

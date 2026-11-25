@@ -18,7 +18,7 @@ mod waves;
 
 pub use bed::Bed;
 pub use conformance::{Conformance, Provider, compare};
-pub use cut::{Column, CutConfig, Sheet, SheetPoint, cut};
+pub use cut::{Column, CutConfig, Sheet, SheetPoint, WholeCut, cut};
 pub use fall::{
     Below, Births, Fall, FallSegment, GRAVITY, Impulse, PathPoint, PatternLoop, Plunge,
     PlungeProfile, SheetPattern, SheetProfile, SheetSample, WATER_DENSITY, loop_ticks,
@@ -37,7 +37,7 @@ pub use river::{
 pub use samples::{ChartSamples, FlowSample, Gauge, River, mix_fall};
 pub use section::{BreakerSection, SectionPoint};
 pub use shore::{Lag, ShoreConfig, ShoreTransform, Source, dispersion, shoaling};
-pub use surf::{SurfProfile, SurfSheet, shore_sector};
+pub use surf::{SurfProfile, SurfSheet, ThrowReach, shore_sector};
 pub use waves::{Field, Limited, Surface, limit, shelter};
 
 /// Invalid authored water, with the declaration's name and actionable cause.
