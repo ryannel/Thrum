@@ -872,3 +872,10 @@
   WP13.11 remains open on the offshore height comparison. All nine automatic worktree checks passed.
   [Chrome and Metal matches](../../../.orchestrate/evidence/WATERS/WP13/chrome-matched-inspection.md) ·
   [Worktree checks](../../../.orchestrate/evidence/WATERS/WP13/bed-grid-package-check.log).
+
+- 2026-11-25 Compared the latest Chrome and Metal fixed captures at all 27 checkpoints within 1 µs of
+  submitted engine time. The latest Chrome 1 km sequence advances for 21.95 s with zero omissions or faults.
+  Reconstructing the CPU sheet at the offshore camera's 32 m mesh spacing reverses one trade crest-height
+  comparison that holds in the 0.25 m cut. WP13.5 and WP13.11 still need a legible visual comparison.
+  [Matched captures](../../../.orchestrate/evidence/WATERS/WP13/chrome-matched-inspection.md) ·
+  [Offshore sampling diagnostic](../../../.orchestrate/evidence/WATERS/WP13/offshore-mesh-resolution.log).
