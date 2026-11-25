@@ -168,6 +168,7 @@ impl Factory {
             let mut preparation = preparation;
             let metal = preparation.prepare_metal(device, false, || {
                 crate::apple_tile::witness::Pipeline::prepare(device)
+                    .map(|pipeline| (pipeline, std::time::Duration::ZERO))
             });
             (preparation, metal)
         };

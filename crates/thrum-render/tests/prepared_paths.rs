@@ -199,6 +199,13 @@ fn metalfx_resize_builds_only_on_the_extent_worker() {
         })
         .expect("worker");
     let candidate = worker.join().expect("worker result");
+    let built = host.creation_checkpoint();
+    assert_eq!(built.pipelines, before.pipelines, "{built}");
+    assert_eq!(
+        built.native_events(CreationPhase::GenerationBuild),
+        1,
+        "{built}"
+    );
     assert!(host.publish_extent(candidate));
     let next = draw(&mut host, &output, RESIZED);
     let after = host.creation_checkpoint();
@@ -221,10 +228,29 @@ fn metalfx_resize_builds_only_on_the_extent_worker() {
         after.phase(CreationPhase::GenerationBuild).textures > 0,
         "{after}"
     );
-    assert_eq!(
-        before.phase(CreationPhase::Play).shader_modules,
-        after.phase(CreationPhase::Play).shader_modules
-    );
+    assert_eq!(built.native_creations, after.native_creations, "{after}");
+    for row in after
+        .rows
+        .iter()
+        .filter(|row| row.phase == CreationPhase::Play)
+    {
+        let counts = row.counts;
+        assert_eq!(row.thread, std::thread::current().name().unwrap());
+        assert_eq!(row.unattributed, 0);
+        assert_eq!(counts.shader_modules, 0);
+        assert!(
+            [
+                counts.textures,
+                counts.texture_views,
+                counts.bind_groups,
+                counts.samplers,
+                counts.query_sets
+            ]
+            .into_iter()
+            .all(|delta| delta <= 0),
+            "{after}"
+        );
+    }
     assert_eq!(after.violations, 0);
 }
 

@@ -321,15 +321,15 @@ impl fmt::Display for CreationReport {
         for row in &self.native_creations {
             write!(
                 f,
-                "; native {:?}/{}@{}: {}",
-                row.phase, row.label, row.thread, row.count
+                "; native {:?}/{}@{}: {} in {:?} synchronous",
+                row.phase, row.label, row.thread, row.count, row.elapsed
             )?;
         }
         for row in &self.rows {
             let c = row.counts;
             write!(
                 f,
-                "; delta {:?}/{}@{} x{} unattributed {}: render {} compute {} shaders {} textures {} samplers {} queries {}",
+                "; delta {:?}/{}@{} x{} unattributed {}: render {} compute {} shaders {} textures {} views {} bind groups {} samplers {} queries {}",
                 row.phase,
                 row.label,
                 row.thread,
@@ -339,6 +339,8 @@ impl fmt::Display for CreationReport {
                 c.compute_pipelines,
                 c.shader_modules,
                 c.textures,
+                c.texture_views,
+                c.bind_groups,
                 c.samplers,
                 c.query_sets
             )?;
@@ -432,7 +434,7 @@ impl DeviceSite {
             let mut state = ledger.lock();
             if counted {
                 let (phase, label) =
-                    event_region(&state, scope).unwrap_or((CreationPhase::Play, "closed"));
+                    event_region(&state, scope).unwrap_or_else(|| unscoped_region(&state));
                 let thread = thread_name();
                 let rows = &mut state.report.native_creations;
                 if let Some(row) = rows
@@ -569,7 +571,7 @@ impl Ledger {
     pub(crate) fn checkpoint(&self) -> CreationReport {
         self.0
             .as_ref()
-            .map_or_else(CreationReport::untracked, |ledger| ledger.lock_checkpoint())
+            .map_or_else(CreationReport::untracked, |ledger| ledger.checkpoint())
     }
 
     pub(crate) fn retire(&self) -> CreationReport {
@@ -680,9 +682,17 @@ fn event_region(state: &State, scope: Option<u64>) -> Option<(CreationPhase, &'s
             .iter()
             .find(|open| open.id == id)
             .map(|open| (open.phase, open.label)),
-        None if state.report.ready => Some((CreationPhase::Play, "unscoped")),
-        None => Some((CreationPhase::Build, "unscoped")),
+        None => Some(unscoped_region(state)),
     }
+}
+
+fn unscoped_region(state: &State) -> (CreationPhase, &'static str) {
+    let phase = if state.report.ready {
+        CreationPhase::Play
+    } else {
+        CreationPhase::Build
+    };
+    (phase, "unscoped")
 }
 
 impl CreationLedger {
@@ -836,7 +846,7 @@ impl CreationLedger {
         self.frames.fetch_add(1, Ordering::Relaxed);
     }
 
-    fn lock_checkpoint(&self) -> CreationReport {
+    fn checkpoint(&self) -> CreationReport {
         let mut state = self.lock();
         self.flush(&mut state);
         let mut report = state.report.clone();
@@ -846,7 +856,7 @@ impl CreationLedger {
 
     /// Close the last window of a retired generation and return its report.
     fn retire(&self) -> CreationReport {
-        self.lock_checkpoint()
+        self.checkpoint()
     }
 
     /// The counts through the last window boundary. Reading does not close a
