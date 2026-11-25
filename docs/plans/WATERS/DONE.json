@@ -1289,7 +1289,7 @@
           "ask": "Does `surf_cut` hold the many-component sheet with 20 or more columns of three or more surfaces? In every comparison, is the expected height the cut-cell lattice over the whole reach with the public cut's refinement, and not the two passes themselves or a triangle's unrefined height? Does the island comparison fail with the bend factor at 0? Does the model's public cut, which the query and the conformance fallback use, make the two passes?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/target-checks.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -1301,7 +1301,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/target-checks.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -1312,8 +1312,8 @@
           "ask": "Do the ticks of both runs advance from the wall clock, with nothing waiting for the GPU between a post and its drain? Is an answer's lateness counted from the tick that posted its point to the tick whose drain handed it to the game? Does the breakers run make cuts on every tick, with its node count above zero throughout?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/builder-surf-running.json",
           "verdict": "",
           "review": ""
         },
@@ -1324,7 +1324,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/surf-cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/builder-surf-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -1335,8 +1335,8 @@
           "ask": "Does the test make its batch on the tick stage ahead of its tick's view, at the four display times the item lists, and take each expected cascade value from the model and not from the dispatch?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -1347,8 +1347,8 @@
           "ask": "In the restore case, is the published old result one that a drain on the old timeline at that tick would have handed over, and is the first drain on the new endpoint made before the new timeline's first post? Would the test fail if the mailbox dropped the former timeline's results only when the new timeline posts, if the post were answered from the old timeline's wake, or if either old result were drained later?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
           "verdict": "",
           "review": ""
         }

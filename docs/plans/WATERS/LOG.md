@@ -1034,9 +1034,16 @@
   The dispatch shares coarse nodes among stations of the same sheet and compacts the retained fine cells.
   WP19.1 and WP19.2 passed on the Mac. WP19.4 recorded 6,660 coarse and 4,050 fine nodes for the paired
   1440p fleet. [Guard results](../../../.orchestrate/evidence/WATERS/WP19/target-checks.md)
-  [Paired cost](../../../.orchestrate/evidence/WATERS/WP19/surf-cost.json)
-- WP19.3 is still open. In the island's 600-tick Metal runs, 69.33% of the open-water stations and none of the
+  [First tick-stage cost with the same node counts](../../../.orchestrate/evidence/WATERS/WP19/tick-stage-first-cost.json)
+- The first WP19.3 candidate failed. In the island's 600-tick Metal runs, 69.33% of the open-water stations and none of the
   breakers stations arrived within two ticks. Fixed updates can post when the frame host skips a view, but
   water records and submits its query only on admitted frames. The planner needs to settle query admission
-  and readback under render backpressure. [Running record](../../../.orchestrate/evidence/WATERS/WP19/surf-running.json)
+  and readback under render backpressure. [Frame-stage running record](../../../.orchestrate/evidence/WATERS/WP19/frame-stage-running.json)
   [Handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md)
+- 2026-11-25 WP19 builder. Water posts and drains on the world's endpoint. The tick stage reads submitted
+  cascades and wake, and stages its own map products. Conservative depth ceilings skip unreachable cells,
+  and groups of eight lanes accumulate component sums for an isolated sea sheet.
+- All six Mac checks passed. At 192 × 108 with 30 view opportunities per second, both arms completed 600
+  measured batches. Open water delivered 97.50% within two ticks and the breakers delivered 94.83%, with
+  zero unavailable replies, fallbacks or blocking reads in either arm. The 1440p surf tick pass took 16.336 ms
+  under shared load. [Metal proof](../../../.orchestrate/evidence/WATERS/WP19/delivery-proof.md)

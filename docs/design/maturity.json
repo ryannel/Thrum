@@ -3274,6 +3274,16 @@
         "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 \u00d7 1440 gale arm evaluated 47.43 million nodes for 48 stations and took 20.71 s in the query pass under shared load. The query exceeds the real-time budget at that load.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP13-handoff.md"
       },
+      "waters_surf_body_query": {
+        "implementation": "partial",
+        "functional_validation": "target_guards_passed",
+        "experienced_quality": "qualification_open",
+        "scope": "WATERS WP19 moves the highest-surface body query to the tick stage, with a coarse-to-fine cut and world endpoints on posts and replies.",
+        "correctness": "The full-lattice fixtures, grouped and individual Metal stations, four cascade carry cases and restore guard passed. On the island, all 600 measured breakers batches cut the sheet and the 144 sampled stations agreed with the model within 9.56 mm.",
+        "visuals": "Surf visual qualification remains with WATERS WP20.",
+        "device": "M3 Max Metal under shared load. At 192 × 108 with 30 view opportunities per second and 60 Hz ticks, 97.50% of open-water answers and 94.83% of breakers answers arrived within two ticks, with zero fallbacks or blocking reads. The paired 2560 × 1440 surf tick pass took 16.336 ms.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP19/delivery-proof.md"
+      },
       "waters_whitewater": {
         "implementation": "partial",
         "functional_validation": "passed",
