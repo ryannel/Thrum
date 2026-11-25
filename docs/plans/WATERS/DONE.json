@@ -1454,10 +1454,10 @@
     {
       "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
-      "status": "in_progress",
-      "failed_reviews": 4,
-      "failed_reviews_with_repeat": 3,
-      "diagnoses": 0,
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
       "depends_on": [],
       "quality_bar": "Water optics as in the sea of Sea of Thieves and the skies of Red Dead Redemption 2 over it: a glitter path under the Sun, sky colour in the swell, a hull seen green through the water at its waterline, shade that takes the sparkle and leaves the sky's light. On the lake, the still water of Red Dead Redemption 2: the far shore and hills mirrored at dawn, stones on the bed seen through the shallows, deepening to the water's own colour.",
       "items": [
@@ -1466,50 +1466,50 @@
           "statement": "At dawn, noon, low Sun, twilight and night the sea reflects that hour's sky, the Sun's glitter lies under the Sun and widens as the wind rises, the night sea is dark under the sky's glow, and nothing clips to flat white or black.",
           "inspect": "`fixed` stills at the five hours in a calm, a trade wind and a gale, from 2 m and 40 m: the glitter path, the swell's faces and the horizon.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/review-fix/README.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.2",
           "statement": "The craft's hull below its waterline and a sunk float are seen through the water, tinted and fading with depth. The waterline on the hull is a soft edge. Thin crests between the camera and a low Sun glow.",
           "inspect": "`fixed` stills at noon in a calm, from 2 m and 6 m, of the craft at rest and of floats sunk 0.5 m and 2 m; and of crests against a low Sun in a trade wind.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.3",
           "statement": "At the lake's edge, the pond and off the beach the ground shows through the shallows, tinted and fading with depth until the water's own colour hides it. The waterline is a soft edge with no bright or dark rim, and the bed moves under passing waves no more than refraction gives.",
           "inspect": "`fixed` stills at noon and low Sun from 2 m on each shore, looking down into the shallows and along the waterline, and a `realtime` sequence of small waves over the lake's shallows.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/lake-transition/README.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.4",
           "statement": "On calm water the craft and the floats reflect in the sea beside them, each reflection whole from the waterline to the image of the body's top. Where a reflection leaves the screen, passes its reach or meets the sky it falls back to the sky with no hole, streak or edge.",
           "inspect": "`fixed` stills and a `realtime` pan of the craft and floats on a glassy sea at low Sun, from 2 m and 10 m above: each reflection, and the screen's edges during the pan.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.5",
-          "statement": "On the calm lake the far shore, the hills and a tree on the bank reflect in the water wherever they are on screen, each joined to its foot at the waterline. Until the mirror view of WP14, where the screen cannot supply a reflection's source, because it is off the screen, past the reach or hidden behind something nearer, the reflection gives way gradually to the sky or to the ground beside it. Seen whole and at its own pixel size, a 2560×1440 frame shows no hole, hard-edged patch, streak, stretched edge or line in the reflection that the scene does not have, and a breeze blurs the reflection away smoothly.",
+          "statement": "On the calm lake the far shore, the hills and a tree on the bank reflect in the water wherever they are on screen, each joined to its foot at the waterline. Until the mirror view of WP14, where the screen cannot supply a reflection's source, because it is off the screen, past the reach or hidden behind something nearer, the reflection gives way gradually to the sky or to the ground beside it. Seen whole and at its own pixel size, a 2560\u00d71440 frame shows no hole, hard-edged patch, streak, stretched edge or line in the reflection that the scene does not have, and a breeze blurs the reflection away smoothly.",
           "inspect": "`fixed` stills of the lake at dawn and noon in a calm from 2 m and 10 m, a `realtime` pan and tilt that takes the far shore off the screen, and a `realtime` sequence as the wind rises from calm to a breeze. Judge by the design's capture rule: whole frames and crops at the frame's own pixel size, and sequences as consecutive frames at 1x. An enlarged crop, a pixel reading or an instrumented shader may explain a defect seen that way, and fails no line alone. 1. The far shore, the hills and the trees each reflect upside down and can be told apart, at both hours and both heights. 2. Each trunk, and the bank along the waterline, meets its reflection with no gap. 3. Round the reflected trees, where a tree hides the bank behind it, the reflection has no cutout, hole, hard-edged patch or streak: the bank carries on, or gives way softly to a muted tone. 4. Toward the frame's edges in the stills, and as the far shore leaves the screen in the pan and tilt, the reflection fades out gradually, with no line, step or patch that is not an edge of the scene. 5. As the wind rises the reflection blurs and breaks up by degrees, with no pop.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.6",
@@ -1518,10 +1518,10 @@
           "inspect": "`fixed` stills at noon with a labelled stand-in provider's shade crossing the sea and the grey float: the shade's edge on the water and on the float.",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.7",
@@ -1530,10 +1530,10 @@
           "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on flat water and with waves, including a body whose reflection lies wholly outside its own source rectangle? Does it hold the see-through rectangles to the map's depths and the water type's sight depth?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/review-fix/README.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.12",
@@ -1542,10 +1542,10 @@
           "ask": "Would a gather that left the camera's air in what it copies, a surface pass that left the air off, and one that multiplied the exposure scale a second time each fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/TECHNICAL.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.9",
@@ -1554,8 +1554,8 @@
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP8.10",
@@ -1563,24 +1563,10 @@
           "check": "python3 scripts/water_cost.py check --scene optics",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/optics-cost-622abddf9b32.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The reflected hillside has a straight seam in its screen-edge fade",
-          "item": "WP8.5",
-          "different": "The bright cutouts at the hidden pine crossings have subsided. This seam crosses unobstructed hillside reflection near the left screen edge, where the mapped bank contribution switches on or off.",
-          "repeat": false
-        },
-        {
-          "name": "Chrome shows a straight seam in the noon lake screen-edge fade",
-          "item": "WP8.9",
-          "different": "The earlier blue holes surrounded hidden tree trunks. This line is at the screen margin away from the trees. Changing only the bank blend in a hardware Chrome diagnostic removes it.",
-          "repeat": false
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },

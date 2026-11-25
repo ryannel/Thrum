@@ -1288,7 +1288,7 @@
       }
     },
     "WP8": {
-      "definitions": "8fce8713ee8b315225f6bbbeadfd743961260dc21657b1a6d43f9d447193e332",
+      "definitions": "9f773dafe0aa596d420f526313bc2748f56a99131bed457d97fb3b4fbde73b58",
       "reviews": [
         {
           "verdict": "fail",
@@ -1503,34 +1503,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
-      },
-      "ready_for_review": {
-        "commit": "d9ebd694e37bfe684cb94dc2e49e55756fb94cbe",
-        "checked": "d9ebd694e37bfe684cb94dc2e49e55756fb94cbe",
-        "at": "2026-11-25T22:26:04Z",
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "headless",
-        "usage": {
-          "input": 284064,
-          "cached": 29481856,
-          "output": 68019,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 284064,
-          "cached": 29481856,
-          "output": 68019,
-          "turns": 1
-        }
+        "task": "Diagnose WATERS WP8. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so th",
+        "at": "2026-11-25T23:08:03Z"
       }
     },
     "WP9": {
@@ -2550,11 +2524,15 @@
     {
       "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package.\n\nFrom the lead: the log (.git/orchestrate/main-checks/cross-target/logs/20261125-210755-*) shows E0599 in examples/water/tests/support.rs (SkyGame has no prepare, poll_status, controls_mut, take_edits, apply off macOS), failing the water-scene tests cloud_shade_gpu, gather_gpu, optics_once_gpu and proof_gpu. Those tests declare `mod support;` ungated. It arrived with WATERS WP8 commits (8af523d28, de26f04ba, b8e28e05e, d412ec35d). This is the same family as WP22, so consider whether the fix should also stop it recurring (for example gating each Metal test file as a whole, or a check the water tests run for a non-Mac target). The WATERS WP8 builder is running now: do not change WP8's items, because that voids its build; plan the fix as the next WATERS work package so it lands right after WP8.",
       "at": "2026-11-25T20:17:27Z"
+    },
+    {
+      "task": "Diagnose WATERS WP8. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so the same items keep failing: the fixes aren't holding, or each fix meets a new defect in an item that may ask for more than the vision and scope document does. Its reviews, oldest first: .orchestrate/evidence/WATERS/WP8-review-1.md, .orchestrate/evidence/WATERS/WP8-review-2.md, .orchestrate/evidence/WATERS/WP8-review-3.md, .orchestrate/evidence/WATERS/WP8-review.md. What failed in each review: review 1 (2026-11-25): Sky-coloured holes break the reflected bank beneath the trees (WP8.5), new; An off-screen body crossing the camera plane triggers a full-screen gather (WP8.7), new; The calm-water Sun reflection clips to flat white (WP8.1), new; Chrome leaves sky-coloured holes in the noon reflected bank (WP8.9), new; Chrome clips the calm noon glint to flat white (WP8.9), new; The zero-body cost view contains a visible unregistered float (WP8.10), new; Editing the Sun abruptly pitches the optics camera (outside the items), new | review 2 (2026-11-25): Hidden lake-bank sources borrow neighbouring terrain colour (WP8.5), new; Chrome reflects neighbouring terrain where the noon bank is hidden (WP8.9), new | review 3 (2026-11-25): Sky-coloured holes break the reflected bank beneath the trees (WP8.5), repeated; Chrome leaves sky-coloured holes in the noon reflected bank (WP8.9), repeated | review 4 (2026-11-25): The reflected hillside has a straight seam in its screen-edge fade (WP8.5), new; Chrome shows a straight seam in the noon lake screen-edge fade (WP8.9), new. A plan you keep ends with `KEEP WATERS WP8: ...`. Lead's steer: the owner's bar is a shipped high-end game's look and speed; references and pixel measurements diagnose, they never gate. Across four reviews each fix met a new screen-space reflection edge defect (hidden-bank borrowing, sky cutouts at the pines, now a straight seam in the screen-edge fade where scene_reflection drops the bank at hit.edge 0.995 while scene_fade still blends). Decide whether the reflection's edge handling needs one coherent design (a single continuous confidence weight shared by every contribution) rather than another local patch, and write that into the work package so the next builder fixes the class, not the instance. Keep items that a player would see at normal viewing; a defect visible only by pixel stepping at the frame edge is not a reason to keep failing. Do not void a running build.",
+      "at": "2026-11-25T23:08:03Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T20:17:27Z"
+    "at": "2026-11-25T23:08:03Z"
   },
   "design_history": [
     {
