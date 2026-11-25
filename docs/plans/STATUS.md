@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-19 of 36 modules done · 15 in progress · 2 to come
+20 of 36 modules done · 14 in progress · 2 to come
 
 ### Needs you now
 
@@ -312,12 +312,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 ### Now and next
 
 - The native Metal step runs any provider through one interface, and the copy/select witness is the first (APPLE-TILE WP13): Not Started · [plan](APPLE-TILE/PLAN.md)
-- A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome (EFFECT-GRAPH WP6): Ready for Review · [plan](EFFECT-GRAPH/PLAN.md) · [latest review](../../.orchestrate/evidence/EFFECT-GRAPH/WP6-review.md)
+- Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running (WATERS WP19): Not Started · [plan](WATERS/PLAN.md)
 - RENDER-2D WP6 A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given: Blocked: Needs Context: WP6.5, WP6.7 and WP6.8 can't be met as written while the Mac’s graphical session is locked. Unlock it so the orchestrator can rerun the window checks. The lead finds the missing fact, or asks you for it
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 
 ### Recently done
 
+- A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome (EFFECT-GRAPH WP6), 25 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/WP6-review.md)
 - Props and terrain are grounded: sky light is dimmed in creases and where things stand close together (RAY-TRACING WP5), 25 Nov · [review](../../.orchestrate/evidence/RAY-TRACING/WP5-review.md)
 - The long tests pass again, and running out of GPU timers is a named error, not a lost device (APPLE-PRESENTATION WP16), 25 Nov
 - The governor holds the display rate under forced load, then recovers step by step (APPLE-PRESENTATION WP7), 25 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md)
@@ -422,7 +423,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The valley's terrain and cooked meshes draw through the object and mesh stages in the main view and the Sun's shadow maps, through edits and device loss, with the cost of both paths on record (MESH-SHADING WP2), 18 Nov · [review](../../.orchestrate/evidence/MESH-SHADING/WP2-review.md)
 - The whole valley is in the ray-tracing structure, terrain and cooked meshes included, on screen or off, and an edited mesh is replaced there in the frame it changes on screen (RAY-TRACING WP2), 18 Nov · [review](../../.orchestrate/evidence/RAY-TRACING/WP2-review.md)
 - A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand (WATERS WP4), 18 Nov · [review](../../.orchestrate/evidence/WATERS/WP4-review.md)
-- On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces (MESH-SHADING WP1), 18 Nov · [review](../../.orchestrate/evidence/MESH-SHADING/WP1-review.md)
 
 ## All modules
 
@@ -438,11 +438,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | WP6 of 6 · Ready for Review |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 25 Nov |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 | Done 23 Nov |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION's last work package, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3 and CREATOR WP3 as well to close | Waiting: On Dependency, APPLE-PRESENTATION:WP11 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU | Done 14 Nov |
-| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | Waiting: On Dependency, EFFECT-GRAPH:WP6 |
+| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP19 of 20 · Not Started |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 | Done 23 Nov |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH WP2 and WP4 and ATMOSPHERE WP5 for its shade; EFFECT-GRAPH WP3 for its first frame; CONTENT-LOOP WP1 for placed volumes, and DEAD-TOOLS WP5 for the record of the library it copies; APPLE-PRESENTATION WP3 and CREATOR WP1 for controls and motion; ATMOSPHERE WP8 for mist and fog; WATERS WP8 for the sea; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP19 of 20 · Blocked: Needs Access |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS WP1 for its flow on the CPU; WATERS WP9 for its first running stream; WATERS WP10 and WP16 to close | Waiting: On Dependency, WATERS:WP9 |
