@@ -455,7 +455,7 @@
     {
       "id": "WP13",
       "name": "The native Metal step runs any provider through one interface, and the copy/select witness is the first",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
       "items": [
         {
@@ -465,8 +465,8 @@
           "lock": "gpu",
           "ask": "Read the segment and the witness. Is each of the seven duties the design lists (the candidate, the reset decision, native or twin, the encoder split, submission and completion, retention, the counters) written once, in the segment, and does the witness reach the frame host and the scene graph only through `NativeProvider`? Does the segment name no witness type, and assume no number, format or extent of textures?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-TILE/WP13/D13.1.md",
           "verdict": "",
           "review": ""
         },
@@ -476,8 +476,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/native_provider_/)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-TILE/WP13/D13.2.md",
           "verdict": "",
           "review": ""
         }

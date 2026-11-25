@@ -571,3 +571,11 @@
   D13.2 requires the second frame's output to hold content only its own rectangle has. Suggestions 3 and 4
   taken in the design and plan file; no Done item changed.
   [Full entry](../../../.orchestrate/evidence/APPLE-TILE/log-entries.md#entry-7).
+
+- 2026-11-25 Builder, WP13. Extracted the Metal segment and moved the copy/select witness onto
+  `NativeProvider`. Explicit witness runs still request Metal on either scene recipe. Ordinary
+  provider admission follows the generation recipe. The eight witness cases passed on Mac Metal.
+  The second provider proved exact rectangle changes, private history resets, twin history through
+  a refused acquisition, rejection to the named twin and provider-specific completion timing.
+  [D13.1](../../../.orchestrate/evidence/APPLE-TILE/WP13/D13.1.md) ·
+  [D13.2](../../../.orchestrate/evidence/APPLE-TILE/WP13/D13.2.md).
