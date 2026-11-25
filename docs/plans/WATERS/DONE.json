@@ -1276,7 +1276,7 @@
     {
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
-      "status": "blocked",
+      "status": "not_started",
       "depends_on": [
         "EFFECT-GRAPH:WP6"
       ],
@@ -1330,17 +1330,7 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0,
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "WP19.3 needs body queries to keep progressing when the frame host delays or skips a render submission.",
-        "work": {
-          "commit": "3110457e6aa5c4614235c5b85f78dfb49066adc0",
-          "branch": "build/waters",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/WATERS/WP19-handoff.md"
-      }
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP8",

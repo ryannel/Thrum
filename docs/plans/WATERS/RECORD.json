@@ -1853,12 +1853,12 @@
       }
     },
     "WP19": {
-      "definitions": "81f071e3f77d21b6462e86ed145d9a73cdc512476e8b93b831d82d135e7820a6",
+      "definitions": "65036fb0bc12102c5831efbd789ccfe55bf5b528c919a6153f6f8984e96a6c1a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix find",
-        "at": "2026-11-25T00:55:07Z"
+        "task": "WATERS WP19 is Blocked: Needs Dependency. WP19.3 (crest height reaches the island game's floats within two ticks for 90%",
+        "at": "2026-11-25T11:30:31Z"
       }
     },
     "WP20": {
@@ -1995,11 +1995,15 @@
     {
       "task": "WATERS WP13 is Blocked again on a three-look stop, now the sand-height cue: short straight-sided bright projections/fins under the pitching lip (WP13.5, WP13.11) on Metal and Chrome; eleven items pass. This is the same family as the gray flap already moved to WP20: geometry or compositing of the near-vertical pitching face. Lead's direction: stop blind visual looks on the breaker face inside WP13. Read the handoff and the warmed near-face diagnostic (job 20261125-064546-26938, output under tmp/waters-wp13-review/near-proof-*; wait for or use its result if present). Then either (a) fold all pitching-face artifacts (flap, fins, projections, curtain read) into WP20 as one diagnostic-first package \u2014 witness that attributes the cue to submitted geometry/depth winner vs foam compositing before any repair \u2014 and let WP13 pass on its remaining items; or (b) if you judge a clean pitching face is the core of WP13's outcome, make the diagnostic attribution the next bounded item and the repair follow from it. Record the choice as an assumption the owner can overturn. Bar: a shipped high-end game's breaker in motion; references diagnose, never gate.",
       "at": "2026-11-25T06:11:25Z"
+    },
+    {
+      "task": "WATERS WP19 is Blocked: Needs Dependency. WP19.3 (crest height reaches the island game's floats within two ticks for 90% of stations) fails because the water query is recorded only in Water::encode_upload and mapped after the frame submits; when the frame host skips a view under GPU backpressure, the query waits for the next admitted frame (open water 69% within two ticks, breakers 0%). The handoff (.orchestrate/evidence/WATERS/WP19-handoff.md, work on build/waters at 3110457e6) asks for the frame host and WATERS owners to decide how a tick query is admitted and completed independently of presentation slots, with the same use-tick semantics. Decide which module owns that (frame host vs WATERS), check it against the C4 contracts, and plan it as that module's next work package, ordered ahead of WATERS WP19.",
+      "at": "2026-11-25T11:30:31Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T06:11:25Z"
+    "at": "2026-11-25T11:30:31Z"
   },
   "design_history": [
     {
