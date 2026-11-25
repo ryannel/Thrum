@@ -1103,7 +1103,7 @@
         "functional_validation": "Metal verified virtual-time policy, external knobs with isolated history effects, failed and cancelled builds, identical route authority, and thermal tier and cadence recovery with zero added pipelines. Hardware Chrome WebGPU lowered and recovered scale with each timing source.",
         "experienced_quality": "The isolated real-time Metal T2 take verified all 600 scheduled images without missed opportunities or capture omissions. Native-size crops showed no flash, pop or oscillation, and a blind viewer could not identify either scale change.",
         "platform_performance": {
-          "mac": "Ordinary 1920×1080 Metal window at 120 Hz, with the repository GPU lock held exclusively. In the settled interval the unloaded and governed arms each missed 0 of 119 render-side opportunities, while the governor-off arm missed 54 of 119 under the same 1,000-round load. Scale first dropped at tick 234 and recovered to 100% in single steps by tick 507. The independent unloaded route changed scale zero times. T2 capture cost is measured separately.",
+          "mac": "Ordinary 1920\u00d71080 Metal window at 120 Hz, with the repository GPU lock held exclusively. In the settled interval the unloaded and governed arms each missed 0 of 119 render-side opportunities, while the governor-off arm missed 54 of 119 under the same 1,000-round load. Scale first dropped at tick 234 and recovered to 100% in single steps by tick 507. The independent unloaded route changed scale zero times. T2 capture cost is measured separately.",
           "browser": "Hardware Chrome passed with GPU timestamps and with timestamp queries removed from the device recipe. Each arm reports the timing source it consumed."
         },
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/README.md",
@@ -4958,7 +4958,7 @@
       "WHOLE-ENGINE-REVIEW.md": "c3705368bbc941ee64a6ea1c5bbb533854189cbad4c22469208d03aa0ae713e0",
       "modules/AUDIO-UI.md": "60373209c2d3d573f909f92575c75252ac1526a9d730ac8e1c68dc14f99392c0",
       "modules/ENVIRONMENT.md": "7be3e7766badf2fa7d799ea561433f8f9ea945bfc415df9be1cec123b294e00c",
-      "modules/NETWORKING.md": "cdbd00e4fb53625ac08a0143a01b7349824bbedb4f3fc8120d289df316b2ddba",
+      "modules/NETWORKING.md": "95cdb6a8ef980329448d0bb0d87eafe5baacd18966b84e1c3eb4e39bc8d4be42",
       "modules/PLATFORM-RUNTIME.md": "3cfd08165509dac1f0964fdb0d3f92215faf1a820a36a8e5c04ff05146171df1",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "70ed4608d576e6b8b1913341d0e170f7ad356989d88204d5144500c6474a1480",
