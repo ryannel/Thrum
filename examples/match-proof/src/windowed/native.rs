@@ -145,7 +145,7 @@ impl Drop for Output {
     fn drop(&mut self) {
         drop(self.rows.take());
         if let Some(writer) = self.writer.take() {
-            let _ = writer.join();
+            drop(writer.join());
         }
     }
 }
