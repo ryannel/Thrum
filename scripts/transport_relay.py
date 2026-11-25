@@ -82,7 +82,8 @@ async def run(args):
                 command = Path(args.control).read_text().strip()
                 if command != cut:
                     cut = command
-                    stats["cut_windows"].append({"command": cut, "wall_us": time.time_ns() // 1000})
+                    stats["cut_windows"].append({"command": cut, "wall_us": time.time_ns() // 1000,
+                                                 "downstream_packets_cut": stats["directions"][1]["cut"]})
             try:
                 await asyncio.wait_for(stop.wait(), 0.01)
             except TimeoutError:

@@ -185,7 +185,7 @@ def validate(match, peer, scenario):
         "client": validate_sample(peer.log, cfg),
     }
     if scenario == "playout":
-        analysis["cut_cases"] = validate_cuts(match, peer)
+        analysis["cut_cases"] = validate_cuts(match, peer, relay["cut_windows"])
     if peer.target == sockets.CHROME:
         assert peer.log.events("webgpu")[0]["adapter"], "no WebGPU canvas adapter recorded"
         visibility = peer.log.events("visibility")
@@ -238,21 +238,25 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
             "stalls": log.events("stall"), "skips": log.events("skip")}
 
 
-def validate_cuts(match, peer):
+def validate_cuts(match, peer, relay_edges):
     events = match.harness
     result = {}
+    assert len(relay_edges) == len(events) == 6, (relay_edges, events)
     # A recovered set can only cross after the relay reopened; allow A0 jitter,
     # a frame's observation and multiple catch-up turns for each isolated cut.
     advances = peer.log.events("advance")
     frames = peer.log.events("frame")
-    for cut, opened in zip(events[::2], events[1::2], strict=True):
+    for cut, opened, applied_cut, applied_open in zip(
+            events[::2], events[1::2], relay_edges[::2], relay_edges[1::2], strict=True):
         name = cut["name"]
-        start, end = cut["wall_us"], opened["wall_us"] + 325_000
+        assert [applied_cut["command"], applied_open["command"]] == ["cut download", "open"]
+        assert applied_open["downstream_packets_cut"] > applied_cut["downstream_packets_cut"], (name, applied_cut, applied_open)
+        start, end = applied_cut["wall_us"], applied_open["wall_us"] + 325_000
         before = next(row for row in reversed(advances) if row["wall_us"] < start)
         window = [row for row in advances if start <= row["wall_us"] <= end]
         stalls = [row for row in peer.log.events("stall") if start <= row["wall_us"] <= end]
         skips = [row for row in peer.log.events("skip") if start <= row["wall_us"] <= end]
-        bursts = [row for row in peer.log.events("burst") if opened["wall_us"] <= row["wall_us"] <= end]
+        bursts = [row for row in peer.log.events("burst") if applied_open["wall_us"] <= row["wall_us"] <= end]
         if name == "buffered":
             assert bursts and not stalls and not skips, (name, bursts, stalls, skips)
             assert all(row["rate"] == before["rate"] for row in window), (name, before, window)
@@ -263,7 +267,8 @@ def validate_cuts(match, peer):
                        for stall in stalls), "no submitted hold from the named stall"
         else:
             assert skips and all(row["first"] <= row["last"] for row in skips), (name, skips)
-        result[name] = {"cut": cut, "open": opened, "bursts": bursts, "stalls": stalls, "skips": skips}
+        result[name] = {"cut": cut, "open": opened, "relay": [applied_cut, applied_open],
+                        "bursts": bursts, "stalls": stalls, "skips": skips}
     return result
 
 

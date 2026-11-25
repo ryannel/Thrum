@@ -36,7 +36,11 @@ impl WindowedMatch {
     pub fn frame(&mut self, timestamp: f64) -> Result<(), JsError> {
         self.shell
             .frame_game(&mut self.game, timestamp)
-            .map_err(js_error)
+            .map_err(js_error)?;
+        if self.shell.status().overload_events != 0 {
+            return Err(JsError::new("driven world reported a clock overload"));
+        }
+        Ok(())
     }
 
     /// Follow the browser's actual document visibility.
