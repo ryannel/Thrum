@@ -18,8 +18,10 @@ use wgpu::util::DeviceExt;
 
 pub(crate) const SEA_RING_HALF_WIDTH: i32 = 32;
 pub(crate) const SURF_FINE_RING_HALF_WIDTH: i32 = 64;
-pub(crate) const SURF_METRE_RING_HALF_WIDTH: i32 = 80;
-pub(crate) const SURF_TWO_METRE_RING_HALF_WIDTH: i32 = 48;
+pub(crate) const SURF_HALF_METRE_RING_HALF_WIDTH: i32 = 240;
+pub(crate) const SURF_METRE_RING_HALF_WIDTH: i32 = 128;
+pub(crate) const SURF_TWO_METRE_RING_HALF_WIDTH: i32 = 72;
+pub(crate) const SURF_FOUR_METRE_RING_HALF_WIDTH: i32 = 40;
 pub(crate) const SURF_EIGHT_METRE_RING_HALF_WIDTH: i32 = 40;
 
 pub(super) struct Prepared {
@@ -615,9 +617,11 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             let mut previous_half_width = 0;
             for level in 0..17 {
                 let half_width = match (surf, level) {
-                    (true, 0 | 1) => SURF_FINE_RING_HALF_WIDTH,
+                    (true, 0) => SURF_FINE_RING_HALF_WIDTH,
+                    (true, 1) => SURF_HALF_METRE_RING_HALF_WIDTH,
                     (true, 2) => SURF_METRE_RING_HALF_WIDTH,
                     (true, 3) => SURF_TWO_METRE_RING_HALF_WIDTH,
+                    (true, 4) => SURF_FOUR_METRE_RING_HALF_WIDTH,
                     // Keep the mesh transition apart from the coarse foam window's edge.
                     (true, 5) => SURF_EIGHT_METRE_RING_HALF_WIDTH,
                     _ => SEA_RING_HALF_WIDTH,
