@@ -597,6 +597,38 @@ lowers scale first and effect knobs by tier after it, and a thermal state above 
 governor's state, which is scale, tier, each knob's value and the reason for the last change, is in the frame
 record and readable by the game.
 
+### Timestamp query sets and Metal's limit (WP16)
+
+Metal gives one process 32 live counter sample buffers, and wgpu makes one for every timestamp query set.
+Measured on the M3 Max on 25 November 2026: the 33rd `makeCounterSampleBuffer` fails with "Cannot allocate
+sample buffer" at every sample count from 8 to 512, and buffers held by another process do not count. The
+iPhone's limit is unmeasured and takes the same number until a device run records it. When Metal refuses,
+wgpu-core 30.0.1 loses the device (`handle_hal_error`), and reports nothing to an error scope. Every later
+creation on that device is invalid, and the first sign is a panic in `create_buffer_init` that names an
+unrelated buffer.
+
+WP7 gave each native 3D frame slot a second timestamp batch, with a query set of its own, so a governed frame
+could free its slot while its timestamps were read back. That doubled a frame host's query sets. Tests that
+share a process, as every binary under `./dev long-tests` does, then passed 32 from four test threads up, and
+`long-tests` failed on main at a25e1d13d. The merge tier runs each test in a process of its own and could not
+see it.
+
+Two mechanisms, both in the frame runtime's timing files:
+
+- **One timestamp query set for each frame slot.** Only the readback waits on a map. A batch that waits holds
+  the buffers it is read from and no query set, because the next frame on the slot is submitted after the
+  resolve of the one before and may write the same queries. WP7's behaviour stays: a governed frame frees its
+  slot while its timestamps wait, and samples are published in submission order.
+- **One count of live timestamp query sets in the process, checked before wgpu is asked.** Every timestamp
+  query set `thrum-render` creates is made through it, the ray build probe's included
+  ([ruling](../ARCHITECTURE.md#interfaces)). On the Metal backend a creation that would pass 32 is refused
+  with a typed timing error that names the count and the limit, and the device is untouched. The count frees a
+  query set only when Metal has: wgpu keeps a dropped query set alive until the submissions that used it
+  complete. A frame host that asked for timing and is refused fails its preparation with that error, as any
+  failed timing preparation does. It is not prepared without timing, because a governor with no GPU time
+  would pass as one that governs.
+  The ray build probe is an observer and is simply not made, as on a device with no timestamps.
+
 ### MetalFX exposure and the normalising fallback (WP8)
 
 The tone pass computes the exposed colour as `stored / A`, where A is the storage scale p times the camera's

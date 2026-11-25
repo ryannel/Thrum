@@ -638,6 +638,50 @@
       "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that."
     },
     {
+      "id": "WP16",
+      "name": "The long tests pass again, and running out of GPU timers is a named error, not a lost device",
+      "status": "not_started",
+      "quality_bar": "A GPU profiler as dependable as a shipped engine's: asking for frame timing never takes the device down, and a test run that runs out of a platform resource says which one.",
+      "items": [
+        {
+          "id": "WP16.1",
+          "statement": "A native 3D frame host prepared with GPU timing on creates at most one timestamp query set for each of its frame slots. A governed frame still frees its slot for the next frame while its own timestamps wait on their readback, and both frames' samples are published in submission order with their pass times. Guard: a GPU test on the creation counters; only a device shows what a host creates and when a readback maps.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=one_query_set_for_each_frame_slot)' --no-tests=fail",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP16.2",
+          "statement": "`crates/thrum-render/src` creates timestamp query sets at one call site, behind the process's count. On Metal, with 32 live, a frame host with timing on is refused with a typed timing error that names the count and the limit of 32, and the ray build probe is not made. The device is not lost: a host already drawing on it draws its next frame. When one holder is dropped, the refused host prepares. Guard: a GPU test that holds 32 real query sets; only Metal shows that the count refuses before the device does.",
+          "check": "git grep -n 'create_query_set(' -- crates/thrum-render/src | wc -l | grep -qx ' *1' && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=creation_past_the_limit_is_refused_and_the_device_survives)' --no-tests=fail",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP16.3",
+          "statement": "In one process, frame hosts with timing on are prepared, draw a frame and are dropped, one after another, until 64 timestamp query sets have been created. Every host prepares and none loses its device. Guard: a GPU test; only a device shows when Metal frees a dropped query set.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=hosts_made_and_dropped_in_turn_never_reach_the_limit)' --no-tests=fail",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP16.4",
+          "statement": "Run with 16 test threads in one process, each of these passes five times in a row: `ray_tracing_gpu` of `v1-game`, and `scene_view_air_shaded_gpu`, the library's tests and `timestamp_budget` of `thrum-render`. The first three are the binaries that failed `long-tests` at a25e1d13d. Record: the five runs' output.",
+          "check": "for i in 1 2 3 4 5; do THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --features draw-probe,thrum-render/creation-counters --test ray_tracing_gpu -- --test-threads=16 && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --lib --test scene_view_air_shaded_gpu --test timestamp_budget -- --test-threads=16 || exit 1; done",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "WP7",
       "name": "The governor holds the display rate under forced load, then recovers step by step",
       "items": [

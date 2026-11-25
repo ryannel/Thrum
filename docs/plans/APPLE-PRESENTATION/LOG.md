@@ -462,3 +462,11 @@
   The deferred readback path applies to governed offscreen rendering. The numbered display-link
   path retains its previous admission behavior. The scoped live check passed at 120 Hz with 0/120
   settled misses unloaded, 0/119 governed and 56/119 governor-off. Its unloaded route held 100%.
+
+- 2026-11-25 Planner: the main-branch check `long-tests` failed at a25e1d13d (last pass 5b5a0aa3e), and the
+  cause is WP7's fe6716e44, which gave each native 3D frame slot a second timestamp query set. Metal allows a
+  process 32, measured here: the 33rd fails, at any sample count, whatever other processes hold. wgpu then loses
+  the device, and the next buffer creation panics. The binaries built at a25e1d13d fail from four test threads
+  up and pass with three or fewer, run alone, so it is not other GPU work. WP16 is planned before WP7: one
+  query set a slot, and a count that refuses the 33rd with a typed error.
+  [Design](DESIGN.md#timestamp-query-sets-and-metals-limit-wp16)

@@ -324,6 +324,15 @@ tests passing.
   every module builds against that copy, and its patches leave the WGSL path and every exact baseline as they
   are. No shipping package links the cook, and nothing is posted upstream.
 
+**Seam ruling for `APPLE-PRESENTATION` WP16.** Metal allows a process 32 live timestamp query sets, and passing
+that loses the device, so `thrum-render` keeps
+[one count of them](APPLE-PRESENTATION/DESIGN.md#timestamp-query-sets-and-metals-limit-wp16) in the frame
+runtime's timing files. The ray build probe makes a query set of its own in `RAY-TRACING`'s
+`synthetic/raytrace/build_probe.rs`. The `APPLE-PRESENTATION` WP16 builder changes that one call site to create
+it through the count, and when the count refuses, the probe is not made, as on a device with no timestamps.
+No item of `RAY-TRACING` changes. Once built, the count belongs to the frame runtime: a module that needs a
+timestamp query set in `thrum-render` creates it there.
+
 **Seam ruling for `CREATOR` WP2.** The profiler needs the frame host to stop timing frames while it is off, which
 no interface offered. The timing-demand switch and the "not requested" reason are built in `thrum-render`'s
 runtime and timing files by the `CREATOR` WP2 builder, after `APPLE-TILE:WP3` is Done, with the behaviour
