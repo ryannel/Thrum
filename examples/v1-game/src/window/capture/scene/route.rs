@@ -17,6 +17,8 @@ use super::{
 use crate::{CameraRoute, GameHost};
 
 #[cfg(feature = "creation-counters")]
+mod creation;
+#[cfg(feature = "creation-counters")]
 use super::CreationProof;
 
 /// Phase tolerance on the logged presentation alpha.
@@ -144,24 +146,13 @@ pub(super) fn record(
         }),
     )?;
     #[cfg(feature = "creation-counters")]
-    let mut native_creations_at_ready = 0;
+    let creation = request
+        .creation_proof
+        .map(|arm| creation::Ready::mark(arm, driver.host()))
+        .transpose()?;
     #[cfg(feature = "creation-counters")]
-    if let Some(arm) = request.creation_proof {
-        let report = driver.host().creation_checkpoint();
-        if !report.ready || report.frames == 0 {
-            return Err("route readiness requires a prepared device and a cooked draw".to_owned());
-        }
-        let ready = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|error| error.to_string())?;
-        eprintln!(
-            "THRUM_METAL_READY {} {}",
-            ready.as_nanos(),
-            report.generation
-        );
-        if arm == CreationProof::Launch {
-            return Ok(());
-        }
+    if request.creation_proof == Some(CreationProof::Launch) {
+        return Ok(());
     }
     // The creation proof drives the normal render path without opening a readback tap.
     let capture_images = !request.governor_thermal;
@@ -376,17 +367,8 @@ pub(super) fn record(
         }
     }
     #[cfg(feature = "creation-counters")]
-    if let Some(arm) = request.creation_proof {
-        if arm == CreationProof::LatePipeline {
-            prepare_late_pipeline(device, driver.host());
-        }
-        let report = driver.host().creation_checkpoint();
-        std::fs::write(directory.join("creation.txt"), report.to_string())
-            .map_err(|error| error.to_string())?;
-        eprintln!(
-            "THRUM_METAL_FINISHED {} {}",
-            report.frames, report.violations
-        );
+    if let Some(ready) = creation {
+        ready.finish(device, driver.host(), directory)?;
     }
     #[cfg(feature = "creation-counters")]
     if let Some(provider) = driver.host().native_provider_report() {
@@ -443,27 +425,6 @@ pub(super) fn record(
         return Err(format!("route ended before checkpoint {}", missed.name));
     }
     Ok(())
-}
-
-#[cfg(feature = "creation-counters")]
-fn prepare_late_pipeline(site: &thrum_render::runtime::DeviceSite, host: &crate::host::Runtime) {
-    let module = site.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("late pipeline control"),
-        source: wgpu::ShaderSource::Wgsl("@compute @workgroup_size(1) fn main() {}".into()),
-    });
-    let pipeline = site.compute(&wgpu::ComputePipelineDescriptor {
-        label: Some("late pipeline control"),
-        layout: None,
-        module: &module,
-        entry_point: Some("main"),
-        compilation_options: Default::default(),
-        cache: None,
-    });
-    assert!(
-        host.creation_report().violations > 0,
-        "late control must register on the live generation"
-    );
-    drop(pipeline);
 }
 
 #[cfg(feature = "creation-counters")]
