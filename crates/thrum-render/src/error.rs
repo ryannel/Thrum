@@ -417,6 +417,13 @@ pub enum EffectGraphError {
     TickPassRequiresRetainedRead(String),
     /// A tick pass may only read the committed side of a history.
     TickPassRequiresPrevious(String),
+    /// A tick read is incompatible with its resource descriptor.
+    InvalidTickRead {
+        /// Name of the tick pass.
+        pass: String,
+        /// Descriptor validation failure.
+        source: crate::graph::GraphError,
+    },
     /// A 2D scene does not support the named tick pass.
     TickPassIn2d(String),
 }
@@ -432,6 +439,9 @@ impl fmt::Display for EffectGraphError {
             }
             Self::TickPassRequiresPrevious(pass) => {
                 write!(f, "Tick pass {pass} must read history by previous")
+            }
+            Self::InvalidTickRead { pass, source } => {
+                write!(f, "Tick pass {pass} has an invalid read: {source}")
             }
             Self::TickPassIn2d(pass) => write!(f, "2D scene refuses tick pass {pass}"),
             Self::AfterOpaqueDepthConflict(pass) => write!(
@@ -492,7 +502,14 @@ impl fmt::Display for EffectGraphError {
     }
 }
 
-impl Error for EffectGraphError {}
+impl Error for EffectGraphError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::InvalidTickRead { source, .. } => Some(source),
+            _ => None,
+        }
+    }
+}
 
 /// Typed cause of a GPU-facing frame operation failure.
 #[derive(Debug)]

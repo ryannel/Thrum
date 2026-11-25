@@ -371,12 +371,12 @@ impl EffectGraph {
                 }
             }
         }
-        for pass in &self.tick_passes {
+        for (index, pass) in self.tick_passes.iter().enumerate() {
             if !names.insert(&pass.name) {
                 return Err(Error::DuplicateEffectPass(pass.name.clone()));
             }
             for read in &pass.reads {
-                let (_, scope) = self
+                let (descriptor, scope) = self
                     .resources
                     .get(read.resource)
                     .ok_or(Error::UnknownEffectResource)?;
@@ -400,6 +400,12 @@ impl EffectGraph {
                     }
                     _ => {}
                 }
+                descriptor
+                    .validate_access(&read.range, read.kind, read.view, index)
+                    .map_err(|source| Error::InvalidTickRead {
+                        pass: pass.name.clone(),
+                        source,
+                    })?;
             }
         }
         Ok(())

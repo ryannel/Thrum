@@ -175,3 +175,68 @@ fn tick_stage_rules_only_allow_committed_retained_compute_reads_in_3d() {
         );
     }
 }
+
+#[test]
+fn tick_stage_rules_validate_texture_read_descriptors() {
+    use crate::{
+        error::EffectGraphError,
+        graph::{GraphError, TextureKind},
+    };
+
+    let name = "query texture";
+    let mut graph = EffectGraph {
+        resources: vec![(
+            ResourceDescriptor::Texture {
+                dimension: TextureKind::D2,
+                width: 8,
+                height: 8,
+                layers: 1,
+                mips: 1,
+                samples: 1,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING,
+            },
+            ResourceScope::Persistent {
+                owner: 0,
+                epoch: 1,
+                initialized: true,
+            },
+        )],
+        tick_passes: vec![TickPass {
+            name: name.into(),
+            reads: vec![EffectAccess {
+                resource: 0,
+                range: 0..1,
+                kind: AccessKind::SampledRead,
+                view: None,
+                history: None,
+            }],
+        }],
+        ..Default::default()
+    };
+    assert_eq!(graph.validate(), Ok(()));
+
+    let invalid_read = |source| {
+        Err(EffectGraphError::InvalidTickRead {
+            pass: name.into(),
+            source,
+        })
+    };
+    graph.tick_passes[0].reads[0].range = 1..2;
+    assert_eq!(
+        graph.validate(),
+        invalid_read(GraphError::InvalidRange { pass: 0 })
+    );
+    graph.tick_passes[0].reads[0].range = 0..1;
+    graph.tick_passes[0].reads[0].view = Some(wgpu::TextureViewDimension::D3);
+    assert_eq!(
+        graph.validate(),
+        invalid_read(GraphError::InvalidTextureView { pass: 0 })
+    );
+    graph.tick_passes[0].reads[0].view = None;
+    graph.tick_passes[0].reads[0].kind = AccessKind::StorageRead;
+    assert_eq!(
+        graph.validate(),
+        invalid_read(GraphError::UsageMismatch { pass: 0 })
+    );
+}

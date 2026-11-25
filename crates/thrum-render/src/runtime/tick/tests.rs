@@ -151,6 +151,10 @@ struct Fixture {
 
 impl Fixture {
     async fn new(name: &str) -> Option<Self> {
+        Self::with_reconstruction(name, false).await
+    }
+
+    async fn with_reconstruction(name: &str, reconstruction: bool) -> Option<Self> {
         let test_gpu = thrum_test_support::gpu(name, Some(wgpu::Backend::Metal))?;
         assert_eq!(test_gpu.adapter.get_info().backend, wgpu::Backend::Metal);
         let (device, queue) = crate::test_device::portable(&test_gpu, None).await;
@@ -174,6 +178,7 @@ impl Fixture {
         let mail = Arc::new(Mutex::new(Mailbox::default()));
         let mut scene = SyntheticScene::grid(1).expect("one-cell scene");
         scene.sun_shadows = false;
+        scene.view = scene.view.with_reconstruction(reconstruction);
         let mut host = FrameHost::new(
             &capabilities,
             &queue,
@@ -190,7 +195,7 @@ impl Fixture {
                 due: 0,
                 points: Vec::new(),
             },
-            StaticScene::default(),
+            StaticScene::with_view(scene.view),
             scene,
             1.0,
         )
@@ -452,7 +457,9 @@ impl TickSubmissionPermission for Permission {
 fn tick_stage_lifecycle_permission_capture_without_rendering_and_timing() {
     pollster::block_on(async {
         crate::timestamp_permit::hold();
-        let Some(mut f) = Fixture::new("tick_stage_lifecycle_permission").await else {
+        let Some(mut f) =
+            Fixture::with_reconstruction("tick_stage_lifecycle_permission", true).await
+        else {
             return;
         };
         f.attach(true);
@@ -547,6 +554,25 @@ fn tick_stage_lifecycle_permission_capture_without_rendering_and_timing() {
         let untimed = f.finish_view();
         assert!(!untimed.timing_requested && untimed.gpu_pass_ns.is_none());
         f.expect_answers(&[oracle.answer(post)]);
+        oracle.commit(4);
+
+        assert!(f.host.enable_governor(crate::governor::DisplayRecord {
+            interval: STEP,
+            thermal: Default::default(),
+        }));
+        for requested in [false, true] {
+            f.host.set_timing_requested(requested);
+            let post = f.schedule(&[0])[0];
+            f.draw();
+            let governed = f.finish_view();
+            let passes = governed
+                .gpu_pass_ns
+                .expect("governor still needs frame timings");
+            assert!(!passes.passes().is_empty());
+            assert_eq!(passes.get(field::PASS).is_some(), requested);
+            f.expect_answers(&[oracle.answer(post)]);
+            oracle.commit(post.endpoint.tick);
+        }
     });
 }
 

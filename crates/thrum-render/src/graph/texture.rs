@@ -1,9 +1,7 @@
 //! Texture-kind and binding validation, performed only during preparation.
-use super::{
-    Access, AccessKind, CompiledGraph, FrameGraph, GraphError, PipelineKey, ResourceDescriptor,
-};
+use super::{AccessKind, CompiledGraph, FrameGraph, GraphError, PipelineKey, ResourceDescriptor};
 use crate::capabilities::DeviceCapabilities;
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, ops::Range};
 
 /// Physical texture kind. Cube faces are layers; volume depth shrinks per mip.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,7 +71,9 @@ fn storage(kind: AccessKind) -> bool {
 
 pub(super) fn validate_access(
     descriptor: &ResourceDescriptor,
-    access: &Access,
+    range: &Range<u64>,
+    kind: AccessKind,
+    explicit_view: Option<wgpu::TextureViewDimension>,
     pass: usize,
 ) -> Result<(), GraphError> {
     let ResourceDescriptor::Texture {
@@ -83,24 +83,24 @@ pub(super) fn validate_access(
         ..
     } = descriptor
     else {
-        return if access.view.is_some() {
+        return if explicit_view.is_some() {
             Err(GraphError::InvalidTextureView { pass })
         } else {
             Ok(())
         };
     };
-    if matches!(access.kind, AccessKind::CopyRead | AccessKind::CopyWrite) {
+    if matches!(kind, AccessKind::CopyRead | AccessKind::CopyWrite) {
         return Ok(());
     }
     let attachment = matches!(
-        access.kind,
+        kind,
         AccessKind::AttachmentClear | AccessKind::AttachmentLoad | AccessKind::DepthAttachmentRead
     );
     if attachment && matches!(dimension, TextureKind::D3 { .. }) {
         return Err(GraphError::VolumeAttachment { pass });
     }
-    let view = access.view.unwrap_or_else(|| dimension.view(*layers));
-    if storage(access.kind)
+    let view = explicit_view.unwrap_or_else(|| dimension.view(*layers));
+    if storage(kind)
         && matches!(
             view,
             wgpu::TextureViewDimension::Cube | wgpu::TextureViewDimension::CubeArray
@@ -108,9 +108,8 @@ pub(super) fn validate_access(
     {
         return Err(GraphError::CubeStorageView { pass });
     }
-    let count = access.range.end - access.range.start;
-    let one_mip =
-        access.range.start / u64::from(*layers) == (access.range.end - 1) / u64::from(*layers);
+    let count = range.end - range.start;
+    let one_mip = range.start / u64::from(*layers) == (range.end - 1) / u64::from(*layers);
     let compatible = match view {
         wgpu::TextureViewDimension::D3 => matches!(dimension, TextureKind::D3 { .. }),
         wgpu::TextureViewDimension::D2 => {
@@ -120,18 +119,18 @@ pub(super) fn validate_access(
         wgpu::TextureViewDimension::D2Array => {
             !matches!(dimension, TextureKind::D3 { .. })
                 && (one_mip
-                    || (access.range.start.is_multiple_of(u64::from(*layers))
+                    || (range.start.is_multiple_of(u64::from(*layers))
                         && count.is_multiple_of(u64::from(*layers))))
         }
         wgpu::TextureViewDimension::Cube => {
             *dimension == TextureKind::Cube
                 && count.is_multiple_of(6)
-                && access.range.start.is_multiple_of(6)
+                && range.start.is_multiple_of(6)
         }
         _ => false,
     };
     if !compatible
-        || (storage(access.kind) && (*samples != 1 || (access.view.is_some() && !one_mip)))
+        || (storage(kind) && (*samples != 1 || (explicit_view.is_some() && !one_mip)))
         || (attachment
             && (!one_mip
                 || !matches!(

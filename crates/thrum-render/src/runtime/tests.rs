@@ -179,6 +179,16 @@ pub(super) struct StaticScene {
     fail_next: std::cell::Cell<bool>,
     invalid_lighting: std::cell::Cell<bool>,
     offset: f64,
+    view: SyntheticView,
+}
+
+impl StaticScene {
+    pub(super) fn with_view(view: SyntheticView) -> Self {
+        Self {
+            view,
+            ..Self::default()
+        }
+    }
 }
 
 impl SceneSource<SourceTick> for StaticScene {
@@ -209,7 +219,7 @@ impl SceneSource<SourceTick> for StaticScene {
             lighting.unwrap_or(FrameLighting::Diagnostic(light))
         };
         Ok(SceneFrame {
-            view: SyntheticView::default(),
+            view: self.view,
             lighting,
         })
     }

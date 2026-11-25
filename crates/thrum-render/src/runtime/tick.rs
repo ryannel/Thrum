@@ -68,7 +68,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     pub(super) fn ask_tick_stage_for_view(&mut self) -> Result<(), FrameError> {
-        self.submit_tick_work(self.timing_requested || self.governor.is_some())
+        self.submit_tick_work(self.timing_requested)
     }
 
     fn submit_tick_work(&mut self, time_with_view: bool) -> Result<(), FrameError> {

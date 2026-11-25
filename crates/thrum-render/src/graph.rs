@@ -107,6 +107,24 @@ impl ResourceDescriptor {
             }
         }
     }
+
+    pub(crate) fn validate_access(
+        &self,
+        range: &Range<u64>,
+        kind: AccessKind,
+        view: Option<wgpu::TextureViewDimension>,
+        pass: usize,
+    ) -> Result<(), GraphError> {
+        if range.start >= range.end || range.end > self.units() {
+            return Err(GraphError::InvalidRange { pass });
+        }
+        texture::validate_access(self, range, kind, view, pass)?;
+        if !self.supports(kind) {
+            return Err(GraphError::UsageMismatch { pass });
+        }
+        Ok(())
+    }
+
     fn supports(&self, kind: AccessKind) -> bool {
         match self {
             Self::AccelerationStructure => {
@@ -1531,15 +1549,12 @@ impl FrameGraph {
                 let Some(resource) = self.resources.get(access.resource.index) else {
                     return Err(GraphError::InvalidRange { pass: index });
                 };
-                if access.range.start >= access.range.end
-                    || access.range.end > resource.descriptor.units()
-                {
-                    return Err(GraphError::InvalidRange { pass: index });
-                }
-                texture::validate_access(&resource.descriptor, access, index)?;
-                if !resource.descriptor.supports(access.kind) {
-                    return Err(GraphError::UsageMismatch { pass: index });
-                }
+                resource.descriptor.validate_access(
+                    &access.range,
+                    access.kind,
+                    access.view,
+                    index,
+                )?;
                 if pass.accesses[..a_index].iter().any(|other| {
                     other.resource == access.resource
                         && ((overlap(&other.range, &access.range)
