@@ -318,9 +318,9 @@ impl SpritePass {
         scene: &SpriteScene,
         world: &mut SpriteWorld,
         bindings: &mut SpriteBindings,
-    ) -> Result<(), RenderError> {
+    ) -> Result<std::time::Duration, RenderError> {
         if scene.cooked.is_empty() {
-            return Ok(());
+            return Ok(std::time::Duration::ZERO);
         }
         let changed = self.cooked.update(
             scene,
@@ -336,10 +336,14 @@ impl SpritePass {
         let same_tick = self.world_source == world.source();
         if changed || !same_tick {
             world.refresh_cooked(scene, same_tick, |row| self.resolve(scene, row).ok());
+            let start = Instant::now();
+            world.order_tick(scene.order_band);
+            let ordering = start.elapsed();
             // Repack retained rows if a publication changes their table indices or density.
             self.forget_world_source();
+            return Ok(ordering);
         }
-        Ok(())
+        Ok(std::time::Duration::ZERO)
     }
 
     fn resolve(&self, scene: &SpriteScene, row: SpriteRow) -> Result<FrameInput, Missing> {

@@ -82,8 +82,10 @@ sh examples/v1-game/web/build.sh --proving
 python3 -m http.server 8765 --bind 127.0.0.1 --directory target/v1-game-web-proving
 ```
 
-Open [the moving sprite field](http://127.0.0.1:8765/?scene=sprites&rows=500&assets=http%3A%2F%2F127.0.0.1%3A7878)
-and replace `source/field/walk.png` with a saved revision. The field uses `walk.0`, `walk.1`
+Open [the moving sprite field](http://127.0.0.1:8765/?scene=sprites&rows=500&assets=http%3A%2F%2F127.0.0.1%3A7878).
+With `scene=sprites`, `assets` points to the watched sheet store. If the watcher uses a different
+port, change the origin in `assets`. Replace `tmp/my-sheets/source/field/walk.png` with a saved
+revision. The field uses `walk.0`, `walk.1`
 and `walk.2`. The generated `edits/recolour.png` and `edits/repack.png` can each be saved as
 `walk.png` to see a live switch.
 

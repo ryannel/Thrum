@@ -35,7 +35,8 @@ async function checkStartupRefusals(cdp, origin, timeout, waitFor) {
     const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
     const rows = [];
     for (const [query, expected] of [
-      ['assets=/cooked', 'cooked placements (?assets)'],
+      ['assets=/cooked&meshes=on', 'valley meshes (?meshes)'],
+      ['placed-clouds=/cooked', 'placed clouds (?placed-clouds)'],
       ['field', 'the flythrough field (?field)'],
       ['meshes=on', 'valley meshes (?meshes)'],
       ['field-meshes', 'field meshes (?field-meshes)'],

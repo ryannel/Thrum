@@ -17,14 +17,77 @@ function paletteCounts(rgba) {
 
 export function checkSheetFrame(raw, frame) {
   assert([1, 2].includes(frame.sheet_generation), 'one of the two cooked generations must draw');
+  const hits = paletteCounts(raw);
+  assertSheetFrame(frame, hits, frame.sheet_generation - 1);
+  frame.sheet_palette_pixels = hits;
+}
+
+function assertSheetFrame(frame, hits, active) {
+  assert.equal(frame.surface_presented, true);
   assert.equal(frame.sprite_world_rows, 500, 'every cooked row draws');
   assert.equal(frame.pending_sheet_rows, 0);
   assert.equal(frame.missing_frame_rows, 0);
-  const hits = paletteCounts(raw);
-  const active = frame.sheet_generation - 1;
   assert(hits[active] > 64 && hits[1 - active] === 0,
     `submission ${frame.submission_id} shows wrong, missing or mixed art: ${hits}`);
-  frame.sheet_palette_pixels = hits;
+}
+
+// Exercise the guide URL on the ordinary page, which owns its own publication
+// polling and animation loop. Restore the original image after the T2 take.
+export async function checkPublicSheetPage(call, url, gameOnPage, waitFor, restoreArt) {
+  const statusAt = async expectedUrl => {
+    const { result } = await call('Runtime.evaluate', {
+      expression: `location.href === ${JSON.stringify(expectedUrl)} && document.querySelector('#status')?.textContent`,
+      returnByValue: true,
+    });
+    return result.value;
+  };
+  const refusedUrl = `${url}&meshes=on`;
+  await call('Page.navigate', { url: refusedUrl });
+  const placementRefusal = await waitFor(async () => {
+    const status = await statusAt(refusedUrl);
+    return /^(Startup fault:|Running)/.test(status) && status;
+  }, 30000, 'cooked mesh refusal in the sprite scene');
+  assert.match(placementRefusal, /^Startup fault:.*2D scene refuses valley meshes/);
+  await call('Page.navigate', { url });
+  const health = async () => {
+    const status = await statusAt(url);
+    if (/fault:/i.test(status)) throw new Error(status);
+    return status;
+  };
+  const status = await waitFor(async () => {
+    const message = await health();
+    return /^Running the sprite scene/.test(message) && message;
+  }, 30000, 'sprite sheet guide page startup');
+  const game = await gameOnPage();
+  await game.invoke('game.begin_submitted_capture(1);');
+  try {
+    const readFrame = (generation, palette) => waitFor(async () => {
+      await health();
+      const result = await game.invoke(`
+        const image = game.next_submitted_image();
+        if (!image) return null;
+        const frame = JSON.parse(image.metadata);
+        const paletteCounts = ${paletteCounts.toString()};
+        const colours = args[0];
+        return { frame, hits: paletteCounts(image.pixels) };
+      `, [colours]);
+      if (result?.frame.sheet_generation != null) {
+        const current = result.frame.sheet_generation;
+        assert(current === 2 || current === generation, `unexpected guide page generation ${current}`);
+        assertSheetFrame(result.frame, result.hits, current === 2 ? 1 : palette);
+        if (current === generation) return result;
+      }
+    }, 30000, `guide page submission using generation ${generation}`);
+    const before = await readFrame(2, 1);
+    const save_monotonic_ns = await restoreArt();
+    const after = await readFrame(3, 0);
+    assert(after.frame.submission_id > before.frame.submission_id);
+    assert(after.frame.tick > before.frame.tick);
+    assert.notDeepEqual(after.frame.sprite_view_centre, before.frame.sprite_view_centre);
+    return { url, status, placementRefusal, save_monotonic_ns, before, after };
+  } finally {
+    await game.invoke('game.end_submitted_capture();');
+  }
 }
 
 async function products(output, head) {

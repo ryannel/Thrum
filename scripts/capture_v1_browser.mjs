@@ -7,10 +7,10 @@ import { spawn, execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
-import { checkSheetFrame, checkSheetSwitch } from './check_sprite_sheets_browser.mjs';
+import { checkPublicSheetPage, checkSheetFrame, checkSheetSwitch } from './check_sprite_sheets_browser.mjs';
 import { captureReceiver } from './browser_capture_receiver.mjs';
 import { finalizeBrowserCapture, openLauncherControl } from './browser_capture_shutdown.mjs';
-import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
+import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice, existingGame, releaseGameGraphics, unloadGamePage } from './check_v1_browser.mjs';
 const decompress = promisify(gunzip);
 const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -342,6 +342,27 @@ try {
         await sheetEdit;
         manifest.sprite_sheets = await checkSheetSwitch(output, record, manifest.records,
           manifest.cooked, await cookedHead(output), requests);
+        await unloadGamePage(cdp, sessionId, 30000);
+        const publicUrl = `${manifest.origin}/?scene=sprites&rows=500&assets=${encodeURIComponent(cookedOrigin)}`;
+        const call = (method, params) => cdp.call(method, params, sessionId);
+        let publicGame;
+        const gameOnPage = async () => {
+          publicGame = await existingGame(cdp, sessionId);
+          return publicGame;
+        };
+        const restoreArt = async () => {
+          const replacement = path.join(output, 'edits/restore.png');
+          await fs.copyFile(path.join(output, 'fixture-source/field/walk.png'), replacement);
+          await fs.rename(replacement, path.join(spriteSource, 'field/walk.png'));
+          return String(process.hrtime.bigint());
+        };
+        try {
+          const proof = await checkPublicSheetPage(call, publicUrl, gameOnPage, waitFor, restoreArt);
+          await fs.writeFile(path.join(output, 'public-sheet-page.json'), JSON.stringify(proof, null, 2) + '\n');
+        } finally {
+          if (publicGame) await releaseGameGraphics(cdp, sessionId, publicGame);
+          await unloadGamePage(cdp, sessionId, 30000);
+        }
       }
       const syncStart = performance.now();
       if (spriteField) {

@@ -2604,7 +2604,7 @@ async function main() {
   console.log(`PASS ${results.length} case(s); artifacts: ${output}`);
 }
 
-export { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice, existingGame };
+export { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice, existingGame, releaseGameGraphics, unloadGamePage };
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => { console.error(error); process.exitCode = 1; });
 }

@@ -76,8 +76,8 @@
         }
         if (sprites) {
           for (const [key, feature] of [
-            ["assets", "cooked placements"], ["field", "the flythrough field"],
-            ["meshes", "valley meshes"], ["field-meshes", "field meshes"],
+            ["field", "the flythrough field"], ["meshes", "valley meshes"],
+            ["field-meshes", "field meshes"], ["placed-clouds", "placed clouds"],
             ["diagnostic-clouds", "diagnostic clouds"], ["material", "a cooked material hook"],
           ]) {
             if (probe.has(key)) throw new Error(`2D scene refuses ${feature} (?${key})`);
@@ -137,9 +137,13 @@
             (spriteRows !== undefined || probe.has("culling") || ![null, "off"].includes(probe.get("reconstruction")))) {
           throw new Error("Sprite sampling probes require the ordinary 2D path without a sprite field");
         }
-        const spriteStore = sprites && cooked ? await fetch_cooked_valley(probe.get("assets")) : null;
-        if (spriteStore && (probe.has("sprite-probe") || probe.has("culling") || ![null, "off"].includes(probe.get("reconstruction")))) {
-          throw new Error("Cooked sheets require the moving sprite field");
+        let spriteStore = null;
+        if (sprites && cooked) {
+          if (probe.has("sprite-probe") || probe.has("culling") || ![null, "off"].includes(probe.get("reconstruction"))) {
+            throw new Error("Cooked sheets require the moving sprite field");
+          }
+          status.textContent = "Fetching cooked sprite sheets…";
+          spriteStore = await fetch_cooked_valley(probe.get("assets"));
         }
         const game = spriteStore
           ? await create_cooked_sprite_game(canvas, spriteStore, spriteRows ?? 1000)
@@ -169,15 +173,18 @@
         const spriteStore = null;
         const game = await create_browser_game(canvas, cooked && probe.get("stars") !== "off", false, false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
         // @end
-        // ?assets=<thrum-cook watch --serve origin> draws the cooked valley; ?stars=off is a visual control.
+        // ?assets follows the cooker's publications for the selected scene.
         if (cooked) {
-          status.textContent = "Fetching the cooked valley…";
-          const valley = spriteStore ?? await fetch_cooked_valley(probe.get("assets"));
-          if (!spriteStore) game.attach_cooked_valley(valley);
+          let store = spriteStore;
+          if (!store) {
+            status.textContent = "Fetching the cooked valley…";
+            store = await fetch_cooked_valley(probe.get("assets"));
+            game.attach_cooked_valley(store);
+          }
           // Follow later publications: each swaps in as it uploads.
           (async () => {
             for (;;) {
-              try { await valley.next_publication(); }
+              try { await store.next_publication(); }
               catch (error) {
                 console.warn(`Cooked publication poll failed: ${error}`);
                 await new Promise((resolve) => setTimeout(resolve, 1000));

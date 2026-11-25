@@ -340,7 +340,6 @@ impl SpriteWorld {
             row.ordered.centre[1] += (x + dx) * sin - (y + dy) * cos;
             row.ordered.radius = radius;
         }
-        self.order_tick(scene.order_band);
     }
 
     pub(super) fn order_tick(&mut self, band: f64) {
