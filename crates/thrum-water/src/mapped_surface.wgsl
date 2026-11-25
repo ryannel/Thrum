@@ -57,17 +57,24 @@ fn surface_opacity(row: SurfaceRow, world: vec3<f32>, view_y: f32) -> f32 {
     // Ownership stays at rest. Thin-sheet appearance uses the bed directly
     // under the displaced point, where the opaque depth actually cuts it.
     let ground = map_cell(world.xz);
-    if ground.inside { depth = world.y - optical_bed(ground); }
+    var swash = 0.0;
+    if ground.inside {
+        let bed = optical_bed(ground);
+        depth = world.y - bed;
+        if SURF_CACHE_ENABLED && row.swash > 0.0 {
+            swash = 1.0 - smoothstep(0.25 * row.swash, 0.65 * row.swash, row.level - bed);
+        }
+    }
     // A glancing ray travels farther through the thin sheet. Let the ground
     // contribution decay continuously with that path to the bed.
     let path = max(0.0, depth) / max(0.15, abs(view_y));
-    let opacity = 1.0 - 0.72 * exp2(-27.0 * path);
+    let opacity = 1.0 - 0.72 * exp2(-mix(27.0, 13.0, swash) * path);
     // A still interface has a readable reflection at contact. Moving swash
     // loses visible coverage as the advancing sheet runs out of thickness.
     let agitation = smoothstep(0.0, 0.4, length(water.heights));
-    // Surf draws a steep forward sheet. Preserve the reflective surface
-    // beneath shallow troughs and confine the ground blend to the thin swash.
-    let edge_depth = select(0.12, 0.055, SURF_CACHE_ENABLED);
+    // Keep the breaker trough reflective. The bounded swash shows the sand
+    // through the thinning sheet as it approaches the wet edge.
+    let edge_depth = select(0.12, mix(0.055, 0.12, swash), SURF_CACHE_ENABLED);
     return opacity * mix(1.0, smoothstep(0.0, edge_depth, depth), agitation);
 }
 

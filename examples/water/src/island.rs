@@ -299,12 +299,12 @@ pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0
 /// Sand, overhead, offshore, lee, whole-island and specialised surf inspection views.
 pub const SURF_VIEWS: [Camera; 9] = [
     CAMERAS[0],
-    Camera::look_at([-94.0, 40.0, 49.0], [-164.0, 0.0, 18.0], 74.0),
+    Camera::look_at([-126.0, 40.0, -17.0], [-142.0, 0.0, -54.0], 66.0),
     Camera::look_at([-1126.0, 180.0, -54.0], [-126.0, 0.0, -54.0], 3.8),
     Camera::look_at([253.0, 40.0, 171.0], [237.0, 0.0, 154.0], 59.0),
     Camera::look_at([-101.0, 40.0, -94.0], [-127.0, 0.0, -98.0], 79.0),
-    Camera::look_at([210.0, 300.0, 170.0], [210.0, 0.0, 169.9], 92.0),
-    Camera::look_at([-112.0, 2.0, 30.0], [-158.0, 0.0, 15.0], 65.0),
+    Camera::look_at([360.0, 300.0, 350.0], [125.0, 0.0, 105.0], 72.0),
+    Camera::look_at([-101.0, 2.0, -46.0], [-147.0, -0.8, -64.0], 65.0),
     // The 2 m coarse cells put the near window edge at z = -56 m here.
     Camera::look_at([-165.0, 90.0, 200.0], [-128.0, 0.0, -56.0], 20.0),
     // Look along the beach so perspective preserves the relative cross-shore gaps.
