@@ -415,3 +415,15 @@
   The earlier sleep trace was rejected at 36/59 misses. The exact 60 Hz replay measured 0/60 unloaded,
   1/59 governed and 15/59 governor-off misses under the same load. D7.3 recorded no scale changes.
   [Display environment and target traces](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/display-environment/README.md)
+
+- 2026-11-25 WP7 repaired the review findings. The native proof uses the ordinary 1920×1080 window and full
+  display-link selection. Its 120 Hz replay recorded 0/119 settled misses with the governor and 54/120 with
+  it disabled at the same load. The steady route held 100% scale. Native pressure uses the slower of the
+  overlapping CPU and GPU stages. The render owner can retire an occupied slot within the same display
+  opportunity. A submitted quality record takes the values committed at its frame boundary, the aerial
+  lookup retains pending sky changes, and Chrome updates its budget when callback cadence changes.
+  [Target records](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/README.md)
+
+- 2026-11-25 WP7's 1920×1080 T2 capture retained all 600 opportunities at its 60 Hz elapsed-time cadence.
+  The 1× movie, unscaled crops, tap-off control, GPU copy cost and blind opinion cover the downstep and
+  recovery. [Motion inspection](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/motion-verified/README.md)
