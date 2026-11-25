@@ -341,8 +341,9 @@ impl PreparedScene {
         self.bind_presenter(presenter)?;
         if !candidate.initialization.is_empty() {
             let submission = queue.submit(std::mem::take(&mut candidate.initialization));
-            surface
-                .device
+            self.prepared
+                .capabilities()
+                .device()
                 .poll(wgpu::PollType::Wait {
                     submission_index: Some(submission),
                     timeout: Some(super::GPU_WAIT),
