@@ -1242,7 +1242,52 @@
     },
     "WP9": {
       "definitions": "53d9c99ba9b1ed9f667b93463d0b450c3911915c47104977a877d5633fd666d9",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "dcc72d26499f0e048688e9614bd08354d0ccce64",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
+          "items": {
+            "D9.1": "fail",
+            "D9.2": "fail",
+            "D9.3": "fail",
+            "D9.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Both native recipes compile contribution pipelines after device readiness",
+              "item": "D9.3",
+              "repeat": false
+            },
+            {
+              "name": "Launch baseline ends after the first cooked draw instead of at generation readiness",
+              "item": "D9.1",
+              "repeat": false
+            },
+            {
+              "name": "The replaced-surface case never replaces a surface lease",
+              "item": "D9.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 117279,
+            "cached": 3846016,
+            "output": 11368,
+            "turns": 1
+          },
+          "at": "2026-11-25T22:59:59Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",

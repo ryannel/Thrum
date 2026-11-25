@@ -942,10 +942,10 @@
           "lock": "gpu",
           "ask": "How does the arm clear the cache and show that the cold run was cold? Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP9/metal-launch/launch.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D9.2",
@@ -954,10 +954,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is there one case for each of the five, each asserting the counters by thread and phase and the one thing the design says changes? Is readiness taken for each device generation, with recovery preparation counted apart from play?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP9/prepared-paths-target.txt",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D9.3",
@@ -965,10 +965,10 @@
           "check": "python3 scripts/apple_presentation.py no-compile --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP9/native-route/no-compile.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D9.4",
@@ -977,17 +977,34 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP9/browser/no-compile.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As free of shader-compilation stutter as a shipped game that compiles its pipelines on a loading screen before play, as Horizon Zero Dawn and Call of Duty: Modern Warfare do on PC: after the game is ready, nothing is compiled, whatever the window or the display does, and a lost device is prepared again behind the same readiness before play resumes."
+      "status": "in_progress",
+      "quality_bar": "As free of shader-compilation stutter as a shipped game that compiles its pipelines on a loading screen before play, as Horizon Zero Dawn and Call of Duty: Modern Warfare do on PC: after the game is ready, nothing is compiled, whatever the window or the display does, and a lost device is prepared again behind the same readiness before play resumes.",
+      "findings": [
+        {
+          "name": "Both native recipes compile contribution pipelines after device readiness",
+          "item": "D9.3",
+          "repeat": false
+        },
+        {
+          "name": "Launch baseline ends after the first cooked draw instead of at generation readiness",
+          "item": "D9.1",
+          "repeat": false
+        },
+        {
+          "name": "The replaced-surface case never replaces a surface lease",
+          "item": "D9.2",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP10",
