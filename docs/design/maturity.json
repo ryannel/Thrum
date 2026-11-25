@@ -1122,6 +1122,18 @@
         },
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/README.md",
         "scope": "Portable TAAU governor on Mac Metal and Chrome WebGPU, with a 120 Hz live Metal window and separate 60 Hz real-time capture of the forced-load route."
+      },
+      "WP16": {
+        "implementation": "Each timed frame slot owns one query set while its separate readback resources can finish independently. Metal trial allocations and wgpu timestamp creation run under one process lock. An exhausted ray build probe still records the mesh build.",
+        "functional_validation": "All six WP16 items passed on Apple M3 Max Metal. The four named binaries each passed five consecutive runs at 16 test threads.",
+        "experienced_quality": "No visual qualification was performed for the timestamp lifecycle change.",
+        "platform_performance": {
+          "mac": "No performance qualification.",
+          "browser": "No device run for this work package.",
+          "ios": "No device run for this work package."
+        },
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP16/README.md",
+        "scope": "Timestamp query sets requested through the renderer's shared allocation path and delayed frame timing publication."
       }
     }
   },

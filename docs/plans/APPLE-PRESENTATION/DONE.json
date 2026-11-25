@@ -640,7 +640,7 @@
     {
       "id": "WP16",
       "name": "The long tests pass again, and running out of GPU timers is a named error, not a lost device",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "A GPU profiler as dependable as a shipped engine's: asking for frame timing never takes the device down, and a test run that runs out of a platform resource says which one.",
       "items": [
         {
@@ -649,8 +649,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=one_query_set_for_each_frame_slot)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP16/WP16.1.log",
           "verdict": "",
           "review": ""
         },
@@ -660,8 +660,8 @@
           "check": "m=$(git grep -n 'create_query_set(' -- crates examples tools tests | grep -v '^crates/thrum-sea/tests/support\\.rs:'); [ \"$(printf '%s\\n' \"$m\" | grep -c .)\" = 1 ] && [ \"$(printf '%s\\n' \"$m\" | grep -c '^crates/thrum-render/src/')\" = 1 ] && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=the_33rd_across_two_devices_is_refused_and_both_survive)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP16/WP16.2.log",
           "verdict": "",
           "review": ""
         },
@@ -671,8 +671,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=hosts_made_and_dropped_in_turn_never_reach_the_limit)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP16/WP16.3.log",
           "verdict": "",
           "review": ""
         },
@@ -682,8 +682,8 @@
           "check": "for i in 1 2 3 4 5; do THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --features draw-probe,thrum-render/creation-counters --test ray_tracing_gpu -- --test-threads=16 && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --lib --test scene_view_air_shaded_gpu --test timestamp_budget -- --test-threads=16 || exit 1; done",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP16/WP16.4.log",
           "verdict": "",
           "review": ""
         },
@@ -693,8 +693,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=a_place_returns_when_metal_has_it_and_a_host_needs_every_slot)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP16/WP16.5.log",
           "verdict": "",
           "review": ""
         },
@@ -704,8 +704,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=two_requests_for_the_last_places_are_answered_in_turn)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP16/WP16.6.log",
           "verdict": "",
           "review": ""
         }

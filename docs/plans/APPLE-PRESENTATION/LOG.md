@@ -482,3 +482,11 @@
   answers requests one at a time (design, ruling). WP16.2 also holds that nothing else calls `create_query_set`
   but `SEA`'s test harness, and new WP16.6 holds one request while a second competes for the last places.
   [What changed and the measurement](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16-plan/README.md#the-interval-between-the-trial-and-the-creation)
+- 2026-11-25 WP16. One timestamp query set per slot survives readback rotation. Metal admits a whole request
+  under the process lock. Exhaustion reaches a frame host as a typed timing error and a ray build probe as a
+  build without a sample. All six items passed on M3 Max Metal, including five consecutive 16-thread runs of
+  the four specified binaries. The governor policy, knobs and transition tests also passed.
+  [WP16 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16/README.md)
+- The separate 16-thread `mesh_stage_gpu` run had five failures with `TimestampQuerySetsExhausted` during
+  timing preparation. That binary's main-tier exclusion stays with MESH-SHADING.
+  [Mesh-stage diagnostic](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16/mesh-stage-gpu.log)
