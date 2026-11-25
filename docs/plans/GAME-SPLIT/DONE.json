@@ -177,8 +177,8 @@
           "statement": "A normal web build exports no qualification function and a normal iPhone build accepts no qualification command. The proving builds that other modules' checks run still have them.",
           "ask": "Which exports does the default web bundle hold? Do the browser and simulator checks that other modules pinned still find the hooks they drive, with their check strings unchanged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/round-4/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md"
         },

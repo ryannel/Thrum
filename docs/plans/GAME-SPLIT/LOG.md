@@ -69,3 +69,9 @@
   and sampling. The exact-baseline rule requires a planner ruling with the owner
   before the verifier's protected pins can change.
   [Proposed patch](../../../.orchestrate/evidence/GAME-SPLIT/WP3/round-3/exact-receipt-proposal.patch)
+- 2026-11-25 WP3 removed the kit's submitted capture and frame probes from ordinary Wasm
+  builds. Starter, mirror and water browser drivers request the capture feature through
+  the existing scene launcher. Chrome on Metal presented the shipping game and matched
+  the JavaScript and Wasm facade allowlists. The three kit proof bundles exported the
+  capture methods. The exact-baseline verifier repair still requires the ruling above.
+  [Browser evidence](../../../.orchestrate/evidence/GAME-SPLIT/WP3/round-4/README.md)
