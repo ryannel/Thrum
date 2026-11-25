@@ -1259,7 +1259,46 @@
     },
     "WP15": {
       "definitions": "ad36ca00388e651dfcd3f5a32a68d68f83fbfed63cba8685ea3921f0583624ef",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "12430fae43a6c72756eb67ec9ea4b7a5ab7be890",
+          "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md",
+          "items": {
+            "WP15.1": "fail",
+            "WP15.2": "pass",
+            "WP15.3": "pass"
+          },
+          "findings": [
+            {
+              "name": "Cache admission misses inherited rustfmt configuration",
+              "item": "WP15.1",
+              "repeat": false
+            },
+            {
+              "name": "Cache admission changes the meaning of a checkout-relative Cargo linker",
+              "item": "WP15.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 63074,
+            "cached": 898560,
+            "output": 6312,
+            "turns": 1
+          },
+          "at": "2026-11-25T04:14:46Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 2 Must Fi",

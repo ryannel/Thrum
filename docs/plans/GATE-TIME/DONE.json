@@ -840,7 +840,7 @@
     {
       "id": "WP15",
       "name": "Merge verification reuses a bounded local Cargo cache",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "The configured merge check makes real Cargo rebuilds cheaper on the busy Mac and returns the ordinary check's verdict on the exact candidate.",
       "items": [
         {
@@ -848,10 +848,10 @@
           "statement": "The configured command checks the caller's inputs and returns the ordinary check's verdict. On the Mac, clean singleton and batch candidates share a bounded Cargo cache and keep their candidate and base selection. A committed failing edit fails with the cache warm and its revert passes. Staged and unstaged tracked changes and non-ignored untracked paths send the check to the caller's worktree. On a passing commit, the configured command reports a failing local assertion when the file is edited and passes after the file is restored, with the cache warm throughout. Toolchain, profile and feature changes invalidate affected builds. Concurrent use, interruption, over-cap retention and low free space recover through cache maintenance or the ordinary check. Ordinary developer and scheduled main-branch checks use their own build directories.",
           "ask": "Do the singleton and batch replays retain their candidate, selection and verdict? Trace the staged, unstaged and untracked admission cases. Do the warm runs show an assertion failure and a passing revert for the committed edit, and an assertion failure in the caller's worktree and a pass after restoration for the uncommitted edit on the same commit? Do the toolchain, profile and feature cases show fresh affected builds? For concurrent use, interruption, over-cap retention and low free space, does the cache owner protect active work and reclaim only its own artifacts, with any fallback preserving the caller's inputs and verdict?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/WP15/record.md#wp151-candidate-inputs-and-verdicts",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md"
         },
         {
           "id": "WP15.2",
@@ -860,8 +860,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/WP15/record.md#wp152-three-paired-mac-trials",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md"
         },
         {
           "id": "WP15.3",
@@ -870,12 +870,24 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/WP15/record.md#wp153-pre-launcher-replay",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Cache admission misses inherited rustfmt configuration",
+          "item": "WP15.1",
+          "repeat": false
+        },
+        {
+          "name": "Cache admission changes the meaning of a checkout-relative Cargo linker",
+          "item": "WP15.1",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP5",
