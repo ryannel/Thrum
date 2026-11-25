@@ -6,8 +6,27 @@
 )]
 mod support {
     pub(crate) mod interface_absent_snapshot;
+    pub(crate) mod interface_presented_snapshot;
     pub(crate) mod sprite_fixture;
     pub(crate) mod sprite_graph_snapshot;
+}
+
+#[test]
+fn presented_metalfx_and_its_twin_match_before_the_interface() {
+    let Some(gpu) =
+        thrum_test_support::gpu("no-interface 3D presentation", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (revision, expected) = include_str!("fixtures/interface_presented.txt")
+        .split_once('\n')
+        .expect("baseline revision and graph records");
+    assert_eq!(revision, "91d2cf2880314e6446721cb9f396d4deb3203ee9");
+    let actual = support::interface_presented_snapshot::snapshot(&gpu);
+    for (line, (before, after)) in expected.lines().zip(actual.lines()).enumerate() {
+        assert_eq!(before, after, "no-interface presented graph line {line}");
+    }
+    assert_eq!(expected.lines().count(), actual.lines().count());
 }
 
 use support::sprite_fixture as fixture;
