@@ -233,6 +233,13 @@ impl Governor {
         }
     }
 
+    pub(crate) fn interrupt_display_observations(&mut self, mark: SampleMark) {
+        if self.admits(mark) {
+            self.missed = 0;
+            self.headroom = 0;
+        }
+    }
+
     /// Commit at most one prepared step for the coming frame.
     pub fn commit(&mut self, now: Duration) -> bool {
         if self.held || self.display.interval.is_zero() {

@@ -125,11 +125,20 @@ fn external_knobs_commit_by_tier_and_invalidate_only_their_owned_history() {
     host.governor_present_called();
     let authority = first.tick;
     let pipelines = host.creation_report().pipelines;
-    host.governor_display_tick(Duration::from_millis(20), 5);
+    host.governor_display_tick(Duration::from_millis(4), 5);
+    let after_gap = frame(&mut host, &output, Duration::from_millis(4));
+    assert_eq!(host.governor_missed_ticks(), 3, "coalesced ticks still count");
+    assert_eq!(after_gap.governor.expect("state").state.tier, 0);
+    host.governor_present_called();
+    for tick in 6..=9 {
+        host.governor_display_tick(Duration::from_millis((tick - 5) * 5), tick);
+    }
     assert_eq!(host.governor_frame().expect("state").state.tier, 0, "staged between frames");
     let tier_one = frame(&mut host, &output, Duration::from_millis(20));
     host.governor_present_called();
-    host.governor_display_tick(Duration::from_millis(40), 9);
+    for tick in 10..=13 {
+        host.governor_display_tick(Duration::from_millis(20 + (tick - 9) * 5), tick);
+    }
     let tier_two = frame(&mut host, &output, Duration::from_millis(40));
     for (tier, sample) in [(1, tier_one), (2, tier_two)] {
         let quality = sample.governor.expect("quality frame");

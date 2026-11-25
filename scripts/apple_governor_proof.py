@@ -12,6 +12,7 @@ from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
 LOAD = (230, 320)
 ROUNDS = 4600
 WINDOW_LOAD_ROUNDS = (ROUNDS, 6200)
+PRELOAD_TICKS = (200, LOAD[0])
 WINDOW_EXTENT = (960, 540)
 CADENCE = "atmosphere.aerial cadence"
 
@@ -95,6 +96,17 @@ def exceeds_baseline(arm, baseline):
     return arm["rate"] > baseline["rate"] + 2 / arm["ticks"]
 
 
+class PreloadMismatch(ValueError):
+    """The window arms were already delivering at different rates before load."""
+
+
+def matched_preload(arm, reference):
+    measured = miss_rate(arm, *PRELOAD_TICKS)
+    if exceeds_baseline(measured, reference) or exceeds_baseline(reference, measured):
+        raise PreloadMismatch(f"{arm['directory']}: unloaded delivery {measured} versus {reference}")
+    return measured
+
+
 def validate_recovery(changes, *, scale=False):
     field = "scale" if scale else "tier"
     recoveries = []
@@ -132,15 +144,31 @@ def mac_governor(output, *, steady=False, capture=False):
     if capture:
         return mac_governor_capture(output, binary, env, route)
 
+    interrupted = []
+    for number in range(1, 4):
+        attempt = output / f"attempt-{number}"
+        attempt.mkdir()
+        try:
+            report = compare_live_load(attempt, binary, env, route)
+        except PreloadMismatch as error:
+            interrupted.append(str(error))
+        else:
+            return dict(report, unmatched_preloads=interrupted)
+    raise ValueError(f"window arms did not match before forced load: {interrupted}")
+
+
+def compare_live_load(output, binary, env, route):
     steady_arm = window_arm(output, binary, env, route, "steady")
     first = LOAD[0] + 30
     baseline = miss_rate(steady_arm, first, LOAD[1])
+    preload = {"steady": miss_rate(steady_arm, *PRELOAD_TICKS)}
     controls = {}
     # Select load strength using only the ungoverned run. A GPU that still
     # presents on time at the first setting cannot witness a return to rate.
     for rounds in WINDOW_LOAD_ROUNDS:
         off_arm = window_arm(output, binary, env, route, f"loaded-off-{rounds}",
                              enabled=False, load=rounds)
+        preload["loaded-off"] = matched_preload(off_arm, preload["steady"])
         controls[rounds] = miss_rate(off_arm, first, LOAD[1])
         if exceeds_baseline(controls[rounds], baseline):
             break
@@ -152,6 +180,7 @@ def mac_governor(output, *, steady=False, capture=False):
         "loaded": window_arm(output, binary, env, route, "loaded", load=rounds),
         "loaded-off": off_arm,
     }
+    preload["loaded"] = matched_preload(arms["loaded"], preload["steady"])
     changes = arms["loaded"]["changes"]
     if not changes:
         raise ValueError("missing governed frame samples")
@@ -177,7 +206,8 @@ def mac_governor(output, *, steady=False, capture=False):
         raise ValueError(f"loaded/off did not falsify a return to baseline proxy rate: {comparison}")
     return dict(target="mac-metal", comparison=comparison, comparison_ticks=[first, LOAD[1]],
                 changes=changes, load=LOAD,
-                rounds=rounds, control_trials=controls, proxy=arms["loaded"]["proxy"],
+                rounds=rounds, control_trials=controls, preload=preload, preload_ticks=PRELOAD_TICKS,
+                proxy=arms["loaded"]["proxy"],
                 display_hz=arms["loaded"]["display_hz"],
                 binary_sha256=digest(binary))
 

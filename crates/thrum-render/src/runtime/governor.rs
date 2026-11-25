@@ -146,9 +146,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 && let Some(mark) = mark
                 && previous.mark == Some(mark)
             {
-                governor
-                    .policy
-                    .observe_missed(mark, count, previous.presented);
+                // A coalesced callback counts against delivery, but it has no
+                // render outcome. It breaks a streak of known render misses.
+                if gap == 0 {
+                    governor
+                        .policy
+                        .observe_missed(mark, count, previous.presented);
+                } else {
+                    governor.policy.interrupt_display_observations(mark);
+                }
             }
         }
         self.governor_display_tick = Some(DisplayTick {
