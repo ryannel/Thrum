@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-20 of 36 modules done · 14 in progress · 2 to come
+21 of 36 modules done · 13 in progress · 2 to come
 
 ### Needs you now
 
@@ -311,13 +311,14 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- The native Metal step runs any provider through one interface, and the copy/select witness is the first (APPLE-TILE WP13): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-TILE/WP13-review.md)
+- MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback (APPLE-PRESENTATION WP8): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - WATERS WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running: Blocked: Needs Dependency: The tick stage needs a delivery path that meets the two-tick requirement while the island’s sand view draws. A planner adds it to the module that owns it
 - RENDER-2D WP6 A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given: Blocked: Needs Context: WP6.5, WP6.7 and WP6.8 can't be met as written while the Mac’s graphical session is locked. Unlock it so the orchestrator can rerun the window checks. The lead finds the missing fact, or asks you for it
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 
 ### Recently done
 
+- The native Metal step runs any provider through one interface, and the copy/select witness is the first (APPLE-TILE WP13), 25 Nov · [review](../../.orchestrate/evidence/APPLE-TILE/WP13-review.md)
 - A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome (EFFECT-GRAPH WP6), 25 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/WP6-review.md)
 - Props and terrain are grounded: sky light is dimmed in creases and where things stand close together (RAY-TRACING WP5), 25 Nov · [review](../../.orchestrate/evidence/RAY-TRACING/WP5-review.md)
 - The long tests pass again, and running out of GPU timers is a named error, not a lost device (APPLE-PRESENTATION WP16), 25 Nov
@@ -432,9 +433,9 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE WP0, APPLE-TILE WP3 | Done 14 Nov |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 24 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | WP13 of 8 · Ready for Review |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | Waiting: On Dependency, APPLE-TILE:WP13 |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP8 of 17 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
