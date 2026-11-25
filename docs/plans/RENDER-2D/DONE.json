@@ -555,7 +555,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why."
     },
     {
