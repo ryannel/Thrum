@@ -31,6 +31,44 @@
         "by": "plan",
         "task": "GAME-UI WP1 needs something no plan provides yet. The builder wrote: Land shared EDR display and submitted half-float ca",
         "at": "2026-11-25T12:58:58Z"
+      },
+      "ready_for_review": {
+        "commit": "d4e00681a6efe0cf1b49dc76cef10e17ce1ef9d8",
+        "checked": "d4e00681a6efe0cf1b49dc76cef10e17ce1ef9d8",
+        "at": "2026-11-25T19:25:46Z",
+        "reused": [
+          "WP1.1",
+          "WP1.2",
+          "WP1.3",
+          "WP1.4",
+          "WP1.5",
+          "WP1.6",
+          "WP1.7",
+          "WP1.8",
+          "WP1.10",
+          "WP1.11"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "visible",
+        "usage": {
+          "input": 716631,
+          "cached": 57162752,
+          "output": 145828,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 716631,
+          "cached": 57162752,
+          "output": 145828,
+          "turns": 2
+        }
       }
     },
     "WP2": {
