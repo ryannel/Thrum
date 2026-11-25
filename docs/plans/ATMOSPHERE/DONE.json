@@ -671,7 +671,7 @@
     {
       "id": "WP3",
       "name": "A renderer developer can reproduce the shadow sampling failure and assess one filter offline",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "items": [
         {
           "id": "WP3.1",
