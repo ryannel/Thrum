@@ -930,7 +930,7 @@
     {
       "id": "WP7",
       "name": "The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
@@ -944,8 +944,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.1-metal-appearance.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
           "id": "WP7.2",
@@ -955,8 +955,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/WP7.2.stdout.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
           "id": "WP7.3",
@@ -965,8 +965,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/phase-cycle-opinion.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
           "id": "WP7.4",
@@ -975,8 +975,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
           "id": "WP7.5",
@@ -985,8 +985,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.5-metal-lifetimes.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
           "id": "WP7.6",
@@ -996,8 +996,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/WP7.6.stderr.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
           "id": "WP7.7",
@@ -1006,8 +1006,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.7-chrome.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
           "id": "WP7.8",
@@ -1017,8 +1017,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/WP7.8.stdout.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         }
       ]
     },
