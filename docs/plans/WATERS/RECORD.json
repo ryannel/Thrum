@@ -1473,6 +1473,36 @@
         "by": "plan",
         "task": "WATERS WP13 is Blocked: a short gray straight-sided flap in the pitching face (native x~2200-2260, y~345-370, engine tim",
         "at": "2026-11-25T04:04:31Z"
+      },
+      "ready_for_review": {
+        "commit": "293ac2cc91b000746dd522d7bd0b561f7072632d",
+        "checked": "293ac2cc91b000746dd522d7bd0b561f7072632d",
+        "at": "2026-11-25T04:49:09Z",
+        "reused": [
+          "WP13.12",
+          "WP13.14"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 329121,
+          "cached": 35416064,
+          "output": 56202,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 3673564,
+          "cached": 307390208,
+          "output": 532702,
+          "turns": 13
+        }
       }
     },
     "WP15": {
