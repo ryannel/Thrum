@@ -964,7 +964,46 @@
     },
     "WP6": {
       "definitions": "208d91f1429054256490bf4eec089368a27ca5c3211c0181e437c80d41e86473",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "70df5f84136c655018ef1a0d0ac5fb6f3d61c80d",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md",
+          "items": {
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "fail",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Disabling an idle capture retains both 8-bit display images",
+              "item": "WP6.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 105637,
+            "cached": 1785344,
+            "output": 6256,
+            "turns": 1
+          },
+          "at": "2026-11-25T17:58:30Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 2 Must Fi",

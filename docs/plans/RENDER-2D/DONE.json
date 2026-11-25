@@ -714,7 +714,7 @@
     {
       "id": "WP6",
       "name": "A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [
         "APPLE-PRESENTATION:WP6"
       ],
@@ -729,8 +729,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/README.md",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
           "id": "WP6.2",
@@ -740,8 +740,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/metal-detail.log",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
           "id": "WP6.3",
@@ -751,8 +751,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/metal-detail.log",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
           "id": "WP6.4",
@@ -760,10 +760,10 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d -E 'test(~float_mode)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/inventory-comparison.md",
-          "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
           "id": "WP6.5",
@@ -773,8 +773,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/edr.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
           "id": "WP6.6",
@@ -785,8 +785,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/README.md",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
           "id": "WP6.7",
@@ -797,8 +797,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/edr-crowd.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
           "id": "WP6.8",
@@ -808,12 +808,19 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/edr-observed.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Disabling an idle capture retains both 8-bit display images",
+          "item": "WP6.4",
+          "repeat": false
+        }
+      ]
     }
   ]
 }
