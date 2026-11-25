@@ -220,7 +220,7 @@ fn refused_outline_size_allows_a_new_sibling_texture_after_reopen() {
     }
     std::fs::write(&description, outline(12)).unwrap();
     let report = cook();
-    assert!(report.failed.is_empty());
+    assert_eq!(report.failed, []);
     assert!(
         report.published.is_none(),
         "both products are already published"
@@ -291,6 +291,10 @@ fn refused_grid_rename_preserves_the_last_manifest_even_after_reopen() {
         .store()
         .load_manifest(&badge_head)
         .expect("badge manifest");
+    assert_eq!(
+        badge_manifest.resolve("hud", &[Profile::Portable]),
+        original_manifest.resolve("hud", &[Profile::Portable])
+    );
     for profile in Profile::ALL {
         let product = |manifest: &thrum_asset::Manifest, name| {
             manifest
