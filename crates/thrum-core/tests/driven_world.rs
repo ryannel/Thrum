@@ -155,7 +155,7 @@ fn resident_observer_uses_the_tick_due_time_to_select_its_pair() {
         NonZeroU32::MIN,
         TICK,
     );
-    let origin = Instant::now() - TICK;
+    let origin = Instant::now().checked_sub(TICK).expect("test clock origin");
     let (mut lane, controls) = WorldLane::start(world, (), origin, move || {
         let _ = wakes.send(());
     })
@@ -163,14 +163,14 @@ fn resident_observer_uses_the_tick_due_time_to_select_its_pair() {
     let timeout = Duration::from_secs(2);
     let anchor = samples.recv_timeout(timeout).expect("driver observation");
     changed.recv_timeout(timeout).expect("worker published");
-    let due = anchor - Duration::from_millis(10);
+    let due = anchor
+        .checked_sub(Duration::from_millis(10))
+        .expect("due time");
+    let before_due = due
+        .checked_sub(Duration::from_nanos(1))
+        .expect("before due time");
 
-    assert_eq!(
-        lane.poll(due - Duration::from_nanos(1))
-            .expect("refused pair")
-            .tick,
-        0
-    );
+    assert_eq!(lane.poll(before_due).expect("refused pair").tick, 0);
     assert_eq!(
         lane.poll(due + Duration::from_millis(5))
             .expect("eligible pair")

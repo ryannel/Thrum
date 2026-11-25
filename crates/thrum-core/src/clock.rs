@@ -245,12 +245,13 @@ impl ClockSample {
     }
 
     fn driven_phase(self, target: Duration, sample: DrivenSample) -> f64 {
-        let elapsed = if target >= self.last_time {
-            (target - self.last_time).as_secs_f64()
+        let elapsed = target.abs_diff(self.last_time).as_secs_f64();
+        let offset = if target < self.last_time {
+            -elapsed
         } else {
-            -(self.last_time - target).as_secs_f64()
+            elapsed
         };
-        sample.fraction + elapsed * sample.rate
+        sample.fraction + offset * sample.rate
     }
 
     fn fraction_at(self, target: Duration) -> u128 {
