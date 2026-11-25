@@ -15,10 +15,34 @@ The capture uses the repository's FFmpeg and zstd tools.
 python3 scripts/render2d.py crowd-still --target mac-metal --output tmp/my-crowd-still
 ```
 
-To start your own game, copy the example into a new workspace package. Change its package and binary names, add the
-folder to the root Cargo workspace, and register its dependencies in `.config/architecture.toml`. Keep the
-`thrum-app::Game` and `thrum-render::runtime::SceneSource` adapters. Replace the example's Crowd-specific world and
-scene with your game's world and scene. Run the new package by name.
+## Start a game from the example
+
+From the workspace root, copy the example to a new folder.
+
+```sh
+cp -R examples/crowd-2d-view examples/my-crowd
+```
+
+Make these edits in the new package and at the workspace root.
+
+1. In `examples/my-crowd/Cargo.toml`, change both the `[package]` and `[[bin]]` names to `my-crowd`.
+2. In the copy's `src/main.rs`, `src/native.rs` and `src/native/band.rs`, change `crowd_2d_view` to `my_crowd`.
+   Cargo derives that library name from the package name. In `src/main.rs`, also change the application ID
+   passed to `thrum_app::Config::new` to `"my-crowd"` and the window title to `"My Crowd"`.
+3. Add `"examples/my-crowd"` to `members` in the root `Cargo.toml`. Copy the `[packages.crowd-2d-view]`
+   entry in `.config/architecture.toml` to `[packages.my-crowd]`, with
+   `manifest = "examples/my-crowd/Cargo.toml"` and the same dependency entries.
+
+Build once to update the workspace lockfile, then run the renamed package.
+
+```sh
+rustup run stable cargo build --offline --release -p my-crowd
+rustup run stable cargo run --locked --offline --release -p my-crowd
+```
+
+The `My Crowd` window uses the copied scene. Try the frame row below before replacing the reference world
+and scene. Keep the `thrum-app::Game` and `thrum-render::runtime::SceneSource` adapters for your game.
+If you also build the copied browser page, have it import the generated `./my_crowd.js` in `web/index.html`.
 
 ## Prepare the scene and the sheets
 
@@ -50,8 +74,9 @@ frame rows for a cursor, damage numbers or other presentation marks. Frame rows 
 do not interpolate. The example follows a player by mixing its adjacent published positions at the frame alpha.
 [Tick-page mapping and camera](../examples/crowd-2d-view/src/scene.rs)
 
-To try a frame row in the Crowd example, change the final argument to `SpriteScene::new` from `0` to `1`.
-Then replace `rows: &[]` in the scene's `SpriteFrame` with `rows: &MARKS`, using the existing glow frame.
+To put a mark in the copied game's scene, edit `examples/my-crowd/src/scene.rs`. Change the final argument to
+`SpriteScene::new` from `0` to `1`. Add this constant using the existing glow frame and replace
+`rows: &[]` in `SpriteFrame` with `rows: &MARKS`.
 
 ```rust
 const MARKS: [SpriteRow; 1] = [SpriteRow {
@@ -60,6 +85,8 @@ const MARKS: [SpriteRow; 1] = [SpriteRow {
     ..SpriteRow::new(4, [6.0, 6.0])
 }];
 ```
+
+Run `my-crowd` again to see the glow at world position (6, 6).
 
 ## Choose order and scale
 
