@@ -855,7 +855,7 @@
       "failed_reviews": 5,
       "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "blocked",
       "quality_bar": "A networked game that draws as smoothly as it does alone wherever its link allows, as Factorio's multiplayer does: the client's world advances only when the match says, and the picture glides between confirmed ticks at the display's refresh. Late sets that land inside the playout buffer show nothing. When the buffer runs out the picture holds, then carries on from where it held, never more than a tenth fast. Only a client that fell behind jumps, and it says so. The engine side names no session: any game can drive a world.",
       "findings": [
         {
@@ -863,7 +863,17 @@
           "item": "WP7.5",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_access",
+        "what": "Unlock the Mac console so WP7.3, WP7.4, and WP7.5 can run on main.",
+        "work": {
+          "commit": "3d53b86207ed80c9612ce568144739072b0e5c78",
+          "branch": "build/session",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/SESSION/WP7-handoff.md"
+      }
     }
   ]
 }
