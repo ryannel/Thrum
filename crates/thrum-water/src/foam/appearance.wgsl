@@ -75,6 +75,7 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let placed = min(vec3(1.0), held.xyz * (caps / max(expected, 0.0001)));
     let sea = mix(vec3(0.04, 0.08, 0.10) * caps, placed, held.w);
     var far = vec4(sea.xy, sea.z + 0.34 * shore, 0.0);
+    var distant_front = 0.0;
     if SURF_CACHE_ENABLED && row.loss > 0.0 {
         // Continue the distributed shore source beyond the moving windows.
         // At equilibrium the film spends 6 s fresh and 13 s aged.
@@ -83,21 +84,24 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
         let air_birth = 0.22 * birth;
         let air = air_birth / (air_birth + 1.0 / 2.4);
         let film = clamp((birth + 0.60 * air / 2.4) / (birth + 1.0 / 19.0), 0.0, 1.0);
-        // The distant estimate gives the visible film a porous mean. The
-        // phase-resolved face supplies the brighter line moving through it.
         // A mapped bed can end while swell is still losing power there.
         // Feather that estimate into open-sea cover before the bed ends.
         let grid = vec2<f32>(bed.corners[0]) + bed.uv;
         let edge = min(grid, vec2<f32>(map.size_count_sea.xy - 1u) - grid);
-        let shore_support = smoothstep(vec2(0.0), vec2(12.0), edge);
-        // At distance the openings in aged wash dominate its visible mean.
-        // Retain the fresh estimate used by the moving front.
-        let visible_film = film * 0.42 * vec2(6.0, 0.20 * 13.0) / 19.0;
-        let shore_stocks = shore_support.x * shore_support.y * vec3(air, visible_film);
+        let fade = smoothstep(vec2(0.0), vec2(12.0), edge);
+        let shore_support = fade.x * fade.y;
+        // Low diffuse cover leaves water visible between distant fronts.
+        // Only the phase-resolved face draws the extra fresh film.
+        let fresh = film * (6.0 / 19.0);
+        let aged = film * (13.0 / 19.0);
+        let diffuse_cover = 0.07;
+        let shore_stocks = shore_support * vec3(0.35 * air, diffuse_cover * vec2(fresh, aged));
+        distant_front = shore_support * (1.0 - sea.y) * fresh * (0.42 - diffuse_cover);
         far = vec4(sea + (vec3(1.0) - sea) * shore_stocks, 0.0);
     }
-    var stocks = foam_at(point.xz, far);
-    let fresh_front = stocks.y;
+    let sample = foam_at(point.xz, far);
+    var stocks = sample.stocks;
+    let fresh_front = stocks.y + sample.distant_weight * distant_front;
     // Dense shallow-water foam still leaves gaps between groups of bubbles.
     // Weight the coarse breakup by depth-limited power so offshore caps
     // and the hull's own film keep their contact profile.
@@ -217,7 +221,7 @@ fn shore_is_wet(point: vec2<f32>, gains: vec4<f32>, depth: f32) -> bool {
     // The ground's optical weight depends on elevation. Stranded foam is
     // patterned separately so a dense stock cannot paint a solid white sheet.
     let sheen = (1.0 - smoothstep(0.0, reach, above)) * smoothstep(seaward_fade, -0.10 * row.swash, above);
-    let stocks = foam_at(ground.xz, vec4(0.0));
+    let stocks = foam_at(ground.xz, vec4(0.0)).stocks;
     let openings = foam_noise(ground.xz * vec2(0.87, 1.53));
     let porous = mix(0.10, 0.60, smoothstep(0.22, 0.76, openings));
     let stranded = vec4(stocks.x, stocks.yz * vec2(0.54, 1.0) * porous, stocks.w);
