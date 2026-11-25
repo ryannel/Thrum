@@ -719,6 +719,22 @@ stage is not part of the frame.
    thread it has not yet observed the tick a post was made on, and at an asking before a wait it has
    observed nothing since its last advance. The host gives a tick pass the tick duration, and no tick of
    its own, alpha, phase or host time.
+   - **From the world, where the game posts.** The world that commits a tick owns that tick's endpoint,
+     and a game has it from its world at the place it posts. It never takes the epoch or the timeline from
+     a frame it was drawn in, which is the stale identity this rule is for, and never copies them from a
+     world's private values. A world that calls its game back for each tick hands the endpoint to that
+     call. `thrum-app`'s sky world is the one such world with a game that posts: `WATERS`' island posts
+     inside `SkyGame`'s fixed update, which was given a tick number and a duration, while the epoch and
+     the timeline were private to the world (`STILL` in `crates/thrum-app/src/sky.rs`). WP6 has that
+     world hand its fixed update the endpoint of the tick it is called for, as the world epoch, the
+     timeline and the tick together, beside what the hook gives today, so a game written against the hook
+     builds unchanged. The order is the world's: it commits a tick, calls the fixed update with that
+     tick's endpoint, the game posts inside the call, and the host's asking comes after the world has
+     advanced (rule 1). An advance that completes several ticks makes one call for each, in order, each
+     with its own tick. The call at tick zero is made before the world is first advanced or drawn, and
+     carries the endpoint too, so a post made there is asked on the world's own identity with no view
+     drawn. The V1 game and a test are their own worlds' games and state the endpoint their world
+     commits.
    - **Whose state.** An effect's committed state has an endpoint too: the one its last submitted frame
      committed, by rule 1 of [state and time](#state-time-and-the-tentative-frame-wp2). A post is answered
      from that state only when the state exists and its world epoch and timeline are the post's. The seam's
@@ -760,20 +776,46 @@ stage is not part of the frame.
    could not submit stays the effect's to keep or to age out.
 6. **Permission and lifecycle.** The frame host submits and nothing else does: a contribution still holds no
    device and submits nothing (C06).
-   - **Permission is the shell's, held through the queue call.** A platform that can take away the right to
-     submit states it to the host as a **submission permission**. The shell gives it to the host once. The
-     host enters it before the first queue call of a tick submission and leaves it after that submission's
-     submit returns, and the permission either holds the platform's right for that long or refuses. The
-     host makes no tick submission outside it. Refused, the asking records nothing, leaves the posts with
-     the effect and counts one tick submission refused for want of permission, a count apart from the
+   - **Permission is the shell's, and the host asks it twice.** A platform that can take away the right to
+     submit states it to the host as a **submission permission**. The shell gives it to the host once, and
+     the host makes no tick submission outside it. The host **enters** the permission once an asking has
+     found work and before it records, so before any write a tick pass stages. It **confirms** the
+     permission as the last thing before the tick submission's `queue.submit`, with no call between the
+     two that can wait. It leaves the permission after that submit returns. Refused at either point, the
+     host makes no submit: it drops anything it recorded, calls no effect back, leaves the posts with the
+     effect and counts one tick submission refused for want of permission, a count apart from the
      bound's. The effect's answers then age out and its game falls back, as that effect's design says.
-   - **The iPhone.** The render owner's permission is its surface lease: a lease section, which refuses when
-     the lease is revoked, when no surface is installed or when the app is going to the background. That is
-     how its device publication already runs (`recover` in `examples/v1-game-ios/src/ios/render.rs`). A
-     suspend sets the background flag before it revokes, and cannot take the surface while a section holds
-     it, so no tick submission lands in the background, which C06 forbids. The render owner calls the host
-     in three places: `advance` before its present section, `advance` to drain an old grid, and `drive`
-     with no surface, after the configure section returned `NoLease` or the platform denied a present. With the permission each is safe as it stands, where
+     The submit is the one call that gives the device work. A write staged before a refused confirmation
+     executes nothing: wgpu holds a `queue.write_*` until the next submit on its queue, and by rule 2 it
+     wrote only the tick pass's own parameters, which the next recording stages again.
+   - **The iPhone.** The render owner's permission is made of the three things its frame section checks:
+     its surface lease, the epoch of the frame request it is serving, and its background flag. Entry is a
+     lease section under that request's epoch which reads the flag inside. It refuses when the lease's
+     epoch has moved past the request's, when no surface is installed or when the flag is set. The
+     confirmation, inside the same section, reads the flag and compares the epoch again. The epoch is the
+     request's, and not one read at entry, so that every invalidation since the shell made the request
+     closes its tick submission as it closes its frame (`examples/v1-game-ios/src/lease.rs`): a suspend,
+     a replaced surface, a lost device and a changed extent. After a changed extent the posts wait for
+     the first request made under the new epoch. The render owner states each request's epoch to the
+     permission before it first calls the host for that request.
+   - **What a suspend does to a tick submission already entered.** The section's lock keeps the surface
+     installed. It does not keep the permission, because the shell never waits for it: a suspend sets the
+     flag, advances the epoch, finds the slot busy and returns, all while a tick submission is inside its
+     section (`suspend` and `release_surface` in `src/ios.rs`). So the guarantee is the one
+     [the shell's design](../PLATFORM-RUNTIME-IOS/DESIGN.md) gives a frame's section, stated by where the
+     suspend lands. Before the confirmation: the confirmation refuses and no submit is made. After the
+     confirmation: that one submit is made, its effect is called back as for any other, and its answer
+     is drained after resume or ages out. Two atomic loads cannot stop a revocation that lands between
+     them and the call that follows, and UIKit is not made to wait. The frame's check before
+     `encoded.submit` leaves the same window. It lets through at most one tick submission for each
+     revocation, since every later entry and confirmation refuses, and the shell revokes at
+     `willResignActive`, before the app is in the background. After `suspended` returns: none is
+     entered until resume, because the frame job returns on the flag before it calls the host, and an
+     entry reads the flag and the epoch under the lock. This is what C06's foreground lease means for a
+     frame, and a tick submission is held to the same.
+   - **Where the render owner calls the host.** In three places: `advance` before its present section,
+     `advance` to drain an old grid, and `drive` with no surface, after the configure section returned
+     `NoLease` or the platform denied a present. With the permission each is safe as it stands, where
      without it a posted pass would be submitted outside the lease in all three. None of the three is
      inside a lease section, so the permission's section does not nest.
    - **A healthy host with no drawable is not a refused one.** In the foreground with its lease, a host
@@ -804,8 +846,9 @@ drawn is a different need and is not built: a tick pass steps nothing a frame re
 [Async-compute eligibility](#async-compute-eligibility) stays a flag for a recipe with a second queue.
 
 **Checked against the contracts.** C06: one executor owns submission, no feature submits outside the
-coordinator's lifecycle, and the iPhone's foreground lease forbids background submission, which rules 1 and 6
-keep. C02: a view is optional and a tick is never lost with one, a required reader has explicit backpressure
+coordinator's lifecycle, which rules 1 and 6 keep, and the iPhone's foreground lease forbids background
+submission, which rule 6 keeps as the lease keeps it for a frame: no tick submission is entered after a
+revocation, and one already entered is refused at its last check before the submit. C02: a view is optional and a tick is never lost with one, a required reader has explicit backpressure
 (rule 5), and an asynchronous result is checked against its epoch before it is published, which stays the
 effect's check on delivery and which rule 3 gives the endpoint for. C09: a water query reads GPU state through
 an asynchronous batched query; the stage changes when that batch is submitted and nothing it answers. C07: no
@@ -818,7 +861,15 @@ gives every expected value exactly. Each of its answers carries its post's endpo
 answer made with no state to answer from carries the mark and no value of the field. On the Mac it is a test
 contribution in `thrum-render`'s own tests, the smallest world that shows what the host admits, and the test
 is its game. In Chrome the V1 game's diagnostic effect gains the same tick pass behind the selection it
-already has. `WATERS` WP19 is the first real consumer and moves its body query to the stage.
+already has.
+
+**What `WATERS` WP19 takes from WP6.** WP19 is the first real consumer and moves its body query to the
+stage. It takes four things as built. The stage, and the rules above for what its tick pass may read and
+write. Each tick's endpoint from the sky world's fixed update, which its island's posts state: the owner
+is the world, the order is rule 3's, and WP19 neither copies the world's private values nor reads a
+frame's. The state record's comparison of a post's world with the committed state's, by which its answers
+say when they had no state. And risk 8's staging of what its query reads from the water map. What the
+query computes, what a marked answer holds, its mailbox and how late its answers are stay `WATERS`'.
 
 ### Check that it can work
 
@@ -853,11 +904,18 @@ already has. `WATERS` WP19 is the first real consumer and moves its body query t
 - **Whose state.** The seam's state record already holds the endpoint the last submitted frame committed,
   with its world epoch and timeline, and already resets on a change of either when a frame begins. Rule 3
   makes the same comparison for a post, before that frame exists.
-- **Permission through the queue call.** The iPhone's lease is a lock the render owner holds for a section,
+- **Permission, entered and confirmed.** The iPhone's lease is a lock the render owner holds for a section,
   and the shell removes a surface only with a try-lock after advancing the epoch
-  (`examples/v1-game-ios/src/lease.rs`). The render owner already publishes a replacement device inside a
-  section that first reads the background flag. A tick submission made the same way has the same guarantee,
-  and the render owner calls `advance` and `drive` outside every section, so the lock is not taken twice.
+  (`examples/v1-game-ios/src/lease.rs`). The lock orders a section against the surface's removal and
+  against nothing else: that file's own test revokes inside a held section, and the section sees the
+  epoch changed while it still holds the surface. So the permission cannot be the lock. It is the lock
+  with the two checks a frame's section makes, on entry and last before the submit
+  (`present` in `src/ios/render.rs`), and it has that section's guarantee and that section's one window.
+  Both checks read the lease's epoch and the background flag, which the lease and the shell already keep.
+  The render owner calls `advance` and `drive` outside every section, so the lock is not taken twice.
+- **The endpoint where the game posts.** The sky kit already makes each fixed-update call for one tick:
+  tick zero's when it builds its world, and the rest as that world commits them. The world holds its epoch
+  and timeline as it holds its tick. Handing all three to the call adds no state and no order.
 - **The asking before the wait.** The render actor's wait touches the host through `has_free_slot` and
   `poll_completed` alone, and it begins only when the surface is ready and the device is checked. An asking
   placed before it is one more call on the same thread. A tick submission takes no frame slot, so it does
@@ -871,9 +929,10 @@ already has. `WATERS` WP19 is the first real consumer and moves its body query t
 | The contribution list, stages, the tentative-commit protocol, the anchor, knobs | This module (`contribution.rs`, `synthetic/{contributed,scene_graph}.rs`, the frame host's list) |
 | The frame's effect time: tick, timeline, tick duration, alpha and the display phase | This module states it; the world's clock in `thrum-core` and the frame host produce it |
 | Tick passes: when they are asked for and recorded, the tick submission, its bound and its completion call | This module states them; the frame host makes the submission ([ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6)) |
-| Permission to make a tick submission | The shell that holds the platform's right: the iPhone's render owner, from its surface lease. The frame host enters it and never judges it |
+| Permission to make a tick submission | The shell that holds the platform's right: the iPhone's render owner, from its surface lease, the epoch of the request it is serving and its background flag. The frame host enters it, confirms it last before the submit and never judges it |
 | The asking ahead of a caller's own wait | The caller that waits: the Mac's render actor |
-| A post's endpoint and the tick its answer is for | The game that posts |
+| A tick's endpoint: the world epoch, the timeline and the tick | The world that commits the tick. It hands the endpoint to its game where the game posts: `thrum-app`'s sky world to `SkyGame`'s fixed update |
+| A post's endpoint and the tick its answer is for | The game that posts, stating the endpoint its world handed it |
 | Whether an effect's committed state is the post's world's | The seam's state record, from the endpoint the last submitted frame committed |
 | What a tick pass computes, its inputs, its readback, its drain, and what an answer holds when there was no state to answer from | The effect's module (`WATERS`' body query) |
 | The due time of a frame's tick, and so its span and origin | The world's clock; the pair's clock sample carries it and the frame host records it |
@@ -918,9 +977,12 @@ WP6 edits `contribution.rs`, the graph's declaration checks and the frame host (
 timing files) under [the module list's ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6), and the V1
 game's diagnostic effect with its browser qualification. It edits two shells, each in one place. The Mac's
 render actor (`crates/thrum-app/src/app/render_actor.rs`) makes the asking before its wait for a frame slot.
-The iPhone's render owner (`examples/v1-game-ios`) gives its host a submission permission made of its lease.
-Nothing else in either changes: not the wait's length, the lead, the lease's protocol or any call into the
-host. The browser page is not edited. `advance_without_rendering` keeps its contract, and the tests that hold
+The iPhone's render owner (`examples/v1-game-ios`) gives its host a submission permission made of its lease,
+its request's epoch and its background flag. Nothing else in either changes: not the wait's length, the
+lead, the lease's protocol, the frame's section or any call into the host. The browser page is not edited.
+It edits `thrum-app`'s sky world (`crates/thrum-app/src/sky.rs`) in one place too: the fixed update is
+handed its tick's endpoint beside what it is given today. `examples/water` is not edited and builds
+unchanged. `advance_without_rendering` keeps its contract, and the tests that hold
 it there keep passing.
 
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change that alters another module's exact images
@@ -979,7 +1041,7 @@ on the valley route with no effect attached.
    the query moved to the stage has to stage its own copy of what it reads from them.
 9. **A shell that needs a submission permission gives none.** The host cannot tell: with none given it
    submits freely. Only the iPhone has the rule today, and WP6.7 and its reviewer's question hold its render
-   owner to it. A later shell on a platform that can revoke the right to submit gives one before it hosts a
+   owner to it, as WP6.3 holds the host to entering and confirming whatever permission it is given. A later shell on a platform that can revoke the right to submit gives one before it hosts a
    scene with a tick pass.
 10. **The first answers after a restore say they had no state.** A game sees marked answers, or none, from
     the restore until the first view of the restored world is submitted. Under a run of skipped views that
@@ -1017,9 +1079,13 @@ on the valley route with no effect attached.
   Chrome gets one function case, because only a browser shows that a submission and a map outside the frame
   complete there and reach a drain through its event loop with no view drawn. The two shells are proved
   where their claim is. The render actor's is an order of calls, which a CPU test with a stand-in for the
-  host shows and no panel timing does. The render owner's is the lease's protocol, which CPU tests beside
-  the lease's own show on the Mac. No WP6 item runs the iPhone simulator: no scene the iPhone app runs
-  declares a tick pass yet.
+  host shows and no panel timing does. The render owner's is what its permission answers in each state of
+  the lease, the request's epoch and the background flag, which CPU tests beside the lease's own show on
+  the Mac. A revocation made between entry and the confirmation is the case that tells the permission
+  from the lock: the surface is still installed and the confirmation refuses. What the host does with
+  each answer is WP6.3's, with a test permission. No WP6 item runs the iPhone simulator: no scene the
+  iPhone app runs declares a tick pass yet. The sky world's endpoint is a CPU test through `SkyGame`'s
+  public route, with no device.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<work-package>/`; selected evidence
   in `.orchestrate/evidence/EFFECT-GRAPH/`.
 - **Maturity.** A ledger row for the seam is added at WP3, with implementation, correctness and device results kept

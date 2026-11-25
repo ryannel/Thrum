@@ -258,3 +258,9 @@
   from, when it is delivered, and two refused declarations. WP6.1 to WP6.4 rewritten, WP6.5 to WP6.7 added,
   and [the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6) now covers one place in two shells.
   [Each finding and its change](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6-design-fixes.md).
+- 2026-11-25 Planner: WP6's design revised after [its second review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md)
+  asked for two changes, in the last round before building. The host now enters the iPhone's permission
+  before it records and confirms it last before the submit (rule 6, WP6.3, WP6.7 rewritten). The sky world
+  hands a game's fixed update each tick's endpoint (rule 3, WP6.8 added, the seam ruling's third place).
+  `WATERS`' files, every contract's words, Done item and exact baseline stand.
+  [Each finding and its change](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6-design-fixes.md).

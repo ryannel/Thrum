@@ -429,8 +429,17 @@ two shells change too, each in one place and by the same builder. The Mac's rend
 (`crates/thrum-app/src/app/render_actor.rs`, `PLATFORM-RUNTIME-MAC`'s and `HOST`'s) asks the host for tick
 work before its wait for a frame slot, so a posted pass is not charged that wait. The iPhone's render owner
 (`examples/v1-game-ios`, `PLATFORM-RUNTIME-IOS`'s) gives its host a submission permission made of its
-surface lease, which the host holds through a tick submission's queue call, so none is made in the background
-or after the lease is revoked (C06). The wait's length, the lead, the lease's protocol and every call into
+surface lease, the epoch of the frame request it is serving and its background flag. The host enters it
+before it records a tick submission and confirms it last before that submission's submit. A tick submission
+so has the guarantee against a revocation that [the lease](PLATFORM-RUNTIME-IOS/DESIGN.md) gives a frame's
+section, and no more (C06): none is entered after a revocation, one already entered is refused at its
+confirmation, one past its confirmation is made, at most one for each revocation, and UIKit never waits.
+After [the second review](../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md) a third place changes,
+by the same builder: `thrum-app`'s sky world (`crates/thrum-app/src/sky.rs`, which `WATERS` gave a tick
+under [its ruling 3](#seam-rulings-for-sea)) hands a game's fixed update the endpoint of each tick, the
+world epoch, the timeline and the tick, beside the tick number and duration it gives today. A post is asked
+on that endpoint, the world owns it, and `examples/water` builds unchanged until `WATERS` WP19 reads it.
+The wait's length, the lead, the lease's protocol, the frame's present section and every call into
 the host stay as they are, and the browser page is not edited. No item of `APPLE-TILE`, `APPLE-PRESENTATION`,
 `HOST`, `CREATOR`, `PLATFORM-RUNTIME-MAC` or `PLATFORM-RUNTIME-IOS` changes, and no exact baseline moves: a
 scene with no tick pass makes the submissions it makes today, and one with a tick pass compiles the same frame graph. C02, C06, C07 and C09 hold as written, and
@@ -3285,3 +3294,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   held behind the Mac's wait for a frame slot: the render actor asks before that wait, and the render owner
   gives its host a permission made of its lease. The tick-pass interface row, every other module's item and
   dependency, and every exact baseline stand.
+- 2026-11-25 [The seam ruling for `EFFECT-GRAPH` WP6](#seam-ruling-for-effect-graph-wp6) revised after the
+  design's second review. The iPhone's permission is checked on entry and again last before the submit, on
+  the request's epoch and the background flag, so a tick submission has the guarantee a frame's section has
+  and the ruling no longer claims more. `thrum-app`'s sky world hands a game's fixed update each tick's
+  endpoint, the third place WP6 builds outside the seam, so `WATERS` WP19 posts with its world's own
+  identity. The tick-pass interface row, every other module's item and dependency, and every exact baseline
+  stand.
