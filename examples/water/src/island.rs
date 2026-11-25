@@ -65,11 +65,11 @@ impl Wind {
     fn surf_forcing(self) -> Forcing {
         let mut forcing = self.forcing();
         if let Some(swell) = forcing.swells.first_mut() {
-            let period = 10.0_f64;
+            let period: f64 = if self == Self::Trade { 6.5 } else { 10.0 };
             swell.wavelength = 9.81 * period.powi(2) / std::f64::consts::TAU;
             swell.direction = std::f64::consts::FRAC_PI_4;
             if matches!(self, Self::Trade) {
-                swell.significant_height = 1.5;
+                swell.significant_height = 2.0;
                 // A local trade wind over a limited fetch leaves room for the
                 // incoming swell to organize the exposed beach.
                 forcing.fetch = 18_000.0;
@@ -124,7 +124,7 @@ fn surf_spectrum(wind: Wind, forcing: &Forcing) -> Result<Spectrum, SeaError> {
         return Spectrum::build(forcing);
     }
 
-    // A repeatable 10 s set on the exposed beach. The sidebands vary the
+    // A repeatable swell set on the exposed beach. The sidebands vary the
     // height from one crest to the next while the wind sea keeps its detail.
     let swell = forcing.swells[0];
     let mut wind_sea = forcing.clone();
@@ -296,8 +296,8 @@ pub const CAMERAS: [Camera; 6] = [
 /// Forty-metre view of the same shore margin as the sand camera.
 pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0, 0.0, 12.0], 65.0);
 
-/// Sand, overhead, offshore, lee, headland, whole-island, seaward and foam handoff views.
-pub const SURF_VIEWS: [Camera; 8] = [
+/// Sand, overhead, offshore, lee, whole-island and specialised surf inspection views.
+pub const SURF_VIEWS: [Camera; 9] = [
     CAMERAS[0],
     Camera::look_at([-94.0, 40.0, 49.0], [-164.0, 0.0, 18.0], 74.0),
     Camera::look_at([-1106.0, 40.0, 8.0], [-106.0, 0.0, 8.0], 10.0),
@@ -307,6 +307,8 @@ pub const SURF_VIEWS: [Camera; 8] = [
     Camera::look_at([-112.0, 2.0, 30.0], [-158.0, 0.0, 15.0], 65.0),
     // The 2 m coarse cells put the near window edge at z = 8 m here.
     Camera::look_at([-240.0, 40.0, 264.0], [-125.0, 0.0, 12.0], 17.0),
+    // Look along the beach so perspective preserves the relative cross-shore gaps.
+    Camera::look_at([-188.0, 105.0, 93.0], [-188.0, 0.0, -8.0], 60.0),
 ];
 
 /// Build the island with its cooked ground and the mapped water contribution.
@@ -406,14 +408,14 @@ fn build_island(
         .slider(
             "camera.island",
             if surf_route {
-                "Sand/Beach/Sea/Lee/Headland/Island/Out/Handoff"
+                "Sand/Beach/Sea/Lee/Headland/Island/Out/Handoff/Approach"
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
                 "Beach / Lake / Pond / Hill / Map / Sill"
             },
             0.0..=if surf_route {
-                7.0
+                8.0
             } else if foam {
                 6.0
             } else {
@@ -431,7 +433,7 @@ fn build_island(
     let sun = controls
         .slider("sun.elevation", "Sun elevation", 5.0..=80.0)
         .default(if surf_route && wind == Wind::Trade {
-            28.0
+            38.0
         } else {
             60.0
         })
@@ -459,7 +461,7 @@ fn build_island(
         };
         sky.sun_elevation_degrees = c.get(sun);
         sky.sun_azimuth_degrees = if surf_route && wind == Wind::Trade {
-            300.0
+            224.0
         } else {
             228.0
         };

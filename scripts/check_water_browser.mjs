@@ -654,7 +654,7 @@ try {
       result.frame_report_history={before,after};
     }
   } else if(mode==='fixed' && surfInspection){
-    const views=['sand','beach','offshore','lee','headland','island','seaward','handoff'];
+    const views=['sand','beach','offshore','lee','headland','island','seaward','handoff','approach'];
     for(const [index,name] of views.entries()){
       await evaluate(`game.edit_control('camera.island',${index})`);
       for(let phase=0;phase<3;phase++){
@@ -676,7 +676,7 @@ try {
     const spacing=surfInspection?100:0;
     if(surfInspection){
       const view=Number(process.env.THRUM_WATER_ISLAND_CAMERA??'0');
-      assert(Number.isInteger(view)&&view>=0&&view<=7,'invalid surf camera');
+      assert(Number.isInteger(view)&&view>=0&&view<=8,'invalid surf camera');
       await evaluate(`game.edit_control('camera.island',${view})`);
       result.surf_camera=view;
       await until(async()=>{
