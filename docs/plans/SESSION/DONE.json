@@ -855,7 +855,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A networked game that draws as smoothly as it does alone wherever its link allows, as Factorio's multiplayer does: the client's world advances only when the match says, and the picture glides between confirmed ticks at the display's refresh. Late sets that land inside the playout buffer show nothing. When the buffer runs out the picture holds, then carries on from where it held, never more than a tenth fast. Only a client that fell behind jumps, and it says so. The engine side names no session: any game can drive a world.",
       "findings": [
         {
