@@ -114,6 +114,8 @@ impl Write for Sink {
     }
 }
 
+pub(super) const STILL: u64 = 5;
+
 impl Recorder {
     pub(super) fn failed(&mut self, host: &mut Host, signals: &Signals, error: &str) {
         drop(self.cancel(host, signals, error));
@@ -235,6 +237,10 @@ impl Recorder {
         }
         if !s.ending && reply.outcome.is_some_and(|r| r.submitted) {
             s.expected += 1;
+            if s.mode == STILL {
+                s.ending = true;
+                host.stop_submitted_capture();
+            }
         }
         if let Some((gpu, cpu)) = host.submitted_capture_usage() {
             s.peak.0 = s.peak.0.max(gpu);

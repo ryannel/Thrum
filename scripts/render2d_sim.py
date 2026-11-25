@@ -67,16 +67,16 @@ def worker(out):
         held = wait(state, lambda s: s.get("world_paused") == "true"
                     and int(s.get("pause_replies", 0)) > prior_pauses, "held photo endpoint")
         held_tick = int(held["pause_tick"])
-        route["post"]("capture-begin")
+        route["post"]("capture-still")
         source = temp / f"thrum-capture-{session}"
-        wait(lambda: load(source / "pending.json"), lambda s: s.get("images", 0) > 0, "held submitted image")
+        receipt = wait(lambda: load(source / "runtime.json"), bool, "held session retirement", 40)
+        (out / f"{label}-capture.json").write_text(json.dumps(receipt, indent=2))
+        validate_session(receipt)
+        if receipt["expected_submissions"] != 1:
+            raise ValueError("held acquisition did not capture exactly one submission")
         screen = out / f"{label}-simctl.png"
         run("io", device, "screenshot", str(screen))
-        route["post"]("capture-end")
-        receipt = wait(lambda: load(source / "runtime.json"), bool, "held session retirement", 40)
-        validate_session(receipt)
         header = load(source / "identity.json")
-        (out / f"{label}-capture.json").write_text(json.dumps(receipt, indent=2))
         if header["passes"] != list(PASSES) or header["backend"] != "Metal":
             raise ValueError("the iOS sprite scene compiled a foreign pass")
         frames = receipt["images"]
@@ -87,12 +87,8 @@ def worker(out):
                     held_tick, expected_extent, int(held["device_generation"]), int(held["presented_epoch"]), ROWS, 1, 1):
                 raise ValueError(f"held image has the wrong endpoint, extent, drawable or scene: {frame}")
         width, height = expected_extent
-        raw = None
-        for frame in decoded_frames(source / "frames.spool", header["encoding"], receipt["writer"]["hashes"],
-                                    width * height * 4):
-            if raw is not None and frame != raw:
-                raise ValueError("the held sprite scene changed between submitted frames")
-            raw = frame
+        raw, = decoded_frames(source / "frames.spool", header["encoding"], receipt["writer"]["hashes"],
+                              width * height * 4)
         expected = (temp / "thrum-sprite-card.rgba").read_bytes()
         bounds = compare_card(raw, expected, expected_extent)
         png = out / f"{label}-engine.png"

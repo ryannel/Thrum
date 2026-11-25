@@ -84,6 +84,7 @@ enum Command {
     CaptureEnd,
     CaptureSaturate,
     CaptureSlow,
+    CaptureStill,
     CaptureMove,
     CaptureRest,
     ForceHeadroom,
@@ -137,6 +138,7 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         18 => Command::ForceHeadroom,
         19 => Command::HoldWorld,
         20 => Command::RunWorld,
+        21 => Command::CaptureStill,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
@@ -614,10 +616,14 @@ impl Shell {
                 self.stale_request = true;
             }
             Command::CookedPan => self.signals.cooked_pan.store(true, Ordering::Release),
-            Command::CaptureBegin | Command::CaptureSaturate | Command::CaptureSlow => {
+            Command::CaptureBegin
+            | Command::CaptureSaturate
+            | Command::CaptureSlow
+            | Command::CaptureStill => {
                 let mode = match command {
                     Command::CaptureSaturate => 2,
                     Command::CaptureSlow => 3,
+                    Command::CaptureStill => capture::STILL,
                     _ => 1,
                 };
                 self.signals.capture.store(mode, Ordering::Release);

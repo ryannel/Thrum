@@ -69,6 +69,7 @@ private let shellCommands: [String: Int32] = [
     "force-headroom": 18,
     "hold-world": 19,
     "run-world": 20,
+    "capture-still": 21,
 ]
 
 // Route commands also arrive as files dropped into the app's temporary
