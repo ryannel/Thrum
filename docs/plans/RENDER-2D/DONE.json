@@ -708,7 +708,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Crowd legibility as in Vampire Survivors and Halls of Torment: with thousands on screen every enemy, projectile and player stays readable, the horde moves as one smooth mass at the display's refresh, and nothing flickers where bodies overlap. Pixel stability as in Celeste. A guide a game maker can follow without reading engine source, as Bevy's 2D examples are.",
       "findings": [
         {
