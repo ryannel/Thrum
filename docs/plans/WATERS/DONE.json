@@ -1371,7 +1371,7 @@
     {
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
-      "status": "ready_for_review",
+      "status": "done",
       "depends_on": [
         "EFFECT-GRAPH:WP6"
       ],
@@ -1409,7 +1409,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-running.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
         {
@@ -1420,7 +1420,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-cost.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
         {
@@ -1449,24 +1449,7 @@
         }
       ],
       "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "The running proof hides missing float deliveries",
-          "item": "WP19.3",
-          "repeat": false
-        },
-        {
-          "name": "Timely delivery collapses at the island's sand camera",
-          "item": "WP19.3",
-          "repeat": false
-        },
-        {
-          "name": "The paired cost record reports empty cut scratch after the fleet query",
-          "item": "WP19.4",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP8",
