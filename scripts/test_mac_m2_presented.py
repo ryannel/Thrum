@@ -118,6 +118,28 @@ class PresentedWitness(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'missing same-process clock markers'):
                 witness.calibration(arm, measured_interval=True)
 
+    def test_replayed_handlers_use_the_live_trace_clock(self):
+        columns = ''.join(f'<col><mnemonic>{name}</mnemonic></col>'
+                          for name in ('time', 'thread', 'class', 'subclass', 'code', 'arg1', 'arg2'))
+        template = '<row><t>{}</t><thread><process fmt="v1-game (7)"/></thread><c>{}</c><sc>{}</sc><code>{}</code><a>{}</a><b>2</b></row>'
+        source = (
+            f'<trace-query-result><node><schema name="kdebug">{columns}</schema>'
+            + template.format(998, 31, 5, 81, 4)
+            + '</node><node>'
+            + template.format(1501, 49, 202, 81, 4)
+            + template.format(1700, 49, 202, 81, 5)
+            + '</node></trace-query-result>'
+        )
+        rows = [{'drawable_id': '4', 'status': '2', 'handler_trace_ns': '1300'},
+                {'drawable_id': '5', 'status': '2', 'handler_trace_ns': '1500'}]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'live.xml'
+            path.write_text(source)
+            self.assertEqual(witness.replay_origin_shift(path, 7, rows), (201, 2))
+            rows[1]['handler_trace_ns'] = '1505'
+            with self.assertRaisesRegex(ValueError, 'one trace-origin shift'):
+                witness.replay_origin_shift(path, 7, rows)
+
     def test_finalization_cap_starts_at_recording_stop(self):
         with tempfile.TemporaryDirectory() as directory:
             log=Path(directory)/'process.log'
