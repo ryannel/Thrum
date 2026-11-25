@@ -8,7 +8,10 @@
       ".orchestrate/evidence/WATERS/design-review-17.md",
       ".orchestrate/evidence/WATERS/design-review.md"
     ],
-    "at": "2026-11-25T00:55:07Z"
+    "at": "2026-11-25T00:55:07Z",
+    "items_owed": [
+      "WP20"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -1400,7 +1403,7 @@
       }
     },
     "WP13": {
-      "definitions": "a4292b0e02ca30167921e469474afc2849d0785b5aea02e2fff0c1070c4da706",
+      "definitions": "6e93f683bd8f981ec50f4951f7f2bcd1b9fdb5a9e9deb5cd5d78b89dc58b6e64",
       "reviews": [
         {
           "verdict": "fail",
@@ -1458,44 +1461,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Unblock WATERS WP13 again (handoff .orchestrate/evidence/WATERS/WP13-handoff.md; candidate 3f55f5cdf on build/waters). E",
-        "at": "2026-11-25T02:43:09Z"
-      },
-      "ready_for_review": {
-        "commit": "1dec5ede321b4931fef3ebd635b55648431b6fb5",
-        "checked": "1dec5ede321b4931fef3ebd635b55648431b6fb5",
-        "at": "2026-11-25T02:55:28Z",
-        "reused": [
-          "WP13.1",
-          "WP13.2",
-          "WP13.3",
-          "WP13.6",
-          "WP13.9",
-          "WP13.10",
-          "WP13.12",
-          "WP13.14"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13",
-        "path": "headless",
-        "usage": {
-          "input": 3344443,
-          "cached": 271974144,
-          "output": 476500,
-          "turns": 11
-        },
-        "session_usage": {
-          "input": 3344443,
-          "cached": 271974144,
-          "output": 476500,
-          "turns": 11
-        }
+        "task": "WATERS WP13 is Blocked: a short gray straight-sided flap in the pitching face (native x~2200-2260, y~345-370, engine tim",
+        "at": "2026-11-25T04:04:31Z"
       }
     },
     "WP15": {
@@ -1676,6 +1643,15 @@
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix find",
         "at": "2026-11-25T00:55:07Z"
       }
+    },
+    "WP20": {
+      "definitions": "f6810b60ab8a5a547d4f4504438a08a6ffd3b2eff2d1e711b56a02c30189ebbd",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "WATERS WP13 is Blocked: a short gray straight-sided flap in the pitching face (native x~2200-2260, y~345-370, engine tim",
+        "at": "2026-11-25T04:04:31Z"
+      }
     }
   },
   "tasks": [
@@ -1790,11 +1766,15 @@
     {
       "task": "Unblock WATERS WP13 again (handoff .orchestrate/evidence/WATERS/WP13-handoff.md; candidate 3f55f5cdf on build/waters). Every WP13 item now has a builder pass except WP13.5 point 4, the one you just added: the taller gale crest breaking farther out, judged from a nearer view. Three nearer Metal looks hit the stop. The inner 0.8 m crest already carries white before its expected onset, so there's no distinct onset to compare, and the builder asks for an optics change or a different crest pair. Lead's direction: this is now the sixth failed look at the same height-rank cue, which by the owner's rules means park it rather than try again. The owner's bar is a plausible shipped-game look, not physical accuracy. Unless you see a clearly cheap and certain route, retire WP13.5 point 4 from WP13, and either record it as a known gap or move it to a later WATERS work package (for example WP10's motion review) where the visuals are reviewed together, so WP13 can go to review with what passes. Record the decision as an assumption the owner can overturn.",
       "at": "2026-11-25T02:43:09Z"
+    },
+    {
+      "task": "WATERS WP13 is Blocked: a short gray straight-sided flap in the pitching face (native x~2200-2260, y~345-370, engine time ~5.22 s, 40 m motion) survived three looks (refined bend, world-space normal, optical fold); the design's three-look stop applies. Everything else in WP13 passes. Lead's direction: don't spend a fourth blind look. Either (a) park the flap as a recorded known gap with a reproducible witness (fixed engine time, camera, the submitted branch/depth/face-weight diagnostic the handoff names) and give that diagnostic and fix to a later work package or spike, so WP13 can pass review on its remaining items; or (b) if you judge the flap foundational to the breaker look, make the next step that witness diagnostic as a bounded item rather than another visual trial. Choose and record which, as an assumption the owner can overturn. The bar is a shipped high-end game's look, judged in motion; references diagnose, never gate.",
+      "at": "2026-11-25T04:04:31Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T02:43:09Z"
+    "at": "2026-11-25T04:04:31Z"
   },
   "design_history": [
     {
