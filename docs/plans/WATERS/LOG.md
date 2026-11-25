@@ -974,14 +974,10 @@
   handoff passed the new sweep, and all eight item checks and the repository test command passed.
   [Overview repair and comparisons](../../../.orchestrate/evidence/WATERS/WP13/gale-overview/repair.md).
 
-- 2026-11-25 WP13 carries the previous coarse foam window's feather across camera changes.
-  Newly exposed cells use the distant estimate while local transported stocks build up.
-  The live gale cut from camera 7 to 8 holds the white crest and the surrounding wash across
-  the old edge from the first destination submission on Metal and hardware Chrome.
-  All eight item checks, the repository gate, and the five visual inspections passed on their targets.
-  The paired 1440p cost record measured 25,916,798 query cut nodes for eight floats.
-  The query timing crossing remains with WP19.
-  [Camera cut and comparison](../../../.orchestrate/evidence/WATERS/WP13/camera-change/camera-cut-inspection.md) ·
-  [Matched Chrome and Metal](../../../.orchestrate/evidence/WATERS/WP13/camera-change/chrome-inspection.md) ·
+- 2026-11-25 WP13 keeps the coarse foam blend continuous across camera changes.
+  The old window edge is clear from the first gale approach submission on Metal and hardware Chrome.
+  All eight item checks, the repository gate, and the five visual inspections passed.
+  [Camera cut](../../../.orchestrate/evidence/WATERS/WP13/camera-change/camera-cut-inspection.md) ·
+  [Matched targets](../../../.orchestrate/evidence/WATERS/WP13/camera-change/chrome-inspection.md) ·
   [Item checks](../../../.orchestrate/evidence/WATERS/WP13/camera-change/target-checks.md) ·
   [Paired cost and investigations](../../../.orchestrate/evidence/WATERS/WP13/camera-change/cost-inspection.md).
