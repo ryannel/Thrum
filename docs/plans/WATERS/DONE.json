@@ -1122,7 +1122,7 @@
     {
       "id": "WP13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1288,7 +1288,17 @@
           "item": "WP13.12",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "A planner decision on the remaining flap would reopen work on the two visual items.",
+        "work": {
+          "commit": "dc1d21f5c0cc35e20e574a284188310cdfa85060",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/WP13-handoff.md"
+      }
     },
     {
       "id": "WP19",
