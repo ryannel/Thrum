@@ -43,6 +43,7 @@ thrum_test_support::macos_gpu_test! {
                 let mut highlight = false;
                 let mut centre = None;
                 let mut moved = false;
+                let mut first_opaque = None;
                 for index in 0u32..12 {
                     let time = Duration::from_millis(u64::from(index) * 17);
                     let yaw = -std::f32::consts::FRAC_PI_2 - 0.046 + index as f32 * 0.006;
@@ -63,7 +64,12 @@ thrum_test_support::macos_gpu_test! {
                     if let Some(exposure) = b.exposure_gpu_words {
                         exposures.insert(exposure[1]);
                     }
-                    highlight |= compare(&a, &b, float);
+                    let (scene_highlight, opaque) = compare(&a, &b, float);
+                    highlight |= scene_highlight;
+                    assert_eq!(
+                        first_opaque.get_or_insert_with(|| opaque.clone()).as_slice(),
+                        opaque.as_slice(),
+                    );
                     let bytes = if float { 8 } else { 4 };
                     let valley = a.rgba[(135 + 40 * extent[0] as usize) * bytes..][..bytes].to_vec();
                     moved |= centre.as_ref().is_some_and(|previous| previous != &valley);
@@ -81,7 +87,7 @@ thrum_test_support::macos_gpu_test! {
 }
 
 #[cfg(target_os = "macos")]
-fn compare(plain: &SubmittedImage, painted: &SubmittedImage, float: bool) -> bool {
+fn compare(plain: &SubmittedImage, painted: &SubmittedImage, float: bool) -> (bool, Vec<u8>) {
     let bytes = if float { 8 } else { 4 };
     let [width, height] = plain.extent.map(|axis| axis as usize);
     assert_eq!(plain.extent, painted.extent);
@@ -89,6 +95,7 @@ fn compare(plain: &SubmittedImage, painted: &SubmittedImage, float: bool) -> boo
     assert_eq!(plain.rgba.len(), width * height * bytes);
     assert_eq!(plain.rgba.len(), painted.rgba.len());
     let mut highlight = false;
+    let mut opaque = Vec::new();
     let encode = |linear: f32| {
         let code = if linear <= 0.003_130_8 {
             linear * 12.92
@@ -113,13 +120,8 @@ fn compare(plain: &SubmittedImage, painted: &SubmittedImage, float: bool) -> boo
                     half::f16::from_le_bytes([channel[0], channel[1]]).to_f32() > 1.0
                 });
         }
-        let corner = (8..17).contains(&x) && (8..12).contains(&y);
-        if corner || anchor {
-            let texel = if anchor {
-                [223, 229, 255]
-            } else {
-                [255, 134, 61]
-            };
+        if let Some(texel) = authored_texel(x, y, anchor) {
+            opaque.extend_from_slice(b);
             for (channel, code) in texel.into_iter().enumerate() {
                 if float {
                     let value =
@@ -135,5 +137,41 @@ fn compare(plain: &SubmittedImage, painted: &SubmittedImage, float: bool) -> boo
             }
         }
     }
-    highlight
+    assert_eq!(opaque.len(), 1_234 * bytes);
+    (highlight, opaque)
+}
+
+#[cfg(target_os = "macos")]
+fn authored_texel(x: usize, y: usize, anchor: bool) -> Option<[u8; 4]> {
+    let colours = [
+        [255, 134, 61, 255],
+        [105, 247, 185, 255],
+        [223, 229, 255, 255],
+        [48, 70, 192, 255],
+        [185, 70, 237, 255],
+        [6, 117, 110, 255],
+    ];
+    let in_rect = |left, top, width, height| {
+        (left..left + width).contains(&x) && (top..top + height).contains(&y)
+    };
+    if anchor {
+        return Some(colours[2]);
+    }
+    for (index, left, top, width, height) in [
+        (0, 8, 8, 9, 4),
+        (1, 111, 8, 9, 6),
+        (3, 8, 59, 4, 7),
+        (4, 114, 62, 6, 4),
+        (2, 22, 19, 40, 2),
+        (1, 22, 28, 54, 6),
+        (5, 76, 28, 24, 6),
+    ] {
+        if in_rect(left, top, width, height) {
+            return Some(colours[index]);
+        }
+    }
+    colours
+        .into_iter()
+        .enumerate()
+        .find_map(|(column, colour)| in_rect(22 + 13 * column, 45, 11, 8).then_some(colour))
 }
