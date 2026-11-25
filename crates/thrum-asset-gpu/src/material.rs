@@ -255,7 +255,7 @@ pub(crate) struct MeshSurface {
     pub(crate) fragment_entry: &'static str,
     pub(crate) color_formats: Vec<Option<wgpu::ColorTargetState>>,
     pub(crate) depth_format: wgpu::TextureFormat,
-    receiver: bool,
+    pub(crate) receiver: bool,
 }
 
 impl MeshSurface {

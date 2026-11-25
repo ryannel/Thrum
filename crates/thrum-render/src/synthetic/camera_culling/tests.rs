@@ -275,9 +275,9 @@ fn list_depth(
                 &prepass.view_bind_group,
                 0,
                 if depth_only {
-                    super::CameraDraw::Depth
+                    CameraDraw::Depth
                 } else {
-                    super::CameraDraw::Forward
+                    CameraDraw::Forward
                 },
             )
             .expect("bind");

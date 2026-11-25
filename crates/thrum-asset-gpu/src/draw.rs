@@ -275,13 +275,9 @@ impl Pipelines {
         let mut mesh = target.meshes(&module, secondary_source.as_deref());
         let mut stage_shadow = None;
         if config.draw_path == CookedDrawPath::MeshStages && fallback.is_none() {
-            match crate::mesh_stages::prepare(surface, &target.main, &source, config) {
+            match crate::mesh_stages::prepare(surface, target, &source, config) {
                 Ok(prepared) => {
-                    mesh.receiver_stages = target.receiver.as_ref().map(|receiver| {
-                        prepared
-                            .layout
-                            .compile(device, receiver, &source, "cooked_mesh")
-                    });
+                    mesh.receiver_stages = prepared.receiver;
                     target.stages = Some(prepared.layout);
                     mesh.stages = Some(prepared.forward);
                     stage_shadow = prepared.shadow;

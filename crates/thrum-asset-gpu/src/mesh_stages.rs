@@ -4,7 +4,7 @@ use thrum_render::binding;
 use thrum_render::contribution::{SceneShadowSurface, SceneSurface};
 use thrum_render::runtime::DeviceSite;
 
-use crate::material::MeshSurface;
+use crate::material::{MeshSurface, Target};
 
 const GROUP: u32 = 4;
 const VIEW_BINDING: u32 = 9;
@@ -18,7 +18,7 @@ const CULL_WITNESS_BYTES: u64 = CULL_OUTCOMES * size_of::<u32>() as u64;
 
 pub(crate) fn prepare(
     surface: &SceneSurface<'_>,
-    target: &MeshSurface,
+    target: &Target,
     source: &str,
     config: &crate::CookedConfig,
 ) -> Result<Prepared, String> {
@@ -38,7 +38,11 @@ pub(crate) fn prepare(
     };
     #[cfg(not(feature = "draw-probe"))]
     let entry = "cooked_mesh";
-    let pipeline = layout.compile(surface.device, target, source, entry);
+    let pipeline = layout.compile(surface.device, &target.main, source, entry);
+    let receiver = target
+        .receiver
+        .as_ref()
+        .map(|target| layout.compile(surface.device, target, source, "cooked_mesh"));
     let shadow = surface
         .shadow
         .as_ref()
@@ -61,6 +65,7 @@ pub(crate) fn prepare(
         Ok(Prepared {
             layout,
             forward: pipeline,
+            receiver,
             shadow,
         }),
         Err,
@@ -70,6 +75,7 @@ pub(crate) fn prepare(
 pub(crate) struct Prepared {
     pub(crate) layout: Layout,
     pub(crate) forward: wgpu::RenderPipeline,
+    pub(crate) receiver: Option<wgpu::RenderPipeline>,
     pub(crate) shadow: Option<wgpu::RenderPipeline>,
 }
 
@@ -209,7 +215,7 @@ impl Layout {
     ) -> wgpu::RenderPipeline {
         let report = NO_REJECTION_REPORT;
         #[cfg(feature = "draw-probe")]
-        let report = if self.rejections.is_some() {
+        let report = if self.rejections.is_some() && !target.receiver {
             &format!(
                 "@group(4) @binding(7) var<storage, read_write> counts: array<atomic<u32>, {CULL_OUTCOMES}>;
                  fn cooked_report_rejection(reason: u32) {{ atomicAdd(&counts[reason], 1u); }}"
