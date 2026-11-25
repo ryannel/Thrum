@@ -18,6 +18,12 @@ struct CacheSample {
 
 fn surf_component(i: u32) -> Component { return components[i]; }
 
+fn visible_face(sample: SurfPoint) -> f32 {
+    // A folded lip can cover the phase-marked face in projection. Carry
+    // the same optical cue on the folded branch, using its own strength.
+    return max(breaking_face(sample), breaking_strength(sample) * sample.lip);
+}
+
 fn cache_sample(point: vec2<f32>, body: u32, dt: f32, previous: bool) -> SurfPoint {
     let record = map.bodies[body];
     let stage = select(record.level.y, record.level.z - record.level.x, previous);
@@ -81,7 +87,7 @@ fn fill_surf_cache(@builtin(global_invocation_id) id: vec3<u32>) {
         let local = vertex.xy / vertex.z;
         var now = cache_sample(point, body, 0.0, false);
         var before = cache_sample(point, body, -dt, true);
-        var face = breaking_face(now);
+        var face = visible_face(now);
         if sea && max(abs(local.x), abs(local.y)) >= f32(sea_grid_radius(vertex.z)) {
             let transition = 2.0;
             let coarse = local / transition;
@@ -94,7 +100,7 @@ fn fill_surf_cache(@builtin(global_invocation_id) id: vec3<u32>) {
             let now_b = cache_sample(b, body, 0.0, false);
             now.displacement = mix(now_a.displacement, now_b.displacement, blend);
             now.variance = mix(now_a.variance, now_b.variance, blend);
-            face = mix(breaking_face(now_a), breaking_face(now_b), blend);
+            face = mix(visible_face(now_a), visible_face(now_b), blend);
             now.short_weight = mix(now_a.short_weight, now_b.short_weight, blend);
             let before_a = cache_sample(a, body, -dt, true);
             let before_b = cache_sample(b, body, -dt, true);
