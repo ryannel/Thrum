@@ -3,7 +3,7 @@
   "design": {
     "verdict": "changes",
     "review": ".orchestrate/evidence/WATERS/design-review.md",
-    "commit": "e8deec26b9238f531299443fe023591bce14b7e0",
+    "commit": "c1beee4e38c702b103ff7514b935ffba5ead66db",
     "hash": "1b866e789b3884898dab6b6e45790aec85d1e76d45610331da213971c1127e8f",
     "by": "review",
     "host": "codex",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 151479,
-      "cached": 2960000,
-      "output": 9859,
+      "input": 87976,
+      "cached": 643072,
+      "output": 4924,
       "turns": 1
     },
-    "at": "2026-11-25T16:18:42Z"
+    "at": "2026-11-25T16:22:06Z"
   },
   "work_packages": {
     "WP1": {
@@ -2650,6 +2650,29 @@
       "items_owed": [
         "WP21"
       ]
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/WATERS/design-review-23.md",
+      "commit": "e8deec26b9238f531299443fe023591bce14b7e0",
+      "hash": "1b866e789b3884898dab6b6e45790aec85d1e76d45610331da213971c1127e8f",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 151479,
+        "cached": 2960000,
+        "output": 9859,
+        "turns": 1
+      },
+      "at": "2026-11-25T16:18:42Z"
     }
   ]
 }
