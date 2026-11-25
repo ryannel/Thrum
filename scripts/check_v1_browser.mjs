@@ -212,7 +212,9 @@ async function qualifyGovernorRefresh(cdp, sessionId, output) {
           const rows = [];
           // The shell waits for one simulated second before enabling quality control.
           for (let frame = 0; frame < (phases.length === 0 ? 240 : 120); frame++) {
-            await new Promise(requestAnimationFrame);
+            // Give the real GPU time to retire work while testing the
+            // synthetic clock. Delivery under load is checked above.
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             time += 1000 / hz;
             game.frame(time);
             rows.push(...JSON.parse(game.take_trace()).rows);
@@ -225,7 +227,7 @@ async function qualifyGovernorRefresh(cdp, sessionId, output) {
       }
     })()`,
     awaitPromise: true, returnByValue: true,
-  }, sessionId, 20000);
+  }, sessionId, 30000);
   if (reply.exceptionDetails) throw new Error(JSON.stringify(reply.exceptionDetails));
   const phases = reply.result.value;
   await fs.writeFile(path.join(output, 'governor-refresh.json'), JSON.stringify(phases));
