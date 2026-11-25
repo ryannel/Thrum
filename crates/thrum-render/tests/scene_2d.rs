@@ -714,8 +714,15 @@ fn float_mode_retires_the_8_bit_attachment_and_only_runs_two_plain_passes() {
                 host.recycle_submitted_image(image);
                 // Also leave a submitted frame in flight at disable.
                 fixture::submit(&mut host, &surface, EXTENT);
-                assert!(host.pending_frames() > 0);
+                assert_eq!(host.pending_frames(), 1);
                 host.disable_submitted_capture();
+                assert_eq!(
+                    host.storage_report()
+                        .matches("SDR output Rgba8Unorm bytes=12288")
+                        .count(),
+                    1,
+                    "only the pending slot retains its 8-bit display image"
+                );
             }
             fixture::submit(&mut host, &surface, EXTENT);
             let submitted = host.last_submission().expect("submitted float frame");
@@ -746,6 +753,30 @@ fn float_mode_retires_the_8_bit_attachment_and_only_runs_two_plain_passes() {
             assert_eq!(allocations(&device), counts);
             assert_eq!(host.submitted_capture_usage(), None);
         }
+        host.enable_submitted_capture_from(61, CaptureLimits::default(), CaptureSource::Sdr)
+            .expect("enable the 8-bit tap before checking idle disable");
+        fixture::submit(&mut host, &surface, EXTENT);
+        let image = fixture::submitted(&mut host, EXTENT, CaptureSource::Sdr);
+        host.recycle_submitted_image(image);
+        fixture::drain(&mut host);
+        assert_eq!(host.pending_frames(), 0);
+        assert_eq!(
+            host.storage_report()
+                .matches("SDR output Rgba8Unorm bytes=12288")
+                .count(),
+            2
+        );
+        host.disable_submitted_capture();
+        assert_eq!(
+            host.storage_report(),
+            storage,
+            "idle disable must release both display images before another poll"
+        );
+        assert_eq!(host.submitted_capture_usage(), None);
+        settle_uploads(&device, &queue);
+        assert_eq!(allocations(&device), counts);
+        println!("{recipe}: idle disable restored storage immediately with zero frames pending");
+
         println!(
             "{recipe}: float-only passes {FLOAT_PASSES:?}, 1 slot, HAL counts {counts:?} restored"
         );

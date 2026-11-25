@@ -771,10 +771,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     /// End capture without waiting for pending GPU work or mapping callbacks.
     /// wgpu retains resources needed by already submitted commands. Late
-    /// callbacks own only the discarded readback mailboxes.
+    /// callbacks own only the discarded readback mailboxes. Free sprite slots
+    /// release their optional 8-bit display image here; pending slots keep it
+    /// until retirement.
     pub fn disable_submitted_capture(&mut self) {
         self.submitted_capture = None;
         self.retired_capture.clear();
+        self.sync_sprite_capture_stage();
     }
 }
 
