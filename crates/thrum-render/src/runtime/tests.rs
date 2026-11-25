@@ -106,7 +106,7 @@ fn reused_source_ticks_do_not_hide_earlier_completed_submissions() {
 fn full_report_queue_drops_the_oldest_tick_even_when_it_finishes_late() {
     let mut queue = VecDeque::with_capacity(COMPLETED_REPORTS);
     let mut dropped = 0;
-    let final_tick = COMPLETED_REPORTS as u32 + 1;
+    let final_tick = COMPLETED_REPORTS as u64 + 1;
     for tick in 2..=final_tick {
         retain_sample(&mut queue, &mut dropped, sample(tick));
     }
