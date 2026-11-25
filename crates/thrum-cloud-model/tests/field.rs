@@ -1,7 +1,7 @@
 //! Monotonic weather coverage across the supplied type axis.
 use crate::support;
 use support::{field, parameters};
-use thrum_cloud_model::Column;
+use thrum_cloud_model::{Column, Density, State};
 
 #[test]
 fn coverage_is_monotone_at_both_ends_and_middle_of_type_axis() {
@@ -45,7 +45,7 @@ fn coverage_is_monotone_at_both_ends_and_middle_of_type_axis() {
 #[test]
 fn extreme_finite_coordinates_do_not_overflow_lattice_neighbours() {
     let field = field(7, 0.3);
-    for x in [-1e300, -1e22, 1e22, 1e300] {
+    for x in [-1e308, -1e22, 1e22, 1e308] {
         for coverage in [0.0, 1.0] {
             let c = field.column([x, -x], 1e25, parameters(coverage, 1.0));
             assert!(c.optical_depth.is_finite() && c.top.is_finite());
@@ -53,6 +53,15 @@ fn extreme_finite_coordinates_do_not_overflow_lattice_neighbours() {
                 assert_clear(c, 1.0);
             }
         }
+        let mixed = parameters(1.0, 0.5);
+        let state = State::new(mixed, 1.0, 0).expect("mixed weather");
+        let column = field.column([x, -x], state.time(), mixed);
+        let point = [x, column.base.midpoint(column.top), -x];
+        assert!(
+            field
+                .density(point, &state, Density::Coarse, |_| None, 0.0)
+                .is_finite()
+        );
     }
 }
 

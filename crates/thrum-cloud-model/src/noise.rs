@@ -28,10 +28,14 @@ impl Field {
         if weight == 0.0 {
             return 1.0;
         }
-        let stretch = SHAPE_PERIOD / BANK_NOISE_PERIOD;
-        let swell = self.shape_noise([point[0] * stretch, 0.31 * SHAPE_PERIOD, point[2] * stretch]);
+        // Match the wrapped GPU phases before scaling either octave.
+        let broad = |x: f64| x.rem_euclid(BANK_NOISE_PERIOD) / BANK_NOISE_PERIOD * SHAPE_PERIOD;
+        let swell = self.shape_noise([broad(point[0]), 0.31 * SHAPE_PERIOD, broad(point[2])]);
         let bank_height = smoothstep(0.32, 0.68, swell);
-        let billow = self.shape_noise([point[0] * 2.0, point[1] * 3.0, point[2] * 2.0]);
+        let octave = [2.0, 3.0, 2.0];
+        let billow = self.shape_noise(std::array::from_fn(|axis| {
+            point[axis].rem_euclid(SHAPE_PERIOD) * octave[axis]
+        }));
         let bottom = 0.05 + 0.59 * bank_height + 0.08 * billow;
         let top = 0.55 + 0.45 * bank_height;
         let interval = smoothstep(0.78 * bottom, bottom + 0.12, height)
