@@ -271,3 +271,7 @@
   [Target checks and review notes](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6/README.md).
   Metal and Chrome returned exact oracle values while optional views were skipped. The iOS lease was
   exercised with the planned Mac stand-in, and the iOS simulator target type-checked.
+- 2026-11-25 Builder, WP6 review fixes. Scene attachment now rejects invalid tick reads using the same
+  range, view and usage checks as frame passes. Tick timestamps follow the host's timing switch, including
+  when the governor measures the view. The Metal lifecycle guard and the reviewer's public attachment and
+  timing probe pass. [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6/review-fix.md)
