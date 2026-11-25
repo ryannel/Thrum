@@ -342,12 +342,16 @@ fn scene_reflection(
             // Interpolate the source position and evaluate its colour once.
             let contribution = agreement * ground * (1.0 - strength);
             let uv = mix(optics_uv(hit.pixel), projected.xy, contribution);
-            hit = gather_at(uv);
+            let resolved = gather_at(uv);
+            strength = max(strength, agreement * ground);
+            if resolved.distance <= 0.0 || any(resolved.pixel != hit.pixel) {
+                // Changing the texel must not pick up a foreground colour
+                // between the two estimates of the bank.
+                strength *= mapped_agreement(resolved, point);
+            }
+            hit = resolved;
             along = mix(along, crossing, contribution);
             border = scene_edge(uv);
-            let common_ground = mapped_agreement(hit, point);
-            strength = max(strength, agreement * ground)
-                * mix(1.0, common_ground, contribution);
         }
         strength *= mix(mix(foreground_coverage(hit), 1.0, clearance), clearance, ground);
     }
