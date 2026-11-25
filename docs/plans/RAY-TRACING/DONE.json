@@ -524,8 +524,8 @@
     {
       "id": "WP5",
       "name": "Props and terrain are grounded: sky light is dimmed in creases and where things stand close together",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
+      "status": "in_progress",
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "CLOUDS:WP7"
@@ -538,8 +538,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_ambient_only_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/receiver-fix/checks/metal.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
@@ -549,8 +549,8 @@
           "inspect": "Take paired `fixed` stills of the shade and dusk stops and of a prop under the overcast preset. Match the camera, world and weather state, and Sun and lamp settings within each pair. Settle the occlusion through submitted frames before sampling the still. Verify Apple tile in both reports, with traced ambient occlusion resolved in the on capture and occlusion off in its control. In both overcast stills confirm a visible overcast sky with the game's Shade provider active. Check the whole views and native-size contact and open-ground crops for the stated differences.",
           "ask": "Does the production cooked-plus-Shade list opt into the WP3 boundary for traced and Maps surfaces? Trace same-generation visual replacement and device replacement. Does Shade leave the accepted weather, history and mailbox intact if the candidate is dropped, with fallible preparation and candidate initialization complete before commit?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp53-contact-and-cloud-composition",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
@@ -559,8 +559,8 @@
           "statement": "No dark or bright halo follows a silhouette, and turning the camera until an occluder leaves the view changes nothing on its receiver.",
           "inspect": "`fixed` stills before and after a turn that takes an occluder out of view, whole and as native-size crops at silhouettes and at the receiver.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp54-silhouettes-and-offscreen-occlusion",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
@@ -569,8 +569,8 @@
           "statement": "Occlusion shows no grain at rest. When an occluder moves away from a still receiver, once in view and once from off screen, the receiver's darkening is gone once the occlusion's settle length and one more frame have passed. The evidence names the frame the occluder moved and states the settle length.",
           "inspect": "`realtime` sequences at rest and of an occluder leaving a named still receiver, in view and from off screen: the consecutive native-size frames from the one before it moves to two past the settle length, each numbered.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp55-grain-at-rest-and-contact-departure",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
@@ -580,9 +580,9 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_ambient_knob_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/receiver-fix/checks/metal.log",
-          "verdict": "fail",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
@@ -591,20 +591,15 @@
           "check": "python3 scripts/ray_tracing_cost.py ambient",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         }
       ],
       "findings": [
         {
-          "name": "Ambient receiver lookup admits occluders outside the declared radius",
-          "item": "WP5.6",
-          "repeat": false
-        },
-        {
-          "name": "Ambient receiver reconstruction doubles the designed ray count beyond 6.25 metres",
+          "name": "Ambient receiver export changes the three-target forward contributor interface",
           "repeat": false
         }
       ]

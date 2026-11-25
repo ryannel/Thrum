@@ -905,7 +905,7 @@
         {
           "verdict": "fail",
           "commit": "786bd3b64e74e48dade8e656df9e0cc731cad568",
-          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review-2.md",
           "items": {
             "WP5.2": "pass",
             "WP5.3": "pass",
@@ -941,6 +941,41 @@
             "turns": 1
           },
           "at": "2026-11-25T12:27:39Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "b7b70029e4ffdd0adcbfd183b24d5d1f7316bad8",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md",
+          "items": {
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Ambient receiver export changes the three-target forward contributor interface",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 124647,
+            "cached": 4073600,
+            "output": 12037,
+            "turns": 1
+          },
+          "at": "2026-11-25T13:14:05Z"
         }
       ],
       "authorised": {
