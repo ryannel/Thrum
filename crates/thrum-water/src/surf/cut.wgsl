@@ -54,6 +54,7 @@ fn triangle(a: CutNode, b: CutNode, c: CutNode, cell: vec2<f32>, sign: f32, hit:
 // The job table occupies the prefix. Every following record is one
 // forward-evaluated coarse node, shared by stations on this sheet.
 @group(2) @binding(0) var<storage, read_write> coarse_lattice: array<vec4<u32>>;
+@group(2) @binding(1) var<storage, read_write> selected_count: atomic<u32>;
 
 fn surf_displacement(point: QueryPoint, rest: vec2<f32>) -> vec3<f32> {
     return cut_node(point, rest, point.dt).displacement;
@@ -73,9 +74,9 @@ fn sample_coarse(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocat
     coarse_lattice[settings.coarse_jobs.x + job.z + index] = bitcast<vec4<u32>>(vec4(displacement, 0.0));
 }
 
-fn coarse_corner(point: QueryPoint, coord: vec2<i32>) -> vec2<f32> {
+fn coarse_corner(point: QueryPoint, coord: vec2<i32>, cached: bool) -> vec2<f32> {
     let grid = point.coarse_grid;
-    if grid.z == 0 {
+    if !cached {
         let rest = vec2<f32>(coord) * (surf.coarse.x * surf.controls.z);
         return surf_displacement(point, rest).xz;
     }
@@ -84,12 +85,12 @@ fn coarse_corner(point: QueryPoint, coord: vec2<i32>) -> vec2<f32> {
     return bitcast<vec4<f32>>(coarse_lattice[settings.coarse_jobs.x + u32(index)]).xz;
 }
 
-fn keeps_cell(point: QueryPoint, coord: vec2<i32>) -> bool {
+fn landing_box(point: QueryPoint, coord: vec2<i32>, cached: bool) -> vec4<f32> {
     let cell = surf.coarse.x * surf.controls.z;
-    let a = coarse_corner(point, coord);
-    let b = coarse_corner(point, coord + vec2(1, 0));
-    let c = coarse_corner(point, coord + vec2(1, 1));
-    let d = coarse_corner(point, coord + vec2(0, 1));
+    let a = coarse_corner(point, coord, cached);
+    let b = coarse_corner(point, coord + vec2(1, 0), cached);
+    let c = coarse_corner(point, coord + vec2(1, 1), cached);
+    let d = coarse_corner(point, coord + vec2(0, 1), cached);
     let spread = sqrt(max(max(max(dot(a-b, a-b), dot(a-c, a-c)), max(dot(a-d, a-d), dot(b-c, b-c))),
         max(dot(b-d, b-d), dot(c-d, c-d))));
     let margin = surf.coarse.y + surf.coarse.z * spread;
@@ -98,8 +99,12 @@ fn keeps_cell(point: QueryPoint, coord: vec2<i32>) -> bool {
     let pd = d + vec2(0.0, cell);
     let lo = min(min(a, pb), min(pc, pd)) - margin;
     let hi = max(max(a, pb), max(pc, pd)) + margin;
-    let column = point.position - vec2<f32>(coord) * cell;
-    return all(column >= lo) && all(column <= hi);
+    return vec4(lo, hi);
+}
+
+fn contains_column(box: vec4<f32>, point: vec2<f32>, coord: vec2<i32>) -> bool {
+    let column = point - vec2<f32>(coord) * (surf.coarse.x * surf.controls.z);
+    return all(column >= box.xy) && all(column <= box.zw);
 }
 
 fn coarse_bounds(fine: vec4<i32>) -> vec4<i32> {
@@ -107,48 +112,73 @@ fn coarse_bounds(fine: vec4<i32>) -> vec4<i32> {
         vec2<i32>(ceil(vec2<f32>(fine.zw) / surf.coarse.x)));
 }
 
+fn coarse_index(point: QueryPoint, coord: vec2<i32>) -> u32 {
+    let relative = coord - point.coarse_grid.xy;
+    return u32(relative.y * point.coarse_grid.z + relative.x);
+}
+
+fn owners_offset() -> u32 {
+    return settings.coarse_jobs.x + settings.coarse_jobs.y;
+}
+
+fn jobs_offset() -> u32 {
+    return owners_offset() + settings.coarse_jobs.y;
+}
+
 fn fine_record(point: QueryPoint, index: u32) -> u32 {
     let width = u32(surf.coarse.x) + 1u;
-    return settings.coarse_jobs.x + settings.coarse_jobs.y +
+    return jobs_offset() + settings.coarse_jobs.y +
         (bitcast<u32>(point.surf_stage.w) - 1u) + index * width * width;
 }
 
-var<workgroup> fine_owner: atomic<u32>;
-var<workgroup> fine_selected: u32;
-
 @compute @workgroup_size(QUERY_WIDTH)
-fn sample_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
-    let job = coarse_lattice[group.x / QUERY_WIDTH];
-    let index = job.y + group.x % QUERY_WIDTH;
+fn select_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
+    let job = coarse_lattice[group.x];
+    let index = job.y + lane;
     let sheet = points[job.x];
     let width = u32(sheet.coarse_grid.z);
     let local = vec2(i32(index % width), i32(index / width));
+    if bitcast<u32>(sheet.surf_stage.w) == 0u ||
+        index + width >= job.w || u32(local.x) + 1u >= width { return; }
     let coarse = sheet.coarse_grid.xy + local;
-    if lane == 0u { atomicStore(&fine_owner, 0xffffffffu); }
-    workgroupBarrier();
-    if bitcast<u32>(sheet.surf_stage.w) != 0u &&
-        index + width < job.w && u32(local.x) + 1u < width {
-        for (var i = lane; i < settings.count; i += QUERY_WIDTH) {
-            let point = points[i];
-            let bounds = coarse_bounds(point.fine_bounds);
-            if point.coarse_grid.z != 0 && point.coarse_grid.w == sheet.coarse_grid.w &&
-                all(coarse >= bounds.xy) && all(coarse < bounds.zw) && keeps_cell(point, coarse) {
-                atomicMin(&fine_owner, i);
-            }
+    let box = landing_box(sheet, coarse, true);
+    var owner = 0xffffffffu;
+    for (var i = 0u; i < settings.count; i++) {
+        let point = points[i];
+        let bounds = coarse_bounds(point.fine_bounds);
+        if bitcast<u32>(point.surf_stage.w) == bitcast<u32>(sheet.surf_stage.w) &&
+            all(coarse >= bounds.xy) && all(coarse < bounds.zw) &&
+            contains_column(box, point.position, coarse) {
+            owner = i;
+            break;
         }
     }
-    workgroupBarrier();
-    if lane == 0u { fine_selected = atomicLoad(&fine_owner); }
-    let owner = workgroupUniformLoad(&fine_selected);
-    if owner == 0xffffffffu { return; }
+    coarse_lattice[owners_offset() + job.z + index] = vec4(owner, 0u, 0u, 0u);
+    if owner != 0xffffffffu {
+        let active = atomicAdd(&selected_count, 1u);
+        coarse_lattice[jobs_offset() + active] = vec4(job.x, index, 0u, 0u);
+    }
+}
+
+@compute @workgroup_size(QUERY_WIDTH)
+fn sample_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(num_workgroups) groups: vec3<u32>,
+    @builtin(local_invocation_index) lane: u32) {
+    let count = atomicLoad(&selected_count);
     let step = u32(surf.coarse.x);
     let side = step + 1u;
-    let offset = fine_record(sheet, index);
-    for (var i = lane; i < side * side; i += QUERY_WIDTH) {
-        let coord = coarse * i32(step) + vec2(i32(i % side), i32(i / side));
-        let rest = vec2<f32>(coord) * surf.controls.z;
-        let p = surf_displacement(sheet, rest);
-        coarse_lattice[offset + i] = vec4(bitcast<vec3<u32>>(p), owner);
+    for (var active = group.x; active < count; active += groups.x) {
+        let job = coarse_lattice[jobs_offset() + active];
+        let sheet = points[job.x];
+        let width = u32(sheet.coarse_grid.z);
+        let index = job.y;
+        let coarse = sheet.coarse_grid.xy + vec2(i32(index % width), i32(index / width));
+        let offset = fine_record(sheet, index);
+        for (var i = lane; i < side * side; i += QUERY_WIDTH) {
+            let coord = coarse * i32(step) + vec2(i32(i % side), i32(i / side));
+            let rest = vec2<f32>(coord) * surf.controls.z;
+            let p = surf_displacement(sheet, rest);
+            coarse_lattice[offset + i] = vec4(bitcast<vec3<u32>>(p), 0u);
+        }
     }
 }
 
@@ -176,7 +206,11 @@ fn find_kept(
     var evaluations = 0u;
     for (var i = start + lane; i < end; i += QUERY_WIDTH) {
         let coord = lo + vec2(i32(i % width), i32(i / width));
-        if keeps_cell(point, coord) {
+        if bitcast<u32>(point.surf_stage.w) != 0u {
+            let owner = coarse_lattice[owners_offset() + u32(point.coarse_grid.w) + coarse_index(point, coord)].x;
+            if owner == 0xffffffffu { continue; }
+        }
+        if contains_column(landing_box(point, coord, point.coarse_grid.z != 0), point.position, coord) {
             let index = atomicAdd(&kept_count, 1u);
             if index < KEPT_CAPACITY { kept[index] = coord; }
         }
@@ -197,9 +231,10 @@ fn shared_fine_tile(
     let side = u32(step) + 1u;
     var offset = 0u;
     if cached {
-        let relative = coarse - point.coarse_grid.xy;
-        offset = fine_record(point, u32(relative.y * point.coarse_grid.z + relative.x));
-        if lane == 0u && coarse_lattice[offset].w == station {
+        let index = coarse_index(point, coarse);
+        offset = fine_record(point, index);
+        let owner = coarse_lattice[owners_offset() + u32(point.coarse_grid.w) + index].x;
+        if lane == 0u && owner == station {
             nodes += side * side;
         }
     }

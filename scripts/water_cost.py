@@ -386,8 +386,9 @@ def measure_surf_running():
             if arm[key]:
                 problems.append(f"{name} reported {arm[key]} {key}")
         nodes = arm['nodes']
-        if len(nodes) != ticks or any((coarse > 0 and fine > 0) != (name == 'breakers')
-                                      for coarse, fine in nodes):
+        cuts = all(coarse > 0 and fine > 0 for coarse, fine in nodes)
+        no_cuts = all(coarse == fine == 0 for coarse, fine in nodes)
+        if len(nodes) != ticks or not (cuts if name == 'breakers' else no_cuts):
             problems.append(f"{name} did not show its expected cuts on every measured tick")
         arm['node_summary'] = {
             phase: {'min': min(column), 'mean': statistics.mean(column), 'max': max(column)}

@@ -165,6 +165,10 @@ impl CoarsePlan {
         }
         plan.coarse_nodes = u32::try_from(plan.records - plan.jobs.len() as u64)
             .expect("bounded coarse node count");
+        let fine_records = 2 * u64::from(plan.coarse_nodes);
+        if plan.records + fine_records > max_records {
+            return plan;
+        }
         let mut fine_offset = 0_u64;
         let per_cell = u64::from((cut.coarse_cells + 1).pow(2));
         // Reserve at most 16 MiB of dense fine storage per ring slot.
@@ -172,8 +176,7 @@ impl CoarsePlan {
         let fine_limit = (16 * 1024 * 1024) / 16;
         for (members, nodes, groups) in fine {
             let storage = nodes * per_cell;
-            if plan.records + storage > max_records
-                || groups > u64::from(max_groups)
+            if plan.records + fine_records + storage > max_records
                 || fine_offset + storage > fine_limit
             {
                 continue;
@@ -182,9 +185,13 @@ impl CoarsePlan {
                 points[index].surf_stage[3] =
                     f32::from_bits(u32::try_from(fine_offset + 1).expect("fine storage offset"));
             }
-            plan.fine_groups = u32::try_from(groups).expect("bounded fine group count");
+            plan.fine_groups = u32::try_from(groups / u64::from(GROUP_WIDTH))
+                .expect("bounded fine selection group count");
             plan.records += storage;
             fine_offset += storage;
+        }
+        if plan.fine_groups != 0 {
+            plan.records += fine_records;
         }
         plan
     }

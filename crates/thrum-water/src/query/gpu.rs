@@ -102,12 +102,14 @@ struct Slot {
 struct CoarseScratch {
     buffer: wgpu::Buffer,
     group: wgpu::BindGroup,
+    count: wgpu::Buffer,
 }
 
 struct CoarseGpu {
     device: wgpu::Device,
     layout: wgpu::BindGroupLayout,
     pipeline: wgpu::ComputePipeline,
+    select: wgpu::ComputePipeline,
     fine: wgpu::ComputePipeline,
 }
 
@@ -119,15 +121,31 @@ impl CoarseScratch {
             size,
             wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         );
+        let count = buffer(
+            &gpu.device,
+            "water query selected cells",
+            size_of::<u32>() as u64,
+            wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        );
         let group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("water query coarse lattice"),
             layout: &gpu.layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: buffer.as_entire_binding(),
-            }],
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: count.as_entire_binding(),
+                },
+            ],
         });
-        Self { buffer, group }
+        Self {
+            buffer,
+            group,
+            count,
+        }
     }
 }
 
@@ -235,7 +253,10 @@ impl Readback {
         let coarse_layout = surf.map(|_| {
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("water query coarse lattice"),
-                entries: &[binding::storage(0, visibility, false, COARSE_RECORD_BYTES)],
+                entries: &[
+                    binding::storage(0, visibility, false, COARSE_RECORD_BYTES),
+                    binding::storage(1, visibility, false, size_of::<u32>() as u64),
+                ],
             })
         });
         let mut groups = vec![Some(&layout)];
@@ -278,6 +299,7 @@ impl Readback {
             device: (**device).clone(),
             layout,
             pipeline: make_cut("water query coarse lattice", "sample_coarse"),
+            select: make_cut("water query select fine cells", "select_fine"),
             fine: make_cut("water query fine lattice", "sample_fine"),
         });
         let slots = std::array::from_fn(|_| {
@@ -503,6 +525,9 @@ impl Readback {
                 if !plan.jobs.is_empty() {
                     queue.write_buffer(&scratch.buffer, 0, bytemuck::cast_slice(&plan.jobs));
                 }
+                if plan.fine_groups != 0 {
+                    queue.write_buffer(&scratch.count, 0, bytemuck::bytes_of(&0_u32));
+                }
                 (
                     u32::try_from(plan.jobs.len()).expect("bounded coarse job count"),
                     plan.coarse_nodes,
@@ -573,7 +598,7 @@ impl Readback {
                 self.slots
                     .iter()
                     .filter_map(|slot| slot.coarse.as_ref())
-                    .map(|scratch| scratch.buffer.size())
+                    .map(|scratch| scratch.buffer.size() + scratch.count.size())
                     .sum(),
             ));
         }
@@ -597,8 +622,10 @@ impl Readback {
                     pass.dispatch_workgroups(batch.coarse_groups, 1, 1);
                 }
                 if batch.fine_groups != 0 {
-                    pass.set_pipeline(&cut.fine);
+                    pass.set_pipeline(&cut.select);
                     pass.dispatch_workgroups(batch.fine_groups, 1, 1);
+                    pass.set_pipeline(&cut.fine);
+                    pass.dispatch_workgroups(256, 1, 1);
                 }
             }
             pass.set_pipeline(&self.pipeline);

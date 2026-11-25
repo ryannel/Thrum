@@ -20,7 +20,7 @@ const AGE: usize = 8;
 const DRAIN_TICKS: u32 = 8;
 const TOLERANCE: f64 = 0.015;
 const WITNESSES: [usize; 3] = [50, 300, 550];
-const CAMERA: Camera = Camera::look_at([-2776.0, 477.0, -54.0], [-126.0, 0.0, -54.0], 1.44);
+const CAMERA: Camera = Camera::look_at([-2776.0, 477.0, 25.0], [-126.0, 0.0, 25.0], 1.44);
 
 struct GameTick {
     begin: Option<u64>,
@@ -130,17 +130,9 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     let wall = Instant::now();
     let mut submitted = 0;
     let mut dropped = 0;
-    let mut callback = 0;
     let mut completed = 0;
+    let mut last_draw = None;
     loop {
-        let elapsed = wall.elapsed();
-        let drive = fixture
-            .host
-            .drive(start + elapsed, Some(&output))
-            .expect("running scene");
-        assert!(drive.overload.is_none(), "{drive:?}");
-        submitted += usize::from(drive.submitted);
-        dropped += usize::from(drive.dropped_view);
         while fixture
             .host
             .poll_completed()
@@ -149,6 +141,21 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
         {
             completed += 1;
         }
+        let elapsed = wall.elapsed();
+        let opportunity = elapsed.as_nanos() / STEP.as_nanos();
+        // Admit one frame per opportunity and keep at most one outstanding.
+        // When there is no free slot, the fixed clock still runs. Nonblocking
+        // sampling of completions avoids rounding every frame up to a tick.
+        let drive = if last_draw != Some(opportunity) && fixture.host.pending_frames() == 0 {
+            last_draw = Some(opportunity);
+            fixture.host.drive(start + elapsed, Some(&output))
+        } else {
+            fixture.host.advance_without_rendering(start + elapsed)
+        }
+        .expect("running scene");
+        assert!(drive.overload.is_none(), "{drive:?}");
+        submitted += usize::from(drive.submitted);
+        dropped += usize::from(drive.dropped_view);
         if stats.lock().expect("game tick").ticks >= WARM_TICKS + MEASURE_TICKS + DRAIN_TICKS {
             break;
         }
@@ -156,14 +163,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
             wall.elapsed() < Duration::from_secs(40),
             "wall-clock ticks did not advance"
         );
-        let now = wall.elapsed();
-        let elapsed_ticks =
-            u32::try_from(now.as_nanos() / STEP.as_nanos()).expect("bounded callback time");
-        callback = (callback + 1).max(elapsed_ticks + 1);
-        // Sleep on the wall clock only. FrameHost polls without waiting before
-        // each tick drains the mailbox, even when all render slots are occupied.
-        let due = STEP * callback;
-        std::thread::sleep(due.saturating_sub(wall.elapsed()));
+        std::thread::sleep(Duration::from_micros(500));
     }
     let wall_seconds = wall.elapsed().as_secs_f64();
     let mailbox = query.stats();
@@ -177,7 +177,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     GameArm {
         record: json!({
             "extent":extent, "ticks":MEASURE_TICKS, "warm_ticks":WARM_TICKS, "wall_seconds":wall_seconds,
-            "frames_submitted":submitted, "frames_completed":completed,
+            "render_in_flight":1, "frames_submitted":submitted, "frames_completed":completed,
             "dropped_views":dropped, "age":stats.ages, "nodes":stats.nodes,
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,
             "blocking_reads":mailbox.blocking_reads, "busy":mailbox.busy,
