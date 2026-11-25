@@ -164,13 +164,17 @@ fn external_knobs_commit_by_tier_and_invalidate_only_their_owned_history() {
     assert_eq!(host.creation_report().pipelines, pipelines);
     assert_eq!(host.creation_report().violations, 0);
 
-    for name in ["atmosphere.aerial cadence", "interval"] {
+    let names = ["atmosphere.aerial cadence", "interval"].map(|suffix| {
+        host.quality_knobs().into_iter().find(|knob| knob.name.ends_with(suffix))
+            .expect("registered").name
+    });
+    for name in &names {
         host.set_quality_knob(name, 2).expect("stage manual value");
-        assert_eq!(host.quality_knobs().into_iter().find(|knob| knob.name == name).expect("registered").value, 4);
+        assert_eq!(host.quality_knobs().into_iter().find(|knob| knob.name == *name).expect("registered").value, 4);
     }
     let edited = frame(&mut host, &output, Duration::from_millis(56));
     let edited = edited.governor.expect("edited frame state");
-    for name in ["atmosphere.aerial cadence", "interval"] {
+    for name in names {
         assert_eq!(host.quality_knobs().into_iter().find(|knob| knob.name == name).expect("registered").value, 2);
         assert_eq!(edited.knobs.iter().find(|knob| knob.name == name).expect("recorded").value, 2);
     }
