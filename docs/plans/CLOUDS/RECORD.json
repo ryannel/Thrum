@@ -1405,7 +1405,7 @@
         {
           "verdict": "fail",
           "commit": "a2ddfd2d9d3ef6312f16f052314596c4e0eedc3c",
-          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review-1.md",
           "items": {
             "WP19.1": "pass",
             "WP19.2": "fail",
@@ -1449,6 +1449,40 @@
             "turns": 1
           },
           "at": "2026-11-25T18:10:12Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "c1218a6266068293e058173e8cacea1cde0a3dac",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md",
+          "items": {
+            "WP19.1": "pass",
+            "WP19.2": "fail",
+            "WP19.3": "pass",
+            "WP19.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Loss attribution uses the nearest target instead of the drawable",
+              "item": "WP19.2",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 77060,
+            "cached": 1521536,
+            "output": 6128,
+            "turns": 1
+          },
+          "at": "2026-11-25T21:08:39Z"
         }
       ],
       "authorised": {
