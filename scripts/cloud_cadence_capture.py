@@ -28,8 +28,7 @@ INSTRUMENT_PACKAGE = SCRATCH / 'ThrumPresentedTime.instrdst'
 TRACE_TEMPLATE = SCRATCH / 'PresentedTime.tracetemplate'
 
 def prepare():
-    if not console_unlocked():
-        raise InvalidMeasurement('local console must be unlocked for the built-in panel')
+    require_unlocked_panel(wake=True)
     subprocess.run(['cargo', 'build', '--release', '--locked', '--offline',
                     '-p', 'v1-game', '--bin', 'v1-game', '-p', 'thrum-cook', '--bin', 'thrum-cook'],
                    cwd=ROOT, check=True, timeout=900)
@@ -69,6 +68,14 @@ def console_unlocked():
     return '"IOConsoleLocked" = No' in raw and not re.search(
         r'"CGSSessionScreenIsLocked"\s*=\s*Yes', raw
     )
+
+
+def require_unlocked_panel(*, wake=False):
+    # A sleeping display can set the screen-lock flag even with locking off.
+    if wake or not console_unlocked():
+        subprocess.run(['/usr/bin/caffeinate', '-u', '-t', '3'], check=True, timeout=6)
+    if not console_unlocked():
+        raise InvalidMeasurement('local console must be unlocked for the built-in panel')
 
 
 def export(trace, output, arguments):
@@ -134,8 +141,7 @@ def bounded_trace_identity(command):
 
 
 def collect(arm, store, wind, *, diagnostic=False):
-    if not console_unlocked():
-        raise InvalidMeasurement('local console must be unlocked for the built-in panel')
+    require_unlocked_panel()
     arm.mkdir()
     name, speed, scale, turns = wind
     noon = arm / 'noon.params.json'
