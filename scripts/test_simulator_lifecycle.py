@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import simulator_lifecycle as simulator
+import v1_simulator_route
 
 
 class SimulatedDevice:
@@ -117,6 +118,24 @@ class SimulatorLifecycle(unittest.TestCase):
                 raise ValueError("worker failure")
         self.assertEqual(self.device.state, "Shutdown")
         self.assertEqual(self.device.events[-1][0], "shutdown_verified")
+
+    def test_presentation_reset_clears_proof_apps_without_erasing_the_device(self):
+        def worker(turn, mode, env):
+            self.assertEqual(mode, "reset")
+            self.assertEqual(env["SIMCTL_CHILD_THRUM_RECONSTRUCTION"], "taau")
+            self.assertEqual(env["SIMCTL_CHILD_THRUM_RECIPE"], "portable")
+            self.assertEqual(self.device.commands[-2:], [
+                ("uninstall", turn.udid, "org.thrum.v1"),
+                ("uninstall", turn.udid, "org.thrum.v1.uitests.xctrunner"),
+            ])
+
+        with patch.object(v1_simulator_route, "worker", side_effect=worker) as route:
+            v1_simulator_route.presentation("reset", "proof/route", prepared=True)
+
+        route.assert_called_once()
+        self.assertNotIn(("erase", "owned"), self.device.commands)
+        self.assertEqual([name for name, _ in self.device.events],
+                         ["admitted", "booted", "reset_apps_cleared", "shutdown_verified"])
 
     def test_deadline_subtracts_admission_time_and_reserves_cleanup(self):
         with self.assertRaises(TimeoutError):

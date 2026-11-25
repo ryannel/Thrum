@@ -35,9 +35,15 @@ def presentation(mode, output, *, clock=time.monotonic, prepared=False):
         subprocess.run(simulator.lock_command(command), cwd=simulator.ROOT, check=True)
         return
     try:
-        with simulator.supervise(fresh=True, seconds=1500, clock=clock) as turn:
+        # The reset case needs fresh app and runner state. Keep OS migration
+        # state across boots to avoid retriggering first-boot data migration.
+        with simulator.supervise(fresh=mode != "reset", seconds=1500, clock=clock) as turn:
             if not prepared:
                 turn.run(["bash", ROUTE, "--prepare"], env=env)
+            if mode == "reset":
+                for bundle in ("org.thrum.v1", "org.thrum.v1.uitests.xctrunner"):
+                    turn.run(["xcrun", "simctl", "uninstall", turn.udid, bundle])
+                turn.event("reset_apps_cleared")
             worker(turn, mode, env)
     except TimeoutError as error:
         print(str(error), file=sys.stderr)

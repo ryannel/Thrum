@@ -551,3 +551,9 @@
   luminance varied more with MetalFX, including a 2.26% single-frame step, without visible added shimmer in
   the inspected native crops. The evidence names the submissions and records the governor timing.
   [Motion inspection](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md)
+
+- 2026-11-25 WP8. The merged D8.7 replay stalled during CoreSimulator's first-boot data migration.
+  Rebooting the owned simulator with its OS data preserved reached application services. The reset
+  route now starts with fresh game and XCTest runner installations by clearing both bundles after
+  boot. The simulator SDK also lacks MetalFX, so simulator builds decline native scaler preparation
+  and omit the framework link. [Simulator replay and diagnosis](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.7-replay.md)

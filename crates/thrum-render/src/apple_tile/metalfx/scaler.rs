@@ -9,6 +9,8 @@ use objc2::{
 };
 use objc2_metal::MTLPixelFormat;
 
+// The iOS Simulator SDK omits MetalFX. Keep the prepared TAAU path linkable.
+#[cfg(not(target_abi = "sim"))]
 #[expect(
     unsafe_code,
     reason = "Link the Apple framework without declaring C functions"
@@ -49,6 +51,9 @@ impl Scaler {
     ) -> Result<Self, ()> {
         #[cfg(not(feature = "creation-counters"))]
         let _ = probe;
+        if cfg!(target_abi = "sim") {
+            return Err(());
+        }
         let class = AnyClass::get(c"MTLFXTemporalScalerDescriptor").ok_or(())?;
         // SAFETY: the guard is used only to access the device, with no wgpu
         // operation or exported borrowed raw pointer during scaler preparation.
