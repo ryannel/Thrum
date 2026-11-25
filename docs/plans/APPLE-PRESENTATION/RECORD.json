@@ -1401,12 +1401,12 @@
       }
     },
     "WP16": {
-      "definitions": "278d466f4e2896f0428ef7633343087a9b8c451ac38e0ffa6be2a5cab021b63d",
+      "definitions": "2a56dfa232015536d647956c5d8b8f0d76b643b0a58cf3cbda44277dacd299ed",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The main-branch check long-tests fails at a25e1d13d282 (last good 5b5a0aa3e1a3); the script is bisecting. Evidence in .g",
-        "at": "2026-11-25T10:19:36Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-25T11:47:05Z"
       }
     }
   },
@@ -1462,11 +1462,15 @@
     {
       "task": "The main-branch check long-tests fails at a25e1d13d282 (last good 5b5a0aa3e1a3); the script is bisecting. Evidence in .git/orchestrate/main-checks/long-tests/logs/: two runs at the same commit failed different GPU tests (run 104030: scene_view_air_shaded_gpu panels + ray_tracing_gpu; run 110703: thrum-render --lib gpu_device_replacement_abandons_slots... + ray_tracing_gpu demand/lifecycle). All panic in wgpu util/device.rs:72 'Failed to get mapped range for buffer created with mapped_at_creation ... Buffer with label ... is invalid' \u2014 buffer creation failing. ray_tracing_gpu failed in both. Decide whether this is a real regression (e.g. a buffer over a device limit, a creation-counters/draw-probe feature combo, device-replacement leaking) or GPU memory exhaustion from concurrent GPU work (visible runs and builders share the GPU), and plan the fix in the owning module. If it is environmental, plan making the tests fail with a clear allocation error or hold the gpu lock, rather than weakening them.",
       "at": "2026-11-25T10:19:36Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 2 Must Fix findings.",
+      "at": "2026-11-25T11:47:05Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T10:19:36Z"
+    "at": "2026-11-25T11:47:05Z"
   },
   "design_history": [
     {
