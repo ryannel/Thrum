@@ -330,13 +330,17 @@ def main():
     parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
+    parser.add_argument('--resume', action='store_true',
+                        help='continue a wind series from its retained recordings and the same binary')
     args = parser.parse_args()
+    if args.resume and (args.scene != 'wind' or args.output is None):
+        parser.error('--resume requires --scene wind and an existing --output')
     if args.command == 'hold' and args.scene == 'scripted':
         from cloud_cadence import scripted_hold
         return scripted_hold()
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
-        return run_wind(args.command, args.output)
+        return run_wind(args.command, args.output, resume=args.resume)
     if args.scene not in FIXTURES or args.command in ('cadence', 'hold'):
         parser.error('cadence requires wind; hold requires wind or scripted')
     destination = args.output or FIXTURES[args.scene]

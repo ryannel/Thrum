@@ -128,9 +128,7 @@
         "scripts/evidence_inventory.py": 1,
         "scripts/generate_earth_night.c": 1,
         "scripts/light_lists_browser.mjs": 1,
-        "scripts/mac_m2_presented.py": 1,
         "scripts/package_content_edits.py": 1,
-        "scripts/qualify_mac_m2.py": 1,
         "scripts/qualify_macos_display.py": 1,
         "scripts/recipe_cost.py": 1,
         "scripts/reference/cloud/air_reference.py": 1,
@@ -141,7 +139,6 @@
         "scripts/reference/cloud/transport_fixture.py": 1,
         "scripts/sim2d_browser_profile.mjs": 1,
         "scripts/sweep_v1_exit.py": 1,
-        "scripts/test_mac_m2_presented.py": 1,
         "scripts/test_qualify_macos_display.py": 1
       }
     },

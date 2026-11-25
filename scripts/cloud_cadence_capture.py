@@ -8,8 +8,11 @@ import os
 import plistlib
 from pathlib import Path
 import re
+import select
 import shutil
 import subprocess
+import tempfile
+import time
 
 from capture_v1_runtime import digest
 from cloud_cadence import ARMS, HZ, InvalidMeasurement, NS, PERIOD, analyze_arm, differences, interval
@@ -82,6 +85,44 @@ def export(trace, output, arguments):
         raise InvalidMeasurement(f'Instruments export failed for {output.name}')
 
 
+def discard_kernel_scratch(arm, pid, began, ended):
+    temporary = Path(tempfile.gettempdir())
+    for path in temporary.glob('instruments*.ktrace'):
+        try:
+            birth = path.stat().st_birthtime
+        except FileNotFoundError:
+            continue
+        if not began <= birth <= ended:
+            continue
+        # Identify the recorder's scratch by the owned game's PID in the
+        # raw event stream, beyond the creation time and filename pattern.
+        command = ['/usr/bin/ktrace', 'trace', '-R', path, '-p', str(pid), '--ndjson']
+        sample = bounded_trace_identity(command)
+        if sample and sample['pid'] == pid and sample['execname'] == 'v1-game':
+            save(arm / 'kernel-scratch.json', {
+                'path': str(path), 'bytes': path.stat().st_size,
+                'game_pid': pid, 'trace_event_time': sample['walltime'],
+            })
+            path.unlink()
+
+
+def bounded_trace_identity(command):
+    # Stop at the first event of the requested process, including when
+    # other users' trace files happened to start at the same time.
+    try:
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                              text=True) as reader:
+            try:
+                ready, _, _ = select.select([reader.stdout], [], [], 6)
+                line = reader.stdout.readline() if ready else ''
+                return json.loads(line) if line else None
+            finally:
+                if reader.poll() is None:
+                    reader.terminate()
+    except (OSError, ValueError):
+        return None
+
+
 def collect(arm, store, wind, *, diagnostic=False):
     if not console_unlocked():
         raise InvalidMeasurement('local console must be unlocked for the built-in panel')
@@ -121,6 +162,7 @@ def collect(arm, store, wind, *, diagnostic=False):
     recorder = game if diagnostic else arm / 'recorder.log'
     power = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-i', '-u'])
     load = None
+    began = time.time()
     try:
         observe_panel = panel_witness(arm)
 
@@ -147,6 +189,7 @@ def collect(arm, store, wind, *, diagnostic=False):
         if load:
             save(arm / 'load.json', load.finish())
 
+    ended = time.time()
     identity = (arm / 'window.txt').read_text()
     if not re.search(r'^extent=1920x1080$', identity, re.MULTILINE) or f'Some({HZ}000)))' not in identity:
         raise InvalidMeasurement(f'{arm.name}: the window was not 1920x1080 at {HZ} Hz')
@@ -161,13 +204,7 @@ def collect(arm, store, wind, *, diagnostic=False):
             continue
         export(trace, arm / filename, ['--xpath', f'/trace-toc/run/data/table[{predicate}]'])
         exported.append(filename)
-    witness = ['python3', str(ROOT / 'scripts/mac_m2_presented.py'), '--input',
-               str(arm / 'presented.xml'), '--arm', str(arm), '--output', str(arm / 'witness.json')]
-    # The witness's qualification also asks for no unmatched rows. The wind
-    # record explicitly retains unmatched submissions and uses only valid times.
-    if bounded(witness, arm / 'witness.log', 40) not in (0, 2) or not (arm / 'witness.json').is_file():
-        raise InvalidMeasurement(f'{arm.name}: presented-time witness did not produce a result')
-    result = analyze_arm(arm, wind)
+    result = read_witness(arm, wind)
     for filename in ('toc.xml', *exported):
         source = arm / filename
         with source.open('rb') as original, gzip.open(source.with_suffix('.xml.gz'), 'wb') as retained:
@@ -176,7 +213,22 @@ def collect(arm, store, wind, *, diagnostic=False):
     # The successful export retains the OS rows, signposts and display tables.
     # Keep an unsuccessful trace for setup diagnosis.
     shutil.rmtree(trace)
+    discard_kernel_scratch(arm, int(re.search(r'^pid=(\d+)$', identity, re.MULTILINE)[1]),
+                           began, ended)
     return result
+
+
+def read_witness(arm, wind):
+    table_path = arm / 'presented.xml'
+    if not table_path.is_file():
+        table_path = table_path.with_suffix('.xml.gz')
+    witness = ['python3', str(ROOT / 'scripts/mac_m2_presented.py'), '--input', str(table_path),
+               '--arm', str(arm), '--output', str(arm / 'witness.json'), '--measured-interval']
+    # The witness's qualification also asks for no unmatched rows. The wind
+    # record explicitly retains unmatched submissions and uses only valid times.
+    if bounded(witness, arm / 'witness.log', 40) not in (0, 2) or not (arm / 'witness.json').is_file():
+        raise InvalidMeasurement(f'{arm.name}: presented-time witness did not produce a result')
+    return analyze_arm(arm, wind)
 
 
 def diagnose(arm, entries):
@@ -214,23 +266,42 @@ def diagnose(arm, entries):
         }
 
 
-def series(output, *, diagnostics):
+def series(output, *, diagnostics, resume=False):
     store = prepare()
-    output.mkdir(parents=True, exist_ok=False)
+    output.mkdir(parents=True, exist_ok=resume)
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     dirty = subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).splitlines()
-    record = {
-        'revision': head, 'binary_sha256': digest(BIN), 'started': datetime.now(timezone.utc).isoformat(),
-        'dirty': dirty, 'cooked_head_sha256': digest(store / 'HEAD'),
-        'xcode': subprocess.check_output(['xcodebuild', '-version'], cwd=ROOT, text=True).splitlines(),
-        'instrument_sha256': digest(INSTRUMENT), 'runs': [], 'cloud_runs': [],
-    }
     destination = output / 'series.json'
+    identity = {
+        'binary_sha256': digest(BIN), 'cooked_head_sha256': digest(store / 'HEAD'),
+        'instrument_sha256': digest(INSTRUMENT),
+    }
+    if resume:
+        record = json.loads(destination.read_text())
+        if any(record.get(key) != value for key, value in identity.items()):
+            raise InvalidMeasurement('a resumed series must use the same game, content and instrument')
+        if len(record['runs']) == len(ARMS):
+            raise InvalidMeasurement('all the wind arms are already recorded')
+        record.setdefault('collection_revisions', [record['revision']]).append(head)
+        record.pop('setup_failure', None)
+    else:
+        record = {
+            'revision': head, **identity, 'started': datetime.now(timezone.utc).isoformat(),
+            'dirty': dirty, 'xcode': subprocess.check_output(
+                ['xcodebuild', '-version'], cwd=ROOT, text=True).splitlines(),
+            'runs': [], 'cloud_runs': [],
+        }
     try:
-        for index, wind in enumerate(ARMS):
+        for index in range(len(record['runs']), len(ARMS)):
+            wind = ARMS[index]
             name = f'{index:02d}-{wind[0]}'
-            print(f'{name}: recording the built-in panel', flush=True)
-            run = collect(output / name, store, wind)
+            arm = output / name
+            if resume and arm.exists():
+                print(f'{name}: validating the retained recording', flush=True)
+                run = read_witness(arm, wind)
+            else:
+                print(f'{name}: recording the built-in panel', flush=True)
+                run = collect(arm, store, wind)
             record['runs'].append(dict(arm=name, **run))
             save(destination, record)
         for index in range(1, len(ARMS), 2):
@@ -253,11 +324,11 @@ def series(output, *, diagnostics):
     return record
 
 
-def run_wind(command, output):
+def run_wind(command, output, *, resume=False):
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
     work_package = 'WP19' if command == 'cadence' else 'WP20'
     output = (output or WORKING / work_package / f'{command}-{stamp}').resolve()
-    record = series(output, diagnostics=command == 'cadence')
+    record = series(output, diagnostics=command == 'cadence', resume=resume)
     print(output / 'series.json')
     for run in record['cloud_runs']:
         print(f'{run["arm"]}: {run["holds"]=}, {run["neighbours_lost"]=}')

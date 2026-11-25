@@ -42,7 +42,7 @@ def xml(path):
     return root, resolve
 
 
-def calibration(arm):
+def calibration(arm, measured_interval=False):
     pid = int(re.search(r'^pid=(\d+)$', (arm / 'window.txt').read_text(), re.M)[1])
     root, resolve = xml(arm / 'signposts.xml')
     points = {}
@@ -64,11 +64,27 @@ def calibration(arm):
     markers = table(arm / 'signposts.tsv')
     if len(markers) != 4:
         raise ValueError('four marker brackets required')
-    bounds = [(D(r['media_before']) * NS - points[k], D(r['media_after']) * NS - points[k]) for r, k in zip(markers, keys, strict=True)]
+    missing = [key for key in keys if key not in points]
+    if (missing and not measured_interval) or len(points) < 2:
+        raise ValueError(f'missing same-process clock markers: {missing}')
+    bounds = [(D(r['media_before']) * NS - points[k], D(r['media_after']) * NS - points[k])
+              for r, k in zip(markers, keys, strict=True) if k in points]
     low, high = max(b[0] for b in bounds), min(b[1] for b in bounds)
     if low > high:
         raise ValueError('inconsistent marker clock brackets')
-    return pid, low, high, [points[k] for k in keys]
+    if not measured_interval:
+        return pid, low, high, [points[k] for k in keys]
+
+    # The cadence launch records its exact media-time interval independently
+    # of signpost delivery. The retained, same-process signposts still bound
+    # the conversion. Never infer a presented time from a game timestamp.
+    (interval,) = table(arm / 'refresh-interval.tsv')
+    offset = (low + high) / 2
+    start = int(D(interval['start_media_seconds']) * NS - offset)
+    end = int(D(interval['end_media_seconds']) * NS - offset)
+    if end <= start:
+        raise ValueError('invalid measured interval')
+    return pid, low, high, [start, start, end, end]
 
 
 def presented_rows(path, pid):
@@ -200,19 +216,21 @@ def main():
     p.add_argument('--arm',type=Path,required=True,help='game surface/requests/markers/window records')
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--refresh-hz',type=float,help='override only with separately retained display-mode evidence')
+    p.add_argument('--measured-interval',action='store_true',
+                   help='use the exact interval in refresh-interval.tsv with same-process trace calibration')
     a=p.parse_args()
     source=a.input
     if source.suffix=='.trace':
         source=a.output.with_suffix('.presented.xml')
         subprocess.run(['xcrun','xctrace','export','--input',str(a.input),'--output',str(source),'--xpath','/trace-toc/run/data/table[@schema="ca-client-presented-handler"]'],check=True,timeout=30)
-    pid,low,high,markers=calibration(a.arm)
+    pid,low,high,markers=calibration(a.arm,a.measured_interval)
     numer,denom=timebase()
     mode = re.search(r'Some\((\d+)\)\)\)', (a.arm/'window.txt').read_text())
     hz = a.refresh_hz if a.refresh_hz is not None else int(mode[1])/1000 if mode else None
     if not hz or hz<=0:
         raise ValueError('reported display refresh unavailable; supply retained mode evidence')
     result=analyse(presented_rows(source,pid),table(a.arm/'surface.tsv'),table(a.arm/'requests.tsv'),low,high,markers,numer,denom,hz)
-    result.update(pid=pid,input=str(a.input),arm=str(a.arm))
+    result.update(pid=pid,input=str(a.input),arm=str(a.arm),measured_interval=a.measured_interval)
     a.output.write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps({k:v for k,v in result.items() if k not in ('intervals','drawables','unmatched','unmatched_affecting_marked_interval','intervals_over_one_period')},indent=2))
     return 0 if result['qualified'] else 2
