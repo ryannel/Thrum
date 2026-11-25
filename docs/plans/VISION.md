@@ -99,42 +99,42 @@ Each is carried from the build plan unless it names another source.
 The V1 exit is the release milestone reached through the milestones below. G0, G2S and G3a were reached
 before the build began. For the others, [the status page](STATUS.md) reports progress in the modules named.
 
-- **G0, integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
+- **Integrity and baselines** (`milestone/integrity-and-baselines`, was G0). Real Metal regressions fail without a device; no successful skips. One baseline
   command records runnable rows and absent consumers. Shipping trees exclude SQLite and authoring.
   [Evidence](../../.orchestrate/evidence/v1-workload/G0-INTEGRITY-2026-11-05.md).
-- **G2S, simulation correctness and multiplayer fitness.** Typed shared and mutable queries, validated admission,
+- **Simulation correctness** (`milestone/simulation-correctness`, was G2S). Typed shared and mutable queries, validated admission,
   trusted in-place rules under sparse undo, engine-owned publication, retained-input amendment and corrected
   replay, with complete authority-state equality against the straight corrected run. Never closed on a partial
   hash or an easier row. [Evidence](../../.orchestrate/evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md);
   [recorded figures](../../.orchestrate/evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history.
-- **G3a, executing graph and live scene.** Render, compute and copy closures execute in dependency order with
+- **Live scene** (`milestone/live-scene`, was G3a). Render, compute and copy closures execute in dependency order with
   culling, derived attachment ops, live camera, lights and cascades, reversed-Z `Depth32Float`, indexed draws and
   submitted transforms.
-- **G3b, functional engine frame runtime.** Display-link targets drive Mac, iOS and browser presentation; Mac runs
+- **Frame runtime** (`milestone/frame-runtime`, was G3b). Display-link targets drive Mac, iOS and browser presentation; Mac runs
   world and render work off its main thread; GPU interpolation, late acquisition and a two-frame limit are shared.
   Modules: `PLATFORM-RUNTIME-MAC`, `PLATFORM-RUNTIME-IOS`, and the web shell.
   [Frame history](../../.orchestrate/evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu allocations are baselines.
-- **G3s, physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple scattering, sky-view and aerial
+- **Sky and atmosphere** (`milestone/sky-and-atmosphere`, was G3s). Hillaire (2020) transmittance, multiple scattering, sky-view and aerial
   LUTs and Sun disk; physical illuminance drives lights and shadows; time controls span dawn through night. Follow
   the Broadsides reading map and the PD and CC0 rules. Module: `ATMOSPHERE`.
   The TAAU route proof on Metal and Chrome records sunrise shadows, the lookout depth edge and the aerial glow at
   sunset. The west-lookout crossing and exact disk match remain open. [WP6 builder evidence](../../.orchestrate/evidence/ATMOSPHERE/WP6/README.md)
-- **G3t, tile dataflow and Metal boundary.** One registry, graph-derived attachment storage, one split scene and
+- **Tile dataflow** (`milestone/tile-dataflow`, was G3t). One registry, graph-derived attachment storage, one split scene and
   output graph, G4's pre-tone colour and exposure input, and a prepared generation-owned native segment with its
   twin, under [the boundary record](../design/decisions/G3T-METAL-BOUNDARY.md). No raw or wgpu encoder splice and
   no rival queue; the complete native recorder stays later. Module: `APPLE-TILE`.
-- **G3c, GPU-driven culling.** Compute frustum and Hi-Z, GPU-written indirect counts, one indexed indirect draw per
+- **GPU culling** (`milestone/gpu-culling`, was G3c). Compute frustum and Hi-Z, GPU-written indirect counts, one indexed indirect draw per
   mesh and pipeline bucket, stable mesh offsets and compute-readable materials. Validate visibility and image
   equivalence; record full and partial-visibility cost and unexpected growth as tripwires. Module: `CULLING`.
-- **G4, Apple reconstruction and governor.** MetalFX, EDR and binary archives through the native boundary; the
+- **Apple reconstruction** (`milestone/apple-reconstruction`, was G4). MetalFX, EDR and binary archives through the native boundary; the
   governor reacts to GPU, thermal and present evidence. Compare Apple tile and portable on this Mac with image
   tolerance and counters. No pipeline compilation during play. Module: `APPLE-PRESENTATION`.
-- **G5, content-addressed loop.** Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC and BC7,
+- **Content-addressed loop** (`milestone/content-addressed-loop`, was G5). Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC and BC7,
   atomic manifest, watcher and dev server. Keep only the runtime validation the game needs; shipping never links
   authoring. Prove visible asset edits without GPU stalls. Modules: `COOKED-DRAW`, `CONTENT-LOOP`
   ([design](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md),
   [evidence](../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)).
-- **G6, creator experience and demo controls.** Native and browser text, sliders, toggles and field overlays bound
+- **Creator experience** (`milestone/creator-experience`, was G6). Native and browser text, sliders, toggles and field overlays bound
   to typed parameters. One command produces a lit scene, sky, cooked mesh, camera and slider; diagnostics and hot
   reload support asset, shader and parameter edits. A fresh agent uses only public docs and the starter, builds a
   small scene without reading internals, and records friction. Keep that scene to about 100 game lines, report
@@ -145,7 +145,7 @@ before the build began. For the others, [the status page](STATUS.md) reports pro
   Chrome, the documentation check, native mistakes and the attended window journey.
   The clipping and shadow-cascade overlays and parameter files as a cooked product remain unbuilt and outside
   the scope of G6.
-- **G7, V1 showcase.** Assemble the exit scene on Mac Apple tile and portable and on Chrome portable. The fixed
+- **V1 showcase** (`milestone/v1-showcase`, was G7). Assemble the exit scene on Mac Apple tile and portable and on Chrome portable. The fixed
   route passes correctness and agent visual review; record whole frames and visible stutter, startup and hitches.
   Native and web share scene and controls. Close with the visual digest, functional and platform status and the
   device runs owed. Module: `SHOWCASE`.
