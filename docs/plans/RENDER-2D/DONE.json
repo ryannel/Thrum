@@ -390,7 +390,7 @@
           "ask": "Is the camera centre advanced through successive submissions of the same retained scene at each scale, and does the pixel-based check reject a frozen camera even when the requested centres advance?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/metal-contrast/chrome/sprites-crisp.json",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/chrome-shutdown/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
           "builder_result": "pass"

@@ -263,3 +263,7 @@
   automated item checks passed, including the three presented Mac windows and first resize.
   [Motion](../../../.orchestrate/evidence/RENDER-2D/WP3/metal-contrast/motion.md) ·
   [Item checks](../../../.orchestrate/evidence/RENDER-2D/WP3/metal-contrast/automated-checks.json)
+- 2026-11-25 WP3.7 now unconfigures each sprite canvas and waits for the WebGPU device's
+  destruction before navigating away. The exact Chrome check passed both DPRs in a fresh
+  checkout, recorded eight device retirements and exited with code 0.
+  [Chrome shutdown evidence](../../../.orchestrate/evidence/RENDER-2D/WP3/chrome-shutdown/README.md)
