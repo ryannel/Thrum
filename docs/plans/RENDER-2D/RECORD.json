@@ -854,7 +854,51 @@
     },
     "WP5": {
       "definitions": "4f70347bb66ce7af869760353bb274cfe4e8f559121a00c66512e0e23eab7b87",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "36a8deeb220fe109c8f59f69faaca37cb847d926",
+          "review": ".orchestrate/evidence/RENDER-2D/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass",
+            "WP5.10": "pass",
+            "WP5.11": "fail",
+            "WP5.12": "pass",
+            "WP5.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "The creator guide's renamed game does not build",
+              "item": "WP5.11",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 146587,
+            "cached": 8092672,
+            "output": 20234,
+            "turns": 1
+          },
+          "at": "2026-11-25T07:09:47Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
