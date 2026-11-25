@@ -1418,7 +1418,7 @@
         {
           "verdict": "fail",
           "commit": "4b0fdea7b02e4154d51ab29a2b1f6ad3f4615d76",
-          "review": ".orchestrate/evidence/WATERS/WP13-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP13-review-1.md",
           "items": {
             "WP13.1": "pass",
             "WP13.2": "pass",
@@ -1467,6 +1467,60 @@
             "turns": 1
           },
           "at": "2026-11-25T03:18:41Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "2055b4960d8f26bea2ef1511900b144cb007a0ce",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md",
+          "items": {
+            "WP13.1": "pass",
+            "WP13.2": "pass",
+            "WP13.3": "pass",
+            "WP13.4": "pass",
+            "WP13.5": "fail",
+            "WP13.6": "pass",
+            "WP13.7": "pass",
+            "WP13.8": "pass",
+            "WP13.9": "pass",
+            "WP13.10": "pass",
+            "WP13.11": "fail",
+            "WP13.12": "pass",
+            "WP13.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "The breaker has long blade-like projections in the handoff view",
+              "repeat": false
+            },
+            {
+              "name": "Straight-sided fins project below the crest at sand height",
+              "item": "WP13.5",
+              "different": "The earlier row of triangular steps at the 40 m beach bend is gone. These straight-sided pieces project below the face at 2 m on the sand.",
+              "repeat": false
+            },
+            {
+              "name": "The matched Chrome breaker has fins at sand height",
+              "item": "WP13.11",
+              "different": "The earlier triangular steps are gone at the matched 40 m checkpoints. The fresh matched trade-wind takes show fins on the underside of the crest at 2 m.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 286756,
+            "cached": 14085632,
+            "output": 42316,
+            "turns": 1
+          },
+          "at": "2026-11-25T05:20:02Z"
         }
       ],
       "authorised": {
