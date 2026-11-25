@@ -108,3 +108,7 @@
   Verified on the Mac with the real launcher. The inherited formatter configuration returns the
   caller's exit 1, the caller-relative linker returns its exit 0, and clean inputs still use the warm
   cache. [Review repair evidence](../../../.orchestrate/evidence/GATE-TIME/WP15/review-fix.md).
+- 2026-11-25 WP15 second review repair. The cache fixtures now isolate admission inputs from the
+  developer's environment. Mac discovery passed with ambient `RUSTFLAGS=-Cdebuginfo=1`, with several
+  combined overrides and with the default environment. An explicit flag still goes to the ordinary
+  caller unchanged on fallback. [Mac evidence](../../../.orchestrate/evidence/GATE-TIME/WP15/ambient-flags-repair.md).

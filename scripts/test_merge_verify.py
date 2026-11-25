@@ -19,21 +19,32 @@ class MergeVerification(unittest.TestCase):
     def setUp(self):
         scratch = tempfile.TemporaryDirectory()
         self.addCleanup(scratch.cleanup)
-        self.root = Path(scratch.name).resolve()
+        sandbox = Path(scratch.name).resolve()
+        self.root = sandbox / "repo"
+        self.root.mkdir()
+        home = sandbox / "home"
+        home.mkdir()
         self.cache = self.root / ".git/orchestrate/merge-cargo"
         self.checkout = self.cache / "checkout"
         self.target = self.checkout / "target"
-        self.env = {key: value for key, value in os.environ.items()
-                    if not key.startswith(("THRUM_", "GIT_", "CARGO_"))}
-        self.env.update(GIT_AUTHOR_NAME="Merge Test", GIT_AUTHOR_EMAIL="merge@example.invalid",
-                        GIT_COMMITTER_NAME="Merge Test", GIT_COMMITTER_EMAIL="merge@example.invalid")
+        # Admission overrides enter these fixtures only through run_check.
+        self.env = {
+            "PATH": os.pathsep.join(str(Path(entry).absolute()) for entry in os.get_exec_path()),
+            "HOME": str(home),
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_AUTHOR_NAME": "Merge Test",
+            "GIT_AUTHOR_EMAIL": "merge@example.invalid",
+            "GIT_COMMITTER_NAME": "Merge Test",
+            "GIT_COMMITTER_EMAIL": "merge@example.invalid",
+        }
         self.git("init", "--quiet", "-b", "main")
         (self.root / ".gitignore").write_text("/target/\n/local.cfg\n")
         (self.root / "input").write_text("pass\n")
         dev = self.root / "dev"
-        dev.write_text("""#!/bin/sh
+        dev.write_text(r"""#!/bin/sh
 set -eu
 echo "check cwd=$PWD"
+printf 'check RUSTFLAGS=%s\n' "${RUSTFLAGS-}"
 test "$1" = check
 mkdir -p target/nextest
 echo artifact > target/artifact
@@ -131,7 +142,7 @@ fi
                 config.unlink()
         self.assert_check(self.run_check(root=caller), 0, "warm", f"check cwd={self.checkout}")
 
-    def test_checkout_relative_tools_and_opaque_flags_take_fallback(self):
+    def test_checkout_dependent_tools_take_fallback(self):
         self.assert_check(self.run_check(), 0, "cold")
         overrides = {
             "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER": "./tmp/linker",
@@ -139,13 +150,19 @@ fi
             "CARGO_TARGET_AARCH64_APPLE_DARWIN_RUNNER": "/usr/bin/env ./tmp/runner",
             "CARGO_BUILD_RUSTC_WRAPPER": "./tmp/rustc",
             "RUSTFMT": "./tmp/rustfmt",
-            "RUSTFLAGS": "-L ./tmp/native",
         }
         for key, value in overrides.items():
             with self.subTest(override=key):
                 self.assert_check(self.run_check(**{key: value}), 0, key, f"check cwd={self.root}")
         self.assert_check(self.run_check(CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER="/usr/bin/cc"),
                           0, "warm", f"check cwd={self.checkout}")
+
+    def test_compiler_flags_are_preserved_on_fallback(self):
+        self.assert_check(self.run_check(), 0, "cold", "check RUSTFLAGS=\n")
+        flags = "-Cdebuginfo=1"
+        self.assert_check(self.run_check(RUSTFLAGS=flags), 0, "explicit Cargo or compiler input override RUSTFLAGS",
+                          f"check cwd={self.root}", f"check RUSTFLAGS={flags}\n")
+        self.assert_check(self.run_check(), 0, "warm", f"check cwd={self.checkout}")
 
     def test_tracked_configurations_can_reference_caller_files(self):
         caller = self.root / "singleton"
