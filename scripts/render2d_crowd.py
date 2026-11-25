@@ -187,7 +187,6 @@ def capture_output(record, source, out, mode):
 
 
 def run(args):
-    from render2d import digest
     costs = args.action == "crowd-costs"
     target = args.target
     commit = git("rev-parse", "HEAD")
@@ -202,9 +201,21 @@ def run(args):
                         retained_sha256=digest(RETAINED))
         if args.action == "band":
             output = scratch / "band.json"
-            invoke([artifact, "band", 10000, 320, 200, "whole", output])
+            import simulator_lifecycle
+            command = [artifact, "band", 10000, 320, 200, "whole", output]
+            held, _ = simulator_lifecycle.ancestor_locks()
+            if "gpu" not in held:
+                command = [sys.executable, simulator_lifecycle.orchestration_script(),
+                           "lock", "gpu", "--worktree", ROOT, "--", *command]
+            invoke(command)
             receipt = json.loads(output.read_text()) | identity
             record(receipt, args.output)
+            return
+        if args.action == "crowd-still":
+            source = scratch / "close"
+            data = replay(artifact, target, "fixed", 10000, (3456, 2234), 0, source, True)
+            capture_output(data | identity, source, args.output, "fixed")
+            print(args.output / "still.png", flush=True)
             return
         if args.action == "crowd-capture":
             modes = ("fixed", "realtime") if target == "mac-metal" else ("realtime",)

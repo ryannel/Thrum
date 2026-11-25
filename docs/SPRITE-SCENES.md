@@ -7,11 +7,12 @@ the first player when you select the close view. From the workspace root on a Ma
 rustup run stable cargo run --locked --offline --release -p crowd-2d-view
 ```
 
-Use the same scene without a window to inspect a held close view. This command writes the renderer's SDR output and
-submission record in a new folder under `tmp/`.
+Use the same scene without a window to inspect a held close view. This captures the first player's view at
+tick 360 on a 3456 × 2234 drawable. It writes `still.png` and the submission record in a new folder under `tmp/`.
+The capture uses the repository's FFmpeg and zstd tools.
 
 ```sh
-target/release/crowd-2d-view fixed 10000 3456 2234 close tmp/my-crowd-still
+python3 scripts/render2d.py crowd-still --target mac-metal --output tmp/my-crowd-still
 ```
 
 To start your own game, copy the example into a new workspace package. Change its package and binary names, add the

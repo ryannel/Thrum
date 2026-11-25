@@ -481,7 +481,7 @@ def prove_field(args, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("field", "costs", "record-costs", "window", "crowd", "crowd-costs", "band", "crowd-capture"))
+    parser.add_argument("action", choices=("field", "costs", "record-costs", "window", "crowd", "crowd-costs", "band", "crowd-capture", "crowd-still"))
     parser.add_argument("--target", choices=TARGETS, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--binary", type=Path)
@@ -490,12 +490,12 @@ def main():
     for name in ("before", "before-load", "base-binary", "binary", "route", "store"):
         parser.add_argument(f"--valley-{name}", type=Path)
     args = parser.parse_args()
-    if args.action in ("crowd", "crowd-costs", "band", "crowd-capture"):
+    if args.action in ("crowd", "crowd-costs", "band", "crowd-capture", "crowd-still"):
         import render2d_crowd
-        if args.action == "band" and args.target != "mac-metal":
-            parser.error("band is a Metal proof")
-        if args.action == "crowd-capture" and not args.output:
-            parser.error("crowd-capture requires a new --output folder")
+        if args.action in ("band", "crowd-still") and args.target != "mac-metal":
+            parser.error(f"{args.action} requires Metal")
+        if args.action in ("crowd-capture", "crowd-still") and not args.output:
+            parser.error(f"{args.action} requires a new --output folder")
         render2d_crowd.run(args)
         return
     if args.action == "window":
