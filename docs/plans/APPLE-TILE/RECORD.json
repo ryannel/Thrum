@@ -22,7 +22,10 @@
       "output": 6254,
       "turns": 1
     },
-    "at": "2026-11-11T05:56:59Z"
+    "at": "2026-11-11T05:56:59Z",
+    "items_owed": [
+      "WP13"
+    ]
   },
   "work_packages": {
     "WP0": {
@@ -651,6 +654,16 @@
         "checked": "e451366458d93f8de784d54e4a203c64d0362275",
         "at": "2026-11-17T14:14:57Z"
       }
+    },
+    "WP13": {
+      "definitions": "166c517cd0882b67651a653e930bbbe6d43d0fa5b7f64f9656a493439759d87e",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "APPLE-PRESENTATION WP8 needs something no plan provides yet. The builder wrote: APPLE-TILE must supply the reusable `Nat",
+        "at": "2026-11-25T13:45:55Z"
+      },
+      "ends_stretch": true
     }
   },
   "decisions": [
@@ -696,11 +709,15 @@
     {
       "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
       "at": "2026-11-15T22:19:37Z"
+    },
+    {
+      "task": "APPLE-PRESENTATION WP8 needs something no plan provides yet. The builder wrote: APPLE-TILE must supply the reusable `NativeProvider` interface, or the planner must assign its extraction to WP8. The builder's handoff, .orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/apple-presentation at 2252c56af21c, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP APPLE-PRESENTATION WP8: builder: <where the plan provides it>`.",
+      "at": "2026-11-25T13:45:55Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-15T22:19:37Z"
+    "at": "2026-11-25T13:45:55Z"
   },
   "design_history": [
     {

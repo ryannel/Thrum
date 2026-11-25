@@ -928,18 +928,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences.",
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "APPLE-TILE must supply the reusable `NativeProvider` interface, or the planner must assign its extraction to WP8.",
-        "work": {
-          "commit": "2252c56af21c8d37d9cdbfc02a751ebd307234e9",
-          "branch": "build/apple-presentation",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md"
-      }
+      "status": "not_started",
+      "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences."
     },
     {
       "id": "WP9",
