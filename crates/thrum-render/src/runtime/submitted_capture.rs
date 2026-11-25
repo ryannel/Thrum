@@ -123,14 +123,16 @@ pub(super) struct TapSpec {
 }
 
 impl TapSpec {
-    fn source_for_format(self, format: Option<wgpu::TextureFormat>) -> CaptureSource {
-        self.source.unwrap_or_else(|| {
-            if format == Some(wgpu::TextureFormat::Rgba16Float) {
-                CaptureSource::Edr
-            } else {
-                CaptureSource::Sdr
-            }
-        })
+    pub(super) fn source_for_format(self, format: Option<wgpu::TextureFormat>) -> CaptureSource {
+        self.source.unwrap_or_else(|| default_source(format))
+    }
+}
+
+fn default_source(format: Option<wgpu::TextureFormat>) -> CaptureSource {
+    if format == Some(wgpu::TextureFormat::Rgba16Float) {
+        CaptureSource::Edr
+    } else {
+        CaptureSource::Sdr
     }
 }
 
@@ -169,11 +171,11 @@ pub(super) fn copy_drawable(
     tap: Option<&mut Tap>,
     generation: u64,
     surface: Option<&super::SurfaceOutput<'_>>,
-    scene: Option<&crate::synthetic::PreparedSynthetic>,
+    prepared: &super::PreparedRenderer,
     encoder: &mut wgpu::CommandEncoder,
     timing_requested: bool,
 ) -> Result<Option<usize>, FrameError> {
-    let (Some(tap), Some(surface), Some(scene)) = (tap, surface, scene) else {
+    let (Some(tap), Some(surface)) = (tap, surface) else {
         return Ok(None);
     };
     let texture = surface.view.texture();
@@ -189,9 +191,10 @@ pub(super) fn copy_drawable(
     ) else {
         return Ok(None);
     };
-    if let Err(error) =
-        readback.copy_texture(encoder, texture, Some(scene.pending_exposure_sample()))
-    {
+    let exposure = prepared
+        .three_d()
+        .map(crate::synthetic::PreparedSynthetic::pending_exposure_sample);
+    if let Err(error) = readback.copy_texture(encoder, texture, exposure) {
         tap.abandon(index);
         return Err(FrameError::gpu("EDR drawable copy", error));
     }
@@ -199,7 +202,6 @@ pub(super) fn copy_drawable(
 }
 
 impl Tap {
-    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn spec_for_generation(&self, generation: u64) -> Option<TapSpec> {
         (self.generation == generation).then_some(self.spec)
     }
@@ -295,7 +297,10 @@ impl Tap {
                     "EDR drawable readback",
                 )
             } else {
-                target.readback(device)
+                match target {
+                    super::FrameTarget::TwoD(target) => target.readback_from(device, self.source),
+                    super::FrameTarget::ThreeD(_) => target.readback(device),
+                }
             };
             readback.copy_timing = self.spare_timers.pop();
             self.slots.push(Slot {
@@ -442,6 +447,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     /// Enable the existing tap at a prepared engine stage. Stage changes prepare
     /// and publish replacement targets only after all ordinary frames retire.
+    /// A float-mode sprite host can enable the 8-bit stage with frames in flight.
     /// A subsequent visual/extent replacement that changes the target stage
     /// refuses capture admission and increments omissions, while rendering continues.
     /// # Errors
@@ -477,46 +483,45 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let _region = self
             .creations
             .region(super::CreationPhase::Transition, "capture-stage");
-        if source == CaptureSource::Edr
-            && (self.prepared.three_d().is_none()
-                || self.presenter.as_ref().is_none_or(|presenter| {
-                    presenter.profile().format != wgpu::TextureFormat::Rgba16Float
-                }))
-        {
+        if source == CaptureSource::Edr && !self.is_edr() {
             return Err(FrameError::InvalidState("capture requires an EDR drawable"));
         }
-        let replacement =
-            if source == CaptureSource::Edr || self.slots[0].target.capture_source() == source {
-                None
-            } else {
-                if self.pending_frames() != 0 {
-                    return Err(FrameError::InvalidState(
-                        "capture stage change requires retired frames",
-                    ));
+        let sprite_sdr = source == CaptureSource::Sdr
+            && self.is_edr()
+            && matches!(self.prepared, super::PreparedRenderer::TwoD(_));
+        let replacement = if sprite_sdr
+            || source == CaptureSource::Edr
+            || self.slots[0].target.capture_source() == source
+        {
+            None
+        } else {
+            if self.pending_frames() != 0 {
+                return Err(FrameError::InvalidState(
+                    "capture stage change requires retired frames",
+                ));
+            }
+            let mut slots = super::preparation::prepare_capture_slots(
+                &self.prepared,
+                &self.queue,
+                self.render_extent,
+                self.presenter.is_some(),
+                self.presenter.as_ref().map(SurfacePresenter::profile),
+                source,
+            )?;
+            super::preparation::bind_presenter(
+                &self.prepared,
+                &mut slots,
+                self.presenter.as_ref(),
+            )?;
+            if let Some(prepared) = self.prepared.three_d() {
+                let inputs = prepared.target_inputs();
+                for slot in &mut slots {
+                    slot.target
+                        .share_view_history(&inputs, &self.slots[0].target);
                 }
-                let mut slots = super::preparation::prepare_capture_slots(
-                    &self.prepared,
-                    &self.queue,
-                    self.render_extent,
-                    self.presenter.is_some(),
-                    self.presenter.as_ref().map(SurfacePresenter::profile),
-                    source,
-                )?;
-                super::preparation::bind_presenter(
-                    &self.prepared,
-                    &mut slots,
-                    self.presenter.as_ref(),
-                )?;
-                if let Some(prepared) = self.prepared.three_d() {
-                    let inputs = prepared.target_inputs();
-                    for slot in &mut slots {
-                        slot.target
-                            .share_view_history(&inputs, &self.slots[0].target);
-                    }
-                }
-                Some(slots)
-            };
-        let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
+            }
+            Some(slots)
+        };
         let mut tap = Tap::empty(spec, source, limits, self.generation, extent);
         tap.spare_timers = CopyTiming::prepare(
             self.prepared.capabilities(),
@@ -529,6 +534,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 crate::error::RenderError::from(error),
             )
         })?;
+        let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
         tap.grow(
             tap.limits.staging_slots,
             tap.limits.cpu_buffers,
@@ -540,6 +546,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.presenter_generation += 1;
         }
         self.submitted_capture = Some(tap);
+        if sprite_sdr {
+            self.sync_sprite_capture_stage();
+        }
         Ok(())
     }
 
@@ -614,12 +623,53 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub(super) fn resize_drawable_capture(&mut self) {
         let replacement = self.submitted_capture.as_ref().and_then(|tap| {
             let extent = capture_extent(tap.source, self.render_extent, self.presenter.as_ref());
-            (tap.source == CaptureSource::Edr
+            ((tap.source == CaptureSource::Edr
+                || (self.is_edr() && matches!(self.prepared, super::PreparedRenderer::TwoD(_))))
                 && tap.generation == self.generation
                 && tap.extent != extent)
                 .then(|| Tap::replacement(tap.spec, tap.source, tap.generation, extent))
         });
         self.switch_capture_extent(replacement);
+    }
+
+    pub(super) fn sprite_capture_source_for_format(
+        &self,
+        format: wgpu::TextureFormat,
+    ) -> CaptureSource {
+        let format = Some(format);
+        self.submitted_capture
+            .as_ref()
+            .and_then(|tap| tap.spec_for_generation(self.generation))
+            .map_or_else(
+                || default_source(format),
+                |spec| spec.source_for_format(format),
+            )
+    }
+
+    pub(super) fn sprite_sdr_capture_enabled(&self) -> bool {
+        self.submitted_capture.as_ref().is_some_and(|tap| {
+            tap.generation == self.generation && tap.source == CaptureSource::Sdr
+        })
+    }
+
+    pub(super) fn sync_sprite_capture_stage(&mut self) {
+        if !matches!(self.prepared, super::PreparedRenderer::TwoD(_)) || !self.is_edr() {
+            return;
+        }
+        let enabled = self.sprite_sdr_capture_enabled();
+        // Keep an in-flight slot's graph and image until its frame and timing
+        // retire. Free slots reflect the tap state before their next recording.
+        for slot in &mut self.slots {
+            if !slot.is_pending()
+                && let super::FrameTarget::TwoD(target) = &mut slot.target
+            {
+                if enabled {
+                    target.enable_sdr(&self.device);
+                } else {
+                    target.release_sdr();
+                }
+            }
+        }
     }
 
     pub(super) fn refresh_capture_capacity(&mut self) {

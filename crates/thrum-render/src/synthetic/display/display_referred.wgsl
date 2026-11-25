@@ -9,3 +9,11 @@
     let linear = textureLoad(scene, vec2<i32>(position.xy), 0).rgb;
     return vec4(srgb_encode(clamp(linear, vec3(0.0), vec3(1.0))), 1.0);
 }
+
+// Current display headroom and the greatest stored half-float at or below it.
+@group(1) @binding(0) var<uniform> edr_headroom: vec2<f32>;
+
+@fragment fn float_fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+    let linear = textureLoad(scene, vec2<i32>(position.xy), 0).rgb;
+    return vec4(min(linear, vec3(edr_headroom.y)), 1.0);
+}

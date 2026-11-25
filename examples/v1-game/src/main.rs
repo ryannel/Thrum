@@ -129,6 +129,7 @@ fn window_display_options()
         forced: forced.parse()?,
         output: std::env::var_os("THRUM_MAC_EDR_PROOF").map(Into::into),
         capture: std::env::var_os("THRUM_MAC_EDR_TAP").is_some(),
+        capture_first_pixels: std::env::var_os("THRUM_MAC_EDR_PIXELS").is_some(),
     }))
 }
 

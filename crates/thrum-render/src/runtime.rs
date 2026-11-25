@@ -1623,7 +1623,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         capture: bool,
     ) -> Result<crate::graph::CompiledGraph, FrameError> {
         if let FrameTarget::TwoD(target) = &self.slots[0].target {
-            return Ok(target.plan(capture).clone());
+            return Ok(target
+                .inspection_plan(capture, self.sprite_sdr_capture_enabled())
+                .clone());
         }
         // A slot that has not submitted since a cooked visual publication
         // can still carry the previous frame revision.
@@ -2437,7 +2439,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.submitted_capture.as_mut(),
                 self.generation,
                 surface.filter(|_| surface_presented),
-                self.prepared.three_d(),
+                &self.prepared,
                 &mut encoder,
                 sample.timing_requested,
             ) {
@@ -2931,6 +2933,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
         }
         self.retired_slots.retain(FrameSlot::is_pending);
+        self.sync_sprite_capture_stage();
         Ok(())
     }
 }

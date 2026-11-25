@@ -126,6 +126,10 @@ impl Game for CrowdView {
         Ok(Prepared::inline(host))
     }
 
+    fn supports_edr(&self) -> bool {
+        true
+    }
+
     fn controls(&self) -> &Controls {
         &self.controls
     }

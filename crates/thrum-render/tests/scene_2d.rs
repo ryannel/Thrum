@@ -89,14 +89,15 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
         // Cross-check the named inventory against every live HAL buffer/texture/query.
         // The sheet, shared transparent placeholder, and shared frame, row and
         // order buffers. Two slots each bind colour, SDR and a view, plus the
-        // host's timestamp query, resolve and readback.
+        // host's timestamp query, resolve and readback. Mac preparation also
+        // keeps the float transfer's headroom uniform.
         assert_eq!(
             (
                 counts.0 - before.0,
                 counts.1 - before.1,
                 counts.2 - before.2
             ),
-            (9, 6, 2)
+            (9 + isize::from(cfg!(target_os = "macos")), 6, 2)
         );
         assert_eq!(host.scene_kind(), SceneKind::TwoD);
         assert_eq!(host.resolved_reconstructor(), None);
@@ -124,7 +125,10 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
             )
         );
         let pipelines = host.creation_report().pipelines;
-        assert_eq!(pipelines.iter().map(|row| row.render).sum::<u64>(), 3);
+        assert_eq!(
+            pipelines.iter().map(|row| row.render).sum::<u64>(),
+            3 + u64::from(cfg!(target_os = "macos"))
+        );
         assert_eq!(
             pipelines
                 .iter()
@@ -212,6 +216,20 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
         }
         let graph = control.scene_graph().expect("inspect the prepared graph");
         let names = graph.pass_names().collect::<Vec<_>>();
+        let attachment_storage: Vec<_> = graph
+            .attachment_storage
+            .iter()
+            .map(|entry| entry.reason)
+            .collect();
+        println!(
+            "{recipe}: 3D control snapshot: {} transient slots; {attachment_storage:?}; {} pipelines; {:?}",
+            graph.transient_slots,
+            control
+                .pipeline_creation_count()
+                .expect("creation counters"),
+            control.storage_report(),
+        );
+
         for pass in [
             "atmosphere sky view",
             "atmosphere stars",
@@ -614,4 +632,109 @@ fn retained_3d_graphs_match_the_starting_commit() {
         actual, baseline,
         "3D pass order, attachment residency or transient lifetimes changed"
     );
+}
+
+#[test]
+#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+fn float_mode_retires_the_8_bit_attachment_and_only_runs_two_plain_passes() {
+    generation_prepares_only_the_sprite_and_output_resources();
+    use thrum_render::{runtime::CaptureLimits, synthetic::CaptureSource};
+
+    const FLOAT_PASSES: [&str; 2] = ["sprites", "V1 surface present"];
+    for recipe in fixture::RECIPES {
+        let Some(thrum_test_support::Opened {
+            device,
+            queue,
+            capabilities,
+            ..
+        }) = fixture::open("float sprite inventory", recipe)
+        else {
+            return;
+        };
+        let (policy, scene) = inputs();
+        let mut host =
+            fixture::host_for_format(&capabilities, &queue, EXTENT, policy, scene, fixture::FLOAT);
+        let surface = fixture::drawable_for_format(&device, EXTENT, fixture::FLOAT);
+        settle_uploads(&device, &queue);
+        let counts = allocations(&device);
+        let storage = host.storage_report();
+        let graph = host.scene_graph().expect("inspect plain float graph");
+        assert_eq!(graph.pass_names().collect::<Vec<_>>(), FLOAT_PASSES);
+        assert_eq!(graph.transient_slots, 1);
+        assert!(!storage.contains("SDR output"));
+        assert_eq!(
+            storage
+                .matches("unique textures/nominal bytes=(1, 24576)")
+                .count(),
+            2
+        );
+        let pipelines = host.creation_report().pipelines;
+        assert_eq!(pipelines.iter().map(|row| row.render).sum::<u64>(), 4);
+        assert_eq!(
+            pipelines
+                .iter()
+                .map(|row| row.compute + row.mesh)
+                .sum::<u64>(),
+            0
+        );
+        for before_capture in [true, false] {
+            if !before_capture {
+                host.enable_submitted_capture_from(
+                    60,
+                    CaptureLimits::default(),
+                    CaptureSource::Sdr,
+                )
+                .expect("enable named 8-bit tap");
+                assert!(
+                    host.storage_report()
+                        .contains("SDR output Rgba8Unorm bytes=12288")
+                );
+                assert_eq!(
+                    host.scene_graph_variant(true)
+                        .expect("inspect 8-bit capture graph")
+                        .pass_names()
+                        .collect::<Vec<_>>(),
+                    CAPTURE,
+                );
+                fixture::submit(&mut host, &surface, EXTENT);
+                let image = fixture::submitted(&mut host, EXTENT, CaptureSource::Sdr);
+                host.recycle_submitted_image(image);
+                // Also leave a submitted frame in flight at disable.
+                fixture::submit(&mut host, &surface, EXTENT);
+                assert!(host.pending_frames() > 0);
+                host.disable_submitted_capture();
+            }
+            fixture::submit(&mut host, &surface, EXTENT);
+            let submitted = host.last_submission().expect("submitted float frame");
+            let completed = fixture::drain(&mut host);
+            let sample = completed
+                .iter()
+                .find(|s| s.submission_order == submitted)
+                .expect("retired float frame");
+            assert_eq!(
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .expect("float pass timings")
+                    .passes()
+                    .iter()
+                    .map(|pass| pass.name.as_ref())
+                    .collect::<Vec<_>>(),
+                FLOAT_PASSES,
+            );
+            settle_uploads(&device, &queue);
+            assert_eq!(host.storage_report(), storage);
+            assert_eq!(
+                host.scene_graph()
+                    .expect("reinspect plain float graph")
+                    .transient_slots,
+                1
+            );
+            assert_eq!(allocations(&device), counts);
+            assert_eq!(host.submitted_capture_usage(), None);
+        }
+        println!(
+            "{recipe}: float-only passes {FLOAT_PASSES:?}, 1 slot, HAL counts {counts:?} restored"
+        );
+    }
 }

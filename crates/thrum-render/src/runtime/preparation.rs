@@ -248,7 +248,7 @@ impl FrameTarget {
     pub(super) fn capture_source(&self) -> CaptureSource {
         match self {
             Self::ThreeD(target) => target.capture_source(),
-            Self::TwoD(target) => target.source,
+            Self::TwoD(target) => target.capture_source(),
         }
     }
 
@@ -697,7 +697,13 @@ pub(super) fn prepare_slots(
         extent,
         profile.is_some(),
         profile,
-        CaptureSource::Sdr,
+        if matches!(prepared, PreparedRenderer::TwoD(_))
+            && profile.is_some_and(|profile| profile.format == wgpu::TextureFormat::Rgba16Float)
+        {
+            CaptureSource::Edr
+        } else {
+            CaptureSource::Sdr
+        },
     )
 }
 

@@ -5,6 +5,7 @@ use thrum_render::runtime::{DriveReport, FrameHost, FrameWorld, SceneSource};
 pub(in crate::app) struct DisplayProof {
     log: File,
     tap: bool,
+    first_pixels: Option<std::path::PathBuf>,
     pub(in crate::app) configures: u64,
     submitted: u64,
     collected: u64,
@@ -27,6 +28,9 @@ impl DisplayProof {
         Ok(Some(Self {
             log: File::create(path.join("frames.jsonl")).map_err(|error| error.to_string())?,
             tap,
+            first_pixels: options
+                .capture_first_pixels
+                .then(|| path.join("submitted.rgba")),
             configures: 1,
             submitted: 0,
             collected: 0,
@@ -44,6 +48,7 @@ impl DisplayProof {
         writeln!(self.log, "{}", serde_json::json!({
             "tick": tick, "presented": frame.surface_presented, "submission": host.last_submission(),
             "headroom": host.display_headroom(), "format": format!("{:?}", config.format),
+            "scene_kind": format!("{:?}", host.scene_kind()),
             "color_space": format!("{:?}", config.color_space), "configures": self.configures,
         })).map_err(|error| error.to_string())?;
         self.collect(host)
@@ -61,6 +66,11 @@ impl DisplayProof {
             } else {
                 None
             };
+            if image.sample.surface_presented
+                && let Some(path) = self.first_pixels.take()
+            {
+                std::fs::write(path, &image.rgba).map_err(|error| error.to_string())?;
+            }
             writeln!(
                 self.log,
                 "{}",
@@ -68,6 +78,8 @@ impl DisplayProof {
                     "capture_submission": image.sample.submission_order, "max_rgb": max,
                     "capture_source": format!("{:?}", image.pixel_source),
                     "capture_session": image.session, "pixel_bytes": image.rgba.len(),
+                    "extent": image.extent,
+                    "encoding": if max.is_some() { "rgba16float-le" } else { "rgba8-srgb" },
                     "presented": image.sample.surface_presented,
                     "presenter_generation": image.presenter_generation,
                 })

@@ -7,6 +7,26 @@ use thrum_render::{
 
 pub(crate) const SIZE: [u32; 2] = [256, 128];
 const ROWS: [SpriteRow; 1] = [SpriteRow::new(0, [-128.0, 64.0])];
+const EDR_ROWS: [SpriteRow; 2] = [
+    ROWS[0],
+    SpriteRow {
+        scale: [16.0; 2],
+        tint: [8.0, 8.0, 8.0, 1.0],
+        ..SpriteRow::new(1, [0.0, 16.0])
+    },
+];
+
+fn edr_probe() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        *ENABLED.get_or_init(|| std::env::var_os("THRUM_SPRITE_EDR_CARD").is_some_and(|v| v == "1"))
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        false
+    }
+}
 
 pub(crate) fn scene(scale: u16) -> Result<SpriteScene, FrameError> {
     if !(1..=6).contains(&scale) {
@@ -14,18 +34,26 @@ pub(crate) fn scene(scale: u16) -> Result<SpriteScene, FrameError> {
             "sprite card scale must be an integer from 1 to 6",
         ));
     }
+    let mut frames = vec![SpriteRect {
+        origin: [0, 0],
+        size: SIZE,
+    }];
+    if edr_probe() {
+        // The cream texel is boosted well above H=2 in every RGB channel.
+        frames.push(SpriteRect {
+            origin: [33, 13],
+            size: [1, 1],
+        });
+    }
+    let capacity = if edr_probe() { 2 } else { 1 };
     Ok(SpriteScene::new(
         EmbeddedSheet {
             extent: SIZE,
             rgba: texels().into(),
-            frames: [SpriteRect {
-                origin: [0, 0],
-                size: SIZE,
-            }]
-            .into(),
+            frames: frames.into(),
             texels_per_unit: 1.0,
         },
-        1,
+        capacity,
     ))
 }
 
@@ -40,7 +68,7 @@ pub(crate) fn frame(scale: u16, extent: [u32; 2]) -> SpriteFrame<'static> {
             ],
             pixels_per_unit: scale,
         },
-        rows: &ROWS,
+        rows: if edr_probe() { &EDR_ROWS } else { &ROWS },
     }
 }
 

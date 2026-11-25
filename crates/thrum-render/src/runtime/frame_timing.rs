@@ -286,7 +286,9 @@ impl FrameTimingBatch {
             FrameTarget::ThreeD(_) => self
                 .layout
                 .and_then(|layout| validate_pass_timings(passes, presented, layout)),
-            FrameTarget::TwoD(_) => validate_sprite_timings(passes, presented),
+            FrameTarget::TwoD(target) => {
+                validate_sprite_timings(passes, presented, target.is_float())
+            }
         };
         let Some((present, contribution)) = durations else {
             self.reject_sample(sample, stats, TimingRefusal::Layout);

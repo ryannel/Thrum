@@ -481,7 +481,7 @@ def prove_field(args, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("field", "costs", "record-costs", "window", "crowd", "crowd-costs", "band", "crowd-capture", "crowd-still"))
+    parser.add_argument("action", choices=("field", "costs", "record-costs", "window", "crowd", "crowd-costs", "band", "crowd-capture", "crowd-still", "edr", "edr-crowd", "edr-observed"))
     parser.add_argument("--target", choices=TARGETS, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--binary", type=Path)
@@ -490,6 +490,22 @@ def main():
     for name in ("before", "before-load", "base-binary", "binary", "route", "store"):
         parser.add_argument(f"--valley-{name}", type=Path)
     args = parser.parse_args()
+    if args.action in ("edr", "edr-crowd", "edr-observed"):
+        import render2d_edr
+        if args.target != "mac-metal":
+            parser.error(f"{args.action} requires Metal")
+        (ROOT / "tmp").mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix=f"render2d-{args.action}-", dir=ROOT / "tmp") as scratch:
+            try:
+                record = render2d_edr.proof(args.action, Path(scratch))
+            finally:
+                if args.output:
+                    render2d_edr.retain(Path(scratch), args.output.with_suffix(".frames"))
+        record.update(target=args.target, commit=git("rev-parse", "HEAD"))
+        if args.output:
+            args.output.write_text(json.dumps(record, indent=2) + "\n")
+        print(json.dumps(record, separators=(",", ":")))
+        return
     if args.action in ("crowd", "crowd-costs", "band", "crowd-capture", "crowd-still"):
         import render2d_crowd
         if args.action in ("band", "crowd-still") and args.target != "mac-metal":

@@ -21,6 +21,7 @@ use thrum_render::{
 };
 
 pub(crate) const RECIPES: [&str; 2] = ["portable", "apple-tile"];
+pub(crate) const FLOAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 pub(crate) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 pub(crate) type Host = FrameHost<World, Scene>;
 
@@ -234,10 +235,23 @@ pub(crate) fn configured_host(
     scene: Scene,
     config: SpriteScene,
 ) -> Host {
+    host_for_format(caps, queue, extent, scene, config, FORMAT)
+}
+
+pub(crate) fn host_for_format(
+    caps: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    extent: [u32; 2],
+    scene: Scene,
+    config: SpriteScene,
+    format: wgpu::TextureFormat,
+) -> Host {
+    let mut host_config = scene_config(extent);
+    host_config.surface = Some(SurfaceProfile { extent, format });
     pollster::block_on(FrameHost::new_2d(
         caps,
         queue,
-        scene_config(extent),
+        host_config,
         World::default(),
         scene,
         config,
@@ -255,11 +269,19 @@ pub(crate) fn sheet(extent: [u32; 2], pixels: &[u8], frames: &[SpriteRect]) -> E
     }
 }
 
-pub(crate) fn drawable(device: &wgpu::Device, [width, height]: [u32; 2]) -> wgpu::TextureView {
+pub(crate) fn drawable(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
+    drawable_for_format(device, extent, FORMAT)
+}
+
+pub(crate) fn drawable_for_format(
+    device: &wgpu::Device,
+    [width, height]: [u32; 2],
+    format: wgpu::TextureFormat,
+) -> wgpu::TextureView {
     device
         .create_texture(&wgpu::TextureDescriptor {
             label: Some("sprite proof drawable"),
-            format: FORMAT,
+            format,
             size: wgpu::Extent3d {
                 width,
                 height,
@@ -268,7 +290,7 @@ pub(crate) fn drawable(device: &wgpu::Device, [width, height]: [u32; 2]) -> wgpu
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         })
         .create_view(&wgpu::TextureViewDescriptor::default())
@@ -290,7 +312,15 @@ pub(crate) fn capture(
         source,
     )
     .expect("open a bounded capture session");
-    let output = drawable(device, extent);
+    let output = drawable_for_format(device, extent, if host.is_edr() { FLOAT } else { FORMAT });
+    submit(host, &output, extent);
+    let image = submitted(host, extent, source);
+    host.disable_submitted_capture();
+    drain(host);
+    image
+}
+
+pub(crate) fn submit(host: &mut Host, output: &wgpu::TextureView, extent: [u32; 2]) {
     let encoded = host
         .advance(Duration::ZERO)
         .expect("advance the fixture world")
@@ -304,11 +334,18 @@ pub(crate) fn capture(
     assert_eq!(attached.viewport, [0, 0, extent[0], extent[1]]);
     let report = encoded
         .submit(Some(&SurfaceOutput {
-            view: &output,
+            view: output,
             extent,
         }))
         .expect("submit the recorded frame");
     assert!(report.surface_presented && report.submitted);
+}
+
+pub(crate) fn submitted(
+    host: &mut Host,
+    extent: [u32; 2],
+    source: CaptureSource,
+) -> SubmittedImage {
     let image =
         thrum_test_support::wait::until("submitted-image tap", Duration::from_secs(10), || {
             host.poll_completed().expect("GPU polling remains healthy");
@@ -319,8 +356,6 @@ pub(crate) fn capture(
     assert_eq!(image.extent, extent);
     assert_eq!(image.pixel_source, source);
     assert_eq!(image.sample.history_identity, [0; 2]);
-    host.disable_submitted_capture();
-    drain(host);
     image
 }
 

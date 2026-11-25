@@ -16,7 +16,7 @@ use crate::shader_constants::{
 use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
-mod edr;
+pub(crate) mod edr;
 
 /// Whether the Mac backing-grid diagnostic is requesting exact 8-bit output.
 #[cfg(target_os = "macos")]
@@ -82,9 +82,12 @@ pub(crate) const DISPLAY_REFERRED_SHADER: &str = concat!(
 
 pub(crate) const DISPLAY_REFERRED_PASS: &str = PassKey::DisplayReferred.constant_name();
 
-/// Fixed-exposure SDR output used when the scene publishes colour only.
+/// Fixed-exposure display output used when the scene publishes colour only.
 #[derive(Clone)]
-pub(crate) struct DisplayReferredStage(wgpu::RenderPipeline);
+pub(crate) struct DisplayReferredStage {
+    sdr: wgpu::RenderPipeline,
+    edr: Option<edr::EdrTone>,
+}
 
 impl DisplayReferredStage {
     pub(crate) fn new(device: &crate::runtime::DeviceSite) -> Self {
@@ -103,12 +106,14 @@ impl DisplayReferredStage {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        Self(display_pipeline(
-            device,
-            &shader,
-            &pipeline_layout,
-            DISPLAY_REFERRED_PASS,
-        ))
+        let sdr = display_pipeline(device, &shader, &pipeline_layout, DISPLAY_REFERRED_PASS);
+        let edr = cfg!(target_os = "macos")
+            .then(|| edr::EdrTone::prepare(device, &shader, &layout, "vertex", "float_fragment"));
+        Self { sdr, edr }
+    }
+
+    pub(crate) fn float(&self) -> Option<&edr::EdrTone> {
+        self.edr.as_ref()
     }
 
     pub(crate) fn bind(
@@ -118,7 +123,7 @@ impl DisplayReferredStage {
     ) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(DISPLAY_REFERRED_PASS),
-            layout: &self.0.get_bind_group_layout(0),
+            layout: &self.sdr.get_bind_group_layout(0),
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::TextureView(colour),
@@ -138,7 +143,7 @@ impl DisplayReferredStage {
         let mut pass = compiled
             .begin_render(encoder, [Some(target)], None, generation, timings)?
             .ok_or(RenderError::GraphPassMismatch)?;
-        pass.set_pipeline(&self.0);
+        pass.set_pipeline(&self.sdr);
         pass.set_bind_group(0, input, &[]);
         pass.draw(0..3, 0..1);
         Ok(())
@@ -208,7 +213,11 @@ impl PreparedPreToneInput {
         &self.input
     }
 
-    fn check_pass(&self, pass: &CompiledPass) -> Result<(), RenderError> {
+    pub(super) fn edr_binding(&self, exposure_side: usize) -> (u64, &wgpu::BindGroup) {
+        (self.generation, &self.groups[exposure_side])
+    }
+
+    pub(super) fn check_pass(&self, pass: &CompiledPass) -> Result<(), RenderError> {
         for (resource, kind) in [
             (&self.input.colour, AccessKind::SampledRead),
             (&self.input.motion, AccessKind::SampledRead),
@@ -270,7 +279,7 @@ impl SdrToneStage {
             "prepared synthetic tone encode role",
         );
         let edr = (cfg!(target_os = "macos") && !pattern)
-            .then(|| edr::EdrTone::prepare(device, &shader, &layout));
+            .then(|| edr::EdrTone::prepare(device, &shader, &layout, "edr_vertex", "edr_fragment"));
         Self {
             key,
             pipeline,

@@ -1,5 +1,4 @@
-//! The float drawable consumes the same pre-tone input and exposure in linear light.
-use super::{PreparedPreToneInput, ToneOutput};
+//! Prepare and record the float present pass with the display headroom uniform.
 use crate::{
     binding,
     graph::{CompiledPass, GraphColorAttachment},
@@ -12,7 +11,7 @@ use wgpu::util::DeviceExt as _;
 
 /// Prepared with the SDR stage so a display mode change needs no compilation.
 #[derive(Clone)]
-pub(in crate::synthetic) struct EdrTone {
+pub(crate) struct EdrTone {
     pipeline: wgpu::RenderPipeline,
     settings: wgpu::Buffer,
     group: wgpu::BindGroup,
@@ -23,6 +22,8 @@ impl EdrTone {
         device: &DeviceSite,
         shader: &wgpu::ShaderModule,
         inputs: &wgpu::BindGroupLayout,
+        vertex: &str,
+        fragment: &str,
     ) -> Self {
         let label = Some("extended dynamic range present");
         let settings = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -52,7 +53,7 @@ impl EdrTone {
             layout: Some(&layout),
             vertex: wgpu::VertexState {
                 module: shader,
-                entry_point: Some("edr_vertex"),
+                entry_point: Some(vertex),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 buffers: &[],
             },
@@ -61,7 +62,7 @@ impl EdrTone {
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
                 module: shader,
-                entry_point: Some("edr_fragment"),
+                entry_point: Some(fragment),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::TextureFormat::Rgba16Float.into())],
             }),
@@ -75,7 +76,7 @@ impl EdrTone {
         }
     }
 
-    pub(in crate::synthetic) fn write_headroom(&self, queue: &wgpu::Queue, headroom: f32) {
+    pub(crate) fn write_headroom(&self, queue: &wgpu::Queue, headroom: f32) {
         let nearest = half::f16::from_f32(headroom);
         let limit = if nearest.to_f32() > headroom {
             half::f16::from_bits(nearest.to_bits() - 1)
@@ -89,35 +90,24 @@ impl EdrTone {
         );
     }
 
-    pub(in crate::synthetic) fn encode(
+    pub(crate) fn encode(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         compiled: &CompiledPass,
-        input: &PreparedPreToneInput,
-        output: ToneOutput<'_>,
+        input: (u64, &wgpu::BindGroup),
+        output: GraphColorAttachment<'_>,
         timings: Option<&mut GpuTimings>,
         presenter: &SurfacePresenter,
     ) -> Result<(), RenderError> {
         if output.view.texture().format() != wgpu::TextureFormat::Rgba16Float {
             return Err(RenderError::TargetExtent);
         }
-        input.check_pass(compiled)?;
+        let (generation, group) = input;
         let mut pass = compiled
-            .begin_render(
-                encoder,
-                [Some(GraphColorAttachment {
-                    resource: output.resource,
-                    range: 0..1,
-                    view: output.view,
-                    clear: wgpu::Color::BLACK,
-                })],
-                None,
-                input.generation,
-                timings,
-            )?
+            .begin_render(encoder, [Some(output)], None, generation, timings)?
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(0, &input.groups[output.exposure_side], &[]);
+        pass.set_bind_group(0, group, &[]);
         pass.set_bind_group(1, &self.group, &[]);
         presenter.set_viewport(&mut pass);
         pass.draw(0..3, 0..1);

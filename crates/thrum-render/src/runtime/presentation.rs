@@ -32,9 +32,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             1.0
         };
         if self.display_headroom.to_bits() != headroom.to_bits() {
-            if let Some(scene) = self.prepared.three_d() {
-                scene.write_display_headroom(&self.queue, headroom);
-            }
+            self.prepared.initialize_display(&self.queue, headroom);
             self.display_headroom = headroom;
         }
     }
@@ -49,8 +47,9 @@ impl PreparedRenderer {
     pub(super) fn initialize_display(&self, queue: &wgpu::Queue, headroom: f32) {
         // The platform record can change while a replacement is preparing.
         // Initialize its new uniform from the render owner's latest value.
-        if let Some(scene) = self.three_d() {
-            scene.write_display_headroom(queue, headroom);
+        match self {
+            Self::ThreeD(scene) => scene.write_display_headroom(queue, headroom),
+            Self::TwoD(scene) => scene.write_display_headroom(queue, headroom),
         }
     }
 }

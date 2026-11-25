@@ -157,7 +157,8 @@ pub trait Game {
         &[]
     }
 
-    /// Whether this game prepares a 3D scene with the EDR display transform.
+    /// Declare EDR support to receive a float surface on an eligible display.
+    /// A 2D game makes the same declaration as a 3D game. Return `true` to opt in.
     fn supports_edr(&self) -> bool {
         false
     }

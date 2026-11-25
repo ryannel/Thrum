@@ -38,17 +38,19 @@ def check_pixels(raw, extent):
     return hashlib.sha256(raw).hexdigest()
 
 
-def mac_binary(*, cook=False, counters=False):
+def mac_binary(*, cook=False, counters=False, crowd=False):
     env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     env.update(CARGO_TARGET_DIR=str(ROOT / "target"), RUSTC_WRAPPER="")
-    targets = ["-p", "v1-game", "--bin", "v1-game"]
+    package = "crowd-2d-view" if crowd else "v1-game"
+    targets = ["-p", package, "--bin", package]
     if counters:
-        targets += ["--features", "v1-game/creation-counters"]
+        feature = "thrum-app/creation-counters" if crowd else "v1-game/creation-counters"
+        targets += ["--features", feature]
     if cook:
         targets += ["-p", "thrum-cook", "--bin", "thrum-cook"]
     run("rustup", "run", "stable", "cargo", "build", "--locked", "--offline", "--release",
         *targets, env=env, timeout=900)
-    return ROOT / "target/release/v1-game", env
+    return ROOT / "target" / "release" / package, env
 
 
 def mac_extent(output):

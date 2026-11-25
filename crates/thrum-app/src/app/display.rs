@@ -123,6 +123,8 @@ pub struct WindowDisplayOptions {
     pub output: Option<std::path::PathBuf>,
     /// Include submitted drawable extrema from the engine tap.
     pub capture: bool,
+    /// Retain the first presented capture's raw pixels beside the capture record.
+    pub capture_first_pixels: bool,
 }
 
 impl DisplayOverride {

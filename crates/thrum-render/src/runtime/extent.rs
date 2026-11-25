@@ -167,9 +167,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .presenter
             .as_ref()
             .ok_or(FrameError::InvalidState("host has no surface presenter"))?;
-        if format != presenter.profile().format
-            && (format != wgpu::TextureFormat::Rgba16Float || self.prepared.three_d().is_none())
-        {
+        if format != presenter.profile().format && format != wgpu::TextureFormat::Rgba16Float {
             return Err(FrameError::InvalidState(
                 "incompatible display mode transition",
             ));
@@ -199,7 +197,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             presenter: presenter.inputs(),
             owner: Arc::clone(&self.visual_owner),
             generation: self.generation,
-            source: self.slots[0].target.capture_source(),
+            source: if self.scene_kind() == super::SceneKind::TwoD {
+                self.sprite_capture_source_for_format(format)
+            } else {
+                self.slots[0].target.capture_source()
+            },
             capture: self
                 .submitted_capture
                 .as_ref()
@@ -368,12 +370,19 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let presenter = presenter
             .refit(extent, extent)
             .map_err(|error| FrameError::gpu("scene presenter resize", error))?;
-        let mut slots = preparation::prepare_slots(
-            &self.prepared,
-            &self.queue,
-            extent,
-            Some(presenter.profile()),
-        )?;
+        let profile = presenter.profile();
+        let mut slots = if self.scene_kind() == super::SceneKind::TwoD && self.is_edr() {
+            preparation::prepare_capture_slots(
+                &self.prepared,
+                &self.queue,
+                extent,
+                true,
+                Some(profile),
+                self.sprite_capture_source_for_format(profile.format),
+            )?
+        } else {
+            preparation::prepare_slots(&self.prepared, &self.queue, extent, Some(profile))?
+        };
         preparation::bind_presenter(&self.prepared, &mut slots, Some(&presenter))?;
         if !current() {
             return Ok(false);

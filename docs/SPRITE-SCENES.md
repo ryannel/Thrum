@@ -52,6 +52,11 @@ the available sheets, and `SpriteSceneRequests::default()` to `FrameHost::new_2d
 `Prepared::inline(host)` for an inline world. This launch uses the 2D renderer with one output pixel per drawable
 pixel. A 2D scene has no temporal reconstruction.
 
+Return `true` from `Game::supports_edr` to receive the float surface on an eligible Mac display.
+The Crowd view already makes this declaration in its library. A tint or additive sprite can produce channels
+above SDR white (1.0). The float mode keeps those channels up to the display's current headroom. The 8-bit mode
+clips them at white. Both use the same scene colours below white.
+
 Start with an embedded sheet as in the example's `configuration` function. Give `EmbeddedSheet` its
 physical texel extent, top-to-bottom straight-alpha RGBA8 sRGB bytes, frame rectangles and texels per world unit.
 Each embedded pivot is the frame's top-left corner. As your art grows, use named cooked frames and a content lease.

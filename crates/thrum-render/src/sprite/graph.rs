@@ -1,4 +1,4 @@
-//! The 2D scene half, composed with the same graph, SDR output and surface consumer.
+//! The 2D scene half, composed with the shared graph and surface consumer.
 
 use std::{collections::BTreeSet, sync::Arc};
 
@@ -44,8 +44,7 @@ pub(crate) struct PreparedSprites {
 
 pub(crate) struct SpriteTarget {
     pub(crate) extent: [u32; 2],
-    pub(crate) source: CaptureSource,
-    row_bytes: u32,
+    source: CaptureSource,
     sprite_rows_bytes: u64,
     sprite_order_bytes: u64,
     generation: u64,
@@ -53,14 +52,28 @@ pub(crate) struct SpriteTarget {
     scene: ResourceId,
     sdr: ResourceId,
     scene_view: wgpu::TextureView,
-    sdr_view: wgpu::TextureView,
+    sdr_view: Option<wgpu::TextureView>,
+    float_sdr: Option<OutputGraphs>,
     sprites: SpriteBindings,
     tone_input: wgpu::BindGroup,
-    plain: ExecutableGraph<SpriteGraph>,
-    capture: ExecutableGraph<SpriteGraph>,
+    output: OutputGraphs,
     surface: Option<ResourceId>,
     camera_centre: [f64; 2],
     clip_scale: [f32; 2],
+}
+
+struct OutputGraphs {
+    plain: ExecutableGraph<SpriteGraph>,
+    capture: Option<ExecutableGraph<SpriteGraph>>,
+}
+
+impl OutputGraphs {
+    fn select(&self, readback: bool) -> &ExecutableGraph<SpriteGraph> {
+        self.capture
+            .as_ref()
+            .filter(|_| readback)
+            .unwrap_or(&self.plain)
+    }
 }
 
 pub(crate) struct SpriteUpload {
@@ -96,6 +109,12 @@ struct RecordContext<'a> {
 }
 
 impl PreparedSprites {
+    pub(crate) fn write_display_headroom(&self, queue: &wgpu::Queue, headroom: f32) {
+        if let Some(stage) = self.tone.float() {
+            stage.write_headroom(queue, headroom);
+        }
+    }
+
     pub(crate) fn target_inputs(&self) -> Self {
         Self {
             capabilities: self.capabilities.clone(),
@@ -320,13 +339,17 @@ impl SpriteTarget {
         let capabilities = &prepared.capabilities;
         let device = capabilities.site();
         let generation = capabilities.generation();
-        let row_bytes = extent[0]
-            .checked_mul(source.bytes_per_pixel())
-            .and_then(|value| value.checked_add(255))
-            .map(|value| value / 256 * 256)
-            .ok_or(RenderError::TargetExtent)?;
+        let row_bytes = padded_row_bytes(extent, source)?;
         let readback_bytes = u64::from(row_bytes) * u64::from(extent[1]) + 32;
-        if !matches!(source, CaptureSource::Sdr | CaptureSource::SceneLinear) {
+        let float = surface_profile.is_some_and(|profile| profile.format == SCENE_FORMAT);
+        if float && prepared.tone.float().is_none() {
+            return Err(RenderError::Present(
+                present::PresentError::UnsupportedFormat,
+            ));
+        }
+        if !(matches!(source, CaptureSource::Sdr | CaptureSource::SceneLinear)
+            || float && source == CaptureSource::Edr)
+        {
             return Err(RenderError::UnsupportedSpriteCapture);
         }
         if extent
@@ -339,8 +362,18 @@ impl SpriteTarget {
         }
 
         let mut graph = FrameGraph::default();
-        let scene = attachment(&mut graph, extent, SCENE_FORMAT)?;
-        let sdr = attachment(&mut graph, extent, OUTPUT_FORMAT)?;
+        let scene = graph.resource(
+            attachment_descriptor(extent, SCENE_FORMAT),
+            ResourceScope::Transient,
+        )?;
+        // On a float surface the tap controls the display image's storage.
+        // Both graph variants can refer to the same sprite target and bindings.
+        let sdr_scope = if float {
+            ResourceScope::Imported { initialized: false }
+        } else {
+            ResourceScope::Transient
+        };
+        let sdr = graph.resource(attachment_descriptor(extent, OUTPUT_FORMAT), sdr_scope)?;
         let key = prepared.sprites.key;
         let tone = PipelineRole::Display.key(key);
         let mut keys = BTreeSet::from([key, tone]);
@@ -351,6 +384,26 @@ impl SpriteTarget {
         for contribution in contributions {
             graph.dependency(contribution, sprites)?;
         }
+        let surface = surface_profile
+            .map(|profile| {
+                keys.insert(present::pipeline_key(generation));
+                let input = if float { &scene } else { &sdr };
+                present::surface_pass(&mut graph, input, profile, generation)
+            })
+            .transpose()?;
+        let float_output = if float {
+            let checkpoint = (source == CaptureSource::SceneLinear).then_some((&scene, sprites));
+            Some(output_graphs(
+                &mut graph,
+                generation,
+                &keys,
+                surface.clone(),
+                checkpoint,
+                readback_bytes,
+            )?)
+        } else {
+            None
+        };
         let tone_pass = graph.declare(
             PassKey::DisplayReferred,
             body(
@@ -361,44 +414,31 @@ impl SpriteTarget {
                 ],
             ),
         );
-        let readback_buffer = graph.resource(
-            ResourceDescriptor::Buffer {
-                bytes: readback_bytes,
-                usage: wgpu::BufferUsages::COPY_DST,
-            },
-            ResourceScope::Imported { initialized: false },
-        )?;
-        let checkpoint = if source == CaptureSource::SceneLinear {
+        graph.validate_capabilities(capabilities)?;
+        let checkpoint = if !float && source == CaptureSource::SceneLinear {
             &scene
         } else {
             &sdr
         };
-        let readback = body(
-            None,
-            vec![
-                Access::new(checkpoint.clone(), 0..1, AccessKind::CopyRead),
-                Access::new(readback_buffer, 0..readback_bytes, AccessKind::CopyWrite),
-            ],
-        );
-        let surface = surface_profile
-            .map(|profile| {
-                keys.insert(present::pipeline_key(generation));
-                present::surface_pass(&mut graph, &sdr, profile, generation)
-            })
-            .transpose()?;
-        graph.validate_capabilities(capabilities)?;
-        let plain =
-            graph.compile_surface_variant(None, generation, &keys, None, surface.clone())?;
-        let capture = graph.compile_surface_variant(
-            Some((PassKey::Readback, readback)),
+        let sdr_bytes =
+            u64::from(padded_row_bytes(extent, CaptureSource::Sdr)?) * u64::from(extent[1]) + 32;
+        // Ordinary SDR and an EDR host recording SDR use the same transfer
+        // and checkpoint. Stages writing the image belong before this copy.
+        let sdr_output = output_graphs(
+            &mut graph,
             generation,
             &keys,
-            Some(tone_pass),
             surface.clone(),
+            Some((checkpoint, tone_pass)),
+            if float { sdr_bytes } else { readback_bytes },
         )?;
+        let (output, float_sdr) = match float_output {
+            Some(output) => (output, Some(sdr_output)),
+            None => (sdr_output, None),
+        };
         let textures = GraphTextures::new(
             device,
-            &capture,
+            output.select(true).plan(),
             capabilities.recipe().map_err(RenderError::Recipe)?,
         );
         let make_view = |resource| {
@@ -408,12 +448,11 @@ impl SpriteTarget {
                 .ok_or(RenderError::GraphPassMismatch)
         };
         let scene_view = make_view(&scene)?;
-        let sdr_view = make_view(&sdr)?;
+        let sdr_view = if float { None } else { Some(make_view(&sdr)?) };
         let tone_input = prepared.tone.bind(device, &scene_view);
-        Ok(Self {
+        let mut target = Self {
             extent,
             source,
-            row_bytes,
             generation,
             textures,
             scene,
@@ -424,49 +463,135 @@ impl SpriteTarget {
             sprite_order_bytes: prepared.sprites.order.size(),
             sprites: prepared.sprites.bind(device),
             tone_input,
-            plain: bind(plain)?,
-            capture: bind(capture)?,
+            output,
+            float_sdr,
             surface: surface.map(|(surface, _)| surface),
             camera_centre: [0.0; 2],
             clip_scale: [1.0; 2],
-        })
+        };
+        if float && source == CaptureSource::Sdr {
+            target.enable_sdr(device);
+        }
+        Ok(target)
+    }
+
+    pub(crate) fn is_float(&self) -> bool {
+        self.float_sdr.is_some()
+    }
+
+    pub(crate) fn capture_source(&self) -> CaptureSource {
+        if !self.is_float() {
+            self.source
+        } else if self.sdr_view.is_some() {
+            CaptureSource::Sdr
+        } else if self.source == CaptureSource::SceneLinear {
+            CaptureSource::SceneLinear
+        } else {
+            CaptureSource::Edr
+        }
+    }
+
+    pub(crate) fn enable_sdr(&mut self, device: &wgpu::Device) {
+        if !self.is_float() || self.sdr_view.is_some() {
+            return;
+        }
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("sprite 8-bit capture display image"),
+            size: wgpu::Extent3d {
+                width: self.extent[0],
+                height: self.extent[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: OUTPUT_FORMAT,
+            usage: colour_usage(),
+            view_formats: &[],
+        });
+        self.sdr_view = Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
+    }
+
+    pub(crate) fn release_sdr(&mut self) {
+        if self.is_float() {
+            self.sdr_view = None;
+        }
     }
 
     fn graph(&self, capture: bool) -> &ExecutableGraph<SpriteGraph> {
-        if capture { &self.capture } else { &self.plain }
+        if let Some(output) = &self.float_sdr
+            && self.sdr_view.is_some()
+        {
+            return output.select(capture);
+        }
+        self.output.select(capture)
     }
 
     pub(crate) fn plan(&self, capture: bool) -> &CompiledGraph {
         self.graph(capture).plan()
     }
 
+    pub(crate) fn inspection_plan(&self, capture: bool, sprite_sdr: bool) -> &CompiledGraph {
+        if sprite_sdr && let Some(output) = &self.float_sdr {
+            return output.select(capture).plan();
+        }
+        self.output.select(capture).plan()
+    }
+
     pub(crate) fn output(&self) -> &wgpu::TextureView {
-        &self.sdr_view
+        if self.is_float() {
+            &self.scene_view
+        } else {
+            self.sdr_view
+                .as_ref()
+                .expect("8-bit target has a display image")
+        }
     }
 
     pub(crate) fn readback(&self, device: &wgpu::Device) -> PixelReadback {
+        self.readback_from(device, self.capture_source())
+    }
+
+    pub(crate) fn readback_from(
+        &self,
+        device: &wgpu::Device,
+        source: CaptureSource,
+    ) -> PixelReadback {
         PixelReadback::new(
             device,
             self.generation,
             self.extent,
-            self.source,
-            self.row_bytes,
+            source,
+            padded_row_bytes(self.extent, source).expect("validated sprite row size"),
             "sprite pixel readback",
         )
     }
 
     pub(crate) fn allocation(&self) -> (u32, u64) {
-        self.textures.allocation()
+        let (count, bytes) = self.textures.allocation();
+        if self.is_float() && self.sdr_view.is_some() {
+            (
+                count + 1,
+                bytes + u64::from(self.extent[0]) * u64::from(self.extent[1]) * 4,
+            )
+        } else {
+            (count, bytes)
+        }
     }
 
     pub(crate) fn storage_report(&self) -> String {
         let pixels = u64::from(self.extent[0]) * u64::from(self.extent[1]);
+        let sdr = self.sdr_view.as_ref().map_or_else(String::new, |view| {
+            format!(
+                "SDR output {:?} bytes={}\n",
+                view.texture().format(),
+                pixels * 4
+            )
+        });
         format!(
-            "sprite colour {:?} bytes={}\nSDR output {:?} bytes={}\nsprite view bytes={}\nsprite rows bytes={}\nsprite order bytes={}\nunique textures/nominal bytes={:?}",
+            "sprite colour {:?} bytes={}\n{sdr}sprite view bytes={}\nsprite rows bytes={}\nsprite order bytes={}\nunique textures/nominal bytes={:?}",
             self.scene_view.texture().format(),
             pixels * 8,
-            self.sdr_view.texture().format(),
-            pixels * 4,
             self.sprites.view.size(),
             self.sprite_rows_bytes,
             self.sprite_order_bytes,
@@ -475,10 +600,11 @@ impl SpriteTarget {
     }
 
     pub(crate) fn timing_metadata_capacity(&self) -> usize {
-        self.plan(false)
-            .pass_order
-            .len()
-            .max(self.plan(true).pass_order.len())
+        self.output.select(true).plan().pass_order.len().max(
+            self.float_sdr
+                .as_ref()
+                .map_or(0, |output| output.select(true).plan().pass_order.len()),
+        )
     }
 
     pub(crate) fn timing_metadata(
@@ -510,6 +636,7 @@ impl SpriteTarget {
 pub(crate) fn validate_sprite_timings(
     passes: &[PassTiming],
     presented: bool,
+    float: bool,
 ) -> Option<(Option<f64>, Option<f64>)> {
     let get = |name| {
         passes
@@ -518,7 +645,9 @@ pub(crate) fn validate_sprite_timings(
             .map(|pass| pass.nanoseconds)
     };
     get(pass::PASS)?;
-    get(DISPLAY_REFERRED_PASS)?;
+    if !float {
+        get(DISPLAY_REFERRED_PASS)?;
+    }
     let present = passes
         .iter()
         .find(|pass| pass.category == TimingCategory::Surface)
@@ -604,26 +733,72 @@ fn contribution_passes(
     Ok(ordered)
 }
 
-fn attachment(
-    graph: &mut FrameGraph,
+fn padded_row_bytes(extent: [u32; 2], source: CaptureSource) -> Result<u32, RenderError> {
+    extent[0]
+        .checked_mul(source.bytes_per_pixel())
+        .and_then(|value| value.checked_add(255))
+        .map(|value| value / 256 * 256)
+        .ok_or(RenderError::TargetExtent)
+}
+
+fn colour_usage() -> wgpu::TextureUsages {
+    wgpu::TextureUsages::RENDER_ATTACHMENT
+        | wgpu::TextureUsages::TEXTURE_BINDING
+        | wgpu::TextureUsages::COPY_SRC
+}
+
+fn attachment_descriptor(
     [width, height]: [u32; 2],
     format: wgpu::TextureFormat,
-) -> Result<ResourceId, RenderError> {
-    Ok(graph.resource(
-        ResourceDescriptor::Texture {
-            dimension: TextureKind::D2,
-            width,
-            height,
-            layers: 1,
-            mips: 1,
-            samples: 1,
-            format,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                | wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::COPY_SRC,
-        },
-        ResourceScope::Transient,
-    )?)
+) -> ResourceDescriptor {
+    ResourceDescriptor::Texture {
+        dimension: TextureKind::D2,
+        width,
+        height,
+        layers: 1,
+        mips: 1,
+        samples: 1,
+        format,
+        usage: colour_usage(),
+    }
+}
+
+fn output_graphs(
+    graph: &mut FrameGraph,
+    generation: u64,
+    keys: &BTreeSet<PipelineKey>,
+    surface: Option<(ResourceId, PassBody)>,
+    checkpoint: Option<(&ResourceId, usize)>,
+    readback_bytes: u64,
+) -> Result<OutputGraphs, RenderError> {
+    let plain =
+        bind(graph.compile_surface_variant(None, generation, keys, None, surface.clone())?)?;
+    let capture = if let Some((image, producer)) = checkpoint {
+        let buffer = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: readback_bytes,
+                usage: wgpu::BufferUsages::COPY_DST,
+            },
+            ResourceScope::Imported { initialized: false },
+        )?;
+        let readback = body(
+            None,
+            vec![
+                Access::new(image.clone(), 0..1, AccessKind::CopyRead),
+                Access::new(buffer, 0..readback_bytes, AccessKind::CopyWrite),
+            ],
+        );
+        Some(bind(graph.compile_surface_variant(
+            Some((PassKey::Readback, readback)),
+            generation,
+            keys,
+            Some(producer),
+            surface,
+        )?)?)
+    } else {
+        None
+    };
+    Ok(OutputGraphs { plain, capture })
 }
 
 fn store(id: &ResourceId) -> Access {
@@ -723,7 +898,11 @@ fn record_tone(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<(),
         GraphColorAttachment {
             resource: &frame.target.sdr,
             range: 0..1,
-            view: &frame.target.sdr_view,
+            view: frame
+                .target
+                .sdr_view
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?,
             clear: wgpu::Color::BLACK,
         },
         &frame.target.tone_input,
@@ -733,10 +912,14 @@ fn record_tone(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<(),
 
 fn record_capture(frame: &mut RecordContext<'_>, _: &CompiledPass) -> Result<(), RenderError> {
     let readback = frame.readback.as_deref_mut().ok_or(RenderError::Readback)?;
-    let view = if frame.target.source == CaptureSource::SceneLinear {
+    let view = if frame.target.capture_source() == CaptureSource::SceneLinear {
         &frame.target.scene_view
     } else {
-        &frame.target.sdr_view
+        frame
+            .target
+            .sdr_view
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?
     };
     readback.copy_texture(frame.encoder, view.texture(), None)
 }
@@ -748,6 +931,29 @@ fn record_present(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<
         .surface
         .as_ref()
         .ok_or(RenderError::GraphPassMismatch)?;
+    if frame.target.is_float() {
+        presenter
+            .validate_output(binding, view, extent)
+            .map_err(RenderError::Present)?;
+        return frame
+            .scene
+            .tone
+            .float()
+            .ok_or(RenderError::GraphPassMismatch)?
+            .encode(
+                frame.encoder,
+                pass,
+                (frame.target.generation, &frame.target.tone_input),
+                GraphColorAttachment {
+                    resource,
+                    range: 0..1,
+                    view,
+                    clear: wgpu::Color::BLACK,
+                },
+                frame.timings.as_deref_mut(),
+                presenter,
+            );
+    }
     presenter
         .encode_compiled(
             frame.encoder,

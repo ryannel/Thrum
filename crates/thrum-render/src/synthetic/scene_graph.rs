@@ -1346,6 +1346,8 @@ impl super::SyntheticTargetInputs {
                     presenter
                         .validate_output(binding, view, extent)
                         .map_err(RenderError::Present)?;
+                    let input = &frame.target.display;
+                    input.check_pass(pass)?;
                     return frame
                         .prepared
                         .display
@@ -1355,11 +1357,12 @@ impl super::SyntheticTargetInputs {
                         .encode(
                             frame.encoder,
                             pass,
-                            &frame.target.display,
-                            super::display::ToneOutput {
+                            input.edr_binding(frame.exposure_side),
+                            crate::graph::GraphColorAttachment {
                                 resource: &surface,
+                                range: 0..1,
                                 view,
-                                exposure_side: frame.exposure_side,
+                                clear: wgpu::Color::BLACK,
                             },
                             frame.timings.as_deref_mut(),
                             presenter,
