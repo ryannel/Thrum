@@ -9,7 +9,7 @@ use std::{
         atomic::{AtomicU8, Ordering},
         mpsc::{self, Receiver, RecvTimeoutError, SyncSender, TrySendError},
     },
-    thread,
+    thread::{self, JoinHandle},
     time::{Duration, Instant},
 };
 
@@ -84,7 +84,8 @@ impl Authority {
 }
 
 pub(super) struct Output {
-    rows: SyncSender<Value>,
+    rows: Option<SyncSender<Value>>,
+    writer: Option<JoinHandle<()>>,
     control: Option<PathBuf>,
     command: Arc<AtomicU8>,
     capture: Option<ImageWriter<SubmittedImage>>,
@@ -105,7 +106,7 @@ impl Output {
         let command = Arc::new(AtomicU8::new(0));
         let control_path = control.clone();
         let command_out = Arc::clone(&command);
-        thread::Builder::new()
+        let writer = thread::Builder::new()
             .name("match-record".into())
             .spawn(move || {
                 if let Err(error) =
@@ -115,7 +116,8 @@ impl Output {
                 }
             })?;
         Ok(Self {
-            rows,
+            rows: Some(rows),
+            writer: Some(writer),
             control,
             command,
             capture: None,
@@ -126,10 +128,25 @@ impl Output {
     // Evidence must retain every row. An overloaded writer fails the proof
     // without waiting in the render actor or silently dropping observations.
     pub(super) fn write(&self, row: Value) -> std::io::Result<()> {
-        self.rows.try_send(row).map_err(|error| match error {
-            TrySendError::Full(_) => std::io::Error::other("match record queue full"),
-            TrySendError::Disconnected(_) => std::io::Error::other("match record writer stopped"),
-        })
+        self.rows
+            .as_ref()
+            .expect("writer sender is present until shutdown")
+            .try_send(row)
+            .map_err(|error| match error {
+                TrySendError::Full(_) => std::io::Error::other("match record queue full"),
+                TrySendError::Disconnected(_) => {
+                    std::io::Error::other("match record writer stopped")
+                }
+            })
+    }
+}
+
+impl Drop for Output {
+    fn drop(&mut self) {
+        drop(self.rows.take());
+        if let Some(writer) = self.writer.take() {
+            let _ = writer.join();
+        }
     }
 }
 
@@ -153,7 +170,9 @@ fn write_record(
         }
         if Instant::now() >= next {
             rows.flush()?;
-            if let Some(text) = control.and_then(|path| fs::read_to_string(path).ok()) {
+            if command.load(Ordering::Relaxed) != STOP
+                && let Some(text) = control.and_then(|path| fs::read_to_string(path).ok())
+            {
                 match text.trim() {
                     "record" => command.store(RECORD, Ordering::Relaxed),
                     "stop" => command.store(STOP, Ordering::Relaxed),
