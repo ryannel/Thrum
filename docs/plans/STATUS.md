@@ -121,27 +121,29 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SCENE-VIEWS assumes: the iPhone simulator is not a target, as it is not for `WATERS`. ([plan](SCENE-VIEWS/PLAN.md))
 - SCENE-VIEWS assumes: cost is recorded on the Mac only, and no timing figure decides an item (brief decision 3). ([plan](SCENE-VIEWS/PLAN.md))
 - SCENE-VIEWS assumes: this module takes no quiet-machine sitting, and no builder is paused for it. Its cost record is the one taken while other builders worked, kept with its load, and nothing in the evidence, the author guide or the ledger is called a figure for a quiet machine. If such figures are wanted, they wait for one window batched with other modules' (the lead's task of 18 November, on the owner's bar of 17 November). ([plan](SCENE-VIEWS/PLAN.md))
-- CLOUDS assumes: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: aim for about 2 s per fast test when run alone on a quiet Mac. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: the owner's "it should start from first principles" (14 November) governs. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera (its WP7 and WP8, after G3s closes) and this module's trace beyond. It adds WP13 to WP16 and three items to WP11. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera and this module's trace beyond. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops WP13.4 and WP16.1. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: "low cloud the camera can enter" includes coming out above it on a summit. The camera stays 2 to 40 m over the ground. Only a layered deck on the hills is inspected. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: a headless game asking whether it can see through a placed cloud gets a marked estimate unless it gives the cloud's voxels. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: "a flexible set of cloud capabilities" is taken up: shade, the visible sky, the world's light, shapes and ground condensate are each left out by a scene at no cost. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: a scene with no visible sky that wants the shade of cooked shapes keeps their volumes loaded (27 MiB). ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this; it costs WP6.9 and WP6.10. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: cloud light takes its first-order phase from the droplets, so the sky will differ from Broadsides' accepted stills near the Sun. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: for light scattered many times the design keeps its flux solution as a starting point, because it brightens a cloud with nothing tuned. Under the owner's bar of 17 November nothing holds it to photon transport, and a builder may tune it by eye. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: for light scattered many times the design keeps its flux solution as a starting point, because it brightens a cloud with nothing tuned. Nothing holds it to photon transport, and a builder may tune it by eye. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: the lowered bar keeps tests where a game reads the weather (the GPU's map against the CPU query) and on the frame contract, and drops every test of how light was computed. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the cloud library included; Third-party material keeps its own licence, and nothing GPL or share-alike is copied. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: "bring that across when it makes sense" (13 November) means work packages start when their dependencies are Done, which can be before G7. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 (the lead's task of 25 November): the weather sky loses at most one refresh in 20 seconds beyond the same game without clouds. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes, on the lead's decision of 18 November; every sky until then shows those flaws. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 (the lead's task of 25 November): by the OS-reported presented times, the weather sky loses at most one refresh in 20 seconds beyond the same game without clouds. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP7.8, WP12.5, WP12.6), and the rest is the performance phase's. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes; every sky until then shows those flaws. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, as WP7's reviews ran it. WP20 comes before WP8 and pauses every other agent for one series. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, as WP7's reviews ran it. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs. ([plan](CLOUDS/PLAN.md))
 - RIVERS assumes: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target. ([plan](RIVERS/PLAN.md))
 - RIVERS assumes: a waterfall has no mist or spray cloud. Shipped waterfalls have one; here it needs a seam with the weather (`CLOUDS`) that cannot be built until late in its plan. The fall already records what a mist would need. ([plan](RIVERS/PLAN.md))
 - RIVERS assumes: "built cohesively" reaches a river's link to its lake, so raising a lake swells its outlet river and its falls, by the outlet's own sill. The whole river answers at once: no rise travels downstream, and nothing floods or bursts. ([plan](RIVERS/PLAN.md))
@@ -306,7 +308,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails (BASELINE-GUARD WP3): Not Started · [plan](BASELINE-GUARD/PLAN.md)
 - Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome (WATERS WP13): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/WP13-review.md)
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
-- The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match (SESSION WP7): Not Started · [plan](SESSION/PLAN.md)
+- The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match (SESSION WP7): In Progress · [plan](SESSION/PLAN.md)
 - Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing (GAME-UI WP1): Not Started · [plan](GAME-UI/PLAN.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 
@@ -414,7 +416,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow (ATMOSPHERE WP10), 18 Nov · [review](../../.orchestrate/evidence/ATMOSPHERE/WP10-review.md)
 - The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed (SCENE-VIEWS WP3), 18 Nov · [review](../../.orchestrate/evidence/SCENE-VIEWS/WP3-review.md)
 - On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws (RAY-TRACING WP1), 18 Nov · [review](../../.orchestrate/evidence/RAY-TRACING/WP1-review.md)
-- The same sea draws in Chrome from one command (WATERS WP3), 18 Nov · [review](../../.orchestrate/evidence/WATERS/WP3-review.md)
 
 ## All modules
 
@@ -442,7 +443,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its last work package | Done 25 Nov |
-| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | WP7 of 8 · Not Started |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | WP7 of 8 · In Progress |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP5 and APPLE-PRESENTATION WP6 | WP1 of 6 · Not Started |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, GATE-TIME:WP5 |
