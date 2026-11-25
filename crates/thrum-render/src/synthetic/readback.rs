@@ -95,15 +95,14 @@ impl PixelReadback {
                 .textures
                 .texture(&target.ids.scene)
                 .ok_or(RenderError::GraphPassMismatch)?,
-            CaptureSource::NativeOutput => {
-                &target
-                    .native
-                    .as_ref()
-                    .ok_or(RenderError::GraphPassMismatch)?
-                    .provider
-                    .output
-            }
-            CaptureSource::NativeHistory => native.ok_or(RenderError::GraphPassMismatch)?.history(),
+            CaptureSource::NativeOutput => target
+                .native
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?
+                .output(),
+            CaptureSource::NativeHistory => native
+                .and_then(super::NativeFrame::history)
+                .ok_or(RenderError::GraphPassMismatch)?,
         };
         self.copy_texture(encoder, texture, exposure)
     }

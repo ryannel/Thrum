@@ -274,7 +274,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
     /// permitted in the background; resume must reset temporal correspondence.
     pub fn cancel_background(mut self) -> DriveReport {
         self.report.dropped_view = true;
-        if let Some(host) = self.discard_recording() {
+        if let Some(host) = self.discard_recording(false) {
             host.invalidate_history();
         }
         self.report.wall = self.wall_start.elapsed();
@@ -288,7 +288,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
     /// queue. Use [Self::skip] for a healthy device so later frames can reuse
     /// the uploaded data.
     pub fn abandon_lost_device(mut self) {
-        if let Some(host) = self.discard_recording() {
+        if let Some(host) = self.discard_recording(false) {
             host.invalidate_history();
         }
     }
@@ -315,9 +315,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         Ok(self.report)
     }
 
-    fn discard_recording(&mut self) -> Option<&mut FrameHost<W, V>> {
+    fn discard_recording(&mut self, healthy: bool) -> Option<&mut FrameHost<W, V>> {
         let ReadyFrame { host, recorded } = self.ready.take()?;
         drop(recorded.encoder);
+        drop(recorded.segments);
+        if let Some(native) = recorded.native
+            && healthy
+            && host.check_native_completion().is_ok()
+        {
+            native.refuse_acquisition();
+        }
         if let Some(index) = recorded.capture_slot
             && let Some(tap) = host.submitted_capture.as_mut()
         {
@@ -336,7 +343,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> Drop for EncodedFrame<'_, W, V> {
     fn drop(&mut self) {
-        if let Some(host) = self.discard_recording() {
+        if let Some(host) = self.discard_recording(true) {
             // Queue::write_buffer stages bytes until submit. Release that staging
             // even when this encoder is discarded without a scene submission.
             // Drop cannot return an error. A native failure stays latched for

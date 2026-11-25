@@ -1667,6 +1667,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .and_then(|(_, target)| target.three_d())
     }
 
+    /// Outcomes of the optional native provider on this view.
+    #[must_use]
+    pub fn native_provider_report(&self) -> Option<crate::synthetic::NativeProviderReport> {
+        self.slots
+            .first()
+            .and_then(|slot| slot.target.three_d()?.native.as_ref())
+            .map(|binding| binding.report())
+    }
+
     /// Outcomes of the optional labelled native copy/select diagnostic.
     #[must_use]
     pub fn native_witness_report(&self) -> Option<crate::synthetic::NativeWitnessReport> {
@@ -1786,7 +1795,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         preparation::bind_presenter(&self.prepared, &mut self.slots, self.presenter.as_ref())?;
         self.resize_drawable_capture();
         self.presenter_generation += 1;
-        if self.native_witness_report().is_some() {
+        if self.native_provider_report().is_some() {
             self.invalidate_history();
         }
         Ok(())
@@ -2275,7 +2284,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let native = slot
             .target
             .three_d()
-            .map(|target| target.reserve_native(self.scene.view.history_reset()))
+            .map(|target| target.reserve_native(&self.scene.view))
             .transpose()
             .map_err(FrameError::Render)?
             .flatten();
@@ -2349,6 +2358,30 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         })
     }
 
+    fn discard_native_presentation(
+        &mut self,
+        slot_index: usize,
+        capture_slot: Option<usize>,
+        native: crate::synthetic::NativeFrame,
+        refused_acquisition: bool,
+    ) -> Result<(), FrameError> {
+        self.history_reset_pending |= if refused_acquisition {
+            !native.refuse_acquisition()
+        } else {
+            drop(native);
+            true
+        };
+        if let Some(index) = capture_slot
+            && let Some(tap) = self.submitted_capture.as_mut()
+        {
+            tap.abandon(index);
+        }
+        self.slots[slot_index]
+            .discard_timing(self.generation, &mut self.timing_stats)
+            .map_err(|error| FrameError::gpu("native presentation discard", error))?;
+        self.flush_staged_uploads()
+    }
+
     fn finish_encoded(
         &mut self,
         recorded: RecordedScene,
@@ -2418,19 +2451,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.dropped_surface = self.dropped_surface.saturating_add(1);
             report.dropped_view = true;
         }
-        if native.is_some() && self.presenter.is_some() && !surface_presented {
+        if self.presenter.is_some()
+            && !surface_presented
+            && let Some(native) = native
+        {
             drop(encoder);
             drop(segments);
-            drop(native);
-            if let Some(index) = capture_slot
-                && let Some(tap) = self.submitted_capture.as_mut()
-            {
-                tap.abandon(index);
-            }
-            slot.discard_timing(self.generation, &mut self.timing_stats)
-                .map_err(|error| FrameError::gpu("native presentation discard", error))?;
-            self.history_reset_pending = true;
-            self.flush_staged_uploads()?;
+            self.discard_native_presentation(slot_index, capture_slot, native, surface.is_none())?;
             report.wall = wall_start.elapsed();
             return surface_encode_outcome(report, surface_error);
         }
@@ -2654,9 +2681,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         ),
         FrameError,
     > {
-        if self.native_witness_report().is_some() {
+        if self.native_provider_report().is_some() {
             return Err(FrameError::InvalidState(
-                "native witness uses the submitted-image tap, not endpoint capture",
+                "native providers use the submitted-image tap",
             ));
         }
         let creations = self.creations.clone();

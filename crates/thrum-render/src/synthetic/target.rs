@@ -1,7 +1,7 @@
 //! Target preparation and late surface rebinding; no frame recording.
 use super::{
     AirShadowTarget, GraphTextures, OffscreenTarget, PreToneViews, PreparedPreToneInput,
-    PreparedSynthetic, RenderError, ShadowTarget, TargetResources, native_witness, temporal,
+    PreparedSynthetic, RenderError, ShadowTarget, TargetResources, temporal,
 };
 impl OffscreenTarget {
     pub(crate) fn bind_surface_graph(
@@ -48,7 +48,7 @@ impl OffscreenTarget {
                         .ok_or(RenderError::GraphPassMismatch)?
                         .0
                 } else if let Some(native) = &self.native {
-                    &native.provider.view
+                    native.output_view()
                 } else if let Some(taau) = &self.taau {
                     &taau.output
                 } else {
@@ -75,7 +75,7 @@ impl super::SyntheticTargetInputs {
         scene: &wgpu::TextureView,
         motion: &wgpu::TextureView,
         temporal: &temporal::TemporalTarget,
-        native: Option<&native_witness::Binding>,
+        native: Option<&crate::apple_tile::NativeBinding>,
         taau: Option<&super::taau::TaauTarget>,
     ) -> Result<PreparedPreToneInput, RenderError> {
         self.display.prepare_input(
@@ -89,7 +89,7 @@ impl super::SyntheticTargetInputs {
                         .ok_or(RenderError::GraphPassMismatch)?
                         .0
                 } else if let Some(native) = native {
-                    &native.provider.view
+                    native.output_view()
                 } else if let Some(taau) = taau {
                     &taau.output
                 } else {

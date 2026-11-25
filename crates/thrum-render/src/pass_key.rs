@@ -360,10 +360,10 @@ pub(crate) enum PassKey {
     },
     /// Ray structure build.
     RayStructureBuild,
-    /// Native witness reset.
-    NativeReset,
-    /// Native stateful witness.
-    NativeWitness,
+    /// Prepared provider work before its whole native encoder.
+    NativeProviderBefore(&'static str),
+    /// A native provider and its prepared twin, identified by their graph name.
+    NativeProvider(&'static str),
     /// The 2D scene's sprite draw.
     Sprites,
     /// Output readback copy.
@@ -419,8 +419,7 @@ impl PassKey {
             Self::ContributionCompute => "contribution compute",
             Self::AfterOpaqueCopy => "effect refraction copy",
             Self::RayStructureBuild => "ray structure build",
-            Self::NativeReset => "native witness reset",
-            Self::NativeWitness => "native stateful copy/select witness",
+            Self::NativeProviderBefore(name) | Self::NativeProvider(name) => name,
             Self::Sprites => "sprites",
             Self::Readback => "output readback",
             Self::Surface => "V1 surface present",
@@ -472,8 +471,8 @@ impl PassKey {
             | Self::ContributionUpload
             | Self::AfterOpaqueCopy
             | Self::RayStructureBuild
-            | Self::NativeReset
-            | Self::NativeWitness
+            | Self::NativeProviderBefore(_)
+            | Self::NativeProvider(_)
             | Self::Readback => TimingCategory::Transfer,
         }
     }
@@ -515,8 +514,8 @@ impl PassKey {
             | Self::ContributionUpload
             | Self::AfterOpaqueCopy
             | Self::RayStructureBuild
-            | Self::NativeReset
-            | Self::NativeWitness
+            | Self::NativeProviderBefore(_)
+            | Self::NativeProvider(_)
             | Self::Readback => return None,
         })
     }

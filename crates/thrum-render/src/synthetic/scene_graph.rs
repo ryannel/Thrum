@@ -588,7 +588,7 @@ impl super::SyntheticTargetInputs {
         let native = self
             .native
             .as_ref()
-            .map(|_| super::native_witness::graph::append(&mut graph, &scene, [width, height]))
+            .map(|provider| provider.declare(&mut graph, &scene, [width, height]))
             .transpose()?;
         let taau = self.append_taau(
             &mut graph,
@@ -698,14 +698,16 @@ impl super::SyntheticTargetInputs {
         source: CaptureSource,
         output: &'a ResourceId,
         scene: &'a ResourceId,
-        native: Option<&'a super::native_witness::graph::Resources>,
+        native: Option<&'a crate::apple_tile::NativeGraph>,
     ) -> Result<&'a ResourceId, RenderError> {
         Ok(match source {
             CaptureSource::Sdr => output,
             CaptureSource::Edr => return Err(RenderError::GraphPassMismatch),
             CaptureSource::SceneLinear => scene,
             CaptureSource::NativeOutput => &native.ok_or(RenderError::GraphPassMismatch)?.output,
-            CaptureSource::NativeHistory => &native.ok_or(RenderError::GraphPassMismatch)?.next,
+            CaptureSource::NativeHistory => native
+                .and_then(|provider| provider.history.as_ref())
+                .ok_or(RenderError::GraphPassMismatch)?,
         })
     }
 
@@ -714,7 +716,7 @@ impl super::SyntheticTargetInputs {
         (scene, motion, exposure): (&ResourceId, &ResourceId, &ResourceId),
         temporal: &super::temporal::TemporalResources,
         taau: Option<&super::taau::TaauResources>,
-        native: Option<&super::native_witness::graph::Resources>,
+        native: Option<&crate::apple_tile::NativeGraph>,
         extent: [u32; 2],
     ) -> Result<PreToneInput, RenderError> {
         let colour = if let Some(native) = native {
@@ -737,7 +739,7 @@ impl super::SyntheticTargetInputs {
             colour,
             motion: motion.clone(),
             exposure: exposure.clone(),
-            extent,
+            extent: native.map_or(extent, |provider| provider.extent),
         })
     }
 
@@ -1506,8 +1508,8 @@ impl super::SyntheticTargetInputs {
             PassKey::CombinedVisibility => B::new(id, PassKind::Compute, |frame, pass| {
                 frame.soft_sun(super::raytrace::soft::Stage::Trace, pass)
             }),
-            PassKey::NativeReset => Self::bind_native(id, false),
-            PassKey::NativeWitness => Self::bind_native(id, true),
+            PassKey::NativeProviderBefore(_) => Self::bind_native(id, false),
+            PassKey::NativeProvider(_) => Self::bind_native(id, true),
             PassKey::Readback => B::new(id, PassKind::Copy, |frame, pass| frame.copy(pass)),
             PassKey::Surface => Self::surface_binding(graph, id)?,
             PassKey::DisplayReferred | PassKey::Sprites => {
@@ -1535,7 +1537,7 @@ impl super::SyntheticTargetInputs {
                 frame
                     .native
                     .ok_or(RenderError::GraphPassMismatch)?
-                    .reset(frame.encoder);
+                    .record_before_native(frame.encoder);
                 Ok(())
             })
         }

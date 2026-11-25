@@ -1,3 +1,4 @@
+use crate::apple_tile::NativeGraph;
 use crate::error::RenderError;
 use crate::graph::PassBody;
 use crate::graph::{
@@ -6,17 +7,11 @@ use crate::graph::{
 };
 use crate::pass_key::PassKey;
 
-pub(crate) struct Resources {
-    pub(crate) output: ResourceId,
-    pub(crate) next: ResourceId,
-    pub(crate) pass: usize,
-}
-
-pub(crate) fn append(
+pub(super) fn append(
     graph: &mut FrameGraph,
     source: &ResourceId,
     [width, height]: [u32; 2],
-) -> Result<Resources, RenderError> {
+) -> Result<NativeGraph, RenderError> {
     let descriptor = |width, height| ResourceDescriptor::Texture {
         dimension: TextureKind::D2,
         width,
@@ -59,7 +54,7 @@ pub(crate) fn append(
         ResourceScope::Imported { initialized: true },
     )?;
     graph.declare(
-        PassKey::NativeReset,
+        PassKey::NativeProviderBefore(super::RESET_PASS),
         PassBody {
             scope: PassScope::View(1),
             pipeline: None,
@@ -71,7 +66,7 @@ pub(crate) fn append(
         },
     );
     let pass = graph.declare_native(
-        PassKey::NativeWitness,
+        PassKey::NativeProvider(super::PASS),
         PassBody {
             scope: PassScope::View(1),
             pipeline: None,
@@ -84,5 +79,11 @@ pub(crate) fn append(
             external_side_effect: false,
         },
     );
-    Ok(Resources { output, next, pass })
+    Ok(NativeGraph {
+        output,
+        history: Some(next),
+        pass,
+        extent: [width, height],
+        bindings: vec![source.clone()],
+    })
 }

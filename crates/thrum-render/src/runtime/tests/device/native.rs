@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(target_os = "macos")]
+mod provider;
 mod replacement;
 use crate::{
     runtime::{CaptureLimits, SurfaceOutput},
@@ -453,7 +455,7 @@ fn metal_native_two_slots_select_submitted_history_before_completion() {
                 .target
                 .three_d()
                 .unwrap()
-                .reserve_native(false)
+                .reserve_native(&host.scene.view)
                 .unwrap()
                 .expect("native witness reservation");
             let Err(error) = host.advance(Duration::ZERO).unwrap().encode_scene() else {

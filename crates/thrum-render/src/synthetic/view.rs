@@ -1,6 +1,7 @@
 //! Checked view input for the synthetic scene. The game/V2 side creates this
 //! packet; V1 only packs and consumes it. Matrices stay column-major.
 
+use crate::apple_tile::NativeFrameValues;
 use crate::records::{ViewAuxRecord, ViewRecord};
 use glam::{Mat3, Mat4, Vec3, Vec4};
 
@@ -40,6 +41,7 @@ pub(super) enum Projection {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SyntheticView {
     native_witness: super::NativeWitness,
+    native_content: Option<NativeFrameValues>,
     pub(super) projection: Projection,
     view_proj: Mat4,
     camera: Vec3,
@@ -72,6 +74,7 @@ impl Default for SyntheticView {
         );
         Self {
             native_witness: super::NativeWitness::Off,
+            native_content: None,
             projection: Projection::OrthographicFixture,
             view_proj: reverse_z,
             camera: Vec3::new(0.0, 0.0, -3.0),
@@ -104,6 +107,36 @@ impl SyntheticView {
     pub fn with_native_witness(mut self, selection: super::NativeWitness) -> Self {
         self.native_witness = selection;
         self
+    }
+
+    /// Set the occupied input rectangle for the native provider and its twin.
+    /// Defaults to the full render extent. Coordinates are in input texels.
+    #[must_use]
+    pub fn with_native_content_rect(mut self, origin: [u32; 2], extent: [u32; 2]) -> Self {
+        self.native_content = Some(NativeFrameValues {
+            content_origin: origin,
+            content_extent: extent,
+        });
+        self
+    }
+
+    pub(super) fn native_content(
+        &self,
+        input_extent: [u32; 2],
+    ) -> Result<NativeFrameValues, RenderError> {
+        let content = self.native_content.unwrap_or(NativeFrameValues {
+            content_origin: [0, 0],
+            content_extent: input_extent,
+        });
+        if content.content_extent.contains(&0)
+            || (0..2).any(|axis| {
+                content.content_origin[axis].saturating_add(content.content_extent[axis])
+                    > input_extent[axis]
+            })
+        {
+            return Err(RenderError::TargetExtent);
+        }
+        Ok(content)
     }
 
     pub(super) fn native_witness(&self) -> super::NativeWitness {
@@ -174,6 +207,7 @@ impl SyntheticView {
         let fx = fy / aspect;
         Ok(Self {
             native_witness: super::NativeWitness::Off,
+            native_content: None,
             projection: Projection::Perspective {
                 view,
                 fx,

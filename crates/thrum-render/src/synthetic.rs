@@ -48,7 +48,7 @@ mod history_gpu;
 mod mesh_arena;
 mod mesh_route;
 pub mod mesh_rows;
-mod native_witness;
+pub(crate) mod native_witness;
 mod preparation;
 mod raytrace;
 pub(crate) use raytrace::RetainedRayMeshes;
@@ -80,8 +80,12 @@ mod target_storage;
 mod temporal;
 mod upload;
 mod view;
-pub(crate) use native_witness::NativeFrame;
-pub use native_witness::{NativeOutcome, NativeSegment, NativeWitness, NativeWitnessReport};
+pub(crate) use crate::apple_tile::NativeFrame;
+use crate::apple_tile::{NativeBinding, NativeGraph, NativeProvider};
+pub use crate::apple_tile::{
+    NativeOutcome, NativeProviderReport, NativeSegment, NativeTwinSelection, TwinReason,
+};
+pub use native_witness::{NativeWitness, NativeWitnessReport};
 pub use readback::{CaptureSource, PixelReadback};
 pub use temporal::TEMPORAL_WITNESS_JSON;
 pub use view::Reconstruction;
@@ -535,7 +539,7 @@ pub struct InstanceUploadReport {
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
-    native: Option<Arc<native_witness::Factory>>,
+    pub(crate) native: Option<Arc<dyn NativeProvider>>,
     culling_selection: CullingSelection,
     temporal_inputs: bool,
     temporal: temporal::TemporalInputs,
@@ -1884,7 +1888,7 @@ impl PreparedSynthetic {
 
 struct TargetResources {
     secondary: Vec<secondary::Resources>,
-    native: Option<native_witness::graph::Resources>,
+    native: Option<NativeGraph>,
     refraction: Option<ResourceId>,
     soft_sun: Option<raytrace::soft::SoftResources>,
     pre_tone: PreToneInput,
@@ -1911,7 +1915,8 @@ struct SceneGraphs<G> {
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
     secondary: Vec<wgpu::BindGroup>,
-    pub(crate) native: Option<Arc<native_witness::Binding>>,
+    pub(crate) native: Option<Arc<NativeBinding>>,
+    witness: NativeWitness,
     effects: after_opaque::TargetEffects,
     soft_sun: Option<raytrace::soft::SoftTarget>,
     ambient: Option<raytrace::ambient::Target>,
@@ -1972,18 +1977,30 @@ impl OffscreenTarget {
             .then_some(texture)
     }
 
-    pub(crate) fn reserve_native(&self, cut: bool) -> Result<Option<NativeFrame>, RenderError> {
+    pub(crate) fn reserve_native(
+        &self,
+        view: &SyntheticView,
+    ) -> Result<Option<NativeFrame>, RenderError> {
         self.native
             .as_ref()
-            .map(|native| native.reserve(cut))
+            .map(|native| {
+                let values = view.native_content([self.width, self.height])?;
+                native.reserve(view.history_reset(), values)
+            })
             .transpose()
     }
 
     /// Diagnostic provider outcomes for this extent/generation, when enabled.
     #[must_use]
     pub fn native_witness_report(&self) -> Option<NativeWitnessReport> {
-        self.ids.native.as_ref()?;
-        self.native.as_ref().map(|native| native.provider.report())
+        let native = self.native.as_ref()?;
+        (self.witness != NativeWitness::Off).then(|| {
+            NativeWitnessReport::from_provider(
+                native.report(),
+                self.witness,
+                native.resident_bytes(),
+            )
+        })
     }
     /// Allocate a nonempty bounded target and display bind group from
     /// one prepared view's generation, on the executor's device. The
@@ -2083,13 +2100,8 @@ impl OffscreenTarget {
         let native = prepared
             .native
             .as_ref()
-            .map(|factory| {
-                factory.binding(
-                    textures
-                        .texture(&ids.scene)
-                        .ok_or(RenderError::GraphPassMismatch)?,
-                )
-            })
+            .zip(ids.native.as_ref())
+            .map(|(provider, declaration)| provider.bind(&textures, declaration))
             .transpose()?;
         let taau = prepared.prepare_taau_target(
             device,
@@ -2198,6 +2210,7 @@ impl OffscreenTarget {
         Ok(Self {
             secondary,
             native,
+            witness: prepared.view_sample.native_witness(),
             capture_source,
             effects,
             soft_sun,

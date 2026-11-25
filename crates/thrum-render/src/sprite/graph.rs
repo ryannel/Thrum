@@ -862,12 +862,12 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
                 | PassKey::AfterOpaqueCopy
                 | PassKey::Secondary { .. }
                 | PassKey::RayStructureBuild
-                | PassKey::NativeReset
+                | PassKey::NativeProviderBefore(_)
                 | PassKey::SoftSun(_)
                 | PassKey::CombinedVisibility
                 | PassKey::AmbientReceiver
                 | PassKey::Ambient(_)
-                | PassKey::NativeWitness => return Err(RenderError::GraphPassMismatch),
+                | PassKey::NativeProvider(_) => return Err(RenderError::GraphPassMismatch),
             };
             Ok(RecordBinding::new(id, kind, record))
         })

@@ -4,7 +4,7 @@ use super::{
     AirShadowPrepared, Arc, AtmospherePrepared, BucketRoute, CasterCulling, CloudPrepared,
     ContributionPasses, CullMode, DeviceCapabilities, PipelineKey, PreparedSynthetic, SdrToneStage,
     ShadowSelection, StarPrepared, SunShadowMethod, SyntheticView, TextureClasses,
-    VisibilityPrepared, mesh_arena, mesh_route, native_witness, secondary, taau, temporal,
+    VisibilityPrepared, mesh_arena, mesh_route, secondary, taau, temporal,
 };
 
 /// Device resources retain their original handles. Only extent-dependent
@@ -17,7 +17,7 @@ pub(crate) struct SyntheticTargetInputs {
     pub(super) capabilities: DeviceCapabilities,
     pub(super) key: PipelineKey,
     pub(super) owner: Arc<()>,
-    pub(super) native: Option<Arc<native_witness::Factory>>,
+    pub(super) native: Option<Arc<dyn crate::apple_tile::NativeProvider>>,
     pub(super) temporal_inputs: bool,
     pub(super) temporal: temporal::TemporalInputs,
     pub(super) taau: Option<taau::Taau>,

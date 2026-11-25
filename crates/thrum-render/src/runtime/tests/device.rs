@@ -10,6 +10,8 @@ use std::{
 #[derive(Default)]
 struct Policy {
     native: crate::synthetic::NativeWitness,
+    #[cfg(target_os = "macos")]
+    native_content_origin: Option<[u32; 2]>,
     camera: f32,
     atmosphere: bool,
     empty: bool,
@@ -73,6 +75,10 @@ impl SceneSource<SourceTick> for Policy {
         let view = view
             .with_history_epoch(history_epoch)
             .with_native_witness(self.native);
+        #[cfg(target_os = "macos")]
+        let view = self
+            .native_content_origin
+            .map_or(view, |origin| view.with_native_content_rect(origin, [2, 2]));
         Ok(SceneFrame { view, lighting })
     }
 }
