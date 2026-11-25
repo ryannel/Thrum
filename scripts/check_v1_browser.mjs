@@ -208,15 +208,21 @@ async function qualifyGovernorRefresh(cdp, sessionId, output) {
       let time = 0;
       try {
         // Real WebGPU work with a controlled callback clock and no debug load.
+        // Retire each submission before emitting the next synthetic opportunity.
+        // Hardware delivery under load is checked with real callbacks above.
+        const deadline = performance.now() + 45000;
         for (const hz of ${JSON.stringify(rates)}) {
           const rows = [];
           // The shell waits for one simulated second before enabling quality control.
           for (let frame = 0; frame < (phases.length === 0 ? 240 : 120); frame++) {
-            // Give the real GPU time to retire work while testing the
-            // synthetic clock. Delivery under load is checked above.
-            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             time += 1000 / hz;
             game.frame(time);
+            while (!game.drain_frames()) {
+              if (performance.now() >= deadline) {
+                throw new Error('WebGPU did not retire the controlled refresh frames before the deadline');
+              }
+              await new Promise(resolve => setTimeout(resolve, 0));
+            }
             rows.push(...JSON.parse(game.take_trace()).rows);
           }
           phases.push({ hz, rows });
@@ -227,13 +233,14 @@ async function qualifyGovernorRefresh(cdp, sessionId, output) {
       }
     })()`,
     awaitPromise: true, returnByValue: true,
-  }, sessionId, 30000);
+  }, sessionId, 50000);
   if (reply.exceptionDetails) throw new Error(JSON.stringify(reply.exceptionDetails));
   const phases = reply.result.value;
   await fs.writeFile(path.join(output, 'governor-refresh.json'), JSON.stringify(phases));
-  return phases.map(({ hz, rows }) => {
+  return phases.map(({ hz, rows }, phase) => {
     const last = rows.at(-1);
-    if (rows.length < 60 || last?.source !== 'AnimationFrame' ||
+    if ((phase === 0 ? rows.length < 60 : rows.length !== 120) ||
+        last?.source !== 'AnimationFrame' ||
         Math.abs(last.budget_ms - 850 / hz) > 0.05 ||
         rows.some(row => row.scale !== 100 || row.tier !== 0)) {
       throw new Error(`Governor changed unloaded quality or kept a stale budget at ${hz} Hz, see ${output}`);

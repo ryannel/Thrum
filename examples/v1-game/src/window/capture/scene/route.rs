@@ -18,6 +18,9 @@ use crate::{CameraRoute, GameHost};
 
 /// Phase tolerance on the logged presentation alpha.
 const ALPHA_TOLERANCE: f32 = 1e-4;
+/// Budget input for the fixed offscreen thermal proof, which has no display link.
+/// Leave room for concurrent GPU work so the thermal record drives the tier.
+const THERMAL_PROOF_INTERVAL: Duration = Duration::from_millis(100);
 
 /// The route file named by `THRUM_CAPTURE_ROUTE`, with its declared extent and overlay.
 pub(super) fn requested(
@@ -150,7 +153,11 @@ pub(super) fn record(
             until: 310,
         });
     let display = DisplayRecord {
-        interval: Duration::from_secs(1) / tick_hz,
+        interval: if thermal_proof.is_some() {
+            THERMAL_PROOF_INTERVAL
+        } else {
+            Duration::from_secs(1) / tick_hz
+        },
         thermal: thrum_app::thermal_state(),
     };
     if (request.governor_identity == Some(true) || thermal_proof.is_some())
@@ -346,6 +353,7 @@ pub(super) fn record(
             directory.join("thermal.json"),
             serde_json::json!({
                 "samples": thermal_rows, "pipelines": pipelines,
+                "display_interval_ns": display.interval.as_nanos(),
                 "platform_thermal": [format!("{:?}", display.thermal),
                                      format!("{:?}", thrum_app::thermal_state())],
             })

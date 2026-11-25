@@ -363,6 +363,8 @@ def mac_governor_thermal(output):
                 (0, 1, "Recovery", "Nominal")]
     if actual != expected:
         raise ValueError(f"thermal record did not degrade and restore effect tier: {actual}")
+    if any(row["quality"]["scale"] != 100 for row in trace["samples"]):
+        raise ValueError(f"timing pressure changed scale during the thermal proof in {directory}")
     validate_recovery(changes)
     pipelines = trace["pipelines"]
     if pipelines is None or pipelines[0] != pipelines[1] or pipelines[1][1] != 0:
@@ -371,7 +373,9 @@ def mac_governor_thermal(output):
                for sample in trace["samples"]):
         raise ValueError("aerial cadence did not age its retained output")
     return dict(target="mac-metal", changes=changes, pipeline_counts=pipelines,
-                platform_thermal=trace["platform_thermal"], scope="fixed route on the Metal frame host",
+                platform_thermal=trace["platform_thermal"],
+                display_interval_ns=trace["display_interval_ns"],
+                scope="fixed route on the Metal frame host with a diagnostic display interval",
                 binary_sha256=digest(binary))
 
 

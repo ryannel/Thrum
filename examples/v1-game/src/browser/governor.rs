@@ -79,6 +79,16 @@ impl GovernorBrowser {
         self.shell.frame(timestamp).map_err(js_error)
     }
 
+    /// Drain completed frames without advancing the qualification clock.
+    /// Returns whether all submitted frames have retired.
+    ///
+    /// # Errors
+    /// Returns a frame-host completion fault.
+    pub fn drain_frames(&mut self) -> Result<bool, JsValue> {
+        let free_slot = self.shell.poll_completed().map_err(js_error)?;
+        Ok(free_slot && self.shell.host().pending_frames() == 0)
+    }
+
     /// Take the completed trace rows while leaving space for subsequent samples.
     pub fn take_trace(&mut self) -> String {
         let through = self.shell.samples().last().map(|sample| sample.tick);
