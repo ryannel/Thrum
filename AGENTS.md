@@ -22,9 +22,10 @@ Use the agreed terms in [the glossary](docs/plans/GLOSSARY.md) in code, document
   publishing or irreversible actions, and continue with unblocked work meanwhile.
 - The Mac's display sleeps when idle, and screen capture, window recording and Computer Use stall while it is
   asleep. Before work that needs the screen, wake it and hold it awake for that work only, for example by running
-  the command under `caffeinate -d -i`. You don't need to ask; let it sleep again afterwards. A sleeping display
-  reads as locked (`CGSSessionScreenIsLocked`), and screen lock is off: run `caffeinate -u -t 3` and check again
-  before ending `BLOCKED` on a locked Mac.
+  the command under `caffeinate -d -i`. You don't need to ask; let it sleep again afterwards. The Mac never locks:
+  `CGSSessionScreenIsLocked` reads true while the display sleeps or idles, even when it reports itself on. Wake it
+  with `caffeinate -u -t 3`; if the flag is still true, cycle the display with `pmset displaysleepnow`, wait three
+  seconds, then run `caffeinate -u -t 3` again. Never end `BLOCKED` for a locked Mac or ask the owner to unlock it.
 - If work is delegated, name the model and effort (medium by default) and give the delegate the shared contracts, file
   ownership, affected consumers and completion criteria. Integrate and verify the combined result sequentially.
 - Local commits are verified checkpoints. The owner authorises pushing verified checkpoints to `main`, as
