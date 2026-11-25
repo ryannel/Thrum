@@ -6525,6 +6525,30 @@
       "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/WATERS/WP8/objects"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/WP8/review-fix/cost-views.tar",
+      "size": 23889920,
+      "sha256": "59e6b22b79ccdd5228e9cb03ec35258e9942e1b618920b0f4c1eda97dc39b645",
+      "date": "2026-11-25T19:53:25.224761+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/WATERS/WP8/objects"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/WP8/review-fix/fixed.tar",
+      "size": 549140480,
+      "sha256": "4ca1422e1729cf32f9a1157ae26fa9f84b3a97b65a1efd0dde1fda6912aac345",
+      "date": "2026-11-25T19:53:20.391219+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/WATERS/WP8/objects"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/WP8/review-fix/motion.tar",
+      "size": 963041280,
+      "sha256": "c6fbfa0391f84db2dc545c8cd25e605f7302f34023dad80cc8743d5d649460a6",
+      "date": "2026-11-25T19:53:22.106738+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/WATERS/WP8/objects"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/render/apple-tile-m0/motion/route-motion/000241.png",
       "size": 2982474,

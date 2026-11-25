@@ -1186,3 +1186,9 @@
   every builder to run it after changing the water scene's tests. The design is unchanged, so WP8's build
   is not held for a design review. For the lead: the type-check in a merge's check is `TEST-SUPPORT`'s and
   `GATE-TIME`'s to plan (20 to 85 s warm in today's runs; three breaks since 24 November).
+- 2026-11-25 WP8 review fixes. The gather clips body source rectangles against the frustum and skips
+  the registered off-screen case on Metal. The lake trace continues the bank across narrow
+  occlusions, and dry hillside relief reflects from both heights. The submitted Metal and Chrome
+  sea views retain glint gradients and show no pure-white or pure-black water pixels. Sun elevation
+  and camera pitch now vary independently. The corrected 1440p record verifies the visible body
+  counts and keeps the caster out of frame. [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/review-fix/README.md).
