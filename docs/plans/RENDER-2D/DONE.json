@@ -714,7 +714,7 @@
     {
       "id": "WP6",
       "name": "A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given",
-      "status": "ready_for_review",
+      "status": "done",
       "depends_on": [
         "APPLE-PRESENTATION:WP6"
       ],
@@ -762,7 +762,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP6/idle-disable-metal.log",
           "builder_result": "pass",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
         {
@@ -813,14 +813,7 @@
         }
       ],
       "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "Disabling an idle capture retains both 8-bit display images",
-          "item": "WP6.4",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 0
     }
   ]
 }

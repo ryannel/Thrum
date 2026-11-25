@@ -968,7 +968,7 @@
         {
           "verdict": "fail",
           "commit": "70df5f84136c655018ef1a0d0ac5fb6f3d61c80d",
-          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review-1.md",
           "items": {
             "WP6.1": "pass",
             "WP6.2": "pass",
@@ -1002,6 +1002,37 @@
             "turns": 1
           },
           "at": "2026-11-25T17:58:30Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "09a044e7fc848be3fdd2d9b6c50ced23d705a2cd",
+          "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md",
+          "items": {
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 76446,
+            "cached": 1421056,
+            "output": 4622,
+            "turns": 1
+          },
+          "at": "2026-11-25T18:19:40Z"
         }
       ],
       "authorised": {
@@ -1045,6 +1076,13 @@
           "output": 75074,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "09a044e7fc848be3fdd2d9b6c50ced23d705a2cd",
+        "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md",
+        "checked": "34b1332011731fe56f070decba37484e58255a57",
+        "at": "2026-11-25T18:19:40Z"
       }
     }
   },
