@@ -141,10 +141,10 @@ fn trace_bodies(origin: vec3<f32>, ray: vec3<f32>, reach: f32, mask: u32) -> Gat
     return best;
 }
 
-// Continue a narrow gap in visible bank radiance across a foreground
-// silhouette. The bed locates the ray's crossing, and only opaque samples
-// whose depth agrees with nearby bed can contribute its colour.
-fn fill_bank_gap(origin: vec3<f32>, ray: vec3<f32>, reach: f32) -> GatherHit {
+// The mapped bed refines grazing intersections that the depth march misses.
+// Accept only the first opaque sample at the crossing's own projected texel,
+// where its reconstructed position agrees with the bed.
+fn trace_bank(origin: vec3<f32>, ray: vec3<f32>, reach: f32) -> GatherHit {
     var previous = 0.06;
     for (var i = 1u; i <= 24u; i++) {
         let phase = f32(i) / 24.0;
@@ -163,24 +163,13 @@ fn fill_bank_gap(origin: vec3<f32>, ray: vec3<f32>, reach: f32) -> GatherHit {
         let projected = optics_project(bank);
         let margin = min(projected.xy, 1.0 - projected.xy);
         if projected.z < 0.0 || min(margin.x, margin.y) < 0.015 { break; }
-        let forward = normalize(ray.xz);
-        let across = vec2(-forward.y, forward.x);
-        let directions = array(across, -across, forward, -forward);
-        for (var j = 0u; j <= 16u; j++) {
-            let radius = f32((j + 3u) / 4u);
-            let offset = directions[(j + 3u) % 4u] * radius;
-            let xz = bank.xz + offset;
-            let bed = vec3(xz.x, reflection_bed(xz), xz.y);
-            let location = optics_project(bed);
-            if location.z < 0.0 { continue; }
-            var sample = gather_at(location.xy);
-            // At a grazing view, one texel can span a long strip of ground.
-            // Test its reconstructed point against the bed at that point.
-            if sample.distance > 0.0 && length(sample.point.xz - xz) < 1.8
-                && abs(sample.point.y - reflection_bed(sample.point.xz)) < 0.22 {
-                sample.point = bank;
-                return sample;
-            }
+        let sample = gather_at(projected.xy);
+        // At a grazing view the texel can cover a strip of ground. Check
+        // height against the bed at the actual sample as well as its distance
+        // along the strip. An occluder at this texel leaves the sky in place.
+        if sample.distance > 0.0 && length(sample.point.xz - bank.xz) < 1.8
+            && abs(sample.point.y - reflection_bed(sample.point.xz)) < 0.22 {
+            return sample;
         }
         break;
     }
@@ -216,14 +205,14 @@ fn water_optical_paths(
         reflected = trace(world, reflected_ray, segment, scenery, false);
         reflection_weight = still;
         if reflected.edge < 0.995 {
-            bank = fill_bank_gap(world, reflected_ray, reach);
+            bank = trace_bank(world, reflected_ray, reach);
         }
         scene_hit = true;
     }
     var outgoing = sky;
     if bank.distance > 0.0 {
         let dist = length(bank.point - world);
-        let uv = optics_project(bank.point).xy;
+        let uv = optics_uv(bank.pixel);
         let margin = min(uv, 1.0 - uv);
         let edge = smoothstep(0.015, 0.14, min(margin.x, margin.y));
         let fade = edge * reflection_weight * (1.0 - smoothstep(0.75 * reach, reach, dist));
