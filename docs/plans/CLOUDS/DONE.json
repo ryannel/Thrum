@@ -1025,7 +1025,7 @@
     {
       "id": "WP19",
       "name": "While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "A frame-pacing record as a shipped engine's frame profiler gives one: every lost refresh has a place, none is put down to load or to the window unless the same game without clouds, run beside it, shows the same loss, and a hitch the game without clouds does not have is never put down to them.",
       "items": [
@@ -1037,8 +1037,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP19/refresh-account-rerun.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md"
         },
         {
           "id": "WP19.2",
@@ -1051,10 +1051,10 @@
             "type": "access",
             "what": "Unlock the Mac. The agent wakes the built-in display for each run of about 25 seconds, and launches, records and reviews; nothing else is needed."
           },
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP19/pre-repair-scoped/series.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md"
         },
         {
           "id": "WP19.3",
@@ -1065,10 +1065,10 @@
             "type": "access",
             "what": "Unlock the Mac. The agent wakes the built-in display for each run of about 25 seconds, and launches, records and reviews; nothing else is needed."
           },
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP19/accounting.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md"
         },
         {
           "id": "WP19.4",
@@ -1078,12 +1078,33 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP19/scripted-hold.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Loss attribution uses the nearest target instead of the drawable",
+          "item": "WP19.2",
+          "repeat": false
+        },
+        {
+          "name": "A missing witness row becomes a lost refresh",
+          "item": "WP19.2",
+          "repeat": false
+        },
+        {
+          "name": "Repeated losses at a place are marked not reproduced",
+          "item": "WP19.3",
+          "repeat": false
+        },
+        {
+          "name": "Trace cleanup can delete another recorder's file",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP20",

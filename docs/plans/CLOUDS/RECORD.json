@@ -1401,7 +1401,56 @@
     },
     "WP19": {
       "definitions": "93bd88062dc03d50cdedd9824146cbdd5ed8faf2e05f81f81ff48265342b67bd",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "a2ddfd2d9d3ef6312f16f052314596c4e0eedc3c",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md",
+          "items": {
+            "WP19.1": "pass",
+            "WP19.2": "fail",
+            "WP19.3": "fail",
+            "WP19.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Loss attribution uses the nearest target instead of the drawable",
+              "item": "WP19.2",
+              "repeat": false
+            },
+            {
+              "name": "A missing witness row becomes a lost refresh",
+              "item": "WP19.2",
+              "repeat": false
+            },
+            {
+              "name": "Repeated losses at a place are marked not reproduced",
+              "item": "WP19.3",
+              "repeat": false
+            },
+            {
+              "name": "Trace cleanup can delete another recorder's file",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 86430,
+            "cached": 1696640,
+            "output": 7379,
+            "turns": 1
+          },
+          "at": "2026-11-25T18:10:12Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 1 Must Fix find",
