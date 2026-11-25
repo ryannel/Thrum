@@ -1180,8 +1180,8 @@
           "inspect": "Use `realtime` sequences in a trade wind and a gale with swell, from 2 m on the sand looking along the break and out to sea, from 40 m above and from 1 km offshore. 1. At 2 m and 40 m a crest pitches forward and the break progresses along its length. It holds together through the pitch, with no tears, fins or stair steps. One recorded gap is WP20's and does not decide this point: one or two short gray, straight-sided patches that show for under half a second in the folding face as a crest passes the bend of the exposed beach, seen from 40 m in a trade wind near native x = 2200\u20132260, y = 345\u2013370 at engine time 5.22 s. A row of teeth along the lip, a patch elsewhere on the crest or one that stays longer fails the point. 2. At 2 m and 40 m follow the broken front into the shallows. Its face lowers into a thin advancing sheet, with no wall or exposed strip between the bore and swash. Sand reappears from the waterline as the sheet drains. 3. At 1 km, in each wind, successive white fronts start at visibly different distances from the beach, and they read as surf running in.",
           "ask": "Do the CPU model and GPU paths use the same swell-driven swash in the displaced sheet, with the plane-beach regular-wave extrema preserved and the wet edge used by both drawing and queries? Use the repeated cross-shore cut to locate any break in the sheet that the motion inspection finds.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/refined-metal-breaker-inspection.md",
           "verdict": "",
           "review": ""
         },
@@ -1244,8 +1244,8 @@
           "statement": "In Chrome, submitted engine time advances during the trade-wind surf inspection. The crests, bore, swash and whitewater pass the same visual checks at matching views on Chrome and portable Metal, including the line of surf at 1 km and the handoff across the coarse foam window's edge.",
           "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind settings and views of WP13.4, WP13.5 and WP13.7, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The matched views pass WP13.4's approach checks and points 1 to 3 of WP13.5. 3. Both targets pass points 1\u20134 of WP13.7, including the surf line from 1 km offshore and the separate handoff view across the coarse window's outer edge. Record any visible differences at the matched views.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/refined-chrome-surf-inspection.md",
           "verdict": "",
           "review": ""
         },

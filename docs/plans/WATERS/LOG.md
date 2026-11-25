@@ -920,3 +920,11 @@
   bend around engine time 5.22 s. The normal and folded-face shading trials leave it in place and
   were reverted. WP13.5 and WP13.11 remain open at the three-look stop.
   [Fixed pairs, moving crops and branch projection](../../../.orchestrate/evidence/WATERS/WP13/review-bend-followup.md).
+
+- 2026-11-25 WP13.5 and WP13.11 passed against the revised checklist on portable Metal and hardware
+  Chrome. The retained bend captures show a pitching crest feeding connected swash and successive
+  fronts breaking at different distances from the beach. Three Chrome views stamped with the reverted
+  normal trial were recaptured on the retained surface with the same settings. All six Chrome motion
+  receipts show advancing engine time and zero omissions or faults. The brief bend patch remains WP20's.
+  [Metal inspection](../../../.orchestrate/evidence/WATERS/WP13/refined-metal-breaker-inspection.md) ·
+  [Matched Chrome inspection](../../../.orchestrate/evidence/WATERS/WP13/refined-chrome-surf-inspection.md).
