@@ -91,10 +91,11 @@ If the window's mean current makes interaction waves visibly wrong in the exampl
 
 ## WP20 A crest pitching at the bend of the exposed beach is drawn whole, with no gray patch flashing in its face, on the Mac and in Chrome
 
-Start from [the witness](LOG.md#wp13-bend-flap-parked). Three visual trials have failed, so take WP20.1's
-diagnostic on the submitted frame before changing anything, then fix what it names, keeping the throw
-([risk 18](DESIGN.md#risks)). If the patch no longer shows, record that. If the record names no cause, or its
-fix fails three looks, end `BLOCKED` with the record.
+Begin with WP20.1's starting take at [the witness](LOG.md#wp13-bend-flap-parked), on Metal and in Chrome. If the
+patch shows in neither, change nothing: the items' check and inspections settle it. If it shows, three visual
+trials have failed, so take WP20.1's diagnostic where it shows before changing anything, then fix what it names,
+keeping the throw ([risk 18](DESIGN.md#risks)). If that record names no cause, or its fix fails three looks, end
+`BLOCKED` with it.
 
 ## WP10 A visitor takes the water from glassy calm to gale, raises and lowers the lake, and goes from dawn to night with the controls, and it holds up in motion, on the Mac and in Chrome
 

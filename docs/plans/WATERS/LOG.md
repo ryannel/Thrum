@@ -905,3 +905,8 @@
   optics behind a patch a viewer sees for a fraction of a second.
 - 2026-11-25 Shortened the plan file's assumptions and seven log entries to the script's limits. No assumption
   was removed: the swash profile's detail and the builder's licence to tune by eye are in the design.
+- 2026-11-25 Design review, Must Fix 1: WP20.1 owed a pre-fix diagnostic naming a cause even if WP8 had already
+  removed the patch, and the plan stopped the builder as blocked with no cause. WP20.1 now records a starting
+  take first. The diagnostic, the fix it names and the `BLOCKED` stop are owed only if that take shows the patch.
+  If it shows none, the check and the inspection settle the item and the ask is met with no diagnostic. The plan
+  file's WP20 note says the same. WP20.2 and the design are unchanged.
