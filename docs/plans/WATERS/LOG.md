@@ -1215,3 +1215,8 @@
   hole, streak or stretched edge"; it now reads "gives way gradually to the sky or to the ground beside it", on
   a list of five lines. Two assumptions in the plan file were shortened to fit its limit.
   [The diagnosis](../../../.orchestrate/evidence/WATERS/WP8-diagnosis.md).
+- 2026-11-26 Planner, after the design review at `67c44f317259` (three Must Fix, none against a decision).
+  WP8.5 holds contact to the bank and to a trunk at the waterline, and an inland pine reflects beyond the bank.
+  [One colour by one weight](DESIGN.md#one-colour-by-one-weight) is two layers, the first body over the scene
+  over the environment, and the scene is traced behind a body. WP8.9 is its own list of what a Chrome still
+  shows; motion stays on Metal. [What changed for each finding](../../../.orchestrate/evidence/WATERS/design-revision-67c44f3.md).

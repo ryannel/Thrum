@@ -1460,11 +1460,12 @@ work in it, not its area.
 that body's box. A ray that misses the box does no more. A ray that meets it is marched across that segment
 only, in screen space against the gathered depth, for a bounded number of steps. A hit reads the gathered colour
 at the hit's own texel, which lies inside the source rectangle because the hit is on the body. A miss, a hit off
-the screen, and a sample whose depth is not inside that body's box take the environment for a reflected ray and
-the water alone for a refracted one.
+the screen, and a sample whose depth is not inside that body's box give the body no part in the pixel: a
+reflected ray carries on as [one colour by one weight](#one-colour-by-one-weight) composes it without the body,
+and a refracted ray shows the water alone.
 
 *The bounded approximation.* A reflected ray is followed for at most the reach, and a pixel whose normal tilts
-past the slope allowance takes the environment; each fades over its last quarter, so neither leaves an edge. The
+past the slope allowance shows no body; each fades over its last quarter, so neither leaves an edge. The
 first profile's reach is 64 m and its allowance 20°, and both are knobs. On a calm sea a body is whole in
 reflection while the ray from the water to its top is no longer than the reach: a craft 3 m tall is whole out to
 about 85 m from a camera 1 m up, 190 m from 6 m up, and 900 m from 40 m up. Only what the camera sees of a body
@@ -1472,43 +1473,65 @@ can be reflected or seen through the water, so a body's underside never shows; t
 own limit.
 
 *The scene's reflection.* Where the water's slope variance is under the profile's mirror limit, a reflected ray
-that met no registered body is marched in screen space against the copied depth, for a bounded number of steps
-over the reach. Rougher water takes the environment alone: its reflection is a blur the environment's colour
-already gives. This trace can reflect only what is on screen. It serves water that has no mirror view.
+is marched in screen space against the copied depth, for a bounded number of steps over the reach, to the first
+opaque surface it meets that is not a registered body. The march passes over a sample that lies inside a
+registered body's box, so a ray that met a body is marched too and finds the scene beyond it. Rougher water
+shows none of the scene: its reflection is a blur the environment's colour already gives. This trace can
+reflect only what is on screen. It serves water that has no mirror view.
 
+<a id="one-colour-by-one-weight"></a>
 *One colour by one weight.* The copy supplies a reflection only in part: a ray's source may lie past the copy's
 edge, past the reach or behind something nearer. How far the copy can be trusted is therefore a weight and never
-a switch. Every screen-space reflected ray, to a registered body or to the scene, ends as
+a switch. A reflected ray meets at most two surfaces the copy can supply: the first registered body on it, found
+in that body's box, and the scene's surface, found by the scene's march. A second body behind the first is
+left out, a declared approximation. Each is one layer, with one colour and
+one weight from 0 to 1, and every screen-space reflected ray ends as the layers laid in the order the ray meets
+them, over the environment:
 
-`L_reflected = mix(L_env, L_source, w)`,
+`L_reflected = mix(mix(L_env, L_far, w_far), L_near, w_near)`,
 
-with `L_env` the environment product, `L_source` the copied radiance at the one point where the ray first meets
-the opaque scene, and `w` one weight from 0 to 1.
+with `L_env` the environment product, and `L_near` and `L_far` the copied radiance of the nearer and the farther
+of the two, each at the one point where the ray meets it. A surface the ray does not meet is a layer of weight
+0. So a ray that meets the scene alone, or a body alone, ends as `mix(L_env, L_source, w)`, and a ray that meets
+neither as `L_env`.
 
-- *One source.* However the point is found (the march, a body's box, or the water map's bed where the ray meets
-  mapped ground that a grazing march steps over), it is one point with one radiance. Two findings of the same
-  surface are never laid one over the other, each under its own fade. Where a ray meets a registered body in
-  front of the scene, the body's colour lies over the scene's by the body's own weight, so on still water a
-  body's reflection thins into the reflected shore behind it and not into a rim of sky.
-- *One weight.* `w` is the product of factors that each run from 1 to 0 without a step, and reach 0 before what
-  they measure runs out: how still the water is (the mirror limit for the scene, the slope allowance for a
-  body); the ray's length, over the last quarter of the reach; how near the source's texel lies to the copy's
-  edge, over a band there; how well the copied depth at the source agrees with the ray; and how near the
-  source's texel lies to the outline of nearer geometry that hides it.
+- *What lies behind a body.* The background of a body's reflection is whatever the same ray would show without
+  the body: the scene's reflection by the scene's own weight, and the environment through what that leaves.
+  A float at half weight in front of a green bank at full weight, under a blue sky, shows half float and half
+  bank, and no sky. The same float before open sky, or on water too rough to mirror the scene, shows half float
+  and half sky. So on still water a body's reflection thins into the reflected shore behind it and not into a
+  rim of sky, and at sea it thins into the sky as before.
+- *When the scene is traced.* The scene's march runs for every reflected ray on water still enough to mirror the
+  scene, whether or not the ray met a body. It may be left out only where its layer could not show: where the
+  scene's stillness factor is 0, or where a nearer body's weight is 1.
+- *One source for a surface.* However a surface's point is found (the march, a body's box, or the water map's
+  bed where the ray meets mapped ground that a grazing march steps over), it is one point with one radiance and
+  one weight. Two findings of the same surface are never laid one over the other, each under its own fade: a
+  bank found by both the march and the water map is one layer and is counted once.
+- *One weight for a surface.* Each layer's `w` is the product of factors that each run from 1 to 0 without a
+  step, and reach 0 before what they measure runs out: how still the water is (the mirror limit for the scene,
+  the slope allowance for a body); the ray's length, over the last quarter of the reach; how near the source's
+  texel lies to the copy's edge, over a band there; how well the copied depth at the source agrees with the
+  ray; and how near the source's texel lies to the outline of nearer geometry that hides it.
 - *No switch.* A reflection's source moves abruptly only where the scene has an edge: an outline, a waterline, a
   shadow. A test of the copy (on it or past its edge, within the reach or not, visible or hidden, agreeing or
-  not, found one way or another) acts only through `w`. It may end a ray, or choose between two colours, only
-  where `w` is already 0 on both sides of it. So a reflection has no line, patch or step that the scene does not
-  have, and the cure for one is a factor of `w`, never a further case.
-- *A hidden source.* Where nearer geometry hides the point a ray meets, the copy holds no radiance for it. What
-  the water shows there is a guess, as it is in any shipped game's screen-space reflection, and two guesses
-  meet this design, chosen by eye: the environment, which may be dimmed as the occluder would dim it; or the
-  radiance of the nearest visible point of the same surface, ground for ground, with `w` falling with the
-  distance it is carried. Either comes in through `w`, over a width that leaves no outline of the occluder in
-  the reflection. The occluder's own colour is never carried onto what it hides. The guess is judged by eye
-  and held to no reference, and [the mirror view](#mirror-views-scenery-the-camera-cannot-see) replaces it.
+  not, found one way or another) acts only through the `w` of the layer it tests. It may end a ray, leave out a
+  trace, or choose between two colours, only where that `w` is already 0 on both sides of it. The two layers
+  change order only where the body and the scene touch, which is an edge of the scene. So a reflection has no
+  line, patch or step that the scene does not have, and the cure for one is a factor of a `w`, never a further
+  case.
+- *A hidden source.* Where nearer geometry hides the point a ray meets, the copy holds no radiance for it. That
+  holds for the scene behind a body as for a bank behind a tree. What the water shows there is a guess, as it
+  is in any shipped game's screen-space reflection, and two guesses meet this design, chosen by eye: the
+  environment, which may be dimmed as the occluder would dim it; or the radiance of the nearest visible point
+  of the same surface, ground for ground, with `w` falling with the distance it is carried. Either comes in
+  through that layer's `w`, over a width that leaves no outline of the occluder in the reflection. The
+  occluder's own colour is never carried onto what it hides. The guess is judged by eye and held to no
+  reference, and [the mirror view](#mirror-views-scenery-the-camera-cannot-see) replaces it.
 - *Cost.* The factors come from what the march has read and a bounded number of further depth reads, spent only
-  where a source lies near something that hides it ([risk 8](#risks)).
+  where a source lies near something that hides it. Both traces run only for a still-water pixel inside a
+  body's receiving rectangle whose body is less than fully trusted, each within its own bound of steps
+  ([risk 8](#risks)).
 
 *The scene through the water.* A refracted ray that met no registered body reads the copy at its own pixel, moved
 by the surface's slope in proportion to the thickness, and keeps the unmoved pixel when the moved one is nearer
