@@ -11,7 +11,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
+      "status": "not_started",
       "quality_bar": "An overlay as exact as a pixel-art game's status display at a whole-number scale, such as Celeste's: every texel a clean block of its authored colour, and steady over a moving scene. As free when unused as Bevy's interface is when its plugin is left out: a game without one runs no pass and holds no resource for it.",
       "items": [
         {
@@ -142,17 +142,7 @@
           "review": "",
           "builder_result": "open"
         }
-      ],
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "Land shared EDR display and submitted half-float capture support for the 2D renderer before WP1.",
-        "work": {
-          "commit": "83e96a63d6d2b917b6bfc982a35e3478c6c260c0",
-          "branch": "build/game-ui",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/GAME-UI/WP1-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP2",

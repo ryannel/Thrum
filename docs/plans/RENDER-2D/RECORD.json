@@ -21,7 +21,10 @@
       "output": 4679,
       "turns": 1
     },
-    "at": "2026-11-24T16:18:11Z"
+    "at": "2026-11-24T16:18:11Z",
+    "items_owed": [
+      "WP6"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -974,6 +977,16 @@
         "checked": "703f0c9d999c240028be580bcc94e9ada297dc86",
         "at": "2026-11-25T08:05:27Z"
       }
+    },
+    "WP6": {
+      "definitions": "9977622947f53aca88d4b82838ab862ee3d61531adf747bddf04e3596506970b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "GAME-UI WP1 needs something no plan provides yet. The builder wrote: Land shared EDR display and submitted half-float ca",
+        "at": "2026-11-25T12:58:58Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -1012,11 +1025,15 @@
     {
       "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
       "at": "2026-11-24T22:06:49Z"
+    },
+    {
+      "task": "GAME-UI WP1 needs something no plan provides yet. The builder wrote: Land shared EDR display and submitted half-float capture support for the 2D renderer before WP1. The builder's handoff, .orchestrate/evidence/GAME-UI/WP1-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/game-ui at 83e96a63d6d2, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP GAME-UI WP1: builder: <where the plan provides it>`.",
+      "at": "2026-11-25T12:58:58Z"
     }
   ],
   "planner": {
-    "host": "codex",
-    "at": "2026-11-24T22:06:49Z"
+    "host": "claude",
+    "at": "2026-11-25T12:58:58Z"
   },
   "design_history": [
     {
