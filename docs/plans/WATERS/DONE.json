@@ -1294,7 +1294,7 @@
     {
       "id": "WP21",
       "name": "With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "Water in a shipped game such as Sea of Thieves is a small part of its frame and never holds a float's answer up. Here, with the breakers in view from the sand: of the stations a float in open water posts, nine in ten get their answer within two ticks and none drops to the conformance model, which delivery decides and no time for a view does; the surf drawn is the surf WP13 passed, at the mesh's nodes and in the white front seen from offshore; and a float rides a hitch on the last answer it had, once a tick, and drops to the conformance model only past the declared maximum age or when the device that made the answer is gone. The reference for WP21.6's inspection is the draw as it was before the pass changed: stills from the revision this work package starts from, at WP13.7's 1 km view and its handoff view, on portable Metal and in Chrome.",
       "items": [
@@ -1307,8 +1307,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP21/metal-cache-guards.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP21-review.md"
         },
         {
           "id": "WP21.2",
@@ -1318,8 +1318,8 @@
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP21/mailbox-guards.log",
           "lock": "gpu",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP21-review.md"
         },
         {
           "id": "WP21.3",
@@ -1329,8 +1329,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP21/surf-running-open-water.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP21-review.md"
         },
         {
           "id": "WP21.4",
@@ -1338,10 +1338,10 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP21/surf-cost.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP21-review.md"
         },
         {
           "id": "WP21.5",
@@ -1351,8 +1351,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP21/chrome-surf.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP21-review.md"
         },
         {
           "id": "WP21.6",
@@ -1361,12 +1361,24 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP21/stills/inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP21-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "The cost record attributes the old per-component reads to the current cache",
+          "item": "WP21.4",
+          "repeat": false
+        },
+        {
+          "name": "The cost check accepts missing WP19 comparison times",
+          "item": "WP21.4",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP19",
