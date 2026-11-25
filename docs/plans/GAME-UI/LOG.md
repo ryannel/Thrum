@@ -78,3 +78,9 @@
   built is the same. One iPhone shell for every game, engine work that `SWARM` M6 had carried under its ruling
   3, is now mechanism 12 and a new M6 here, proved with the crowd view as a second app. The revised design
   needs a design review.
+- 2026-11-25 WP1 prerequisite review at `99394b6a7`. The 2D graph presents a decoded 8-bit image to a float
+  drawable, and the submitted EDR capture tap requires a 3D renderer. WP1.1 and WP1.2 require the float mode
+  over the sprite scene, including submitted half-float pixels. Mechanism 1 assumes a shared EDR display
+  transform at that seam. Proposal for the planner is to assign a prerequisite for 2D to use the existing
+  EDR transform and capture tap, with the proof of the unchanged host scoped against the resulting baseline.
+  The [handoff](../../../.orchestrate/evidence/GAME-UI/WP1-handoff.md) contains the source trace.
