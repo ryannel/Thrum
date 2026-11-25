@@ -119,3 +119,8 @@
   sibling PNG now publishes all three profiles during a refused outline edit or grid rename. Reopening keeps
   the refused rename's old grid private and the proposed input's public hashes intact. The two valid fixture
   font products matched the previous cook byte for byte. [Proof](../../../.orchestrate/evidence/GAME-UI/WP2/round4/index.md)
+- 2026-11-26 WP2 review fix. The cooker recovers the private grid of a legacy pixel font from a saved cook
+  action that matches the committed product. A refused cell-size edit or rename retains the font and its
+  bindings across reopen. A later independent PNG publishes all three profiles. Verified on the reviewer's
+  archived store and a regression covering a previously public PNG proposed by a refused rename.
+  [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP2/round5/index.md)
