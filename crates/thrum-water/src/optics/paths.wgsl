@@ -141,10 +141,9 @@ fn trace_bodies(origin: vec3<f32>, ray: vec3<f32>, reach: f32, mask: u32) -> Gat
     return best;
 }
 
-// The mapped bed refines grazing intersections that the depth march misses.
-// Accept only the first opaque sample at the crossing's own projected texel,
-// where its reconstructed position agrees with the bed.
-fn trace_bank(origin: vec3<f32>, ray: vec3<f32>, reach: f32) -> GatherHit {
+// Locate the first mapped bank crossing, including a crossing hidden from
+// the camera. The depth march alone can step over it at a grazing angle.
+fn bank_crossing(origin: vec3<f32>, ray: vec3<f32>, reach: f32) -> f32 {
     var previous = 0.06;
     for (var i = 1u; i <= 24u; i++) {
         let phase = f32(i) / 24.0;
@@ -159,21 +158,56 @@ fn trace_bank(origin: vec3<f32>, ray: vec3<f32>, reach: f32) -> GatherHit {
             let q = origin + ray * mid;
             if q.y > reflection_bed(q.xz) { lo = mid; } else { hi = mid; }
         }
-        let bank = origin + ray * hi;
-        let projected = optics_project(bank);
-        let margin = min(projected.xy, 1.0 - projected.xy);
-        if projected.z < 0.0 || min(margin.x, margin.y) < 0.015 { break; }
-        let sample = gather_at(projected.xy);
-        // At a grazing view the texel can cover a strip of ground. Check
-        // height against the bed at the actual sample as well as its distance
-        // along the strip. An occluder at this texel leaves the sky in place.
-        if sample.distance > 0.0 && length(sample.point.xz - bank.xz) < 1.8
-            && abs(sample.point.y - reflection_bed(sample.point.xz)) < 0.22 {
-            return sample;
-        }
-        break;
+        return hi;
     }
-    return empty_hit();
+    return reach;
+}
+
+fn above_bank(point: vec3<f32>) -> f32 {
+    return point.y - reflection_bed(point.xz);
+}
+
+struct BankVisibility {
+    hit: GatherHit,
+    hidden: bool,
+}
+
+// Read radiance only from the first opaque sample at the crossing's own
+// texel. A nearer surface above the bed hides the crossing from the camera.
+fn bank_visibility(bank: vec3<f32>) -> BankVisibility {
+    let projected = optics_project(bank);
+    let margin = min(projected.xy, 1.0 - projected.xy);
+    if projected.z < 0.0 || min(margin.x, margin.y) < 0.015 {
+        return BankVisibility(empty_hit(), true);
+    }
+    let sample = gather_at(projected.xy);
+    if sample.distance == 0.0 { return BankVisibility(empty_hit(), false); }
+    // A grazing texel can cover a strip of bank. Check the reconstructed
+    // height at the sample and bound its separation along that strip.
+    let above = above_bank(sample.point);
+    if length(sample.point.xz - bank.xz) < 1.8 && abs(above) < 0.22 {
+        return BankVisibility(sample, false);
+    }
+    let separation = length(bank - view.camera_xyz_time.xyz) - sample.distance;
+    let hidden = separation > select(1.8, 0.0, above > 0.22);
+    return BankVisibility(empty_hit(), hidden);
+}
+
+// Use neighbouring depths only to feather the visible side of a silhouette.
+// Each ray still reads radiance from its own validated source.
+fn bank_edge(hit: GatherHit) -> f32 {
+    let uv = optics_uv(hit.pixel);
+    let pixel_step = view_aux.viewport_inv_viewport.zw;
+    let offsets = array(vec2(2.0, 0.0), vec2(-2.0, 0.0), vec2(0.0, 2.0), vec2(0.0, -2.0));
+    var confidence = 1.0;
+    for (var i = 0u; i < 4u; i++) {
+        let nearby = gather_at(uv + offsets[i] * pixel_step);
+        if nearby.distance > 0.0 && nearby.distance + 1.0 < hit.distance {
+            let occluder = smoothstep(0.22, 0.7, above_bank(nearby.point));
+            confidence = min(confidence, 1.0 - 0.55 * occluder);
+        }
+    }
+    return confidence;
 }
 
 fn water_optical_paths(
@@ -204,8 +238,19 @@ fn water_optical_paths(
         let segment = vec2(0.06, reach);
         reflected = trace(world, reflected_ray, segment, scenery, false);
         reflection_weight = still;
-        if reflected.edge < 0.995 {
-            bank = trace_bank(world, reflected_ray, reach);
+        let crossing = bank_crossing(world, reflected_ray, reach);
+        if crossing < reach {
+            let visibility = bank_visibility(world + reflected_ray * crossing);
+            if visibility.hidden && reflected.distance > 0.0
+                && dot(reflected.point - world, reflected_ray) >= crossing {
+                reflected = empty_hit();
+            }
+            if reflected.edge < 0.995 {
+                bank = visibility.hit;
+                if bank.distance > 0.0 {
+                    bank.edge *= bank_edge(bank);
+                }
+            }
         }
         scene_hit = true;
     }
@@ -215,7 +260,7 @@ fn water_optical_paths(
         let uv = optics_uv(bank.pixel);
         let margin = min(uv, 1.0 - uv);
         let edge = smoothstep(0.015, 0.14, min(margin.x, margin.y));
-        let fade = edge * reflection_weight * (1.0 - smoothstep(0.75 * reach, reach, dist));
+        let fade = min(bank.edge, edge) * reflection_weight * (1.0 - smoothstep(0.75 * reach, reach, dist));
         outgoing = mix(sky, fresnel * hit_light(bank), fade);
     }
     if reflected.distance > 0.0 {
