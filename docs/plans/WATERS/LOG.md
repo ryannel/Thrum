@@ -885,3 +885,9 @@
   independent inspection confirmed the matched approach, peel, connected swash, retreating lace and
   handoff. All six Chrome motion receipts advance throughout, with zero omissions or faults.
   [Inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/chrome-matched-inspection.md).
+
+- 2026-11-25 The updated WP13.5 1 km cue is visible in both winds. Three nearer Metal views of the
+  specified gale pair show a taller outer face and, from the reverse view, a shallow inner ridge. The
+  inner ridge already carries whitewater before the diagnostic event, so its first white remains
+  ambiguous. The builder and an independent inspection reached the same result.
+  [Nearer views and receipts](../../../.orchestrate/evidence/WATERS/WP13/near-gale-set-inspection.md).
