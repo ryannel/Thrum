@@ -76,7 +76,7 @@ def window_arm(output, binary, env, route, name, *, enabled=True, load=0, therma
                   THRUM_GOVERNOR_LOAD=str(load), THRUM_GOVERNOR_ROUTE=str(route_path),
                   THRUM_GOVERNOR_RECORD="thermal" if thermal else "observed",
                   THRUM_MAC_TRANSITION=str(directory), THRUM_MAC_TRANSITION_ARM="baseline",
-                  THRUM_V1_FRAMES="720" if enabled and load else "520")
+                  THRUM_V1_FRAMES="1440" if enabled and load else "1040")
     with (directory / "game.log").open("w") as log:
         result = subprocess.run([str(binary)],
                                 cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,
@@ -88,7 +88,8 @@ def window_arm(output, binary, env, route, name, *, enabled=True, load=0, therma
         raise ValueError(f"wrong running Metal target in {directory}")
     rows = read_rows(directory / "frames.jsonl")
     display = read_rows(directory / "display.jsonl")
-    if not rows or not display or rows[-1]["world_tick"] < LOAD[1] + 180:
+    route_end = route["origin_tick"] + route["keys"][-1]["tick"]
+    if not rows or not display or rows[-1]["world_tick"] < max(route_end, LOAD[1] + 180):
         raise ValueError(f"Metal window did not complete the route in {directory}")
     if any(tuple(row["surface"]) != LIVE_EXTENT for row in rows):
         raise InvalidDisplayEnvironment(

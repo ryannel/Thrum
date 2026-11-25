@@ -333,10 +333,12 @@ impl GovernorHost {
             };
             let ns = |value| Duration::try_from_secs_f64(value * 1e-9).ok();
             let elapsed = ns(span + segment)?;
-            // The native owner records this frame before kicking its GPU
-            // work. Both costs use the frame's delivery headroom.
+            // The native owner can encode the next frame while the GPU
+            // executes the previous one. The slower stage sets its delivery
+            // rate. Missed display opportunities still account for stalls
+            // when that overlap cannot be achieved.
             #[cfg(not(target_arch = "wasm32"))]
-            let elapsed = elapsed.saturating_add(sample.render_cpu);
+            let elapsed = elapsed.max(sample.render_cpu);
             let scale_dependent = ns(scale_work)?;
             Some(FrameCost {
                 elapsed,

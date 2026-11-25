@@ -293,6 +293,8 @@ impl TransitionProof {
                 "observation_ns": sample.observation.as_nanos(),
                 "render_extent": sample.render_extent,
                 "gpu_ns": sample.gpu_pass_ns.as_ref().map(|gpu| gpu.sum() + sample.gpu_present_ns.unwrap_or_default()),
+                "gpu_span_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.timed_pass_span_nanoseconds()),
+                "render_cpu_ns": sample.render_cpu.as_nanos(),
                 "debug_load_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.passes().iter().find(|pass| pass.name.ends_with("debug load")).map(|pass| pass.nanoseconds)),
                 "quality": sample.governor.as_ref().map(governor_record),
             })).collect::<Vec<_>>();
