@@ -942,8 +942,8 @@
           "statement": "Under each of the four presets, from 2 m and from 40 m, at noon and at a 15\u00b0 Sun, the sky reads as that sky to the horizon: clear has no cloud; fair has scattered cumulus; broken has connected lumpy banks with irregular gaps and bright gap edges; overcast is a continuous low ceiling with soft relief and the Sun hidden.",
           "inspect": "Capture `fixed` stills for each preset, height and Sun. Judge contact sheets by preset, then native-size crops overhead, in the middle distance and at the horizon.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.1-metal-appearance.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
