@@ -910,3 +910,7 @@
   take first. The diagnostic, the fix it names and the `BLOCKED` stop are owed only if that take shows the patch.
   If it shows none, the check and the inspection settle the item and the ask is met with no diagnostic. The plan
   file's WP20 note says the same. WP20.2 and the design are unchanged.
+- 2026-11-25 WP13.12 passed on a fresh paired 1440p Metal record. All 57 crossed pass-growth comparisons
+  have investigations, including 35 against positive baselines below 0.05 ms. Replaying the reviewed
+  input restored all 12 missing comparisons in its audit. The latest cache holds 26,752,032 bytes.
+  [Record, replay and query investigation](../../../.orchestrate/evidence/WATERS/WP13/positive-baseline-cost-inspection.md).
