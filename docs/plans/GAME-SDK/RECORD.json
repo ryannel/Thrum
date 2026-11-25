@@ -1,27 +1,14 @@
 {
   "module": "GAME-SDK",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
-    "commit": "c01f071c872f6b1f2bb064a6da06b5bb0b5f4db5",
-    "hash": "90d789090e5e5d848d50a678194645864992c4cc93ad76cc32a7ef3a29045c7a",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 145806,
-      "cached": 3160832,
-      "output": 11881,
-      "turns": 1
-    },
-    "at": "2026-11-25T21:22:34Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "dcf039615e8717bbb97b302c79728c930ca3d68846207edc9f7f84ee84be1082",
+    "after": [
+      ".orchestrate/evidence/GAME-SDK/design-review-1.md",
+      ".orchestrate/evidence/GAME-SDK/design-review.md"
+    ],
+    "at": "2026-11-25T21:37:02Z"
   },
   "work_packages": {
     "WP1": {
@@ -34,12 +21,12 @@
       }
     },
     "WP2": {
-      "definitions": "b9f8e90c7431ea8e31d4a1d7f074015c982bdef962480902421a90d6ee73a081",
+      "definitions": "d617eaf4d2b96c9c8c05a2a721eaadeea9194f9ab32ea13129998704c58756d9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 15 Must Fix",
-        "at": "2026-11-25T21:15:14Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix ",
+        "at": "2026-11-25T21:37:02Z"
       },
       "ends_stretch": true
     }
@@ -52,11 +39,15 @@
     {
       "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 15 Must Fix findings.",
       "at": "2026-11-25T21:15:14Z"
+    },
+    {
+      "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it. Also record an owner decision, 25 November 2026: asked whether the first release should keep the planner's default (2D queries and sprite animation in; rigid bodies, skeletal animation and audio out) or add physics and audio, the owner answered \"Planner's default\". Write it into the design and plan as decided rather than open, and remove it from what is left for the owner. The owner still approves the whole design before any work package is built.",
+      "at": "2026-11-25T21:37:02Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T21:15:14Z"
+    "at": "2026-11-25T21:37:02Z"
   },
   "design_history": [
     {
@@ -81,6 +72,29 @@
         "turns": 1
       },
       "at": "2026-11-25T20:52:20Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
+      "commit": "c01f071c872f6b1f2bb064a6da06b5bb0b5f4db5",
+      "hash": "90d789090e5e5d848d50a678194645864992c4cc93ad76cc32a7ef3a29045c7a",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 145806,
+        "cached": 3160832,
+        "output": 11881,
+        "turns": 1
+      },
+      "at": "2026-11-25T21:22:34Z"
     }
   ]
 }
