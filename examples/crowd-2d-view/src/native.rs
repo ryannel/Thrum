@@ -140,7 +140,7 @@ fn capture(runtime: &mut Offscreen<CrowdView>, mode: &str, output: &Path) -> Res
     let mut opportunities = Vec::new();
     let mut rejected = 0;
     let interval = Duration::from_nanos(16_666_667);
-    let opportunities_count = if realtime { 1225 } else { 1 };
+    let opportunities_count = if realtime { 1321 } else { 1 };
     for index in 0..opportunities_count {
         let target = start + interval * index;
         while Instant::now() < target
@@ -161,7 +161,8 @@ fn capture(runtime: &mut Offscreen<CrowdView>, mode: &str, output: &Path) -> Res
             runtime.step_at(Duration::from_nanos(360 * 16_666_667))?
         };
         opportunities.push(json!({"request_ns": now.as_nanos(), "submitted": report.submitted,
-            "submission": report.submitted.then(|| runtime.last_submission()).flatten(), "tick": report.tick}));
+            "submission": report.submitted.then(|| runtime.last_submission()).flatten(), "tick": report.tick,
+            "overload": report.overload}));
         drain(runtime, &writer, &mut frames, &mut rejected)?;
     }
     let expected = opportunities

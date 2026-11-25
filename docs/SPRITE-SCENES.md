@@ -49,6 +49,17 @@ frame rows for a cursor, damage numbers or other presentation marks. Frame rows 
 do not interpolate. The example follows a player by mixing its adjacent published positions at the frame alpha.
 [Tick-page mapping and camera](../examples/crowd-2d-view/src/scene.rs)
 
+To try a frame row in the Crowd example, change the final argument to `SpriteScene::new` from `0` to `1`.
+Then replace `rows: &[]` in the scene's `SpriteFrame` with `rows: &MARKS`, using the existing glow frame.
+
+```rust
+const MARKS: [SpriteRow; 1] = [SpriteRow {
+    layer: 2,
+    additive: 0.6,
+    ..SpriteRow::new(4, [6.0, 6.0])
+}];
+```
+
 ## Choose order and scale
 
 Layers draw in increasing order. Within a layer world rows sort by value, then stable identity at equal values.

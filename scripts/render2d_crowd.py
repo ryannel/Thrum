@@ -163,8 +163,13 @@ def capture_output(record, source, out, mode):
             package(frame, out / "still.png", width, height)
     else:
         start = images[0]["submit_ns"]
-        if images[-1]["submit_ns"] - start < 20_000_000_000:
-            raise ValueError("submitted realtime images span less than twenty seconds")
+        duration = images[-1]["submit_ns"] - start
+        if duration < 20_000_000_000:
+            raise ValueError(f"submitted realtime images span only {duration * 1e-9:.3f} seconds")
+        if any(row.get("overload") for row in record["opportunities"]):
+            raise ValueError("the realtime authority stopped on overload")
+        if images[-1]["tick"] - images[0]["tick"] < 1200:
+            raise ValueError("less than twenty seconds of actual Crowd replay")
         files = out / "png"
         files.mkdir()
         for row, frame in zip(images, frames, strict=True):
@@ -205,12 +210,18 @@ def run(args):
             modes = ("fixed", "realtime") if target == "mac-metal" else ("realtime",)
             for mode in modes:
                 for close in [False, True]:
-                    extent = (3456, 2234) if mode == "fixed" else (1920, 1080) if target == "mac-metal" else (1280, 720)
+                    extent = (3456, 2234) if mode == "fixed" else (1920, 1080)
                     label = f"{mode}-{'close' if close else 'whole'}"
                     source = scratch / label
                     data = replay(artifact, target, mode, 10000, extent, 0, source, close)
-                    capture_output(data | identity, source, args.output / label, mode)
-                    shutil.rmtree(source)
+                    try:
+                        capture_output(data | identity, source, args.output / label, mode)
+                    except (OSError, ValueError):
+                        args.output.mkdir(parents=True, exist_ok=True)
+                        (args.output / f"{label}-incomplete.json").write_text(json.dumps(data | identity))
+                        raise
+                    finally:
+                        shutil.rmtree(source)
             return
         extents = EXTENTS if costs and target == "mac-metal" else ((1920, 1080),) if costs else ((320, 200),)
         all_runs = []

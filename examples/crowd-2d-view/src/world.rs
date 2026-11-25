@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
 use crowd_2d::{Simulation, frames};
 use thrum_core::{
@@ -28,8 +28,16 @@ impl CrowdWorld {
         Self {
             simulation: Simulation::for_presentation(count, 1),
             exact_steps,
-            clock: TickClock::new(ClockConfig::default(), Duration::ZERO)
-                .expect("default tick clock"),
+            clock: TickClock::new(
+                ClockConfig {
+                    // Realtime capture and a contended renderer can briefly fall behind.
+                    // Keep accepted authority ticks queued; render still limits per-call work.
+                    max_queued_ticks: NonZeroU32::new(32).expect("nonzero queue"),
+                    ..ClockConfig::default()
+                },
+                Duration::ZERO,
+            )
+            .expect("valid Crowd clock"),
             overload: None,
         }
     }

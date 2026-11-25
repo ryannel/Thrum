@@ -161,7 +161,7 @@ async function run({ action, count, extent, ticks, close, run_id }) {
         expected += Number(submitted);
         opportunities.push({ request_ns: Math.round(elapsed * 1e6), submitted });
         while (await image()) {}
-      } while (elapsed < 20_400);
+      } while (elapsed < 22_000);
       const deadline = performance.now() + 15_000;
       while (samples.length < expected && performance.now() < deadline) {
         if (!await image()) await yieldToBrowser();
