@@ -216,19 +216,7 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
         }
         let graph = control.scene_graph().expect("inspect the prepared graph");
         let names = graph.pass_names().collect::<Vec<_>>();
-        let attachment_storage: Vec<_> = graph
-            .attachment_storage
-            .iter()
-            .map(|entry| entry.reason)
-            .collect();
-        println!(
-            "{recipe}: 3D control snapshot: {} transient slots; {attachment_storage:?}; {} pipelines; {:?}",
-            graph.transient_slots,
-            control
-                .pipeline_creation_count()
-                .expect("creation counters"),
-            control.storage_report(),
-        );
+        report_control_inventory(recipe, &graph, &control);
 
         for pass in [
             "atmosphere sky view",
@@ -270,6 +258,31 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
             "{recipe}: 2D/3D HAL buffers, textures, queries {counts:?}/{counts3:?}; 3D named passes {names:?}"
         );
     }
+}
+
+#[cfg(feature = "creation-counters")]
+#[expect(
+    clippy::print_stdout,
+    reason = "the proof compares the 3D inventory with the pre-change run"
+)]
+fn report_control_inventory(
+    recipe: &str,
+    graph: &thrum_render::graph::CompiledGraph,
+    control: &fixture::Host,
+) {
+    let pipelines = control
+        .pipeline_creation_count()
+        .expect("creation counters");
+    let storage = control.storage_report();
+    let attachment_storage: Vec<_> = graph
+        .attachment_storage
+        .iter()
+        .map(|entry| entry.reason)
+        .collect();
+    println!(
+        "{recipe}: 3D control snapshot: {} transient slots; {attachment_storage:?}; {} pipelines; {:?}",
+        graph.transient_slots, pipelines, storage,
+    );
 }
 
 #[cfg(feature = "creation-counters")]
@@ -637,10 +650,10 @@ fn retained_3d_graphs_match_the_starting_commit() {
 #[test]
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 fn float_mode_retires_the_8_bit_attachment_and_only_runs_two_plain_passes() {
-    generation_prepares_only_the_sprite_and_output_resources();
     use thrum_render::{runtime::CaptureLimits, synthetic::CaptureSource};
 
     const FLOAT_PASSES: [&str; 2] = ["sprites", "V1 surface present"];
+    generation_prepares_only_the_sprite_and_output_resources();
     for recipe in fixture::RECIPES {
         let Some(thrum_test_support::Opened {
             device,
