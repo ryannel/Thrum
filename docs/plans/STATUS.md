@@ -304,7 +304,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback (APPLE-PRESENTATION WP8): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- APPLE-PRESENTATION's design: Design Ready for Review · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
 - Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running (WATERS WP19): Not Started · [plan](WATERS/PLAN.md)
 - While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed (CLOUDS WP19): Not Started · [plan](CLOUDS/PLAN.md)
 - The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match (SESSION WP7): Ready for Review · [plan](SESSION/PLAN.md) · [latest review](../../.orchestrate/evidence/SESSION/WP7-review.md)
@@ -431,7 +431,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 | WP8 of 16 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 | Design Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
