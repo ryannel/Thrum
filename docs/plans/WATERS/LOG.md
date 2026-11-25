@@ -1108,3 +1108,6 @@
   cut scratch, 8,388,672 bytes with the fleet query.
   [Smaller-extent run](../../../.orchestrate/evidence/WATERS/WP19/review-fix-sand-96.json) ·
   [Paired cost record](../../../.orchestrate/evidence/WATERS/WP19/review-fix-surf-cost.json).
+- 2026-11-25 WP22. The running surf proof module now uses the same macOS guard as its driver and helpers.
+  WP22.1 passed on the Mac. Cargo type-checked all workspace targets, including every water scene test target,
+  for both Linux and Windows. [Cross-target record](../../../.orchestrate/evidence/WATERS/WP22/cross-target.md).
