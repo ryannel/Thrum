@@ -192,6 +192,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - RENDER-2D assumes: The packed crowd proofs cover 2,000, 5,000 and 10,000 moving sprites. Engine capture and frame ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: SWARM art can use linear-light blending. The output half handles SDR clipping and receives ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: On an EDR display a 2D colour above white is shown as it is up to the display's headroom and ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: A 2D game gets the EDR surface only when it says so, with the one declaration a 3D game makes. The ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: Stable overlap matters more than exact height order for sprites within the sort band. ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: The lead treats a visible pulse in fine patterns during ordinary scrolling as a shipped-game ([plan](RENDER-2D/PLAN.md))
 - SESSION assumes: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target. ([plan](SESSION/PLAN.md))
