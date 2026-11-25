@@ -891,3 +891,8 @@
   inner ridge already carries whitewater before the diagnostic event, so its first white remains
   ambiguous. The builder and an independent inspection reached the same result.
   [Nearer views and receipts](../../../.orchestrate/evidence/WATERS/WP13/near-gale-set-inspection.md).
+
+- 2026-11-25 Measured the background contrast around the submitted reverse-view gale onsets. The inner
+  patch is already 39–42% neutral bright before the expected onset and about 43% across it. In the
+  surface shader the breaker face has to exceed the overlapping transported lace to change coverage.
+  [Submitted-pixel diagnostic](../../../.orchestrate/evidence/WATERS/WP13/gale-onset-brightness.log).
