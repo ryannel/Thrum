@@ -516,7 +516,7 @@
         {
           "verdict": "fail",
           "commit": "ab68f163c698339caddf3670456ac737bd42af54",
-          "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/WP3-review-3.md",
           "items": {
             "WP3.12": "pass",
             "WP3.1": "pass",
@@ -554,6 +554,48 @@
             "turns": 1
           },
           "at": "2026-11-24T23:55:39Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "5c54a8c64d9be022675ee84ae1be990e9ce8578b",
+          "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
+          "items": {
+            "WP3.12": "pass",
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "fail",
+            "WP3.9": "pass",
+            "WP3.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Metal 2\u00d7 stripes ripple at texel-edge crossings",
+              "item": "WP3.8",
+              "different": "The previous contrast pulse is resolved. The new stagger displaces neighbouring parts of the same straight stripe at different times, producing a one-pixel ripple while contrast stays high.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 101949,
+            "cached": 3174912,
+            "output": 10034,
+            "turns": 1
+          },
+          "at": "2026-11-25T00:55:40Z"
         }
       ],
       "authorised": {

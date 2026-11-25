@@ -400,10 +400,10 @@
           "statement": "On Metal through a slow diagonal pan and a fast scroll at 1.5\u00d7, 2\u00d7 and 2.37\u00d7, the test card's original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the existing 1920\u00d71080 card, ground and rotating field with T2 engine capture in realtime mode, at 0.05 and 3 output pixels per simulation tick in X with the 0.53 diagonal Y component at each scale. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's 1.5\u00d7 take to locate the offending patches.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/metal-contrast/motion.md",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP3.9",
@@ -426,17 +426,17 @@
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 1,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Pixel stability as in Celeste. At normal viewing size and recorded speed, fine lines and checks stay distinct and their contrast holds during the pan. Edges as clean as in Hades and Hollow Knight, with no fringe, halo, neighbouring sheet colour or gap between ground tiles. Judge the running output by eye.",
       "diagnosed_for_planner_finding": true,
       "findings": [
         {
-          "name": "Metal 2\u00d7 pattern contrast pulses during the pan",
+          "name": "Metal 2\u00d7 stripes ripple at texel-edge crossings",
           "item": "WP3.8",
-          "different": "The earlier dark flash in mean checker brightness is resolved. The remaining pulse is a repeated loss of contrast between the light and dark marks while both remain visible.",
+          "different": "The previous contrast pulse is resolved. The new stagger displaces neighbouring parts of the same straight stripe at different times, producing a one-pixel ripple while contrast stays high.",
           "repeat": false
         }
       ]
