@@ -1100,6 +1100,30 @@
   the first drain of a later tick. A held result that passes the maximum age is let go with no mailbox
   count, since the game counts the fallback it takes, which keeps the guard's count of one at tick 10.
   WP21.2 has both as cases and its check runs the guard unchanged.
+- 2026-11-25 Planner, last round on WP21. The second design review
+  ([review](../../../.orchestrate/evidence/WATERS/design-review.md)) read the revision before the six
+  entries above were merged, so it found all six open. Each fix was checked against its finding in the
+  shader, the mailbox and the guards, and four were changed further. WP21.2's statement and check
+  changed; no other item did.
+- 2026-11-25 Must Fix 1, checked, unchanged: `cache_shore_face` fills the lattice the design names, and
+  WP21.6's pairs at the 1 km and handoff views fail an empty lattice on Metal and in Chrome. The Chrome
+  script already takes `fixed` stills at its `offshore` and `handoff` views.
+- 2026-11-25 Must Fix 2, checked, unchanged: `reset_readback` runs where the query's device state is
+  rebuilt, and WP21.2's seventh case drains after it.
+- 2026-11-25 Must Fix 3, checked, unchanged: no line of the design, the quality bar or an item sets a
+  time for a view.
+- 2026-11-25 Must Fix 4: the design now states the ring-edge blend as `fill_surf_cache` makes it, the
+  model's displacement at the place rounded down and up in units of twice the spacing, mixed by the
+  larger fractional part, so WP21.1's expected value is one a test can compute.
+- 2026-11-25 Must Fix 5: risk 33 still said "read once a node". It now says once for each bed cell and
+  stage a node's sheet reads, as the design and the cost account do.
+- 2026-11-25 Must Fix 6: "one result a tick, new or held" broke a second guard. WP19.6's test drains
+  tick 4, publishes a result and takes it at a second drain of tick 4. The rule is now narrower: a held
+  result is handed only in a tick whose drains have handed the body nothing, and new results keep
+  today's rules. The second drain of tick 5 in WP5.1's guard still hands nothing and changes no count.
+  WP19.6's test also ends on an empty drain at tick 8, which now hands the tick-7 answer again, held;
+  the design names that one assertion, and WP21.2's check runs both guards. Both pass today under the
+  `gpu` lock. A held reply is marked, so the island and the running run count it apart.
 - 2026-11-25 WP19 review follow-up. The running proof now samples only the current drain at the island's sand
   camera and counts a fallback at each station the island would send to the conformance model. At 96 × 54,
   open water was within two ticks for 2.33% of stations. One view at a time took 117.9 ms median to complete

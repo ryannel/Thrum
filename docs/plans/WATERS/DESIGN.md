@@ -1142,8 +1142,8 @@ fallback already gives from the game's own map.
 Results come back through a ring of mapped buffers one to two ticks later. A result older than the declared
 maximum is unavailable, and the game falls back to the conformance model in `thrum-water-model` (the map, and the long waves at the body's gain:
 on a lake, level water with its current)
-and counts it. A hitch ages answers the same way: at a drain that brings a body no newer result, the mailbox
-hands the game the last one again, carried to that tick, until it passes the maximum age
+and counts it. A hitch ages answers the same way: in a tick whose drain brings a body no newer result, the
+mailbox hands the game the last one again, once, carried to that tick, until it passes the maximum age
 ([the held answer](#a-surf-view-a-running-game-can-afford-wp21)). No path waits on the GPU: a blocking map or poll is a defect,
 and a counter proves there is none. The contract is the same where the dispatch makes cuts: with every float
 of the example in the breakers of a gale, answers still reach the game one to two ticks later and none grows
@@ -2195,8 +2195,9 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
     (WP21.3). Early sign: WP13.12's record, 97 ms for the pass at the beach in a gale,
     which tripped the refresh-interval wire and was left; then WP19's control arm, 4% of open-water answers
     within two ticks from the sand. The designed remedies do each kind of work as often as it changes and
-    leave the sheet as it is: the transform's table read once a node, both presentations from one pass over
-    the components, and no evaluation of a node that nothing in view reads
+    leave the sheet as it is: the transform's table read once for each bed cell and stage a node's sheet
+    reads, both presentations from one pass over the components, and no evaluation of a node that
+    nothing in view reads
     ([WP21](#a-surf-view-a-running-game-can-afford-wp21)). Beyond them, each with the surf judged again by
     eye: narrower or coarser surf rings, a sum on a coarser lattice, a cache made on alternate frames. The
     wrong fixes are a smaller extent or a far camera, which do not shrink a pass counted in nodes, a lower
@@ -2475,9 +2476,12 @@ limits as on Metal.
 
 - **The mesh's nodes.** An interior node holds the model's forward sheet at its rest place, as WP13.1
   holds it. A node on a ring's outer edge holds the blend that joins the ring to the coarser one outside
-  it: the model's sheet at the two nearest nodes of twice the ring's spacing, one to either side of it,
-  mixed by its place between them, and the sheet itself where it stands on such a node. That is so at
-  both presentations. It is not the model's sheet at the node's own rest place. On a 32 m crest of 0.5 m
+  it, as `fill_surf_cache` makes it today. Take the node's place in units of twice the ring's spacing.
+  Round it down on both axes for one coarser node and up on both for the other. The node's displacement
+  is the model's displacement at those two rest places, mixed by the larger of the two fractional parts:
+  half and half between two coarser nodes, and the sheet's own displacement where the node stands on
+  one. That is so at both presentations. It is not the model's sheet at the node's own rest place.
+  On a 32 m crest of 0.5 m
   amplitude the mean of the heights 4 m to either side lies 0.146 m under the crest, ten times
   WP13.1's tolerance of 0.015 m, which is why WP13.1's guard leaves those nodes out. WP21.1 compares
   them with the blend of the model.
@@ -2535,14 +2539,25 @@ the machine's ordinary load shows none. That is not [the contract](#bodies-and-t
 result is unavailable when it is older than the declared maximum and a hitch ages answers. The mailbox
 keeps it:
 
-- **Once a tick.** A body is handed one result for a tick, new or held, and no more. The first drain of
-  a tick that has no undelivered result it can use for a live body hands the game the newest result
-  already delivered for that body again. Each height is carried from its use tick to the drained tick by
-  its rate of change, as a late answer's is, once and never on top of an earlier carry, and wet or dry
-  is decided again from the carried height. A second drain of the same tick hands nothing for that body
-  and changes no count, as the mailbox behaves today: WP5.1's guard drains a tick-3 post at tick 5,
-  drains tick 5 again and gets nothing, and it stands as written. The held answer is that result at the
-  first drain of tick 6, if nothing newer can be used then.
+- **Once a tick, and only in a tick that gave the body nothing.** A drain hands a live body the newest
+  result already delivered for it again when two things hold: the drain has no undelivered result the
+  body can use, and no drain of that tick has handed the body anything, new or held. Each height is
+  carried from its use tick to the drained tick by its rate of change, as a late answer's is, once and
+  never on top of an earlier carry, and wet or dry is decided again from the carried height. The reply
+  says it is a held one, so the island and the running run count it apart from a delivery. A later
+  drain of the same tick, with nothing published since, hands nothing for that body and changes no
+  count, whether the first handed a new result or a held one. That is how the mailbox behaves today:
+  WP5.1's guard drains a tick-3 post at tick 5, drains tick 5 again and gets nothing, and it stands as
+  written. The held answer is that result at the first drain of tick 6, if nothing newer can be used
+  then. New results are handed by the rules they have today, which this does not change: WP19.6's
+  guard drains tick 4, publishes a result and takes it at a second drain of tick 4, and that stands
+  too.
+- **One existing assertion changes.** WP19.6's guard ends by draining tick 8, one tick after the
+  restored timeline's first answer, and expects nothing. Under this rule that drain hands the tick-7
+  answer again, held: the new endpoint's, with a calm wake. The guard's claim there is that neither
+  result of the old timeline is ever handed over, and the builder keeps it by asserting whose answer
+  the drain hands. Any other test that expects an empty drain one tick after a delivery is brought to
+  the rule the same way, with its claim kept.
 - **To the maximum age.** When the held result's post is more than the maximum age behind the drained
   tick, the mailbox lets it go and the drain hands nothing for the body. No count of the mailbox's
   changes, because the result was counted when it was first delivered. The float falls back, and the
@@ -2565,7 +2580,8 @@ The game does not change: the island takes what its drain gives it, and a predic
 from the station still sends that station to the fallback.
 
 **The proofs.** WP21.2 holds the held answer on the CPU, with results the test publishes, since the rule
-is the mailbox's own and needs no device, and runs WP5.1's Metal guard beside it, unchanged. WP21.3 is
+is the mailbox's own and needs no device, and runs the two Metal guards that drain a tick twice beside
+it: WP5.1's unchanged, and WP19.6's with its last drain's assertion as above. WP21.3 is
 WP19.3's control arm taken by itself from the sand, `water_cost.py running --scene surf --arm open-water`,
 at the extent WP19.3 will draw. It is decided by delivery and by nothing timed: of every station posted,
 nine in ten first handed over within two ticks, a station never handed over counting as late, and no
