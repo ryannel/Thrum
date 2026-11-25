@@ -17,7 +17,8 @@ import time
 
 from capture_v1_runtime import digest
 from cloud_cadence import (
-    ARMS, HZ, InvalidMeasurement, NS, OccludedMeasurement, PERIOD, analyze_arm, differences, interval,
+    ARMS, HZ, IncompleteWitness, InvalidMeasurement, NS, OccludedMeasurement, PERIOD, analyze_arm,
+    differences, interval,
     require_unoccluded, window_conditions,
 )
 from mac_m2_presented import table
@@ -426,7 +427,7 @@ def run_wind(command, output, *, resume=False):
         destination = (output or WORKING / work_package / f'{command}-{stamp}').resolve()
         try:
             record = series(destination, diagnostics=diagnostics, resume=resume)
-        except (OccludedMeasurement, RecordingTimeout) as error:
+        except (OccludedMeasurement, RecordingTimeout, IncompleteWitness) as error:
             if attempt == attempts:
                 raise
             print(f'{error}. Rejected series: {destination / "series.json"}. '

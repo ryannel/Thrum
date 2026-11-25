@@ -804,3 +804,8 @@
   whole default series, and it cycles the display during setup if a wake alone leaves the idle flag set.
   [Window order](../../../.orchestrate/evidence/CLOUDS/WP19/merged-retry-window-order.log) ·
   [Rejected check](../../../.orchestrate/evidence/CLOUDS/WP19/merged-cadence-retry.log)
+- Once the panel was available, the next check recorded three valid arms. The fourth had no occlusion,
+  but drawable 1473 had a game submission and no OS presented-time row inside the measured interval.
+  This incomplete witness now restarts the whole default series. The rejected trace and its unmatched
+  submission remain available for review.
+  [Incomplete witness](../../../.orchestrate/evidence/CLOUDS/WP19/cadence-20261125T195654.460494Z/03-10ms-1x/witness.json)

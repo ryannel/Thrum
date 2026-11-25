@@ -24,7 +24,7 @@ class WindAttribution(unittest.TestCase):
             ],
             'unmatched': [{'drawable': 1}, {'drawable': 7}],
         }
-        with self.assertRaisesRegex(InvalidMeasurement, 'unmatched drawable 4'):
+        with self.assertRaisesRegex(cadence.IncompleteWitness, 'unmatched drawable 4'):
             cadence.require_complete_observations(witness, Decimal(0), Decimal(20))
         witness['drawables'].insert(2, {'drawable': 4, 'presented_media_ns': '10'})
         cadence.require_complete_observations(witness, Decimal(0), Decimal(20))
@@ -182,6 +182,19 @@ class WindRecovery(unittest.TestCase):
         with (
             patch.object(capture, 'series', side_effect=[
                 capture.RecordingTimeout('02-off'), {'cloud_runs': []},
+            ]) as collect,
+            redirect_stderr(StringIO()),
+            redirect_stdout(StringIO()),
+        ):
+            self.assertEqual(capture.run_wind('cadence', None), 0)
+        first, second = collect.call_args_list
+        self.assertNotEqual(first.args[0], second.args[0])
+        self.assertFalse(second.kwargs['resume'])
+
+    def test_cadence_restarts_after_an_unmatched_observation(self):
+        with (
+            patch.object(capture, 'series', side_effect=[
+                cadence.IncompleteWitness('unmatched drawable 1473'), {'cloud_runs': []},
             ]) as collect,
             redirect_stderr(StringIO()),
             redirect_stdout(StringIO()),

@@ -32,6 +32,10 @@ class OccludedMeasurement(InvalidMeasurement):
     """The window or its surface reported occlusion during a run."""
 
 
+class IncompleteWitness(InvalidMeasurement):
+    """An unmatched observation could affect the measured interval."""
+
+
 def losses(presented, start, end, period):
     """A stall is the unfilled refresh periods between two OS-presented frames."""
     if not presented or presented[0] > start or presented[-1] < end:
@@ -135,7 +139,7 @@ def require_complete_observations(witness, start, end):
             continue
         if index and Decimal(frames[index - 1]['presented_media_ns']) >= end:
             continue
-        raise InvalidMeasurement(f'unmatched drawable {ordinal} can affect the measured interval')
+        raise IncompleteWitness(f'unmatched drawable {ordinal} can affect the measured interval')
 
 
 def present_calls(rows):
