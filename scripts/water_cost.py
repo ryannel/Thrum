@@ -506,6 +506,25 @@ def surf_cache_investigation(record, table, wp13):
     }
 
 
+def surf_pass_investigation(label, phase, arms):
+    samples_by_arm = {}
+    for name, arm in arms.items():
+        samples = [ms for frame in arm['frames'] if frame['tick_frame'] == (phase == 'step')
+                   for key, ms in frame['passes_ms'].items() if key.rsplit(': ', 1)[-1] == label]
+        if samples:
+            samples_by_arm[name] = dict(count=len(samples), low_ms=min(samples),
+                                        median_ms=statistics.median(samples), high_ms=max(samples))
+    if label == 'water body query':
+        finding = 'The paired arms queried the same 48 stations. The surf arm also cut the surface; see query node counts.'
+    elif label == 'whitewater':
+        finding = 'The surf arm evaluates transformed shore birth. Compare the sampled spread with the same-forcing whitewater arm.'
+    elif set(samples_by_arm) == set(arms):
+        finding = 'The pass layout is common to all three arms. Timing spreads show the native counters under shared load; there is no isolated pass substitution.'
+    else:
+        finding = 'The pass runs in the two water arms. The paired samples quantify the increase with surf enabled; the shared run does not isolate contention.'
+    return dict(arms=samples_by_arm, disposition=finding)
+
+
 def measure_surf():
     record = measure_surf_arm('surf-cost')
     prior = json.loads(SURF_HISTORY.read_text())
@@ -566,7 +585,10 @@ def measure_surf():
                 'arms': {name: {k: rows[phase][k] for k in ('gpu_ms', 'completion_upper_ms')}
                          for name, rows in table.items()},
                 'surf_cache_ms': treatment['passes_ms'].get('surf field cache'),
-                'disposition': 'The surf-disabled arm isolates the added field cache and surface path. The water-absent arm keeps the same sky and opaque ground. The completion bracket includes the fixture’s synchronous wait.',
+                'largest_passes': {name: sorted(rows[phase]['passes_ms'].items(),
+                                                key=lambda item: item[1], reverse=True)[:5]
+                                   for name, rows in table.items()},
+                'disposition': 'Compare the same-view completion brackets by arm. Device pass medians report individual timings and can overlap. The water-absent arm keeps the same sky and opaque ground.',
             })
         if any(rows[phase]['timestamped_samples'] != rows[phase]['samples'] for rows in table.values()):
             investigations.append({
@@ -583,7 +605,7 @@ def measure_surf():
                     investigations.append({
                         'wire': '25 percent pass increase', 'phase': phase, 'pass': label,
                         'baseline': baseline, 'before_ms': before, 'current_ms': elapsed,
-                        'disposition': 'Use the same-forcing paired arms to distinguish a surf cost from the earlier forcing and shared machine load.',
+                        **surf_pass_investigation(label, phase, arms),
                     })
     if query_frames['surf']['gpu_ms'] > 0.1:
         investigations.append({
@@ -602,6 +624,8 @@ def main():
     parser.add_argument('--scene', choices=list(RECORDS), required=True)
     parser.add_argument('--arm', choices=['open-water'])
     args = parser.parse_args()
+    if args.arm and args.action != 'running':
+        parser.error('--arm is only available for a running proof')
     if args.action == 'running':
         if args.scene != 'surf':
             parser.error('running is only available for surf')
