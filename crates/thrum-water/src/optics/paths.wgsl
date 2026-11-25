@@ -20,18 +20,26 @@ fn empty_hit() -> GatherHit {
     return GatherHit(vec3(0.0), 0.0, vec2(0u), 0.0);
 }
 
+fn gather_depth(pixel: vec2<u32>) -> f32 {
+    if !optics_source(pixel) { return 0.0; }
+    return textureLoad(gathered_distance, pixel, 0).x;
+}
+
+fn gather_point(pixel: vec2<u32>, distance: f32) -> vec3<f32> {
+    let near_point = view_aux.inverse_view_proj * optics_ndc(optics_uv(pixel), 1.0);
+    let camera = view.camera_xyz_time.xyz;
+    let direction = normalize(near_point.xyz - camera * near_point.w);
+    return camera + direction * distance;
+}
+
 fn gather_at(uv: vec2<f32>) -> GatherHit {
     if any(uv < vec2(0.0)) || any(uv >= vec2(1.0)) { return empty_hit(); }
     let pixel = vec2<u32>(uv * view_aux.viewport_inv_viewport.xy);
-    if !optics_source(pixel) { return empty_hit(); }
-    let distance = textureLoad(gathered_distance, pixel, 0).x;
+    let distance = gather_depth(pixel);
     if distance <= 0.0 { return empty_hit(); }
-    let near_point = view_aux.inverse_view_proj * optics_ndc(optics_uv(pixel), 1.0);
-    let camera = view.camera_xyz_time.xyz;
-    let dir = normalize(near_point.xyz - camera * near_point.w);
     let sides = min(uv, 1.0 - uv);
     let edge = smoothstep(0.0, 0.05, min(sides.x, sides.y));
-    return GatherHit(camera + dir * distance, distance, pixel, edge);
+    return GatherHit(gather_point(pixel, distance), distance, pixel, edge);
 }
 
 fn hit_light(hit: GatherHit) -> vec3<f32> {
@@ -170,6 +178,11 @@ fn above_bank(point: vec3<f32>) -> f32 {
 struct BankVisibility {
     hit: GatherHit,
     hidden: bool,
+    occluded: bool,
+}
+
+fn bank_occluder(height: f32, separation: f32) -> bool {
+    return height > 0.5 && separation > 1.0;
 }
 
 // Read radiance only from the first opaque sample at the crossing's own
@@ -178,36 +191,134 @@ fn bank_visibility(bank: vec3<f32>) -> BankVisibility {
     let projected = optics_project(bank);
     let margin = min(projected.xy, 1.0 - projected.xy);
     if projected.z < 0.0 || min(margin.x, margin.y) < 0.015 {
-        return BankVisibility(empty_hit(), true);
+        return BankVisibility(empty_hit(), true, false);
     }
     let sample = gather_at(projected.xy);
-    if sample.distance == 0.0 { return BankVisibility(empty_hit(), false); }
+    if sample.distance == 0.0 { return BankVisibility(empty_hit(), false, false); }
     // A grazing texel can cover a strip of bank. Check the reconstructed
     // height at the sample and bound its separation along that strip.
     let above = above_bank(sample.point);
     if length(sample.point.xz - bank.xz) < 1.8 && abs(above) < 0.22 {
-        return BankVisibility(sample, false);
+        return BankVisibility(sample, false, false);
     }
     let separation = length(bank - view.camera_xyz_time.xyz) - sample.distance;
     let hidden = separation > select(1.8, 0.0, above > 0.22);
-    return BankVisibility(empty_hit(), hidden);
+    return BankVisibility(empty_hit(), hidden, bank_occluder(above, separation));
 }
 
-// Use neighbouring depths only to feather the visible side of a silhouette.
-// Each ray still reads radiance from its own validated source.
-fn bank_edge(hit: GatherHit) -> f32 {
-    let uv = optics_uv(hit.pixel);
-    let pixel_step = view_aux.viewport_inv_viewport.zw;
-    let offsets = array(vec2(2.0, 0.0), vec2(-2.0, 0.0), vec2(0.0, 2.0), vec2(0.0, -2.0));
-    var confidence = 1.0;
-    for (var i = 0u; i < 4u; i++) {
-        let nearby = gather_at(uv + offsets[i] * pixel_step);
-        if nearby.distance > 0.0 && nearby.distance + 1.0 < hit.distance {
-            let occluder = smoothstep(0.22, 0.7, above_bank(nearby.point));
-            confidence = min(confidence, 1.0 - 0.55 * occluder);
+// Distance from the crossing to the foreground in source texels. Sample
+// depths only; the only bank colour comes from the validated centre.
+fn bank_edge(bank: vec3<f32>, hit: GatherHit) -> f32 {
+    let size = view_aux.viewport_inv_viewport.xy;
+    let texel = optics_project(bank).xy * size;
+    let bank_distance = length(bank - view.camera_xyz_time.xyz);
+    let radius = clamp(size.y / 240.0, 2.5, 6.0);
+    let limit = i32(ceil(radius));
+    var clearance_squared = radius * radius;
+    for (var y = -limit; y <= limit; y++) {
+        for (var x = -limit; x <= limit; x++) {
+            let pixel = vec2<i32>(hit.pixel) + vec2<i32>(x, y);
+            if any(pixel < vec2(0)) || any(pixel >= vec2<i32>(size)) { continue; }
+            let edge = max(abs(vec2<f32>(pixel) + 0.5 - texel) - 0.5, vec2(0.0));
+            let separation_squared = dot(edge, edge);
+            if separation_squared >= clearance_squared { continue; }
+            let distance = gather_depth(vec2<u32>(pixel));
+            let separation = bank_distance - distance;
+            if distance > 0.0 && separation > 1.0
+                && bank_occluder(above_bank(gather_point(vec2<u32>(pixel), distance)), separation) {
+                clearance_squared = separation_squared;
+            }
         }
     }
-    return confidence;
+    return smoothstep(0.0, radius, sqrt(clearance_squared));
+}
+
+// The foreground masks the grazing sky lobe as well as the bank. Broaden
+// the fallback toward the open upper sky when low-angle sunlight lights the
+// horizon, where the unoccluded directional lobe would give a bright stripe.
+fn occluded_skylight(ray: vec3<f32>, sky: vec3<f32>, fresnel: f32) -> vec3<f32> {
+    let up = vec3(0.0, 1.0, 0.0);
+    let upper = fresnel * 0.7 * environment_sky_radiance(normalize(mix(ray, up, 0.88)));
+    let low_sun = 1.0 - smoothstep(0.02, 0.35, environment_sun_direction().y);
+    let light = mix(sky, upper, low_sun);
+    let luminance = dot(light, vec3(0.2126, 0.7152, 0.0722));
+    return mix(vec3(luminance), light, 0.25);
+}
+
+fn scene_edge(uv: vec2<f32>) -> f32 {
+    let margin = min(uv, 1.0 - uv);
+    return smoothstep(0.015, 0.14, min(margin.x, margin.y));
+}
+
+fn scene_fade(hit: GatherHit, origin: vec3<f32>, reach: f32) -> f32 {
+    return min(hit.edge, scene_edge(optics_uv(hit.pixel)))
+        * (1.0 - smoothstep(0.75 * reach, reach, length(hit.point - origin)));
+}
+
+// Very thin foreground depth at a disocclusion can otherwise leave an
+// opaque streak in the fallback. Estimate vertical silhouette coverage
+// from depth on either side of the hit without fetching either colour.
+fn foreground_coverage(hit: GatherHit) -> f32 {
+    let size = optics_extent();
+    let spacing = min(max(size.y / 720u, 1u), hit.pixel.y);
+    let below = min(hit.pixel.y + spacing, size.y - 1u);
+    let tolerance = 0.07 + 4.0 * hit.distance * view_aux.viewport_inv_viewport.w;
+    let above_depth = gather_depth(vec2(hit.pixel.x, hit.pixel.y - spacing));
+    let below_depth = gather_depth(vec2(hit.pixel.x, below));
+    let support = vec2(above_depth, below_depth);
+    let same_surface = (1.0 - smoothstep(vec2(tolerance), vec2(2.0 * tolerance),
+        abs(support - hit.distance))) * step(vec2(0.00001), support);
+    return mix(0.25, 1.0, max(same_surface.x, same_surface.y));
+}
+
+fn scene_reflection(
+    origin: vec3<f32>, ray: vec3<f32>, reach: f32, sky: vec3<f32>, fresnel: f32, still: f32,
+) -> vec3<f32> {
+    let scenery = OpticsBody(vec4(0.0), vec4(0.0));
+    var hit = trace(origin, ray, vec2(0.06, reach), scenery, false);
+    var bank = empty_hit();
+    var confidence = 1.0;
+    var on_bank = false;
+
+    let crossing = bank_crossing(origin, ray, reach);
+    if crossing < reach {
+        let point = origin + ray * crossing;
+        let visibility = bank_visibility(point);
+        if visibility.hidden && hit.distance > 0.0 && dot(hit.point - origin, ray) >= crossing {
+            hit = empty_hit();
+        }
+        on_bank = hit.distance > 0.0 && abs(above_bank(hit.point)) < 0.22;
+        if visibility.occluded {
+            confidence = 0.0;
+        } else if visibility.hit.distance > 0.0 {
+            confidence = bank_edge(point, visibility.hit);
+            if hit.edge < 0.995 { bank = visibility.hit; }
+        }
+    }
+
+    var background = sky;
+    if bank.distance > 0.0 {
+        background = mix(background, fresnel * hit_light(bank), still * scene_fade(bank, origin, reach));
+    }
+    var coverage = 0.0;
+    var reflected = vec3(0.0);
+    if hit.distance > 0.0 {
+        coverage = still * scene_fade(hit, origin, reach);
+        reflected = fresnel * hit_light(hit);
+    }
+    if confidence < 1.0 {
+        let obscured = occluded_skylight(ray, sky, fresnel);
+        let shade = still * (1.0 - confidence) * scene_edge(optics_project(origin + ray * crossing).xy)
+            * (1.0 - smoothstep(0.75 * reach, reach, crossing));
+        // A depth-traced bank and a mapped crossing share the same fade.
+        // A genuine hit in front of the bank still overlays the fallback.
+        if on_bank { return mix(mix(background, reflected, coverage), obscured, shade); }
+        background = mix(background, obscured, shade);
+        if hit.distance > 0.0 {
+            coverage *= mix(foreground_coverage(hit), 1.0, confidence);
+        }
+    }
+    return mix(background, reflected, coverage);
 }
 
 fn water_optical_paths(
@@ -227,50 +338,15 @@ fn water_optical_paths(
         through = trace_bodies(world, refracted_ray, optics.extinction_sight.w, mask);
     }
     let depth = max(0.0, world.y - row.bed);
-    var bank = empty_hit();
-    var reflection_weight = slope_weight;
-    var scene_hit = false;
     let rough_limit = optics.downwelling_mirror.w;
     let still = 1.0 - smoothstep(rough_limit * 0.5, rough_limit, sqrt(variance));
-    if reflected.distance == 0.0 && optics.reach_slope_scene.z != 0.0
-        && still > 0.0 && reflected_ray.y > 0.0 {
-        let scenery = OpticsBody(vec4(0.0), vec4(0.0));
-        let segment = vec2(0.06, reach);
-        reflected = trace(world, reflected_ray, segment, scenery, false);
-        reflection_weight = still;
-        let crossing = bank_crossing(world, reflected_ray, reach);
-        if crossing < reach {
-            let visibility = bank_visibility(world + reflected_ray * crossing);
-            if visibility.hidden && reflected.distance > 0.0
-                && dot(reflected.point - world, reflected_ray) >= crossing {
-                reflected = empty_hit();
-            }
-            if reflected.edge < 0.995 {
-                bank = visibility.hit;
-                if bank.distance > 0.0 {
-                    bank.edge *= bank_edge(bank);
-                }
-            }
-        }
-        scene_hit = true;
-    }
     var outgoing = sky;
-    if bank.distance > 0.0 {
-        let dist = length(bank.point - world);
-        let uv = optics_uv(bank.pixel);
-        let margin = min(uv, 1.0 - uv);
-        let edge = smoothstep(0.015, 0.14, min(margin.x, margin.y));
-        let fade = min(bank.edge, edge) * reflection_weight * (1.0 - smoothstep(0.75 * reach, reach, dist));
-        outgoing = mix(sky, fresnel * hit_light(bank), fade);
-    }
     if reflected.distance > 0.0 {
         let t = length(reflected.point - world);
-        let uv = optics_uv(reflected.pixel);
-        let margin = min(uv, 1.0 - uv);
-        let scene_edge = min(reflected.edge, smoothstep(0.015, 0.14, min(margin.x, margin.y)));
-        let fade = select(reflected.edge, scene_edge, scene_hit) * reflection_weight
-            * (1.0 - smoothstep(0.75 * reach, reach, t));
-        outgoing = mix(outgoing, fresnel * hit_light(reflected), fade);
+        let fade = reflected.edge * slope_weight * (1.0 - smoothstep(0.75 * reach, reach, t));
+        outgoing = mix(sky, fresnel * hit_light(reflected), fade);
+    } else if optics.reach_slope_scene.z != 0.0 && still > 0.0 && reflected_ray.y > 0.0 {
+        outgoing = scene_reflection(world, reflected_ray, reach, sky, fresnel, still);
     }
 
     var edge_depth = depth;
