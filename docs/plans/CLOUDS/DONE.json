@@ -1088,7 +1088,7 @@
     {
       "id": "WP20",
       "name": "With clouds drifting, the player sees a new frame as steadily as in the same game without them, in its ordinary window on the Mac",
-      "status": "ready_for_review",
+      "status": "done",
       "depends_on": [],
       "alone": true,
       "quality_bar": "Smooth at the display's full refresh, as the project's bar asks of a shipped game's sky: in the game as a player runs it, a drifting sky costs the player no new frame that the same game without clouds shows, and stands still no longer at once than that game does, by the times the OS reports each frame reached the display.",
@@ -1106,8 +1106,8 @@
           },
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP20/hold-20261125T224406.456981Z/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP20-review.md"
         }
       ],
       "failed_reviews": 0,
