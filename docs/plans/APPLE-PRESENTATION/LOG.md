@@ -385,3 +385,9 @@
   4,600-round pass as D7.2 lowered scale at tick 233 and the governor restored it at tick 332.
   The independent viewer could not locate either scale step. The latest workspace check passed 1,142 tests.
   [Motion, timing, and separate capture cost](../../../.orchestrate/evidence/APPLE-PRESENTATION/M7/resume/qualified-motion/README.md)
+
+- 2026-11-25 WP7 gives the Chrome proof a rendered warm-up before admitting governor samples and streams
+  the trace through the recovery window. On M3 Max WebGPU both timing arms started and finished at 100%
+  scale. The GPU arm first dropped at tick 138 and the animation-frame arm at tick 135. The Mac verifier
+  got zero presents while the console was locked. D7.2 and D7.3 still require an unlocked window for the
+  merged replay. [Chrome and Metal records](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/replay/README.md)
