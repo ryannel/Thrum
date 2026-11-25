@@ -63,6 +63,7 @@ fn declaration(
         depth,
         write_depth: false,
         refraction: false,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
         accesses,
     }
 }

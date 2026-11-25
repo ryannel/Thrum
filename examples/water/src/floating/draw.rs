@@ -1,6 +1,6 @@
 use super::{Body, Hull, scene::Fleet};
 use bytemuck::{Pod, Zeroable};
-use glam::{DMat4, Vec3, vec3};
+use glam::{DMat4, Mat4, Vec3, vec3};
 use std::{
     ops::Range,
     sync::{Arc, Mutex},
@@ -8,6 +8,7 @@ use std::{
 use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface,
 };
+use thrum_water::{BodyBounds, OpticsBodies};
 use wgpu::util::DeviceExt;
 
 #[repr(C)]
@@ -35,6 +36,7 @@ struct Prepared {
     queue: wgpu::Queue,
     craft: Range<u32>,
     float: Range<u32>,
+    bounds: [[Vec3; 2]; 2],
 }
 
 pub(super) struct Draw {
@@ -42,15 +44,23 @@ pub(super) struct Draw {
     prepared: Option<Prepared>,
     previous: Vec<Matrix>,
     recorded: Vec<Matrix>,
+    opaque: OpticsBodies,
+    visible_count: usize,
 }
 
 impl Draw {
-    pub(super) fn new(fleet: Arc<Mutex<Fleet>>) -> Self {
+    pub(super) fn new(
+        fleet: Arc<Mutex<Fleet>>,
+        opaque: OpticsBodies,
+        visible_count: usize,
+    ) -> Self {
         Self {
             fleet,
             prepared: None,
             previous: Vec::new(),
             recorded: Vec::new(),
+            opaque,
+            visible_count,
         }
     }
 }
@@ -126,6 +136,8 @@ impl SceneContribution for Draw {
             }),
             multiview_mask: None, cache: None,
         });
+        let (craft_vertices, float_vertices) = vertices.split_at(split as usize);
+        let bounds = [local_bounds(craft_vertices), local_bounds(float_vertices)];
         let vertices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("floating hull geometry"),
             contents: bytemuck::cast_slice(&vertices),
@@ -146,6 +158,7 @@ impl SceneContribution for Draw {
             queue: surface.queue.clone(),
             craft: 0..split,
             float: split..end,
+            bounds,
         });
         Ok(())
     }
@@ -164,6 +177,18 @@ impl SceneContribution for Draw {
                 .zip(&fleet.current)
                 .map(|(old, new)| pose(old, new, alpha)),
         );
+        let boxes = self
+            .recorded
+            .iter()
+            .zip(&fleet.current)
+            .take(self.visible_count)
+            .filter(|(_, body)| !matches!(body.hull, Hull::Craft) || fleet.craft_present)
+            .filter_map(|(pose, body)| {
+                let bounds = prepared.bounds[usize::from(matches!(body.hull, Hull::Float))];
+                placed_bounds(Mat4::from_cols_array_2d(pose), bounds)
+            })
+            .collect::<Vec<_>>();
+        self.opaque.publish(&boxes);
         drop(fleet);
         let inputs: Vec<_> = self
             .recorded
@@ -191,7 +216,7 @@ impl SceneContribution for Draw {
         pass.set_pipeline(&prepared.pipeline);
         pass.set_vertex_buffer(0, prepared.vertices.slice(..));
         pass.set_vertex_buffer(1, prepared.instances.slice(..));
-        for (index, body) in (0_u32..).zip(&fleet.current) {
+        for (index, body) in (0_u32..).zip(&fleet.current).take(self.visible_count) {
             let vertices = match body.hull {
                 Hull::Craft if !fleet.craft_present => continue,
                 Hull::Craft => &prepared.craft,
@@ -380,4 +405,24 @@ fn float(vertices: &mut Vec<Vertex>) {
         [0.67, 0.12, 0.018],
     );
     cap(vertices, ring(0.85, 0.11), [0.49, 0.081, 0.015]);
+}
+
+fn local_bounds(vertices: &[Vertex]) -> [Vec3; 2] {
+    vertices.iter().fold(
+        [Vec3::splat(f32::INFINITY), Vec3::splat(f32::NEG_INFINITY)],
+        |[low, high], vertex| {
+            let point = Vec3::from_array(vertex.position);
+            [low.min(point), high.max(point)]
+        },
+    )
+}
+
+fn placed_bounds(model: Mat4, [low, high]: [Vec3; 2]) -> Option<BodyBounds> {
+    let centre = model.transform_point3((low + high) * 0.5);
+    let radius = (high - low) * 0.5;
+    let extent = model.x_axis.truncate().abs() * radius.x
+        + model.y_axis.truncate().abs() * radius.y
+        + model.z_axis.truncate().abs() * radius.z
+        + Vec3::splat(0.02);
+    BodyBounds::new((centre - extent).to_array(), (centre + extent).to_array())
 }

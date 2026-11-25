@@ -1896,6 +1896,7 @@ struct TargetResources {
     secondary: Vec<secondary::Resources>,
     native: Option<NativeGraph>,
     refraction: Option<ResourceId>,
+    after_opaque_images: Vec<Vec<ResourceId>>,
     soft_sun: Option<raytrace::soft::SoftResources>,
     pre_tone: PreToneInput,
     temporal: temporal::TemporalResources,

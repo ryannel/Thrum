@@ -115,6 +115,26 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 ))
                 .expect("pan control");
         }
+        if route == "optics-pan" {
+            if floating.is_some() {
+                let yaw = -56.0 + elapsed * 30.0;
+                runtime.parameters(&format!(r#"{{"camera.optics_height":2,"camera.optics_pan":{yaw},"sun.elevation":6}}"#))
+                    .expect("fleet pan");
+            } else if island.is_some() {
+                let yaw = elapsed * 14.0;
+                let tilt = elapsed * 4.0;
+                runtime
+                    .parameters(&format!(
+                        r#"{{"camera.pan":{yaw},"camera.tilt":{tilt},"sun.elevation":12}}"#
+                    ))
+                    .expect("lake pan");
+            }
+        } else if route == "optics-breeze" {
+            let gain = ((elapsed - 1.0) / 4.0).clamp(0.0, 1.0);
+            runtime
+                .parameters(&format!(r#"{{"lake.waves":{gain}}}"#))
+                .expect("breeze");
+        }
         if handoff_cut && elapsed >= 5.0 && cut.is_none() {
             runtime
                 .parameters(r#"{"camera.island":8}"#)

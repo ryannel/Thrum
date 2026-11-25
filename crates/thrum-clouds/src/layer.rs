@@ -484,6 +484,7 @@ fn declaration(name: &str, kind: AfterOpaqueKind, accesses: Vec<EffectAccess>) -
         depth: true,
         write_depth: false,
         refraction: false,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
     }
 }
 

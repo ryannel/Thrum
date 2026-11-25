@@ -27,6 +27,7 @@ fn viewport_pass() -> AfterOpaquePass {
         }],
         depth: false,
         refraction: false,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
         write_depth: false,
     }
 }

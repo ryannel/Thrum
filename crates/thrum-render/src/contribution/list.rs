@@ -186,8 +186,16 @@ impl SceneContributions {
                 }));
             graph.passes.extend(declaration.passes);
             graph.tick_passes.extend(declaration.tick_passes);
+            let after_count = declaration.after_opaque.len();
             for pass in &mut declaration.after_opaque {
                 pass.name = format!("effect {member}: {}", pass.name);
+                if let super::AfterOpaqueImages::Sample { producer, .. } = &mut pass.images {
+                    *producer = if *producer < after_count {
+                        graph.after_opaque.len() + *producer
+                    } else {
+                        usize::MAX
+                    };
+                }
             }
             graph.after_opaque.extend(declaration.after_opaque);
         }

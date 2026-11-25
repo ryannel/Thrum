@@ -5,12 +5,14 @@ pub mod foam;
 mod fresnel_tests;
 pub mod interaction;
 pub mod map_gpu;
+mod optics;
 mod prepare;
 pub mod query;
 mod records;
 #[cfg(test)]
 mod sampling_tests;
 mod surf;
+pub use optics::{BodyBounds, Optics, OpticsBodies};
 use std::sync::{Arc, Mutex};
 pub use surf::cache::{SurfTap, SurfWitness};
 use thrum_render::contribution::{
@@ -22,6 +24,7 @@ use thrum_water_model::Map;
 
 /// The surface pass's timing name.
 pub const SURFACE_PASS: &str = "water surface";
+const VIEW_RECORDS: &str = include_str!("view.wgsl");
 
 /// Physical and mesh settings. Named sea states belong to the game.
 #[derive(Clone, Copy, Debug, Default)]
@@ -31,6 +34,8 @@ pub struct Profile {
     /// Deep-water backscatter divided by extinction, RGB in zero through one.
     /// The game supplies its water type; the default is a pure absorber.
     pub deep_scatter: [f32; 3],
+    /// Optional see-through water and screen-space reflections.
+    pub optics: Option<Optics>,
     /// Optional body query capacity and age limits.
     pub query: Option<query::QueryLimits>,
     /// Optional two-level interaction waves.
@@ -65,7 +70,7 @@ impl std::fmt::Display for WaterError {
             Self::UnsupportedBody => f.write_str("this surface profile requires a sea body"),
             Self::InvalidSpectrum(reason) => write!(f, "water spectrum: {reason}"),
             Self::InvalidOptics => {
-                f.write_str("water deep scatter must be finite in zero through one")
+                f.write_str("water optical coefficients and reflection controls are outside their supported range")
             }
             Self::InvalidLevel => f.write_str("water level must be finite"),
             Self::UnsupportedMap(reason) => f.write_str(reason),
@@ -116,6 +121,7 @@ pub struct Water {
     foam_tap: Option<foam::Tap>,
     surf_tap: Option<SurfTap>,
     foam_pattern: thrum_asset_gpu::ProductLease,
+    opaque: OpticsBodies,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
@@ -159,10 +165,11 @@ impl Water {
         }) {
             return Err(WaterError::InvalidInteractionLimits);
         }
-        if profile
-            .deep_scatter
-            .iter()
-            .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
+        if profile.optics.is_some_and(|optics| !optics.valid())
+            || profile
+                .deep_scatter
+                .iter()
+                .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
         {
             return Err(WaterError::InvalidOptics);
         }
@@ -229,6 +236,7 @@ impl Water {
             foam_tap: None,
             surf_tap: None,
             foam_pattern: thrum_asset_gpu::ProductLease::default(),
+            opaque: OpticsBodies::default(),
             prepared: None,
             previous: None,
             recorded: (0.0, 0, 0.0),
@@ -298,6 +306,12 @@ impl Water {
     pub fn vertices(&self) -> u32 {
         self.prepared.as_ref().map_or(0, |p| p.vertices)
     }
+
+    /// Get the input for the frame's opaque body boxes.
+    #[must_use]
+    pub fn optics_bodies(&self) -> OpticsBodies {
+        self.opaque.clone()
+    }
     /// Allocated wave and surface resources, for paired cost records.
     pub fn resource_bytes(&self) -> Vec<(String, u64)> {
         self.prepared.as_ref().map_or_else(Vec::new, |p| {
@@ -309,6 +323,9 @@ impl Water {
             resources.push(("water mesh".into(), p.mesh.size()));
             if let Some(indices) = &p.indices {
                 resources.push(("water surface triangle indices".into(), indices.size()));
+            }
+            if let Some(gather) = &p.gather {
+                resources.push(("water gather regions".into(), gather.bytes()));
             }
             if let Some(map) = &p.map {
                 let size = map.texture.size();
@@ -495,6 +512,17 @@ impl SceneContribution for Water {
         if let Some(gpu) = &mut p.map {
             gpu.record(&p.queue, &map, frame.time);
         }
+        if let Some(gather) = &mut p.gather {
+            gather.record(
+                &p.queue,
+                frame,
+                self.mapped.then_some(&*map),
+                &self.opaque,
+                row.level,
+                self.offshore_displacement[1],
+                self.height_rms,
+            );
+        }
         if let Some(cache) = &mut p.surf_cache {
             cache.record(
                 &p.queue,
@@ -641,7 +669,10 @@ impl SceneContribution for Water {
         frame: &ContributionFrame,
     ) {
         if let Some(p) = &self.prepared {
-            let film = p.film.as_ref().filter(|_| index == 0);
+            let film = p
+                .film
+                .as_ref()
+                .filter(|_| index == usize::from(p.gather.is_some()));
             pass.set_pipeline(film.unwrap_or(&p.pipeline));
             pass.set_bind_group(
                 2,
@@ -669,6 +700,30 @@ impl SceneContribution for Water {
             } else {
                 pass.draw(0..p.vertices, 0..1);
             }
+        }
+    }
+    fn after_opaque_runs(&self, _: usize, _: &ContributionFrame) -> bool {
+        self.prepared
+            .as_ref()
+            .and_then(|p| p.gather.as_ref())
+            .is_some_and(optics::Gather::runs)
+    }
+
+    fn encode_after_opaque(
+        &mut self,
+        _: usize,
+        pass: &mut wgpu::ComputePass<'_>,
+        frame: &ContributionFrame,
+    ) {
+        if let Some(p) = &self.prepared
+            && let Some(gather) = &p.gather
+        {
+            gather.encode(
+                pass,
+                p.environment
+                    .group(frame.exposure_side)
+                    .expect("exposure side"),
+            );
         }
     }
     fn submitted(&mut self, history_advanced: bool) {

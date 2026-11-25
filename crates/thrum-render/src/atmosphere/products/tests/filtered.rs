@@ -188,6 +188,7 @@ pub(super) fn with_exposure(
         surface.environment_light,
         &[exposure.clone(), exposure],
         false,
+        None,
     )
 }
 

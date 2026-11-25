@@ -147,6 +147,7 @@ fn declaration() -> AfterOpaquePass {
         depth: false,
         write_depth: true,
         refraction: false,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
     }
 }
 

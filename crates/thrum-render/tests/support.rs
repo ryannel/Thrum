@@ -569,6 +569,7 @@ fn late(index: usize, bytes: u64) -> AfterOpaquePass {
         depth: false,
         write_depth: false,
         refraction: false,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
     }
 }
 impl SceneContribution for Observer {
@@ -797,6 +798,7 @@ fn air_late(index: usize) -> AfterOpaquePass {
         depth: false,
         write_depth: false,
         refraction: true,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
         accesses: vec![EffectAccess {
             resource: index,
             range: 0..AIR_BYTES,

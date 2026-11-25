@@ -313,7 +313,7 @@ pub(crate) fn world_at(
         depth,
     ))
 }
-fn half_value(bits: u16) -> f32 {
+pub(crate) fn half_value(bits: u16) -> f32 {
     let sign = if bits & 0x8000 == 0 { 1.0 } else { -1.0 };
     let exponent = i32::from((bits >> 10) & 31);
     let fraction = f32::from(bits & 1023) / 1024.0;

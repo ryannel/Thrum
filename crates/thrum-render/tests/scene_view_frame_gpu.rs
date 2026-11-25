@@ -35,6 +35,7 @@ fn tag_pass() -> AfterOpaquePass {
         depth: false,
         write_depth: false,
         refraction: false,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
     }
 }
 impl SceneContribution for Tag {

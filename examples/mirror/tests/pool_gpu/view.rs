@@ -151,6 +151,7 @@ impl Probe {
             }],
             depth: self.request.is_none(),
             refraction: self.request.is_none(),
+            images: thrum_render::contribution::AfterOpaqueImages::None,
             write_depth: false,
         }
     }

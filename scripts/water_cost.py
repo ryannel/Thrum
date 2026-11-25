@@ -17,7 +17,8 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'island': ROOT / 'tests/fixtures/waters/island-cost.json',
            'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json',
-           'surf': ROOT / '.orchestrate/evidence/WATERS/WP21/surf-cost.json'}
+           'surf': ROOT / '.orchestrate/evidence/WATERS/WP21/surf-cost.json',
+           'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
 # which ends in this name.
@@ -641,6 +642,104 @@ def measure_surf():
     print(f'PASS paired 1440p Metal surf record: {path.relative_to(ROOT)}')
 
 
+def optics_key(view):
+    return f"{view['view']}/{view['wind']}/{view['body_count']}"
+
+
+def optics_summary(data, states):
+    assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440]
+    assert data['capture'] is False and data['commit']
+    views = {optics_key(view): view for view in data['views']}
+    expected = {f'sea/{wind}/{count}' for wind in ('Calm', 'Gale') for count in (0, 1, 9)}
+    assert views.keys() == expected | {'lake/Calm/None'}
+    summary = {}
+    for named, view in views.items():
+        arms = {row['enabled']: row for row in view['arms']}
+        assert arms.keys() == states
+        sources = None
+        summary[named] = {}
+        for enabled, arm in arms.items():
+            frames = arm['frames']
+            timeline = [(frame['tick'], frame['alpha']) for frame in frames]
+            assert sources is None or sources == timeline
+            sources = timeline
+            phases = wake_summary(frames)
+            for row in phases.values():
+                assert row['timestamped_samples'] > 0, f'{named}: {arm["timing"]}'
+                assert 'water surface' in row['passes_ms']
+                capture_needed = enabled and view['body_count'] != 0
+                assert ('water gather' in row['passes_ms']) == capture_needed, named
+            summary[named]['optics' if enabled else 'control'] = phases
+    return summary
+
+
+def measure_optics(action):
+    output = ROOT / 'tmp/wp8/paired-cost'
+    output.mkdir(parents=True, exist_ok=True)
+    store = output / 'store'
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+         'cook', 'examples/water/assets', str(store)])
+    commit = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    env = dict(os.environ, THRUM_WATER_PROOF='optics-cost', THRUM_WATER_COMMIT=commit,
+               THRUM_WATER_OUTPUT=str(output), THRUM_ASSET_STORE=str(store))
+    env['THRUM_WATER_OPTICS_COST_ARM'] = 'prior' if action == 'record' else 'paired'
+    run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+         '--test', 'proof_gpu'], env=env)
+    data = json.loads((output / 'optics-cost.json').read_text())
+    data['host'] = platform.platform()
+    data['load'] = run(['uptime'], capture_output=True, text=True).stdout.strip()
+    data['summary'] = optics_summary(data, {False} if action == 'record' else {False, True})
+    destination = WORKING / 'WP8'
+    destination.mkdir(parents=True, exist_ok=True)
+    if action == 'record':
+        path = destination / 'optics-cost-prior.json'
+    else:
+        prior = json.loads(RECORDS['optics'].read_text())
+        data['prior_record'] = str(RECORDS['optics'].relative_to(ROOT))
+        data['prior_summary'] = optics_summary(prior, {False})
+        data['investigations'] = optics_investigations(data['summary'], data['prior_summary'])
+        path = destination / f'optics-cost-{commit[:12]}.json'
+    path.write_text(json.dumps(data, indent=2) + '\n')
+    print(f'PASS paired optics record {path.relative_to(ROOT)}')
+
+
+def optics_investigations(summary, prior):
+    investigations = []
+    for view, pair in summary.items():
+        for phase, current in pair['optics'].items():
+            control = pair['control'][phase]
+            historical = prior[view]['control'][phase]
+            surface = current['passes_ms']['water surface']
+            unchanged_surface = control['passes_ms']['water surface']
+            gather = current['passes_ms'].get('water gather', 0.0)
+            facts = dict(view=view, phase=phase, surface_ms=surface, gather_ms=gather,
+                         rays_and_composition_delta_ms=surface-unchanged_surface,
+                         control_surface_ms=unchanged_surface,
+                         prior_surface_ms=historical['passes_ms']['water surface'],
+                         completion_upper_ms=current['completion_upper_ms'],
+                         paired_completion_upper_ms=control['completion_upper_ms'])
+            if current['timestamped_samples'] != current['samples']:
+                investigations.append(dict(facts, wire='timestamp batch rejected',
+                    disposition='Completion brackets retain every submitted frame. Named pass medians '
+                                'use only intact, validated query batches.'))
+            if max(current['gpu_ms'], current['completion_upper_ms']) > 1000 / 120:
+                investigations.append(dict(facts, wire='frame exceeds one refresh interval',
+                    disposition='The capture-off pair isolates optics. Gather timestamps measure the '
+                                'copy and inverse air directly. Rays and composition share the water '
+                                'surface pass; the matching surface delta includes both. Completion '
+                                'also includes synchronous observer polling under shared machine load.'))
+            for name, value in current['passes_ms'].items():
+                previous = historical['passes_ms'].get(name)
+                if previous is not None and value >= previous * 1.25:
+                    investigations.append(dict(facts, wire='pass grows by at least 25% from the prior view',
+                        pass_name=name, prior_ms=previous, current_ms=value,
+                        paired_ms=control['passes_ms'].get(name),
+                        disposition='The same-view control repeats the earlier disabled profile. '
+                                    'Only the water surface and the private gather gain optical work; '
+                                    'common-pass variation reflects this run and shared device load.'))
+    return investigations
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['record', 'check', 'running'])
@@ -659,6 +758,9 @@ def main():
         return
     if args.scene == 'foam':
         measure_foam()
+        return
+    if args.scene == 'optics':
+        measure_optics(args.action)
         return
     if args.scene == 'surf':
         measure_surf()

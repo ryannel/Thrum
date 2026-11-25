@@ -56,6 +56,7 @@ pub(super) fn create(
     environment_light: &wgpu::Buffer,
     exposure: &[wgpu::Buffer; 2],
     far_aerial: bool,
+    cloud: Option<&super::CloudPrepared>,
 ) -> EnvironmentProducts {
     let visibility = wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE;
     let buffer = |binding, bytes| binding::uniform(binding, visibility, bytes);
@@ -86,6 +87,20 @@ pub(super) fn create(
             visibility,
             wgpu::SamplerBindingType::Filtering,
         ));
+    }
+    if let Some(cloud) = cloud {
+        entries.extend([
+            binding::texture(
+                13,
+                visibility,
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D2,
+            ),
+            buffer(14, cloud.uniform.size()),
+        ]);
+        if cloud.band.is_some() {
+            entries.extend(super::ground_band::GroundBandPrepared::layout(visibility));
+        }
     }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("lent environment products"),
@@ -132,6 +147,21 @@ pub(super) fn create(
             resource: wgpu::BindingResource::TextureView(view),
         });
     }
+    if let Some(cloud) = cloud {
+        bindings.extend([
+            wgpu::BindGroupEntry {
+                binding: 13,
+                resource: wgpu::BindingResource::TextureView(&cloud.view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 14,
+                resource: cloud.uniform.as_entire_binding(),
+            },
+        ]);
+        if let Some(band) = &cloud.band {
+            bindings.extend(band.entries());
+        }
+    }
     let groups = std::array::from_fn(|side| {
         bindings.push(wgpu::BindGroupEntry {
             binding: 10,
@@ -145,19 +175,29 @@ pub(super) fn create(
         bindings.pop();
         group
     });
+    let mut shader_source = if atmosphere.view_volume.is_some() {
+        library_with_volume(far_aerial, true)
+    } else if far_aerial {
+        crate::shaders::Shader::EnvironmentProductsFar
+            .source()
+            .into_owned()
+    } else {
+        crate::shaders::Shader::EnvironmentProducts
+            .source()
+            .into_owned()
+    };
+    if let Some(cloud) = cloud {
+        shader_source.push_str(
+            &cloud
+                .variant()
+                .sampling_source()
+                .replace("@group(1)", "@group(0)")
+                .replace("aerial_frame", "atmosphere"),
+        );
+    }
     EnvironmentProducts {
         layout,
-        shader_source: if atmosphere.view_volume.is_some() {
-            library_with_volume(far_aerial, true)
-        } else if far_aerial {
-            crate::shaders::Shader::EnvironmentProductsFar
-                .source()
-                .into_owned()
-        } else {
-            crate::shaders::Shader::EnvironmentProducts
-                .source()
-                .into_owned()
-        },
+        shader_source,
         groups,
     }
 }

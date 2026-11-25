@@ -230,7 +230,7 @@ fn shore_is_wet(point: vec2<f32>, gains: vec4<f32>, depth: f32) -> bool {
     let ray = reflect(-v, vec3(0.0, 1.0, 0.0));
     let sky = environment_sky_radiance(ray);
     let fresnel = water_fresnel(v.y);
-    let incident = environment_diffuse(vec3(0.0, 1.0, 0.0)) + sun_irradiance(ground) * max(0.0, environment_sun_direction().y);
+    let incident = environment_diffuse(vec3(0.0, 1.0, 0.0)) + water_sun(ground) * max(0.0, environment_sun_direction().y);
     let reflection = sheen * fresnel * 0.72 * (1.0 - foam);
     let opacity = reflection + foam;
     let light = (reflection * sky + foam * 0.24 * incident) / max(1e-6, opacity);

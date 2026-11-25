@@ -1,7 +1,9 @@
 //! Opt-in submitted-output capture and paired GPU measurement driver.
 #[cfg(target_os = "macos")]
-mod realtime;
 #[cfg(target_os = "macos")]
+mod optics_cost;
+#[cfg(target_os = "macos")]
+mod realtime;
 mod support;
 #[cfg(target_os = "macos")]
 mod surf_cost;
@@ -47,7 +49,7 @@ fn whitewater() -> bool {
         Settings::Island { foam, .. } => foam,
         Settings::Surf(_) => true,
         Settings::Floating(floating) => floating.wake.is_some_and(|wake| wake.whitewater),
-        Settings::OpenSea => false,
+        Settings::OpenSea | Settings::OpticsSea(_) | Settings::OpticsShade(_) => false,
     }
 }
 
@@ -67,6 +69,18 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
                 water_scene::island::build_surf(wind, water).expect("surf island");
             (game, report)
         }
+        Settings::OpticsSea(wind) => water_scene::build_optics_sea(
+            wind,
+            std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
+            water,
+        )
+        .expect("optics sea"),
+        Settings::OpticsShade(wind) => water_scene::build_optics_shade(
+            wind,
+            std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
+            water,
+        )
+        .expect("optics shade"),
         Settings::OpenSea => water_scene::build_paired(
             std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
             water,
@@ -142,6 +156,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("record");
         return;
     }
+    if mode == "optics-cost" {
+        optics_cost::run(gpu, &directory);
+        return;
+    }
     if mode == "surf-cost" || mode == "surf-running" {
         let (file, result) = if mode == "surf-cost" {
             ("surf-cost.json", surf_cost::run(gpu))
@@ -158,10 +176,17 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     let mut fixture = if let Some(floating) = floating() {
         let scene = floating_game(floating, true, true, whitewater());
         support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report)
-    } else if island_wind().is_some() {
+    } else if island_wind().is_some()
+        || matches!(
+            settings(),
+            Settings::OpticsSea(_) | Settings::OpticsShade(_)
+        )
+    {
         let (game, report) = proof_game(true);
         let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
-        fixture.warm_cooked();
+        if std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some() {
+            fixture.warm_cooked();
+        }
         fixture
     } else if std::env::var("THRUM_WATER_RECIPE").is_ok_and(|v| v == "portable") {
         support::Fixture::antialiased(gpu, [2560, 1440])
@@ -325,6 +350,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 }
                 checkpoints.sort_by(|a, b| a.2.total_cmp(&b.2));
                 checkpoints
+            } else if std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("optics")
+                && (floating().is_some() || island_wind().is_some())
+            {
+                optics_checkpoints()
             } else if island_wind().is_some() {
                 ["beach", "lake", "pond", "hill"]
                     .into_iter()
@@ -339,6 +368,22 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                         })
                     })
                     .collect()
+            } else if matches!(
+                settings(),
+                Settings::OpticsSea(_) | Settings::OpticsShade(_)
+            ) {
+                let mut views: Vec<_> = [("dawn", 1.0), ("noon", 60.0), ("low-sun", 6.0), ("twilight", -5.0), ("night", -18.0)]
+                    .into_iter().flat_map(|(name,sun)| [2,40].map(|height| {
+                        (format!("{name}-{height}"), format!(r#"{{"camera.height":{height},"camera.bearing":90,"sun.elevation":{sun}}}"#), 10.0)
+                    })).collect();
+                if std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some() {
+                    views.push((
+                        "submerged-noon-6".into(),
+                        r#"{"camera.height":6,"camera.bearing":90,"sun.elevation":60}"#.into(),
+                        10.0,
+                    ));
+                }
+                views
             } else {
                 views.into_iter().map(|(name,height,bearing,sun)| (name.to_owned(),
                     format!(r#"{{"camera.height":{height},"camera.bearing":{bearing},"sun.elevation":{sun}}}"#),
@@ -388,6 +433,49 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         serde_json::to_vec_pretty(&result).expect("json"),
     )
     .expect("record");
+}
+
+#[cfg(target_os = "macos")]
+fn optics_checkpoints() -> Vec<(String, String, f64)> {
+    if floating().is_some() {
+        return [
+            ("hull-2", 2, 60),
+            ("hull-6", 6, 60),
+            ("reflection-2", 2, 6),
+            ("reflection-10", 10, 6),
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(i, (name, height, sun))| {
+            (
+                name.into(),
+                format!(r#"{{"camera.optics_height":{height},"sun.elevation":{sun}}}"#),
+                9.0 + f64::from(u32::try_from(i).expect("four checkpoints")),
+            )
+        })
+        .collect();
+    }
+    let views = [
+        ("beach", 0),
+        ("lake", 1),
+        ("pond", 2),
+        ("lake-high", 7),
+        ("beach-down", 8),
+        ("lake-down", 9),
+        ("pond-down", 10),
+    ];
+    [("dawn", 1), ("noon", 60), ("low-sun", 6)]
+        .into_iter()
+        .flat_map(|(name, sun)| {
+            views.map(|(view, camera)| {
+                (
+                    format!("{view}-{name}"),
+                    format!(r#"{{"camera.island":{camera},"sun.elevation":{sun}}}"#),
+                    10.0,
+                )
+            })
+        })
+        .collect()
 }
 
 #[cfg(target_os = "macos")]

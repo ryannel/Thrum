@@ -56,6 +56,7 @@ impl Slab {
             depth: true,
             write_depth: false,
             refraction: self.refraction,
+            images: thrum_render::contribution::AfterOpaqueImages::None,
         }
     }
     pub(super) fn rebuild(

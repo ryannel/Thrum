@@ -379,6 +379,27 @@ impl Map {
         Ok(())
     }
 
+    /// Set one body's four amplitude gains against the prepared ambient wave field.
+    /// # Errors
+    /// Refuses unknown bodies or gains outside the finite unit interval.
+    pub fn set_wave_gains(&mut self, body: usize, gains: [f64; 4]) -> Result<(), WaterError> {
+        let body = self
+            .bodies
+            .get_mut(body)
+            .ok_or_else(|| WaterError::new("waves", "unknown body"))?;
+        if gains.iter().any(|gain| !(0.0..=1.0).contains(gain)) {
+            return Err(WaterError::new(
+                &body.name,
+                "amplitude gains must be between zero and one",
+            ));
+        }
+        if body.gains.map(f64::to_bits) != gains.map(f64::to_bits) {
+            body.gains = gains;
+            self.spatial_revision = self.spatial_revision.wrapping_add(1);
+        }
+        Ok(())
+    }
+
     /// Query the continuous row and bed at a world point.
     pub fn sample(&self, point: [f64; 2]) -> Option<MapSample> {
         if point.iter().any(|v| !v.is_finite()) {

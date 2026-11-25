@@ -179,7 +179,7 @@ pub fn build_paired(
     chase: bool,
     draw_water: bool,
 ) -> Result<FloatingScene, Box<dyn Error>> {
-    build_scene(wind, lake, speed, heading, chase, draw_water, None)
+    build_scene(wind, lake, speed, heading, chase, draw_water, None, None)
 }
 
 /// Build the craft and float scene with the public interaction wave inputs.
@@ -206,7 +206,36 @@ pub fn build_wake_paired(
     demo: WakeDemo,
     draw_water: bool,
 ) -> Result<FloatingScene, Box<dyn Error>> {
-    build_scene(wind, lake, speed, heading, true, draw_water, Some(demo))
+    build_scene(
+        wind,
+        lake,
+        speed,
+        heading,
+        true,
+        draw_water,
+        Some(demo),
+        None,
+    )
+}
+
+/// Same camera, wave forcing and poses in both arms of the optics record.
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_optics_arm(
+    wind: Wind,
+    bodies: usize,
+    optics: bool,
+) -> Result<FloatingScene, Box<dyn Error>> {
+    build_scene(
+        wind,
+        false,
+        0.0,
+        std::f32::consts::PI,
+        false,
+        true,
+        None,
+        Some((optics, bodies)),
+    )
 }
 
 #[expect(
@@ -221,6 +250,7 @@ fn build_scene(
     chase: bool,
     draw_water: bool,
     demo: Option<WakeDemo>,
+    optics_arm: Option<(bool, usize)>,
 ) -> Result<FloatingScene, Box<dyn Error>> {
     let demo = demo.map(|mut demo| {
         demo.stone &= lake;
@@ -233,6 +263,9 @@ fn build_scene(
     }));
     let spectrum = Spectrum::build(&wind.forcing())?;
     let mut profile = crate::profile(&spectrum);
+    profile.optics = optics_arm
+        .is_none_or(|(enabled, _)| enabled)
+        .then(thrum_water::Optics::default);
     profile.query = Some(QueryLimits {
         points: 2048,
         max_age: 3,
@@ -362,7 +395,7 @@ fn build_scene(
         })
         .transpose()?;
     let sun = controls
-        .slider("sun.elevation", "Sun elevation", 5.0..=80.0)
+        .slider("sun.elevation", "Sun elevation", -25.0..=80.0)
         .default(elevation)
         .add()?;
     let chase_control = controls
@@ -370,6 +403,16 @@ fn build_scene(
         .default(f32::from(chase))
         .step(1.0)
         .add()?;
+    let optics_height = controls
+        .slider("camera.optics_height", "Optics eye height", 0.0..=10.0)
+        .default(0.0)
+        .add()?;
+    let optics_pan = controls
+        .slider("camera.optics_pan", "Optics pan", -85.0..=85.0)
+        .default(0.0)
+        .add()?;
+    let camera_angles = Arc::new(Mutex::new([0.0_f32; 2]));
+    let presented_angles = Arc::clone(&camera_angles);
     let speed_value = Arc::new(Mutex::new((speed, 0.0)));
     let current_speed = Arc::clone(&speed_value);
     let view_choice = Arc::new(AtomicBool::new(chase));
@@ -398,6 +441,8 @@ fn build_scene(
             craft_control.is_none_or(|control| controls.get(control) > 0.5),
             Ordering::Relaxed,
         );
+        *camera_angles.lock().expect("optics angles") =
+            [controls.get(optics_height), controls.get(optics_pan)];
         sky.sun_elevation_degrees = controls.get(sun);
         sky.sun_azimuth_degrees = azimuth;
         sky.exposure_compensation_ev = 0.3;
@@ -416,6 +461,11 @@ fn build_scene(
             .rotation
             .slerp(body.rotation, f64::from(alpha));
         let mut camera = camera(&body, view_choice.load(Ordering::Relaxed), level, demo);
+        let [height, pan] = *presented_angles.lock().expect("optics angles");
+        if height > 0.0 {
+            camera.position[1] = (body.position + DVec3::Y * body.draft()).as_vec3().y + height;
+        }
+        crate::island::pan_camera(&mut camera, pan, 0.0);
         if let Some(swell) = &camera_swell {
             keep_camera_above_swell(&mut camera, swell, fleet.tick, alpha);
         }
@@ -575,9 +625,21 @@ fn build_scene(
             #[cfg(target_arch = "wasm32")]
             browser_status(stats, wake, &status_fleet.lock().expect("floating fleet"));
         })
-        .with_contribution(Box::new(Draw::new(Arc::clone(&fleet))), || {
-            ContentStatus::Drawn(1)
-        });
+        .with_contribution(
+            Box::new(Draw::new(
+                Arc::clone(&fleet),
+                water.optics_bodies(),
+                optics_arm.map_or(9, |(_, count)| count),
+            )),
+            || ContentStatus::Drawn(1),
+        );
+    let game = if optics_arm.is_some() {
+        game.with_meshes(vec![
+            MeshPlacement::new("meshes/float", "textures/white").at([150.0, 2.0, 62.0]),
+        ])?
+    } else {
+        game
+    };
     let game = if draw_water {
         game.with_contribution(Box::new(water), || ContentStatus::Drawn(1))
     } else {

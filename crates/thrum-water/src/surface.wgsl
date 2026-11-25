@@ -1,14 +1,3 @@
-struct ViewRecord {
-    view_proj: mat4x4<f32>, previous_view_proj: mat4x4<f32>,
-    camera_xyz_time: vec4<f32>, pre_exposure_inv_exposure_jitter: vec4<f32>,
-    unjittered_view_proj: mat4x4<f32>, mip_bias: f32, jitter_phase: u32, padding: vec2<u32>,
-}
-struct ViewAuxRecord {
-    inverse_view_proj: mat4x4<f32>, viewport_inv_viewport: vec4<f32>,
-    near_far: vec4<f32>, time: vec4<f32>, flags: vec4<u32>, subrectangle: vec4<f32>,
-}
-@group(0) @binding(0) var<uniform> view: ViewRecord;
-@group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
 struct Field { displacement:vec4<f32>, slope:vec4<f32>, velocity:vec4<f32>, }
 fn add_field(a:Field,b:Field,w:f32)->Field {return Field(a.displacement+w*b.displacement,a.slope+w*b.slope,a.velocity+w*b.velocity);}
 fn cascade_at(point:vec2<f32>,band:u32)->Field {
@@ -271,12 +260,18 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let fresnel=clamp(reflected.w,0.0,1.0);
     // A dielectric interface splits the reflected and transmitted paths by R.
     // The environment lends its filtered radiance; its opaque-material DFG is not R.
-    var light=reflected.rgb;
+    let paths=water_optical_paths(row,input.world,vec2<u32>(input.clip.xy),n,v,variance,reflected.rgb,fresnel);
+    var light=paths.reflected;
     // Deep-water in-scatter, driven only by the shared hemispherical irradiance.
     let l=environment_sun_direction();
-    let sunlight=sun_irradiance(input.world);
+    let sunlight=water_sun(input.world);
     let incident=environment_diffuse(vec3(0.0,1.0,0.0))+sunlight*max(l.y,0.0);
-    light+=(1.0-fresnel)*incident*water.scatter.rgb/3.14159265;
+    if OPTICS_ENABLED {
+        light+=(1.0-fresnel)*(incident*water.scatter.rgb/3.14159265*(1.0-paths.transmission)
+            + paths.transmission*paths.behind);
+    } else {
+        light+=(1.0-fresnel)*incident*water.scatter.rgb/3.14159265;
+    }
     // Height in RMS-wave units and horizontal compression locate the thin
     // crest. Its extra in-scatter is bounded and uses the same lent irradiance
     // as the body; no independent light, pattern, or geometric sharpening.
@@ -299,6 +294,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     var motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
     if water.level_dt_reset.z>0.5 {motion=vec2(65504.0);}
     var opacity=surface_opacity(row,input.world,v.y);
+    if OPTICS_ENABLED { opacity=smoothstep(0.0,0.035,paths.thickness); }
     if FOAM_ENABLED { opacity=max(opacity,whitewater.y); }
     return Output(vec4(colour,opacity),motion,clamp(fresnel+0.1+whitewater.y,0.0,1.0));
 }

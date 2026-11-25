@@ -32,6 +32,12 @@ fn main() {
                     )
                     .map(|scene| scene.game),
                 },
+                Settings::OpticsSea(wind) => {
+                    water_scene::build_optics_sea(wind, draw_float, true).map(|(game, _)| game)
+                }
+                Settings::OpticsShade(wind) => {
+                    water_scene::build_optics_shade(wind, draw_float, true).map(|(game, _)| game)
+                }
                 Settings::OpenSea => {
                     water_scene::build_with_report(draw_float).map(|(game, _)| game)
                 }

@@ -74,3 +74,13 @@ test = false
 # WATERS M13.9 names this target.
 [[test]]
 name = "surf_frame_gpu"
+
+# WATERS WP8's focused Metal proofs.
+[[test]]
+name = "gather_gpu"
+
+[[test]]
+name = "cloud_shade_gpu"
+
+[[test]]
+name = "optics_once_gpu"

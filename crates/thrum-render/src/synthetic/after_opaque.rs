@@ -1,5 +1,6 @@
 //! Late effects share one refraction source and independently request scene depth.
 use super::{RenderError, SceneContext, SyntheticTargetInputs, TargetResources};
+use crate::contribution::AfterOpaqueImages;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphDepthAttachment,
@@ -14,6 +15,7 @@ pub(super) struct TargetEffects {
 }
 pub(super) struct LateGraph {
     pub(super) copy: Option<ResourceId>,
+    pub(super) images: Vec<Vec<ResourceId>>,
     pub(super) first: Option<usize>,
     pub(super) last: usize,
     pub(super) colour: usize,
@@ -106,6 +108,7 @@ impl SyntheticTargetInputs {
         } else {
             None
         };
+        let mut images: Vec<Vec<ResourceId>> = Vec::new();
         for (index, declaration) in self.effect_graph.after_opaque.iter().enumerate() {
             let key = self.late_key(index);
             keys.insert(key);
@@ -130,6 +133,23 @@ impl SyntheticTargetInputs {
                     AccessKind::SampledRead,
                 ));
             }
+            let writes = match declaration.images {
+                AfterOpaqueImages::None => Vec::new(),
+                AfterOpaqueImages::Capture(formats) => {
+                    accesses.push(Access::new(scene.clone(), 0..1, AccessKind::SampledRead));
+                    capture_images(graph, formats, extent, &mut accesses)?
+                }
+                AfterOpaqueImages::Sample { producer, .. } => {
+                    accesses.extend(
+                        images[producer]
+                            .iter()
+                            .cloned()
+                            .map(|id| Access::new(id, 0..1, AccessKind::SampledRead)),
+                    );
+                    Vec::new()
+                }
+            };
+            images.push(writes);
             let pass = graph.declare_named(
                 PassKey::AfterOpaque(crate::pass_key::pass_index(index)),
                 format!("effect after {index}: {}", declaration.name),
@@ -154,6 +174,7 @@ impl SyntheticTargetInputs {
         }
         Ok(LateGraph {
             copy,
+            images,
             first,
             last,
             colour: previous_render,
@@ -181,8 +202,23 @@ impl SyntheticTargetInputs {
             .effect_graph
             .after_opaque
             .iter()
-            .map(|declaration| {
+            .enumerate()
+            .map(|(index, declaration)| {
                 let layout = declaration.input_layout(device);
+                let (source, images) = match declaration.images {
+                    AfterOpaqueImages::None => (None, &[][..]),
+                    AfterOpaqueImages::Capture(_) => (
+                        Some(texture_view(textures, &ids.scene)?),
+                        ids.after_opaque_images[index].as_slice(),
+                    ),
+                    AfterOpaqueImages::Sample { producer, .. } => {
+                        (None, ids.after_opaque_images[producer].as_slice())
+                    }
+                };
+                let views = images
+                    .iter()
+                    .map(|id| texture_view(textures, id))
+                    .collect::<Result<Vec<_>, _>>()?;
                 let mut entries = Vec::new();
                 if declaration.depth {
                     entries.push(wgpu::BindGroupEntry {
@@ -198,6 +234,18 @@ impl SyntheticTargetInputs {
                         ),
                     });
                 }
+                if let Some(view) = &source {
+                    entries.push(wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(view),
+                    });
+                }
+                entries.extend((AfterOpaqueImages::FIRST_IMAGE..).zip(&views).map(
+                    |(binding, view)| wgpu::BindGroupEntry {
+                        binding,
+                        resource: wgpu::BindingResource::TextureView(view),
+                    },
+                ));
                 Ok(device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some(&declaration.name),
                     layout: &layout,
@@ -223,6 +271,45 @@ impl SyntheticTargetInputs {
             .collect();
         Ok(TargetEffects { groups, names })
     }
+}
+
+fn texture_view(
+    textures: &crate::graph::GraphTextures,
+    id: &ResourceId,
+) -> Result<wgpu::TextureView, RenderError> {
+    textures
+        .texture(id)
+        .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()))
+        .ok_or(RenderError::GraphPassMismatch)
+}
+
+fn capture_images(
+    graph: &mut FrameGraph,
+    formats: &[wgpu::TextureFormat],
+    [width, height]: [u32; 2],
+    accesses: &mut Vec<Access>,
+) -> Result<Vec<ResourceId>, RenderError> {
+    formats
+        .iter()
+        .map(|&format| {
+            let id = graph.resource(
+                ResourceDescriptor::Texture {
+                    dimension: crate::graph::TextureKind::D2,
+                    width,
+                    height,
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING
+                        | wgpu::TextureUsages::STORAGE_BINDING,
+                },
+                ResourceScope::Transient,
+            )?;
+            accesses.push(Access::new(id.clone(), 0..1, AccessKind::StorageWrite));
+            Ok(id)
+        })
+        .collect()
 }
 
 impl SceneContext<'_> {

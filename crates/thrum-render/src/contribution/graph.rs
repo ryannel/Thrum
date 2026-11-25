@@ -1,6 +1,7 @@
 //! Public, generation-prepared effect declarations. Physical resources stay with the effect.
 
 use super::HistoryBinding;
+use super::{AfterOpaqueImages, AfterOpaqueKind};
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, FrameGraph, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
@@ -251,11 +252,28 @@ impl EffectGraph {
             }
         }
         let mut names = BTreeSet::new();
-        for pass in &self.after_opaque {
-            if pass.write_depth && (pass.depth || pass.kind != super::AfterOpaqueKind::Render) {
+        for (index, pass) in self.after_opaque.iter().enumerate() {
+            match pass.images {
+                AfterOpaqueImages::Capture(formats)
+                    if formats.is_empty() || pass.kind != AfterOpaqueKind::Compute =>
+                {
+                    return Err(Error::AfterOpaqueImages(pass.name.clone()));
+                }
+                AfterOpaqueImages::Sample { producer, count }
+                    if producer >= index
+                        || !matches!(
+                            self.after_opaque[producer].images,
+                            AfterOpaqueImages::Capture(formats) if formats.len() == count as usize
+                        ) =>
+                {
+                    return Err(Error::AfterOpaqueImages(pass.name.clone()));
+                }
+                _ => {}
+            }
+            if pass.write_depth && (pass.depth || pass.kind != AfterOpaqueKind::Render) {
                 return Err(Error::AfterOpaqueDepthConflict(pass.name.clone()));
             }
-            if pass.kind == super::AfterOpaqueKind::Render
+            if pass.kind == AfterOpaqueKind::Render
                 && pass.accesses.iter().any(|access| {
                     matches!(
                         access.kind,
@@ -268,12 +286,10 @@ impl EffectGraph {
             {
                 return Err(Error::AfterOpaqueUsesSceneAttachments(pass.name.clone()));
             }
-            if pass.kind == super::AfterOpaqueKind::Render
-                && pass.cadence != EffectCadence::EveryFrame
-            {
+            if pass.kind == AfterOpaqueKind::Render && pass.cadence != EffectCadence::EveryFrame {
                 return Err(Error::CadenceRequiresRetainedOutput(pass.name.clone()));
             }
-            if pass.kind == super::AfterOpaqueKind::Compute
+            if pass.kind == AfterOpaqueKind::Compute
                 && pass.accesses.iter().any(|access| {
                     matches!(
                         access.kind,

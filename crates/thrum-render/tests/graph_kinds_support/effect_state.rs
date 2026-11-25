@@ -17,6 +17,7 @@ fn late_depth_writes_refuse_sampling_and_compute_but_allow_a_surface() {
             depth: false,
             write_depth: true,
             refraction: false,
+            images: thrum_render::contribution::AfterOpaqueImages::None,
         }],
         ..EffectGraph::default()
     };
@@ -294,6 +295,7 @@ fn late_passes_share_history_validation_and_refuse_unrecordable_accesses_at_prep
         depth: true,
         write_depth: false,
         refraction: false,
+        images: thrum_render::contribution::AfterOpaqueImages::None,
     };
     graph.after_opaque.push(late.clone());
     graph.validate().expect("late history producer");

@@ -379,6 +379,8 @@ impl Error for ArenaError {}
 pub enum EffectGraphError {
     /// After-opaque pass (named by the payload) cannot attach depth in that configuration.
     AfterOpaqueDepthConflict(String),
+    /// Invalid private capture or reference to its producer.
+    AfterOpaqueImages(String),
     /// After-opaque render pass (named by the payload) declares a scene attachment or copy access.
     AfterOpaqueUsesSceneAttachments(String),
     /// Pass (named by the payload) must write retained output to skip frames.
@@ -448,6 +450,12 @@ impl fmt::Display for EffectGraphError {
                 f,
                 "After-opaque pass {pass} cannot attach depth in that configuration"
             ),
+            Self::AfterOpaqueImages(pass) => {
+                write!(
+                    f,
+                    "After-opaque pass {pass} has invalid private image bindings"
+                )
+            }
             Self::AfterOpaqueUsesSceneAttachments(pass) => write!(
                 f,
                 "After-opaque render pass {pass} declares a scene attachment or copy access"

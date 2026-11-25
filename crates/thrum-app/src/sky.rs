@@ -306,7 +306,7 @@ impl Sky {
             })
     }
 
-    fn lighting(&self) -> Result<FrameLighting, RenderError> {
+    fn lighting(&self, nightglow: bool) -> Result<FrameLighting, RenderError> {
         AtmosphereFrame::new(
             self.toward_sun(),
             SOLAR_LUX,
@@ -314,7 +314,13 @@ impl Sky {
             self.camera.position[1],
             1,
         )
-        .map(FrameLighting::Atmosphere)
+        .map(|light| {
+            FrameLighting::Atmosphere(if nightglow {
+                light.with_nightglow()
+            } else {
+                light
+            })
+        })
     }
 }
 
@@ -499,6 +505,7 @@ pub struct SkyScene {
     sky: Sky,
     presentation_camera: Option<PresentationCamera>,
     ground: bool,
+    nightglow: bool,
     temporal_sampling: bool,
     overlay: DisplayOverlay,
 }
@@ -545,12 +552,16 @@ impl SceneSource<SourceTick> for SkyScene {
         };
         let lighting = match lighting {
             Some(published) => published,
-            None => self.sky.lighting()?,
+            None => self.sky.lighting(self.nightglow)?,
         };
         let view = match lighting {
             // A flat incident-light meter, darkened below daylight so twilight reads dim.
             FrameLighting::Atmosphere(_) => view
-                .with_incident_exposure(self.sky.exposure_compensation_ev, 0.0, 18.0)
+                .with_incident_exposure(
+                    self.sky.exposure_compensation_ev,
+                    if self.nightglow { -12.0 } else { 0.0 },
+                    18.0,
+                )
                 .and_then(SyntheticView::with_low_light_adaptation),
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(FALLBACK_EXPOSURE)
@@ -632,6 +643,7 @@ pub struct SkyGame {
     fixed_update: Option<FixedUpdate>,
     presentation_camera: Option<PresentationCamera>,
     temporal_sampling: bool,
+    nightglow: bool,
     overlay: DisplayOverlay,
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     name: &'static str,
@@ -647,6 +659,7 @@ pub struct SkyGame {
     update: Update,
     ground: Option<[f32; 3]>,
     local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
+    sun_optical_depth: Option<thrum_render::atmosphere::SunOpticalDepth>,
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -662,6 +675,23 @@ pub struct SkyGame {
 }
 
 impl SkyGame {
+    /// Use the physical atmosphere's nightglow below twilight.
+    #[must_use]
+    pub fn with_nightglow(mut self) -> Self {
+        self.nightglow = true;
+        self
+    }
+
+    /// Set the scene's authored Sun-path optical depth independently of the visible sky.
+    #[must_use]
+    pub fn with_sun_optical_depth(
+        mut self,
+        field: thrum_render::atmosphere::SunOpticalDepth,
+    ) -> Self {
+        self.sun_optical_depth = Some(field);
+        self
+    }
+
     /// A scene with `controls` in the panel, `camera`, the Sun 30° high in the south-east and
     /// the default ground. `update` runs before every frame (and after every control edit) to
     /// map the controls onto the [`Sky`]; a value the renderer cannot draw is reported and the
@@ -681,6 +711,7 @@ impl SkyGame {
             fixed_update: None,
             presentation_camera: None,
             temporal_sampling: false,
+            nightglow: false,
             overlay: DisplayOverlay::Off,
             #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             name: "thrum",
@@ -703,6 +734,7 @@ impl SkyGame {
             update: Box::new(update),
             ground: Some(DEFAULT_GROUND),
             local_lights: Vec::new(),
+            sun_optical_depth: None,
             contribution: None,
             status: None,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -1092,6 +1124,8 @@ impl SkyGame {
         let _ = self.update();
         self.sky.check().map_err(GameError::InvalidScene)?;
         let world = self.take_world();
+        let mut scene = ground_scene(self.ground, &self.local_lights)?;
+        scene.sun_optical_depth.clone_from(&self.sun_optical_depth);
         let mut host = FrameHost::new(
             capabilities,
             queue,
@@ -1101,10 +1135,11 @@ impl SkyGame {
                 sky: self.sky,
                 presentation_camera: self.presentation_camera.take(),
                 ground: self.ground.is_some(),
+                nightglow: self.nightglow,
                 temporal_sampling: self.temporal_sampling,
                 overlay: self.overlay,
             },
-            ground_scene(self.ground, &self.local_lights)?,
+            scene,
             FALLBACK_EXPOSURE,
         )
         .await?;

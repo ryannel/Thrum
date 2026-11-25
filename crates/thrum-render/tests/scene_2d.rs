@@ -570,6 +570,7 @@ impl SceneContribution for Contribution {
                     depth: false,
                     write_depth: false,
                     refraction: false,
+                    images: thrum_render::contribution::AfterOpaqueImages::None,
                 })
                 .into_iter()
                 .collect(),

@@ -3,6 +3,7 @@ use super::{
     foam::{self, Foam},
     interaction::{self, Interaction},
     map_gpu::{self, MapGpu},
+    optics::{self, Gather},
     query::{self, QueryMailbox, Readback},
     records::Parameters,
     surf::{SurfGpu, cache::Cache},
@@ -31,6 +32,7 @@ pub(super) struct Prepared {
     pub(super) interaction: Option<Interaction>,
     pub(super) foam: Option<Foam>,
     pub(super) environment: EnvironmentProducts,
+    pub(super) gather: Option<Gather>,
     pub(super) pipeline: wgpu::RenderPipeline,
     pub(super) film: Option<wgpu::RenderPipeline>,
     pub(super) parameters: wgpu::Buffer,
@@ -53,7 +55,7 @@ struct Pattern {
     bound: Option<(u64, wgpu::BindGroup)>,
     submitted: Option<u64>,
 }
-fn declaration() -> AfterOpaquePass {
+fn declaration(gather: bool) -> AfterOpaquePass {
     AfterOpaquePass {
         name: SURFACE_PASS.into(),
         kind: AfterOpaqueKind::Render,
@@ -62,6 +64,11 @@ fn declaration() -> AfterOpaquePass {
         depth: false,
         write_depth: true,
         refraction: false,
+        images: if gather {
+            optics::sampled(0)
+        } else {
+            thrum_render::contribution::AfterOpaqueImages::None
+        },
     }
 }
 fn film_declaration() -> AfterOpaquePass {
@@ -69,7 +76,7 @@ fn film_declaration() -> AfterOpaquePass {
         name: "shore film".into(),
         depth: true,
         write_depth: false,
-        ..declaration()
+        ..declaration(false)
     }
 }
 impl Prepared {
@@ -109,6 +116,9 @@ impl Prepared {
                 if let Some(cache) = &self.surf_cache {
                     entries.push(cache.surface_entry());
                 }
+                if let Some(gather) = &self.gather {
+                    entries.push(optics::entry(&gather.buffer));
+                }
                 (
                     product.serial,
                     pattern
@@ -146,7 +156,7 @@ impl Prepared {
         if self.query.is_some() {
             Readback::declare(&self.ambient, &mut graph, wake.clone());
         }
-        let mut surface = declaration();
+        let mut surface = declaration(self.gather.is_some());
         surface.accesses = self.ambient.filtered_accesses();
         surface.accesses.extend(wake);
         let surf_cache = self
@@ -158,6 +168,9 @@ impl Prepared {
             surface.accesses.push(read);
         }
         graph.opaque_reads.clear();
+        if self.gather.is_some() {
+            graph.after_opaque.push(optics::declaration());
+        }
         if self.film.is_some() {
             let mut film = film_declaration();
             film.accesses.clone_from(&surface.accesses);
@@ -240,8 +253,11 @@ pub(super) fn new(
         None
     };
     let environment = surface
-        .environment_products()
+        .environment_products_with_cloud()
         .ok_or("water needs the scene's physical environment")?;
+    let gather = profile
+        .optics
+        .map(|profile| Gather::new(surface, &environment, profile));
     let parameters = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("water parameters"),
         size: size_of::<Parameters>() as u64,
@@ -294,24 +310,7 @@ pub(super) fn new(
             surf.as_ref(),
         )
     });
-    let fallback = foam.as_ref().map(|_| {
-        device
-            .create_texture(&wgpu::TextureDescriptor {
-                label: Some("absent foam pattern"),
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8Unorm,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING,
-                view_formats: &[],
-            })
-            .create_view(&wgpu::TextureViewDescriptor::default())
-    });
+    let fallback = foam.as_ref().map(|_| fallback_pattern(device));
     if let (Some(foam), Some(fallback)) = (&foam, &fallback) {
         entries.extend(Foam::sample_layout());
         entries.push(binding::texture(
@@ -327,6 +326,10 @@ pub(super) fn new(
         entries.push(cache.surface_binding());
         bindings.push(cache.surface_entry());
     }
+    if let Some(gather) = &gather {
+        entries.push(optics::uniform(wgpu::ShaderStages::FRAGMENT));
+        bindings.push(optics::entry(&gather.buffer));
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),
         entries: &entries,
@@ -336,15 +339,17 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let source = shader_source(&environment, mapped, interaction.is_some(), foam.as_ref())
-        + &Cache::source(surf_cache.as_ref());
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some(SURFACE_PASS),
-        source: wgpu::ShaderSource::Wgsl(source.into()),
-    });
-    let pipeline = create_pipeline(surface, &layout, &environment, &shader, mapped, false);
-    let film = (foam.is_some() && has_shore(map))
-        .then(|| create_pipeline(surface, &layout, &environment, &shader, true, true));
+    let (pipeline, film) = surface_pipelines(
+        surface,
+        &layout,
+        &environment,
+        mapped,
+        interaction.as_ref(),
+        foam.as_ref(),
+        gather.as_ref(),
+        surf_cache.as_ref(),
+        has_shore(map),
+    );
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
         layout,
@@ -359,6 +364,7 @@ pub(super) fn new(
         interaction,
         foam,
         environment,
+        gather,
         pipeline,
         film,
         parameters,
@@ -454,6 +460,25 @@ fn field_entries<'a>(
     bindings
 }
 
+fn fallback_pattern(device: &DeviceSite) -> wgpu::TextureView {
+    device
+        .create_texture(&wgpu::TextureDescriptor {
+            label: Some("absent foam pattern"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        })
+        .create_view(&wgpu::TextureViewDescriptor::default())
+}
+
 fn pattern_entry(view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
     wgpu::BindGroupEntry {
         binding: 12,
@@ -461,20 +486,75 @@ fn pattern_entry(view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
     }
 }
 
+fn surface_pipelines(
+    surface: &SceneSurface<'_>,
+    layout: &wgpu::BindGroupLayout,
+    environment: &EnvironmentProducts,
+    mapped: bool,
+    interaction: Option<&Interaction>,
+    foam: Option<&Foam>,
+    gather: Option<&Gather>,
+    cache: Option<&Cache>,
+    shore: bool,
+) -> (wgpu::RenderPipeline, Option<wgpu::RenderPipeline>) {
+    let source = shader_source(
+        surface,
+        environment,
+        mapped,
+        interaction.is_some(),
+        foam,
+        gather.is_some(),
+    ) + &Cache::source(cache);
+    let shader = surface
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some(SURFACE_PASS),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
+        });
+    let pipeline = create_pipeline(
+        surface,
+        layout,
+        environment,
+        &shader,
+        mapped,
+        false,
+        gather.is_some(),
+    );
+    let film = (foam.is_some() && shore)
+        .then(|| create_pipeline(surface, layout, environment, &shader, true, true, false));
+    (pipeline, film)
+}
+
 fn shader_source(
+    surface: &SceneSurface<'_>,
     environment: &EnvironmentProducts,
     mapped: bool,
     wake: bool,
     foam: Option<&Foam>,
+    gather: bool,
 ) -> String {
+    let sun = if surface.sun_optical_depth {
+        "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
+    } else {
+        "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point); }"
+    };
     format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         environment.shader_source.replace("@group(0)", "@group(2)"),
+        super::VIEW_RECORDS,
         include_str!("fresnel.wgsl"),
         include_str!("sampling.wgsl"),
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
         include_str!("surface.wgsl"),
+        if gather {
+            concat!(
+                include_str!("optics/regions.wgsl"),
+                include_str!("optics/paths.wgsl")
+            )
+        } else {
+            include_str!("optics/disabled.wgsl")
+        },
         if mapped {
             map_gpu::declarations() + include_str!("mapped_surface.wgsl")
         } else {
@@ -497,12 +577,13 @@ fn create_pipeline(
     shader: &wgpu::ShaderModule,
     mapped: bool,
     film: bool,
+    gather: bool,
 ) -> wgpu::RenderPipeline {
     let device = surface.device;
     let pass = if film {
         film_declaration()
     } else {
-        declaration()
+        declaration(gather)
     };
     let inputs = pass.input_layout(device);
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

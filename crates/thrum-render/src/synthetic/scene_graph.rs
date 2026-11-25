@@ -722,6 +722,7 @@ impl super::SyntheticTargetInputs {
                 secondary,
                 native,
                 refraction: late.copy,
+                after_opaque_images: late.images,
                 soft_sun: soft_sun.map(|(resources, _)| resources),
                 pre_tone,
                 temporal,

@@ -18,6 +18,7 @@ const VIEW: (&str, &str) = ("view", "THRUM_WATER_VIEW");
 const STONE: (&str, &str) = ("stone", "THRUM_WATER_STONE");
 const WAKE_BODIES: (&str, &str) = ("wake-bodies", "THRUM_WATER_WAKE_BODIES");
 const ISLAND: (&str, &str) = ("island", "THRUM_WATER_ISLAND");
+const OPTICS: (&str, &str) = ("optics", "THRUM_WATER_OPTICS");
 const SURF: (&str, &str) = ("surf", "THRUM_WATER_SURF");
 
 /// The scene the settings choose.
@@ -25,6 +26,10 @@ const SURF: (&str, &str) = ("surf", "THRUM_WATER_SURF");
 pub enum Settings {
     /// The open trade sea, chosen when no other setting names a scene.
     OpenSea,
+    /// The open sea with optics and selectable winds.
+    OpticsSea(Wind),
+    /// Open sea under the labelled stand-in cloud shade.
+    OpticsShade(Wind),
     /// The island under a wind, with transported whitewater on its beach when `foam` is set.
     Island {
         /// Weather the island is loaded with.
@@ -106,6 +111,13 @@ impl Settings {
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {
         if let Some(wind) = get(SURF).as_deref().and_then(Wind::named) {
             return Self::Surf(wind);
+        }
+        if let Some(wind) = get(OPTICS).as_deref().and_then(Wind::named) {
+            return if get(("shade", "THRUM_WATER_SHADE")).as_deref() == Some("1") {
+                Self::OpticsShade(wind)
+            } else {
+                Self::OpticsSea(wind)
+            };
         }
         let foam = get(FOAM);
         let location = get(LOCATION);

@@ -57,7 +57,7 @@ mod list;
 mod quality;
 mod state;
 mod views;
-pub use after_opaque::{AfterOpaqueKind, AfterOpaquePass};
+pub use after_opaque::{AfterOpaqueImages, AfterOpaqueKind, AfterOpaquePass};
 pub(crate) use graph::EffectResources;
 pub use graph::{
     EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources, TickPass,
@@ -318,6 +318,23 @@ impl SceneSurface<'_> {
     /// `None`. Rebuild the result when this surface is replaced.
     #[must_use]
     pub fn environment_products(&self) -> Option<crate::atmosphere::EnvironmentProducts> {
+        self.environment_products_impl(None)
+    }
+
+    /// Borrow the environment and the prepared cloud optical-depth operation.
+    /// When `sun_optical_depth` is true, the shader also provides
+    /// `cloud_factor(world_point)`. Apply it to direct sunlight only.
+    #[must_use]
+    pub fn environment_products_with_cloud(
+        &self,
+    ) -> Option<crate::atmosphere::EnvironmentProducts> {
+        self.environment_products_impl(self.cloud)
+    }
+
+    fn environment_products_impl(
+        &self,
+        cloud: Option<&crate::atmosphere::CloudPrepared>,
+    ) -> Option<crate::atmosphere::EnvironmentProducts> {
         self.environment.map(|environment| {
             environment.products(
                 self.device,
@@ -325,6 +342,7 @@ impl SceneSurface<'_> {
                 self.environment_light,
                 self.exposure,
                 self.cloud.is_some(),
+                cloud,
             )
         })
     }

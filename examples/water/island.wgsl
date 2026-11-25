@@ -17,6 +17,7 @@ fn ground_noise(point: vec2<f32>) -> f32 {
 }
 
 fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
+    if any(surface.base_colour.rgb < vec3(0.99)) { return surface; }
     var out = surface;
     let xz = at.world.xz;
     let height = at.world.y;

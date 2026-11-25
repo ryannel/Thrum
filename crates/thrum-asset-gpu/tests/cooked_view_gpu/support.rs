@@ -250,6 +250,7 @@ impl Probe {
             depth: main,
             write_depth: false,
             refraction: main,
+            images: thrum_render::contribution::AfterOpaqueImages::None,
         }
     }
 }

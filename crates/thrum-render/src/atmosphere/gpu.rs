@@ -103,6 +103,7 @@ impl AtmospherePrepared {
         environment_light: &wgpu::Buffer,
         exposure: &[wgpu::Buffer; 2],
         far_aerial: bool,
+        cloud: Option<&super::CloudPrepared>,
     ) -> super::EnvironmentProducts {
         super::products::create(
             self,
@@ -111,6 +112,7 @@ impl AtmospherePrepared {
             environment_light,
             exposure,
             far_aerial,
+            cloud,
         )
     }
 

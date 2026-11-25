@@ -9,6 +9,7 @@ import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
 if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf');
+const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
 const [width,height] = [2560,1440];
@@ -402,7 +403,8 @@ try {
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
+  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'');
+  result.route=route;
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
@@ -653,6 +655,34 @@ try {
       const saturated=await capture('history-full',1000/240,true);
       assert(saturated.submission===after.submission+1,'post-saturation capture was not the next submission');
       result.frame_report_history={before,after};
+    }
+  } else if(opticsRoute){
+    const routeParams=new URLSearchParams(opticsRoute.slice(1));
+    if(!routeParams.has('bodies')){
+      await until(async()=>{
+        if(!await evaluate('game.frame_ready()'))return false;
+        await drive(1000/60);
+        const status=await evaluate('game.report()');
+        return /^Cooked generation [0-9]+ drawn/.test(status);
+      },'optics content drawn');
+    }
+    let checkpoints;
+    if(routeParams.has('island')){
+      checkpoints=[['beach-noon',{'camera.island':0}],['lake-noon',{'camera.island':1}],
+        ['pond-noon',{'camera.island':2}],['lake-high-noon',{'camera.island':7}],
+        ['beach-down-noon',{'camera.island':8}],['lake-down-noon',{'camera.island':9}],
+        ['pond-down-noon',{'camera.island':10}]];
+    }else if(routeParams.has('bodies')){
+      checkpoints=[['hull-2',{'camera.optics_height':2,'sun.elevation':60}],
+        ['hull-6',{'camera.optics_height':6,'sun.elevation':60}]];
+    }else{
+      checkpoints=[['noon',60],['low-sun',6],['night',-18]].flatMap(([name,sun])=>
+        [2,40].map(height=>[name+'-'+height,{'camera.height':height,'camera.bearing':90,'sun.elevation':sun}]));
+      checkpoints.push(['submerged-noon-6',{'camera.height':6,'camera.bearing':90,'sun.elevation':60}]);
+    }
+    for(const [name,params] of checkpoints){
+      await evaluate(`game.apply_params(${JSON.stringify(JSON.stringify(params))})`);
+      await capture(name,1000/60);
     }
   } else if(mode==='fixed' && surfInspection){
     const views=['sand','beach','offshore','lee','headland','island','seaward','handoff','approach'];

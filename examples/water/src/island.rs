@@ -295,6 +295,13 @@ pub const CAMERAS: [Camera; 6] = [
     Camera::look_at([127.0, 400.0, 35.0], [127.0, 0.0, 34.99], 65.0),
     Camera::look_at([208.0, 76.0, 10.0], [208.0, 0.0, 9.99], 65.0),
 ];
+const LAKE_HIGH: Camera = Camera::look_at([171.0, 22.0, 34.0], [187.0, 11.7, 12.0], 64.0);
+const SHALLOWS: [Camera; 3] = [
+    Camera::look_at([-112.0, 2.0, 30.0], [-103.0, -1.0, 26.0], 64.0),
+    Camera::look_at([171.0, 14.0, 34.0], [175.0, 10.7, 28.0], 64.0),
+    Camera::look_at([95.0, 12.6, 106.0], [109.0, 10.0, 101.0], 63.0),
+];
+
 /// Forty-metre view of the same shore margin as the sand camera.
 pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0, 0.0, 12.0], 65.0);
 
@@ -344,7 +351,7 @@ pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
 /// # Panics
 /// Panics if a scene lock is poisoned or a bounded control fails.
 pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, foam, None, |_| {})
+    build_island(wind, draw_water, foam, None, true, |_| {})
 }
 
 /// Use the island's surf profile and tide and beach inspection controls.
@@ -362,7 +369,7 @@ pub fn build_surf_paired(
     draw_water: bool,
     surf: bool,
 ) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, true, Some(surf), |_| {})
+    build_island(wind, draw_water, true, Some(surf), false, |_| {})
 }
 
 /// Build the surf island with an observer for the cache's evaluated nodes and table reads.
@@ -372,10 +379,17 @@ pub fn build_surf_measured(
     wind: Wind,
 ) -> Result<(FoamScene, thrum_water::SurfTap), Box<dyn Error>> {
     let mut tap = None;
-    let scene = build_island(wind, true, true, Some(true), |water| {
+    let scene = build_island(wind, true, true, Some(true), false, |water| {
         tap = Some(water.tap_surf_work());
     })?;
     Ok((scene, tap.ok_or("missing surf work observer")?))
+}
+
+/// Same-view island cost arm, with either optical profile.
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_optics_arm(wind: Wind, optics: bool) -> Result<FoamScene, Box<dyn Error>> {
+    build_island(wind, true, false, None, optics, |_| {})
 }
 
 fn build_island(
@@ -383,6 +397,7 @@ fn build_island(
     draw_water: bool,
     foam: bool,
     surf: Option<bool>,
+    optics: bool,
     configure: impl FnOnce(&mut Water),
 ) -> Result<FoamScene, Box<dyn Error>> {
     let surf_route = surf.is_some();
@@ -403,6 +418,9 @@ fn build_island(
     } else {
         crate::profile(&spectrum)
     };
+    if optics {
+        profile.optics = Some(thrum_water::Optics::default());
+    }
     if foam {
         profile.query = Some(thrum_water::query::QueryLimits {
             points: 512,
@@ -421,6 +439,7 @@ fn build_island(
         None
     };
     let report = water.report();
+    let basin_gains = map.lock().expect("island map").body(1).expect("lake").gains;
     let display_map = Arc::clone(&map);
     let mut controls = Controls::new();
     let camera = controls
@@ -431,14 +450,14 @@ fn build_island(
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
-                "Beach / Lake / Pond / Hill / Map / Sill"
+                "Island view"
             },
             0.0..=if surf_route {
                 9.0
             } else if foam {
                 6.0
             } else {
-                5.0
+                10.0
             },
         )
         .step(1.0)
@@ -450,7 +469,7 @@ fn build_island(
         .default(0.0)
         .add()?;
     let sun = controls
-        .slider("sun.elevation", "Sun elevation", 5.0..=80.0)
+        .slider("sun.elevation", "Sun elevation", -8.0..=80.0)
         .default(if surf_route && wind == Wind::Trade {
             38.0
         } else {
@@ -466,6 +485,18 @@ fn build_island(
                 .add()
         })
         .transpose()?;
+    let pan = controls
+        .slider("camera.pan", "Camera pan", -175.0..=175.0)
+        .default(0.0)
+        .add()?;
+    let tilt = controls
+        .slider("camera.tilt", "Camera tilt", -45.0..=50.0)
+        .default(0.0)
+        .add()?;
+    let lake_waves = controls
+        .slider("lake.waves", "Lake wave gain", 0.0..=1.0)
+        .default(1.0)
+        .add()?;
     let game = SkyGame::new(controls, CAMERAS[3], move |c, sky| {
         #[expect(
             clippy::cast_possible_truncation,
@@ -476,8 +507,15 @@ fn build_island(
         sky.camera = if surf_route {
             SURF_VIEWS[index]
         } else {
-            CAMERAS.get(index).copied().unwrap_or(BEACH_OVERHEAD)
+            match index {
+                7 => LAKE_HIGH,
+                8..=10 => SHALLOWS[index - 8],
+                _ => CAMERAS.get(index).copied().unwrap_or(BEACH_OVERHEAD),
+            }
         };
+        if !surf_route {
+            pan_camera(&mut sky.camera, c.get(pan), c.get(tilt));
+        }
         sky.sun_elevation_degrees = c.get(sun);
         sky.sun_azimuth_degrees = if surf_route && wind == Wind::Trade {
             224.0
@@ -489,6 +527,11 @@ fn build_island(
         let mut map = display_map.lock().expect("island map");
         map.set_stage(1, f64::from(c.get(stage)))
             .expect("bounded stage control");
+        if !surf_route {
+            let factor = f64::from(c.get(lake_waves));
+            map.set_wave_gains(1, basin_gains.map(|gain| gain * factor))
+                .expect("bounded lake gain");
+        }
         if let Some(tide) = tide {
             map.set_stage(0, f64::from(c.get(tide)))
                 .expect("bounded tide control");
@@ -498,7 +541,7 @@ fn build_island(
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
     let (game, lease) = game.with_meshes_and_texture_lease(
-        vec![MeshPlacement::new("meshes/island", "textures/white")],
+        placements(&map, !surf_route),
         Some(("water island", include_str!("../island.wgsl"))),
         if foam { &["textures/foam-rank"] } else { &[] },
     )?;
@@ -511,4 +554,62 @@ fn build_island(
         game
     };
     Ok((game, report, map, probes))
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the authored lake placements use GPU metres"
+)]
+fn placements(map: &SharedMap, decorate: bool) -> Vec<MeshPlacement> {
+    let mut meshes = vec![MeshPlacement::new("meshes/island", "textures/white")];
+    if !decorate {
+        return meshes;
+    }
+    let map = map.lock().expect("island map");
+    let asset = |name, at, colour| {
+        MeshPlacement::new(name, "textures/white")
+            .at(at)
+            .material(thrum_app::sky::CookedMaterial {
+                base_colour: colour,
+                roughness: 0.9,
+                metalness: 0.0,
+            })
+    };
+    for (x, z, scale) in [
+        (198.0, -20.0, 1.0),
+        (204.0, -22.0, 0.83),
+        (209.0, -25.0, 0.72),
+    ] {
+        let y = map.bed().height([x, z]).expect("bank") as f32;
+        let at = [x as f32, y, z as f32];
+        meshes.push(asset("meshes/pine-bark", at, [0.16, 0.084, 0.042, 1.0]).scale(scale));
+        meshes.push(asset("meshes/pine-needles", at, [0.044, 0.10, 0.036, 1.0]).scale(scale));
+    }
+    for (x, z, scale) in [
+        (174.0, 31.0, 0.42),
+        (175.4, 29.4, 0.78),
+        (172.0, 33.9, 0.36),
+        (179.5, 33.2, 0.53),
+        (106.5, 102.0, 0.43),
+    ] {
+        let y = map.bed().height([x, z]).expect("shore") as f32 - 0.04;
+        meshes.push(
+            asset(
+                "meshes/float",
+                [x as f32, y, z as f32],
+                [0.25, 0.22, 0.18, 1.0],
+            )
+            .scale(scale),
+        );
+    }
+    meshes
+}
+
+pub(crate) fn pan_camera(camera: &mut Camera, degrees: f32, tilt: f32) {
+    let from = glam::Vec3::from_array(camera.position);
+    let aim = glam::Vec3::from_array(camera.target) - from;
+    let swivel = glam::Quat::from_rotation_y(degrees.to_radians()) * aim;
+    let across = swivel.cross(glam::Vec3::Y).normalize_or_zero();
+    camera.target =
+        (from + glam::Quat::from_axis_angle(across, tilt.to_radians()) * swivel).to_array();
 }

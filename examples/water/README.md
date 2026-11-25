@@ -53,6 +53,22 @@ paired capture-off run. `check` takes a fresh measurement and validates the comm
 timings themselves are investigation tripwires rather than pass thresholds. The cost tool cooks
 the calibration float and keeps it in both arms at identical world times, so only water differs.
 
+## Optics
+
+Run `THRUM_WATER_OPTICS=calm ./dev scene examples/water` for the sea and the submerged
+calibration floats. Choose `trade` or `gale` to inspect how the glitter widens. Set
+`THRUM_WATER_SHADE=1` to enable the stand-in cloud optical-depth field across the grey float.
+Chrome accepts `?optics=calm&shade=1` for the same scene. Views 7–10 on the island show the lake
+from 10 m and the three shores looking down. In a trade wind, **Lake wave gain** takes the lake
+from flat to sheltered waves without replacing its wave field.
+
+Water opts into a type's extinction, downwelling attenuation and reflection budget with
+`thrum_water::Profile::optics`. The geometry producer can submit conservative world boxes with
+`Water::optics_bodies()` before water records its upload for that view. The surface reads
+radiance and distance only where the gather copied them. Registered boxes admit floating
+geometry and the bed controls shore transmission. Still water can reflect visible scenery
+within reach. When that source is unavailable, the reflected path uses the lent sky.
+
 ## Island
 
 Run the island on Metal with `THRUM_WATER_ISLAND=trade ./dev scene examples/water`.
