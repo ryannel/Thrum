@@ -121,12 +121,15 @@ impl Factory {
             let mut prepared = prepared;
             let raw = prepared.prepare_metal(device, false, || {
                 let retain = |texture| apple_tile::texture(texture).ok_or(RenderError::StaleTarget);
-                Ok::<_, RenderError>(Raw {
-                    source: retain(&source)?,
-                    output: retain(&output)?,
-                    history: [retain(&history[0])?, retain(&history[1])?],
-                    zero: retain(&zero)?,
-                })
+                Ok::<_, RenderError>((
+                    Raw {
+                        source: retain(&source)?,
+                        output: retain(&output)?,
+                        history: [retain(&history[0])?, retain(&history[1])?],
+                        zero: retain(&zero)?,
+                    },
+                    std::time::Duration::ZERO,
+                ))
             });
             (prepared, raw)
         };
