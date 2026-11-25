@@ -245,7 +245,7 @@ def run(args):
                            "lock", "gpu", "--worktree", ROOT, "--", *command]
             invoke(command)
             receipt = json.loads(output.read_text()) | identity
-            record(receipt, args.output)
+            record(receipt, evidence_output(args, commit))
             return
         if args.action == "crowd-still":
             source = scratch / "close"
@@ -289,7 +289,15 @@ def run(args):
         receipt = identity | {"target": target, "workload": "retained Crowd", "runs": all_runs}
         if costs:
             receipt["tripwires"] = tripwires(all_runs)
-        record(receipt, args.output)
+        record(receipt, evidence_output(args, commit))
+
+
+def evidence_output(args, commit):
+    if args.output:
+        return args.output
+    if PROOF.is_dir():
+        return PROOF / f"{args.action}-{args.target}-{commit[:12]}.json"
+    return None
 
 
 def tripwires(runs):
