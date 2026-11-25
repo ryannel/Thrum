@@ -712,3 +712,16 @@
   production columns. WP19.1 now compares the public answer with the whole cut after the same refinement,
   within 1 cm, and its question to the reviewer names the unrefined height as the wrong reference. The
   triangle stage is not a separate claim: the two passes change nothing after the highest triangle is found.
+
+<a id="wp13-set-decision"></a>
+
+- 2026-11-25 WP13.5 blocked after three Metal looks from 1 km could not rank two crests' heights at break onset.
+  Chose a nearer view over refining the offshore mesh: a 1 m crest is a pixel or two from 1 km under a game's
+  lens, so its height is not a cue a player reads. WP13.5 now judges from 1 km that fronts start at different
+  distances and run in, in both winds, and judges the taller crest breaking farther out in the gale from a
+  nearer view: the 3.0 m and 0.8 m crests with onsets near `x = −223 m` and `x = −126 m`.
+  [Looks, cuts and mesh sampling](../../../.orchestrate/evidence/WATERS/WP13/break-distance-inspection.md)
+
+- 2026-11-25 The lead asked whether the surf query's 47 million nodes and 18.1 s a tick need a plan change before
+  WP19. They do not: the [WP19 decision](#wp19-query-decision) was taken on that measurement, and WP19 makes the
+  cut coarse to fine and holds it to the age contract.
