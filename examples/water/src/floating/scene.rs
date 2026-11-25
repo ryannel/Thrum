@@ -463,7 +463,13 @@ fn build_scene(
         let mut camera = camera(&body, view_choice.load(Ordering::Relaxed), level, demo);
         let [height, pan] = *presented_angles.lock().expect("optics angles");
         if height > 0.0 {
+            let target = glam::Vec3::from_array(camera.target);
+            let eye = glam::Vec3::from_array(camera.position);
+            let distance = (height - 4.0).max(0.0) * 3.5;
+            let offset = (eye - target).with_y(0.0).normalize_or_zero() * distance;
+            camera.position = (eye + offset).to_array();
             camera.position[1] = (body.position + DVec3::Y * body.draft()).as_vec3().y + height;
+            camera.vertical_fov_degrees /= 1.0 + distance / 24.0;
         }
         crate::island::pan_camera(&mut camera, pan, 0.0);
         if let Some(swell) = &camera_swell {

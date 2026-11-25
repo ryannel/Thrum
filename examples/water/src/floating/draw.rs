@@ -307,7 +307,7 @@ fn craft(vertices: &mut Vec<Vertex>) {
         vertices,
         ring(-0.46, 0.54),
         ring(0.42, 0.90),
-        [0.08, 0.022, 0.012],
+        [0.25, 0.18, 0.114],
     );
     strip(
         vertices,

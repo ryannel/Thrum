@@ -278,6 +278,14 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let crest_height=max(0.0,input.world.y-row.level)/max(water.scatter.w,0.001);
     let crest=1.0-exp(-crest_height*max(0.0,1.0-determinant));
     light+=(1.0-fresnel)*incident*water.scatter.rgb*crest;
+    if OPTICS_ENABLED {
+        // Forward scattering is concentrated toward the observer when the
+        // thin, compressed part of the crest stands between lens and Sun.
+        let forward = pow(max(dot(l, -v), 0.0), 8.0);
+        let low_sun = 1.0 - smoothstep(0.14, 0.46, l.y);
+        light += (1.0-fresnel) * sunlight * vec3(0.024, 0.11, 0.088)
+            * (crest * forward * low_sun);
+    }
     let h=normalize(l+v);let nh=max(dot(n,h),0.0);let nl=max(dot(n,l),0.0);
     let a2=pow(roughness,4.0);let d=a2/(3.14159265*pow(nh*nh*(a2-1.0)+1.0,2.0));
     let gv=2.0*nv/(nv+sqrt(a2+(1.0-a2)*nv*nv));

@@ -153,6 +153,7 @@ fn water_optical_paths(
         through = trace_bodies(world, refracted_ray, optics.extinction_sight.w, mask);
     }
     var reflection_weight = slope_weight;
+    var scene_hit = false;
     let rough_limit = optics.downwelling_mirror.w;
     let still = 1.0 - smoothstep(rough_limit * 0.5, rough_limit, sqrt(variance));
     if reflected.distance == 0.0 && optics.reach_slope_scene.z != 0.0
@@ -160,11 +161,16 @@ fn water_optical_paths(
         reflected = trace(world, reflected_ray, vec2(0.06, reach),
             OpticsBody(vec4(0.0), vec4(0.0)), false);
         reflection_weight = still;
+        scene_hit = true;
     }
     var outgoing = sky;
     if reflected.distance > 0.0 {
         let t = length(reflected.point - world);
-        let fade = reflected.edge * reflection_weight * (1.0 - smoothstep(0.75 * reach, reach, t));
+        let uv = optics_uv(reflected.pixel);
+        let margin = min(uv, 1.0 - uv);
+        let scene_edge = smoothstep(0.015, 0.13, min(margin.x, margin.y));
+        let fade = select(reflected.edge, scene_edge, scene_hit) * reflection_weight
+            * (1.0 - smoothstep(0.75 * reach, reach, t));
         outgoing = mix(sky, fresnel * hit_light(reflected), fade);
     }
 

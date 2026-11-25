@@ -463,6 +463,7 @@ fn optics_checkpoints() -> Vec<(String, String, f64)> {
         ("beach-down", 8),
         ("lake-down", 9),
         ("pond-down", 10),
+        ("lake-shore", 11),
     ];
     [("dawn", 1), ("noon", 60), ("low-sun", 6)]
         .into_iter()

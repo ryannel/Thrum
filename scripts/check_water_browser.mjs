@@ -669,7 +669,7 @@ try {
     let checkpoints;
     if(routeParams.has('island')){
       checkpoints=[['beach-noon',{'camera.island':0}],['lake-noon',{'camera.island':1}],
-        ['pond-noon',{'camera.island':2}],['lake-high-noon',{'camera.island':7}],
+        ['pond-noon',{'camera.island':2}],['lake-high-noon',{'camera.island':7}],['lake-shore-noon',{'camera.island':11}],
         ['beach-down-noon',{'camera.island':8}],['lake-down-noon',{'camera.island':9}],
         ['pond-down-noon',{'camera.island':10}]];
     }else if(routeParams.has('bodies')){
