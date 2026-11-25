@@ -63,7 +63,8 @@ impl WorldDriver for Script {
             15 => (0, 0.375, 25.0),
             25 => (0, 0.625, 25.0),
             35 => (0, 1.0, 50.0),
-            45 => (2, 0.5, 27.5),
+            40 => (0, 1.0, 25.0),
+            45 => (2, 0.375, 25.0),
             80 => (1, 0.25, 25.0),
             _ => unreachable!("script timestamp"),
         };
@@ -73,21 +74,6 @@ impl WorldDriver for Script {
             presentation: ClockSample::driven(now, fraction, rate, TICK).expect("phase"),
             next_due: Duration::from_millis(10),
         })
-    }
-
-    fn advance_for_display(
-        &mut self,
-        now: Duration,
-        display_at: Duration,
-        cap: NonZeroU32,
-    ) -> Result<DrivenAdvance, Self::Error> {
-        let mut advance = self.advance(now, cap)?;
-        if now == Duration::from_millis(45) {
-            assert_eq!(display_at, Duration::from_millis(50));
-            advance.presentation =
-                ClockSample::driven(display_at, 0.55, 27.5, TICK).expect("phase");
-        }
-        Ok(advance)
     }
 
     fn publication(&mut self) -> Result<Option<WorldPublication<()>>, Self::Error> {
@@ -235,7 +221,10 @@ fn frame_host_samples_the_driver_at_each_display_target() {
             (15, 5, 1, 0.5, 0.5, Some(0)),
             (25, 20, 1, 1.0, 1.125, Some(0)),
             (35, 50, 1, 1.0, 2.25, Some(15)),
-            (45, 5, 3, 0.55, 0.55, Some(30)),
+            // The target has already reached 45 ms. Only the next
+            // observation can admit the driver's two ticks.
+            (40, 5, 1, 1.0, 1.125, Some(0)),
+            (45, 5, 3, 0.5, 0.5, Some(30)),
             (70, 20, 3, 1.0, 1.0, None),
             (80, 0, 4, 0.25, 0.25, Some(70)),
         ] {
@@ -271,6 +260,11 @@ fn frame_host_samples_the_driver_at_each_display_target() {
             assert!((frame.display_phase - phase).abs() < f32::EPSILON);
             assert_eq!(frame.clock_interpolating, due.is_some());
             assert_eq!(frame.tick_due_time, due.map(Duration::from_millis));
+            assert!(
+                frame
+                    .tick_due_time
+                    .is_none_or(|due| due <= frame.observation)
+            );
 
             let time = effect_time
                 .lock()

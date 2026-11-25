@@ -521,6 +521,10 @@ pub struct SubmittedFrameClock {
     pub submission_order: u64,
     /// Monotonic display time consumed when evaluating the world clock.
     pub display_time: Duration,
+    /// Host observation that admitted the committed endpoint.
+    pub observation: Duration,
+    /// Host due time of the committed endpoint while interpolating.
+    pub tick_due_time: Option<Duration>,
     /// Whether the submission wrote to the platform surface.
     pub surface_presented: bool,
 }
@@ -655,6 +659,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     submitted_capture: Option<submitted_capture::Tap>,
     retired_capture: VecDeque<submitted_capture::Tap>,
     presentation_lead: Duration,
+    presentation_lead_limit: Duration,
     observation: Duration,
     platform_target: Option<Duration>,
     lead_status: Option<crate::frame::TargetLeadStatus>,
@@ -1029,9 +1034,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Set the lead to the platform's next display target. Fixed-clock worlds
     /// still advance only to the callback's observed monotonic time.
     pub fn set_presentation_lead(&mut self, lead: Duration) {
-        self.presentation_lead = lead;
+        self.presentation_lead = lead.min(self.presentation_lead_limit);
         self.platform_target = None;
         self.lead_status = None;
+    }
+
+    /// Bound the display lead consumed by this host. A zero limit samples at
+    /// the observation, as needed by a driver that admits pairs at that time.
+    pub fn set_presentation_lead_limit(&mut self, limit: Duration) {
+        self.presentation_lead_limit = limit;
+        self.set_presentation_lead(self.presentation_lead);
     }
 
     /// Record a runner's platform target and the status of its consumed lead.
@@ -1257,6 +1269,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             submitted_capture: None,
             retired_capture: VecDeque::new(),
             presentation_lead: Duration::ZERO,
+            presentation_lead_limit: Duration::MAX,
             observation: Duration::ZERO,
             platform_target: None,
             lead_status: None,
@@ -1862,9 +1875,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.governor_boundary(now);
         self.poll_gpu()?;
         self.commit_governor(now)?;
-        let advanced = self
-            .world
-            .advance_for_display(now, self.presentation_lead)?;
+        let advanced = self.world.advance(now)?;
         let report = self.record_world_advance(&advanced);
         Ok(AdvancedFrame {
             host: Some(self),
@@ -2536,6 +2547,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             presentation_alpha: sample.presentation_alpha,
             submission_order: sample.submission_order,
             display_time: sample.observation.saturating_add(sample.presentation_lead),
+            observation: sample.observation,
+            tick_due_time: sample.tick_due_time,
             surface_presented,
         });
         if let Some(index) = capture_slot

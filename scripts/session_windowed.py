@@ -227,6 +227,7 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
             latest = row
         elif event == "frame" and row["tick"] > 4:
             assert latest and latest["tick"] == row["tick"], (row, latest)
+            assert row["due_ns"] is None or row["due_ns"] <= row["observation_ns"], row
             frames += 1
             assert 0 <= row["alpha"] <= 1
             elapsed = max(0, row["display_us"] - latest["playout_us"])

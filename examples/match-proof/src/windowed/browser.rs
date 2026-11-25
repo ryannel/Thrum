@@ -27,7 +27,8 @@ impl WindowedMatch {
             peer: Peer::Replica(Box::new(replica)),
             rows: std::cell::RefCell::default(),
             last_frame: None,
-        });
+        })
+        .map_err(js_error)?;
         let shell = create_game(canvas, 1, &mut game).await.map_err(js_error)?;
         Ok(Self { game, shell })
     }

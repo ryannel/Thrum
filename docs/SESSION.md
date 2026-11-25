@@ -116,11 +116,9 @@ scene reads.
   `client.advance_with_step_budget(now_us, cap, sample_controls)` and drain results as above. Pass the
   driver's cap as a `u8` or use a smaller budget. After that advance, read `client.playout(now_us)` and
   `client.settings().tick_us`. Before playout starts, hold the current endpoint.
-- For an inline client, implement `WorldDriver::advance_for_display(now, display_at, cap)` as well.
-  Call `client.advance_for_display(now_us, display_us, cap, sample_controls, on_prediction)`, drain results,
-  then read `client.playout(display_us)`. Anchor the returned `ClockSample` to `display_at`. This lets the
-  client commit the buffered endpoint its upcoming frame needs while link timing and input authoring use
-  `now`. Use `|_| {}` if the game has no prediction or ignores correction events.
+- For an inline client, call `host.set_presentation_lead_limit(Duration::ZERO)` when preparing the frame
+  host. The frame samples at the observation, when its committed pair is due. A later platform target can
+  cross a playout tick boundary, before that tick is eligible for this observation.
 - In the listen host's driver, drain accepted links, stage local inputs, then call
   `host.advance(now_us, current_tick + cap)` and read `host.playout(now_us)`. The host applies its own
   negotiated catch-up cap as well.

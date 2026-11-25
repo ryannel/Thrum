@@ -184,9 +184,10 @@ fn write_record(
     }
 }
 
-fn config(name: &'static str) -> Config {
+fn config(name: &'static str, x: i32) -> Config {
     let mut config = Config::new("match-proof", name);
     config.window_size = [640, 360];
+    config.window_position = Some([x, 64]);
     config
 }
 
@@ -220,7 +221,7 @@ pub fn host(output: &Path, control: PathBuf, ticks: u64) -> Result<(), GameError
         offered: false,
     }));
     run(
-        config("Crowd Match Host"),
+        config("Crowd Match Host", 32),
         peer,
         Output::new(output, None).map_err(rejected)?,
     );
@@ -238,7 +239,7 @@ pub fn client(
 ) -> Result<(), GameError> {
     let peer = Peer::Replica(Box::new(Replica::connect(ticket)?));
     run(
-        config("Crowd Match Client"),
+        config("Crowd Match Client", 400),
         peer,
         Output::new(output, capture_control).map_err(rejected)?,
     );
@@ -247,11 +248,11 @@ pub fn client(
 
 fn run(config: Config, peer: Peer, native: Output) {
     thrum_app::run_until_closed(config, || {
-        Ok::<_, GameError>(WindowMatch::new(Driver {
+        WindowMatch::new(Driver {
             peer,
             native,
             last_frame: None,
-        }))
+        })
     });
 }
 

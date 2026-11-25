@@ -17,6 +17,8 @@ pub struct Config {
     pub panel_title: &'static str,
     /// Initial window inner size in physical pixels; a capture renders at this size too.
     pub window_size: [u32; 2],
+    /// Initial Mac window position in logical screen coordinates, when specified.
+    pub window_position: Option<[i32; 2]>,
 }
 
 impl Config {
@@ -33,6 +35,7 @@ impl Config {
             render_thread: "thrum-render",
             panel_title: title,
             window_size: [1600, 900],
+            window_position: None,
         }
     }
 }

@@ -546,10 +546,17 @@ impl<G: WindowGame + 'static> App<G> {
     ) -> Result<(), String> {
         let attributes = self.extent_capture.as_ref().map_or_else(
             || {
-                Window::default_attributes().with_inner_size(winit::dpi::PhysicalSize::new(
-                    self.config.window_size[0],
-                    self.config.window_size[1],
-                ))
+                let attributes =
+                    Window::default_attributes().with_inner_size(winit::dpi::PhysicalSize::new(
+                        self.config.window_size[0],
+                        self.config.window_size[1],
+                    ));
+                match self.config.window_position {
+                    Some([x, y]) => {
+                        attributes.with_position(winit::dpi::LogicalPosition::new(x, y))
+                    }
+                    None => attributes,
+                }
             },
             WindowExtentCapture::attributes,
         );

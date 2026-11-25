@@ -24,16 +24,6 @@ pub trait FrameWorld {
     /// # Errors
     /// Returns an authoritative clock, game or lane failure.
     fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError>;
-    /// Admit work for a frame. Inline driven worlds may consume the display lead.
-    /// # Errors
-    /// Returns an authoritative clock, game or lane failure.
-    fn advance_for_display(
-        &mut self,
-        now: Duration,
-        _lead: Duration,
-    ) -> Result<WorldAdvance, FrameError> {
-        self.advance(now)
-    }
     /// Lease a page with its actual committed identity.
     /// # Errors
     /// Returns a publication failure without changing authority.
@@ -74,15 +64,6 @@ impl<D: WorldDriver> FrameWorld for DrivenWorld<D> {
 
     fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError> {
         self.advance(now)
-            .map_err(|error| FrameError::World(error.to_string()))
-    }
-
-    fn advance_for_display(
-        &mut self,
-        now: Duration,
-        lead: Duration,
-    ) -> Result<WorldAdvance, FrameError> {
-        self.advance_for_display(now, lead)
             .map_err(|error| FrameError::World(error.to_string()))
     }
 
