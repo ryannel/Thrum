@@ -8,7 +8,9 @@ light under water, after the review of those revisions for
 diagnostics. Revised 25 November 2026 after the design review of that day: the cut is made
 [coarse to fine](#bodies-and-the-query), so that a game gets the surface in the breakers in time to use it.
 Revised again that day after WP19's builder stopped: the query is
-[admitted by the tick](#bodies-and-the-query), and no longer waits for a view.
+[admitted by the tick](#bodies-and-the-query), and no longer waits for a view. Revised after that
+revision's review: the carry bound covers an ordinary post, and a post is answered only from
+[its own world's state](#bodies-and-the-query).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -1057,18 +1059,31 @@ what the model's cut costs, WP13 a tick with every float in the breakers, and WP
 Each answer is the body of water at the point with its depth and current, the height, the slope, the surface's
 velocity (the current and the waves' together) and the time derivative of height, with one support flag per
 layer, and it is **valid at the use tick** its point asked for. A point that is not wet now says it is dry: ground beyond the water, and the swash between waves, where the depth it reports is negative. The dispatch brings every layer to that tick
-before it sums them: the long waves are evaluated there, the height of the cascades is carried there from the
-frame's `t` by its rate of change, and the wake's from its state tick. The answer carries the use tick and the
-times it was made from. A game that uses an answer at another tick moves the whole answer once, by its time
-derivative from the use tick, so no layer is extrapolated twice. For a wave of frequency `ω` carried `Δt` the
-remaining error is at most `½(ωΔt)²` of its amplitude, reported per profile. The cascades are carried at most
-three ticks: 0.4% for a 20 m wave and 3.8% for a 2 m wave, whose height is centimetres (part G).
+before it sums them: the long waves are evaluated there, the height of the cascades is carried there by its
+rate of change from the display time `t` of the last submitted view, and the wake's from its state tick. The
+answer carries the use tick and the times it was made from. A game that uses an answer at another tick moves
+the whole answer once, by its time derivative from the use tick, so no layer is extrapolated twice. For a
+wave of frequency `ω` carried `Δt` the remaining error is at most `½(ωΔt)²` of its amplitude, reported per
+profile.
+
+**The carry bound** is how far a layer read from frame state may be carried, and it is the profile's: **five
+ticks** in the first profile. An ordinary post needs four of them. A float at tick `C` asks for tick `C + 2`,
+and its batch goes ahead of tick `C`'s view (below), so the newest cascades are the view before's. That view
+committed tick `C − 1`, and its display time is `t = C − 2 + α`: a carry of `4 − α` ticks, more than three
+and at most four, on every tick of a world that draws each tick. The wake's state is at tick `C − 1`, a
+carry of three. The fifth tick is for an advance that completes two ticks, or one that follows a single view
+the host did not submit, so that neither costs a float its short waves. At five ticks the error above is
+1.1% for a 20 m wave and 11% for a 2 m wave, whose height is centimetres (part G's formula; three ticks,
+the bound while the batch rode the frame, gave 0.4% and 3.8%).
 
 **Admitted by the tick.** The batch is a [tick pass](../EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6) and not a
 pass of the frame. The frame host asks for it in every advance that reaches the device, records it and submits
 it by itself, ahead of that advance's view and whether or not a view is drawn, and the readback's map starts
 when that submission is made. So a batch posted in a tick whose view is skipped, for want of a frame slot or
-a drawable, is on the device in that tick. As a `simulate` pass it waited for the next view the host
+a drawable, is on the device in that tick. The one exception is the stage's own: at the host's bound on
+outstanding tick submissions the host records no batch, counts the refusal and asks again at its next
+advance ([rule 5](../EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6)), and the posts wait in the mailbox as they
+do for any batch not yet made. As a `simulate` pass it waited for the next view the host
 admitted: WP19's first running record delivered 69% of open-water answers within two ticks and none within
 one ([record](../../../.orchestrate/evidence/WATERS/WP19/surf-running.json)). The water still submits
 nothing itself (C06).
@@ -1078,12 +1093,43 @@ are evaluated at the use tick from inputs the batch stages itself, so they do no
 wake's windows and the map's products on the GPU are as the last submitted frame left them, and the water
 knows the time and tick each holds, because it committed them. Each is brought to the use tick from there by
 the rule above, and the answer carries those times as before. Skipped views lengthen the carry. A layer
-whose carry would pass the profile's carry bound, three ticks in the first profile, is carried to the bound
-and no further, and its support flag is cleared, so a game can tell. The bound is the profile's, and its
-error is reported with the profile as above. An answer is never made from what a frame recorded and did not
+whose carry would pass the carry bound is carried to the bound and no further, and its support flag is
+cleared, so a game can tell: in the first profile that is a source more than five ticks behind the use
+tick, two views or more gone unsubmitted at a 60 Hz draw. Inside the bound the flag stays set, so an
+ordinary answer has supported cascades at its use tick. An answer is never made from what a frame recorded and did not
 submit: the batch stages its own inputs and takes the frame's state only from what the frame's passes wrote.
 Where the host may not touch the device, after a loss or in the background, no batch is submitted, answers
 age out and the game falls back, as below.
+
+**Whose state.** A post carries the world endpoint of its tick, which is the world epoch, the timeline and
+the tick, and the game has it from its world where it posts
+([rule 3](../EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6)). Every answer carries its post's endpoint back.
+The water's committed state has an endpoint too, the one its last submitted view committed, and the seam's
+state record compares the two at each asking. Ticks are not compared, so a restore that lands on the tick
+number the old timeline had reached is still another world. A post is answered only when the state exists
+and its world epoch and timeline are the post's. Otherwise the water makes **no answer**: no batch for that
+post, and nothing marked as made without state. That is so before a world's first submitted water view, and
+after a restore, a new world or a replaced device until the first view of the changed world is submitted.
+A marked answer was the other choice, and it would hold nothing a game lacks. Every layer but the long
+waves is frame state, the long waves are shaped by the map's products on the device, which are frame state
+as well and which a restore can change with a body's stage, and the map and the long waves are what the
+fallback already gives from the game's own map.
+
+- **What the float gets.** Until an answer of its own timeline reaches it, a float gets the fallback below,
+  the conformance model's map and long waves, counted as it is when an answer ages out. The first view of a
+  changed world is a [full frame](#time-content-functions-and-state): it resets the wake to calm and the foam
+  to none and commits the state on the new endpoint. The asking of the next advance answers, and the
+  answer arrives one to two ticks later as any does.
+- **A post asked before that view** is not dropped. It waits in the mailbox as a post does for any batch
+  not yet made, and the first asking after its world's view answers it with the rest, carried as any late
+  question is. If it passes the maximum age first it expires and is counted.
+- **The former timeline.** The mailbox serves one world epoch and timeline, the latest post's. A post on
+  another makes the mailbox drop what it holds of the former: posts no batch has taken, and results
+  published and not yet drained. A batch of the former still in flight is dropped when its map completes.
+  None of them reaches the game, whatever its age, because age is the wrong test here: the result of a
+  timeline abandoned this tick is zero ticks old and is another world's water. A drain hands the game only
+  answers whose world epoch and timeline are the ones it drains on, which is C02's check before a result
+  is published.
 
 Results come back through a ring of mapped buffers one to two ticks later. A result older than the declared
 maximum is unavailable, and the game falls back to the conformance model in `thrum-water-model` (the map, and the long waves at the body's gain:
@@ -2057,7 +2103,10 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 18. **A breaking crest tears or stair-steps**, because the section stretches the sheet past what the mesh
     resolves. Early sign: WP13's captures from 40 m and from 1 km. The designed remedies are refinement along
     the band where the breaking index passes 1 and the throw's fade with the mesh's spacing. The wrong fix is taking
-    the throw out everywhere.
+    the throw out everywhere. What is left of it seen close is WP20's. There a cue is diagnosed from the
+    submitted frame before it is repaired, on the target and in the view and wind that show it, so a cue
+    seen only in Chrome is read in Chrome. A cue can have more than one cause at the same pixels, as when
+    foam shows up a branch that wrongly wins depth, and its diagnosis names each cause its frames support.
 19. **The lag shows**: a step in the swell where the bed begins, or a jump as the tide crosses a sampled
     stage. Early sign: WP13's tide sequence. The designed remedies are a wider border at the bed's edge and
     closer stage samples. The wrong fix is holding the lag at one stage. In a lake the same sign is a crease
@@ -2290,5 +2339,16 @@ holds whatever they become. WP13 keeps the regular-wave run-up and draw-back and
   it, plus the batch's own. That record's breakers arm completed a frame every 72 ms against 20 ms in open
   water, so the cut's device time is still to come down, by [risk 32](#risks)'s remedies. The cost record's
   query time is the tick pass's, read under its name from the same timing feed.
+- **Carry and state on the stage.** The move changes two things an answer shows, and WP19.5 and WP19.6
+  hold them on Metal with the host's views scripted. The source of the cascades is one view older than
+  when the batch rode the frame, so [the carry bound](#bodies-and-the-query) is five ticks: an ordinary
+  post, four ticks ahead of its source, keeps its cascade support, and a source more than five behind
+  loses it. And a post is answered only from [its own world's state](#bodies-and-the-query). WP5.1's
+  gale test posts before the first water view, discards that view and reads supported cascades from the
+  first view submitted. On the stage both askings come before that view and find no state, so the post
+  waits with no batch made, and the test's cascade comparison moves to a post answered after the view has
+  seeded the state. The posts take their endpoint from the fixed update, as `EFFECT-GRAPH` WP6 hands it.
+  The running run submits a view before its first measured post, as its first record did, so its count of
+  fallbacks starts on a seeded timeline.
 - **The cost record** is taken again as WP13.12's was, beside it.
 

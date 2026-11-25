@@ -93,10 +93,9 @@ If the window's mean current makes interaction waves visibly wrong in the exampl
 
 ## WP20 A pitching crest seen close is drawn whole, with no tabs, strands, bands or flashing patch on its face, on the Mac and in Chrome
 
-Begin with WP20.1, before changing anything. [The reading at WP13's candidate](LOG.md#wp13-face-finish-parked)
-gives the sand-height cues to the foam's cover: confirm it, and read the bend and the crest ends. Repair only
-what a record names ([risk 18](DESIGN.md#risks)). If a record names no cause, or a repair fails three looks,
-end `BLOCKED`.
+Begin with WP20.1 and WP20.4. [WP13's reading](LOG.md#wp13-face-finish-parked) is a lead: it read no depth,
+bend, crest end or Chrome. Repair only a stage a diagnosis names ([risk 18](DESIGN.md#risks)), taken on the
+target and in the wind that show the cue. Without one, or after three failed looks at a repair, end `BLOCKED`.
 
 ## WP10 A visitor takes the water from glassy calm to gale, raises and lowers the lake, and goes from dawn to night with the controls, and it holds up in motion, on the Mac and in Chrome
 

@@ -990,3 +990,28 @@
   four items are unchanged. What an answer holds does not change. A layer read from frame state is carried
   from the last submitted frame, and loses its support flag past the profile's carry bound.
   [Handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md).
+- 2026-11-25 Design review of the tick-stage revision asked for changes, four Must Fix
+  ([review](../../../.orchestrate/evidence/WATERS/design-review.md)). The four entries below settle them.
+- 2026-11-25 Must Fix 1, an ordinary float request passed the carry bound: on the stage the newest cascades
+  are the view before's, a carry of more than three and at most four ticks for a post two ticks ahead. The
+  first profile's [carry bound](DESIGN.md#bodies-and-the-query) is now five ticks, four for an ordinary post
+  and one for a two-tick advance or a single view not submitted. New WP19.5 holds supported cascades at
+  carries of 4, 3.5 and 5 ticks on a tick before its view, and the cleared flag at 6.
+- 2026-11-25 Must Fix 2, no settled answer before a timeline's first view: chosen, the water makes no answer
+  until a view of the post's world is submitted, and the float uses the conformance fallback. A marked
+  answer would hold nothing the fallback lacks, because the map's products on the device are frame state
+  too. A post waits in the mailbox and is answered at the first asking after that view, and the mailbox
+  drops the former timeline's posts and results, pending and in flight
+  ([whose state](DESIGN.md#bodies-and-the-query)). New WP19.6 holds a post before seeding, a post after it
+  and a restore onto the same tick number. WP5.1's gale test moves its cascade comparison to a post answered
+  after seeding.
+- 2026-11-25 Must Fix 3, WP20 could find a Chrome defect it forbade repairing: WP20.1 now looks for each cue
+  in every view where WP20.2 judges it, the handoff in both winds, and takes a diagnosis at whichever
+  revision shows a cue. New WP20.4 is the same record in Chrome, from Chrome's own frames. The plan file's
+  note lets a repair follow any diagnosis, on the target that shows the cue. A clean target owes only its takes.
+- 2026-11-25 Must Fix 4, WP20.1 could give two causes to the same pixels and required one: a diagnosis now
+  names every cause its frames support, and both where two observations hold at the same pixels. WP20.2
+  holds each repair to a stage a diagnosis names. The stop stands where a diagnosis cannot tell which stage
+  to repair. Risk 18 says the same.
+- 2026-11-25 Suggestion taken: the design says a batch in a skipped view's tick is on the device in that tick
+  except at the host's bound on outstanding tick submissions, where the host counts the refusal and asks again.
