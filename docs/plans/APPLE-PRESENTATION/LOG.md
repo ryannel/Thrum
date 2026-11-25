@@ -524,3 +524,13 @@
   reveal and spawn in the inspected windows. Continuous 1× playback review is still due.
   [Exposure control](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/fixed-storage/comparison.json) ·
   [Motion evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/motion-previews/README.md)
+
+- 2026-11-25 WP8. The 1920×1080 exposure diagnostic still missed the exact D8.3 bound. The GPU witness
+  verified 12 ordinary colour channels within one half-float ULP at the matching tone input, preserved alpha
+  and retained the three boundary repair counts. Side-by-side playback and native-pixel measurements are on
+  record for D8.8. The bright-star crop had 0.0138% phase modulation at the scene-linear tap and 8.11% at
+  the native output before tone. The SDR paired crop showed 2.79% peak-to-peak with MetalFX and 0.16%
+  with TAAU. Continuous playback review is outstanding.
+  [Exposure at 1920×1080](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/exposure-1080p/comparison.json) ·
+  [GPU tone-input witness](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/still-tone-input.log) ·
+  [Motion record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/motion-previews/README.md)
