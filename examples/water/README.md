@@ -56,7 +56,8 @@ the calibration float and keeps it in both arms at identical world times, so onl
 ## Optics
 
 Run `THRUM_WATER_OPTICS=calm ./dev scene examples/water` for the sea and the submerged
-calibration floats. Choose `trade` or `gale` to inspect how the glitter widens. Set
+calibration floats. Choose `trade` or `gale` to inspect how the glitter widens.
+**Camera pitch** changes the view independently of the Sun elevation. Set
 `THRUM_WATER_SHADE=1` to enable the stand-in cloud optical-depth field across the grey float.
 Chrome accepts `?optics=calm&shade=1` for the same scene. Views 7–10 on the island show the lake
 from 10 m and the three shores looking down. In a trade wind, **Lake wave gain** takes the lake

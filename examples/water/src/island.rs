@@ -295,7 +295,7 @@ pub const CAMERAS: [Camera; 6] = [
     Camera::look_at([127.0, 400.0, 35.0], [127.0, 0.0, 34.99], 65.0),
     Camera::look_at([208.0, 76.0, 10.0], [208.0, 0.0, 9.99], 65.0),
 ];
-const LAKE_HIGH: Camera = Camera::look_at([170.0, 22.0, 18.0], [195.0, 12.0, -8.0], 65.0);
+const LAKE_HIGH: Camera = Camera::look_at([161.0, 22.0, 31.0], [195.0, 12.0, -8.0], 56.0);
 const SHALLOWS: [Camera; 3] = [
     Camera::look_at([-112.0, 2.0, 30.0], [-103.0, -1.0, 26.0], 64.0),
     Camera::look_at([171.0, 14.0, 34.0], [175.0, 10.7, 28.0], 64.0),

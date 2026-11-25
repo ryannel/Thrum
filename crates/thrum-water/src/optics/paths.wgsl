@@ -66,7 +66,9 @@ fn trace(
     body: OpticsBody, registered: bool,
 ) -> GatherHit {
     if interval.x >= interval.y { return empty_hit(); }
-    let steps = select(32u, 16u, registered);
+    // The scene's silhouettes need finer brackets over the full reach.
+    // Registered geometry already restricts the trace to its short interval.
+    let steps = select(48u, 16u, registered);
     let step = (interval.y - interval.x) / f32(steps);
     var previous = interval.x;
     var clear = false;
@@ -91,7 +93,8 @@ fn trace(
             var left = previous;
             var right = t;
             var best = hit;
-            for (var j = 0u; j < 5u; j++) {
+            let refine = select(7u, 5u, registered);
+            for (var j = 0u; j < refine; j++) {
                 let middle = 0.5 * (left + right);
                 let q = origin + ray * middle;
                 let candidate = gather_at(optics_project(q).xy);
@@ -104,7 +107,8 @@ fn trace(
             }
             let along = dot(best.point - origin, ray);
             let error = length(best.point - origin - along * ray);
-            let tolerance = 0.045 + best.distance * 3.0 * max(
+            let tolerance = select(0.018, 0.045, registered)
+                + best.distance * select(1.8, 3.0, registered) * max(
                 view_aux.viewport_inv_viewport.z, view_aux.viewport_inv_viewport.w,
             );
             if along > 0.02 && along <= interval.y + 0.03 && error < 2.0 * tolerance
