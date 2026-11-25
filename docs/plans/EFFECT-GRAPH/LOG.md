@@ -275,3 +275,7 @@
   range, view and usage checks as frame passes. Tick timestamps follow the host's timing switch, including
   when the governor measures the view. The Metal lifecycle guard and the reviewer's public attachment and
   timing probe pass. [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6/review-fix.md)
+- 2026-11-25 Builder, WP6 storage textures. Tick and frame preparation share device capability validation
+  for storage texture formats and per-pass counts. On Metal the public attachment probe accepted the supported
+  read and rejected both the unsupported format and the over-limit pass, naming the tick pass in each error.
+  All eight pinned target checks passed. [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/README.md)

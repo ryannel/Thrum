@@ -447,8 +447,8 @@
           "statement": "A contribution declares tick passes beside its frame passes, and preparation holds the stage's rules. It accepts a tick pass that reads its effect's persistent resources and reads its histories by `previous`. It refuses each of these with a named error: a tick pass that reads a history by `next`; one that reads a history by `result`; a tick pass that writes a transient, persistent or history resource or an attachment; a tick pass that reads a transient or an attachment; and a tick pass declared in a 2D scene. Guard: CPU tests of the declaration checks in `thrum-render`.",
           "check": "cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_rules/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.1.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
@@ -459,8 +459,8 @@
           "ask": "Are the expected values worked out by a CPU oracle of the field and never read from the engine? In the advances that submit no view, would the test fail if the tick pass were recorded with the next view, or if its answer reached the drain only after the next view? In the advance of two ticks, would the test fail if only the newer tick's post were answered? Is the frame host the only code that submits a tick pass's encoder, with a contribution given no device or queue submission of its own?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.2.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
@@ -471,8 +471,8 @@
           "ask": "Is there no blocking poll and no blocking map between a post and its drain? Is the confirmation the last thing the frame host does before a tick submission's `queue.submit`, with no call between the two that can wait? Is there any path on which the frame host records a tick pass before it has entered the permission it was given, or makes a tick submission's submit without that confirmation? Does the tick stage create no timestamp query set of its own? Do the tests that hold `advance_without_rendering` to touching no device still stand as they were?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.3.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
@@ -482,8 +482,8 @@
           "check": "node scripts/check_v1_browser.mjs --case effect-tick",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.4.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
@@ -493,8 +493,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_world_change/)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.5.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
@@ -504,8 +504,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/tick_work_before_slot_wait/)' --no-tests=fail",
           "ask": "In `crates/thrum-app/src/app/render_actor.rs`, is there any path on which the render actor polls or sleeps for a frame slot before the host's asking has been made? Does the tested wait run in the render actor's frame path, and not only in the test? Are the wait's deadline, the lead it measures afterwards and the `advance` that follows unchanged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.6.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
@@ -515,8 +515,8 @@
           "check": "cargo nextest run --locked --offline -p v1-game-ios -E 'test(/tick_permission/)' --no-tests=fail",
           "ask": "Does every host the iPhone's render owner drives hold this permission from before its first advance, and keep it through a device recovery? Does the render owner state each frame request's epoch to the permission before its first call into the host for that request, so the permission never checks an epoch read at entry? Is each of the render owner's calls to `advance` and `drive` outside every lease section, so the permission's section cannot nest? Is the tested permission the one the render owner gives the host? Are the lease's protocol and the frame's present section unchanged?",
           "target": "stand_in:ios-sim",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.7.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
@@ -525,8 +525,8 @@
           "statement": "A game on the sky kit is handed each tick's endpoint where it posts. Through `SkyGame`'s public fixed-update route, with a tick duration set: the call made at tick zero, before the world is first advanced, carries tick 0; an advance that completes three ticks makes three calls in order, each carrying its own tick; and every one of those four calls carries the world epoch and the timeline that the world's publication carries after that advance. A fixed update written against the hook as it was, taking a tick number and a duration, still builds and is called as before. Guard: a CPU test in `thrum-app`, with no device.",
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/fixed_update_endpoint/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/WP6.8.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         }
