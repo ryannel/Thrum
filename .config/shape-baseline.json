@@ -69,7 +69,7 @@
     "library-env": {
       "version": 2,
       "files": {
-        "crates/thrum-app/src/app.rs": 4,
+        "crates/thrum-app/src/app.rs": 3,
         "crates/thrum-app/src/app/profile_recording.rs": 2,
         "crates/thrum-app/src/sky.rs": 4,
         "crates/thrum-app/src/sky/capture.rs": 1,

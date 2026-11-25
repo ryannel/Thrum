@@ -1700,7 +1700,7 @@ pub fn run_with_display<G: WindowGame + 'static, E: std::error::Error>(
 }
 
 /// Set to `1` to collect GPU timestamps throughout a window run and print the frames report.
-/// Bounded [`run`] always prints the report, with timing from any frames the profiler observed.
+/// Bounded [`run`] always prints a frames report.
 pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
 
 #[expect(
