@@ -69,6 +69,16 @@ class WindowMatch(sockets.Match):
         advances = self.host.events("advance")
         return advances[-1]["tick"] if advances else 0
 
+    def finish(self, expected):
+        super().finish(expected)
+        interval = self.config["digest_interval"]
+        last_digest = self.ticks // interval * interval
+        for log in [self.host, *(peer.log for peer in expected)]:
+            self.wait("final committed window records", lambda: (
+                log.events("advance") and log.events("advance")[-1]["tick"] == self.ticks
+                and (not last_digest or log.events("digest") and log.events("digest")[-1]["tick"] == last_digest)
+            ), 5)
+
     def cut(self, peer, name, duration):
         self.action("cut", name=name, duration=duration)
         control = peer.output / "relay-control"

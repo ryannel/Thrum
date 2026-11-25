@@ -1039,7 +1039,7 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         display_at: u64,
         prior: u64,
         settings: Settings,
-        mut budget: u8,
+        budget: u8,
         observe: &mut impl FnMut(PredictionEvent<P::State>),
     ) {
         let stepped = self.world().tick();
@@ -1060,11 +1060,11 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
             if self.held > prior {
                 clock.observe(self.held, now, settings);
             }
+            let settings = Settings {
+                catch_up: settings.catch_up.min(budget),
+                ..settings
+            };
             clock.advance(display_at, stepped, self.held, settings, || {
-                if budget == 0 {
-                    return false;
-                }
-                budget -= 1;
                 replica.commit(slot, &mut committed)
             });
             self.state = if clock.behind() {

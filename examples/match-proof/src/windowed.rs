@@ -252,13 +252,6 @@ struct Driver {
 
 impl Driver {
     #[cfg_attr(
-        target_os = "macos",
-        expect(
-            clippy::needless_pass_by_value,
-            reason = "the browser retains the same row before uploading"
-        )
-    )]
-    #[cfg_attr(
         target_arch = "wasm32",
         expect(
             clippy::unnecessary_wraps,
@@ -267,7 +260,7 @@ impl Driver {
     )]
     fn record(&mut self, row: Value) -> Result<(), GameError> {
         #[cfg(target_os = "macos")]
-        self.native.write(&row).map_err(rejected)?;
+        self.native.write(row).map_err(rejected)?;
         #[cfg(target_arch = "wasm32")]
         self.rows.get_mut().push(row);
         Ok(())

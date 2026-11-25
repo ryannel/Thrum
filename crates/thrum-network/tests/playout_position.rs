@@ -3,7 +3,7 @@
 use crate::support;
 
 use support::{Match, local};
-use thrum_network::session::{Playout, Settings, Skip, World};
+use thrum_network::session::{Controls, Playout, Settings, Skip, World};
 
 #[derive(Clone, Copy)]
 struct Frame {
@@ -91,6 +91,58 @@ fn check_bursts(settings: Settings) {
         })
         .collect::<Vec<_>>();
     assert!(assert_motion(&control, &windows, period, catch_up).is_err());
+}
+
+#[test]
+fn a_smaller_display_budget_records_holding_at_the_work_cap() {
+    let mut fixture = Match::new(local(), 1, None, false);
+    fixture.ready();
+    while fixture.host.world().tick() < 50 {
+        fixture.neutral(200);
+    }
+    let start = fixture.now;
+    let before = fixture.clients[0].world().tick();
+    let mut samples = [None; 3];
+    for (sample, offset) in samples.iter_mut().zip([50_000, 58_333, 66_666]) {
+        let now = start + offset;
+        let target = now + 8_333;
+        fixture.memory.advance(now / 1_000);
+        fixture.host.advance(now, 200);
+        fixture.memory.advance(now / 1_000);
+        let client = &mut fixture.clients[0];
+        client
+            .advance_for_display(now, target, 1, |_| Controls::axes([0.0; 3]), |_| {})
+            .expect("bounded display advance");
+        assert!(client.held() > client.world().tick());
+        assert!(client.take_skip().is_none());
+        *sample = Some((client.playout(target).unwrap(), client.world().tick()));
+        if offset == 50_000 {
+            assert_eq!(client.playout(target + 4_166), client.playout(target));
+            assert!(client.take_stall().is_none());
+        } else if offset == 58_333 {
+            let stall = client
+                .take_stall()
+                .expect("work-cap stall ended on recovery");
+            assert!(stall.work_cap);
+            assert_eq!(stall.position.to_bits(), ((before + 1) as f64).to_bits());
+            assert!((40_000..65_000).contains(&stall.duration_us), "{stall:?}");
+        }
+    }
+    let [(held, committed), (resumed, next), (moving, _)] = samples.map(Option::unwrap);
+    assert_eq!(committed, before + 1);
+    assert_eq!(next, committed + 1);
+    assert_eq!(
+        held,
+        Playout {
+            position: committed as f64,
+            rate: 0.0
+        }
+    );
+    assert_eq!(resumed.position.to_bits(), held.position.to_bits());
+    let fastest = 8_333.0 / f64::from(fixture.settings.tick_us)
+        * f64::from(fixture.settings.playout_catch_up)
+        / 1_000.0;
+    assert!(moving.position > resumed.position && moving.position <= resumed.position + fastest);
 }
 
 #[test]

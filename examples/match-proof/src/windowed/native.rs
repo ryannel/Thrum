@@ -4,7 +4,13 @@ use std::{
     net::{Ipv4Addr, SocketAddr},
     num::NonZeroU32,
     path::{Path, PathBuf},
-    time::Duration,
+    sync::{
+        Arc,
+        atomic::{AtomicU8, Ordering},
+        mpsc::{self, Receiver, RecvTimeoutError, SyncSender, TrySendError},
+    },
+    thread,
+    time::{Duration, Instant},
 };
 
 use crowd_2d_view::proof;
@@ -78,26 +84,80 @@ impl Authority {
 }
 
 pub(super) struct Output {
-    rows: BufWriter<File>,
+    rows: SyncSender<Value>,
     control: Option<PathBuf>,
+    command: Arc<AtomicU8>,
     capture: Option<ImageWriter<SubmittedImage>>,
     stopped_capture: bool,
 }
 
+const RECORD: u8 = 1;
+const STOP: u8 = 2;
+
 impl Output {
     fn new(path: &Path, control: Option<PathBuf>) -> std::io::Result<Self> {
+        let file = File::create(path)?;
+        let (rows, incoming) = mpsc::sync_channel(1024);
+        let command = Arc::new(AtomicU8::new(0));
+        let control_path = control.clone();
+        let command_out = Arc::clone(&command);
+        thread::Builder::new()
+            .name("match-record".into())
+            .spawn(move || {
+                if let Err(error) =
+                    write_record(file, &incoming, control_path.as_deref(), &command_out)
+                {
+                    eprintln!("match record writer: {error}");
+                }
+            })?;
         Ok(Self {
-            rows: BufWriter::new(File::create(path)?),
+            rows,
             control,
+            command,
             capture: None,
             stopped_capture: false,
         })
     }
 
-    pub(super) fn write(&mut self, row: &Value) -> std::io::Result<()> {
-        serde_json::to_writer(&mut self.rows, row)?;
-        self.rows.write_all(b"\n")?;
-        self.rows.flush()
+    // Evidence must retain every row. An overloaded writer fails the proof
+    // without waiting in the render actor or silently dropping observations.
+    pub(super) fn write(&self, row: Value) -> std::io::Result<()> {
+        self.rows.try_send(row).map_err(|error| match error {
+            TrySendError::Full(_) => std::io::Error::other("match record queue full"),
+            TrySendError::Disconnected(_) => std::io::Error::other("match record writer stopped"),
+        })
+    }
+}
+
+fn write_record(
+    file: File,
+    incoming: &Receiver<Value>,
+    control: Option<&Path>,
+    command: &AtomicU8,
+) -> std::io::Result<()> {
+    let mut rows = BufWriter::new(file);
+    let interval = Duration::from_millis(8);
+    let mut next = Instant::now() + interval;
+    loop {
+        match incoming.recv_timeout(next.saturating_duration_since(Instant::now())) {
+            Ok(row) => {
+                serde_json::to_writer(&mut rows, &row)?;
+                rows.write_all(b"\n")?;
+            }
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Disconnected) => return rows.flush(),
+        }
+        if Instant::now() >= next {
+            rows.flush()?;
+            if let Some(text) = control.and_then(|path| fs::read_to_string(path).ok()) {
+                match text.trim() {
+                    "record" => command.store(RECORD, Ordering::Relaxed),
+                    "stop" => command.store(STOP, Ordering::Relaxed),
+                    _ => {}
+                }
+            }
+            next = Instant::now() + interval;
+        }
     }
 }
 
@@ -182,7 +242,7 @@ fn drain(host: &mut Host, writer: &ImageWriter<SubmittedImage>) -> Result<(), Ga
         host.world_mut()
             .driver_mut()
             .native
-            .write(&row)
+            .write(row)
             .map_err(rejected)?;
         if let Some(image) = writer.submit(image) {
             host.recycle_submitted_image(image);
@@ -200,9 +260,9 @@ pub(super) fn capture(host: &mut Host) -> Result<(), GameError> {
     if output.stopped_capture {
         return Ok(());
     }
-    let command = fs::read_to_string(&control).unwrap_or_default();
+    let command = output.command.load(Ordering::Relaxed);
     let mut writer = output.capture.take();
-    if writer.is_none() && command.trim() == "record" {
+    if writer.is_none() && command == RECORD {
         host.enable_submitted_capture_with_limits(
             1,
             CaptureLimits {
@@ -224,7 +284,7 @@ pub(super) fn capture(host: &mut Host) -> Result<(), GameError> {
         );
     }
     if let Some(active) = &writer {
-        if command.trim() == "stop" {
+        if command == STOP {
             host.stop_submitted_capture();
         }
         drain(host, active)?;
@@ -232,7 +292,7 @@ pub(super) fn capture(host: &mut Host) -> Result<(), GameError> {
     let drained = host
         .submitted_capture_usage()
         .is_some_and(|(staging, _)| staging == 0);
-    if command.trim() == "stop"
+    if command == STOP
         && drained
         && let Some(active) = writer.take()
     {
@@ -243,7 +303,7 @@ pub(super) fn capture(host: &mut Host) -> Result<(), GameError> {
         output.stopped_capture = true;
         output
             .write(
-                &json!({"event":"capture_finished", "mode":"realtime", "frames":summary.frames,
+                json!({"event":"capture_finished", "mode":"realtime", "frames":summary.frames,
             "omitted":omitted, "hashes":summary.frame_hashes}),
             )
             .map_err(rejected)?;
