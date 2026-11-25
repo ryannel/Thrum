@@ -341,7 +341,7 @@
         {
           "verdict": "fail",
           "commit": "45f660d5da16544c8d0b39ac5eaa686a8ef5009e",
-          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review-4.md",
           "items": {
             "WP3.1": "pass",
             "WP3.2": "pass",
@@ -371,6 +371,34 @@
             "turns": 1
           },
           "at": "2026-11-25T00:49:38Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "df22a0b4b8e26a2dd9eea8f5f5a2a09f40dbd03f",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "items": {
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 76779,
+            "cached": 2219904,
+            "output": 7555,
+            "turns": 1
+          },
+          "at": "2026-11-25T01:51:14Z"
         }
       ],
       "authorised": {
@@ -416,7 +444,14 @@
         }
       ],
       "counted_from": "2026-11-25T01:20:49Z",
-      "counted_after": 4
+      "counted_after": 4,
+      "done": {
+        "by": "review",
+        "commit": "df22a0b4b8e26a2dd9eea8f5f5a2a09f40dbd03f",
+        "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+        "checked": "322dbfbfc6116cd5fd04481b48ba576016e126da",
+        "at": "2026-11-25T01:51:14Z"
+      }
     },
     "WP4": {
       "definitions": "92a40ee332fbe5626aacedeb8e2aa91eded94dd25ab336100d7d157b1899a183",
