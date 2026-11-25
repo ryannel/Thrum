@@ -1454,8 +1454,8 @@
     {
       "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -1466,10 +1466,10 @@
           "statement": "At dawn, noon, low Sun, twilight and night the sea reflects that hour's sky, the Sun's glitter lies under the Sun and widens as the wind rises, the night sea is dark under the sky's glow, and nothing clips to flat white or black.",
           "inspect": "`fixed` stills at the five hours in a calm, a trade wind and a gale, from 2 m and 40 m: the glitter path, the swell's faces and the horizon.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.2",
@@ -1478,8 +1478,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.3",
@@ -1488,8 +1488,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.4",
@@ -1498,18 +1498,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.5",
           "statement": "On the calm lake the far shore, the hills and a tree on the bank reflect in the water wherever they are on screen, each joined to its foot at the waterline. Until the mirror view of WP14, where a reflection's source is off the screen or hidden, or the water is too rough to mirror, the water shows the sky with no hole, streak or stretched edge, and a breeze blurs the reflection away smoothly.",
           "inspect": "`fixed` stills of the lake at dawn and noon in a calm from 2 m and 10 m, a `realtime` pan and tilt that takes the far shore off the screen, and a `realtime` sequence as the wind rises from calm to a breeze.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.6",
@@ -1520,8 +1520,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.7",
@@ -1530,10 +1530,10 @@
           "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on flat water and with waves, including a body whose reflection lies wholly outside its own source rectangle? Does it hold the see-through rectangles to the map's depths and the water type's sight depth?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/TECHNICAL.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.12",
@@ -1544,18 +1544,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/TECHNICAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.9",
           "statement": "In Chrome the sea passes WP8.1's and WP8.2's lists at noon, low Sun and night, and the lake passes WP8.3's and WP8.5's at noon.",
           "inspect": "`fixed` stills in Chrome at noon, low Sun and night at those items' views, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/README.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.10",
@@ -1563,10 +1563,46 @@
           "check": "python3 scripts/water_cost.py check --scene optics",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/optics-cost-6c153e0f26b1.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Sky-coloured holes break the reflected bank beneath the trees",
+          "item": "WP8.5",
+          "repeat": false
+        },
+        {
+          "name": "An off-screen body crossing the camera plane triggers a full-screen gather",
+          "item": "WP8.7",
+          "repeat": false
+        },
+        {
+          "name": "The calm-water Sun reflection clips to flat white",
+          "item": "WP8.1",
+          "repeat": false
+        },
+        {
+          "name": "Chrome leaves sky-coloured holes in the noon reflected bank",
+          "item": "WP8.9",
+          "repeat": false
+        },
+        {
+          "name": "Chrome clips the calm noon glint to flat white",
+          "item": "WP8.9",
+          "repeat": false
+        },
+        {
+          "name": "The zero-body cost view contains a visible unregistered float",
+          "item": "WP8.10",
+          "repeat": false
+        },
+        {
+          "name": "Editing the Sun abruptly pitches the optics camera",
+          "repeat": false
         }
       ]
     },

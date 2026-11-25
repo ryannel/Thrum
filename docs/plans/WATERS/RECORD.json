@@ -1289,7 +1289,77 @@
     },
     "WP8": {
       "definitions": "8fce8713ee8b315225f6bbbeadfd743961260dc21657b1a6d43f9d447193e332",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "72687d60afdbd765a235dfb6816fe32f362e0078",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "fail",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "fail",
+            "WP8.12": "pass",
+            "WP8.9": "fail",
+            "WP8.10": "fail"
+          },
+          "findings": [
+            {
+              "name": "Sky-coloured holes break the reflected bank beneath the trees",
+              "item": "WP8.5",
+              "repeat": false
+            },
+            {
+              "name": "An off-screen body crossing the camera plane triggers a full-screen gather",
+              "item": "WP8.7",
+              "repeat": false
+            },
+            {
+              "name": "The calm-water Sun reflection clips to flat white",
+              "item": "WP8.1",
+              "repeat": false
+            },
+            {
+              "name": "Chrome leaves sky-coloured holes in the noon reflected bank",
+              "item": "WP8.9",
+              "repeat": false
+            },
+            {
+              "name": "Chrome clips the calm noon glint to flat white",
+              "item": "WP8.9",
+              "repeat": false
+            },
+            {
+              "name": "The zero-body cost view contains a visible unregistered float",
+              "item": "WP8.10",
+              "repeat": false
+            },
+            {
+              "name": "Editing the Sun abruptly pitches the optics camera",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 210378,
+            "cached": 9495168,
+            "output": 19570,
+            "turns": 1
+          },
+          "at": "2026-11-25T19:29:17Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
