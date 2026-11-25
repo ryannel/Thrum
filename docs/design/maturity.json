@@ -3268,21 +3268,21 @@
         "implementation": "partial",
         "functional_validation": "target_guards_passed",
         "experienced_quality": "qualification_open",
-        "scope": "WATERS WP13 draws the forward surf sheet with contour-driven bounded swash, cuts its highest surface for gameplay, and redistributes depth-limited shore birth in the existing whitewater stocks.",
-        "correctness": "Metal verified the folded float column, submitted depth and motion, and the birth budget across breaking, subcritical, calm, omitted-wave and dry cases. Hardware Chrome verified 17,420 cache nodes at 1.983 s with 0.446 mm maximum displacement error and zero faults. The CPU plane beach retained the regular-wave extrema with short geometry present.",
-        "visuals": "Metal and Chrome submit curved crests, a spreading bore and a distant surf line. The extended shelf gives two model crests room to shoal. On Metal, three independent looks could not follow a pair through both the turn and the narrowing. Pitch and swash retreat remain unclear.",
-        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 \u00d7 1440 gale arm evaluated 47.43 million nodes for 48 stations and took 20.71 s in the query pass under shared load. The query exceeds the real-time budget at that load.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP13-handoff.md"
+        "scope": "WATERS WP13 draws the forward surf sheet with contour-driven bounded swash, cuts its highest surface for gameplay, and redistributes depth-limited shore birth in the existing whitewater stocks. WP21 shares packed shore reads and culls unused mesh cache samples.",
+        "correctness": "Metal verified the folded float column, submitted depth and motion, and the birth budget across breaking, subcritical, calm, omitted-wave and dry cases. Hardware Chrome verified 17,420 cache nodes at 1.983 s with 0.446 mm maximum displacement error and zero faults. The CPU plane beach retained the regular-wave extrema with short geometry present. WP21 Metal first-frame cases pass after camera turn, move, stage and wind changes. Chrome checks 4,817 mesh nodes to 0.127 mm with zero validation faults.",
+        "visuals": "Metal and Chrome submit curved crests, a spreading bore and a distant surf line. The extended shelf gives two model crests room to shoal. On Metal, three independent looks could not follow a pair through both the turn and the narrowing. Pitch and swash retreat remain unclear. The WP21 builder inspection passed 12 paired offshore and handoff stills on portable Metal and Chrome.",
+        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 \u00d7 1440 gale arm evaluated 47.43 million nodes for 48 stations and took 20.71 s in the query pass under shared load. The query exceeded the real-time budget at that load. WP21 measured the 1440p sand-view cache at 6.48 ms on tick frames with shared load.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP21/README.md"
       },
       "waters_surf_body_query": {
         "implementation": "partial",
         "functional_validation": "target_guards_passed",
         "experienced_quality": "qualification_open",
-        "scope": "WATERS WP19 moves the highest-surface body query to the tick stage, with a coarse-to-fine cut and world endpoints on posts and replies.",
-        "correctness": "The full-lattice fixtures, grouped and individual Metal stations, four cascade carry cases and restore guard passed. The running proof uses the current tick's drain and the island's station sampling rule.",
+        "scope": "WATERS WP19 moves the highest-surface body query to the tick stage, with a coarse-to-fine cut and world endpoints on posts and replies. WP21 holds the latest delivered reply until its age, generation, timeline or device invalidates it.",
+        "correctness": "The full-lattice fixtures, grouped and individual Metal stations, four cascade carry cases and restore guard passed. The running proof uses the current tick's drain and the island's station sampling rule. WP21 passed the CPU held-answer cases and both Metal repeat-drain guards.",
         "visuals": "Surf visual qualification remains with WATERS WP20.",
-        "device": "M3 Max Metal under shared load. At the island's sand camera, the 60 Hz run misses the 90% two-tick delivery threshold in open water and in breakers, with fallback uses in both arms and zero blocking reads. Halving the 192 × 108 extent did not recover delivery. The paired 2560 × 1440 surf query took 1.751 ms and retained 8,388,672 bytes of cut scratch.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP19/delivery-proof.md"
+        "device": "M3 Max Metal under shared load. At the island's sand camera, the 60 Hz run misses the 90% two-tick delivery threshold in open water and in breakers, with fallback uses in both arms and zero blocking reads. Halving the 192 × 108 extent did not recover delivery. The paired 2560 × 1440 surf query took 1.751 ms and retained 8,388,672 bytes of cut scratch. The WP21 open-water arm from the same sand camera at 192 × 108 delivered all 28,800 stations within two ticks, with 48 held uses and zero fallbacks, unavailable answers or blocking reads. The breakers delivery proof remains with WP19.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP21/README.md"
       },
       "waters_whitewater": {
         "implementation": "partial",

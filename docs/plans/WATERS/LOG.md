@@ -1135,3 +1135,12 @@
 - 2026-11-25 WP22. The running surf proof module now uses the same macOS guard as its driver and helpers.
   WP22.1 passed on the Mac. Cargo type-checked all workspace targets, including every water scene test target,
   for both Linux and Windows. [Cross-target record](../../../.orchestrate/evidence/WATERS/WP22/cross-target.md).
+- 2026-11-25 WP21. The surf field cache shares packed shore reads across components and evaluates both
+  presentations in one component loop at equal stage. The mesh cache skips nodes outside the displaced
+  triangle and normal footprint. The query mailbox marks held answers and carries each height from its
+  use tick, with expiry at the configured age and invalidation on world, body or readback reset.
+- 2026-11-25 WP21 proof. Both Metal mailbox guards, the first-frame mesh comparisons and the Chrome
+  surf check passed. All 28,800 open-water stations arrived within two ticks. There were 48 held uses
+  and zero fallbacks. The 1440p paired record measured 6.48 ms for the cache on tick frames, beside
+  93.45 ms in WP19's review fix and 96.74 ms in WP13. All 12 fixed still pairs retained the offshore
+  front and foam handoff by eye. [Target records](../../../.orchestrate/evidence/WATERS/WP21/README.md).
