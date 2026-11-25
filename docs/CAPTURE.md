@@ -131,6 +131,15 @@ output-byte bound stay the same. Use a small extent for these longer takes.
 For Chrome, a cloud view can supply `preset`, `weather_rate` and `wind`, plus
 `duration_seconds` between 1 and 60 for an elapsed-time take.
 
+For a native window cadence measurement, launch the proving build with
+`THRUM_MAC_QUALIFY` set to an existing output directory, `THRUM_MAC_TAP=off`
+and `THRUM_MAC_QUALIFY_MODE=wind`. Use `THRUM_V1_FRAMES=10000` so the frame
+limit outlasts the observation. Select the cooked valley and running weather
+as for a wind take. The ordinary window retains a 20-second interval after
+warm-up without scripted camera edits or forced GPU timestamp queries.
+Join `requests.tsv` and `surface.tsv` by sequence to check the display-link
+target interval between submitted frames.
+
 `--case clouds-route --route PATH --mode realtime` records a cloud inspection
 route in the same versioned route format. It admits at most 1,800 simulation
 ticks including preparation and drain, with 4,096 submitted records and a

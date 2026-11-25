@@ -142,15 +142,31 @@ fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, Stri
         Ok("off") => false,
         _ => return Err("qualification requires THRUM_MAC_TAP=on or off".to_owned()),
     };
+    let held_wind = match std::env::var("THRUM_MAC_QUALIFY_MODE").as_deref() {
+        Err(std::env::VarError::NotPresent) | Ok("pan") => false,
+        Ok("wind") if !capture => true,
+        Ok("wind") => return Err("wind qualification requires THRUM_MAC_TAP=off".to_owned()),
+        _ => return Err("THRUM_MAC_QUALIFY_MODE must be pan or wind".to_owned()),
+    };
     Ok(Some(thrum_app::WindowQualification {
         output: output.into(),
         control: "camera.yaw",
         control_column: "yaw_degrees",
-        // Three seconds to warm up, then the holds on either side of a two-second sweep.
-        boundaries: [3.0, 4.0, 6.0, 7.1],
-        sample: |elapsed| ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0,
+        // Both modes warm up for three seconds. Wind keeps the camera fixed
+        // for at least 20 seconds. Pan drives the control for two seconds.
+        boundaries: if held_wind {
+            [3.0, 10.0, 16.0, 23.1]
+        } else {
+            [3.0, 4.0, 6.0, 7.1]
+        },
+        sample: if held_wind {
+            None
+        } else {
+            Some(|elapsed| ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0)
+        },
         accepted: |radians| f64::from(radians.to_degrees()),
         capture,
+        gpu_timestamps: !held_wind,
         replace_surface: std::env::var("THRUM_MAC_REPLACE").as_deref() == Ok("1"),
     }))
 }

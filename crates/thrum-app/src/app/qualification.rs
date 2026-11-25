@@ -21,7 +21,7 @@ use thrum_render::runtime::{
 };
 use thrum_render::synthetic::CaptureSource;
 
-const RECORDS: usize = 2048;
+const RECORDS: usize = 4096;
 
 /// One identified submission from the ordinary Mac window.
 pub(super) struct ExtentCapture {
@@ -151,7 +151,7 @@ impl ExtentCapture {
 #[cfg(test)]
 mod tests;
 
-/// An opt-in control sweep observed on the ordinary window and render owner.
+/// An opt-in observation of the ordinary window and render owner.
 pub struct WindowQualification {
     /// Directory for the control, window and submitted-frame records.
     pub output: PathBuf,
@@ -162,11 +162,14 @@ pub struct WindowQualification {
     /// Signpost boundaries in elapsed seconds; the last ends the run.
     pub boundaries: [f64; 4],
     /// Control value in display units at the given elapsed seconds.
-    pub sample: fn(f64) -> f64,
+    /// With no sample function, observe the control without driving the panel.
+    pub sample: Option<fn(f64) -> f64>,
     /// Translate an accepted model value to the sweep's display units.
     pub accepted: fn(f32) -> f64,
-    /// Record submitted images as well as submission and timing records.
+    /// Record submitted images alongside submission records.
     pub capture: bool,
+    /// Request per-pass GPU timestamps during the observation.
+    pub gpu_timestamps: bool,
     /// Exercise replacement with a readback pending.
     pub replace_surface: bool,
 }
@@ -205,28 +208,34 @@ impl Pan {
             super::qualification_signpost::mark(stage);
             self.signposts.push((stage, before, CACurrentMediaTime()));
         }
-        let requested = (self.options.sample)(elapsed);
         let id = controls
             .lookup(self.options.control)
             .map_err(|e| e.to_string())?;
-        if !panel.simulate(id, requested) {
-            return Err("qualification slider action unavailable".to_owned());
-        }
-        panel.apply_edits(controls);
-        if !panel.take_refused().is_empty() {
-            return Err("AppKit qualification action refused".to_owned());
-        }
+        let requested = if let Some(sample) = self.options.sample {
+            let requested = sample(elapsed);
+            if !panel.simulate(id, requested) {
+                return Err("qualification slider action unavailable".to_owned());
+            }
+            panel.apply_edits(controls);
+            if !panel.take_refused().is_empty() {
+                return Err("AppKit qualification action refused".to_owned());
+            }
+            Some(requested)
+        } else {
+            None
+        };
         let Value::Number(accepted) = controls.value(id) else {
             return Err("qualification control is not numeric".to_owned());
         };
+        let accepted = (self.options.accepted)(*accepted);
         if self.rows.len() == RECORDS {
             return Err("pan marker capacity exhausted".to_owned());
         }
         self.rows.push((
             unix_ns()?,
             CACurrentMediaTime(),
-            requested,
-            (self.options.accepted)(*accepted),
+            requested.unwrap_or(accepted),
+            accepted,
         ));
         Ok(elapsed >= boundaries[3])
     }

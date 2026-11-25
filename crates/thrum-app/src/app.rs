@@ -181,8 +181,12 @@ impl<G: WindowGame + 'static> App<G> {
     }
 
     fn timing_requested(&self) -> bool {
-        let reports =
-            matches!(self.timing_policy, TimingPolicy::Report) || self.qualification.is_some();
+        let reports = self
+            .qualification
+            .as_ref()
+            .map_or(matches!(self.timing_policy, TimingPolicy::Report), |pan| {
+                pan.options.gpu_timestamps
+            });
         reports || crate::profile::enabled(self.game.controls()).unwrap_or(true)
     }
 
