@@ -1,5 +1,5 @@
 """The paired wind series. The Mac presented-time witness owns display cadence."""
-from bisect import bisect_left
+from bisect import bisect_left, bisect_right
 from collections import Counter
 from decimal import Decimal, ROUND_CEILING
 import json
@@ -155,6 +155,34 @@ def present_calls(rows):
     return calls
 
 
+def before_present_call(arm, timestamp, following, call_row, rows, targets, dispatches):
+    # A request that was dispatched before the miss owns its recorded outcome.
+    # Its display target can be several refreshes behind the current deadline.
+    dispatched = Decimal(following['opportunity_media_seconds']) * NS
+    if (dispatched <= timestamp and call_row is not None
+            and call_row['submission_id'] == str(following['drawable'])):
+        place = call_row.get('request_place')
+        if place is None and not call_row['interval_submission_id']:
+            # Earlier records report the request outcome when the interval had no call.
+            place = call_row['place']
+        if place in PLACES and place != 'display_link':
+            return place, call_row, 'drawable_request'
+
+    # With no joined request outcome, only an already elapsed opportunity can
+    # explain the miss. Its refusal must precede the miss as well.
+    index = bisect_right(targets, timestamp) - 1
+    if index >= 0 and timestamp - targets[index] < PERIOD * Decimal('1.5'):
+        target = targets[index]
+        row = rows[target]
+        place = row['place']
+        if place in ('display_link', 'late_request'):
+            return place, row, 'unserved_opportunity'
+        if (place in PLACES and not row['submission_id']
+                and target in dispatches and dispatches[target] <= timestamp):
+            return place, row, 'unserved_opportunity'
+    raise InvalidMeasurement(f'{arm.name}: no causal refresh-account row for {timestamp} ns')
+
+
 def require_unoccluded(arm, conditions):
     window_events = conditions['occluded_window_events']
     surface_attempts = conditions['occluded_surface_attempts']
@@ -200,9 +228,11 @@ def analyze_arm(arm, wind):
         raise InvalidMeasurement(f'{arm.name}: incomplete refresh account')
     calls = present_calls(rows)
     targets = sorted(rows)
-    # Match unserved opportunities only while the next drawable was waiting
-    # for its present call. The witness alone supplies the missing refreshes.
-    position = 0
+    dispatches = {}
+    for request in table(arm / 'requests.tsv'):
+        target = Decimal(request['target_media_seconds']) * NS
+        dispatched = Decimal(request['media_seconds']) * NS
+        dispatches[target] = max(dispatched, dispatches.get(target, dispatched))
     drawable = 0
     all_places = Counter()
     for record, stall in zip(result['stalls'], stalls, strict=True):
@@ -219,37 +249,20 @@ def analyze_arm(arm, wind):
                 place = 'after_present_call'
                 row = call_row
                 opportunity = None
+                account_source = 'present_call'
             else:
                 if call_row is None and Decimal(following['opportunity_media_seconds']) * NS <= timestamp:
                     raise InvalidMeasurement(f'{arm.name}: present call for drawable {following["drawable"]}'
                                              f' may straddle {timestamp} ns')
-                while position + 1 < len(targets) and abs(targets[position + 1] - timestamp) < abs(
-                        targets[position] - timestamp):
-                    position += 1
-                # ProMotion can shift the callback grid by half a period.
-                # Match in order and use each unserved opportunity once.
-                if position == len(targets) or abs(targets[position] - timestamp) >= PERIOD:
-                    raise InvalidMeasurement(f'{arm.name}: missing refresh-account row for {timestamp} ns')
-                target = targets[position]
-                position += 1
-                row = rows[target]
-                place = row['place']
+                place, row, account_source = before_present_call(
+                    arm, timestamp, following, call_row, rows, targets, dispatches)
                 opportunity = row['target_media_seconds']
-                # A display-link interval can be served by a call just after
-                # the witness's loss. Recover the next drawable's own request
-                # outcome when the interval masks that outcome.
-                if (place == 'served' and call_row is not None
-                        and call_row['submission_id'] == str(following['drawable'])):
-                    row = call_row
-                    place = row.get('request_place', place)
-            if place not in PLACES:
-                raise InvalidMeasurement(f'{arm.name}: no unserved opportunity for {timestamp} ns ({place})')
             missing.append(dict(
                 seconds=float((timestamp - start) / NS), presented_grid_media_ns=str(timestamp),
                 place=place, previous_drawable=last_drawable[drawable]['drawable'],
                 next_drawable=following['drawable'], next_present_call_media_seconds=call,
                 present_call_source='window_account' if call_row is not None else 'surface_sample_after_call',
-                opportunity_target_media_seconds=opportunity, account=row,
+                opportunity_target_media_seconds=opportunity, account_source=account_source, account=row,
             ))
         record['refreshes'] = missing
         record['places'] = dict(Counter(row['place'] for row in missing))

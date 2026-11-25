@@ -43,7 +43,7 @@ class WindAttribution(unittest.TestCase):
         }
         request = {'target_media_seconds': '0.008', 'submission_id': '11',
                    'interval_submission_id': '', 'present_call_media_seconds': '-0.001',
-                   'place': 'served', 'request_place': 'drawable'}
+                   'place': 'encode_submit', 'request_place': 'encode_submit'}
         missed = {'target_media_seconds': '0', 'submission_id': '', 'interval_submission_id': '',
                   'place': 'late_request'}
         rows = {Decimal(0): missed, Decimal(8_000_000): request}
@@ -57,24 +57,41 @@ class WindAttribution(unittest.TestCase):
                 }),
                 patch.object(cadence, 'interval', return_value=(Decimal(0), cadence.PERIOD)),
                 patch.object(cadence, 'account_rows', return_value=rows),
-                patch.object(cadence, 'table', return_value=[{
-                    'submission_id': '11', 'timing_requested': 'false',
-                }]),
+                patch.object(cadence, 'table', side_effect=lambda path: (
+                    [{'submission_id': '11', 'timing_requested': 'false'}]
+                    if path.name == 'cadence-frames.tsv' else []
+                )),
             ):
-                for call, opportunity, place, source in [
-                    ('-0.001', 'late_request', 'after_present_call', request),
-                    ('0.001', 'late_request', 'late_request', missed),
-                    ('0.001', 'served', 'drawable', request),
+                for call, dispatch, opportunity, place, source in [
+                    ('-0.001', '-0.003', 'late_request', 'after_present_call', request),
+                    ('0.001', '-0.003', 'late_request', 'encode_submit', request),
+                    ('0.001', '0.0005', 'display_link', 'display_link', missed),
                 ]:
                     with self.subTest(call=call, opportunity=opportunity):
                         request['present_call_media_seconds'] = call
+                        frame['opportunity_media_seconds'] = dispatch
                         missed['place'] = opportunity
+                        (arm / 'witness.json').write_text(json.dumps(witness))
                         run = cadence.analyze_arm(arm, cadence.ABSENT)
                         (stall,) = run['stalls']
                         (loss,) = stall['refreshes']
                         self.assertEqual(loss['place'], place)
                         self.assertEqual(loss['account'], source)
                         self.assertEqual(loss['next_present_call_media_seconds'], call)
+
+    def test_only_an_elapsed_refusal_can_explain_a_loss_before_the_next_dispatch(self):
+        target = Decimal(-1)
+        following = {'drawable': 12, 'opportunity_media_seconds': '0.001'}
+        refused = {'submission_id': '', 'place': 'frame_slot'}
+        future = {'submission_id': '12', 'place': 'drawable', 'request_place': 'drawable'}
+        rows = {target: refused, Decimal(1): future}
+        arm = Path('04-off')
+        self.assertEqual(cadence.before_present_call(
+            arm, Decimal(0), following, future, rows, sorted(rows), {target: Decimal(-2)}),
+            ('frame_slot', refused, 'unserved_opportunity'))
+        with self.assertRaisesRegex(InvalidMeasurement, 'no causal refresh-account row'):
+            cadence.before_present_call(
+                arm, Decimal(0), following, future, rows, sorted(rows), {target: Decimal(1)})
 
 
 class RecordingOwnership(unittest.TestCase):
