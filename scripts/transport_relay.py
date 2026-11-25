@@ -18,9 +18,32 @@ async def run(args):
     backends = {}
     opening = {}
     cut = ""
+    requested = ""
+    download_cut_duration = None
+    reopen = None
     stats["cut_windows"] = []
     pending = set()
     stop = asyncio.Event()
+
+    def set_cut(command):
+        nonlocal cut
+        if command == cut:
+            return
+        cut = command
+        stats["cut_windows"].append({"command": cut, "wall_us": time.time_ns() // 1000,
+                                     "downstream_packets_cut": stats["directions"][1]["cut"]})
+
+    def apply(command):
+        nonlocal download_cut_duration, reopen
+        if reopen is not None:
+            reopen.cancel()
+            reopen = None
+        duration = command.removeprefix("timed download ")
+        if duration != command:
+            download_cut_duration = int(duration) / 1000
+        else:
+            download_cut_duration = None
+            set_cut(command)
 
     def forward(direction, data, send):
         row = stats["directions"][direction]
@@ -36,7 +59,14 @@ async def run(args):
             row["dropped"] += 1
             return
         def deliver():
+            nonlocal download_cut_duration, reopen
             pending.discard(handle)
+            if direction == 1 and download_cut_duration is not None:
+                # Start on a delivery so even a short cut passes over real
+                # downstream traffic rather than an empty polling interval.
+                set_cut("cut download")
+                reopen = loop.call_later(download_cut_duration, set_cut, "open")
+                download_cut_duration = None
             if cut == "cut" or (direction == 1 and cut == "cut download"):
                 row["cut"] += 1
                 return
@@ -80,15 +110,16 @@ async def run(args):
         while not stop.is_set():
             if args.control and Path(args.control).exists():
                 command = Path(args.control).read_text().strip()
-                if command != cut:
-                    cut = command
-                    stats["cut_windows"].append({"command": cut, "wall_us": time.time_ns() // 1000,
-                                                 "downstream_packets_cut": stats["directions"][1]["cut"]})
+                if command != requested:
+                    requested = command
+                    apply(command)
             try:
                 await asyncio.wait_for(stop.wait(), 0.01)
             except TimeoutError:
                 pass
     finally:
+        if reopen is not None:
+            reopen.cancel()
         for handle in pending:
             handle.cancel()
         front.close()

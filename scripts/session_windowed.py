@@ -79,13 +79,9 @@ class WindowMatch(sockets.Match):
                 and (not last_digest or log.events("digest") and log.events("digest")[-1]["tick"] == last_digest)
             ), 5)
 
-    def cut(self, peer, name, duration):
-        self.action("cut", name=name, duration=duration)
-        control = peer.output / "relay-control"
-        sockets.write_atomic(control, "cut download")
-        time.sleep(duration)
-        sockets.write_atomic(control, "open")
-        self.action("open", name=name)
+    def cut(self, peer, name, duration_ms):
+        self.action("cut", name=name, duration_ms=duration_ms)
+        sockets.write_atomic(peer.output / "relay-control", f"timed download {duration_ms}")
 
 
 def proof(target, scenario, output, motion):
@@ -156,11 +152,11 @@ def run_events(match, peer, scenario, motion):
         match.wait("3 seconds of resumed presentation", lambda: match.tick() >= 900, 15)
     else:
         match.wait("settled playout before buffered cut", lambda: match.tick() >= 360, 15)
-        match.cut(peer, "buffered", 0.018)
+        match.cut(peer, "buffered", 18)
         match.wait("steady period before stall cut", lambda: match.tick() >= 600, 15)
-        match.cut(peer, "stall", 0.23)
+        match.cut(peer, "stall", 230)
         match.wait("steady period before backlog cut", lambda: match.tick() >= 900, 15)
-        match.cut(peer, "skip", 1.08)
+        match.cut(peer, "skip", 1080)
         match.wait("3 seconds after skips", lambda: match.tick() >= 1170, 15)
     if motion:
         peer.command("stop")
@@ -254,13 +250,13 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
 def validate_cuts(match, peer, relay_edges):
     events = match.harness
     result = {}
-    assert len(relay_edges) == len(events) == 6, (relay_edges, events)
+    assert len(relay_edges) == 2 * len(events) == 6, (relay_edges, events)
     # A recovered set can only cross after the relay reopened; allow A0 jitter,
     # a frame's observation and multiple catch-up turns for each isolated cut.
     advances = peer.log.events("advance")
     frames = peer.log.events("frame")
-    for cut, opened, applied_cut, applied_open in zip(
-            events[::2], events[1::2], relay_edges[::2], relay_edges[1::2], strict=True):
+    for cut, applied_cut, applied_open in zip(
+            events, relay_edges[::2], relay_edges[1::2], strict=True):
         name = cut["name"]
         assert [applied_cut["command"], applied_open["command"]] == ["cut download", "open"]
         assert applied_open["downstream_packets_cut"] > applied_cut["downstream_packets_cut"], (name, applied_cut, applied_open)
@@ -280,7 +276,7 @@ def validate_cuts(match, peer, relay_edges):
                        for stall in stalls), "no submitted hold from the named stall"
         else:
             assert skips and all(row["first"] <= row["last"] for row in skips), (name, skips)
-        result[name] = {"cut": cut, "open": opened, "relay": [applied_cut, applied_open],
+        result[name] = {"cut": cut, "relay": [applied_cut, applied_open],
                         "bursts": bursts, "stalls": stalls, "skips": skips}
     stall = result["stall"]["stalls"][-1]
     next_cut = result["skip"]["relay"][0]["wall_us"]
