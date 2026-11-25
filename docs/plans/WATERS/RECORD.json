@@ -1841,7 +1841,54 @@
     },
     "WP19": {
       "definitions": "45b6a6a8edef6b0804868c9ad5bd9d26ea0e4be9fb8624845dd8a04df5aa0af2",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "78026a45af0d58dc6af111cf61a4709c671c4d77",
+          "review": ".orchestrate/evidence/WATERS/WP19-review.md",
+          "items": {
+            "WP19.1": "pass",
+            "WP19.2": "pass",
+            "WP19.3": "fail",
+            "WP19.4": "fail",
+            "WP19.5": "pass",
+            "WP19.6": "pass"
+          },
+          "findings": [
+            {
+              "name": "The running proof hides missing float deliveries",
+              "item": "WP19.3",
+              "repeat": false
+            },
+            {
+              "name": "Timely delivery collapses at the island's sand camera",
+              "item": "WP19.3",
+              "repeat": false
+            },
+            {
+              "name": "The paired cost record reports empty cut scratch after the fleet query",
+              "item": "WP19.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 151210,
+            "cached": 5038976,
+            "output": 12072,
+            "turns": 1
+          },
+          "at": "2026-11-25T15:36:07Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix find",

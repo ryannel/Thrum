@@ -1276,7 +1276,7 @@
     {
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [
         "EFFECT-GRAPH:WP6"
       ],
@@ -1290,8 +1290,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
         {
           "id": "WP19.2",
@@ -1302,8 +1302,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
         {
           "id": "WP19.3",
@@ -1312,10 +1312,10 @@
           "ask": "Do the ticks of both runs advance from the wall clock, with nothing waiting for the GPU between a post and its drain? Is an answer's lateness counted from the tick that posted its point to the tick whose drain handed it to the game? Does the breakers run make cuts on every tick, with its node count above zero throughout?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/builder-surf-running.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
         {
           "id": "WP19.4",
@@ -1323,10 +1323,10 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/builder-surf-cost.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
         {
           "id": "WP19.5",
@@ -1337,8 +1337,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
         {
           "id": "WP19.6",
@@ -1349,12 +1349,29 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "The running proof hides missing float deliveries",
+          "item": "WP19.3",
+          "repeat": false
+        },
+        {
+          "name": "Timely delivery collapses at the island's sand camera",
+          "item": "WP19.3",
+          "repeat": false
+        },
+        {
+          "name": "The paired cost record reports empty cut scratch after the fleet query",
+          "item": "WP19.4",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP8",
