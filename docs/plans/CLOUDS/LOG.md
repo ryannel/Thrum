@@ -826,3 +826,19 @@ refresh between loss-free controls. The other four cloud runs lost none.
 The four clouds-absent losses are in the
 [Mac runtime log](../PLATFORM-RUNTIME-MAC/LOG.md#refreshes-lost-with-clouds-absent-in-clouds-wp20).
 [Series and audit](../../../.orchestrate/evidence/CLOUDS/WP20/hold-20261125T224406.456981Z/README.md)
+
+## WP8 World light
+
+The optional overlay carries cloud RGB in-scatter and transmittance into ATMOSPHERE's
+diffuse and reflection products. Clouds keep borrowing the clear sky for their own
+ambient light. The incident meter now uses the Sun path at its metering point when
+World light is declared. The display smooths gain through the clear handover while
+the meter continues to report physical illuminance. Legacy aerial transport scales
+its solar in-scatter where the scene has no view volume.
+
+Metal and Chrome fixed views reproduce neutral overcast daylight and directional
+reflections under broken weather. The Metal retake resolves the exposure steps in
+the coverage sweep. The apparent hard edge follows the authored lookout geometry.
+The paired 1440p Metal record compares World light against Sky alone and the WP7
+reference and times the overlay, diffuse projection and reflection mips by name.
+[Qualification and limits](../../../.orchestrate/evidence/CLOUDS/WP8/README.md)

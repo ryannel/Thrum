@@ -1130,8 +1130,8 @@
           "ask": "Did any existing test, bound or reference of `ATMOSPHERE` change? None may. Does cloud ambient still come from the clear sky's radiance, so that cloud light does not feed itself?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.1.log",
           "verdict": "",
           "review": ""
         },
@@ -1141,8 +1141,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test haze_scale_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.2.log",
           "verdict": "",
           "review": ""
         },
@@ -1153,8 +1153,8 @@
           "ask": "Did the meter already see cloud shade, or did this work package add it under ruling 3? Either way, does the record say which?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.3.log",
           "verdict": "",
           "review": ""
         },
@@ -1163,8 +1163,8 @@
           "statement": "At noon under the overcast preset the valley is lit a neutral grey, dimmer than on a clear day, with no Sun shadows and no blue cast. Distant terrain is neither brighter than the sky behind it nor black. The picture reads as overcast daylight, not dusk.",
           "inspect": "Capture `fixed` stills of the valley at noon under the overcast and the clear presets, from 2 m and from 40 m. Judge each whole, the pair side by side, and native-size crops of near ground, a grey object and the far ridges.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification-retake-review.md",
           "verdict": "",
           "review": ""
         },
@@ -1173,8 +1173,8 @@
           "statement": "Under the broken preset, sunlit and shaded land sits under the sky that lights it, and a polished sphere shows the clouds in the direction they are, moving as they move.",
           "inspect": "Capture `fixed` stills at noon and at a 15\u00b0 Sun with the polished sphere in frame, and a `realtime` 20-second sequence at 8x. Judge the sphere's reflection against the sky in native-size crops and across the sequence.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/broken-moving/motion.json",
           "verdict": "",
           "review": ""
         },
@@ -1183,8 +1183,8 @@
           "statement": "As coverage sweeps from clear to overcast and back in motion, the land's light, the haze and the exposure follow with no step and no pumping.",
           "inspect": "Capture a `realtime` sequence of the sweep, a minute each way, from 40 m. Judge consecutive frames at 1x.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/coverage-sweep/motion.json",
           "verdict": "",
           "review": ""
         },
@@ -1193,8 +1193,8 @@
           "statement": "In Chrome the overcast and the broken valley pass WP8.4's and WP8.5's lists.",
           "inspect": "Capture the same `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/fixed-crops.json",
           "verdict": "",
           "review": ""
         },
@@ -1204,8 +1204,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene overcast-lit",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/overcast-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -1216,8 +1216,8 @@
           "ask": "Does the test count creations by name for each set, and would a capability whose output was hidden while its passes still ran fail it? When Shapes is declared, is a placed cloud in its volume form inside the compared ground field?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.9.log",
           "verdict": "",
           "review": ""
         }

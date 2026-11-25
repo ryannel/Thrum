@@ -3111,6 +3111,13 @@
         "device": "Apple M3 Max Metal and Chrome WebGPU engine output. Matched loaded 1440p Metal GPU means were 6.52 ms absent, 72.26 ms fair, 77.14 ms broken and 35.60 ms overcast.",
         "record": "../../.orchestrate/evidence/CLOUDS/WP7/README.md"
       },
+      "world_light_evidence": {
+        "implementation": "CLOUDS WP8 adds the opt-in physical sky overlay, incident metering through the Sun path, and solar aerial scaling where a view volume is absent. Display gain eases through changing cloud cover.",
+        "correctness": "Metal verifies the diffuse and reflection composition, isolated solar aerial scaling, physical horizontal incident lux, six capability sets and ground-field byte parity with a resident placed volume.",
+        "visuals": "Matched Metal and Chrome stills show neutral overcast daylight and directional broken-cloud reflections. The Metal coverage sweep preserves a continuous exposure response through closing and reopening. The capture record identifies the submission gaps and the additional Chrome props.",
+        "device": "The Apple M3 Max portable Metal 1440p overcast pairs measured 20.20 ms with World light and 19.29 ms with Sky alone. The WP7 reference measured 35.60 ms. The diffuse projection, reflection mips and cloud overlay have named GPU timings in the paired record.",
+        "record": "../../.orchestrate/evidence/CLOUDS/WP8/README.md"
+      },
       "name": "Cloud fields and projections",
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

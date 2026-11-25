@@ -4579,6 +4579,22 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/WP8/broken-moving-continuous.zst",
+      "size": 346395392,
+      "sha256": "d5e42cebc5c14755e77ab5d62e13418d3fd6210550a157756596763ebecf048a",
+      "date": "2026-11-25T23:50:11.749762+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/CLOUDS/WP8/lossless-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/WP8/coverage-sweep-continuous.zst",
+      "size": 86889624,
+      "sha256": "796ee694ab56aeecda9e2679c47f6b9683fb94625cc8198036dd6c4face9d3c6",
+      "date": "2026-11-25T23:51:10.593291+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/CLOUDS/WP8/lossless-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CONTENT-LOOP/M2/realtime/frames.zst",
       "size": 476272219,
       "sha256": "c5a4e429f941846c02aa8576fd2178d7d10bd52e542cd978c5cae282c40db686",
