@@ -441,3 +441,8 @@
   An invalid control permits a bounded retry. A delivering control leaves the over-limit run failed.
   The shared-lock Metal replay delivered zero scale changes at 1920×1080 and 120 Hz.
   [Steady route evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/steady-control/README.md)
+
+- 2026-11-25 The Mac window proofs passed with the repository GPU lock held exclusively at 1920×1080
+  and 120 Hz. D7.2 recorded 0/119 settled misses unloaded, 0/119 governed and 54/119 governor-off under
+  the same load. D7.3 recorded zero scale changes. The lead can adopt the lock-only plan change after
+  the active builder releases the module. [Target records and lock change](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/README.md)

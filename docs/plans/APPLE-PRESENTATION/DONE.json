@@ -659,7 +659,7 @@
           "lock": "gpu",
           "ask": "Are ticks without a present counted by the frame host from display-link ticks, and labelled as a render-side proxy? Does the arm fail with the governor off under the same load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/final-check-live/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/live/governor.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
@@ -670,7 +670,7 @@
           "check": "python3 scripts/apple_presentation.py governor --target mac-metal --steady",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/steady-control/replay/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/steady/governor.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
