@@ -1122,8 +1122,8 @@
     {
       "id": "WP13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -1138,8 +1138,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/qualified-field-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.2",
@@ -1149,8 +1149,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/surf-capability-r2.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.3",
@@ -1161,8 +1161,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/shore-shielded-floating.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.4",
@@ -1171,8 +1171,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/short-swell-approach-inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.5",
@@ -1180,10 +1180,10 @@
           "inspect": "Use `realtime` sequences in a trade wind and a gale with swell, from 2 m on the sand looking along the break and out to sea, from 40 m above and from 1 km offshore. 1. At 2 m and 40 m a crest pitches forward and the break progresses along its length. It holds together through the pitch, with no tears, fins or stair steps. 2. At 2 m and 40 m follow the broken front into the shallows. Its face lowers into a thin advancing sheet, with no wall or exposed strip between the bore and swash. Sand reappears from the waterline as the sheet drains. 3. At 1 km, in each wind, successive white fronts start at visibly different distances from the beach, and they read as surf running in.",
           "ask": "Do the CPU model and GPU paths use the same swell-driven swash in the displaced sheet, with the plane-beach regular-wave extrema preserved and the wet edge used by both drawing and queries? Use the repeated cross-shore cut to locate any break in the sheet that the motion inspection finds.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP13/breaker-motion-inspection.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.6",
@@ -1194,8 +1194,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/shore-shielded-foam.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.7",
@@ -1204,8 +1204,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/whitewater-motion-inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.8",
@@ -1214,8 +1214,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/tide-motion-inspection.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.9",
@@ -1225,8 +1225,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/shore-shielded-frame.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.10",
@@ -1236,18 +1236,18 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/shelf-chrome-conformance.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.11",
           "statement": "In Chrome, submitted engine time advances during the trade-wind surf inspection. The crests, bore, swash and whitewater pass the same visual checks at matching views on Chrome and portable Metal, including the line of surf at 1 km and the handoff across the coarse foam window's edge.",
           "inspect": "Use Chrome T2 `fixed` stills and `realtime` sequences at the trade-wind settings and views of WP13.4, WP13.5 and WP13.7, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. The matched views pass WP13.4's approach checks and points 1 to 3 of WP13.5. 3. Both targets pass points 1\u20134 of WP13.7, including the surf line from 1 km offshore and the separate handoff view across the coarse window's outer edge. Record any visible differences at the matched views.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP13/chrome-matched-inspection.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.12",
@@ -1255,10 +1255,10 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP13/surf-cost.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
         },
         {
           "id": "WP13.14",
@@ -1268,8 +1268,25 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP13/recovered-trail-check.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "The pitching crest stair-steps around the beach bend",
+          "item": "WP13.5",
+          "repeat": false
+        },
+        {
+          "name": "The matched Chrome crest has the same triangular steps",
+          "item": "WP13.11",
+          "repeat": false
+        },
+        {
+          "name": "The cost report omits pass-growth investigations for small baselines",
+          "item": "WP13.12",
+          "repeat": false
         }
       ]
     },
