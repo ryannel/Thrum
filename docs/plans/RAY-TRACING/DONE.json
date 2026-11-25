@@ -496,7 +496,7 @@
     {
       "id": "WP7",
       "name": "The renderer's tests type-check for Linux and Windows again with its counters on, so the cross-target check on main passes",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [],
       "quality_bar": "Main's Linux and Windows type-check is green again, and the Mac runs every ray test it ran before.",
       "items": [

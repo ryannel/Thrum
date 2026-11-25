@@ -877,6 +877,38 @@
         "by": "plan",
         "task": "The main-branch check cross-target (bash scripts/check_cross_target.sh) fails on main; last pass 84d1e63db, failing sinc",
         "at": "2026-11-25T01:02:47Z"
+      },
+      "ready_for_review": {
+        "commit": "ace9c3252e980ddc4b9d6a9e3b09f996431ab8ea",
+        "checked": "322dbfbfc6116cd5fd04481b48ba576016e126da",
+        "at": "2026-11-25T01:46:28Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 125057,
+          "cached": 10327680,
+          "output": 16566,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 125057,
+          "cached": 10327680,
+          "output": 16566,
+          "turns": 1
+        }
+      },
+      "done": {
+        "by": "checks",
+        "commit": "ace9c3252e980ddc4b9d6a9e3b09f996431ab8ea",
+        "checked": "322dbfbfc6116cd5fd04481b48ba576016e126da",
+        "at": "2026-11-25T01:46:28Z"
       }
     }
   },
