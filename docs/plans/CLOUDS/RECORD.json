@@ -831,7 +831,7 @@
       }
     },
     "WP7": {
-      "definitions": "2e4ef0d4a6271cae2044f452bd70a8a501ff672b7392aa88a1db953a5a81a792",
+      "definitions": "ee31a59dadef7541bad649d9fcba7e10b2cb88e0af2ae21de83071fcab728156",
       "reviews": [
         {
           "verdict": "fail",
@@ -1016,8 +1016,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
-        "at": "2026-11-25T08:39:28Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 5 Must Fix find",
+        "at": "2026-11-25T09:05:10Z"
       }
     },
     "WP8": {
@@ -1344,21 +1344,21 @@
       }
     },
     "WP19": {
-      "definitions": "b1bae0acdb7c4a8af173d6a91cb0a2b21e318938a0a281a214ab3c5657dfc2c8",
+      "definitions": "98eed31fe63c3ab5478e7144404b6e5d6c212fb1b5a2c8cab97e68b588e7efc9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
-        "at": "2026-11-25T08:39:28Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 5 Must Fix find",
+        "at": "2026-11-25T09:05:10Z"
       }
     },
     "WP20": {
-      "definitions": "3f7ac697fd9dd2b00135ce752a2af2ed2041de416cd7f6e9a81a0a1ef27b3a77",
+      "definitions": "a642a20dc79a6e736614db165b81a2adb2abd41432b32aa41a5560a7ff2754f4",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
-        "at": "2026-11-25T08:39:28Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 5 Must Fix find",
+        "at": "2026-11-25T09:05:10Z"
       }
     }
   },
@@ -1474,11 +1474,15 @@
     {
       "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind drift). Seven of eight items pass. Latest review (.orchestrate/evidence/CLOUDS/WP7-review.md): the launch-path fix landed and the fast arm improved, but the matched runs missed targets, including the 90-degree turn. Note the reviewer's runs were on a shared machine ('other work continued'): still air held only 0.125 s while 40 m/s 60x held 32.6 s and clouds-absent 44.8 s, which looks more like contention than cloud cost. The reviewer also found the cadence report samples the target before encode/acquire/submit, so it can overstate streaks. Decide why it keeps failing and what changes: whether WP7.4 needs an exclusive-GPU measurement protocol (gpu lock held, other visible runs excluded) to be judgeable at all, whether the cadence report must record target vs actual submission time, and whether the turn needs a stage-time diagnosis before more repair. Keep the bar: the player's ordinary game holds the display's refresh with clouds drifting; don't weaken it to a bounded or capped run.",
       "at": "2026-11-25T08:39:28Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 5 Must Fix findings.",
+      "at": "2026-11-25T09:05:10Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T08:39:28Z"
+    "at": "2026-11-25T09:05:10Z"
   },
   "design_history": [
     {
