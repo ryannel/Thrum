@@ -2,10 +2,10 @@
   "module": "APPLE-TILE",
   "adopted": true,
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": ".orchestrate/evidence/APPLE-TILE/design-review.md",
-    "commit": "cd07387d086ab4c60c52fcef1f02935fb1ed86de",
-    "hash": "d46f58ec1e7083e5aae90fa6b665fcc6772128682fd64ce68137196e5a5cff59",
+    "commit": "0f04b21b434baa6d93ee95d57a4262137aaaefcc",
+    "hash": "fe86de66171d5da3783263fd7fe8d711aef3c513c002d8fc7ab316aeef047927",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -17,12 +17,12 @@
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 98086,
-      "cached": 1342080,
-      "output": 7229,
+      "input": 39229,
+      "cached": 355328,
+      "output": 2715,
       "turns": 1
     },
-    "at": "2026-11-25T13:50:24Z"
+    "at": "2026-11-25T13:58:57Z"
   },
   "work_packages": {
     "WP0": {
@@ -783,6 +783,29 @@
       "items_owed": [
         "WP13"
       ]
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/APPLE-TILE/design-review-5.md",
+      "commit": "cd07387d086ab4c60c52fcef1f02935fb1ed86de",
+      "hash": "d46f58ec1e7083e5aae90fa6b665fcc6772128682fd64ce68137196e5a5cff59",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 98086,
+        "cached": 1342080,
+        "output": 7229,
+        "turns": 1
+      },
+      "at": "2026-11-25T13:50:24Z"
     }
   ]
 }
