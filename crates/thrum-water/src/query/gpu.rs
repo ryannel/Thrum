@@ -33,6 +33,7 @@ const QUERY_PASS: &str = "water body query";
 const CARRY_TICKS: f64 = 5.0;
 const SLOT_COUNT: usize = 4;
 const GROUP_WIDTH: u32 = 64;
+const NODES_PER_GROUP: u32 = 8;
 const SURF_GROUP: u32 = 1;
 const SURF_BINDING: u32 = 7;
 const COARSE_GROUP: u32 = 2;
@@ -267,6 +268,7 @@ struct Batch {
     coarse_groups: u32,
     fine_groups: u32,
     single_sheet: bool,
+    fine_width: u32,
 }
 
 pub(crate) struct Readback {
@@ -404,17 +406,21 @@ impl Readback {
         let plain = surf
             .is_none()
             .then(|| make_pipeline(QUERY_PASS, "sample_query", &[]));
-        let make_surf = |constants| SurfPipelines {
-            coarse: make_pipeline("water query coarse lattice", "sample_coarse", constants),
-            fine: make_pipeline("water query fine lattice", "sample_fine", constants),
+        let make_surf = |coarse, fine, constants| SurfPipelines {
+            coarse: make_pipeline("water query coarse lattice", coarse, &[]),
+            fine: make_pipeline("water query fine lattice", fine, &[]),
             answer: make_pipeline(QUERY_PASS, "sample_query", constants),
         };
         let coarse = coarse_layout.map(|layout| CoarseGpu {
             device: (**device).clone(),
             layout,
             select: make_pipeline("water query select fine cells", "select_fine", &[]),
-            general: make_surf(&[]),
-            single_sheet: make_surf(&[("single_sheet", 1.0)]),
+            general: make_surf("sample_coarse", "sample_fine", &[]),
+            single_sheet: make_surf(
+                "sample_coarse_wide",
+                "sample_fine_wide",
+                &[("single_sheet", 1.0)],
+            ),
         });
         let slots = std::array::from_fn(|_| {
             Slot::new(
@@ -652,6 +658,9 @@ impl Readback {
                 map_revisions,
                 coarse_groups,
                 fine_groups,
+                fine_width: map
+                    .surf_profile()
+                    .map_or(0, |profile| profile.cut.coarse_cells + 1),
                 single_sheet: points.iter().all(|point| {
                     point.body == u32::MAX
                         || point.flags & 1 == 0
@@ -725,7 +734,12 @@ impl Readback {
                 };
                 if batch.coarse_groups != 0 {
                     pass.set_pipeline(&pipelines.coarse);
-                    pass.dispatch_workgroups(batch.coarse_groups, 1, 1);
+                    let wide = if batch.single_sheet {
+                        GROUP_WIDTH / NODES_PER_GROUP
+                    } else {
+                        1
+                    };
+                    pass.dispatch_workgroups(batch.coarse_groups, wide, 1);
                 }
                 if batch.fine_groups != 0 {
                     pass.set_pipeline(&cut.select);
@@ -736,7 +750,12 @@ impl Readback {
                         .limits()
                         .max_compute_workgroups_per_dimension
                         .min(256);
-                    pass.dispatch_workgroups(groups, 1, 1);
+                    let wide = if batch.single_sheet {
+                        batch.fine_width.pow(2).div_ceil(NODES_PER_GROUP)
+                    } else {
+                        1
+                    };
+                    pass.dispatch_workgroups(groups, wide, 1);
                 }
                 pass.set_pipeline(&pipelines.answer);
                 pass.dispatch_workgroups(batch.count, 1, 1);

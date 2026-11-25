@@ -79,6 +79,74 @@ fn sample_coarse(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocat
     coarse_lattice[at] = vec4(bitcast<vec3<u32>>(displacement), mask);
 }
 
+// Eight adjacent lanes accumulate independent components of one node.
+const WAVE_LANES: u32 = 8u;
+const NODES_PER_GROUP: u32 = QUERY_WIDTH / WAVE_LANES;
+var<workgroup> wave_lanes: array<SurfMoments, QUERY_WIDTH>;
+var<workgroup> swash_lanes: array<SurfMoments, QUERY_WIDTH>;
+
+fn merge_moments(a: SurfMoments, b: SurfMoments) -> SurfMoments {
+    return SurfMoments(a.field + b.field, a.rate + b.rate,
+        a.re_vector + b.re_vector, a.im_vector + b.im_vector,
+        a.horizontal + b.horizontal, a.variance + b.variance);
+}
+
+fn parallel_displacement(point: QueryPoint, rest: vec2<f32>, lane: u32, enabled: bool) -> vec3<f32> {
+    let wave = lane % WAVE_LANES;
+    let row = MapRow(point.level_current_bed.xyz, point.gains);
+    let chop = settings.lengths_chop.w;
+    var column: SurfColumn;
+    var ordinary: SurfMoments;
+    var swash: SurfMoments;
+    if enabled {
+        column = surf_column(rest, point.body, row, point.surf_stage.x, settings.heights, settings.components);
+        if column.valid {
+            ordinary = surf_column_moments(column, rest, row, settings.origin, point.dt,
+                chop, settings.components, true, wave, WAVE_LANES);
+            if column.inner > 0.0 {
+                swash = surf_column_moments(column, rest, row, settings.origin, point.dt,
+                    chop, settings.components, false, wave, WAVE_LANES);
+            }
+        }
+    }
+    wave_lanes[lane] = ordinary;
+    swash_lanes[lane] = swash;
+    workgroupBarrier();
+    // Tree reduction within each node. Every lane reaches each barrier.
+    for (var step = WAVE_LANES / 2u; step != 0u; step /= 2u) {
+        if wave < step {
+            wave_lanes[lane] = merge_moments(wave_lanes[lane], wave_lanes[lane + step]);
+            swash_lanes[lane] = merge_moments(swash_lanes[lane], swash_lanes[lane + step]);
+        }
+        workgroupBarrier();
+    }
+    var result = vec3(0.0);
+    if wave == 0u && column.valid {
+        result = surf_column_result(column, rest, row, chop, wave_lanes[lane], swash_lanes[lane]).displacement;
+    }
+    workgroupBarrier();
+    return result;
+}
+
+@compute @workgroup_size(QUERY_WIDTH)
+fn sample_coarse_wide(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
+    let job = coarse_lattice[group.x];
+    let index = job.y + group.y * NODES_PER_GROUP + lane / WAVE_LANES;
+    let at = settings.coarse_jobs.x + job.z + index;
+    var mask = 0u;
+    if index < job.w { mask = coarse_lattice[at].w; }
+    let point = points[job.x];
+    let grid = point.coarse_grid;
+    let width = u32(grid.z);
+    let coord = grid.xy + vec2(i32(index % width), i32(index / width));
+    let rest = vec2<f32>(coord) * (surf.coarse.x * surf.controls.z);
+    let valid = index < job.w && (mask & 2u) != 0u;
+    let displacement = parallel_displacement(point, rest, lane, valid);
+    if valid && lane % WAVE_LANES == 0u {
+        coarse_lattice[at] = vec4(bitcast<vec3<u32>>(displacement), mask);
+    }
+}
+
 fn coarse_corner(point: QueryPoint, coord: vec2<i32>, cached: bool) -> vec2<f32> {
     let grid = point.coarse_grid;
     if !cached {
@@ -187,6 +255,31 @@ fn sample_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(num_workgroups)
             let rest = vec2<f32>(coord) * surf.controls.z;
             let p = surf_displacement(sheet, rest);
             coarse_lattice[offset + i] = vec4(bitcast<vec3<u32>>(p), 0u);
+        }
+    }
+}
+
+var<workgroup> fine_count: u32;
+
+@compute @workgroup_size(QUERY_WIDTH)
+fn sample_fine_wide(@builtin(workgroup_id) group: vec3<u32>, @builtin(num_workgroups) groups: vec3<u32>,
+    @builtin(local_invocation_index) lane: u32) {
+    if lane == 0u { fine_count = atomicLoad(&selected_count); }
+    let count = workgroupUniformLoad(&fine_count);
+    let step = u32(surf.coarse.x);
+    let side = step + 1u;
+    let i = group.y * NODES_PER_GROUP + lane / WAVE_LANES;
+    for (var selected = group.x; selected < count; selected += groups.x) {
+        let job = coarse_lattice[jobs_offset() + selected];
+        let sheet = points[job.x];
+        let width = u32(sheet.coarse_grid.z);
+        let index = job.y;
+        let coarse = sheet.coarse_grid.xy + vec2(i32(index % width), i32(index / width));
+        let coord = coarse * i32(step) + vec2(i32(i % side), i32(i / side));
+        let rest = vec2<f32>(coord) * surf.controls.z;
+        let displacement = parallel_displacement(sheet, rest, lane, i < side * side);
+        if i < side * side && lane % WAVE_LANES == 0u {
+            coarse_lattice[fine_record(sheet, index) + i] = vec4(bitcast<vec3<u32>>(displacement), 0u);
         }
     }
 }

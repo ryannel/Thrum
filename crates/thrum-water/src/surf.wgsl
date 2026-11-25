@@ -196,11 +196,11 @@ struct SurfMoments {
     variance: f32,
 }
 
-fn surf_moments(point: vec2<f32>, cell: Cell, stages: StageBlend, transformed: bool,
+fn surf_moments_lanes(point: vec2<f32>, cell: Cell, stages: StageBlend, transformed: bool,
     floor_depth: f32, fade: f32, gain: f32, anchor: vec2<f32>, dt: f32, chop: f32,
-    count: u32, local: bool) -> SurfMoments {
+    count: u32, local: bool, first: u32, stride: u32) -> SurfMoments {
     var result: SurfMoments;
-    for (var i = 0u; i < count; i++) {
+    for (var i = first; i < count; i += stride) {
         let wave = surf_component(i);
         if wave.amplitude == 0.0 { continue; }
         let k0 = 1.0 / wave.inverse_k;
@@ -234,6 +234,13 @@ fn surf_moments(point: vec2<f32>, cell: Cell, stages: StageBlend, transformed: b
         }
     }
     return result;
+}
+
+fn surf_moments(point: vec2<f32>, cell: Cell, stages: StageBlend, transformed: bool,
+    floor_depth: f32, fade: f32, gain: f32, anchor: vec2<f32>, dt: f32, chop: f32,
+    count: u32, local: bool) -> SurfMoments {
+    return surf_moments_lanes(point, cell, stages, transformed, floor_depth, fade, gain,
+        anchor, dt, chop, count, local, 0u, 1u);
 }
 
 // The still-water contour keeps the approaching phase with no shoaling.
@@ -283,13 +290,31 @@ fn breaking_face(sample: SurfPoint) -> f32 {
         (1.0 - smoothstep(0.55, 0.90, sample.phase));
 }
 
-fn surf_forward(
-    point: vec2<f32>, body: u32, row: MapRow, stage: f32, anchor: vec2<f32>,
-    dt: f32, chop: f32, heights: vec4<f32>, count: u32,
-) -> SurfPoint {
+struct SurfColumn {
+    valid: bool,
+    depth: f32,
+    floor_depth: f32,
+    swash: f32,
+    fade: f32,
+    ratio: f32,
+    contour: vec3<f32>,
+    support: f32,
+    inner: f32,
+    cell: Cell,
+    stages: StageBlend,
+    transformed: bool,
+    empty: SurfPoint,
+}
+
+fn surf_column(point: vec2<f32>, body: u32, row: MapRow, stage: f32,
+    heights: vec4<f32>, count: u32) -> SurfColumn {
+    var column: SurfColumn;
     var empty: SurfPoint;
     empty.short_weight = 1.0;
-    if row.gains.x == 0.0 || heights.x == 0.0 || count == 0u { return empty; }
+    if row.gains.x == 0.0 || heights.x == 0.0 || count == 0u {
+        column.empty = empty;
+        return column;
+    }
     let cell = map_cell(point);
     let depth = select(1.0e30, row.water.x - cell.bed, cell.inside);
     let floor_depth = max(depth, surf.controls.x);
@@ -300,7 +325,8 @@ fn surf_forward(
         // wet edge, where the bed cuts the distant foam estimate.
         let rms = heights.x * row.gains.x * 0.25;
         empty.variance = rms * rms;
-        return empty;
+        column.empty = empty;
+        return column;
     }
     let draw = SWASH_C * swash / (1.0 - SWASH_C);
     var fade = f32(depth > 0.0);
@@ -316,20 +342,45 @@ fn surf_forward(
     }
     let support = smoothstep(0.0, 1.0, contour.z);
     let inner = support * (1.0 - smoothstep(0.35, 0.85, ratio));
-    var moments: array<SurfMoments, 2>;
-    let count_stations = select(1u, 2u, inner > 0.0);
-    for (var station = 0u; station < count_stations; station++) {
-        let local = station == 0u;
-        var position = point;
-        var at = cell;
-        if !local {
-            position += contour.xy / contour.z;
-            at = map_cell(position);
-        }
-        moments[station] = surf_moments(position, at, stages, transformed && at.inside,
-            floor_depth, fade, row.gains.x, anchor, dt, chop, count, local);
+    return SurfColumn(true, depth, floor_depth, swash, fade, ratio, contour, support, inner,
+        cell, stages, transformed, empty);
+}
+
+fn surf_column_moments(column: SurfColumn, point: vec2<f32>, row: MapRow, anchor: vec2<f32>,
+    dt: f32, chop: f32, count: u32, local: bool, first: u32, stride: u32) -> SurfMoments {
+    var position = point;
+    var at = column.cell;
+    if !local {
+        position += column.contour.xy / column.contour.z;
+        at = map_cell(position);
     }
-    let ordinary = moments[0];
+    return surf_moments_lanes(position, at, column.stages, column.transformed && at.inside,
+        column.floor_depth, column.fade, row.gains.x, anchor, dt, chop, count, local, first, stride);
+}
+
+fn surf_forward(
+    point: vec2<f32>, body: u32, row: MapRow, stage: f32, anchor: vec2<f32>,
+    dt: f32, chop: f32, heights: vec4<f32>, count: u32) -> SurfPoint {
+    let column = surf_column(point, body, row, stage, heights, count);
+    if !column.valid { return column.empty; }
+    let ordinary = surf_column_moments(column, point, row, anchor, dt, chop, count, true, 0u, 1u);
+    var swash_moments: SurfMoments;
+    if column.inner > 0.0 {
+        swash_moments = surf_column_moments(column, point, row, anchor, dt, chop, count, false, 0u, 1u);
+    }
+    return surf_column_result(column, point, row, chop, ordinary, swash_moments);
+}
+
+fn surf_column_result(column: SurfColumn, point: vec2<f32>, row: MapRow, chop: f32,
+    ordinary: SurfMoments, swash_moments: SurfMoments) -> SurfPoint {
+    let depth = column.depth;
+    let floor_depth = column.floor_depth;
+    let swash = column.swash;
+    var fade = column.fade;
+    let ratio = column.ratio;
+    let contour = column.contour;
+    let support = column.support;
+    let inner = column.inner;
     let field = ordinary.field;
     let variance = ordinary.variance;
     var horizontal = ordinary.horizontal;
@@ -368,7 +419,7 @@ fn surf_forward(
         horizontal *= 1.0 - inner;
         section_throw *= 1.0 - inner;
         if inner > 0.0 {
-            let q = contour_phase(moments[1], swash);
+            let q = contour_phase(swash_moments, swash);
             let factor = SWASH_C * (depth + swash);
             height = mix(height, factor * q.x, inner);
             height_dt = mix(height_dt, factor * q.y, inner);
