@@ -930,7 +930,7 @@
     {
       "id": "WP7",
       "name": "The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
@@ -1027,7 +1027,17 @@
           "item": "WP7.4",
           "repeat": true
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_access",
+        "what": "Unlock the Mac console so the ordinary V1 window can be tested on the built-in 120 Hz display.",
+        "work": {
+          "commit": "5a617f72ca706187bef2ed4ae620daed3121bf29",
+          "branch": "build/clouds",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/CLOUDS/WP7-handoff.md"
+      }
     },
     {
       "id": "WP8",
