@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": ".orchestrate/evidence/WATERS/design-review.md",
-    "commit": "a769d3b360a22d0171abe1e477f9034a5091a896",
-    "hash": "f735564d9f6cb39b488c10e14a77872ad56a96ce900eb49085655cfb9d031ce6",
+    "commit": "24c9c36d1e95eb455ca49d1745dc6c0f1c902872",
+    "hash": "699a901f77318ef60aec63e0b94da495b75932b7cc843f8681b223d4b070beb5",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 93342,
-      "cached": 2180608,
-      "output": 8807,
+      "input": 93506,
+      "cached": 4027392,
+      "output": 12611,
       "turns": 1
     },
-    "at": "2026-11-24T23:51:34Z"
+    "at": "2026-11-25T00:33:15Z"
   },
   "work_packages": {
     "WP1": {
@@ -2081,6 +2081,29 @@
         "turns": 1
       },
       "at": "2026-11-24T04:48:35Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/WATERS/design-review-17.md",
+      "commit": "a769d3b360a22d0171abe1e477f9034a5091a896",
+      "hash": "f735564d9f6cb39b488c10e14a77872ad56a96ce900eb49085655cfb9d031ce6",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 93342,
+        "cached": 2180608,
+        "output": 8807,
+        "turns": 1
+      },
+      "at": "2026-11-24T23:51:34Z"
     }
   ]
 }
